@@ -1,5 +1,9 @@
 # TODO List
 
+# Build
+
+- [ ] 来个会写 CMake 或者 Makefile 的
+
 # AST
 
 - [ ] AST结构
