@@ -1,0 +1,1 @@
+/// @todo 愚见觉得std::unordered_map<string,std::stack<int>>挺好的，那个int用来装SSA的标号。然后每个作用域要有一个manager负责在codegen之后把栈减掉一层；另外那个id我很不想存在内存里，但是不存

@@ -1,22 +1,28 @@
 #pragma once
 #include <memory>
+/// @brief 一个list_node，要求对象的所有权移交给它，由它来管理
+/// @tparam T 
 template<typename T>
 class List_node{
+    using Next=std::shared_ptr<List_node>;
+    using DataOwner=std::unique_ptr<T>;
     protected:
-    std::unique_ptr<List_node> nxt;
-    std::unique_ptr<T> data;
+    Next nxt;
+    DataOwner data;
     public:
-    List_node(unique_ptr<T> __data):{
+    List_node(DataOwner __data):{
         data=std::move(__data);
     }
 };
 
-/// @brief 只写了尾插和iterator的list
+/// @brief 一个简单支持多态的外挂式链表
+/// @tparam T 
 template<typename T>
 class List{
+    using ListPtr=std::shared_ptr<List_node<T>>;
+    using DataOwner=std::unique_ptr<T>;
     private:
-    std::unique_ptr<List_node<T>> head;
-    List_node<T>* tail;
+    ListPtr head,tail;
     public:
     class iterator{
         private:
@@ -34,14 +40,20 @@ class List{
     };
     iterator begin(){return iterator(head.get());}
     iterator end(){return iterator(nullptr);}
-    void push_back(unique_ptr<T>& __data){
+    void push_front(std::unique_ptr<T> __data){
+        ListPtr tmp=std::make_shared<List_node>(__data);
+        tmp->nxt=head;
+        head=tmp;
+        if(tail==nullptr)tail=head;
+    }
+    void push_back(std::unique_ptr<T> __data){
         if(head==nullptr){
-            head.reset(new List_node<T>(__data));
-            tail=head.get();
+            head=std::make_shared<List_node>(__data);
+            tail=head;
         }
         else{
-            tail->nxt.reset(new List_node<T>(__data));
-            tail=tail->nxt.get();
+            tail->nxt=std::make_shared<List_node>(__data);
+            tail=tail->nxt;
         }
     }
 };
