@@ -1,22 +1,21 @@
-    1 CompUnit: Decl CompUnit
-    2         | FuncDef CompUnit
-    3         | Decl
-    4         | FuncDef
+    1 CompUnit: Decl CompUnit {$2.push_front((AST_NODE*)$1);$$=$2;}
+    2         | FuncDef CompUnit {{$2.push_front((AST_NODE*)$1);$$=$2;}}
+    3         | Decl {$$=new CompUnit((AST_NODE*)$1);}
+    4         | FuncDef {{$$=new CompUnit((AST_NODE*)$1);}}
 
-    5 Decl: ConstDecl
-    6     | VarDecl
+    5 Decl: ConstDecl {$$=new Decl($1);}
+    6     | VarDecl {$$=new Decl($1);}
 
-    7 ConstDecl: Y_CONST Type ConstDef Y_SEMICOLON
-    8          | Y_CONST Type ConstDefs Y_SEMICOLON
+    7 ConstDecl: Y_CONST Type ConstDefs Y_SEMICOLON {$$=std::make_unique<>($2,$3)}
 
-    9 ConstDefs: ConstDef Y_COMMA ConstDef
-   10          | ConstDefs Y_COMMA ConstDef
+    8 ConstDefs: ConstDefs Y_COMMA ConstDef {$1->push_back($3);}
+    9          | ConstDef {$$=new ConstDefs($1);}
 
-   11 ConstDef: Y_ID Y_ASSIGN ConstInitVal
-   12         | Y_ID ConstExps Y_ASSIGN ConstInitVal
+   11 ConstDef: Y_ID Y_ASSIGN ConstInitVal {$$=new ConstDef();}
+   12         | Y_ID ConstExps Y_ASSIGN ConstInitVal {$$=new ConstDef();}
 
-   13 ConstExps: Y_LSQUARE ConstExp Y_RSQUARE
-   14          | Y_LSQUARE ConstExp Y_RSQUARE ConstExps
+   13 ConstExps: Y_LSQUARE ConstExp Y_RSQUARE {}
+   14          | Y_LSQUARE ConstExp Y_RSQUARE ConstExps {}
 
    15 ConstInitVal: ConstExp
    16             | Y_LBRACKET Y_RBRACKET
