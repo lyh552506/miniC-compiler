@@ -83,18 +83,7 @@ class ConstDefs:public AST_NODE
     }
 };
 
-class ConstDef:public AST_NODE
-{
-    private:
-    std::string ID;
-    std::unique_ptr<Exps> array_descripters; 
-    std::unique_ptr<InitVal> civ;
-    public:
-    ConstDef(std::string _id,Exps* _ad,InitVal* _iv):ID(_id),array_descripters(_ad),civ(_iv){}
-    void codegen() final {
-        /// @todo 实现codegen
-    }
-};
+using ConstDef=VarDef;
 
 class Exps:public AST_NODE
 {
@@ -105,6 +94,9 @@ class Exps:public AST_NODE
     }
     void push_front(AddExp* _data){
         ls.push_front(_data);
+    }
+    void push_back(AddExp* _data){
+        ls.push_back(_data);
     }
 };
 
@@ -126,34 +118,61 @@ class AddExp:public AST_NODE
 class InitVal:public AST_NODE
 {
     private:
-    Owner cexp;//解决就是一个ConstExp的情况
-    std::list<InitVal> civs;
-
+    /// nullptr:{}
+    /// AddExp
+    /// ConstInitVals
+    Owner val;
     public:
-    /// @note 注意规约时第四表达式的处理
-    
+    /// @brief InitVal:{}
+    InitVal()=default;
+    /// @brief InitVal:ConstExp
+    InitVal(AST_NODE* _data):val(_data){}
     void codegen() final {
         /// @todo 实现codegen
     }  
 };
 
-using InitVals=std::list<InitVal>;
+class InitVals:public AST_NODE
+{
+    List<InitVal> ls;
+    public:
+    InitVals(InitVal* _data){
+        ls.push_back(_data);
+    }
+    void push_back(InitVal* _data){
+        ls.push_back(_data);
+    }
+};
 
 class VarDecl:public AST_NODE
 {
     private:
     Type tp;
-    VarDefs vdfs;
+    std::unique_ptr<VarDefs> vdfs;
+    public:
+    VarDecl(VarDefs* ptr):vdfs(ptr){}
 };
 
-using VarDefs=std::list<VarDef>;
+class VarDefs:public AST_NODE
+{
+    List<VarDef> ls;
+    public:
+    VarDefs(VarDef* vdf){
+        push_back(vdf);
+    }
+    void push_back(VarDef* _data){
+        ls.push_back(_data);
+    }
+};
 
 class VarDef:public AST_NODE
 {
+    private:
     std::string ID;
-    std::list<AddExp> array_descripters;
-    InitVals iv;
+    std::unique_ptr<Exps> array_descripters; 
+    std::unique_ptr<InitVal> civ;
     public:
+    VarDef(std::string _id,Exps* _ad,InitVal* _iv):ID(_id),array_descripters(_ad),civ(_iv){}
     void codegen() final {
         /// @todo 实现codegen
     }
@@ -161,13 +180,23 @@ class VarDef:public AST_NODE
 
 class FuncDef:public AST_NODE
 {
-    private:
     Type tp;
     std::string ID;
-    FuncParams params;
+    std::unique_ptr<FuncParams> params;
+    FuncDef(Type _tp,std::string _id,FuncParams* ptr):tp(_tp),ID(_id),params(ptr){}
 };
 
-using FuncParams=std::list<FuncParam>;
+class FuncParams:public AST_NODE
+{
+    List<FuncParam> ls;
+    public:
+    FuncParams(FuncParam* ptr){
+        ls.push_back(ptr);
+    }
+    void push_back(FuncParam* ptr){
+        ls.push_back(ptr);
+    }
+};
 
 class FuncParam:public AST_NODE
 {
@@ -175,42 +204,59 @@ class FuncParam:public AST_NODE
     Type tp;
     std::string ID;
     bool emptySquare;
-    std::list<AddExp> array_descripters;
+    std::unique_ptr<Exps> array_subscripts;
+    public:
+    FuncParam(Type _tp,std::string _id,bool is_empty,Exps* ptr):tp(_tp),ID(_id),emptySquare(is_empty),array_subscripts(ptr){}
 };
 
 class Block:public AST_NODE
 {
     private:
-    BlockItems items;
+    std::unique_ptr<BlockItems> items;
+    public:
+    Block(BlockItems* ptr):items(ptr){}
 };
 
-using BlockItems=std::list<BlockItem>;
+class BlockItems:public AST_NODE
+{
+    List<BlockItem> ls;
+    public:
+    BlockItems(BlockItem* ptr){
+        push_back(ptr);
+    }
+    void push_back(BlockItem* ptr){
+        ls.push_back(ptr);
+    }
+};
 
-using BlockItem=Grammar_Assistance;
+using BlockItem=Grammar_Assistance; 
 
 using Stmt=Grammar_Assistance;
 
 class AssignStmt:public AST_NODE
 {
     private:
-    LVal lv;
-    AddExp exp;
+    std::unique_ptr<LVal> lv;
+    std::unique_ptr<AddExp> exp;
     public:
+    AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
 };
 
-/// @brief 有点不好处理...
+/// @brief EmptyStmt直接不给翻译，就是只有';'的那种
 class ExpStmt:public AST_NODE
 {
-    
+    std::unique_ptr<AddExp> exp;
+    public:
+    ExpStmt(AddExp* ptr):exp(ptr){}
 };
 
 class WhileStmt:public AST_NODE
 {
     private:
-    LorExp condition;
-    Stmt stmt;
+    std::unique_ptr<LorExp> condition;
+    std::unique_ptr<Stmt> stmt;
     public:
-
+    WhileStmt(LorExp* p1,Stmt* p2):condition(p1),stmt(p2){}
 };
 
 class IfStmt:public AST_NODE
@@ -218,12 +264,14 @@ class IfStmt:public AST_NODE
     private:
     LorExp condition;
     Stmt t,f;
+    public:
+    IfStmt(LorExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
 }; 
 
-/// @brief 记录下一个Stmt的起点
+/// @brief 这个很奇怪，因为break和continue本身就代表了一种信息
 class BreakStmt:public AST_NODE
 {
-
+    
 };
 
 class ContinueStmt:public AST_NODE
@@ -233,16 +281,18 @@ class ContinueStmt:public AST_NODE
 
 class ReturnStmt:public AST_NODE
 {
-
+    std::unique_ptr<AddExp> return_val;
+    public:
+    ReturnStmt(AddExp* ptr):return_val(ptr){}
 };
 
 class LVal:public AST_NODE
 {
     private:
     std::string ID;
-    std::list<AddExp> array_descripters;
+    std::unique_ptr<Exps> array_descripters;
     public:
-
+    LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
 };
 
 /// @brief primaryexp中间也包含一下函数调用

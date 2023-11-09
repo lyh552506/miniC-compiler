@@ -17,19 +17,17 @@
    13 ConstExps: Y_LSQUARE ConstExp Y_RSQUARE {}
    14          | Y_LSQUARE ConstExp Y_RSQUARE ConstExps {}
 
-   15 ConstInitVal: ConstExp
+   15 ConstInitVal: ConstExp {$$=new InitVal($1);}
    16             | Y_LBRACKET Y_RBRACKET
-   17             | Y_LBRACKET ConstInitVal Y_RBRACKET
-   18             | Y_LBRACKET ConstInitVal ConstInitVals Y_RBRACKET
+   18             | Y_LBRACKET ConstInitVals Y_RBRACKET
 
-   19 ConstInitVals: Y_COMMA ConstInitVal
-   20              | Y_COMMA ConstInitVal ConstInitVals
+   19 ConstInitVals: ConstInitVal 
+   20              | ConstInitVals Y_COMMA ConstInitVal
 
-   21 VarDecl: Type VarDef Y_SEMICOLON
-   22        | Type VarDef VarDecls Y_SEMICOLON
+   21 VarDecl: Type VarDefs Y_SEMICOLON
 
-   23 VarDecls: Y_COMMA VarDef
-   24         | Y_COMMA VarDef VarDecls
+   23 VarDefs: VarDef
+   24        | VarDefs Y_COMMA VarDef
 
    25 VarDef: Y_ID
    26       | Y_ID Y_ASSIGN InitVal
@@ -59,7 +57,7 @@
    44      | Y_LBRACKET Y_RBRACKET
 
    45 BlockItems: BlockItem
-   46           | BlockItem BlockItems
+   46           | BlockItems BlockItem
 
    47 BlockItem: Decl
    48          | Stmt
