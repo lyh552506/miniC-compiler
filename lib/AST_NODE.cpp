@@ -1,6 +1,8 @@
 #pragma once
 #include "AST_NODE.h"
 #include "List.hpp"
+/// @todo 这个东西应该包含的是Lexer的定义头
+#include "yytokentype.hpp"
 #include <list>
 #include <string>
 
@@ -98,20 +100,8 @@ class Exps:public AST_NODE
     void push_back(AddExp* _data){
         ls.push_back(_data);
     }
-};
-
-/// @brief 由MulExp和乘法运算符构建起来的链表
-class AddExp:public AST_NODE
-{
-    private:
-    List<AST_NODE> ls;
-    public:
-    AddExp(AST_NODE* _data){
-        ls.push_back(_data);
-    }
-    void Merge_back(AST_NODE* op,AST_NODE* next_MulExp){
-        ls.push_back(op);
-        ls.push_back(next_MulExp);
+    void codegen() final{
+        ///@todo impl codegen
     }
 };
 
@@ -142,6 +132,9 @@ class InitVals:public AST_NODE
     void push_back(InitVal* _data){
         ls.push_back(_data);
     }
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class VarDecl:public AST_NODE
@@ -151,6 +144,9 @@ class VarDecl:public AST_NODE
     std::unique_ptr<VarDefs> vdfs;
     public:
     VarDecl(VarDefs* ptr):vdfs(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class VarDefs:public AST_NODE
@@ -162,6 +158,9 @@ class VarDefs:public AST_NODE
     }
     void push_back(VarDef* _data){
         ls.push_back(_data);
+    }
+    void codegen() final{
+        ///@todo impl codegen
     }
 };
 
@@ -184,6 +183,9 @@ class FuncDef:public AST_NODE
     std::string ID;
     std::unique_ptr<FuncParams> params;
     FuncDef(Type _tp,std::string _id,FuncParams* ptr):tp(_tp),ID(_id),params(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class FuncParams:public AST_NODE
@@ -196,6 +198,9 @@ class FuncParams:public AST_NODE
     void push_back(FuncParam* ptr){
         ls.push_back(ptr);
     }
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class FuncParam:public AST_NODE
@@ -207,6 +212,9 @@ class FuncParam:public AST_NODE
     std::unique_ptr<Exps> array_subscripts;
     public:
     FuncParam(Type _tp,std::string _id,bool is_empty,Exps* ptr):tp(_tp),ID(_id),emptySquare(is_empty),array_subscripts(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class Block:public AST_NODE
@@ -215,6 +223,9 @@ class Block:public AST_NODE
     std::unique_ptr<BlockItems> items;
     public:
     Block(BlockItems* ptr):items(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class BlockItems:public AST_NODE
@@ -226,6 +237,9 @@ class BlockItems:public AST_NODE
     }
     void push_back(BlockItem* ptr){
         ls.push_back(ptr);
+    }
+    void codegen() final{
+        ///@todo impl codegen
     }
 };
 
@@ -240,6 +254,9 @@ class AssignStmt:public AST_NODE
     std::unique_ptr<AddExp> exp;
     public:
     AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 /// @brief EmptyStmt直接不给翻译，就是只有';'的那种
@@ -248,35 +265,48 @@ class ExpStmt:public AST_NODE
     std::unique_ptr<AddExp> exp;
     public:
     ExpStmt(AddExp* ptr):exp(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class WhileStmt:public AST_NODE
 {
     private:
-    std::unique_ptr<LorExp> condition;
+    std::unique_ptr<LOrExp> condition;
     std::unique_ptr<Stmt> stmt;
     public:
-    WhileStmt(LorExp* p1,Stmt* p2):condition(p1),stmt(p2){}
+    WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class IfStmt:public AST_NODE
 {
     private:
-    LorExp condition;
+    std::unique_ptr<LOrExp> condition;
     Stmt t,f;
     public:
-    IfStmt(LorExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
+    IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 }; 
 
 /// @brief 这个很奇怪，因为break和continue本身就代表了一种信息
 class BreakStmt:public AST_NODE
 {
-    
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class ContinueStmt:public AST_NODE
 {
-
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class ReturnStmt:public AST_NODE
@@ -284,6 +314,9 @@ class ReturnStmt:public AST_NODE
     std::unique_ptr<AddExp> return_val;
     public:
     ReturnStmt(AddExp* ptr):return_val(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 class LVal:public AST_NODE
@@ -293,17 +326,51 @@ class LVal:public AST_NODE
     std::unique_ptr<Exps> array_descripters;
     public:
     LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
 /// @brief primaryexp中间也包含一下函数调用
 using PrimaryExp=Grammar_Assistance;
 
-class UnaryExp:public AST_NODE
+class FunctionCall:public AST_NODE
 {
-    private:
-    std::list<UnaryOp> oplist;
-    PrimaryExp pexp;
+    std::string id;
+    std::unique_ptr<CallParams> cp;
+    public:
+    FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
 };
 
-using CallParams=std::list<AddExp>;
+using CallParams=Exps;
 
+/// @brief 由某种表达式和运算符构建起来的链表
+template<typename T>
+class BaseExp:public AST_NODE
+{
+    private:
+    std::list<yytokentype> oplist;
+    List<T> ls;
+    public:
+    BaseExp(T* _data){
+        ls.push_back(_data);
+    }
+    void Merge_back(yytokentype op,T* next_MulExp){
+        oplist.push_back(op);
+        ls.push_back(next_MulExp);
+    }
+    void codegen() final {
+        ///@todo
+    }
+};
+
+using UnaryExp=BaseExp<PrimaryExp>;
+using MulExp=BaseExp<UnaryExp>;
+using AddExp=BaseExp<MulExp>;
+using RelExp=BaseExp<AddExp>;
+using EqExp=BaseExp<RelExp>;
+using LAndExp=BaseExp<EqExp>;
+using LOrExp=BaseExp<LAndExp>;
