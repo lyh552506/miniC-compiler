@@ -1,5 +1,9 @@
+%option outfile="scanner.cc" header-file="scanner.hh"
+
 %{
-#include "token_type.h"
+#define YY_DECL yy::parser::symbol_type yylex(void)
+#include "parser.tab.hh"
+#include <iostream>
 %}
 T_int int
 T_float float
@@ -14,7 +18,7 @@ T_continue continue
 
 identifier ([a-zA-Z]|_)([a-zA-Z]|[0-9]|_)*
 
-HEXPREFIX 0x
+HEXPREFIX (0x)|(0X)
 OCTALPREFIX 0
 
 HEX_FLOAT_TAIL [pP][+-]?{HEXNUM}
@@ -24,12 +28,9 @@ OCTALNUM [0-7]
 HEXNUM [0-9a-fA-F]
 DECIMALNUM [0-9]
 
-HEX {HEXPREFIX}[1-9a-fA-F]{HEXNUM}*
-OCTAL {OCTALPREFIX}[1-7]{OCTALNUM}*
-
-INT {HEX}|{OCTAL}|([1-9][0-9]*)|0
-INTEGER {INT}(u|U)?(l|L|(ll)|(LL))?
-
+HEX {HEXPREFIX}{HEXNUM}*
+OCTAL {OCTALPREFIX}{OCTALNUM}*
+DECIMAL [1-9]{DECIMALNUM}*
 
 HEX_FLOAT_FORM1 {HEXPREFIX}{HEXNUM}*\.{HEXNUM}+{HEX_FLOAT_TAIL}?
 HEX_FLOAT_FORM2 {HEXPREFIX}{HEXNUM}+\.?{HEX_FLOAT_TAIL}
@@ -74,45 +75,49 @@ Sharp "#"
 %x COMMENT
 
 %%
-{T_int} {return Y_INT;}
-{T_float} {return Y_FLOAT;}
-{T_void} {return Y_VOID;}
-{T_const} {return Y_CONST;}
-{T_break} {return Y_BREAK;}
-{T_while} {return Y_WHILE;}
-{T_if} {return Y_IF;}
-{T_else} {return Y_ELSE;}
-{T_return} {return Y_RETURN;}
-{T_continue} {return Y_CONTINUE;}
+{T_int} {return yy::parser::make_Y_INT();}
+{T_float} {return yy::parser::make_Y_FLOAT();}
+{T_void} {return yy::parser::make_Y_VOID();}
+{T_const} {return yy::parser::make_Y_CONST();}
+{T_break} {return yy::parser::make_Y_BREAK();}
+{T_while} {return yy::parser::make_Y_WHILE();}
+{T_if} {return yy::parser::make_Y_IF();}
+{T_else} {return yy::parser::make_Y_ELSE();}
+{T_return} {return yy::parser::make_Y_RETURN();}
+{T_continue} {return yy::parser::make_Y_CONTINUE();}
 
-{identifier} {return Y_ID;} 
+{identifier} {return yy::parser::make_Y_ID(yytext);} 
 
-{FLOAT} {return num_FLOAT;}
-{INTEGER} {return num_INT;}
+{FLOAT} {return yy::parser::make_num_FLOAT(std::stof(yytext));}
+{HEX} {return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16));}
+{OCTAL} {return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8));}
+{DECIMAL} {return yy::parser::make_num_INT(std::stoi(yytext));}
 
-{ADD} {return Y_ADD;}
-{DEL} {return Y_SUB;}
-{MUL} {return Y_MUL;}
-{MOD} {return Y_MODULO;}
-{DIV} {return Y_DIV;}
-{BIG} {return Y_GREAT;}
-{BIG_Equ} {return Y_GREATEQ;}
-{SMALL} {return Y_LESS;}
-{SMALL_Equ} {return Y_LESSEQ;}
-{EquEqu} {return Y_EQ;}
-{Equ} {return Y_ASSIGN;}
-{NotEqu} {return Y_NOTEQ;}
-{NOT} {return Y_NOT;}
-{AND} {return Y_AND;}
-{OR} {return Y_OR;}
-"(" {return Y_LPAR;}
-")"	{return Y_RPAR;}
-"["	{return Y_LSQUARE;}
-"]"	{return Y_RSQUARE;}
-"{"	{return Y_LBRACKET;}
-"}"	{return Y_RBRACKET;}
-{Colon} {return Y_SEMICOLON;}
-{Comma} {return Y_COMMA;}
+{ADD} {return yy::parser::make_Y_ADD();}
+{DEL} {return yy::parser::make_Y_SUB();}
+{MUL} {return yy::parser::make_Y_MUL();}
+{MOD} {return yy::parser::make_Y_MODULO();}
+{DIV} {return yy::parser::make_Y_DIV();}
+{BIG} {return yy::parser::make_Y_GREAT();}
+{BIG_Equ} {return yy::parser::make_Y_GREATEQ();}
+{SMALL} {return yy::parser::make_Y_LESS();}
+{SMALL_Equ} {return yy::parser::make_Y_LESSEQ();}
+{EquEqu} {return yy::parser::make_Y_EQ();}
+{Equ} {return yy::parser::make_Y_ASSIGN();}
+{NotEqu} {return yy::parser::make_Y_NOTEQ();}
+{NOT} {return yy::parser::make_Y_NOT();}
+{AND} {return yy::parser::make_Y_AND();}
+{OR} {return yy::parser::make_Y_OR();}
+"(" {return yy::parser::make_Y_LPAR();}
+")"	{return yy::parser::make_Y_RPAR();}
+"["	{return yy::parser::make_Y_LSQUARE();}
+"]"	{return yy::parser::make_Y_RSQUARE();}
+"{"	{return yy::parser::make_Y_LBRACKET();}
+"}"	{return yy::parser::make_Y_RBRACKET();}
+{Colon} {return yy::parser::make_Y_SEMICOLON();}
+{Comma} {return yy::parser::make_Y_COMMA();}
+
+<<EOF>>  {return yy::parser::make_YYEOF();}
 
 "//".*        {}
 "/*" {BEGIN COMMENT;}

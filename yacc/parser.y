@@ -1,129 +1,265 @@
-    1 CompUnit: Decl CompUnit {$2.push_front((AST_NODE*)$1);$$=$2;}
-    2         | FuncDef CompUnit {{$2.push_front((AST_NODE*)$1);$$=$2;}}
-    3         | Decl {$$=new CompUnit((AST_NODE*)$1);}
-    4         | FuncDef {{$$=new CompUnit((AST_NODE*)$1);}}
+//parser.y token的定义交给bison来做了
 
-    5 Decl: ConstDecl {$$=new Decl($1);}
-    6     | VarDecl {$$=new Decl($1);}
+//prologue
+%code requires{
+#include "AST_NODE.hpp"
+#include "Singleton.hpp"
+};
 
-    7 ConstDecl: Y_CONST Type ConstDefs Y_SEMICOLON {$$=std::make_unique<>($2,$3)}
+%code{
+extern yy::parser::symbol_type yylex();
+namespace yy
+{
+  // Report an error to the user.
+  auto parser::error (const std::string& msg) -> void
+  {
+    std::cerr << msg << '\n';
+  }
+}
+}
 
-    8 ConstDefs: ConstDefs Y_COMMA ConstDef {$1->push_back($3);}
-    9          | ConstDef {$$=new ConstDefs($1);}
 
-   11 ConstDef: Y_ID Y_ASSIGN ConstInitVal {$$=new ConstDef();}
-   12         | Y_ID ConstExps Y_ASSIGN ConstInitVal {$$=new ConstDef();}
+//bison 版本
+%require "3.2"
+//语言
+%language "c++" 
+//语义值存储的方式(C++中Union不是很方便)
+%define api.value.type variant
+//要求Bison生成make_NUMBER这种函数(如果没有这个,在flex中构造函数错误写错了可能可以过编译)
+%define api.token.constructor
+//生成header,flex需要用Bison++自动定义的类
+%header
+//token的enum前缀
 
-   13 ConstExps: Y_LSQUARE ConstExp Y_RSQUARE {}
-   14          | Y_LSQUARE ConstExp Y_RSQUARE ConstExps {}
+//token定义
+//语法:
+//%token <C++ typename> TOKEN的enum名字 ;
+%token Y_INT
+%token Y_FLOAT
+%token Y_VOID
+%token Y_CONST
+%token Y_BREAK
+%token Y_WHILE
+%token Y_IF
+%token Y_ELSE
+%token Y_RETURN
+%token Y_CONTINUE
+%token <std::string> Y_ID
+%token <float> num_FLOAT
+%token <int> num_INT
+%token Y_ADD
+%token Y_SUB
+%token Y_MUL
+%token Y_MODULO
+%token Y_DIV
+%token Y_GREAT
+%token Y_GREATEQ
+%token Y_LESS
+%token Y_LESSEQ
+%token Y_EQ
+%token Y_ASSIGN
+%token Y_NOTEQ
+%token Y_NOT
+%token Y_AND
+%token Y_OR
+%token Y_LPAR
+%token Y_RPAR
+%token Y_LSQUARE
+%token Y_RSQUARE
+%token Y_LBRACKET
+%token Y_RBRACKET
+%token Y_SEMICOLON
+%token Y_COMMA
 
-   15 ConstInitVal: ConstExp {$$=new InitVal($1);}
-   16             | Y_LBRACKET Y_RBRACKET
-   18             | Y_LBRACKET ConstInitVals Y_RBRACKET
+///none terminator定义
+%nterm <CompUnit*> CompUnit
+%nterm <Decl*> Decl
+%nterm <ConstDecl*> ConstDecl
+%nterm <ConstDefs*> ConstDefs
+%nterm <ConstDef*> ConstDef
+%nterm <Exps*> ConstExps
+%nterm <InitVal*> ConstInitVal
+%nterm <InitVals*> ConstInitVals
+%nterm <InitVal*> InitVal
+%nterm <InitVals*> InitVals
+%nterm <VarDecl*> VarDecl
+%nterm <VarDefs*> VarDefs
+%nterm <VarDef*> VarDef
+%nterm <FuncDef*> FuncDef
+%nterm <FuncParams*> FuncParams
+%nterm <FuncParam*> FuncParam
+%nterm <Block*> Block
+%nterm <BlockItems*> BlockItems
+%nterm <BlockItem*> BlockItem
+%nterm <AST_NODE*> Stmt
+%nterm <LVal*> LVal
+%nterm <PrimaryExp*> PrimaryExp
+%nterm <CallParams*> CallParams
+%nterm <UnaryExp*> UnaryExp
+%nterm <MulExp*> MulExp
+%nterm <AddExp*> AddExp
+%nterm <RelExp*> RelExp
+%nterm <EqExp*> EqExp
+%nterm <LAndExp*> LAndExp
+%nterm <LOrExp*> LOrExp
+%nterm <AST_Type> Type
+%nterm <Exps*> ArraySubscripts
 
-   19 ConstInitVals: ConstInitVal 
-   20              | ConstInitVals Y_COMMA ConstInitVal
+%start GrammarEntrance
 
-   21 VarDecl: Type VarDefs Y_SEMICOLON
+//ACTION部分
+%%
 
-   23 VarDefs: VarDef
-   24        | VarDefs Y_COMMA VarDef
+GrammarEntrance: CompUnit {Singleton<CompUnit*>()=$1;}
 
-   25 VarDef: Y_ID
-   26       | Y_ID Y_ASSIGN InitVal
-   27       | Y_ID ConstExps
-   28       | Y_ID ConstExps Y_ASSIGN InitVal
+CompUnit: Decl CompUnit {$$=$2;$$->push_front((AST_NODE*)$1);}
+        | FuncDef CompUnit {$$=$2;$$->push_front((AST_NODE*)$1);}
+        | Decl {$$=new CompUnit((AST_NODE*)$1);}
+        | FuncDef {{$$=new CompUnit((AST_NODE*)$1);}}
+        ;
 
-   29 InitVal: Exp
-   30        | Y_LBRACKET Y_RBRACKET
-   31        | Y_LBRACKET InitVal Y_RBRACKET
-   32        | Y_LBRACKET InitVal InitVals Y_RBRACKET
+Decl: ConstDecl {$$=new Decl($1);}
+    | VarDecl {$$=new Decl($1);}
+    ;
 
-   33 InitVals: Y_COMMA InitVal
-   34         | Y_COMMA InitVal InitVals
+ConstDecl: Y_CONST Type ConstDefs Y_SEMICOLON {$$=new ConstDecl($2,$3);}
+         ;
 
-   35 FuncDef: Type Y_ID Y_LPAR Y_RPAR Block
-   36        | Type Y_ID Y_LPAR FuncParams Y_RPAR Block
+ConstDefs: ConstDefs Y_COMMA ConstDef {$1->push_back($3);}
+         | ConstDef {$$=new ConstDefs($1);}
+         ;
 
-   37 FuncParams: FuncParam
-   38           | FuncParams Y_COMMA FuncParam
+ConstDef: Y_ID Y_ASSIGN ConstInitVal {$$=new ConstDef($1,nullptr,$3);}
+        | Y_ID ConstExps Y_ASSIGN ConstInitVal {$$=new ConstDef($1,$2,$4);}
+        ;
 
-   39 FuncParam: Type Y_ID
-   40          | Type Y_ID Y_LSQUARE Y_RSQUARE
-   41          | Type Y_ID ArraySubscripts
-   42          | Type Y_ID Y_LSQUARE Y_RSQUARE ArraySubscripts
+ConstExps: Y_LSQUARE AddExp Y_RSQUARE {$$=new Exps($2);}
+         | Y_LSQUARE AddExp Y_RSQUARE ConstExps {$$=$4;$$->push_front($2);}
+         ;
 
-   43 Block: Y_LBRACKET BlockItems Y_RBRACKET
-   44      | Y_LBRACKET Y_RBRACKET
+ConstInitVal: AddExp {$$=new InitVal((AST_NODE*)$1);}
+            | Y_LBRACKET Y_RBRACKET {$$=new InitVal();}
+            | Y_LBRACKET ConstInitVals Y_RBRACKET {$$=new InitVal((AST_NODE*)$2);}
+            ;
 
-   45 BlockItems: BlockItem
-   46           | BlockItems BlockItem
+ConstInitVals: ConstInitVal {$$=new InitVals($1);}
+             | ConstInitVals Y_COMMA ConstInitVal {$$=$1;$$->push_back($3);}
+             ;
 
-   47 BlockItem: Decl
-   48          | Stmt
+VarDecl: Type VarDefs Y_SEMICOLON {$$=new VarDecl($1,$2);}
+       ;
 
-   49 Stmt: LVal Y_ASSIGN Exp Y_SEMICOLON
-   50     | Y_SEMICOLON
-   51     | Exp Y_SEMICOLON
-   52     | Block
-   53     | Y_WHILE Y_LPAR LOrExp Y_RPAR Stmt
-   54     | Y_IF Y_LPAR LOrExp Y_RPAR Stmt
-   55     | Y_IF Y_LPAR LOrExp Y_RPAR Stmt Y_ELSE Stmt
-   56     | Y_BREAK Y_SEMICOLON
-   57     | Y_CONTINUE Y_SEMICOLON
-   58     | Y_RETURN Exp Y_SEMICOLON
-   59     | Y_RETURN Y_SEMICOLON
+VarDefs: VarDef {$$=new VarDefs($1);}
+       | VarDefs Y_COMMA VarDef {$$=$1;$$->push_back($3);}
+       ;
 
-   60 Exp: AddExp
+VarDef: Y_ID {$$=new VarDef($1);}
+      | Y_ID Y_ASSIGN InitVal {$$=new VarDef($1,nullptr,$3);}
+      | Y_ID ConstExps {$$=new VarDef($1,$2,nullptr);}
+      | Y_ID ConstExps Y_ASSIGN InitVal {$$=new VarDef($1,$2,$4);}
+      ;
 
-   61 LVal: Y_ID
-   62     | Y_ID ArraySubscripts
+InitVal: AddExp {$$=new InitVal((AST_NODE*)$1);}
+       | Y_LBRACKET Y_RBRACKET {$$=new InitVal(nullptr);}
+       | Y_LBRACKET InitVals Y_RBRACKET {$$=new InitVal((AST_NODE*)$2);}
+       ;
 
-   63 ArraySubscripts: Y_LSQUARE Exp Y_RSQUARE
-   64                | Y_LSQUARE Exp Y_RSQUARE ArraySubscripts
+InitVals: InitVal {$$=new InitVals($1);}
+        | InitVals Y_COMMA InitVal {$$=$1;$$->push_back($3);}
+        ;
 
-   65 PrimaryExp: Y_LPAR Exp Y_RPAR
-   66           | LVal
-   67           | num_INT
-   68           | num_FLOAT
+FuncDef: Type Y_ID Y_LPAR Y_RPAR Block {$$=new FuncDef($1,$2);}
+       | Type Y_ID Y_LPAR FuncParams Y_RPAR Block {$$=new FuncDef($1,$2,$4);}
+       ; 
 
-   69 UnaryExp: PrimaryExp
-   70         | Y_ID Y_LPAR Y_RPAR
-   71         | Y_ID Y_LPAR CallParams Y_RPAR
-   72         | Y_ADD UnaryExp
-   73         | Y_SUB UnaryExp
-   74         | Y_NOT UnaryExp
+FuncParams: FuncParam {$$=new FuncParams($1);}
+          | FuncParams Y_COMMA FuncParam {$$=$1;$$->push_back($3);}
+          ;
 
-   75 CallParams: Exp
-   76           | Exp Y_COMMA CallParams
+FuncParam: Type Y_ID {$$=new FuncParam($1,$2);}
+         | Type Y_ID Y_LSQUARE Y_RSQUARE {$$=new FuncParam($1,$2,true);}
+         | Type Y_ID ArraySubscripts {$$=new FuncParam($1,$2,false,$3);}
+         | Type Y_ID Y_LSQUARE Y_RSQUARE ArraySubscripts {$$=new FuncParam($1,$2,true,$5);}
+         ;
 
-   77 MulExp: UnaryExp
-   78       | MulExp Y_MUL UnaryExp
-   79       | MulExp Y_DIV UnaryExp
-   80       | MulExp Y_MODULO UnaryExp
+Block: Y_LBRACKET BlockItems Y_RBRACKET {$$=new Block($2);}
+     | Y_LBRACKET Y_RBRACKET {$$=new Block(nullptr);}
+     ;
 
-   81 AddExp: MulExp
-   82       | AddExp Y_ADD MulExp
-   83       | AddExp Y_SUB MulExp
+BlockItems: BlockItem {$$=new BlockItems($1);}
+          | BlockItems BlockItem {$$=$1;$$->push_back($2);}
+          ;
 
-   84 RelExp: AddExp
-   85       | AddExp Y_LESS RelExp
-   86       | AddExp Y_GREAT RelExp
-   87       | AddExp Y_LESSEQ RelExp
-   88       | AddExp Y_GREATEQ RelExp
+BlockItem: Decl {$$=new BlockItem((AST_NODE*)$1);}
+         | Stmt {$$=new BlockItem((AST_NODE*)$1);}
+         ;
 
-   89 EqExp: RelExp
-   90      | RelExp Y_EQ EqExp
-   91      | RelExp Y_NOTEQ EqExp
+Stmt: LVal Y_ASSIGN AddExp Y_SEMICOLON {$$=new AssignStmt($1,$3);}
+    | Y_SEMICOLON {$$=new ExpStmt(nullptr);}
+    | AddExp Y_SEMICOLON {$$=new ExpStmt($1);}
+    | Block {$$=$1;}
+    | Y_WHILE Y_LPAR LOrExp Y_RPAR Stmt {$$=new WhileStmt($3,$5);}
+    | Y_IF Y_LPAR LOrExp Y_RPAR Stmt Y_ELSE Stmt {$$=new IfStmt($3,$5,$7);}
+    | Y_IF Y_LPAR LOrExp Y_RPAR Stmt {$$=new IfStmt($3,$5);}
+    | Y_BREAK Y_SEMICOLON {$$=new BreakStmt();}
+    | Y_CONTINUE Y_SEMICOLON {$$=new ContinueStmt();}
+    | Y_RETURN AddExp Y_SEMICOLON {$$=new ReturnStmt($2);}
+    | Y_RETURN Y_SEMICOLON {$$=new ReturnStmt();}
+    ;
 
-   92 LAndExp: EqExp
-   93        | EqExp Y_AND LAndExp
+LVal: Y_ID {$$=new LVal($1);}
+    | Y_ID ArraySubscripts {$$=new LVal($1,$2);}
+    ;
 
-   94 LOrExp: LAndExp
-   95       | LAndExp Y_OR LOrExp
+ArraySubscripts: Y_LSQUARE AddExp Y_RSQUARE {$$=new Exps($2);}
+               | Y_LSQUARE AddExp Y_RSQUARE ArraySubscripts {$$=$4;$$->push_front($2);}
+               ;
 
-   96 ConstExp: AddExp
+PrimaryExp: Y_LPAR AddExp Y_RPAR {$$=new PrimaryExp((AST_NODE*)$2);}
+          | LVal {$$=new PrimaryExp((AST_NODE*)$1);}
+          | num_INT {$$=new PrimaryExp((AST_NODE*)(new ConstValue<int>($1)));}
+          | num_FLOAT {$$=new PrimaryExp((AST_NODE*)(new ConstValue<float>($1)));}
+          | Y_ID Y_LPAR Y_RPAR {$$=new PrimaryExp((AST_NODE*)(new FunctionCall($1)));}
+          | Y_ID Y_LPAR CallParams Y_RPAR {$$=new PrimaryExp((AST_NODE*)(new FunctionCall($1,$3)));}
+          ;
 
-   97 Type: Y_INT
-   98     | Y_FLOAT
-   99     | Y_VOID
+UnaryExp: PrimaryExp {$$=new UnaryExp($1);}
+        | Y_ADD UnaryExp {$$=$2;$$->push_front(AST_ADD);}
+        | Y_SUB UnaryExp {$$=$2;$$->push_front(AST_SUB);}
+        | Y_NOT UnaryExp {$$=$2;$$->push_front(AST_NOT);}
+        ;
+
+CallParams: AddExp {$$=new CallParams($1);}
+          | AddExp Y_COMMA CallParams {$$=$3;$$->push_front($1);}
+          ;
+
+MulExp: UnaryExp {$$=new MulExp($1);}
+      | MulExp Y_MUL UnaryExp {$$=$1;$$->push_back(AST_MUL);$$->push_back($3);}
+      | MulExp Y_DIV UnaryExp {$$=$1;$$->push_back(AST_DIV);$$->push_back($3);}
+      | MulExp Y_MODULO UnaryExp {$$=$1;$$->push_back(AST_MODULO);$$->push_back($3);}
+
+AddExp: MulExp {$$=new AddExp($1);}
+      | AddExp Y_ADD MulExp {$$=$1;$$->push_back(AST_ADD);$$->push_back($3);}
+      | AddExp Y_SUB MulExp {$$=$1;$$->push_back(AST_SUB);$$->push_back($3);}
+
+RelExp: AddExp {$$=new RelExp($1);}
+      | AddExp Y_LESS RelExp {$$=$3;$$->push_front(AST_LESS);$$->push_front($1);}
+      | AddExp Y_GREAT RelExp {$$=$3;$$->push_front(AST_GREAT);$$->push_front($1);}
+      | AddExp Y_LESSEQ RelExp {$$=$3;$$->push_front(AST_LESSEQ);$$->push_front($1);}
+      | AddExp Y_GREATEQ RelExp {$$=$3;$$->push_front(AST_GREATEQ);$$->push_front($1);}
+
+EqExp: RelExp {$$=new EqExp($1);}
+     | RelExp Y_EQ EqExp {$$=$3;$$->push_front(AST_EQ);$$->push_front($1);}
+     | RelExp Y_NOTEQ EqExp {$$=$3;$$->push_front(AST_NOTEQ);$$->push_front($1);}
+
+LAndExp: EqExp {$$=new LAndExp($1);}
+       | EqExp Y_AND LAndExp {$$=$3;$$->push_front(AST_AND);$$->push_front($1);}
+
+LOrExp: LAndExp {$$=new LOrExp($1);}
+      | LAndExp Y_OR LOrExp {$$=$3;$$->push_front(AST_OR);$$->push_front($1);}
+
+Type: Y_INT {$$=AST_INT;}
+    | Y_FLOAT {$$=AST_FLOAT;}
+    | Y_VOID {$$=AST_VOID;}
+
+%%
