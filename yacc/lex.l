@@ -1,8 +1,8 @@
-%option outfile="scanner.cc" header-file="scanner.hh"
+%option outfile="scanner.cpp" header-file="scanner.hpp"
 
 %{
 #define YY_DECL yy::parser::symbol_type yylex(void)
-#include "parser.tab.hh"
+#include "parser.hpp"
 #include <iostream>
 %}
 T_int int

@@ -28,7 +28,8 @@ namespace yy
 //要求Bison生成make_NUMBER这种函数(如果没有这个,在flex中构造函数错误写错了可能可以过编译)
 %define api.token.constructor
 //生成header,flex需要用Bison++自动定义的类
-%header
+%header "parser.hpp"
+%output "parser.cpp"
 //token的enum前缀
 
 //token定义
