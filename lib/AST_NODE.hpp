@@ -3,6 +3,10 @@
 #include "List.hpp"
 #include <list>
 #include <string>
+#include <iostream>
+#include <cxxabi.h>
+#include <cassert>
+#include "MagicEnum.hpp"
 
 enum AST_Type
 {
@@ -60,6 +64,16 @@ class AST_NODE
     /// @todo 可以加个enum type 表示这个是什么type，但是貌似 C++ 现在支持动态判定类型,指typeid
     public:
     virtual void codegen()=0;
+    virtual void print(int x)
+    {
+        for(int i=0;i<x;i++)std::cout<<"  ";
+        
+        int status;
+        char* demangled_name = abi::__cxa_demangle(typeid(*this).name(), 0, 0, &status);
+        assert(status==0);
+        std::cout<<demangled_name;
+        free(demangled_name);
+    }
 };
 
 /// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*
@@ -77,8 +91,14 @@ class CompUnit:public AST_NODE
     void push_back(AST_NODE* __data){
         ls.push_back(__data);
     }
-    void codegen() override {
-        /// @todo 实现codegen
+    void codegen() final {
+    }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<'\n';
+        for(auto &i:ls){
+            i.print(x+1);
+        }
     }
 };
 
@@ -95,6 +115,9 @@ class Grammar_Assistance:public AST_NODE
     void codegen() final {
         /// @todo 实现codegen
     }
+    void print(int x) final {
+        ptr->print(x);
+    }
 };
 
 class ConstDecl:public AST_NODE
@@ -108,6 +131,11 @@ class ConstDecl:public AST_NODE
     }
     void codegen() final {
         /// @todo 实现codegen
+    }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<":TYPE:"<<magic_enum::enum_name(type)<<'\n';
+        cdfs->print(x+1);
     }
 };
 
@@ -123,6 +151,9 @@ class ConstDefs:public AST_NODE
     }
     void codegen() final{
         ///@todo impl codegen
+    }
+    void print(int x) final {
+        for(auto &i:ls)i.print(x);
     }
 };
 
@@ -143,6 +174,11 @@ class InnerBaseExps:public AST_NODE
     void codegen() final{
         ///@todo impl codegen
     }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<'\n';
+        for(auto &i:ls)i.print(x+1);
+    }
 };
 
 class InitVal:public AST_NODE
@@ -161,7 +197,14 @@ class InitVal:public AST_NODE
     }
     void codegen() final {
         /// @todo 实现codegen
-    }  
+    }
+    void print(int x) final {
+        AST_NODE::print(x);
+        if(val==nullptr)
+            std::cout<<":empty{}\n";
+        else
+            std::cout<<'\n',val->print(x+1);
+    }
 };
 
 class InitVals:public AST_NODE
@@ -177,6 +220,11 @@ class InitVals:public AST_NODE
     void codegen() final{
         ///@todo impl codegen
     }
+    void print(int x) final{
+        AST_NODE::print(x);
+        std::cout<<'\n';
+        for(auto &i:ls)i.print(x+1);
+    }
 };
 
 class VarDecl:public AST_NODE
@@ -188,6 +236,11 @@ class VarDecl:public AST_NODE
     VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
     void codegen() final{
         ///@todo impl codegen
+    }
+    void print(int x) final{
+        AST_NODE::print(x);
+        std::cout<<magic_enum::enum_name(type)<<'\n';
+        vdfs->print(x+1);
     }
 };
 
@@ -204,6 +257,9 @@ class VarDefs:public AST_NODE
     void codegen() final{
         ///@todo impl codegen
     }
+    void print(int x) final{
+        for(auto &i:ls)i.print(x);
+    }
 };
 
 template<typename T>
@@ -215,8 +271,15 @@ class BaseDef:public AST_NODE
     std::unique_ptr<InitVal> civ;
     public:
     BaseDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):ID(_id),array_descripters(_ad),civ(_iv){}
+    BaseDef(const BaseDef<T>&)=default;
     void codegen() final {
         /// @todo 实现codegen
+    }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<":"<<ID<<'\n';
+        if(array_descripters!=nullptr)array_descripters->print(x+1);
+        if(civ!=nullptr)civ->print(x+1);
     }
 };
 
@@ -225,10 +288,17 @@ class FuncDef:public AST_NODE
     AST_Type tp;
     std::string ID;
     std::unique_ptr<FuncParams> params;
+    std::unique_ptr<Block> function_body;
     public:
-    FuncDef(AST_Type _tp,std::string _id,FuncParams* ptr=nullptr):tp(_tp),ID(_id),params(ptr){}
+    FuncDef(AST_Type _tp,std::string _id,FuncParams* ptr,Block* fb):tp(_tp),ID(_id),params(ptr),function_body(fb){}
     void codegen() final{
         ///@todo impl codegen
+    }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<":"<<ID<<":"<<magic_enum::enum_name(tp)<<'\n';
+        if(params!=nullptr)params->print(x+1);
+        function_body->print(x+1);
     }
 };
 
@@ -245,6 +315,9 @@ class FuncParams:public AST_NODE
     void codegen() final{
         ///@todo impl codegen
     }
+    void print(int x) final {
+        for(auto &i:ls)i.print(x);
+    }
 };
 
 class FuncParam:public AST_NODE
@@ -259,6 +332,13 @@ class FuncParam:public AST_NODE
     void codegen() final{
         ///@todo impl codegen
     }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<":"<<magic_enum::enum_name(tp);
+        if(emptySquare==1)std::cout<<"ptr";
+        std::cout<<ID;
+        if(array_subscripts!=nullptr)array_subscripts->print(x+1);
+    }
 };
 
 class Block:public AST_NODE
@@ -269,6 +349,9 @@ class Block:public AST_NODE
     Block(BlockItems* ptr):items(ptr){}
     void codegen() final{
         ///@todo impl codegen
+    }
+    void print(int x) final {
+        items->print(x);
     }
 };
 
@@ -285,6 +368,11 @@ class BlockItems:public AST_NODE
     void codegen() final{
         ///@todo impl codegen
     }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<'\n';
+        for(auto &i:ls)i.print(x+1);
+    }
 };
 
 class AssignStmt:public AST_NODE
@@ -297,6 +385,13 @@ class AssignStmt:public AST_NODE
     void codegen() final{
         ///@todo impl codegen
     }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<'\n';
+        assert(lv!=nullptr);
+        lv->print(x+1);
+        exp->print(x+1);   
+    }
 };
 
 /// @brief EmptyStmt直接不给翻译，就是只有';'的那种
@@ -307,6 +402,10 @@ class ExpStmt:public AST_NODE
     ExpStmt(AddExp* ptr):exp(ptr){}
     void codegen() final{
         ///@todo impl codegen
+    }
+    void print(int x) final {
+        if(exp==nullptr)AST_NODE::print(x);
+        else exp->print(x);
     }
 };
 
@@ -320,17 +419,31 @@ class WhileStmt:public AST_NODE
     void codegen() final{
         ///@todo impl codegen
     }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<'\n';
+        assert(condition!=nullptr&&stmt!=nullptr);
+        condition->print(x+1);
+        stmt->print(x+1);
+    }
 };
 
 class IfStmt:public AST_NODE
 {
     private:
     std::unique_ptr<LOrExp> condition;
-    Stmt *t,*f;
+    std::unique_ptr<Stmt> t,f;
     public:
     IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2=nullptr):condition(p0),t(p1),f(p2){}
     void codegen() final{
         ///@todo impl codegen
+    }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<'\n';
+        assert(t!=nullptr);
+        t->print(x+1);
+        if(f!=nullptr)f->print(x+1);
     }
 }; 
 
@@ -340,12 +453,18 @@ class BreakStmt:public AST_NODE
     void codegen() final{
         ///@todo impl codegen
     }
+    void print(int x) final {
+        AST_NODE::print(x);std::cout<<'\n';
+    }
 };
 
 class ContinueStmt:public AST_NODE
 {
     void codegen() final{
         ///@todo impl codegen
+    }
+    void print(int x) final {
+        AST_NODE::print(x);std::cout<<'\n';
     }
 };
 
@@ -356,6 +475,10 @@ class ReturnStmt:public AST_NODE
     ReturnStmt(AddExp* ptr=nullptr):return_val(ptr){}
     void codegen() final{
         ///@todo impl codegen
+    }
+    void print(int x) final {
+        AST_NODE::print(x);std::cout<<'\n';
+        if(return_val!=nullptr)return_val->print(x+1);
     }
 };
 
@@ -369,6 +492,12 @@ class LVal:public AST_NODE
     void codegen() final{
         ///@todo impl codegen
     }
+    void print(int x) final {
+        AST_NODE::print(x);
+        if(array_descripters!=nullptr)std::cout<<":with array descripters:";
+        std::cout<<ID<<'\n';
+        array_descripters->print(x+1);
+    }
 };
 
 class FunctionCall:public AST_NODE
@@ -379,6 +508,11 @@ class FunctionCall:public AST_NODE
     FunctionCall(std::string _id,CallParams* ptr=nullptr):id(_id),cp(ptr){}
     void codegen() final{
         ///@todo impl codegen
+    }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<id;
+        if(cp!=nullptr)cp->print(x+1);
     }
 };
 
@@ -407,6 +541,9 @@ class BaseExp:public AST_NODE
     }
     void codegen() final {
         ///@todo
+    }
+    void print(int x) final {
+        
     }
 };
 

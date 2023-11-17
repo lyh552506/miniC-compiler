@@ -20,6 +20,7 @@ class List{
     using ListPtr=std::shared_ptr<List_node>;
     using DataOwner=std::unique_ptr<T>;
     ListPtr head,tail;
+    int siz=0;
     public:
     class iterator{
         private:
@@ -42,6 +43,7 @@ class List{
         tmp->nxt=head;
         head=tmp;
         if(tail==nullptr)tail=head;
+        siz++;
     }
     void push_back(T* __data){
         if(head==nullptr){
@@ -52,7 +54,9 @@ class List{
             tail->nxt=std::make_shared<List_node>(__data);
             tail=tail->nxt;
         }
+        siz++;
     }
+    int size(){return siz;}
     List(const List& other)=delete;
     List(List&& other)noexcept:head(std::move(other.head),tail(std::move(other.tail))){}
     List()=default;
