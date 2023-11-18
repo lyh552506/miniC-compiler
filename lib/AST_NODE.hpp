@@ -76,84 +76,35 @@ class AST_NODE
     }
 };
 
-/// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*
-class CompUnit:public AST_NODE
+/// @brief 由某种表达式和运算符构建起来的链表
+template<typename T>
+class BaseExp:public AST_NODE
 {
     private:
-    List<AST_NODE> ls;
+    std::list<AST_Type> oplist;
+    List<T> ls;
     public:
-    CompUnit(AST_NODE* __data){
-        push_back(__data);
+    BaseExp(T* _data){
+        ls.push_back(_data);
     }
-    void push_front(AST_NODE* __data){
-        ls.push_front(__data);
+    void push_back(AST_Type tp){
+        oplist.push_back(tp);
     }
-    void push_back(AST_NODE* __data){
-        ls.push_back(__data);
+    void push_front(AST_Type tp){
+        oplist.push_front(tp);
+    }
+    void push_back(T* data){
+        ls.push_back(data);
+    }
+    void push_front(T* data){
+        ls.push_front(data);
     }
     void codegen() final {
+        ///@todo
     }
     void print(int x) final {
         AST_NODE::print(x);
         std::cout<<'\n';
-        for(auto &i:ls){
-            i.print(x+1);
-        }
-    }
-};
-
-/// @brief 辅助语法单元，可能为几个中的一种,存一个AST_NODE*指针就好
-template<typename T>
-class Grammar_Assistance:public AST_NODE
-{
-    private:
-    Owner ptr;
-    public:
-    Grammar_Assistance(AST_NODE* _ptr){
-        ptr.reset(_ptr);   
-    }
-    void codegen() final {
-        /// @todo 实现codegen
-    }
-    void print(int x) final {
-        ptr->print(x);
-    }
-};
-
-class ConstDecl:public AST_NODE
-{
-    private:
-    /// @brief  for float,1 for int
-    AST_Type type;
-    std::unique_ptr<ConstDefs> cdfs;
-    public:
-    ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
-    }
-    void codegen() final {
-        /// @todo 实现codegen
-    }
-    void print(int x) final {
-        AST_NODE::print(x);
-        std::cout<<":TYPE:"<<magic_enum::enum_name(type)<<'\n';
-        cdfs->print(x+1);
-    }
-};
-
-class ConstDefs:public AST_NODE
-{
-    List<ConstDef> ls;
-    public:
-    ConstDefs(ConstDef* __data){
-        push_back(__data);
-    }
-    void push_back(ConstDef* __data){
-        ls.push_back(__data);
-    }
-    void codegen() final{
-        ///@todo impl codegen
-    }
-    void print(int x) final {
-        for(auto &i:ls)i.print(x);
     }
 };
 
@@ -207,61 +158,6 @@ class InitVal:public AST_NODE
     }
 };
 
-class InitVals:public AST_NODE
-{
-    List<InitVal> ls;
-    public:
-    InitVals(InitVal* _data){
-        ls.push_back(_data);
-    }
-    void push_back(InitVal* _data){
-        ls.push_back(_data);
-    }
-    void codegen() final{
-        ///@todo impl codegen
-    }
-    void print(int x) final{
-        AST_NODE::print(x);
-        std::cout<<'\n';
-        for(auto &i:ls)i.print(x+1);
-    }
-};
-
-class VarDecl:public AST_NODE
-{
-    private:
-    AST_Type type;
-    std::unique_ptr<VarDefs> vdfs;
-    public:
-    VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-    void print(int x) final{
-        AST_NODE::print(x);
-        std::cout<<magic_enum::enum_name(type)<<'\n';
-        vdfs->print(x+1);
-    }
-};
-
-class VarDefs:public AST_NODE
-{
-    List<VarDef> ls;
-    public:
-    VarDefs(VarDef* vdf){
-        push_back(vdf);
-    }
-    void push_back(VarDef* _data){
-        ls.push_back(_data);
-    }
-    void codegen() final{
-        ///@todo impl codegen
-    }
-    void print(int x) final{
-        for(auto &i:ls)i.print(x);
-    }
-};
-
 template<typename T>
 class BaseDef:public AST_NODE
 {
@@ -283,40 +179,139 @@ class BaseDef:public AST_NODE
     }
 };
 
-class FuncDef:public AST_NODE
+/// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*
+class CompUnit:public AST_NODE
 {
-    AST_Type tp;
-    std::string ID;
-    std::unique_ptr<FuncParams> params;
-    std::unique_ptr<Block> function_body;
+    private:
+    List<AST_NODE> ls;
     public:
-    FuncDef(AST_Type _tp,std::string _id,FuncParams* ptr,Block* fb):tp(_tp),ID(_id),params(ptr),function_body(fb){}
-    void codegen() final{
-        ///@todo impl codegen
+    CompUnit(AST_NODE* __data){
+        push_back(__data);
+    }
+    void push_front(AST_NODE* __data){
+        ls.push_front(__data);
+    }
+    void push_back(AST_NODE* __data){
+        ls.push_back(__data);
+    }
+    void codegen() final {
     }
     void print(int x) final {
         AST_NODE::print(x);
-        std::cout<<":"<<ID<<":"<<magic_enum::enum_name(tp)<<'\n';
-        if(params!=nullptr)params->print(x+1);
-        function_body->print(x+1);
+        std::cout<<'\n';
+        for(auto &i:ls){
+            i.print(x+1);
+        }
     }
 };
 
-class FuncParams:public AST_NODE
+/// @brief 辅助语法单元，可能为几个中的一种,存一个AST_NODE*指针就好
+template<typename T>
+class Grammar_Assistance:public AST_NODE
 {
-    List<FuncParam> ls;
+    private:
+    Owner ptr;
     public:
-    FuncParams(FuncParam* ptr){
-        ls.push_back(ptr);
+    Grammar_Assistance(AST_NODE* _ptr){
+        ptr.reset(_ptr);   
     }
-    void push_back(FuncParam* ptr){
-        ls.push_back(ptr);
+    void codegen() final {
+        /// @todo 实现codegen
+    }
+    void print(int x) final {
+        ptr->print(x);
+    }
+};
+
+class ConstDefs:public AST_NODE
+{
+    List<ConstDef> ls;
+    public:
+    ConstDefs(ConstDef* __data){
+        push_back(__data);
+    }
+    void push_back(ConstDef* __data){
+        ls.push_back(__data);
     }
     void codegen() final{
         ///@todo impl codegen
     }
     void print(int x) final {
         for(auto &i:ls)i.print(x);
+    }
+};
+
+class ConstDecl:public AST_NODE
+{
+    private:
+    /// @brief  for float,1 for int
+    AST_Type type;
+    std::unique_ptr<ConstDefs> cdfs;
+    public:
+    ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
+    }
+    void codegen() final {
+        /// @todo 实现codegen
+    }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<":TYPE:"<<magic_enum::enum_name(type)<<'\n';
+        cdfs->print(x+1);
+    }
+};
+
+class InitVals:public AST_NODE
+{
+    List<InitVal> ls;
+    public:
+    InitVals(InitVal* _data){
+        ls.push_back(_data);
+    }
+    void push_back(InitVal* _data){
+        ls.push_back(_data);
+    }
+    void codegen() final{
+        ///@todo impl codegen
+    }
+    void print(int x) final{
+        AST_NODE::print(x);
+        std::cout<<'\n';
+        for(auto &i:ls)i.print(x+1);
+    }
+};
+
+class VarDefs:public AST_NODE
+{
+    List<VarDef> ls;
+    public:
+    VarDefs(VarDef* vdf){
+        push_back(vdf);
+    }
+    void push_back(VarDef* _data){
+        ls.push_back(_data);
+    }
+    void codegen() final{
+        ///@todo impl codegen
+    }
+    void print(int x) final{
+        for(auto &i:ls)i.print(x);
+    }
+};
+
+class VarDecl:public AST_NODE
+{
+    private:
+    AST_Type type;
+    std::unique_ptr<VarDefs> vdfs;
+    public:
+    VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
+    void print(int x) final{
+        AST_NODE::print(x);
+        std::cout<<":"<<magic_enum::enum_name(type)<<'\n';
+        vdfs->print(x+1);
     }
 };
 
@@ -341,17 +336,21 @@ class FuncParam:public AST_NODE
     }
 };
 
-class Block:public AST_NODE
+class FuncParams:public AST_NODE
 {
-    private:
-    std::unique_ptr<BlockItems> items;
+    List<FuncParam> ls;
     public:
-    Block(BlockItems* ptr):items(ptr){}
+    FuncParams(FuncParam* ptr){
+        ls.push_back(ptr);
+    }
+    void push_back(FuncParam* ptr){
+        ls.push_back(ptr);
+    }
     void codegen() final{
         ///@todo impl codegen
     }
     void print(int x) final {
-        items->print(x);
+        for(auto &i:ls)i.print(x);
     }
 };
 
@@ -372,6 +371,57 @@ class BlockItems:public AST_NODE
         AST_NODE::print(x);
         std::cout<<'\n';
         for(auto &i:ls)i.print(x+1);
+    }
+};
+
+class Block:public AST_NODE
+{
+    private:
+    std::unique_ptr<BlockItems> items;
+    public:
+    Block(BlockItems* ptr):items(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
+    void print(int x) final {
+        items->print(x);
+    }
+};
+
+class FuncDef:public AST_NODE
+{
+    AST_Type tp;
+    std::string ID;
+    std::unique_ptr<FuncParams> params;
+    std::unique_ptr<Block> function_body;
+    public:
+    FuncDef(AST_Type _tp,std::string _id,FuncParams* ptr,Block* fb):tp(_tp),ID(_id),params(ptr),function_body(fb){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<":"<<ID<<":"<<magic_enum::enum_name(tp)<<'\n';
+        if(params!=nullptr)params->print(x+1);
+        function_body->print(x+1);
+    }
+};
+
+class LVal:public AST_NODE
+{
+    private:
+    std::string ID;
+    std::unique_ptr<Exps> array_descripters;
+    public:
+    LVal(std::string _id,Exps* ptr=nullptr):ID(_id),array_descripters(ptr){}
+    void codegen() final{
+        ///@todo impl codegen
+    }
+    void print(int x) final {
+        AST_NODE::print(x);
+        if(array_descripters!=nullptr)std::cout<<":with array descripters";
+        std::cout<<":"<<ID<<'\n';
+        if(array_descripters!=nullptr)array_descripters->print(x+1);
     }
 };
 
@@ -482,24 +532,6 @@ class ReturnStmt:public AST_NODE
     }
 };
 
-class LVal:public AST_NODE
-{
-    private:
-    std::string ID;
-    std::unique_ptr<Exps> array_descripters;
-    public:
-    LVal(std::string _id,Exps* ptr=nullptr):ID(_id),array_descripters(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-    void print(int x) final {
-        AST_NODE::print(x);
-        if(array_descripters!=nullptr)std::cout<<":with array descripters:";
-        std::cout<<ID<<'\n';
-        array_descripters->print(x+1);
-    }
-};
-
 class FunctionCall:public AST_NODE
 {
     std::string id;
@@ -513,37 +545,6 @@ class FunctionCall:public AST_NODE
         AST_NODE::print(x);
         std::cout<<id;
         if(cp!=nullptr)cp->print(x+1);
-    }
-};
-
-/// @brief 由某种表达式和运算符构建起来的链表
-template<typename T>
-class BaseExp:public AST_NODE
-{
-    private:
-    std::list<AST_Type> oplist;
-    List<T> ls;
-    public:
-    BaseExp(T* _data){
-        ls.push_back(_data);
-    }
-    void push_back(AST_Type tp){
-        oplist.push_back(tp);
-    }
-    void push_front(AST_Type tp){
-        oplist.push_front(tp);
-    }
-    void push_back(T* data){
-        ls.push_back(data);
-    }
-    void push_front(T* data){
-        ls.push_front(data);
-    }
-    void codegen() final {
-        ///@todo
-    }
-    void print(int x) final {
-        
     }
 };
 
