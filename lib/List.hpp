@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 
+/// @warning to be deleted, will be replaced by std::list<unique_ptr<T>>>
 /// @brief 一个简单支持多态的外挂式链表
 /// @tparam T 
 template<typename T>
@@ -16,6 +17,7 @@ class List{
         List_node(T* __data){
             data.reset(__data);
         }
+        // void p
     };
     using ListPtr=std::shared_ptr<List_node>;
     using DataOwner=std::unique_ptr<T>;
@@ -58,6 +60,6 @@ class List{
     }
     int size(){return siz;}
     List(const List& other)=delete;
-    List(List&& other)noexcept:head(std::move(other.head),tail(std::move(other.tail))){}
+    // List(List&& other)noexcept:head(std::move(other.head),tail(std::move(other.tail))){}
     List()=default;
 };

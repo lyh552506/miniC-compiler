@@ -7,6 +7,7 @@
 #include <cxxabi.h>
 #include <cassert>
 #include "MagicEnum.hpp"
+#include "CFG.hpp"
 
 enum AST_Type
 {
@@ -45,13 +46,13 @@ using Owner=std::unique_ptr<AST_NODE>;
 using Exps=InnerBaseExps<void>;
 using CallParams=InnerBaseExps<int>;
 using PrimaryExp=Grammar_Assistance<int>;
-using UnaryExp=BaseExp<PrimaryExp>;
-using MulExp=BaseExp<UnaryExp>;
-using AddExp=BaseExp<MulExp>;
-using RelExp=BaseExp<AddExp>;
-using EqExp=BaseExp<RelExp>;
-using LAndExp=BaseExp<EqExp>;
-using LOrExp=BaseExp<LAndExp>;
+using UnaryExp=BaseExp<PrimaryExp>;//+-+-+!- primary
+using MulExp=BaseExp<UnaryExp>;//*
+using AddExp=BaseExp<MulExp>;//+ -
+using RelExp=BaseExp<AddExp>;//> < >= <=
+using EqExp=BaseExp<RelExp>;//==
+using LAndExp=BaseExp<EqExp>;//&&
+using LOrExp=BaseExp<LAndExp>;//||
 using Decl=Grammar_Assistance<char>;
 using BlockItem=Grammar_Assistance<void>; 
 using VarDef=BaseDef<int>;
@@ -63,7 +64,10 @@ class AST_NODE
 {
     /// @todo 可以加个enum type 表示这个是什么type，但是貌似 C++ 现在支持动态判定类型,指typeid
     public:
-    virtual void codegen()=0;
+    virtual void codegen(){
+        std::cerr<<"In AST some nodes are forbidden to call codegen()\n";
+        assert(0);
+    };
     virtual void print(int x)
     {
         for(int i=0;i<x;i++)std::cout<<"  ";
@@ -82,7 +86,7 @@ class BaseExp:public AST_NODE
 {
     private:
     std::list<AST_Type> oplist;
-    List<T> ls;
+    std::list<T*> ls;
     public:
     BaseExp(T* _data){
         ls.push_back(_data);
@@ -99,12 +103,39 @@ class BaseExp:public AST_NODE
     void push_front(T* data){
         ls.push_front(data);
     }
-    void codegen() final {
-        ///@todo
-    }
     void print(int x) final {
         AST_NODE::print(x);
         std::cout<<'\n';
+    }
+    Value* GetValuePtr(){
+        /// UnaryExp 是一元操作符，单独取出来研究
+        if constexpr(std::is_same_v<T,PrimaryExp>){
+            /// @note 可以优化？
+            //num=!x equals to num=(x==0)?1:0;
+            //num=+x useless 没人翻译
+            //num=-x 字面意思
+            T* data=ls.front();
+            Value* ptr=data.GetValuePtr();
+            for(auto i=oplist.rbegin();i!=oplist.rend();i++){
+                switch (*i)
+                {
+                case AST_NOT:
+                    break;
+                case AST_ADD:
+                    break;
+                case AST_SUB:
+                    Singleton<Module>().Place(new BinaryInst());
+                    break; 
+                default:
+                    assert(0);
+                    break;
+                }
+            }
+        }
+        else{
+            /// @note 其他都是二元操作符
+
+        }
     }
 };
 
@@ -124,6 +155,11 @@ class InnerBaseExps:public AST_NODE
     }
     void codegen() final{
         ///@todo impl codegen
+    }
+    std::vector<size_t> ConstValGet(){
+        ///@todo 数组声明会用到
+        assert(0);
+        return vector<size_t>();
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -146,15 +182,26 @@ class InitVal:public AST_NODE
     InitVal(AST_NODE* _data){
         val.reset(_data);
     }
-    void codegen() final {
-        /// @todo 实现codegen
-    }
     void print(int x) final {
         AST_NODE::print(x);
         if(val==nullptr)
             std::cout<<":empty{}\n";
         else
             std::cout<<'\n',val->print(x+1);
+    }
+    Value* GetValuePtr(Variable* structure){
+        if(val==nullptr){
+            ///@todo notice it's a empty initialize
+        }
+        else if(InitVals* ivs=dynamic_cast<InitVals*>(val.get())){
+            ///@todo 是个数组的初始化
+        }
+        else if(AddExp* exp=dynamic_cast<AddExp*>(val.get())){
+            return exp->GetValuePtr();
+        }
+        std::cerr<<"No such condition at all\n";
+        assert(0);
+        return nullptr;
     }
 };
 
@@ -169,7 +216,23 @@ class BaseDef:public AST_NODE
     BaseDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):ID(_id),array_descripters(_ad),civ(_iv){}
     BaseDef(const BaseDef<T>&)=default;
     void codegen() final {
-        /// @todo 实现codegen
+        // Singleton<InnerDataType>()
+        if(array_descripters!=nullptr)
+        {
+            // Singleton<Module>().Generate(new IRArray(array_descripters->ConstValGet()));
+            assert(0);
+        }
+        else
+        {
+            auto tmp=new Variable(ID);
+            Singleton<Module>().Register(tmp->get_name(),tmp);
+            /// @note 如果是global，alloca和store放一起，生成一条global decl指令，要求civ是常数
+            /// @note Module可以新开一个结构来存放所有的全局变量声明！
+            /// @note 否则分离alloca和赋值，alloca放在函数头部，store该放哪里放哪里
+            auto alloca=new AllocaInst(tmp);
+            auto store=(civ==nullptr)?(nullptr):(new StoreInst(civ->GetValuePtr(tmp),tmp));
+            Singleton<Module>().Place(alloca,store);
+        }
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -195,6 +258,9 @@ class CompUnit:public AST_NODE
         ls.push_back(__data);
     }
     void codegen() final {
+        auto& m=Singleton<Module>();
+        for(auto&i:ls)
+            i.codegen();
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -216,7 +282,7 @@ class Grammar_Assistance:public AST_NODE
         ptr.reset(_ptr);   
     }
     void codegen() final {
-        /// @todo 实现codegen
+        ptr->codegen();
     }
     void print(int x) final {
         ptr->print(x);
@@ -291,7 +357,8 @@ class VarDefs:public AST_NODE
         ls.push_back(_data);
     }
     void codegen() final{
-        ///@todo impl codegen
+        for(auto&i:ls)
+            i.codegen();
     }
     void print(int x) final{
         for(auto &i:ls)i.print(x);
@@ -306,7 +373,19 @@ class VarDecl:public AST_NODE
     public:
     VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
     void codegen() final{
-        ///@todo impl codegen
+        switch (type)
+        {
+        case AST_INT:
+            Singleton<InnerDataType>()=IR_Value_INT;
+            break;
+        case AST_FLOAT:
+            Singleton<InnerDataType>()=IR_Value_Float;
+            break;
+        case AST_VOID:
+        default:
+            assert(0);
+        }
+        vdfs->codegen();
     }
     void print(int x) final{
         AST_NODE::print(x);
