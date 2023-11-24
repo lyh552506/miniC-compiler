@@ -2,6 +2,7 @@
 #include <vector>
 #include <cassert>
 #include "List.hpp"
+#include <variant>
 class User;
 class Value;
 /// @brief Use关系，User析构时析构
@@ -47,6 +48,9 @@ class Value
     UserList userlist;
     InnerDataType tp;
     public:
+    InnerDataType GetType(){
+        return tp;
+    }
     Value()=delete;
     Value(InnerDataType _tp):tp(_tp){}
     void add_user(Use* __data){
@@ -63,4 +67,19 @@ class User:public Value
     public:
     User():Value(IR_Value_VOID){}
     User(InnerDataType tp):Value(tp){}
+};
+class Operand:public std::variant<Value*,int,float>
+{
+    using InnerOperand=std::variant<Value*,int,float>;
+    public:
+    InnerDataType GetType(){
+        auto fat=*static_cast<InnerOperand*>(this);
+        if(std::holds_alternative<Value*>(fat)){
+            return std::get<Value*>(fat)->GetType();
+        }
+        else if(std::holds_alternative<int>(fat)){
+            return InnerDataType::IR_Value_INT;
+        }
+        else return InnerDataType::IR_Value_Float;
+    }
 };

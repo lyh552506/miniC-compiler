@@ -1,26 +1,31 @@
 #pragma once
 #include "SymbolTable.hpp"
-class BaseInst:public User
+/// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
+class User;
+class BasicBlock:public Value
 {
-};
-class BranchInst:public BaseInst
-{
-};
-class BinaryInst:public BaseInst
-{
-    enum Operation
-    {
-        Op_Add,Op_Sub,Op_Mul,Op_Div,Op_And,Op_Or,Op_Mod,
-        //what's below should be translate to cmp inst in llvm
-        Op_E,Op_NE,Op_GE,Op_L,Op_LE,Op_G
-    }op;
+    List<User> insts;
     public:
-    BinaryInst(Value* A,Value* B){
-        
+    void push_front(User* ptr){
+        insts.push_front(ptr);
+    }
+    void push_back(User* ptr){
+        insts.push_back(ptr);
     }
 };
-/// @brief allocainst 什么都没有use
-class AllocaInst:public BaseInst
+class InstWithDef:public User
+{
+    protected:
+    Value* def;
+    public:
+    virtual Value* GetDef(){
+        return def;
+    }
+};
+/// @brief %1=alloca i32
+/// @note inst def %1, but no ultra def
+/// @param data Value* with structure reference
+class AllocaInst:public User
 {
     Value* data;
     public:
@@ -30,26 +35,75 @@ class AllocaInst:public BaseInst
     }
 };
 /// @brief src->des
-class StoreInst:public BaseInst
+/// @note inst use %src %des
+/// @param src Operand
+/// @param des Value*
+class StoreInst:public User
 {
     Value* des;
-    Value* src;
+    Operand src;
     public:
-    StoreInst(Value* __src,Value* __des):src(__src),des(__des){
-        add_use(src);
+    StoreInst(Operand __src,Value* __des):src(__src),des(__des){
+        if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
         add_use(des);
     }
 };
-/// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
-class BasicBlock:public Value
+/// @brief load src to def
+/// @note inst use src;def def
+/// @param src Value*
+class LoadInst:public InstWithDef
 {
-    List<BaseInst> insts;
+    Value* src;
     public:
-    void push_front(BaseInst* ptr){
-        insts.push_front(ptr);
+    /// @brief 一般都是只有src,def是load产生的
+    /// @param __src 
+    LoadInst(Value* __src):src(__src){
+        add_use(src);
+        def=new Value(src->GetType());
     }
-    void push_back(BaseInst* ptr){
-        insts.push_back(ptr);
+};
+/// @brief float to int
+class FPTSI:public InstWithDef
+{
+    Value* src;
+    public:
+    FPTSI(Value* __src):src(__src){
+        add_use(src);
+        def=new Value(IR_Value_INT);
+    }
+};
+/// @brief int to float
+class SITFP:public InstWithDef
+{
+    Operand src;
+    public:
+    SITFP(Operand __src):src(__src){
+        if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
+        def=new Value(IR_Value_Float);
+    }
+};
+/// @brief BinaryInst use A B,def C
+/// @param A operand
+/// @param op define inside class
+/// @param B operand
+/// @param C operand
+class BinaryInst:public InstWithDef
+{
+    public:
+    enum Operation
+    {
+        Op_Add,Op_Sub,Op_Mul,Op_Div,Op_And,Op_Or,Op_Mod,
+        //what's below should be translate to cmp inst in llvm
+        Op_E,Op_NE,Op_GE,Op_L,Op_LE,Op_G
+    };//卧槽，原批
+    private:
+    Operation op;
+    Operand A,B;
+    public:
+    BinaryInst(Operand _A,Operation __op,Operand _B):op(__op){
+        if(std::holds_alternative<Value*>(A))add_use(std::get<Value*>(A));
+        if(std::holds_alternative<Value*>(B))add_use(std::get<Value*>(B));
+        def=new Value(_A.GetType());
     }
 };
 /// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
@@ -57,17 +111,12 @@ class Variable:public Value
 {
     std::string name;
     public:
-    Variable(std::string _id):name(_id),Value(Singleton<InnerDataType>()){}
+    Variable(std::string _id):name(_id),Value(Singleton<InnerDataType>()){
+        Singleton<Module>().Register(name,this);
+    }
     std::string get_name(){
         return name;
     }
-};
-/// @brief 源代码中显示字面量的处理等同于const int a=10;
-/// @tparam T float/int 
-template<typename T>
-class ConstantVariable:public Variable
-{
-
 };
 // /// @brief 数组类型，在这个语言里const array纯属烂活
 // class IRArray:public Value
@@ -108,6 +157,9 @@ class Module:public SymbolTable
 {
     /// @todo Module中需要一个Factory类似的东西来确保自动析构一些指针指向的对象
     std::vector<Function> ls;
+    void append(User* __data){
+        ls.back().cur_building().push_back(__data);
+    }
     public:
     Module()=default;
     /// @brief Generate函数组，Module会符号表注册，生成Alloca语句并放在正确的位置
@@ -117,7 +169,8 @@ class Module:public SymbolTable
     //         /// @todo Global Alloca
     //     }
     // }
-    void Place(AllocaInst* alloca,StoreInst* store){
+    /// @warning 这个在有初值和数值的时候有问题
+    void Place(AllocaInst* alloca){
         /// @note global declaration
         if(rec.empty()){
             /// @todo impl global decl
@@ -126,10 +179,31 @@ class Module:public SymbolTable
         /// @note local declaration
         else{
             ls.back().entry_block().push_front(alloca);
-            ls.back().cur_building().push_back(store);
         }
     }
-    void Place(BinaryInst* bs){
+    Operand GenerateSITFP(Operand _A){
+        auto tmp=new SITFP(_A);
+        return Operand(tmp->GetDef());
+    }
+    Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B){
+        bool tpA=(_A.GetType()==InnerDataType::IR_Value_INT);
+        bool tpB=(_B.GetType()==InnerDataType::IR_Value_INT);
+        // 一个int一个float
+        BinaryInst* tmp;
+        if(tpA^tpB){
+            assert(op!=BinaryInst::Op_And&&op!=BinaryInst::Op_Or&&op!=BinaryInst::Op_Mod);
+            if(tpA==1){
+                ///@todo 改变成float
+                tmp=new BinaryInst(GenerateSITFP(_A),op,_B);
 
+            }
+            else{
+                ///@todo 改变成float
+
+            }
+        }
+        else tmp=new BinaryInst(_A,op,_B);
+        append(tmp);
+        return Operand(tmp->GetDef());
     }
 };

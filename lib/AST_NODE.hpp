@@ -86,7 +86,7 @@ class BaseExp:public AST_NODE
 {
     private:
     std::list<AST_Type> oplist;
-    std::list<T*> ls;
+    List<T> ls;
     public:
     BaseExp(T* _data){
         ls.push_back(_data);
@@ -107,7 +107,7 @@ class BaseExp:public AST_NODE
         AST_NODE::print(x);
         std::cout<<'\n';
     }
-    Value* GetValuePtr(){
+    Operand GetOperand(){
         /// UnaryExp 是一元操作符，单独取出来研究
         if constexpr(std::is_same_v<T,PrimaryExp>){
             /// @note 可以优化？
@@ -115,19 +115,21 @@ class BaseExp:public AST_NODE
             //num=+x useless 没人翻译
             //num=-x 字面意思
             T* data=ls.front();
-            Value* ptr=data.GetValuePtr();
+            Operand ptr=data.GetOperand();
             for(auto i=oplist.rbegin();i!=oplist.rend();i++){
                 switch (*i)
                 {
                 case AST_NOT:
+                    ptr=Singleton<Module>().GenerateBinaryInst(0,BinaryInst::Op_Sub,ptr);
                     break;
                 case AST_ADD:
                     break;
                 case AST_SUB:
-                    Singleton<Module>().Place(new BinaryInst());
-                    break; 
+                    ptr=Singleton<Module>().GenerateBinaryInst(0,BinaryInst::Op_Sub,ptr);
+                    break;
                 default:
                     assert(0);
+                    std::cerr<<"Wrong Operator in BinaryExp\n";
                     break;
                 }
             }
@@ -158,7 +160,7 @@ class InnerBaseExps:public AST_NODE
     }
     std::vector<size_t> ConstValGet(){
         ///@todo 数组声明会用到
-        assert(0);
+        static_assert(0);
         return vector<size_t>();
     }
     void print(int x) final {
@@ -189,19 +191,21 @@ class InitVal:public AST_NODE
         else
             std::cout<<'\n',val->print(x+1);
     }
-    Value* GetValuePtr(Variable* structure){
+    void DealInitVal(Variable* structure){
         if(val==nullptr){
             ///@todo notice it's a empty initialize
+            assert(0);
         }
         else if(InitVals* ivs=dynamic_cast<InitVals*>(val.get())){
             ///@todo 是个数组的初始化
+            assert(0);
         }
         else if(AddExp* exp=dynamic_cast<AddExp*>(val.get())){
-            return exp->GetValuePtr();
+            assert(0);
         }
-        std::cerr<<"No such condition at all\n";
-        assert(0);
-        return nullptr;
+        else{
+            assert(0);
+        }
     }
 };
 
@@ -220,18 +224,17 @@ class BaseDef:public AST_NODE
         if(array_descripters!=nullptr)
         {
             // Singleton<Module>().Generate(new IRArray(array_descripters->ConstValGet()));
+            std::cerr<<"Array Not Implenmented!\n";
             assert(0);
         }
         else
         {
+            /// @todo impl initval
+            if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
+            assert(civ==nullptr);
             auto tmp=new Variable(ID);
-            Singleton<Module>().Register(tmp->get_name(),tmp);
-            /// @note 如果是global，alloca和store放一起，生成一条global decl指令，要求civ是常数
-            /// @note Module可以新开一个结构来存放所有的全局变量声明！
-            /// @note 否则分离alloca和赋值，alloca放在函数头部，store该放哪里放哪里
             auto alloca=new AllocaInst(tmp);
-            auto store=(civ==nullptr)?(nullptr):(new StoreInst(civ->GetValuePtr(tmp),tmp));
-            Singleton<Module>().Place(alloca,store);
+            Singleton<Module>().Place(alloca);
         }
     }
     void print(int x) final {
@@ -260,13 +263,13 @@ class CompUnit:public AST_NODE
     void codegen() final {
         auto& m=Singleton<Module>();
         for(auto&i:ls)
-            i.codegen();
+            i->codegen();
     }
     void print(int x) final {
         AST_NODE::print(x);
         std::cout<<'\n';
         for(auto &i:ls){
-            i.print(x+1);
+            i->print(x+1);
         }
     }
 };
@@ -303,7 +306,7 @@ class ConstDefs:public AST_NODE
         ///@todo impl codegen
     }
     void print(int x) final {
-        for(auto &i:ls)i.print(x);
+        for(auto &i:ls)i->print(x);
     }
 };
 
@@ -342,7 +345,7 @@ class InitVals:public AST_NODE
     void print(int x) final{
         AST_NODE::print(x);
         std::cout<<'\n';
-        for(auto &i:ls)i.print(x+1);
+        for(auto &i:ls)i->print(x+1);
     }
 };
 
@@ -358,10 +361,10 @@ class VarDefs:public AST_NODE
     }
     void codegen() final{
         for(auto&i:ls)
-            i.codegen();
+            i->codegen();
     }
     void print(int x) final{
-        for(auto &i:ls)i.print(x);
+        for(auto &i:ls)i->print(x);
     }
 };
 
@@ -383,6 +386,7 @@ class VarDecl:public AST_NODE
             break;
         case AST_VOID:
         default:
+            std::cerr<<"void as variable is not allowed!\n";
             assert(0);
         }
         vdfs->codegen();
@@ -429,7 +433,7 @@ class FuncParams:public AST_NODE
         ///@todo impl codegen
     }
     void print(int x) final {
-        for(auto &i:ls)i.print(x);
+        for(auto &i:ls)i->print(x);
     }
 };
 
@@ -449,7 +453,7 @@ class BlockItems:public AST_NODE
     void print(int x) final {
         AST_NODE::print(x);
         std::cout<<'\n';
-        for(auto &i:ls)i.print(x+1);
+        for(auto &i:ls)i->print(x+1);
     }
 };
 
