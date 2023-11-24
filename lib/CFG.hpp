@@ -65,10 +65,10 @@ class LoadInst:public InstWithDef
 /// @brief float to int
 class FPTSI:public InstWithDef
 {
-    Value* src;
+    Operand src;
     public:
-    FPTSI(Value* __src):src(__src){
-        add_use(src);
+    FPTSI(Operand __src):src(__src){
+        if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
         def=new Value(IR_Value_INT);
     }
 };
@@ -114,6 +114,7 @@ class Variable:public Value
     Variable(std::string _id):name(_id),Value(Singleton<InnerDataType>()){
         Singleton<Module>().Register(name,this);
     }
+    Variable(InnerDataType tp,std::string _id):Value(tp),name(_id){}
     std::string get_name(){
         return name;
     }
@@ -143,13 +144,19 @@ class Function:public Value
 {
     //Contains BasicBlock
     //Function used by CallInst
+    std::string name;
+    std::vector<Variable> params;
     std::vector<BasicBlock> bbs;
     public:
+    Function(InnerDataType _tp,std::string _id):Value(_tp),name(_id){}
     BasicBlock& entry_block(){
         return bbs.front();
     }
     BasicBlock& cur_building(){
         return bbs.back();
+    }
+    void push_param(Variable var){
+        params.push_back(var);
     }
 };
 /// @brief 编译单元
@@ -170,6 +177,9 @@ class Module:public SymbolTable
     //     }
     // }
     /// @warning 这个在有初值和数值的时候有问题
+    Function& GenerateFunction(InnerDataType _tp,std::string _id){
+        ls.push_back(Function(_tp,_id));
+    }
     void Place(AllocaInst* alloca){
         /// @note global declaration
         if(rec.empty()){
@@ -183,6 +193,7 @@ class Module:public SymbolTable
     }
     Operand GenerateSITFP(Operand _A){
         auto tmp=new SITFP(_A);
+        append(tmp);
         return Operand(tmp->GetDef());
     }
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B){

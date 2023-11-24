@@ -261,7 +261,6 @@ class CompUnit:public AST_NODE
         ls.push_back(__data);
     }
     void codegen() final {
-        auto& m=Singleton<Module>();
         for(auto&i:ls)
             i->codegen();
     }
@@ -304,6 +303,7 @@ class ConstDefs:public AST_NODE
     }
     void codegen() final{
         ///@todo impl codegen
+        for(auto &i:ls)i->codegen();
     }
     void print(int x) final {
         for(auto &i:ls)i->print(x);
@@ -320,7 +320,21 @@ class ConstDecl:public AST_NODE
     ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
     }
     void codegen() final {
-        /// @todo 实现codegen
+        /// @warning copy from VarDecl
+        switch (type)
+        {
+        case AST_INT:
+            Singleton<InnerDataType>()=IR_Value_INT;
+            break;
+        case AST_FLOAT:
+            Singleton<InnerDataType>()=IR_Value_Float;
+            break;
+        case AST_VOID:
+        default:
+            std::cerr<<"void as variable is not allowed!\n";
+            assert(0);
+        }
+        cdfs->codegen();
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -407,8 +421,22 @@ class FuncParam:public AST_NODE
     std::unique_ptr<Exps> array_subscripts;
     public:
     FuncParam(AST_Type _tp,std::string _id,bool is_empty=false,Exps* ptr=nullptr):tp(_tp),ID(_id),emptySquare(is_empty),array_subscripts(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
+    void GetVariable(Function& tmp){
+        auto get_type=[](AST_Type _tp){
+            switch(_tp)
+            {
+                case AST_INT:
+                    return InnerDataType::IR_Value_INT;
+                case AST_FLOAT:
+                    return InnerDataType::IR_Value_Float;
+                case AST_VOID:
+                    return InnerDataType::IR_Value_VOID;
+                default:
+                    std::cerr<<"Wrong Type\n";
+                    assert(0);
+            }
+        };
+        tmp.push_param(Variable(get_type(tp),ID));
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -429,8 +457,10 @@ class FuncParams:public AST_NODE
     void push_back(FuncParam* ptr){
         ls.push_back(ptr);
     }
-    void codegen() final{
-        ///@todo impl codegen
+    void GetVariable(Function& tmp){
+        for(auto &i:ls)
+            i->GetVariable(tmp);
+        return;
     }
     void print(int x) final {
         for(auto &i:ls)i->print(x);
@@ -463,8 +493,8 @@ class Block:public AST_NODE
     std::unique_ptr<BlockItems> items;
     public:
     Block(BlockItems* ptr):items(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
+    void GetInst(Function& tmp){
+
     }
     void print(int x) final {
         items->print(x);
@@ -480,7 +510,25 @@ class FuncDef:public AST_NODE
     public:
     FuncDef(AST_Type _tp,std::string _id,FuncParams* ptr,Block* fb):tp(_tp),ID(_id),params(ptr),function_body(fb){}
     void codegen() final{
-        ///@todo impl codegen
+        auto get_type=[](AST_Type _tp){
+            switch(_tp)
+            {
+                case AST_INT:
+                    return InnerDataType::IR_Value_INT;
+                case AST_FLOAT:
+                    return InnerDataType::IR_Value_Float;
+                case AST_VOID:
+                    return InnerDataType::IR_Value_VOID;
+                default:
+                    std::cerr<<"Wrong Type\n";
+                    assert(0);
+            }
+        };
+        auto& f=Singleton<Module>().GenerateFunction(get_type(tp),ID);
+        Singleton<Module>().layer_increase();
+        if(params!=nullptr)params->GetVariable(f);
+        assert(function_body!=nullptr);
+        function_body->GetInst(f);
     }
     void print(int x) final {
         AST_NODE::print(x);
