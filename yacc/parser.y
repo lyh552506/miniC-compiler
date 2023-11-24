@@ -169,8 +169,8 @@ InitVals: InitVal {$$=new InitVals($1);}
         | InitVals Y_COMMA InitVal {$$=$1;$$->push_back($3);}
         ;
 
-FuncDef: Type Y_ID Y_LPAR Y_RPAR Block {$$=new FuncDef($1,$2);}
-       | Type Y_ID Y_LPAR FuncParams Y_RPAR Block {$$=new FuncDef($1,$2,$4);}
+FuncDef: Type Y_ID Y_LPAR Y_RPAR Block {$$=new FuncDef($1,$2,nullptr,$5);}
+       | Type Y_ID Y_LPAR FuncParams Y_RPAR Block {$$=new FuncDef($1,$2,$4,$6);}
        ; 
 
 FuncParams: FuncParam {$$=new FuncParams($1);}
