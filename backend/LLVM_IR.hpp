@@ -1,5 +1,4 @@
-
-
+// We wanting a form of ir in memory;
 class LLVM_IR
 {
 public:

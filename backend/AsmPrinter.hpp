@@ -1,3 +1,5 @@
+//The list of all registers
+#pragma once
 enum Register {
     x0 = 0,
     x1 = 1,
