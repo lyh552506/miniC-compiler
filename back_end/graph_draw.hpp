@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <vector>
 #include<unordered_map>
+#include<algorithm>
 
 enum {
   mov,
@@ -17,11 +18,9 @@ enum {
 /// @brief 节点类
 class _Node {
 public:
-
   _Node():varName{},degree{0}
   {};
 
-  
   enum NodeType {
     spillednode,
     coalescednode,
@@ -53,10 +52,18 @@ public:
     return degree;
   }
 
+  void storeDegree(int x){
+    degree=x;
+  }
+
+  std::list<_Node>& GetList(){
+    return AdjList;
+  }
+
 private:
   //std::unordered_set<_Node> AdjSet;//图中冲突边的结合
   int degree{0};//当前结点
-  std::list<_Node>AdjList;
+  std::list<_Node>AdjList;//图的邻接表表示，存储与当前节点有冲突的结点集合
 };
 
 
@@ -159,3 +166,6 @@ void AddEdge(_Node& u,_Node& v);
 std::unordered_set<_Node> GetInst_Use(Instruction &Inst);
 _Node& GetInst_Def(Instruction &Inst);
 bool IsMoveRelated(const _Node& node);
+void DecrementDegree(_Node& node);
+std::list<_Node> Adjacent(_Node& node);
+std::list<_Node> NodeMoves(_Node& node);
