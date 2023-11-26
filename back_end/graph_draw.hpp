@@ -157,3 +157,5 @@ void AddWorkList(_Node& node);
 bool IsAdjset(std::pair<_Node,_Node>& key);
 bool OK(_Node& node_1,_Node& node_2);
 bool AdjOk(_Node& node_1,_Node& node_2);
+bool Conservative(std::list<_Node> &nodes);
+bool ConservativeCoalesce(_Node& u,_Node& v);
