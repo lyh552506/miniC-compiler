@@ -145,25 +145,36 @@ class Function:public Value
     //Contains BasicBlock
     //Function used by CallInst
     std::string name;
-    std::vector<Variable> params;
+    using ParamPtr=std::unique_ptr<Variable>;
+    using VarPtr=std::unique_ptr<Variable>;
+    std::vector<ParamPtr> params;
+    std::vector<VarPtr> alloca_variables;
     std::vector<BasicBlock> bbs;
     public:
     Function(InnerDataType _tp,std::string _id):Value(_tp),name(_id){}
-    BasicBlock& entry_block(){
-        return bbs.front();
-    }
+    // BasicBlock& entry_block(){
+    //     return bbs.front();
+    // }
     BasicBlock& cur_building(){
         return bbs.back();
     }
-    void push_param(Variable var){
-        params.push_back(var);
+    void push_param(Variable* var){
+        params.push_back(ParamPtr(var));
+        Singleton<Module>().Register(var->get_name(),var);
+    }
+    void push_alloca(Variable* ptr){
+        alloca_variables.push_back(VarPtr(ptr));
+        assert(!bbs.empty());
+        bbs.front().push_front(new AllocaInst(ptr));
     }
 };
 /// @brief 编译单元
 class Module:public SymbolTable
 {
     /// @todo Module中需要一个Factory类似的东西来确保自动析构一些指针指向的对象
+    using GlobalVariblePtr=std::unique_ptr<Variable>;
     std::vector<Function> ls;
+    std::vector<GlobalVariblePtr> globalvaribleptr;
     void append(User* __data){
         ls.back().cur_building().push_back(__data);
     }
@@ -179,17 +190,15 @@ class Module:public SymbolTable
     /// @warning 这个在有初值和数值的时候有问题
     Function& GenerateFunction(InnerDataType _tp,std::string _id){
         ls.push_back(Function(_tp,_id));
+        return ls.back();
     }
-    void Place(AllocaInst* alloca){
-        /// @note global declaration
-        if(rec.empty()){
-            /// @todo impl global decl
-            assert(0);
-        }
-        /// @note local declaration
-        else{
-            ls.back().entry_block().push_front(alloca);
-        }
+    void GenerateAlloca(Variable* ptr){
+        SymbolTable::Register(ptr->get_name(),ptr);
+        if(SymbolTable::rec.empty())
+            //全局变量
+            globalvaribleptr.push_back(GlobalVariblePtr(ptr));
+        else
+            ls.back().push_alloca(ptr);
     }
     Operand GenerateSITFP(Operand _A){
         auto tmp=new SITFP(_A);

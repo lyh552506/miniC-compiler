@@ -233,8 +233,7 @@ class BaseDef:public AST_NODE
             if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
             assert(civ==nullptr);
             auto tmp=new Variable(ID);
-            auto alloca=new AllocaInst(tmp);
-            Singleton<Module>().Place(alloca);
+            Singleton<Module>().GenerateAlloca(tmp);
         }
     }
     void print(int x) final {
@@ -289,6 +288,7 @@ class Grammar_Assistance:public AST_NODE
     void print(int x) final {
         ptr->print(x);
     }
+    AST_NODE* GetPtr(){return ptr.get();}
 };
 
 class ConstDefs:public AST_NODE
@@ -429,14 +429,12 @@ class FuncParam:public AST_NODE
                     return InnerDataType::IR_Value_INT;
                 case AST_FLOAT:
                     return InnerDataType::IR_Value_Float;
-                case AST_VOID:
-                    return InnerDataType::IR_Value_VOID;
                 default:
                     std::cerr<<"Wrong Type\n";
                     assert(0);
             }
         };
-        tmp.push_param(Variable(get_type(tp),ID));
+        tmp.push_param(new Variable(get_type(tp),ID));
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -477,8 +475,35 @@ class BlockItems:public AST_NODE
     void push_back(BlockItem* ptr){
         ls.push_back(ptr);
     }
-    void codegen() final{
-        ///@todo impl codegen
+    void GetInst(Function& f){
+        for(auto &i:ls){
+            auto tmp=i->GetPtr();
+            //BlockItem可能是Decl(Grammar_Assistance<char>)
+            //或者AssignStmt ExpStmt Block WhileStmt
+            //IfStmt BreakStmt ContinueStmt ReturnStmt
+            if(auto dEcl=dynamic_cast<Decl*>(tmp)){
+
+            }
+            else if(auto assign=dynamic_cast<AssignStmt*>(tmp)){
+
+            }
+            else if(auto expstmt=dynamic_cast<ExpStmt*>(tmp)){
+
+            }
+            else if(auto whilestmt=dynamic_cast<WhileStmt*>(tmp)){
+
+            }
+            else if(auto ifstmt=dynamic_cast<IfStmt*>(tmp)){
+
+            }
+            else if(auto breakstmt=dynamic_cast<BreakStmt*>(tmp)){
+
+            }
+            else if(auto continuestmt=dynamic_cast<ContinueStmt*>(tmp)){
+
+            }
+            else assert(0);
+        }
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -494,7 +519,7 @@ class Block:public AST_NODE
     public:
     Block(BlockItems* ptr):items(ptr){}
     void GetInst(Function& tmp){
-
+        items->GetInst(tmp);
     }
     void print(int x) final {
         items->print(x);
@@ -529,6 +554,7 @@ class FuncDef:public AST_NODE
         if(params!=nullptr)params->GetVariable(f);
         assert(function_body!=nullptr);
         function_body->GetInst(f);
+        Singleton<Module>().layer_decrease();
     }
     void print(int x) final {
         AST_NODE::print(x);
