@@ -7,6 +7,7 @@
 #include <vector>
 #include<unordered_map>
 #include<algorithm>
+#include<memory>
 
 enum {
   mov,
@@ -15,18 +16,36 @@ enum {
   assign,
 };
 
+
+
 /// @brief 节点类
 class _Node {
 public:
-  _Node():varName{},degree{0}
-  {};
-
   enum NodeType {
     spillednode,
     coalescednode,
     colorednode,
   };
-  
+  _Node():varName{},degree{0},alias{nullptr},AdjList{}
+  {};
+  // //移动构造
+  // _Node(_Node&& other):AdjList(std::move(other.AdjList)),varName(std::move(other.varName)),alias(std::move(other.alias)),degree(other.degree)
+  // {
+  //   other.degree=0;
+  // }
+  // //移动赋值
+  // _Node& operator=(_Node&& other){
+  //   if(*this!=other){
+  //     AdjList=std::move(other.AdjList);
+  //     varName=std::move(other.varName);
+  //     alias=std::move(other.alias);
+  //     degree=other.degree;
+
+  //     other.degree=0;
+  //   }
+  //   return *this;
+  // }
+
   bool operator==(const _Node &other)const {
     return other.varName==varName;
   }
@@ -38,34 +57,29 @@ public:
   bool operator<(const _Node& other)const {
     return varName<other.varName; 
   }
-  char* varName;
-
   void Insert(_Node& node){
     AdjList.emplace_back(node);
   }
-
-  void AddDegree(){
-    degree++;
-  }
-
-  int GetDegree() const{
-    return degree;
-  }
-
-  void storeDegree(int x){
-    degree=x;
-  }
-
+  // void AddDegree(){
+  //   degree++;
+  // }
+  // int GetDegree() const{
+  //   return degree;
+  // }
+  // void storeDegree(int x){
+  //   degree=x;
+  // }
   std::list<_Node>& GetList(){
     return AdjList;
   }
-
 private:
   //std::unordered_set<_Node> AdjSet;//图中冲突边的结合
-  int degree{0};//当前结点
   std::list<_Node>AdjList;//图的邻接表表示，存储与当前节点有冲突的结点集合
+public:  
+  int degree{0};//当前结点度数
+  _Node* alias;
+  std::string varName;
 };
-
 
 namespace std {
     template <>
@@ -78,9 +92,34 @@ namespace std {
 }
 struct Instruction {
   int type; // 操作数的类型，是否为move？
-  std::string def;
-  std::vector<std::string> use;
+  _Node def;
+  std::vector<_Node> use;
+  bool operator==(const Instruction& other){
+    if(type==other.type){
+      if(def==other.def){
+        /// @note 有点累赘，有没有更好判断两个instruction相等的东西？
+        return use==other.use;
+      }
+    }
+    return false;
+  }
 };
+
+/// @brief 对于x<--y,y是src，x是dst
+struct MoveInstruction{
+   std::unique_ptr<_Node> src;
+   std::unique_ptr<_Node> dst;
+
+   MoveInstruction():src{nullptr},dst{nullptr}
+   {}
+
+   bool operator==(const MoveInstruction& other){
+    if(src==other.src)
+      return dst==other.dst;
+    return false;
+   }
+};
+
 
 struct BasicBlock {
 
@@ -93,62 +132,6 @@ struct Function {
 };
 
 
-
-/// @brief 低度数的传送无关节点表
-// class _simplifyWorkLists {
-// public:
-//   _simplifyWorkLists() = default;
-
-//   std::unordered_set<_Node> GetLists() { return list; }
-
-// private:
-//   std::unordered_set<_Node> list;
-// };
-
-// /// @brief 包含从图中删除的临时变量的栈
-// class selectStack {
-// public:
-//   selectStack() = default;
-
-// private:
-//   std::stack<_Node> slectNode;
-// };
-
-// /// @brief 低度数的但与传送有关的节点表
-// class freezeWorklists {
-
-// private:
-//   std::unordered_set<_Node> list;
-// };
-
-// /// @brief 高度数的节点表
-// class spillWorklists {
-
-// private:
-//   std::unordered_set<_Node> list;
-// };
-
-// /// @brief 在本轮中需要溢出的节点表，每次初始化为空
-// class spilledWorklists {
-// public:
-//   void refresh() { list.clear(); }
-
-// private:
-//   std::unordered_set<_Node> list;
-// };
-
-// /// @brief 已成功着色的节点集合
-// class coloredNode {
-
-// private:
-//   std::unordered_set<_Node> nodelist;
-// };
-
-// class WorkListsMoves {
-
-// private:
-//   std::unordered_set<Instruction *> list;
-// };
 
 // TODO 首先构造冲突图，把每个节点分为传送有关和传送无关
 void Build(Function &function);
@@ -163,9 +146,14 @@ void ReWriteProgram(std::unordered_set<_Node> &myset);
 bool IsMoveInstruction(Instruction &Inst);
 void simplifyInstr();
 void AddEdge(_Node& u,_Node& v);
-std::unordered_set<_Node> GetInst_Use(Instruction &Inst);
+std::vector<_Node> GetInst_Use(Instruction &Inst);
 _Node& GetInst_Def(Instruction &Inst);
 bool IsMoveRelated(const _Node& node);
 void DecrementDegree(_Node& node);
 std::list<_Node> Adjacent(_Node& node);
-std::list<_Node> NodeMoves(_Node& node);
+std::list<Instruction> NodeMoves(const _Node& node);
+void GetAlias(_Node* node);
+void AddWorkList(_Node& node);
+bool IsAdjset(std::pair<_Node,_Node>& key);
+bool OK(_Node& node_1,_Node& node_2);
+bool AdjOk(_Node& node_1,_Node& node_2);
