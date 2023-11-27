@@ -29,11 +29,12 @@ std::list<Instruction> constrainedMoves;
 //不再考虑合并的传送指令集合
 std::list<Instruction> frozenMoves;
 // 从一个结点到与该节点相关的传送指令表的映射
-std::map<_Node, std::list<Instruction>> moveList;
+std::unordered_map<_Node, std::list<Instruction>> moveList;
 // 图中冲突边的结合
 std::unordered_map<_Node, _Node> AdjSet;
 // 从图中删除的临时变量的栈
-std::unordered_set<_Node> selectlist;
+std::stack<_Node> selectstack;
+std::unordered_set<_Node> selectset;
 // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
 std::unordered_set<_Node> coalescedNodes;
 
@@ -68,8 +69,7 @@ void start()
     // 如果在colorassign的时候存在溢出
     if (!spilledNodes.empty())
     {
-        ReWriteProgram(
-            spilledNodes); // 为被溢出的临时变量分配存储单元，并插入访问这些单元的存/取指令
+        ReWriteProgram(spilledNodes); // 为被溢出的临时变量分配存储单元，并插入访问这些单元的存/取指令
         start();
     }
     else
@@ -180,15 +180,15 @@ void MakeWorkList()
 /// @brief 简化结点
 void Simplify()
 {
-    // 获取其中一个可简化结点，将他加入到selectlist并从simplifylist里删除
+    // 获取其中一个可简化结点，将他加入到selectset并从simplifylist里删除
     _Node node = simplifyWorkList.front();
     simplifyWorkList.pop_front();
-    selectlist.insert(node);
-
+    selectset.insert(node);
+    selectstack.push(node);
     std::list<_Node>& adjlist = node.GetList(); // 获取结点的邻接表AdjList
     for (_Node& m : adjlist)
     {
-        if (selectlist.find(m) == selectlist.end() &&
+        if (selectset.find(m) == selectset.end() &&
             coalescedNodes.find(m) == coalescedNodes.end())
         {
             DecrementDegree(m);
@@ -201,7 +201,7 @@ void coalesce() {
     Instruction& Inst = worklistMoves.front();
     _Node dst=Inst.def;
     std::vector<_Node> Use=Inst.use;
-    _Node src=Use[0];
+    _Node src=Use[0];//move指令的use只有一个
     GetAlias(&dst);
     GetAlias(&src);
     std::pair<_Node,_Node> coales;
@@ -217,12 +217,14 @@ void coalesce() {
         constrainedMoves.emplace_back(Inst);
         AddWorkList(src);
         AddWorkList(dst);
-    }else if(Precolored.find(coales.first)!=Precolored.end()){
-
+    }else if((Precolored.find(coales.first)!=Precolored.end()&&AdjOk(coales.first,coales.second))||  
+             (Precolored.find(coales.first)==Precolored.end()&&ConservativeCoalesce(coales.first,coales.second))){
+        coalescedMoves.emplace_back(Inst);
+        Combine(coales.first,coales.second);
+        AddWorkList(coales.first);
+    }else{ //上述条件都不满足，则添加到未做好准备合并的集合
+        activeMoves.emplace_back(Inst);
     }
-
-
-    
 }
 
 /// @brief 获取结点，对于已经合并的结点，返回他合并到的结点名
@@ -240,8 +242,8 @@ void GetAlias(_Node* node)
 /// @brief 对传入结点进行判定，如果满足条件就将他加入到可简化节点
 /// @param node 
 void AddWorkList(_Node& node){
-    if(Precolored.find(node)!=Precolored.end()){
-        if(!IsMoveRelated(node)){
+    if(Precolored.find(node)==Precolored.end()){//node不属于机器寄存器集合
+        if(!IsMoveRelated(node)){//node不是传送相关
             if(node.degree<K){
                 freezeWorkLists.erase(node);
                 simplifyWorkList.emplace_back(node);
@@ -251,12 +253,61 @@ void AddWorkList(_Node& node){
 }
 
 
+//如果简化和合并不能再进行，就寻找一个度数较低的传送有关结点，冻结这个结点所关联的传送指令：放弃对这些传送节点进行合并的希望
+//导致该节点变成传送无关
+void Freeze() {
+    //已经检查过freezeWorkLists是否为空
+    auto it=freezeWorkLists.begin();//TODO 后续需要补充一个选择结点的启发式算法
+    if(it!=freezeWorkLists.end()){
+        _Node node=*it;
+        freezeWorkLists.erase(it);
+        simplifyWorkList.emplace_back(node);
+        FreezeMoves(node);
+    }
+}
 
-void Freeze() {}
+/// @brief 冻结的结点node不再考虑合并，将相关传送指令加入到frozenMoves
+/// @param node 
+void FreezeMoves(_Node& node){
+    std::list<Instruction> Inst=NodeMoves(node);
+    for(auto& Ins:Inst){ //x <-- y
+        _Node* dst=&(Ins.def);
+        _Node* src=&(Ins.use[0]);
+        _Node* temp;
+        GetAlias(src);
+        GetAlias(&node);
+        if(*src==node){
+            GetAlias(dst);//dst充当v
+            temp=dst;
+        }else{
+            temp=src;
+        }
+        activeMoves.remove(Ins);
+        frozenMoves.emplace_back(Ins);
+        //如果此时传送相关结点除了node的另一个结点，当node不再考虑合并后自己本身也不再是传送有关节点并且度数小于K，可考虑简化
+        std::list<Instruction> nodemove=NodeMoves(*temp);
+        if(nodemove.empty()&&temp->degree<K){
+            freezeWorkLists.erase(*temp);
+            simplifyWorkList.emplace_back(*temp);
+        }
+    }
+}
 
-void SelectSpill() {}
+/// @brief 选择溢出
+void SelectSpill() {
+    auto it=spillWorkLists.begin();//TODO 后续需要一个启发式算法
+    if(it!=spillWorkLists.end()){
+        _Node node=*it;
+        spillWorkLists.erase(it);
+        simplifyWorkList.emplace_back(node);
+        FreezeMoves(node);
+    }
+}
 
-void AssignColor() {}
+/// @brief 图着色
+void AssignColor() {
+    
+}
 
 void ReWriteProgram(std::unordered_set<_Node>& myset) {}
 
@@ -287,9 +338,9 @@ std::list<_Node> Adjacent(_Node& node)
     std::list<_Node> result{};
     for (auto& Nod : L)
     {
-        auto it1 = selectlist.find(Nod);
+        auto it1 = selectset.find(Nod);
         auto it2 = coalescedNodes.find(Nod);
-        if (it1 == selectlist.end() && it2 == coalescedNodes.end())
+        if (it1 == selectset.end() && it2 == coalescedNodes.end())
         { //不在这两个集合则添加
             result.emplace_back(Nod);
         }
@@ -297,9 +348,7 @@ std::list<_Node> Adjacent(_Node& node)
     return result;
 }
 
-/// @brief
-/// 找出该节点相关的传送指令中有可能合并的传送指令集合和还未做好准备的传送指令集合
-/// （//TODO为什么？？）
+/// @brief 找出该节点相关的传送指令中有可能合并的传送指令集合和还未做好准备的传送指令集合
 /// @param node
 /// @return 一个双向链表（不用担心返回一个list所带来的效率问题）
 std::list<Instruction> NodeMoves(const _Node& node)
@@ -311,11 +360,8 @@ std::list<Instruction> NodeMoves(const _Node& node)
         std::list<Instruction>& InstList = it->second; //获取映射到的move指令集
         for (auto& Inst : InstList)
         {
-            auto it1 = std::find(
-                activeMoves.begin(), activeMoves.end(),
-                Inst); // TODO如果能把activeMoves和worklistMoves改成unordered_set效率会变快,前提是提供可哈希的变量
-            auto it2 =
-                std::find(worklistMoves.begin(), worklistMoves.end(), Inst);
+            auto it1 = std::find(activeMoves.begin(), activeMoves.end(), Inst); // TODO如果能把activeMoves和worklistMoves改成unordered_set效率会变快,前提是提供可哈希的变量
+            auto it2 =std::find(worklistMoves.begin(), worklistMoves.end(), Inst);
             if (it1 != activeMoves.end() || it2 != worklistMoves.end())
             {
                 result.emplace_back(Inst);
@@ -407,7 +453,7 @@ bool ConservativeCoalesce(_Node& u,_Node& v){
     std::list<_Node> Merg;
     std::unordered_set<_Node> Uniq;
     for(auto& elem:list_1){
-        if(Uniq.insert(elem).second){ //利用哈希set来去重
+        if(Uniq.insert(elem).second){ //利用哈希set来去重,second表示插入是否成功
             Merg.emplace_back(elem);
         }
     }
@@ -418,8 +464,6 @@ bool ConservativeCoalesce(_Node& u,_Node& v){
     }
     return Conservative(Merg);
 }
-
-
 
 /// @brief 利用OK启发式函数判断
 /// @param u,v
@@ -432,3 +476,49 @@ bool AdjOk(_Node& u,_Node& v){
     }
     return true;
 }
+
+/// @brief 将结点v合并到u
+/// @param u 
+/// @param v 
+void Combine(_Node& u,_Node& v){
+    if(freezeWorkLists.find(v)!=freezeWorkLists.end()){//属于低度数的传送有关节点
+        freezeWorkLists.erase(v);
+    }else{//属于高度数
+        spillWorkLists.erase(v);
+    }
+    coalescedNodes.emplace(v);
+    v.alias=&u;
+    //合并u和v的moveList表
+    std::unordered_set<Instruction> assist{};
+    std::list<Instruction> list_1=moveList[u];
+    std::list<Instruction> list_2=moveList[v];
+    for(auto& it1:list_1){
+        assist.emplace(it1);
+    }
+    for(auto& it2:list_2){
+        if(assist.insert(it2).second){
+            list_1.emplace_back(it2);
+        }
+    }
+    //EnableMove
+    std::list<Instruction> nodemove=NodeMoves(v);
+    for(auto& Inst:nodemove){
+        auto Find=std::find(activeMoves.begin(),activeMoves.end(),Inst);
+        if(Find!=activeMoves.end()){
+            activeMoves.erase(Find);
+            worklistMoves.emplace_back(Inst);
+        }
+    }
+    //把原来v的所有冲突边加入到合并后的u上
+    std::list<_Node> adj=Adjacent(v);
+    for(auto& t:adj){
+        AddEdge(t,u);
+        DecrementDegree(t); //TODO 有点没有理解这里为什么会有一个DecrementDegree
+    }
+    if((u.degree>=K)&&(freezeWorkLists.find(u)!=freezeWorkLists.end()))//合并后如果u变成了高度数结点，并且u原本是一个低度数结点，此时需要将u添加到spillworklist
+    {
+        freezeWorkLists.erase(u);
+        spillWorkLists.emplace(u);
+    }
+}
+
