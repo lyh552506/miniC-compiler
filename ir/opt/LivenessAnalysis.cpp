@@ -19,7 +19,22 @@ void BasicBlock ::addSuccessor(BasicBlock* block)
 
 void liveVariableAnalysis(std::vector<BasicBlock*>& blocks)
 {
-    // TODO;
+    std::vector<BasicBlock*> worklist;
+    for (auto block : blocks)
+        worklist.push_back(block);
+    while (!worklist.empty())
+    {
+        BasicBlock* block = worklist.back();
+        worklist.pop_back();
+        for (auto succ : block->successors)
+        {
+            if (succ->def.empty())
+                succ->def = block->def;
+            else
+                succ->def.insert(block->def.begin(), block->def.end());
+            worklist.push_back(succ);
+        }
+    }
 }
 
 void liveVariableAnalysisandPrintRanges(std ::vector<BasicBlock*>& blocks)
@@ -34,11 +49,10 @@ void liveVariableAnalysisandPrintRanges(std ::vector<BasicBlock*>& blocks)
     for (int i = 0; i < blocks.size(); ++i) {
         for (const Variable& var : blocks[i]->out) {
             if (liveRanges[var].empty() || liveRanges[var].back().second != i)
-                // If the variable is not already live or was not live in the pervious, strat a new
-                // range
+                /// @brief: If the variable is not already live or was not live in the pervious, strat a new range
                 liveRanges[var].push_back({i + 1, i + 1});
             else
-                // If the variable was live in the pervious block, extend the current range
+                /// @brief :If the variable was live in the pervious block, extend the current range
                 liveRanges[var].back().second = i + 1;
         }
     }
