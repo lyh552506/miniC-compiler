@@ -65,10 +65,11 @@ class AST_NODE
 
 class HasOperand:public AST_NODE
 {
+    public:
     virtual Operand GetOperand(BasicBlock* block)=0;
 };
 
-using PrimaryExp=HasOperand*;
+// using PrimaryExp=HasOperand*;
 
 class Stmt:public AST_NODE
 {
@@ -76,8 +77,8 @@ class Stmt:public AST_NODE
     virtual void GetInst(BasicBlock* block)=0;
 };
 
-using Decl=Stmt*;
-using BlockItem=Stmt*;
+// using Decl=Stmt*;
+// using BlockItem=Stmt*;
 
 
 /// @brief 由某种表达式和运算符构建起来的链表
@@ -109,22 +110,22 @@ class BaseExp:public HasOperand
     }
     Operand GetOperand(BasicBlock* block) final{
         /// UnaryExp 是一元操作符，单独取出来研究
-        if constexpr(std::is_same_v<T,PrimaryExp>){
+        if constexpr(std::is_same_v<T,HasOperand>){
             /// @note 可以优化？
             //num=!x equals to num=(x==0)?1:0;
             //num=+x useless 没人翻译
             //num=-x 字面意思
-            Operand ptr=ls->front()->GetOperand(block);
+            Operand ptr=ls.front()->GetOperand(block);
             for(auto i=oplist.rbegin();i!=oplist.rend();i++){
                 switch (*i)
                 {
                 case AST_NOT:
-                    ptr=block.GenerateBinaryInst(0,BinaryInst::Op_Sub,ptr);
+                    ptr=block->GenerateBinaryInst(Operand(0),BinaryInst::Op_Sub,ptr);
                     break;
                 case AST_ADD:
                     break;
                 case AST_SUB:
-                    ptr=block.GenerateBinaryInst(0,BinaryInst::Op_Sub,ptr);
+                    ptr=block->GenerateBinaryInst(Operand(0),BinaryInst::Op_Sub,ptr);
                     break;
                 default:
                     assert(0);
@@ -132,15 +133,16 @@ class BaseExp:public HasOperand
                     break;
                 }
             }
+            return ptr;
         }
         else{
             /// @note 其他都是二元操作符
-            static_assert(0);
+            assert(0);
         }
     }
 };
 
-using UnaryExp=BaseExp<PrimaryExp>;//+-+-+!- primary
+using UnaryExp=BaseExp<HasOperand>;//+-+-+!- primary
 using MulExp=BaseExp<UnaryExp>;//*
 using AddExp=BaseExp<MulExp>;//+ -
 using RelExp=BaseExp<AddExp>;//> < >= <=
@@ -472,17 +474,17 @@ class FuncParams:public AST_NODE
 
 class BlockItems:public Stmt
 {
-    List<BlockItem> ls;
+    List<Stmt> ls;
     public:
-    BlockItems(BlockItem* ptr){
+    BlockItems(Stmt* ptr){
         push_back(ptr);
     }
-    void push_back(BlockItem* ptr){
+    void push_back(Stmt* ptr){
         ls.push_back(ptr);
     }
     void GetInst(BasicBlock* block){
         for(auto &i:ls)
-            (*i.get())->GetInst(block);
+            i->GetInst(block);
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -551,7 +553,7 @@ class LVal:public HasOperand
     public:
     LVal(std::string _id,Exps* ptr=nullptr):ID(_id),array_descripters(ptr){}
     Operand GetOperand(BasicBlock* block)final{
-        static_assert(0);
+        assert(0);
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -569,7 +571,7 @@ class AssignStmt:public Stmt
     public:
     AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
     void GetInst(BasicBlock* block)final{
-        static_assert(0);
+        assert(0);
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -587,7 +589,7 @@ class ExpStmt:public Stmt
     public:
     ExpStmt(AddExp* ptr):exp(ptr){}
     void GetInst(BasicBlock* block)final{
-        static_assert(0);
+        assert(0);
     }
     void print(int x) final {
         if(exp==nullptr)AST_NODE::print(x);
@@ -603,7 +605,7 @@ class WhileStmt:public Stmt
     public:
     WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
     void GetInst(BasicBlock* block)final{
-        static_assert(0);
+        assert(0);
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -622,7 +624,7 @@ class IfStmt:public Stmt
     public:
     IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2=nullptr):condition(p0),t(p1),f(p2){}
     void GetInst(BasicBlock* block)final{
-        static_assert(0);
+        assert(0);
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -637,7 +639,7 @@ class IfStmt:public Stmt
 class BreakStmt:public Stmt
 {
     void GetInst(BasicBlock* block)final{
-        static_assert(0);
+        assert(0);
     }
     void print(int x) final {
         AST_NODE::print(x);std::cout<<'\n';
@@ -647,7 +649,7 @@ class BreakStmt:public Stmt
 class ContinueStmt:public Stmt
 {
     void GetInst(BasicBlock* block)final{
-        static_assert(0);
+        assert(0);
     }
     void print(int x) final {
         AST_NODE::print(x);std::cout<<'\n';
@@ -660,7 +662,7 @@ class ReturnStmt:public Stmt
     public:
     ReturnStmt(AddExp* ptr=nullptr):return_val(ptr){}
     void GetInst(BasicBlock* block)final{
-        static_assert(0);
+        assert(0);
     }
     void print(int x) final {
         AST_NODE::print(x);std::cout<<'\n';
@@ -675,7 +677,7 @@ class FunctionCall:public HasOperand
     public:
     FunctionCall(std::string _id,CallParams* ptr=nullptr):id(_id),cp(ptr){}
     Operand GetOperand(BasicBlock* block)final{
-
+        assert(0);
     }
     void print(int x) final {
         AST_NODE::print(x);
@@ -691,6 +693,6 @@ class ConstValue:public HasOperand
     public:
     ConstValue(T _data):data(_data){}
     void GetInst(BasicBlock* block)final{
-        static_assert(0);
+        assert(0);
     }
 };

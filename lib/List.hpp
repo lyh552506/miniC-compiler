@@ -7,9 +7,9 @@ class List:public std::list<std::unique_ptr<T>>
 {
     public:
     void push_front(T* data){
-        this->push_front(std::unique_ptr<T>(data));
+        this->push_front(data);
     }
     void push_back(T* data){
-        this->push_back(std::unique_ptr<T>(data));
+        this->push_back(data);
     }
 };

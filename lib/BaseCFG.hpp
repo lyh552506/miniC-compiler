@@ -19,9 +19,7 @@ class Use
     Use** prev=nullptr;
     public:
     Use()=delete;
-    Use(User* __fat,Value* __usee):fat(__fat),usee(__usee){
-        usee->add_user(this);
-    }
+    Use(User*,Value*);
     /// @brief 注意，调用这个方法的一定是User，所以我加了个鉴权
     void RemoveFromUserList(User* is_valid){
         assert(is_valid==fat);
@@ -57,6 +55,9 @@ class Value
         userlist.push_front(__data);
     }
 };
+Use::Use(User* __fat,Value* __usee):fat(__fat),usee(__usee){
+    usee->add_user(this);
+}
 class User:public Value
 {
     std::vector<Use> uselist;
@@ -72,6 +73,9 @@ class Operand:public std::variant<Value*,int,float>
 {
     using InnerOperand=std::variant<Value*,int,float>;
     public:
+    Operand(int num):InnerOperand(num){}
+    Operand(Value* num):InnerOperand(num){}
+    Operand(float num):InnerOperand(num){}
     InnerDataType GetType(){
         auto fat=*static_cast<InnerOperand*>(this);
         if(std::holds_alternative<Value*>(fat)){

@@ -2,7 +2,6 @@
 #include "SymbolTable.hpp"
 #include "Singleton.hpp"
 /// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
-class User;
 class InstWithDef:public User
 {
     protected:
@@ -90,7 +89,7 @@ class BinaryInst:public InstWithDef
     Operation op;
     Operand A,B;
     public:
-    BinaryInst(Operand _A,Operation __op,Operand _B):op(__op){
+    BinaryInst(Operand _A,Operation __op,Operand _B):A(_A),op(__op),B(_B){
         if(std::holds_alternative<Value*>(A))add_use(std::get<Value*>(A));
         if(std::holds_alternative<Value*>(B))add_use(std::get<Value*>(B));
         def=new Value(_A.GetType());
@@ -101,9 +100,7 @@ class Variable:public Value
 {
     std::string name;
     public:
-    Variable(std::string _id):name(_id),Value(Singleton<InnerDataType>()){
-        Singleton<Module>().Register(name,this);
-    }
+    Variable(std::string _id):name(_id),Value(Singleton<InnerDataType>()){}
     Variable(InnerDataType tp,std::string _id):Value(tp),name(_id){}
     std::string get_name(){
         return name;
@@ -174,14 +171,8 @@ class Function:public Value
     BasicBlock* front_block(){
         return bbs.front().get();
     }
-    void push_param(Variable* var){
-        params.push_back(ParamPtr(var));
-        Singleton<Module>().Register(var->get_name(),var);
-    }
-    void push_alloca(Variable* ptr){
-        alloca_variables.push_back(VarPtr(ptr));
-        Singleton<Module>().Register(ptr->get_name(),ptr);
-    }
+    void push_param(Variable* var);
+    void push_alloca(Variable* ptr);
 };
 /// @brief 编译单元
 class Module:public SymbolTable
@@ -200,3 +191,11 @@ class Module:public SymbolTable
         globalvaribleptr.push_back(GlobalVariblePtr(ptr));
     }
 };
+void Function::push_alloca(Variable* ptr){
+    alloca_variables.push_back(VarPtr(ptr));
+    Singleton<Module>().Register(ptr->get_name(),ptr);
+}
+void Function::push_param(Variable* var){
+    params.push_back(ParamPtr(var));
+    Singleton<Module>().Register(var->get_name(),var);
+}
