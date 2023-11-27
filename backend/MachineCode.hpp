@@ -2,20 +2,21 @@
 #include<string>
 #include<vector>
 
-class MachineCode;
+class MachineUnit;
+class MachineFunction;
+class MachineBlock;
 class MachineInst;
 
 class MachineOperand
 {
 private:
-
     MachineInst *parent;
     int type;
     int val;
+    std::string lable;
     int regnum;
 
 public:
-
 enum OperandType{
     REG, 
     IMM, 
@@ -25,7 +26,7 @@ enum OperandType{
     MachineOperand();
     MachineOperand(int type, int val);
 
-    ~MachineOperand();
+    ~MachineOperand(){};
 
     bool operator==(const MachineOperand&) const;
     bool operator<(const MachineOperand&) const;
@@ -42,23 +43,25 @@ enum OperandType{
 
     void setParent(MachineInst *parent);
     void setReg(int regnum);
-
 };
 
 class MachineInst
 {
 private:
+    MachineBlock *parent;
     int type;
     int opcode;
-    MachineOperand *lo1;
-    MachineOperand *rop1;
-    MachineOperand *rop2;
+    MachineOperand *rd;
+    MachineOperand *rs1;
+    MachineOperand *rs2;
     int num;
+    std::vector<MachineOperand *> defList;
+    std::vector<MachineOperand *> useList;
 public:
     MachineInst();
-    MachineInst(int opcode, MachineOperand *lo1, MachineOperand *rop1, MachineOperand *rop2);
-    MachineInst(int opcode, MachineOperand *lo1, MachineOperand *rop1);
-    MachineInst(int opcode, MachineOperand *lo1);
+    MachineInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    MachineInst(int opcode, MachineOperand *rd, MachineOperand *rs1);
+    MachineInst(int opcode, MachineOperand *rd);
     MachineInst(int opcode);
 
 //list of RISC_V instructions
@@ -140,22 +143,59 @@ enum RISC_V_Inst {
     Snez  
 };
 
+    void setParent(MachineBlock *parent);
     void setOpcode(int opcode);
     void setnum(int num);
-    void setop(MachineOperand *lo1);
+    void setop(MachineOperand *rd);
+    
+    void addDef(MachineOperand *def);
+    void addUse(MachineOperand *use);
+    
     int getnum();
+};
+
+class MachineBlock
+{
+private:
+    MachineFunction *parent;
+    int num;
+    std::vector<MachineInst *> InstList;
+    std::vector<MachineBlock *> pred;//前驱
+    std::vector<MachineBlock *> succ;//后继
+
+public:
+    MachineBlock(MachineFunction *parent, int num);
+    std::vector<MachineInst *> &getInsts();
+    
+};
+
+class MachineFunction
+{
+private:
+    MachineUnit *parent;
+    std::vector<MachineBlock *> BlockList;
+    std::vector<MachineOperand *> arglist;
+    int stacksize;
+    int offset;
+
+public:
+
+    int getstacksize();
 
 };
 
-class MachineCode
+class MachineUnit
 {
 private:
-    std::vector<MachineInst *> InstList;
+    std::vector<MachineFunction *> FuncList;
+
+
 
 public:
-    MachineCode();
-    ~MachineCode();
+    MachineUnit();
+    ~MachineUnit();
 
-    void addInst(MachineInst *inst);
-    std::vector<MachineInst *> getInstList();
+    std::vector<MachineFunction *> &getFuncs();
+
+
 };

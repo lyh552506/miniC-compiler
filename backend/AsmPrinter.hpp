@@ -60,7 +60,7 @@ enum Register {
 
 class AsmPrinter {
 private:
-    std::vector<MachineInst *> InstList;
+    // std::vector<MachineInst *> InstList;
     int regstatu[32];
 
 public:
