@@ -1,18 +1,8 @@
 #pragma once
 #include "SymbolTable.hpp"
+#include "Singleton.hpp"
 /// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
 class User;
-class BasicBlock:public Value
-{
-    List<User> insts;
-    public:
-    void push_front(User* ptr){
-        insts.push_front(ptr);
-    }
-    void push_back(User* ptr){
-        insts.push_back(ptr);
-    }
-};
 class InstWithDef:public User
 {
     protected:
@@ -119,90 +109,25 @@ class Variable:public Value
         return name;
     }
 };
-// /// @brief 数组类型，在这个语言里const array纯属烂活
-// class IRArray:public Value
-// {
-//     /// @brief 比如说int a[1025][12][2];因为只有float和int类型，所以按4字节=32位编址
-//     /// 同时实现方法中可以空掉第一位（1025），因为访存只需要后续位置，在统一ir中GEP指令要方便一点
-//     /// 同时struct的实现可以类似当成一个复用结构的Array
-//     /// 同时ptr类型至少在IR层面等同于GEP指令
-//     /// 如果第一个是-1，则是指针类型的
-//     std::string name;
-//     std::vector<size_t> size_tables;
-//     public:
-//     std::string get_name(){
-//         return name;
-//     }
-//     IRArray(std::string _id,std::vector<size_t> __table){
-//         name=_id;
-//         size_tables=__table;
-//     }
-// };
-/// @brief 以function为最大单元生成CFG
-//其实function本质是就是CFG了
-class Function:public Value
+class BasicBlock:public Value
 {
-    //Contains BasicBlock
-    //Function used by CallInst
-    std::string name;
-    using ParamPtr=std::unique_ptr<Variable>;
-    using VarPtr=std::unique_ptr<Variable>;
-    std::vector<ParamPtr> params;
-    std::vector<VarPtr> alloca_variables;
-    std::vector<BasicBlock> bbs;
+    List<User> insts;
     public:
-    Function(InnerDataType _tp,std::string _id):Value(_tp),name(_id){}
-    // BasicBlock& entry_block(){
-    //     return bbs.front();
-    // }
-    BasicBlock& cur_building(){
-        return bbs.back();
+    BasicBlock():Value(IR_Value_VOID){};
+    void push_front(User* ptr){
+        insts.push_front(ptr);
     }
-    void push_param(Variable* var){
-        params.push_back(ParamPtr(var));
-        Singleton<Module>().Register(var->get_name(),var);
-    }
-    void push_alloca(Variable* ptr){
-        alloca_variables.push_back(VarPtr(ptr));
-        assert(!bbs.empty());
-        bbs.front().push_front(new AllocaInst(ptr));
-    }
-};
-/// @brief 编译单元
-class Module:public SymbolTable
-{
-    /// @todo Module中需要一个Factory类似的东西来确保自动析构一些指针指向的对象
-    using GlobalVariblePtr=std::unique_ptr<Variable>;
-    std::vector<Function> ls;
-    std::vector<GlobalVariblePtr> globalvaribleptr;
-    void append(User* __data){
-        ls.back().cur_building().push_back(__data);
-    }
-    public:
-    Module()=default;
-    /// @brief Generate函数组，Module会符号表注册，生成Alloca语句并放在正确的位置
-    // void Generate(IRArray* __data){
-    //     SymbolTable::Register(__data->get_name(),__data);
-    //     if(SymbolTable::rec.empty()){
-    //         /// @todo Global Alloca
-    //     }
-    // }
-    /// @warning 这个在有初值和数值的时候有问题
-    Function& GenerateFunction(InnerDataType _tp,std::string _id){
-        ls.push_back(Function(_tp,_id));
-        return ls.back();
-    }
-    void GenerateAlloca(Variable* ptr){
-        SymbolTable::Register(ptr->get_name(),ptr);
-        if(SymbolTable::rec.empty())
-            //全局变量
-            globalvaribleptr.push_back(GlobalVariblePtr(ptr));
-        else
-            ls.back().push_alloca(ptr);
+    void push_back(User* ptr){
+        insts.push_back(ptr);
     }
     Operand GenerateSITFP(Operand _A){
         auto tmp=new SITFP(_A);
-        append(tmp);
+        push_back(tmp);
+        return Operand(tmp->GetDef());
+    }
+    Operand GenerateFPTSI(Operand _B){
+        auto tmp=new FPTSI(_B);
+        push_back(tmp);
         return Operand(tmp->GetDef());
     }
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B){
@@ -219,11 +144,59 @@ class Module:public SymbolTable
             }
             else{
                 ///@todo 改变成float
-
+                tmp=new BinaryInst(_A,op,GenerateSITFP(_B));
             }
         }
         else tmp=new BinaryInst(_A,op,_B);
-        append(tmp);
+        push_back(tmp);
         return Operand(tmp->GetDef());
+    }
+};
+/// @brief 以function为最大单元生成CFG
+//其实function本质是就是CFG了
+class Function:public Value
+{
+    std::string name;
+    using ParamPtr=std::unique_ptr<Variable>;
+    using VarPtr=std::unique_ptr<Variable>;
+    using BasicBlockPtr=std::unique_ptr<BasicBlock>;
+    std::vector<ParamPtr> params;
+    std::vector<VarPtr> alloca_variables;
+    std::vector<BasicBlockPtr> bbs;
+    void InsertAlloca(AllocaInst* ptr){
+        bbs.front()->push_back(ptr);
+    }
+    public:
+    Function(InnerDataType _tp,std::string _id):Value(_tp),name(_id){
+        //至少有一个bbs
+        bbs.push_back(BasicBlockPtr(new BasicBlock()));
+    }
+    BasicBlock* front_block(){
+        return bbs.front().get();
+    }
+    void push_param(Variable* var){
+        params.push_back(ParamPtr(var));
+        Singleton<Module>().Register(var->get_name(),var);
+    }
+    void push_alloca(Variable* ptr){
+        alloca_variables.push_back(VarPtr(ptr));
+        Singleton<Module>().Register(ptr->get_name(),ptr);
+    }
+};
+/// @brief 编译单元
+class Module:public SymbolTable
+{
+    using GlobalVariblePtr=std::unique_ptr<Variable>;
+    std::vector<Function> ls;
+    std::vector<GlobalVariblePtr> globalvaribleptr;
+    public:
+    Module()=default;
+    Function& GenerateFunction(InnerDataType _tp,std::string _id){
+        ls.push_back(Function(_tp,_id));
+        return ls.back();
+    }
+    void GenerateGlobalVariable(Variable* ptr){
+        SymbolTable::Register(ptr->get_name(),ptr);
+        globalvaribleptr.push_back(GlobalVariblePtr(ptr));
     }
 };
