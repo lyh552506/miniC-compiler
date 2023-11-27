@@ -171,8 +171,8 @@ class Function:public Value
     BasicBlock* front_block(){
         return bbs.front().get();
     }
-    void push_param(Variable* var);
-    void push_alloca(Variable* ptr);
+    void push_param(Variable*);
+    void push_alloca(Variable*);
 };
 /// @brief 编译单元
 class Module:public SymbolTable

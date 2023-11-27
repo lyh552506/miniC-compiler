@@ -183,6 +183,7 @@ class Exps:public InnerBaseExps//数组声明修饰符/访问修饰符号
 
 class CallParams:public InnerBaseExps//函数调用时的Params
 {
+    public:
     CallParams(AddExp* _data):InnerBaseExps(_data){}
     std::vector<Operand> GetParams(BasicBlock* block){
         std::vector<Operand> params;
@@ -283,11 +284,20 @@ class BaseDef:public Stmt
 
 class VarDef:public BaseDef
 {
-
+    public:
+    VarDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):BaseDef(_id,_ad,_iv){}
+    void GetInst(BasicBlock* ptr)final{
+        assert(0);
+    }
 };
 class ConstDef:public BaseDef
 {
-
+    public:
+    /// @warning 测试用例没有错，实际这里写_iv=nullptr是有点危险 
+    ConstDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):BaseDef(_id,_ad,_iv){}
+    void GetInst(BasicBlock* ptr)final{
+        assert(0);
+    }
 };
 
 /// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*
@@ -335,6 +345,9 @@ class ConstDefs:public Stmt
     void print(int x) final {
         for(auto &i:ls)i->print(x);
     }
+    void GetInst(BasicBlock* block)final{
+        assert(0);
+    }
 };
 
 class ConstDecl:public Stmt
@@ -345,6 +358,9 @@ class ConstDecl:public Stmt
     std::unique_ptr<ConstDefs> cdfs;
     public:
     ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
+    }
+    void GetInst(BasicBlock* block)final{
+        assert(0);
     }
     void codegen() final {
         /// @warning copy from VarDecl
@@ -387,6 +403,9 @@ class VarDefs:public Stmt
     void print(int x) final{
         for(auto &i:ls)i->print(x);
     }
+    void GetInst(BasicBlock* block)final{
+        assert(0);
+    }
 };
 
 class VarDecl:public Stmt
@@ -396,6 +415,9 @@ class VarDecl:public Stmt
     std::unique_ptr<VarDefs> vdfs;
     public:
     VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
+    void GetInst(BasicBlock* block)final{
+        assert(0);
+    }
     void codegen() final{
         switch (type)
         {
@@ -692,7 +714,7 @@ class ConstValue:public HasOperand
     T data;
     public:
     ConstValue(T _data):data(_data){}
-    void GetInst(BasicBlock* block)final{
+    Operand GetOperand(BasicBlock* block){
         assert(0);
     }
 };
