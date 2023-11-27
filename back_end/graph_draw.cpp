@@ -356,11 +356,11 @@ void ReWriteProgram(Function& function) {
    std::unordered_set<_Node> newTemps={vi,vj};                        
 //初始化，重新进行该过程
    spilledNodes.clear();
-   
+   initial.merge(coloredNode);
+   initial.merge(coalescedNodes);
+   initial.merge(newTemps);
    coloredNode.clear();
    coalescedNodes.clear();
-
-
 }
 
 ///@brief 图着色完成后再次遍历inst，删除源操作数和目的操作数相同的传送指令
