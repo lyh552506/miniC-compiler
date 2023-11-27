@@ -58,7 +58,7 @@ public:
   void Insert(_Node& node){
     AdjList.emplace_back(node);
   }
-  std::list<_Node>& GetList(){
+  std::list<_Node> GetList(){
     return AdjList;
   }
 private:
@@ -68,6 +68,7 @@ public:
   int degree{0};//当前结点度数
   _Node* alias;
   std::string varName;
+  //int color;
 };
 
 
@@ -147,9 +148,9 @@ void SelectSpill();
 void start();
 void MakeWorkList();
 void AssignColor();
-void ReWriteProgram(std::unordered_set<_Node> &myset);
+void ReWriteProgram(Function& function);
 bool IsMoveInstruction(Instruction &Inst);
-void simplifyInstr();
+void simplifyInstr(Function& function);
 void AddEdge(_Node& u,_Node& v);
 std::vector<_Node> GetInst_Use(Instruction &Inst);
 _Node& GetInst_Def(Instruction &Inst);
@@ -157,7 +158,7 @@ bool IsMoveRelated(const _Node& node);
 void DecrementDegree(_Node& node);
 std::list<_Node> Adjacent(_Node& node);
 std::list<Instruction> NodeMoves(const _Node& node);
-void GetAlias(_Node* node);
+_Node* GetAlias(_Node* node);
 void AddWorkList(_Node& node);
 bool IsAdjset(std::pair<_Node,_Node>& key);
 bool OK(_Node& node_1,_Node& node_2);

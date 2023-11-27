@@ -37,6 +37,12 @@ std::stack<_Node> selectstack;
 std::unordered_set<_Node> selectset;
 // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
 std::unordered_set<_Node> coalescedNodes;
+//已成功着色的结点集合
+std::unordered_set<_Node> coloredNode;
+
+std::unordered_map<_Node,int> color;
+
+
 
 /// @brief 开始着色
 void start()
@@ -69,12 +75,12 @@ void start()
     // 如果在colorassign的时候存在溢出
     if (!spilledNodes.empty())
     {
-        ReWriteProgram(spilledNodes); // 为被溢出的临时变量分配存储单元，并插入访问这些单元的存/取指令
+        ReWriteProgram(function); // 为被溢出的临时变量分配存储单元，并插入访问这些单元的存/取指令
         start();
     }
     else
     {
-        simplifyInstr(); // 删除无用的move指令
+        simplifyInstr(function); // 删除无用的move指令
         return;
     }
 }
@@ -185,7 +191,7 @@ void Simplify()
     simplifyWorkList.pop_front();
     selectset.insert(node);
     selectstack.push(node);
-    std::list<_Node>& adjlist = node.GetList(); // 获取结点的邻接表AdjList
+    std::list<_Node> adjlist = node.GetList(); // 获取结点的邻接表AdjList
     for (_Node& m : adjlist)
     {
         if (selectset.find(m) == selectset.end() &&
@@ -229,14 +235,15 @@ void coalesce() {
 
 /// @brief 获取结点，对于已经合并的结点，返回他合并到的结点名
 /// @param node
-/// @return void
-void GetAlias(_Node* node)
+/// @return _Node*
+_Node* GetAlias(_Node* node)
 {
     if (coalescedNodes.find(*node) != coalescedNodes.end())// node被合并
     { 
         if (node->alias != node) 
-          GetAlias(node->alias);
+          return GetAlias(node->alias);
     }
+    return node;
 }
 
 /// @brief 对传入结点进行判定，如果满足条件就将他加入到可简化节点
@@ -306,10 +313,61 @@ void SelectSpill() {
 
 /// @brief 图着色
 void AssignColor() {
-    
+    while(!selectstack.empty()){
+        _Node& spill=selectstack.top();
+        selectstack.pop();
+        std::list<_Node> adj=spill.GetList();
+        int ColorChoice[K]={0};//可选择的颜色集合，对应为0则为可选择
+        for(auto& node:adj){
+            GetAlias(&node);
+            if(coloredNode.find(node)!=coloredNode.end()||Precolored.find(node)!=Precolored.end()){//node是预着色结点或者已经着色
+                ColorChoice[color[node]]=1;
+            }
+        }
+        int flag=0;//是否还可以着色的标志
+        int Color;//选择颜色
+        for(int i=0;i<K;i++){
+            if(ColorChoice[i]==0){
+                flag=1;
+                Color=i;
+            }
+        }
+        if(!flag)//不能再分配颜色
+        {
+            spilledNodes.emplace(spill);
+        }else{
+            coloredNode.emplace(spill);
+            color[spill]=Color;
+        }
+    }
+    //对已经合并的传送集合进行颜色上的合并
+    for(auto it:coalescedNodes){
+       _Node* alia=GetAlias(&it);
+       color[it]=color[*alia];
+    }
 }
 
-void ReWriteProgram(std::unordered_set<_Node>& myset) {}
+//将溢出结点再inst流中改为分配内存单元
+void ReWriteProgram(Function& function) {
+//TODO 遍历指令，在溢出结点的定值和取数前分别加入访存指令
+//生成一个临时变量vi，能做到     vi<--ci 
+//                          M[..]<--vi
+   _Node vi,vj;
+   std::unordered_set<_Node> newTemps={vi,vj};                        
+//初始化，重新进行该过程
+   spilledNodes.clear();
+   
+   coloredNode.clear();
+   coalescedNodes.clear();
+
+
+}
+
+///@brief 图着色完成后再次遍历inst，删除源操作数和目的操作数相同的传送指令
+void simplifyInstr(Function& function){
+
+}
+
 
 // 获取指定指令的Use
 std::vector<_Node> GetInst_Use(Instruction& Inst) {}
