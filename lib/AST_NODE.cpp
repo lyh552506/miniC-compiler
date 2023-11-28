@@ -103,7 +103,7 @@ void BaseDef::print(int x){
     if(civ!=nullptr)civ->print(x+1);
 }
 
-VarDef::VarDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):BaseDef(_id,_ad,_iv){}
+VarDef::VarDef(std::string _id,Exps* _ad,InitVal* _iv):BaseDef(_id,_ad,_iv){}
 void VarDef::GetInst(BasicBlock* ptr){
     assert(0);
 }
@@ -222,7 +222,7 @@ void VarDecl::print(int x){
     vdfs->print(x+1);
 }
 
-FuncParam::FuncParam(AST_Type _tp,std::string _id,bool is_empty=false,Exps* ptr=nullptr):tp(_tp),ID(_id),emptySquare(is_empty),array_subscripts(ptr){}
+FuncParam::FuncParam(AST_Type _tp,std::string _id,bool is_empty,Exps* ptr):tp(_tp),ID(_id),emptySquare(is_empty),array_subscripts(ptr){}
 void FuncParam::GetVariable(Function& tmp){
     auto get_type=[](AST_Type _tp){
         switch(_tp)
@@ -315,7 +315,7 @@ void FuncDef::print(int x){
     function_body->print(x+1);
 }
 
-LVal::LVal(std::string _id,Exps* ptr=nullptr):ID(_id),array_descripters(ptr){}
+LVal::LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
 Operand LVal::GetOperand(BasicBlock* block){
     assert(0);
 }
@@ -358,7 +358,7 @@ void WhileStmt::print(int x){
     stmt->print(x+1);
 }
 
-IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2=nullptr):condition(p0),t(p1),f(p2){}
+IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
 void IfStmt::GetInst(BasicBlock* block){
     assert(0);
 }
@@ -383,7 +383,7 @@ void ContinueStmt::print(int x){
     AST_NODE::print(x);std::cout<<'\n';
 }
 
-ReturnStmt::ReturnStmt(AddExp* ptr=nullptr):return_val(ptr){}
+ReturnStmt::ReturnStmt(AddExp* ptr):return_val(ptr){}
 void ReturnStmt::GetInst(BasicBlock* block){
     assert(0);
 }
@@ -392,7 +392,7 @@ void ReturnStmt::print(int x){
     if(return_val!=nullptr)return_val->print(x+1);
 }
 
-FunctionCall::FunctionCall(std::string _id,CallParams* ptr=nullptr):id(_id),cp(ptr){}
+FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){}
 Operand FunctionCall::GetOperand(BasicBlock* block){
     assert(0);
 }

@@ -30,7 +30,7 @@ namespace yy
 //生成header,flex需要用Bison++自动定义的类
 %header "parser.hpp"
 %output "parser.cpp"
-%no-lines
+// %no-lines
 //token的enum前缀
 
 //token定义
