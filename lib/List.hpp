@@ -1,65 +1,18 @@
 #pragma once
+#include <list>
 #include <memory>
-
-/// @warning to be deleted, will be replaced by std::list<unique_ptr<T>>>
-/// @brief 一个简单支持多态的外挂式链表
+/// @brief 要写什么自己加，最简单的一集
 /// @tparam T 
 template<typename T>
-class List{
-    /// @brief 一个list_node，要求对象的所有权移交给它，由它来管理
-    /// @tparam T 
-    class List_node{
-        using Next=std::shared_ptr<List_node>;
-        using DataOwner=std::unique_ptr<T>;
-        public:
-        Next nxt;
-        DataOwner data;
-        List_node(T* __data){
-            data.reset(__data);
-        }
-        // void p
-    };
-    using ListPtr=std::shared_ptr<List_node>;
-    using DataOwner=std::unique_ptr<T>;
-    ListPtr head,tail;
-    int siz=0;
+class List:public std::list<std::unique_ptr<T>>
+{
+    using Father=std::list<std::unique_ptr<T>>;
+    using DataType=std::unique_ptr<T>;
     public:
-    class iterator{
-        private:
-        List_node *ptr;
-        public:
-        iterator(List_node* p):ptr(p){}
-        T& operator*(){return *(ptr->data);}
-        iterator& operator++(){
-            ptr=ptr->nxt.get();
-            return *this;
-        }
-        bool operator!=(const iterator& other){
-            return ptr!=other.ptr;
-        }
-    };
-    iterator begin(){return iterator(head.get());}
-    iterator end(){return iterator(nullptr);}
-    void push_front(T* __data){
-        ListPtr tmp=std::make_shared<List_node>(__data);
-        tmp->nxt=head;
-        head=tmp;
-        if(tail==nullptr)tail=head;
-        siz++;
+    void push_front(T* data){
+        Father::push_front(DataType(data));
     }
-    void push_back(T* __data){
-        if(head==nullptr){
-            head=std::make_shared<List_node>(__data);
-            tail=head;
-        }
-        else{
-            tail->nxt=std::make_shared<List_node>(__data);
-            tail=tail->nxt;
-        }
-        siz++;
+    void push_back(T* data){
+        Father::push_back(DataType(data));
     }
-    int size(){return siz;}
-    List(const List& other)=delete;
-    // List(List&& other)noexcept:head(std::move(other.head),tail(std::move(other.tail))){}
-    List()=default;
 };

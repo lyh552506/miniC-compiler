@@ -2,6 +2,7 @@
 #include "BaseCFG.hpp"
 #include <map>
 #include <stack>
+#include <string>
 /// @brief same layer with same name is illegal 
 class SymbolTable
 {
@@ -14,18 +15,19 @@ class SymbolTable
         rec.push_back(std::vector<recoder>());
     }
     void layer_decrease(){
-        /// @todo 放进变量表的指针现在没有东西去析构
+        for(auto &i:rec.back())
+            while(!i->empty())i->pop();
         rec.pop_back();
     }
     Value* GetValueByName(std::string name){
         auto &i=mp[name];
         assert(!i->empty());
-        i->top();
+        return i->top();
     }
     void Register(std::string name,Value* val){
         auto &i=mp[name];
         if(i==nullptr)i.reset(new std::stack<Value*>());
-        rec.back().push_back(i.get());
+        if(!rec.empty())rec.back().push_back(i.get());
         /// @todo 函数重定义是科学的
         i->push(val);
     }

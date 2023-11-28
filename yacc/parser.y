@@ -30,6 +30,7 @@ namespace yy
 //生成header,flex需要用Bison++自动定义的类
 %header "parser.hpp"
 %output "parser.cpp"
+// %no-lines
 //token的enum前缀
 
 //token定义
@@ -74,7 +75,7 @@ namespace yy
 
 ///none terminator定义
 %nterm <CompUnit*> CompUnit
-%nterm <Decl*> Decl
+%nterm <Stmt*> Decl
 %nterm <ConstDecl*> ConstDecl
 %nterm <ConstDefs*> ConstDefs
 %nterm <ConstDef*> ConstDef
@@ -91,10 +92,10 @@ namespace yy
 %nterm <FuncParam*> FuncParam
 %nterm <Block*> Block
 %nterm <BlockItems*> BlockItems
-%nterm <BlockItem*> BlockItem
-%nterm <AST_NODE*> Stmt
+%nterm <Stmt*> BlockItem
+%nterm <Stmt*> Stmt
 %nterm <LVal*> LVal
-%nterm <PrimaryExp*> PrimaryExp
+%nterm <HasOperand*> PrimaryExp
 %nterm <CallParams*> CallParams
 %nterm <UnaryExp*> UnaryExp
 %nterm <MulExp*> MulExp
@@ -119,8 +120,8 @@ CompUnit: Decl CompUnit {$$=$2;$$->push_front((AST_NODE*)$1);}
         | FuncDef {{$$=new CompUnit((AST_NODE*)$1);}}
         ;
 
-Decl: ConstDecl {$$=new Decl($1);}
-    | VarDecl {$$=new Decl($1);}
+Decl: ConstDecl {$$=(Stmt*)$1;}
+    | VarDecl {$$=(Stmt*)$1;}
     ;
 
 ConstDecl: Y_CONST Type ConstDefs Y_SEMICOLON {$$=new ConstDecl($2,$3);}
@@ -191,8 +192,8 @@ BlockItems: BlockItem {$$=new BlockItems($1);}
           | BlockItems BlockItem {$$=$1;$$->push_back($2);}
           ;
 
-BlockItem: Decl {$$=new BlockItem((AST_NODE*)$1);}
-         | Stmt {$$=new BlockItem((AST_NODE*)$1);}
+BlockItem: Decl {$$=(Stmt*)$1;}
+         | Stmt {$$=(Stmt*)$1;}
          ;
 
 Stmt: LVal Y_ASSIGN AddExp Y_SEMICOLON {$$=new AssignStmt($1,$3);}
@@ -216,12 +217,12 @@ ArraySubscripts: Y_LSQUARE AddExp Y_RSQUARE {$$=new Exps($2);}
                | Y_LSQUARE AddExp Y_RSQUARE ArraySubscripts {$$=$4;$$->push_front($2);}
                ;
 
-PrimaryExp: Y_LPAR AddExp Y_RPAR {$$=new PrimaryExp((AST_NODE*)$2);}
-          | LVal {$$=new PrimaryExp((AST_NODE*)$1);}
-          | num_INT {$$=new PrimaryExp((AST_NODE*)(new ConstValue<int>($1)));}
-          | num_FLOAT {$$=new PrimaryExp((AST_NODE*)(new ConstValue<float>($1)));}
-          | Y_ID Y_LPAR Y_RPAR {$$=new PrimaryExp((AST_NODE*)(new FunctionCall($1)));}
-          | Y_ID Y_LPAR CallParams Y_RPAR {$$=new PrimaryExp((AST_NODE*)(new FunctionCall($1,$3)));}
+PrimaryExp: Y_LPAR AddExp Y_RPAR {$$=(HasOperand*)$2;}
+          | LVal {$$=(HasOperand*)$1;}
+          | num_INT {$$=(HasOperand*)(new ConstValue<int>($1));}
+          | num_FLOAT {$$=(HasOperand*)(new ConstValue<float>($1));}
+          | Y_ID Y_LPAR Y_RPAR {$$=(HasOperand*)(new FunctionCall($1));}
+          | Y_ID Y_LPAR CallParams Y_RPAR {$$=(HasOperand*)(new FunctionCall($1,$3));}
           ;
 
 UnaryExp: PrimaryExp {$$=new UnaryExp($1);}
