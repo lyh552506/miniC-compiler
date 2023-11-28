@@ -45,12 +45,10 @@
 #ifndef YY_YY_PARSER_HPP_INCLUDED
 # define YY_YY_PARSER_HPP_INCLUDED
 // "%code requires" blocks.
-#line 4 "./parser.y"
 
 #include "AST_NODE.hpp"
 #include "Singleton.hpp"
 
-#line 54 "parser.hpp"
 
 
 # include <cstdlib> // std::abort
@@ -185,7 +183,6 @@
 #endif
 
 namespace yy {
-#line 189 "parser.hpp"
 
 
 
@@ -2808,7 +2805,6 @@ switch (yykind)
 
 
 } // yy
-#line 2812 "parser.hpp"
 
 
 
