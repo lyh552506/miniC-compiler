@@ -82,6 +82,7 @@ class Variable:public Value
     public:
     Variable(std::string _id);
     Variable(InnerDataType tp,std::string _id);
+    std::string get_name();
 };
 class BasicBlock:public Value
 {
@@ -90,6 +91,7 @@ class BasicBlock:public Value
     BasicBlock();
     void push_front(User* ptr);
     void push_back(User* ptr);
+    Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
 };

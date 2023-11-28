@@ -181,7 +181,7 @@ class BaseDef:public Stmt
     std::unique_ptr<Exps> array_descripters; 
     std::unique_ptr<InitVal> civ;
     public:
-    BaseDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr);
+    BaseDef(std::string _id,Exps* _ad,InitVal* _iv);
     void codegen();
     void print(int x);
 };
@@ -189,14 +189,14 @@ class BaseDef:public Stmt
 class VarDef:public BaseDef
 {
     public:
-    VarDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr);
+    VarDef(std::string _id,Exps* _ad,InitVal* _iv);
     void GetInst(BasicBlock* ptr);
 };
 class ConstDef:public BaseDef
 {
     public:
-    ConstDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr);
-    void GetInst(BasicBlock* ptr);
+    ConstDef(std::string,Exps*,InitVal*);
+    void GetInst(BasicBlock*);
 };
 
 /// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*
@@ -267,7 +267,7 @@ class FuncParam:public AST_NODE
     bool emptySquare;
     std::unique_ptr<Exps> array_subscripts;
     public:
-    FuncParam(AST_Type _tp,std::string _id,bool is_empty=false,Exps* ptr=nullptr);
+    FuncParam(AST_Type _tp,std::string _id,bool is_empty,Exps* ptr);
     void GetVariable(Function& tmp);
     void print(int x);
 };
@@ -320,7 +320,7 @@ class LVal:public HasOperand
     std::string ID;
     std::unique_ptr<Exps> array_descripters;
     public:
-    LVal(std::string _id,Exps* ptr=nullptr);
+    LVal(std::string _id,Exps* ptr);
     Operand GetOperand(BasicBlock* block);
     void print(int x);
 };
@@ -363,7 +363,7 @@ class IfStmt:public Stmt
     std::unique_ptr<LOrExp> condition;
     std::unique_ptr<Stmt> t,f;
     public:
-    IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2=nullptr);
+    IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2);
     void GetInst(BasicBlock* block);
     void print(int x);
 }; 
@@ -385,7 +385,7 @@ class ReturnStmt:public Stmt
 {
     std::unique_ptr<AddExp> return_val;
     public:
-    ReturnStmt(AddExp* ptr=nullptr);
+    ReturnStmt(AddExp* ptr);
     void GetInst(BasicBlock* block);
     void print(int x);
 };
@@ -395,7 +395,7 @@ class FunctionCall:public HasOperand
     std::string id;
     std::unique_ptr<CallParams> cp;
     public:
-    FunctionCall(std::string _id,CallParams* ptr=nullptr);
+    FunctionCall(std::string _id,CallParams* ptr);
     Operand GetOperand(BasicBlock* block);
     void print(int x);
 };

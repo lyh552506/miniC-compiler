@@ -2,6 +2,7 @@
 #include "BaseCFG.hpp"
 #include <map>
 #include <stack>
+#include <string>
 /// @brief same layer with same name is illegal 
 class SymbolTable
 {
