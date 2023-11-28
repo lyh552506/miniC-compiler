@@ -21,11 +21,7 @@ class Use
     Use()=delete;
     Use(User*,Value*);
     /// @brief 注意，调用这个方法的一定是User，所以我加了个鉴权
-    void RemoveFromUserList(User* is_valid){
-        assert(is_valid==fat);
-        (*prev)=nxt;
-        nxt->prev=prev;
-    }
+    void RemoveFromUserList(User* is_valid);
 };
 /// @brief prepare for Value to quickly find out its User
 class UserList
@@ -33,12 +29,7 @@ class UserList
     Use* head=nullptr;
     public:
     UserList()=default;
-    void push_front(Use* _data){
-        _data->nxt=head;
-        if(head!=nullptr)head->prev=&(_data->nxt);
-        _data->prev=&head;
-    }
-    /// @todo 给一个遍历的方法
+    void push_front(Use* _data);
 };
 class Value
 {
@@ -46,44 +37,26 @@ class Value
     UserList userlist;
     InnerDataType tp;
     public:
-    InnerDataType GetType(){
-        return tp;
-    }
+    InnerDataType GetType();
     Value()=delete;
-    Value(InnerDataType _tp):tp(_tp){}
-    void add_user(Use* __data){
-        userlist.push_front(__data);
-    }
+    Value(InnerDataType _tp);
+    void add_user(Use* __data);
 };
-Use::Use(User* __fat,Value* __usee):fat(__fat),usee(__usee){
-    usee->add_user(this);
-}
 class User:public Value
 {
     std::vector<Use> uselist;
     protected:
-    void add_use(Value* __data){
-        uselist.push_back(Use(this,__data));
-    }
+    void add_use(Value* __data);
     public:
-    User():Value(IR_Value_VOID){}
-    User(InnerDataType tp):Value(tp){}
+    User();
+    User(InnerDataType tp);
 };
 class Operand:public std::variant<Value*,int,float>
 {
     using InnerOperand=std::variant<Value*,int,float>;
     public:
-    Operand(int num):InnerOperand(num){}
-    Operand(Value* num):InnerOperand(num){}
-    Operand(float num):InnerOperand(num){}
-    InnerDataType GetType(){
-        auto fat=*static_cast<InnerOperand*>(this);
-        if(std::holds_alternative<Value*>(fat)){
-            return std::get<Value*>(fat)->GetType();
-        }
-        else if(std::holds_alternative<int>(fat)){
-            return InnerDataType::IR_Value_INT;
-        }
-        else return InnerDataType::IR_Value_Float;
-    }
+    Operand(int num);
+    Operand(Value* num);
+    Operand(float num);
+    InnerDataType GetType();
 };
