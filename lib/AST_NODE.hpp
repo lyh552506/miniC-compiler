@@ -322,6 +322,7 @@ class LVal:public HasOperand
     public:
     LVal(std::string _id,Exps* ptr=nullptr);
     Operand GetOperand(BasicBlock* block);
+    std::string GetName();
     void print(int x);
 };
 

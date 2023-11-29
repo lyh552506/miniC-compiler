@@ -25,10 +25,10 @@ class AllocaInst:public User
 /// @param des Value*
 class StoreInst:public User
 {
-    Value* des;
+    Variable* des;
     Operand src;
     public:
-    StoreInst(Operand __src,Value* __des);
+    StoreInst(Operand,Variable*);
 };
 /// @brief load src to def
 /// @note inst use src;def def
@@ -94,6 +94,7 @@ class BasicBlock:public Value
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
+    void GenerateStoreInst(Operand,Variable*);
 };
 /// @brief 以function为最大单元生成CFG
 //其实function本质是就是CFG了

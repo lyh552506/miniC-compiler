@@ -327,7 +327,12 @@ void LVal::print(int x){
 }
 AssignStmt::AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
 void AssignStmt::GetInst(BasicBlock* block){
-    assert(0);
+    Operand tmp=exp->GetOperand(block);
+    // block->GenerateStoreInst(block,);
+    auto valueptr=Singleton<Module>().GetValueByName(lv->GetName());
+    // if(auto variable=dynamic_cast<Variable*>(valueptr)){
+
+    // }
 }
 void AssignStmt::print(int x){
     AST_NODE::print(x);

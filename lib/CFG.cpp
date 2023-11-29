@@ -7,7 +7,7 @@ Value* InstWithDef::GetDef(){
 AllocaInst::AllocaInst(Value* __data):data(__data){
     /// @note 注意__data的实际类型一定是Varible或者数组，所以Type在里面找
 }
-StoreInst::StoreInst(Operand __src,Value* __des):src(__src),des(__des){
+StoreInst::StoreInst(Operand __src,Variable* __des):src(__src),des(__des){
     if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
     add_use(des);
 }
@@ -69,6 +69,14 @@ Operand BasicBlock::GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Opera
     else tmp=new BinaryInst(_A,op,_B);
     push_back(tmp);
     return Operand(tmp->GetDef());
+}
+void BasicBlock::GenerateStoreInst(Operand src,Variable* des){
+    if(des->GetType()!=src.GetType()){
+        if(des->GetType()==IR_Value_INT)this->GenerateFPTSI(src);
+        else this->GenerateSITFP(src);
+    }
+    auto storeinst=new StoreInst(src,des);
+    this->push_back(storeinst);
 }
 void Function::InsertAlloca(AllocaInst* ptr){
     bbs.front()->push_back(ptr);
