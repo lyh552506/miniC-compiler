@@ -49,7 +49,7 @@ class MachineInst
 {
 private:
     MachineBlock *parent;
-    //int type;
+    int type;
     int opcode;
     MachineOperand *rd;
     MachineOperand *rs1;
@@ -70,14 +70,25 @@ enum InstType {
     Store,
     Branch,
     Jump,
-
+    Cmp,
+    Neg, // 取反，取负数
     Pseudo, // 伪指令
-
+};
+    void setParent(MachineBlock *parent);
+    void setOpcode(int opcode);
+    void setnum(int num);
+    void setop(MachineOperand *rd);
+    
+    void addDef(MachineOperand *def);
+    void addUse(MachineOperand *use);
+    
+    int getnum();
 };
 
-
-//list of RISC_V instructions
-enum RISC_V_Inst {
+class BinaryInst : public MachineInst
+{  
+public:
+enum Binary_Inst {
     //算数运算
     Add, //加法 add rd, rs1, rs2
     Addw,
@@ -92,45 +103,6 @@ enum RISC_V_Inst {
     Divw,
     Rem, //取余 rem rd, rs1, rs2
     Remw,
-
-    Beq, //分支 beq rs1, rs2, offset
-    Beqz, // == 0
-    Bge, // >=
-    Bgez,
-    Bgt, // >
-    Bgtz,
-    Ble, // <=
-    Blez,
-    Blt, // <
-    Bltz,
-    Bne, // !=
-    Bnez,
-    J, //跳转 j offset
-    Jr, //跳转 jr rs1
-    Jal, //跳转并保存返回地址  jal offset
-    Jalr,// 跳转并保存返回地址 jalr rs1
-
-    La, //加载地址 la rd, label
-    Li, //加载立即数 li rd, imm
-    Lb, //加载 lb rd, offset(rs1)
-    Lh,
-    Lw,
-    Ld,
-    Sb, //存储 sb rs2, offset(rs1)
-    Sh,
-    Sw,
-    Sd,
-
-    And, //按位与 and rd, rs1, rs2
-    Andi,
-    Or, //按位或 or rd, rs1, rs2
-    Ori,
-    Not, //按位取反 not rd, rs1
-    Xor, //按位异或 xor rd, rs1, rs2
-    Xori,
-    //Neg, //取负数
-    //Negw,
-
     Sll, //逻辑左移 sll rd, rs1, rs2
     Slli,
     Slliw,
@@ -143,27 +115,110 @@ enum RISC_V_Inst {
     Sraw, 
     Srai, //算术右移立即数 srai rd, rs1, imm
     Sraiw,
+    And, //按位与 and rd, rs1, rs2
+    Andi,
+    Or, //按位或 or rd, rs1, rs2
+    Ori,
+    Xor, //按位异或 xor rd, rs1, rs2
+    Xori
+};
+ 
 
+    BinaryInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    void print();
+};
+
+class LoadInst : public MachineInst
+{
+public:
+enum Load_Inst {
+    Lb, //加载 lb rd, offset(rs1)
+    Lh,
+    Lw,
+    Ld
+};
+    LoadInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    void print();
+};
+
+class StoreInst : public MachineInst
+{
+public:
+enum Store_Inst {
+    Sb, //存储 sb rs2, offset(rs1)
+    Sh,
+    Sw,
+    Sd
+};
+    StoreInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    void print();
+
+};
+
+class BranchInst : public MachineInst
+{
+public:
+enum Branch_Inst {
+    Beq, //分支 beq rs1, rs2, offset
+    Beqz, // == 0
+    Bge, // >=
+    Bgez,
+    Bgt, // >
+    Bgtz,
+    Ble, // <=
+    Blez,
+    Blt, // <
+    Bltz,
+    Bne, // !=
+    Bnez
+};
+    BranchInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    void print();
+
+};
+
+class JumpInst : public MachineInst
+{
+public:
+enum Jump_Inst {
+    J, //跳转 j offset
+    Jr, //跳转 jr rs1
+    Jal, //跳转并保存返回地址  jal offset
+    Jalr,// 跳转并保存返回地址 jalr rs1
+};
+    JumpInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    void print();
+
+};
+
+class CmpInst : public MachineInst
+{
+public:
+enum Cmp_Inst {
     Slt, //有符号比较 slt rd, rs1, rs2
     Slti,
     Sltz,
-    Snez,
+    Snez
+};
+    CmpInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    void print();
 
-    //Nop, //空指令
-    //Auipc,
+};
+
+class PseudoInst : public MachineInst
+{
+public:
+enum Pseudo_Inst {
+    // Nop, //空指令
+    // Auipc,
+    Li, //加载立即数 li rd, imm
+    La, //加载地址 la rd, label
     Mv, //移动 mv rd, rs1
     Ret //返回 ret
 };
+    PseudoInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    void print();
 
-    void setParent(MachineBlock *parent);
-    void setOpcode(int opcode);
-    void setnum(int num);
-    void setop(MachineOperand *rd);
-    
-    void addDef(MachineOperand *def);
-    void addUse(MachineOperand *use);
-    
-    int getnum();
 };
 
 class MachineBlock
@@ -172,13 +227,13 @@ private:
     MachineFunction *parent;
     int num;
     std::vector<MachineInst *> InstList;
+
     std::vector<MachineBlock *> pred;//前驱
     std::vector<MachineBlock *> succ;//后继
 
 public:
     MachineBlock(MachineFunction *parent, int num);
     std::vector<MachineInst *> &getInsts();
-    
 };
 
 class MachineFunction
@@ -195,8 +250,11 @@ public:
 
     int getstacksize();
     int getoffset();
+
     void setstacksize(int size);
     void setoffset(int offset);
+
+    void print();
 };
 
 class MachineUnit
@@ -210,6 +268,4 @@ public:
     ~MachineUnit();
 
     std::vector<MachineFunction *> &getFuncs();
-
-
 };

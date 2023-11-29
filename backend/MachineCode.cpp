@@ -95,25 +95,3 @@ MachineInst::MachineInst() {
     this->rs2 = nullptr;
     this->num = -1;
 }
-
-MachineInst::MachineInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2) {
-    this->parent = nullptr;
-    //this->type = type;
-    this->opcode = opcode;
-    this->rd = rd;
-    this->rs1 = rs1;
-    this->rs2 = rs2;
-    this->num = 3;
-    if(rd != nullptr) {
-        this->defList.push_back(rd);
-        rd->setParent(this);
-    }
-    if(rs1 != nullptr) {
-        this->useList.push_back(rs1);
-        rs1->setParent(this);
-    }
-    if(rs2 != nullptr) {
-        this->useList.push_back(rs2);
-        rs2->setParent(this);
-    }
-}
