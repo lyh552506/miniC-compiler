@@ -47,7 +47,7 @@ enum OperandType{
 
 class MachineInst
 {
-private:
+protected:
     MachineBlock *parent;
     int type;
     int opcode;
@@ -58,12 +58,6 @@ private:
     std::vector<MachineOperand *> defList;
     std::vector<MachineOperand *> useList;
 public:
-    MachineInst();
-    MachineInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
-    MachineInst(int opcode, MachineOperand *rd, MachineOperand *rs1);
-    MachineInst(int opcode, MachineOperand *rd);
-    MachineInst(int opcode);
-
 enum InstType {
     Binary,
     Load,
@@ -74,13 +68,10 @@ enum InstType {
     Neg, // 取反，取负数
     Pseudo, // 伪指令
 };
+
     void setParent(MachineBlock *parent);
-    void setOpcode(int opcode);
-    void setnum(int num);
-    void setop(MachineOperand *rd);
-    
-    void addDef(MachineOperand *def);
-    void addUse(MachineOperand *use);
+    // void addDef(MachineOperand *def);
+    // void addUse(MachineOperand *use);
     
     int getnum();
 };
@@ -122,10 +113,9 @@ enum Binary_Inst {
     Xor, //按位异或 xor rd, rs1, rs2
     Xori
 };
- 
 
-    BinaryInst(int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
-    void print();
+    BinaryInst(MachineBlock *parent, int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    void print(std::ofstream &outputFile);
 };
 
 class LoadInst : public MachineInst

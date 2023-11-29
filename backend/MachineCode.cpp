@@ -1,3 +1,5 @@
+#include<string>
+#include<fstream>
 #include"MachineCode.hpp"
 
 //MachineOperand
@@ -86,12 +88,25 @@ void MachineOperand::setReg(int regnum) {
 }
 
 //MachineInst
-MachineInst::MachineInst() {
-    this->parent = nullptr;
-    //this->type = -1;
-    this->opcode = -1;
-    this->rd = nullptr;
-    this->rs1 = nullptr;
-    this->rs2 = nullptr;
-    this->num = -1;
+void MachineInst::setParent(MachineBlock *parent) {
+    this->parent = parent;
 }
+
+int MachineInst::getnum() {
+    return this->num;
+}  
+
+//BinaryInst
+BinaryInst::BinaryInst(MachineBlock *parent, int opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2) {
+    this->parent = parent;
+    this->opcode = opcode;
+    this->rd = rd;
+    this->rs1 = rs1;
+    this->rs2 = rs2;
+    this->num = 0;
+}
+
+void BinaryInst::print(std::ofstream &outputFile) {
+    outputFile << this->opcode << this->rd->getRegnum() << this->rs1->getRegnum() << this->rs2->getRegnum() << std::endl;
+}
+
