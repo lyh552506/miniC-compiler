@@ -35,10 +35,10 @@ enum OperandType{
     bool isMem();
     bool isLabel();
 
-    int getVal();
-    int getReg();
-    int getType();
     MachineInst *getParent();
+    int getType();
+    int getVal();
+    int getRegnum();
     std::string getlable();
 
     void setParent(MachineInst *parent);
@@ -49,7 +49,7 @@ class MachineInst
 {
 private:
     MachineBlock *parent;
-    int type;
+    //int type;
     int opcode;
     MachineOperand *rd;
     MachineOperand *rs1;
@@ -63,6 +63,18 @@ public:
     MachineInst(int opcode, MachineOperand *rd, MachineOperand *rs1);
     MachineInst(int opcode, MachineOperand *rd);
     MachineInst(int opcode);
+
+enum InstType {
+    Binary,
+    Load,
+    Store,
+    Branch,
+    Jump,
+
+    Pseudo, // 伪指令
+
+};
+
 
 //list of RISC_V instructions
 enum RISC_V_Inst {
@@ -109,11 +121,6 @@ enum RISC_V_Inst {
     Sw,
     Sd,
 
-    //Nop, //空指令
-    //Auipc,
-    Mv, //移动 mv rd, rs1
-    Ret, //返回 ret
-
     And, //按位与 and rd, rs1, rs2
     Andi,
     Or, //按位或 or rd, rs1, rs2
@@ -140,7 +147,12 @@ enum RISC_V_Inst {
     Slt, //有符号比较 slt rd, rs1, rs2
     Slti,
     Sltz,
-    Snez  
+    Snez,
+
+    //Nop, //空指令
+    //Auipc,
+    Mv, //移动 mv rd, rs1
+    Ret //返回 ret
 };
 
     void setParent(MachineBlock *parent);
@@ -179,9 +191,12 @@ private:
     int offset;
 
 public:
+    MachineFunction(MachineUnit *parent);
 
     int getstacksize();
-
+    int getoffset();
+    void setstacksize(int size);
+    void setoffset(int offset);
 };
 
 class MachineUnit
@@ -189,10 +204,9 @@ class MachineUnit
 private:
     std::vector<MachineFunction *> FuncList;
 
-
-
 public:
     MachineUnit();
+
     ~MachineUnit();
 
     std::vector<MachineFunction *> &getFuncs();

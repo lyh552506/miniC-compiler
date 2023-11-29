@@ -71,7 +71,7 @@ public:
 
     void regalloc(MachineInst *inst);
 
-    void printInst(MachineInst *inst);
+    void printMachineCode(MachineInst *inst);
 
 
 };
