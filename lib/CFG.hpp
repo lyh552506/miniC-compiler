@@ -55,6 +55,19 @@ class SITFP:public InstWithDef
     public:
     SITFP(Operand __src);
 };
+class UnCondInst:public User
+{
+    BasicBlock* des;
+    public:
+    UnCondInst(BasicBlock*);
+};
+class CondInst:public User
+{
+    Operand condition;
+    BasicBlock *istrue,*isfalse;
+    public:
+    CondInst(Operand,BasicBlock*,BasicBlock*);
+};
 /// @brief BinaryInst use A B,def C
 /// @param A operand
 /// @param op define inside class
@@ -87,14 +100,16 @@ class Variable:public Value
 class BasicBlock:public Value
 {
     List<User> insts;
+    Function& master;
     public:
-    BasicBlock();
+    BasicBlock(Function& __master);
     void push_front(User* ptr);
     void push_back(User* ptr);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
     void GenerateStoreInst(Operand,Variable*);
+    BasicBlock* GenerateNewBlock();
 };
 /// @brief 以function为最大单元生成CFG
 //其实function本质是就是CFG了
@@ -111,6 +126,7 @@ class Function:public Value
     public:
     Function(InnerDataType _tp,std::string _id);
     BasicBlock* front_block();
+    void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
 };

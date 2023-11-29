@@ -23,6 +23,17 @@ SITFP::SITFP(Operand __src):src(__src){
     if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
     def=new Value(IR_Value_Float);
 }
+
+UnCondInst::UnCondInst(BasicBlock* __des):des(__des){
+    add_use(__des);
+}
+
+CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse):condition(__cond),istrue(__istrue),isfalse(__isfalse){
+    if(std::holds_alternative<Value*>(condition))add_use(std::get<Value*>(condition));
+    add_use(istrue);
+    add_use(isfalse);
+}
+
 BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):A(_A),op(__op),B(_B){
     if(std::holds_alternative<Value*>(A))add_use(std::get<Value*>(A));
     if(std::holds_alternative<Value*>(B))add_use(std::get<Value*>(B));
@@ -33,7 +44,7 @@ Variable::Variable(InnerDataType tp,std::string _id):Value(tp),name(_id){}
 std::string Variable::get_name(){
     return name;
 }
-BasicBlock::BasicBlock():Value(IR_Value_VOID){};
+BasicBlock::BasicBlock(Function& __master):Value(IR_Value_VOID),master(__master){};
 void BasicBlock::push_front(User* ptr){
     insts.push_front(ptr);
 }
@@ -78,12 +89,17 @@ void BasicBlock::GenerateStoreInst(Operand src,Variable* des){
     auto storeinst=new StoreInst(src,des);
     this->push_back(storeinst);
 }
+BasicBlock* BasicBlock::GenerateNewBlock(){
+    BasicBlock* tmp=new BasicBlock(master);
+    master.add_block(tmp);
+    return tmp;
+}
 void Function::InsertAlloca(AllocaInst* ptr){
     bbs.front()->push_back(ptr);
 }
 Function::Function(InnerDataType _tp,std::string _id):Value(_tp),name(_id){
     //至少有一个bbs
-    bbs.push_back(BasicBlockPtr(new BasicBlock()));
+    bbs.push_back(BasicBlockPtr(new BasicBlock(*this)));
 }
 BasicBlock* Function::front_block(){
     return bbs.front().get();
@@ -95,6 +111,9 @@ void Function::push_alloca(Variable* ptr){
 void Function::push_param(Variable* var){
     params.push_back(ParamPtr(var));
     Singleton<Module>().Register(var->get_name(),var);
+}
+void Function::add_block(BasicBlock* __block){
+    bbs.push_back(BasicBlockPtr(__block));
 }
 Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
     ls.push_back(Function(_tp,_id));

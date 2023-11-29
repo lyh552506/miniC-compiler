@@ -41,6 +41,7 @@ class Value
     Value()=delete;
     Value(InnerDataType _tp);
     void add_user(Use* __data);
+    virtual void print();
 };
 class User:public Value
 {

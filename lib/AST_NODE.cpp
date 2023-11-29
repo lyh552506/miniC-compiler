@@ -330,9 +330,12 @@ void AssignStmt::GetInst(BasicBlock* block){
     Operand tmp=exp->GetOperand(block);
     // block->GenerateStoreInst(block,);
     auto valueptr=Singleton<Module>().GetValueByName(lv->GetName());
-    // if(auto variable=dynamic_cast<Variable*>(valueptr)){
-
-    // }
+    
+    /// @warning design of StoreInst is not mature enough for ptr, be careful
+    if(auto variable=dynamic_cast<Variable*>(valueptr))
+        block->GenerateStoreInst(tmp,variable);
+    else
+        assert(0);
 }
 void AssignStmt::print(int x){
     AST_NODE::print(x);
@@ -344,7 +347,7 @@ void AssignStmt::print(int x){
 
 ExpStmt::ExpStmt(AddExp* ptr):exp(ptr){}
 void ExpStmt::GetInst(BasicBlock* block){
-    assert(0);
+    Operand tmp=exp->GetOperand(block);
 }
 void ExpStmt::print(int x){
     if(exp==nullptr)AST_NODE::print(x);
@@ -353,7 +356,13 @@ void ExpStmt::print(int x){
 
 WhileStmt::WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
 void WhileStmt::GetInst(BasicBlock* block){
-    assert(0);
+    auto condition_part=block->GenerateNewBlock();
+    auto inner_part=block->GenerateNewBlock();
+    
+    ///@note condition_part is a real part
+    Operand condi_judge=condition->GetOperand(condition_part);
+    // block->GenerateCondInst(condi_judge,is_true,is_false);
+
 }
 void WhileStmt::print(int x){
     AST_NODE::print(x);
