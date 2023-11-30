@@ -1,6 +1,18 @@
 #pragma once
 #include "SymbolTable.hpp"
 #include "Singleton.hpp"
+// #include "BaseCFG.hpp"
+/// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
+class BasicBlock;
+class Function;
+class Variable:public Value
+{
+    std::string name;
+    public:
+    Variable(std::string _id);
+    Variable(InnerDataType tp,std::string _id);
+    std::string get_name();
+};
 /// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
 class InstWithDef:public User
 {
@@ -105,15 +117,6 @@ class BinaryInst:public InstWithDef
     Operand A,B;
     public:
     BinaryInst(Operand _A,Operation __op,Operand _B);
-};
-/// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
-class Variable:public Value
-{
-    std::string name;
-    public:
-    Variable(std::string _id);
-    Variable(InnerDataType tp,std::string _id);
-    std::string get_name();
 };
 class BasicBlock:public Value
 {

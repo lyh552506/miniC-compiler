@@ -117,6 +117,7 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
         assert(civ==nullptr);
         auto tmp=new Variable(ID);
         state.current_building->GenerateAlloca(tmp);
+        return state.current_building;
     }
 }
 
@@ -343,6 +344,9 @@ LVal::LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
 Operand LVal::GetOperand(BasicBlock* block){
     assert(0);
 }
+
+std::string LVal::GetName(){return ID;}
+
 void LVal::print(int x){
     AST_NODE::print(x);
     if(array_descripters!=nullptr)std::cout<<":with array descripters";
@@ -413,6 +417,7 @@ BasicBlock* IfStmt::GetInst(GetInstState state){
     isfalse=f->GetInst(f_state);
     if(!istrue->EndWithBranch())istrue->GenerateUnCondInst(nxt_building);
     if(!isfalse->EndWithBranch())isfalse->GenerateUnCondInst(nxt_building);
+    return nxt_building;
 }
 
 void IfStmt::print(int x){
