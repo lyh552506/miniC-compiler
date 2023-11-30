@@ -1,6 +1,7 @@
 #include "CFG.hpp"
 #include <string>
 #include <memory>
+#include <iostream>
 Value* InstWithDef::GetDef(){
     return def;
 }
@@ -33,6 +34,22 @@ CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse):co
     add_use(istrue);
     add_use(isfalse);
 }
+
+CallInst::CallInst(Function* _func,std::vector<Operand> _args):call_handle(_func),args(_args){}
+
+bool CallInst::HasDef(){
+    if(call_handle->GetType()!=IR_Value_VOID)return true;
+    else return false;
+}
+
+Value* CallInst::GetDef(){
+    assert(HasDef());
+    return def;
+}
+
+RetInst::RetInst():ret_val(nullptr){}
+
+RetInst::RetInst(Operand op):ret_val(op){}
 
 BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):A(_A),op(__op),B(_B){
     if(std::holds_alternative<Value*>(A))add_use(std::get<Value*>(A));
@@ -103,6 +120,44 @@ Function::Function(InnerDataType _tp,std::string _id):Value(_tp),name(_id){
 }
 BasicBlock* Function::front_block(){
     return bbs.front().get();
+}
+bool BasicBlock::EndWithBranch(){
+    if(auto data=dynamic_cast<UnCondInst*>(insts.back().get()))return 1;
+    else if(auto data=dynamic_cast<CondInst*>(insts.back().get()))return 1;
+    else if(auto data=dynamic_cast<RetInst*>(insts.back().get()))return 1;
+    else return 0;
+}
+void BasicBlock::GenerateCondInst(Operand condi,BasicBlock* is_true,BasicBlock* is_false){
+    auto inst=new CondInst(condi,is_true,is_false);
+    insts.push_back(inst);
+}
+void BasicBlock::GenerateUnCondInst(BasicBlock* des){
+    auto inst=new UnCondInst(des);
+    insts.push_back(inst);
+}
+void BasicBlock::GenerateRetInst(Operand ret_val){
+    if(master.GetType()!=ret_val.GetType()){
+        if(ret_val.GetType()==IR_Value_INT)
+            ret_val=GenerateSITFP(ret_val);
+        else
+            ret_val=GenerateFPTSI(ret_val);
+    }
+    auto inst=new RetInst(ret_val);
+    insts.push_back(inst);
+}
+void BasicBlock::GenerateRetInst(){
+    auto inst=new RetInst();
+    insts.push_back(inst);
+}
+void BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
+    if(auto func=dynamic_cast<Function*>(Singleton<Module>().GetValueByName(id))){
+        auto inst=new CallInst(func,args);
+        insts.push_back(inst);
+    }
+    else{
+        std::cerr<<"No Such Function!\n";
+        assert(0);
+    }
 }
 void Function::push_alloca(Variable* ptr){
     alloca_variables.push_back(VarPtr(ptr));

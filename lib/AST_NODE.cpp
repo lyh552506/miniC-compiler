@@ -104,12 +104,12 @@ void BaseDef::print(int x){
 }
 
 VarDef::VarDef(std::string _id,Exps* _ad,InitVal* _iv):BaseDef(_id,_ad,_iv){}
-BasicBlock* VarDef::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+BasicBlock* VarDef::GetInst(GetInstState state){
     assert(0);
 }
 
 ConstDef::ConstDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):BaseDef(_id,_ad,_iv){}
-BasicBlock* ConstDef::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+BasicBlock* ConstDef::GetInst(GetInstState state){
     assert(0);
 }
 
@@ -146,13 +146,13 @@ void ConstDefs::codegen(){
 void ConstDefs::print(int x){
     for(auto &i:ls)i->print(x);
 }
-BasicBlock* ConstDefs::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+BasicBlock* ConstDefs::GetInst(GetInstState state){
     assert(0);
 }
 
 ConstDecl::ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
 }
-BasicBlock* ConstDecl::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+BasicBlock* ConstDecl::GetInst(GetInstState state){
     assert(0);
 }
 void ConstDecl::codegen(){
@@ -191,12 +191,12 @@ void VarDefs::codegen(){
 void VarDefs::print(int x){
     for(auto &i:ls)i->print(x);
 }
-BasicBlock* VarDefs::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+BasicBlock* VarDefs::GetInst(GetInstState state){
     assert(0);
 }
 
 VarDecl::VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
-BasicBlock* VarDecl::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+BasicBlock* VarDecl::GetInst(GetInstState state){
     assert(0);
 }
 void VarDecl::codegen(){
@@ -267,9 +267,16 @@ BlockItems::BlockItems(Stmt* ptr){
 void BlockItems::push_back(Stmt* ptr){
     ls.push_back(ptr);
 }
-BasicBlock* BlockItems::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
-    // for(auto &i:ls)
-        // block=i->GetInst(block,exit);
+BasicBlock* BlockItems::GetInst(GetInstState state){
+    for(auto &i:ls)
+    {
+        state.current_building=i->GetInst(state);
+        ///@warning 已经是一个basicblock了，后面的肯定访问不到
+        if(state.current_building->EndWithBranch()){
+            return state.current_building;
+        }
+    }
+    return state.current_building;
 }
 void BlockItems::print(int x){
     AST_NODE::print(x);
@@ -278,8 +285,8 @@ void BlockItems::print(int x){
 }
 
 Block::Block(BlockItems* ptr):items(ptr){}
-BasicBlock* Block::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
-    // items->GetInst(tmp);
+BasicBlock* Block::GetInst(GetInstState state){
+    return items->GetInst(state);
 }
 void Block::print(int x){
     items->print(x);
@@ -326,16 +333,17 @@ void LVal::print(int x){
     if(array_descripters!=nullptr)array_descripters->print(x+1);
 }
 AssignStmt::AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
-BasicBlock* AssignStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
-    Operand tmp=exp->GetOperand(block);
+BasicBlock* AssignStmt::GetInst(GetInstState state){
+    Operand tmp=exp->GetOperand(state.current_building);
     // block->GenerateStoreInst(block,);
     auto valueptr=Singleton<Module>().GetValueByName(lv->GetName());
     
     /// @warning design of StoreInst is not mature enough for ptr, be careful
     if(auto variable=dynamic_cast<Variable*>(valueptr))
-        block->GenerateStoreInst(tmp,variable);
+        state.current_building->GenerateStoreInst(tmp,variable);
     else
         assert(0);
+    return state.current_building;
 }
 void AssignStmt::print(int x){
     AST_NODE::print(x);
@@ -346,8 +354,9 @@ void AssignStmt::print(int x){
 }
 
 ExpStmt::ExpStmt(AddExp* ptr):exp(ptr){}
-BasicBlock* ExpStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
-    Operand tmp=exp->GetOperand(block);
+BasicBlock* ExpStmt::GetInst(GetInstState state){
+    Operand tmp=exp->GetOperand(state.current_building);
+    return state.current_building;
 }
 void ExpStmt::print(int x){
     if(exp==nullptr)AST_NODE::print(x);
@@ -355,13 +364,15 @@ void ExpStmt::print(int x){
 }
 
 WhileStmt::WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
-BasicBlock* WhileStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
-    auto condition_part=block->GenerateNewBlock();
-    auto inner_part=block->GenerateNewBlock();
-    
-    ///@note condition_part is a real part
+BasicBlock* WhileStmt::GetInst(GetInstState state){
+    auto condition_part=state.current_building->GenerateNewBlock();
+    auto inner_loop=state.current_building->GenerateNewBlock();
+    auto nxt_building=state.current_building->GenerateNewBlock();
+
     Operand condi_judge=condition->GetOperand(condition_part);
-    // block->GenerateCondInst(condi_judge,is_true,is_false);
+    condition_part->GenerateCondInst(condi_judge,inner_loop,nxt_building);
+    auto loop_state=state;loop_state.current_building=inner_loop;
+    inner_loop=stmt->GetInst(loop_state);
 
 }
 void WhileStmt::print(int x){
@@ -373,7 +384,7 @@ void WhileStmt::print(int x){
 }
 
 IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
-BasicBlock* IfStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+BasicBlock* IfStmt::GetInst(GetInstState state){
     assert(0);
 }
 void IfStmt::print(int x){
@@ -383,14 +394,14 @@ void IfStmt::print(int x){
     t->print(x+1);
     if(f!=nullptr)f->print(x+1);
 }
-BasicBlock* BreakStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+BasicBlock* BreakStmt::GetInst(GetInstState state){
     assert(0);
 }
 void BreakStmt::print(int x){
     AST_NODE::print(x);std::cout<<'\n';
 }
 
-BasicBlock* ContinueStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+BasicBlock* ContinueStmt::GetInst(GetInstState state){
     assert(0);
 }
 void ContinueStmt::print(int x){
@@ -398,7 +409,7 @@ void ContinueStmt::print(int x){
 }
 
 ReturnStmt::ReturnStmt(AddExp* ptr):return_val(ptr){}
-BasicBlock* ReturnStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+BasicBlock* ReturnStmt::GetInst(GetInstState state){
     assert(0);
 }
 void ReturnStmt::print(int x){

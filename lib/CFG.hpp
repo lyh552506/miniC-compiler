@@ -68,6 +68,24 @@ class CondInst:public User
     public:
     CondInst(Operand,BasicBlock*,BasicBlock*);
 };
+/// @brief Maybe don't has Def if it calls void function
+class CallInst:public InstWithDef
+{
+    Function* call_handle;
+    std::vector<Operand> args;
+    public:
+    CallInst(Function*,std::vector<Operand>);
+    bool HasDef();
+    Value* GetDef()final;
+};
+/// @brief Ret, maybe has return value
+class RetInst:public User
+{
+    Operand ret_val;
+    public:
+    RetInst();
+    RetInst(Operand);
+};
 /// @brief BinaryInst use A B,def C
 /// @param A operand
 /// @param op define inside class
@@ -108,8 +126,14 @@ class BasicBlock:public Value
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
+    void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
+    void GenerateUnCondInst(BasicBlock*);
+    void GenerateRetInst(Operand);
+    void GenerateRetInst();
+    void GenerateCallInst(std::string,std::vector<Operand> args);
     void GenerateStoreInst(Operand,Variable*);
     BasicBlock* GenerateNewBlock();
+    bool EndWithBranch();
 };
 /// @brief 以function为最大单元生成CFG
 //其实function本质是就是CFG了

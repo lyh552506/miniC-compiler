@@ -42,6 +42,13 @@ class FunctionCall;
 template<typename T>class ConstValue;
 class BaseDef;
 
+struct GetInstState
+{
+    BasicBlock* current_building;
+    BasicBlock* break_block;
+    BasicBlock* continue_block;
+};
+
 /// @brief 最基础的AST_NODE，所有基础特性都应该放里面
 class AST_NODE 
 {
@@ -59,7 +66,7 @@ class Stmt:public AST_NODE
 {
     public:
     /// @return 如果这个GetInst已经用到了下一个BasicBlock，则让GetInst自己创建，让后通过返回值修改 block=xx->GetInst(block,exit);
-    virtual BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*)=0;
+    virtual BasicBlock* GetInst(GetInstState)=0;
 };
 /// @brief 由某种表达式和运算符构建起来的链表
 template<typename T>
@@ -191,13 +198,13 @@ class VarDef:public BaseDef
 {
     public:
     VarDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*)final;
+    BasicBlock* GetInst(GetInstState)final;
 };
 class ConstDef:public BaseDef
 {
     public:
     ConstDef(std::string,Exps*,InitVal*);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*)final;
+    BasicBlock* GetInst(GetInstState)final;
 };
 
 /// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*
@@ -222,7 +229,7 @@ class ConstDefs:public Stmt
     void push_back(ConstDef* __data);
     void codegen();
     void print(int x);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*)final;
+    BasicBlock* GetInst(GetInstState)final;
 };
 
 class ConstDecl:public Stmt
@@ -232,7 +239,7 @@ class ConstDecl:public Stmt
     std::unique_ptr<ConstDefs> cdfs;
     public:
     ConstDecl(AST_Type tp,ConstDefs* content);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*)final;
+    BasicBlock* GetInst(GetInstState)final;
     void codegen();
     void print(int x);
 };
@@ -245,7 +252,7 @@ class VarDefs:public Stmt
     void push_back(VarDef* _data);
     void codegen();
     void print(int x);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
 };
 
 class VarDecl:public Stmt
@@ -255,7 +262,7 @@ class VarDecl:public Stmt
     std::unique_ptr<VarDefs> vdfs;
     public:
     VarDecl(AST_Type tp,VarDefs* ptr);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
     void codegen();
     void print(int x);
 };
@@ -289,7 +296,7 @@ class BlockItems:public Stmt
     public:
     BlockItems(Stmt* ptr);
     void push_back(Stmt* ptr);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -299,7 +306,7 @@ class Block:public Stmt
     std::unique_ptr<BlockItems> items;
     public:
     Block(BlockItems* ptr);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -334,7 +341,7 @@ class AssignStmt:public Stmt
     std::unique_ptr<AddExp> exp;
     public:
     AssignStmt(LVal* p1,AddExp* p2);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -344,7 +351,7 @@ class ExpStmt:public Stmt
     std::unique_ptr<AddExp> exp;
     public:
     ExpStmt(AddExp* ptr);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -355,7 +362,7 @@ class WhileStmt:public Stmt
     std::unique_ptr<Stmt> stmt;
     public:
     WhileStmt(LOrExp* p1,Stmt* p2);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -366,20 +373,20 @@ class IfStmt:public Stmt
     std::unique_ptr<Stmt> t,f;
     public:
     IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2=nullptr);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 }; 
 
 /// @brief 这个很奇怪，因为break和continue本身就代表了一种信息
 class BreakStmt:public Stmt
 {
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
 class ContinueStmt:public Stmt
 {
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -388,7 +395,7 @@ class ReturnStmt:public Stmt
     std::unique_ptr<AddExp> return_val;
     public:
     ReturnStmt(AddExp* ptr=nullptr);
-    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
