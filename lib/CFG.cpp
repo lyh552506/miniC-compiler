@@ -159,6 +159,9 @@ void BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
         assert(0);
     }
 }
+void BasicBlock::GenerateAlloca(Variable* var){
+    master.push_alloca(var);
+}
 void Function::push_alloca(Variable* ptr){
     alloca_variables.push_back(VarPtr(ptr));
     Singleton<Module>().Register(ptr->get_name(),ptr);

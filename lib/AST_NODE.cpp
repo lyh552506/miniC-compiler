@@ -104,14 +104,23 @@ void BaseDef::print(int x){
 }
 
 VarDef::VarDef(std::string _id,Exps* _ad,InitVal* _iv):BaseDef(_id,_ad,_iv){}
-BasicBlock* VarDef::GetInst(GetInstState state){
-    assert(0);
+
+BasicBlock* BaseDef::GetInst(GetInstState state){
+    if(array_descripters!=nullptr)
+    {
+        std::cerr<<"Array Not Implenmented!\n";
+        assert(0);
+    }
+    else
+    {
+        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
+        assert(civ==nullptr);
+        auto tmp=new Variable(ID);
+        state.current_building->GenerateAlloca(tmp);
+    }
 }
 
 ConstDef::ConstDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):BaseDef(_id,_ad,_iv){}
-BasicBlock* ConstDef::GetInst(GetInstState state){
-    assert(0);
-}
 
 CompUnit::CompUnit(AST_NODE* __data){
     push_back(__data);
@@ -147,13 +156,15 @@ void ConstDefs::print(int x){
     for(auto &i:ls)i->print(x);
 }
 BasicBlock* ConstDefs::GetInst(GetInstState state){
-    assert(0);
+    for(auto&i:ls)
+        state.current_building=i->GetInst(state);
+    return state.current_building;
 }
 
 ConstDecl::ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
 }
 BasicBlock* ConstDecl::GetInst(GetInstState state){
-    assert(0);
+    return cdfs->GetInst(state);
 }
 void ConstDecl::codegen(){
     /// @warning copy from VarDecl
@@ -192,12 +203,14 @@ void VarDefs::print(int x){
     for(auto &i:ls)i->print(x);
 }
 BasicBlock* VarDefs::GetInst(GetInstState state){
-    assert(0);
+    for(auto&i:ls)
+        state.current_building=i->GetInst(state);
+    return state.current_building;
 }
 
 VarDecl::VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
 BasicBlock* VarDecl::GetInst(GetInstState state){
-    assert(0);
+    return vdfs->GetInst(state);
 }
 void VarDecl::codegen(){
     switch (type)
@@ -286,7 +299,10 @@ void BlockItems::print(int x){
 
 Block::Block(BlockItems* ptr):items(ptr){}
 BasicBlock* Block::GetInst(GetInstState state){
-    return items->GetInst(state);
+    Singleton<Module>().layer_increase();
+    auto tmp=items->GetInst(state);
+    Singleton<Module>().layer_decrease();
+    return tmp;
 }
 void Block::print(int x){
     items->print(x);

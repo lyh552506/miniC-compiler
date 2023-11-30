@@ -184,12 +184,13 @@ class InitVal:public AST_NODE
 
 class BaseDef:public Stmt
 {
-    private:
+    protected:
     std::string ID;
     std::unique_ptr<Exps> array_descripters; 
     std::unique_ptr<InitVal> civ;
     public:
     BaseDef(std::string _id,Exps* _ad,InitVal* _iv);
+    BasicBlock* GetInst(GetInstState)final;
     void codegen();
     void print(int x);
 };
@@ -198,13 +199,11 @@ class VarDef:public BaseDef
 {
     public:
     VarDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr);
-    BasicBlock* GetInst(GetInstState)final;
 };
 class ConstDef:public BaseDef
 {
     public:
     ConstDef(std::string,Exps*,InitVal*);
-    BasicBlock* GetInst(GetInstState)final;
 };
 
 /// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*

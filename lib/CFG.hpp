@@ -132,6 +132,7 @@ class BasicBlock:public Value
     void GenerateRetInst();
     void GenerateCallInst(std::string,std::vector<Operand> args);
     void GenerateStoreInst(Operand,Variable*);
+    void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
     bool EndWithBranch();
 };
