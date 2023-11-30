@@ -104,12 +104,12 @@ void BaseDef::print(int x){
 }
 
 VarDef::VarDef(std::string _id,Exps* _ad,InitVal* _iv):BaseDef(_id,_ad,_iv){}
-void VarDef::GetInst(BasicBlock* ptr){
+BasicBlock* VarDef::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     assert(0);
 }
 
 ConstDef::ConstDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):BaseDef(_id,_ad,_iv){}
-void ConstDef::GetInst(BasicBlock* ptr){
+BasicBlock* ConstDef::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     assert(0);
 }
 
@@ -146,13 +146,13 @@ void ConstDefs::codegen(){
 void ConstDefs::print(int x){
     for(auto &i:ls)i->print(x);
 }
-void ConstDefs::GetInst(BasicBlock* block){
+BasicBlock* ConstDefs::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     assert(0);
 }
 
 ConstDecl::ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
 }
-void ConstDecl::GetInst(BasicBlock* block){
+BasicBlock* ConstDecl::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     assert(0);
 }
 void ConstDecl::codegen(){
@@ -191,12 +191,12 @@ void VarDefs::codegen(){
 void VarDefs::print(int x){
     for(auto &i:ls)i->print(x);
 }
-void VarDefs::GetInst(BasicBlock* block){
+BasicBlock* VarDefs::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     assert(0);
 }
 
 VarDecl::VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
-void VarDecl::GetInst(BasicBlock* block){
+BasicBlock* VarDecl::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     assert(0);
 }
 void VarDecl::codegen(){
@@ -267,9 +267,9 @@ BlockItems::BlockItems(Stmt* ptr){
 void BlockItems::push_back(Stmt* ptr){
     ls.push_back(ptr);
 }
-void BlockItems::GetInst(BasicBlock* block){
-    for(auto &i:ls)
-        i->GetInst(block);
+BasicBlock* BlockItems::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+    // for(auto &i:ls)
+        // block=i->GetInst(block,exit);
 }
 void BlockItems::print(int x){
     AST_NODE::print(x);
@@ -278,8 +278,8 @@ void BlockItems::print(int x){
 }
 
 Block::Block(BlockItems* ptr):items(ptr){}
-void Block::GetInst(BasicBlock* tmp){
-    items->GetInst(tmp);
+BasicBlock* Block::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
+    // items->GetInst(tmp);
 }
 void Block::print(int x){
     items->print(x);
@@ -305,7 +305,7 @@ void FuncDef::codegen(){
     Singleton<Module>().layer_increase();
     if(params!=nullptr)params->GetVariable(f);
     assert(function_body!=nullptr);
-    function_body->GetInst(f.front_block());
+    // function_body->GetInst(f.front_block());
     Singleton<Module>().layer_decrease();
 }
 void FuncDef::print(int x){
@@ -326,7 +326,7 @@ void LVal::print(int x){
     if(array_descripters!=nullptr)array_descripters->print(x+1);
 }
 AssignStmt::AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
-void AssignStmt::GetInst(BasicBlock* block){
+BasicBlock* AssignStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     Operand tmp=exp->GetOperand(block);
     // block->GenerateStoreInst(block,);
     auto valueptr=Singleton<Module>().GetValueByName(lv->GetName());
@@ -346,7 +346,7 @@ void AssignStmt::print(int x){
 }
 
 ExpStmt::ExpStmt(AddExp* ptr):exp(ptr){}
-void ExpStmt::GetInst(BasicBlock* block){
+BasicBlock* ExpStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     Operand tmp=exp->GetOperand(block);
 }
 void ExpStmt::print(int x){
@@ -355,7 +355,7 @@ void ExpStmt::print(int x){
 }
 
 WhileStmt::WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
-void WhileStmt::GetInst(BasicBlock* block){
+BasicBlock* WhileStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     auto condition_part=block->GenerateNewBlock();
     auto inner_part=block->GenerateNewBlock();
     
@@ -373,7 +373,7 @@ void WhileStmt::print(int x){
 }
 
 IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
-void IfStmt::GetInst(BasicBlock* block){
+BasicBlock* IfStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     assert(0);
 }
 void IfStmt::print(int x){
@@ -383,14 +383,14 @@ void IfStmt::print(int x){
     t->print(x+1);
     if(f!=nullptr)f->print(x+1);
 }
-void BreakStmt::GetInst(BasicBlock* block){
+BasicBlock* BreakStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     assert(0);
 }
 void BreakStmt::print(int x){
     AST_NODE::print(x);std::cout<<'\n';
 }
 
-void ContinueStmt::GetInst(BasicBlock* block){
+BasicBlock* ContinueStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     assert(0);
 }
 void ContinueStmt::print(int x){
@@ -398,7 +398,7 @@ void ContinueStmt::print(int x){
 }
 
 ReturnStmt::ReturnStmt(AddExp* ptr):return_val(ptr){}
-void ReturnStmt::GetInst(BasicBlock* block){
+BasicBlock* ReturnStmt::GetInst(BasicBlock* block,BasicBlock* break_block,BasicBlock* continue_block){
     assert(0);
 }
 void ReturnStmt::print(int x){

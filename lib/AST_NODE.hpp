@@ -58,7 +58,8 @@ class HasOperand:public AST_NODE
 class Stmt:public AST_NODE
 {
     public:
-    virtual void GetInst(BasicBlock* block)=0;
+    /// @return 如果这个GetInst已经用到了下一个BasicBlock，则让GetInst自己创建，让后通过返回值修改 block=xx->GetInst(block,exit);
+    virtual BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*)=0;
 };
 /// @brief 由某种表达式和运算符构建起来的链表
 template<typename T>
@@ -190,13 +191,13 @@ class VarDef:public BaseDef
 {
     public:
     VarDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr);
-    void GetInst(BasicBlock* ptr);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*)final;
 };
 class ConstDef:public BaseDef
 {
     public:
     ConstDef(std::string,Exps*,InitVal*);
-    void GetInst(BasicBlock*);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*)final;
 };
 
 /// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*
@@ -221,7 +222,7 @@ class ConstDefs:public Stmt
     void push_back(ConstDef* __data);
     void codegen();
     void print(int x);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*)final;
 };
 
 class ConstDecl:public Stmt
@@ -231,7 +232,7 @@ class ConstDecl:public Stmt
     std::unique_ptr<ConstDefs> cdfs;
     public:
     ConstDecl(AST_Type tp,ConstDefs* content);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*)final;
     void codegen();
     void print(int x);
 };
@@ -244,7 +245,7 @@ class VarDefs:public Stmt
     void push_back(VarDef* _data);
     void codegen();
     void print(int x);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
 };
 
 class VarDecl:public Stmt
@@ -254,7 +255,7 @@ class VarDecl:public Stmt
     std::unique_ptr<VarDefs> vdfs;
     public:
     VarDecl(AST_Type tp,VarDefs* ptr);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
     void codegen();
     void print(int x);
 };
@@ -288,7 +289,7 @@ class BlockItems:public Stmt
     public:
     BlockItems(Stmt* ptr);
     void push_back(Stmt* ptr);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
     void print(int x);
 };
 
@@ -298,7 +299,7 @@ class Block:public Stmt
     std::unique_ptr<BlockItems> items;
     public:
     Block(BlockItems* ptr);
-    void GetInst(BasicBlock* tmp);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
     void print(int x);
 };
 
@@ -333,7 +334,7 @@ class AssignStmt:public Stmt
     std::unique_ptr<AddExp> exp;
     public:
     AssignStmt(LVal* p1,AddExp* p2);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
     void print(int x);
 };
 
@@ -343,7 +344,7 @@ class ExpStmt:public Stmt
     std::unique_ptr<AddExp> exp;
     public:
     ExpStmt(AddExp* ptr);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
     void print(int x);
 };
 
@@ -354,7 +355,7 @@ class WhileStmt:public Stmt
     std::unique_ptr<Stmt> stmt;
     public:
     WhileStmt(LOrExp* p1,Stmt* p2);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
     void print(int x);
 };
 
@@ -365,20 +366,20 @@ class IfStmt:public Stmt
     std::unique_ptr<Stmt> t,f;
     public:
     IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2=nullptr);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
     void print(int x);
 }; 
 
 /// @brief 这个很奇怪，因为break和continue本身就代表了一种信息
 class BreakStmt:public Stmt
 {
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
     void print(int x);
 };
 
 class ContinueStmt:public Stmt
 {
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
     void print(int x);
 };
 
@@ -387,7 +388,7 @@ class ReturnStmt:public Stmt
     std::unique_ptr<AddExp> return_val;
     public:
     ReturnStmt(AddExp* ptr=nullptr);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(BasicBlock*,BasicBlock*,BasicBlock*);
     void print(int x);
 };
 
