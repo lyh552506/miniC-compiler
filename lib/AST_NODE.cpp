@@ -312,7 +312,8 @@ void FuncDef::codegen(){
     Singleton<Module>().layer_increase();
     if(params!=nullptr)params->GetVariable(f);
     assert(function_body!=nullptr);
-    // function_body->GetInst(f.front_block());
+    GetInstState state={f.front_block(),nullptr,nullptr};
+    function_body->GetInst(state);
     Singleton<Module>().layer_decrease();
 }
 void FuncDef::print(int x){
@@ -355,7 +356,7 @@ void AssignStmt::print(int x){
 
 ExpStmt::ExpStmt(AddExp* ptr):exp(ptr){}
 BasicBlock* ExpStmt::GetInst(GetInstState state){
-    Operand tmp=exp->GetOperand(state.current_building);
+    if(exp!=nullptr)Operand tmp=exp->GetOperand(state.current_building);
     return state.current_building;
 }
 void ExpStmt::print(int x){
@@ -371,9 +372,10 @@ BasicBlock* WhileStmt::GetInst(GetInstState state){
 
     Operand condi_judge=condition->GetOperand(condition_part);
     condition_part->GenerateCondInst(condi_judge,inner_loop,nxt_building);
-    auto loop_state=state;loop_state.current_building=inner_loop;
+    GetInstState loop_state={inner_loop,nxt_building,condition_part};
     inner_loop=stmt->GetInst(loop_state);
-
+    if(!inner_loop->EndWithBranch())inner_loop->GenerateUnCondInst(condition_part);
+    return nxt_building;
 }
 void WhileStmt::print(int x){
     AST_NODE::print(x);
@@ -385,8 +387,18 @@ void WhileStmt::print(int x){
 
 IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
 BasicBlock* IfStmt::GetInst(GetInstState state){
-    assert(0);
+    auto istrue=state.current_building->GenerateNewBlock();
+    auto isfalse=state.current_building->GenerateNewBlock();
+    auto nxt_building=state.current_building->GenerateNewBlock();
+
+    GetInstState t_state=state;t_state.current_building=istrue;
+    istrue=t->GetInst(t_state);
+    GetInstState f_state=state;f_state.current_building=isfalse;
+    isfalse=f->GetInst(f_state);
+    if(!istrue->EndWithBranch())istrue->GenerateUnCondInst(nxt_building);
+    if(!isfalse->EndWithBranch())isfalse->GenerateUnCondInst(nxt_building);
 }
+
 void IfStmt::print(int x){
     AST_NODE::print(x);
     std::cout<<'\n';
@@ -395,14 +407,16 @@ void IfStmt::print(int x){
     if(f!=nullptr)f->print(x+1);
 }
 BasicBlock* BreakStmt::GetInst(GetInstState state){
-    assert(0);
+    state.current_building->GenerateUnCondInst(state.break_block);
+    return state.current_building;
 }
 void BreakStmt::print(int x){
     AST_NODE::print(x);std::cout<<'\n';
 }
 
 BasicBlock* ContinueStmt::GetInst(GetInstState state){
-    assert(0);
+    state.current_building->GenerateUnCondInst(state.continue_block);
+    return state.current_building;
 }
 void ContinueStmt::print(int x){
     AST_NODE::print(x);std::cout<<'\n';
@@ -410,7 +424,12 @@ void ContinueStmt::print(int x){
 
 ReturnStmt::ReturnStmt(AddExp* ptr):return_val(ptr){}
 BasicBlock* ReturnStmt::GetInst(GetInstState state){
-    assert(0);
+    if(return_val!=nullptr){
+        auto ret_val=return_val->GetOperand(state.current_building);
+        state.current_building->GenerateRetInst(ret_val);
+    }
+    else state.current_building->GenerateRetInst();
+    return state.current_building;
 }
 void ReturnStmt::print(int x){
     AST_NODE::print(x);std::cout<<'\n';
