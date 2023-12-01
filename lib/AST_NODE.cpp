@@ -394,6 +394,8 @@ BasicBlock* WhileStmt::GetInst(GetInstState state){
     auto inner_loop=state.current_building->GenerateNewBlock();
     auto nxt_building=state.current_building->GenerateNewBlock();
 
+    state.current_building->GenerateUnCondInst(condition_part);
+
     Operand condi_judge=condition->GetOperand(condition_part);
     condition_part->GenerateCondInst(condi_judge,inner_loop,nxt_building);
     GetInstState loop_state={inner_loop,nxt_building,condition_part};
@@ -414,6 +416,9 @@ BasicBlock* IfStmt::GetInst(GetInstState state){
     auto istrue=state.current_building->GenerateNewBlock();
     auto isfalse=state.current_building->GenerateNewBlock();
     auto nxt_building=state.current_building->GenerateNewBlock();
+    
+    Operand condi=condition->GetOperand(state.current_building);
+    state.current_building->GenerateCondInst(condi,istrue,isfalse);
 
     GetInstState t_state=state;t_state.current_building=istrue;
     istrue=t->GetInst(t_state);
