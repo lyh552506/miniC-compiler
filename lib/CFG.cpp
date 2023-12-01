@@ -116,6 +116,18 @@ BasicBlock* BasicBlock::GenerateNewBlock(){
     master.add_block(tmp);
     return tmp;
 }
+void BasicBlock::print(){
+    std::cout<<"---BasicBlock---\n";
+    for(auto &i:insts)
+        i->print();
+    std::cout<<"---EndBasicBlock\n";
+}
+void Function::print(){
+    std::cout<<"---Function---:"<<name<<"\n";
+    for(auto &i:bbs)
+        i->print();
+    std::cout<<"---EndFunction---\n";
+}
 void Function::InsertAlloca(AllocaInst* ptr){
     bbs.front()->push_back(ptr);
 }
@@ -177,6 +189,14 @@ void Function::push_param(Variable* var){
 }
 void Function::add_block(BasicBlock* __block){
     bbs.push_back(BasicBlockPtr(__block));
+}
+// void Module::visit(std::function<void(Function*)> call_back){
+//     for(auto&i:ls)
+//         call_back(i.get());
+// }
+void Module::Test(){
+    for(auto&i:ls)
+        i->print();
 }
 Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
     ls.push_back(FunctionPtr(new Function(_tp,_id)));

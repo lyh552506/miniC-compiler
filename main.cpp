@@ -7,6 +7,7 @@ int main(int argc,char** argv)
     parse();
     std::cout<<Singleton<CompUnit*>()<<'\n';
     Singleton<CompUnit*>()->codegen();
+    Singleton<Module>().Test();
     std::cout<<"Program Terminated!\n";
     return 0;
 }

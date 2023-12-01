@@ -124,6 +124,7 @@ class BasicBlock:public Value
     Function& master;
     public:
     BasicBlock(Function& __master);
+    void print()final;
     void push_front(User* ptr);
     void push_back(User* ptr);
     Operand GenerateSITFP(Operand _A);
@@ -155,6 +156,7 @@ class Function:public Value
     public:
     Function(InnerDataType _tp,std::string _id);
     BasicBlock* front_block();
+    void print()final;
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
@@ -170,5 +172,5 @@ class Module:public SymbolTable
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
-    
+    void Test();
 };
