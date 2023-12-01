@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory.h>
 #include <vector>
+#include<algorithm>
 
 //SDOM(MIN_SDOM(x))即代表获取离x最近的sdom结点
 #define SDOM(x) node[x].sdom //获取x对应结点的sdom
@@ -23,18 +24,44 @@ public:
        int idom;
        std::forward_list<int> des; // 记录该结点的下一个结点
        std::forward_list<int> rev; // 记录该节点的上一个结点
-       
-       Node():dfnum{0}, father{0}, des{}, rev{},sdom{0},idom{0} 
+       std::forward_list<int> idom_child;//支配树上的孩子
+       Node():dfnum{0}, father{0}, des{}, rev{},sdom{0},idom{0},idom_child{} 
        {}
     }; 
+    class DF{
+    public:
+       std::forward_list<int> df;
+       DF()=default;
+    };
 private:
     std::vector<Node> node;
     std::vector<int> vertex;     // 记录dfs对应的结点
     std::vector<int> bucket[20]; // bucket[u]代表sdom为u的点集
     std::vector<DSU> dsu;        //辅助数据结构实现路径压缩
+    std::vector<DF> df;          //存储每个结点的必经结点边界
+
     int tot_node,count;          //count是当前的dfs序号
 
 public:
+    /// @brief 从CFG的根节点开始计算出每个节点的dominate frontier
+    /// @param x 
+    void computeDF(int x){
+      for(auto de:node[x].des){//找到结点x的所有后继结点，计算DF_local
+         if(node[de].idom!=x){ //de是x的一个后继并且x不是de的严格支配节点
+            df[x].df.push_front(de);
+         }
+      }
+      //计算DP_up
+      for(auto child:node[x].idom_child){
+        computeDF(child);
+        for(auto frontier:df[child].df){
+          if(node[frontier].idom!=x||x==frontier){
+            df[x].df.push_front(frontier);
+          }
+        }
+      }
+    }
+
     /// @brief 初始化边关系
     /// @param m 
     void Init(int m) {
@@ -115,8 +142,17 @@ public:
         }
       }
   }
-
-  dominance(int n, int m):node(n + 1), tot_node{n},vertex(n + 1), dsu(n + 1),count{1}
+   
+   /// @brief 建立支配树
+   void build_tree(){
+    for(int i=2;i<=tot_node;i++){
+      int idom=IDOM(i);
+      if(idom>0){
+        node[idom].idom_child.push_front(i);
+      }
+    }
+   }
+  dominance(int n, int m):node(n + 1), tot_node{n},vertex(n + 1), dsu(n + 1),count{1},df(n+1)
   {
     for (int i = 1; i <= n; i++) {
       dsu[i].ancestor = i;
