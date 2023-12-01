@@ -19,11 +19,6 @@ enum {
 /// @brief 节点类
 class _Node {
 public:
-  enum NodeType {
-    spillednode,
-    coalescednode,
-    colorednode,
-  };
   _Node():varName{},degree{0},alias{nullptr},AdjList{}
   {};
   // //移动构造
@@ -68,7 +63,6 @@ public:
   int degree{0};//当前结点度数
   _Node* alias;
   std::string varName;
-  //int color;
 };
 
 

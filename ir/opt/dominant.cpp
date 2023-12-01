@@ -1,5 +1,7 @@
 #include"dominant.hpp"
 
+
+/// @brief 预备phi函数关系
 void dom_begin(){
     int n,m;//CFG的结点数和边数
     dominance Dom{n,m};
@@ -9,3 +11,4 @@ void dom_begin(){
     Dom.build_tree(); //构建支配树
     Dom.computeDF(1);
 }
+

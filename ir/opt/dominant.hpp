@@ -1,4 +1,5 @@
 #include <forward_list>
+#include<list>
 #include <iostream>
 #include <memory.h>
 #include <vector>
@@ -9,8 +10,34 @@
 #define MIN_SDOM(x) dsu[x].min_sdom //获取结点最近的sdom的index
 #define IDOM(x) node[x].idom  //获取结点的idom
 
+//纯属yy
+class Function{
+public:
+  std::vector<BasicBlock> bbs;
+};
+
+class BasicBlock{
+public:
+   std::list<Instruction> Inst;
+};
+
+class Instruction{
+public:
+   std::vector<_Node> use;
+   std::vector<_Node> def;
+};
+
+struct _Node{
+  std::string name;
+  std::vector<int> block;
+};
+
+Function function;
+
+
 class dominance{
 public:
+    friend class phi_function;
     class DSU{//并查集实现路径压缩
     public:
        int ancestor;
@@ -40,7 +67,7 @@ private:
     std::vector<DSU> dsu;        //辅助数据结构实现路径压缩
     std::vector<DF> df;          //存储每个结点的必经结点边界
 
-    int tot_node,count;          //count是当前的dfs序号
+    int block_num,count;          //count是当前的dfs序号
 
 public:
     /// @brief 从CFG的根节点开始计算出每个节点的dominate frontier
@@ -111,7 +138,7 @@ public:
   /// @brief 支配节点查找
    void find_dom() {
     int n, fat;
-    for (int i = tot_node; i > 1; i--) { // 从dfs最大的结点开始
+    for (int i = block_num; i > 1; i--) { // 从dfs最大的结点开始
       int sdom_cadidate=999999;
       n = vertex[i]; //获取dfs序对应的结点号       
       fat = node[n].father;
@@ -134,7 +161,7 @@ public:
       bucket[fat].clear();
     }
       //按照标号从小到大再跑一次，得到所有点的idom
-      for(int i=2;i<=tot_node;i++){
+      for(int i=2;i<=block_num;i++){
         int N=vertex[i];
         SDOM(N)=vertex[SDOM(N)];//将sdom的内容更新为dfs序对应的结点号
         if(IDOM(N)!=SDOM(N)){
@@ -145,20 +172,40 @@ public:
    
    /// @brief 建立支配树
    void build_tree(){
-    for(int i=2;i<=tot_node;i++){
+    for(int i=2;i<=block_num;i++){
       int idom=IDOM(i);
       if(idom>0){
         node[idom].idom_child.push_front(i);
       }
     }
    }
-  dominance(int n, int m):node(n + 1), tot_node{n},vertex(n + 1), dsu(n + 1),count{1},df(n+1)
+  dominance(int n, int m):node(n + 1), block_num{n},vertex(n + 1), dsu(n + 1),count{1},df(n+1)
   {
     for (int i = 1; i <= n; i++) {
       dsu[i].ancestor = i;
       dsu[i].min_sdom = i;
     }
   }
+};
+
+class phi_function:public dominance{
+public:
+   std::vector<_Node> var;//记录每一个basicblock的定值的变量
+   std::vector<_Node> defsite;//记录每个node
+
+   phi_function(int n,int m):dominance(n,m)
+   {}
+
+   void place_phy(){
+    for(int node=1;node<=block_num;node++){
+      //TODO 获取到所有的定值
+    }
+    for(int node=1;node<=block_num;node++){
+      // for(auto& v:var){
+      //   v.block.push_back(node);
+      // }
+    }
+   }
 };
 
 
