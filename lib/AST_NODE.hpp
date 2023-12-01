@@ -54,6 +54,7 @@ class AST_NODE
 {
     /// @todo 可以加个enum type 表示这个是什么type，但是貌似 C++ 现在支持动态判定类型,指typeid
     public:
+    virtual ~AST_NODE()=default;
     virtual void codegen();
     virtual void print(int x);
 };

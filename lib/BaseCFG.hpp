@@ -37,9 +37,10 @@ class Value
     UserList userlist;
     InnerDataType tp;
     public:
-    InnerDataType GetType();
+    virtual ~Value()=default;
     Value()=delete;
     Value(InnerDataType _tp);
+    InnerDataType GetType();
     void add_user(Use* __data);
     virtual void print();
 };

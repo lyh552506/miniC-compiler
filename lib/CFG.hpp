@@ -170,4 +170,5 @@ class Module:public SymbolTable
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
+    
 };
