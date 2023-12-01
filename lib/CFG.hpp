@@ -162,7 +162,8 @@ class Function:public Value
 class Module:public SymbolTable
 {
     using GlobalVariblePtr=std::unique_ptr<Variable>;
-    std::vector<Function> ls;
+    using FunctionPtr=std::unique_ptr<Function>;
+    std::vector<FunctionPtr> ls;
     std::vector<GlobalVariblePtr> globalvaribleptr;
     public:
     Module()=default;

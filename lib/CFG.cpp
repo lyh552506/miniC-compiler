@@ -174,8 +174,8 @@ void Function::add_block(BasicBlock* __block){
     bbs.push_back(BasicBlockPtr(__block));
 }
 Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
-    ls.push_back(Function(_tp,_id));
-    return ls.back();
+    ls.push_back(FunctionPtr(new Function(_tp,_id)));
+    return *ls.back();
 }
 void Module::GenerateGlobalVariable(Variable* ptr){
     SymbolTable::Register(ptr->get_name(),ptr);
