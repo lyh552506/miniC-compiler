@@ -342,6 +342,10 @@ void FuncDef::print(int x){
 
 LVal::LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
 Operand LVal::GetOperand(BasicBlock* block){
+    assert(array_descripters==nullptr);
+    if(auto var=dynamic_cast<Variable*>(Singleton<Module>().GetValueByName(ID)))
+        return block->GenerateLoadInst(var); 
+    std::cerr<<"Not a LVal\n";
     assert(0);
 }
 

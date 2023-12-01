@@ -68,6 +68,11 @@ void BasicBlock::push_front(User* ptr){
 void BasicBlock::push_back(User* ptr){
     insts.push_back(ptr);
 }
+Operand BasicBlock::GenerateLoadInst(Variable* data){
+    auto tmp=new LoadInst(data);
+    insts.push_back(tmp);
+    return tmp->GetDef();
+}
 Operand BasicBlock::GenerateSITFP(Operand _A){
     auto tmp=new SITFP(_A);
     push_back(tmp);

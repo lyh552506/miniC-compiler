@@ -124,7 +124,34 @@ class BaseExp:public HasOperand
         }
         else{
             /// @note 其他都是二元操作符
-            assert(0);
+            auto i=ls.begin();
+            auto oper=(*i)->GetOperand(block);
+            for(auto &j:oplist){
+                i++;
+                auto another=(*i)->GetOperand(block);
+                BinaryInst::Operation opcode;
+                switch (j)
+                {
+                case AST_ADD:opcode=BinaryInst::Op_Add;break;
+                case AST_SUB:opcode=BinaryInst::Op_Sub;break;
+                case AST_DIV:opcode=BinaryInst::Op_Div;break;
+                case AST_MUL:opcode=BinaryInst::Op_Mul;break;
+                case AST_EQ:opcode=BinaryInst::Op_E;break;
+                case AST_AND:opcode=BinaryInst::Op_And;break;
+                case AST_GREAT:opcode=BinaryInst::Op_G;break;
+                case AST_LESS:opcode=BinaryInst::Op_L;break;
+                case AST_GREATEQ:opcode=BinaryInst::Op_GE;break;
+                case AST_LESSEQ:opcode=BinaryInst::Op_LE;break;
+                case AST_MODULO:opcode=BinaryInst::Op_Mod;break;
+                case AST_NOTEQ:opcode=BinaryInst::Op_NE;break;
+                case AST_OR:opcode=BinaryInst::Op_Or;break;
+                default:
+                    std::cerr<<"No such Opcode\n";
+                    assert(0);
+                }
+                oper=block->GenerateBinaryInst(oper,opcode,another);
+            }
+            return oper;
         }
     }
 };
@@ -415,6 +442,6 @@ class ConstValue:public HasOperand
     public:
     ConstValue(T _data):data(_data){}
     Operand GetOperand(BasicBlock* block){
-        assert(0);
+        return Operand(data);
     }
 };

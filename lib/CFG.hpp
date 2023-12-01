@@ -129,6 +129,7 @@ class BasicBlock:public Value
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
+    Operand GenerateLoadInst(Variable*);
     void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);
