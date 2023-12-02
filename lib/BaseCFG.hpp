@@ -55,7 +55,7 @@ class User:public Value
     public:
     User();
     User(InnerDataType tp);
-    void print()final;
+    void print();
 };
 class Operand:public std::variant<Value*,int,float>
 {

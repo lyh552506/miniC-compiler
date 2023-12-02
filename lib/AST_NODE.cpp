@@ -413,19 +413,24 @@ void WhileStmt::print(int x){
 
 IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
 BasicBlock* IfStmt::GetInst(GetInstState state){
-    auto istrue=state.current_building->GenerateNewBlock();
-    auto isfalse=state.current_building->GenerateNewBlock();
     auto nxt_building=state.current_building->GenerateNewBlock();
-    
     Operand condi=condition->GetOperand(state.current_building);
-    state.current_building->GenerateCondInst(condi,istrue,isfalse);
 
+    auto istrue=state.current_building->GenerateNewBlock();
     GetInstState t_state=state;t_state.current_building=istrue;
     istrue=t->GetInst(t_state);
-    GetInstState f_state=state;f_state.current_building=isfalse;
-    isfalse=f->GetInst(f_state);
     if(!istrue->EndWithBranch())istrue->GenerateUnCondInst(nxt_building);
-    if(!isfalse->EndWithBranch())isfalse->GenerateUnCondInst(nxt_building);
+    
+    if(f!=nullptr)
+    {
+        auto isfalse=state.current_building->GenerateNewBlock();
+        GetInstState f_state=state;f_state.current_building=isfalse;
+        isfalse=f->GetInst(f_state);
+        if(!isfalse->EndWithBranch())isfalse->GenerateUnCondInst(nxt_building);
+        state.current_building->GenerateCondInst(condi,istrue,isfalse);
+    }
+    else state.current_building->GenerateCondInst(condi,istrue,nxt_building);
+    
     return nxt_building;
 }
 
