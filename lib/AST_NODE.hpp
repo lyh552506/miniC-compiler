@@ -3,6 +3,9 @@
 #include "List.hpp"
 #include <list>
 #include <string>
+#include <cassert>
+#include "MagicEnum.hpp"
+#include "CFG.hpp"
 
 enum AST_Type
 {
@@ -10,12 +13,11 @@ enum AST_Type
 };
 
 class AST_NODE;
-class CompUnit;
-template<typename T>
+class CompUnit;//codegen, acquire what's in list has codegen
 class Grammar_Assistance;
-class ConstDecl;
-class ConstDefs;
-template <typename T>class InnerBaseExps;
+class ConstDecl;//codegen(CompUnit) GetInst
+class ConstDefs;//codegen(CompUnit) GetInst
+class InnerBaseExps;//
 class InitVal;
 class InitVals;
 class VarDecl;
@@ -36,355 +38,38 @@ class LVal;
 template<typename T>class BaseExp;
 class FunctionCall;
 template<typename T>class ConstValue;
-template<typename T>class BaseDef;
-using Owner=std::unique_ptr<AST_NODE>;
-using Exps=InnerBaseExps<void>;
-using CallParams=InnerBaseExps<int>;
-using PrimaryExp=Grammar_Assistance<int>;
-using UnaryExp=BaseExp<PrimaryExp>;
-using MulExp=BaseExp<UnaryExp>;
-using AddExp=BaseExp<MulExp>;
-using RelExp=BaseExp<AddExp>;
-using EqExp=BaseExp<RelExp>;
-using LAndExp=BaseExp<EqExp>;
-using LOrExp=BaseExp<LAndExp>;
-using Decl=Grammar_Assistance<char>;
-using BlockItem=Grammar_Assistance<void>; 
-using VarDef=BaseDef<int>;
-using ConstDef=BaseDef<void>;
-using Stmt=AST_NODE;
+class BaseDef;
+
+struct GetInstState
+{
+    BasicBlock* current_building;
+    BasicBlock* break_block;
+    BasicBlock* continue_block;
+};
 
 /// @brief 最基础的AST_NODE，所有基础特性都应该放里面
 class AST_NODE 
 {
     /// @todo 可以加个enum type 表示这个是什么type，但是貌似 C++ 现在支持动态判定类型,指typeid
     public:
-    virtual void codegen()=0;
+    virtual ~AST_NODE()=default;
+    virtual void codegen();
+    virtual void print(int x);
 };
-
-/// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*
-class CompUnit:public AST_NODE
+class HasOperand:public AST_NODE
 {
-    private:
-    List<AST_NODE> ls;
     public:
-    CompUnit(AST_NODE* __data){
-        push_back(__data);
-    }
-    void push_front(AST_NODE* __data){
-        ls.push_front(__data);
-    }
-    void push_back(AST_NODE* __data){
-        ls.push_back(__data);
-    }
-    void codegen() override {
-        /// @todo 实现codegen
-    }
+    virtual Operand GetOperand(BasicBlock* block)=0;
 };
-
-/// @brief 辅助语法单元，可能为几个中的一种,存一个AST_NODE*指针就好
-template<typename T>
-class Grammar_Assistance:public AST_NODE
+class Stmt:public AST_NODE
 {
-    private:
-    Owner ptr;
     public:
-    Grammar_Assistance(AST_NODE* _ptr){
-        ptr.reset(_ptr);   
-    }
-    void codegen() final {
-        /// @todo 实现codegen
-    }
+    /// @return 如果这个GetInst已经用到了下一个BasicBlock，则让GetInst自己创建，让后通过返回值修改 block=xx->GetInst(block,exit);
+    virtual BasicBlock* GetInst(GetInstState)=0;
 };
-
-class ConstDecl:public AST_NODE
-{
-    private:
-    /// @brief  for float,1 for int
-    AST_Type type;
-    std::unique_ptr<ConstDefs> cdfs;
-    public:
-    ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
-    }
-    void codegen() final {
-        /// @todo 实现codegen
-    }
-};
-
-class ConstDefs:public AST_NODE
-{
-    List<ConstDef> ls;
-    public:
-    ConstDefs(ConstDef* __data){
-        push_back(__data);
-    }
-    void push_back(ConstDef* __data){
-        ls.push_back(__data);
-    }
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-template<typename T>
-class InnerBaseExps:public AST_NODE
-{
-    List<AddExp> ls;
-    public:
-    InnerBaseExps(AddExp* _data){
-        push_front(_data);
-    }
-    void push_front(AddExp* _data){
-        ls.push_front(_data);
-    }
-    void push_back(AddExp* _data){
-        ls.push_back(_data);
-    }
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class InitVal:public AST_NODE
-{
-    private:
-    /// nullptr:{}
-    /// AddExp
-    /// ConstInitVals
-    Owner val;
-    public:
-    /// @brief InitVal:{}
-    InitVal()=default;
-    /// @brief InitVal:ConstExp
-    InitVal(AST_NODE* _data){
-        val.reset(_data);
-    }
-    void codegen() final {
-        /// @todo 实现codegen
-    }  
-};
-
-class InitVals:public AST_NODE
-{
-    List<InitVal> ls;
-    public:
-    InitVals(InitVal* _data){
-        ls.push_back(_data);
-    }
-    void push_back(InitVal* _data){
-        ls.push_back(_data);
-    }
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class VarDecl:public AST_NODE
-{
-    private:
-    AST_Type type;
-    std::unique_ptr<VarDefs> vdfs;
-    public:
-    VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class VarDefs:public AST_NODE
-{
-    List<VarDef> ls;
-    public:
-    VarDefs(VarDef* vdf){
-        push_back(vdf);
-    }
-    void push_back(VarDef* _data){
-        ls.push_back(_data);
-    }
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-template<typename T>
-class BaseDef:public AST_NODE
-{
-    private:
-    std::string ID;
-    std::unique_ptr<Exps> array_descripters; 
-    std::unique_ptr<InitVal> civ;
-    public:
-    BaseDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):ID(_id),array_descripters(_ad),civ(_iv){}
-    void codegen() final {
-        /// @todo 实现codegen
-    }
-};
-
-class FuncDef:public AST_NODE
-{
-    AST_Type tp;
-    std::string ID;
-    std::unique_ptr<FuncParams> params;
-    public:
-    FuncDef(AST_Type _tp,std::string _id,FuncParams* ptr=nullptr):tp(_tp),ID(_id),params(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class FuncParams:public AST_NODE
-{
-    List<FuncParam> ls;
-    public:
-    FuncParams(FuncParam* ptr){
-        ls.push_back(ptr);
-    }
-    void push_back(FuncParam* ptr){
-        ls.push_back(ptr);
-    }
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class FuncParam:public AST_NODE
-{
-    private:
-    AST_Type tp;
-    std::string ID;
-    bool emptySquare;
-    std::unique_ptr<Exps> array_subscripts;
-    public:
-    FuncParam(AST_Type _tp,std::string _id,bool is_empty=false,Exps* ptr=nullptr):tp(_tp),ID(_id),emptySquare(is_empty),array_subscripts(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class Block:public AST_NODE
-{
-    private:
-    std::unique_ptr<BlockItems> items;
-    public:
-    Block(BlockItems* ptr):items(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class BlockItems:public AST_NODE
-{
-    List<BlockItem> ls;
-    public:
-    BlockItems(BlockItem* ptr){
-        push_back(ptr);
-    }
-    void push_back(BlockItem* ptr){
-        ls.push_back(ptr);
-    }
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class AssignStmt:public AST_NODE
-{
-    private:
-    std::unique_ptr<LVal> lv;
-    std::unique_ptr<AddExp> exp;
-    public:
-    AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-/// @brief EmptyStmt直接不给翻译，就是只有';'的那种
-class ExpStmt:public AST_NODE
-{
-    std::unique_ptr<AddExp> exp;
-    public:
-    ExpStmt(AddExp* ptr):exp(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class WhileStmt:public AST_NODE
-{
-    private:
-    std::unique_ptr<LOrExp> condition;
-    std::unique_ptr<Stmt> stmt;
-    public:
-    WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class IfStmt:public AST_NODE
-{
-    private:
-    std::unique_ptr<LOrExp> condition;
-    Stmt *t,*f;
-    public:
-    IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2=nullptr):condition(p0),t(p1),f(p2){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-}; 
-
-/// @brief 这个很奇怪，因为break和continue本身就代表了一种信息
-class BreakStmt:public AST_NODE
-{
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class ContinueStmt:public AST_NODE
-{
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class ReturnStmt:public AST_NODE
-{
-    std::unique_ptr<AddExp> return_val;
-    public:
-    ReturnStmt(AddExp* ptr=nullptr):return_val(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class LVal:public AST_NODE
-{
-    private:
-    std::string ID;
-    std::unique_ptr<Exps> array_descripters;
-    public:
-    LVal(std::string _id,Exps* ptr=nullptr):ID(_id),array_descripters(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
-class FunctionCall:public AST_NODE
-{
-    std::string id;
-    std::unique_ptr<CallParams> cp;
-    public:
-    FunctionCall(std::string _id,CallParams* ptr=nullptr):id(_id),cp(ptr){}
-    void codegen() final{
-        ///@todo impl codegen
-    }
-};
-
 /// @brief 由某种表达式和运算符构建起来的链表
 template<typename T>
-class BaseExp:public AST_NODE
+class BaseExp:public HasOperand
 {
     private:
     std::list<AST_Type> oplist;
@@ -405,18 +90,357 @@ class BaseExp:public AST_NODE
     void push_front(T* data){
         ls.push_front(data);
     }
-    void codegen() final {
-        ///@todo
+    void print(int x) final {
+        AST_NODE::print(x);
+        std::cout<<'\n';
+    }
+    Operand GetOperand(BasicBlock* block) final{
+        /// UnaryExp 是一元操作符，单独取出来研究
+        if constexpr(std::is_same_v<T,HasOperand>){
+            /// @note 可以优化？
+            //num=!x equals to num=(x==0)?1:0;
+            //num=+x useless 没人翻译
+            //num=-x 字面意思
+            Operand ptr=ls.front()->GetOperand(block);
+            for(auto i=oplist.rbegin();i!=oplist.rend();i++){
+                switch (*i)
+                {
+                case AST_NOT:
+                    ptr=block->GenerateBinaryInst(Operand(0),BinaryInst::Op_Sub,ptr);
+                    break;
+                case AST_ADD:
+                    break;
+                case AST_SUB:
+                    ptr=block->GenerateBinaryInst(Operand(0),BinaryInst::Op_Sub,ptr);
+                    break;
+                default:
+                    assert(0);
+                    std::cerr<<"Wrong Operator in BinaryExp\n";
+                    break;
+                }
+            }
+            return ptr;
+        }
+        else{
+            /// @note 其他都是二元操作符
+            auto i=ls.begin();
+            auto oper=(*i)->GetOperand(block);
+            for(auto &j:oplist){
+                i++;
+                auto another=(*i)->GetOperand(block);
+                BinaryInst::Operation opcode;
+                switch (j)
+                {
+                case AST_ADD:opcode=BinaryInst::Op_Add;break;
+                case AST_SUB:opcode=BinaryInst::Op_Sub;break;
+                case AST_DIV:opcode=BinaryInst::Op_Div;break;
+                case AST_MUL:opcode=BinaryInst::Op_Mul;break;
+                case AST_EQ:opcode=BinaryInst::Op_E;break;
+                case AST_AND:opcode=BinaryInst::Op_And;break;
+                case AST_GREAT:opcode=BinaryInst::Op_G;break;
+                case AST_LESS:opcode=BinaryInst::Op_L;break;
+                case AST_GREATEQ:opcode=BinaryInst::Op_GE;break;
+                case AST_LESSEQ:opcode=BinaryInst::Op_LE;break;
+                case AST_MODULO:opcode=BinaryInst::Op_Mod;break;
+                case AST_NOTEQ:opcode=BinaryInst::Op_NE;break;
+                case AST_OR:opcode=BinaryInst::Op_Or;break;
+                default:
+                    std::cerr<<"No such Opcode\n";
+                    assert(0);
+                }
+                oper=block->GenerateBinaryInst(oper,opcode,another);
+            }
+            return oper;
+        }
     }
 };
 
+using UnaryExp=BaseExp<HasOperand>;//+-+-+!- primary
+using MulExp=BaseExp<UnaryExp>;//*
+using AddExp=BaseExp<MulExp>;//+ -
+using RelExp=BaseExp<AddExp>;//> < >= <=
+using EqExp=BaseExp<RelExp>;//==
+using LAndExp=BaseExp<EqExp>;//&&
+using LOrExp=BaseExp<LAndExp>;//||
+
+class InnerBaseExps:public AST_NODE
+{
+    protected:
+    List<AddExp> ls;
+    public:
+    InnerBaseExps(AddExp* _data);
+    void push_front(AddExp* _data);
+    void push_back(AddExp* _data);
+    void print(int x);
+};
+
+class Exps:public InnerBaseExps//数组声明修饰符/访问修饰符号
+{
+    public:
+    Exps(AddExp* _data);
+    std::vector<Operand> GetArrayDescripter();
+};
+
+class CallParams:public InnerBaseExps//函数调用时的Params
+{
+    public:
+    CallParams(AddExp* _data);
+    std::vector<Operand> GetParams(BasicBlock* block);
+};
+
+class InitVals:public AST_NODE
+{
+    List<InitVal> ls;
+    public:
+    InitVals(InitVal* _data);
+    void push_back(InitVal* _data);
+    void print(int x);
+};
+
+class InitVal:public AST_NODE
+{
+    private:
+    std::unique_ptr<AST_NODE> val;
+    public:
+    InitVal()=default;
+    InitVal(AST_NODE* _data);
+    void print(int x);
+    void DealInitVal(Variable* structure);
+};
+
+class BaseDef:public Stmt
+{
+    protected:
+    std::string ID;
+    std::unique_ptr<Exps> array_descripters; 
+    std::unique_ptr<InitVal> civ;
+    public:
+    BaseDef(std::string _id,Exps* _ad,InitVal* _iv);
+    BasicBlock* GetInst(GetInstState)final;
+    void codegen();
+    void print(int x);
+};
+
+class VarDef:public BaseDef
+{
+    public:
+    VarDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr);
+};
+class ConstDef:public BaseDef
+{
+    public:
+    ConstDef(std::string,Exps*,InitVal*);
+};
+
+/// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*
+class CompUnit:public AST_NODE
+{
+    private:
+    List<AST_NODE> ls;
+    public:
+    CompUnit(AST_NODE* __data);
+    void push_front(AST_NODE* __data);
+    void push_back(AST_NODE* __data);
+    void codegen();
+    void print(int x);
+};
+
+
+class ConstDefs:public Stmt
+{
+    List<ConstDef> ls;
+    public:
+    ConstDefs(ConstDef* __data);
+    void push_back(ConstDef* __data);
+    void codegen();
+    void print(int x);
+    BasicBlock* GetInst(GetInstState)final;
+};
+
+class ConstDecl:public Stmt
+{
+    private:
+    AST_Type type;
+    std::unique_ptr<ConstDefs> cdfs;
+    public:
+    ConstDecl(AST_Type tp,ConstDefs* content);
+    BasicBlock* GetInst(GetInstState)final;
+    void codegen();
+    void print(int x);
+};
+
+class VarDefs:public Stmt
+{
+    List<VarDef> ls;
+    public:
+    VarDefs(VarDef* vdf);
+    void push_back(VarDef* _data);
+    void codegen();
+    void print(int x);
+    BasicBlock* GetInst(GetInstState)final;
+};
+
+class VarDecl:public Stmt
+{
+    private:
+    AST_Type type;
+    std::unique_ptr<VarDefs> vdfs;
+    public:
+    VarDecl(AST_Type tp,VarDefs* ptr);
+    BasicBlock* GetInst(GetInstState)final;
+    void codegen();
+    void print(int x);
+};
+
+class FuncParam:public AST_NODE
+{
+    private:
+    AST_Type tp;
+    std::string ID;
+    bool emptySquare;
+    std::unique_ptr<Exps> array_subscripts;
+    public:
+    FuncParam(AST_Type _tp,std::string _id,bool is_empty=false,Exps* ptr=nullptr);
+    void GetVariable(Function& tmp);
+    void print(int x);
+};
+
+class FuncParams:public AST_NODE
+{
+    List<FuncParam> ls;
+    public:
+    FuncParams(FuncParam* ptr);
+    void push_back(FuncParam* ptr);
+    void GetVariable(Function& tmp);
+    void print(int x);
+};
+
+class BlockItems:public Stmt
+{
+    List<Stmt> ls;
+    public:
+    BlockItems(Stmt* ptr);
+    void push_back(Stmt* ptr);
+    BasicBlock* GetInst(GetInstState)final;
+    void print(int x);
+};
+
+class Block:public Stmt
+{
+    private:
+    std::unique_ptr<BlockItems> items;
+    public:
+    Block(BlockItems* ptr);
+    BasicBlock* GetInst(GetInstState)final;
+    void print(int x);
+};
+
+class FuncDef:public AST_NODE
+{
+    AST_Type tp;
+    std::string ID;
+    std::unique_ptr<FuncParams> params;
+    std::unique_ptr<Block> function_body;
+    public:
+    FuncDef(AST_Type _tp,std::string _id,FuncParams* ptr,Block* fb);
+    void codegen();
+    void print(int x);
+};
+
+class LVal:public HasOperand
+{
+    private:
+    std::string ID;
+    std::unique_ptr<Exps> array_descripters;
+    public:
+    LVal(std::string _id,Exps* ptr=nullptr);
+    Operand GetOperand(BasicBlock* block);
+    std::string GetName();
+    void print(int x);
+};
+
+class AssignStmt:public Stmt
+{
+    private:
+    std::unique_ptr<LVal> lv;
+    std::unique_ptr<AddExp> exp;
+    public:
+    AssignStmt(LVal* p1,AddExp* p2);
+    BasicBlock* GetInst(GetInstState)final;
+    void print(int x);
+};
+
+/// @brief EmptyStmt直接不给翻译，就是只有';'的那种
+class ExpStmt:public Stmt
+{
+    std::unique_ptr<AddExp> exp;
+    public:
+    ExpStmt(AddExp* ptr);
+    BasicBlock* GetInst(GetInstState)final;
+    void print(int x);
+};
+
+class WhileStmt:public Stmt
+{
+    private:
+    std::unique_ptr<LOrExp> condition;
+    std::unique_ptr<Stmt> stmt;
+    public:
+    WhileStmt(LOrExp* p1,Stmt* p2);
+    BasicBlock* GetInst(GetInstState)final;
+    void print(int x);
+};
+
+class IfStmt:public Stmt
+{
+    private:
+    std::unique_ptr<LOrExp> condition;
+    std::unique_ptr<Stmt> t,f;
+    public:
+    IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2=nullptr);
+    BasicBlock* GetInst(GetInstState)final;
+    void print(int x);
+}; 
+
+/// @brief 这个很奇怪，因为break和continue本身就代表了一种信息
+class BreakStmt:public Stmt
+{
+    BasicBlock* GetInst(GetInstState)final;
+    void print(int x);
+};
+
+class ContinueStmt:public Stmt
+{
+    BasicBlock* GetInst(GetInstState)final;
+    void print(int x);
+};
+
+class ReturnStmt:public Stmt
+{
+    std::unique_ptr<AddExp> return_val;
+    public:
+    ReturnStmt(AddExp* ptr=nullptr);
+    BasicBlock* GetInst(GetInstState)final;
+    void print(int x);
+};
+
+class FunctionCall:public HasOperand
+{
+    std::string id;
+    std::unique_ptr<CallParams> cp;
+    public:
+    FunctionCall(std::string _id,CallParams* ptr=nullptr);
+    Operand GetOperand(BasicBlock* block);
+    void print(int x);
+};
+
 template<typename T>
-class ConstValue:public AST_NODE
+class ConstValue:public HasOperand
 {
     T data;
     public:
     ConstValue(T _data):data(_data){}
-    void codegen() final{
-
+    Operand GetOperand(BasicBlock* block){
+        return Operand(data);
     }
 };
