@@ -104,14 +104,24 @@ void BaseDef::print(int x){
 }
 
 VarDef::VarDef(std::string _id,Exps* _ad,InitVal* _iv):BaseDef(_id,_ad,_iv){}
-void VarDef::GetInst(BasicBlock* ptr){
-    assert(0);
+
+BasicBlock* BaseDef::GetInst(GetInstState state){
+    if(array_descripters!=nullptr)
+    {
+        std::cerr<<"Array Not Implenmented!\n";
+        assert(0);
+    }
+    else
+    {
+        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
+        assert(civ==nullptr);
+        auto tmp=new Variable(ID);
+        state.current_building->GenerateAlloca(tmp);
+        return state.current_building;
+    }
 }
 
 ConstDef::ConstDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):BaseDef(_id,_ad,_iv){}
-void ConstDef::GetInst(BasicBlock* ptr){
-    assert(0);
-}
 
 CompUnit::CompUnit(AST_NODE* __data){
     push_back(__data);
@@ -146,14 +156,16 @@ void ConstDefs::codegen(){
 void ConstDefs::print(int x){
     for(auto &i:ls)i->print(x);
 }
-void ConstDefs::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* ConstDefs::GetInst(GetInstState state){
+    for(auto&i:ls)
+        state.current_building=i->GetInst(state);
+    return state.current_building;
 }
 
 ConstDecl::ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
 }
-void ConstDecl::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* ConstDecl::GetInst(GetInstState state){
+    return cdfs->GetInst(state);
 }
 void ConstDecl::codegen(){
     /// @warning copy from VarDecl
@@ -191,13 +203,15 @@ void VarDefs::codegen(){
 void VarDefs::print(int x){
     for(auto &i:ls)i->print(x);
 }
-void VarDefs::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* VarDefs::GetInst(GetInstState state){
+    for(auto&i:ls)
+        state.current_building=i->GetInst(state);
+    return state.current_building;
 }
 
 VarDecl::VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
-void VarDecl::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* VarDecl::GetInst(GetInstState state){
+    return vdfs->GetInst(state);
 }
 void VarDecl::codegen(){
     switch (type)
@@ -267,9 +281,16 @@ BlockItems::BlockItems(Stmt* ptr){
 void BlockItems::push_back(Stmt* ptr){
     ls.push_back(ptr);
 }
-void BlockItems::GetInst(BasicBlock* block){
+BasicBlock* BlockItems::GetInst(GetInstState state){
     for(auto &i:ls)
-        i->GetInst(block);
+    {
+        state.current_building=i->GetInst(state);
+        ///@warning 已经是一个basicblock了，后面的肯定访问不到
+        if(state.current_building->EndWithBranch()){
+            return state.current_building;
+        }
+    }
+    return state.current_building;
 }
 void BlockItems::print(int x){
     AST_NODE::print(x);
@@ -278,8 +299,11 @@ void BlockItems::print(int x){
 }
 
 Block::Block(BlockItems* ptr):items(ptr){}
-void Block::GetInst(BasicBlock* tmp){
-    items->GetInst(tmp);
+BasicBlock* Block::GetInst(GetInstState state){
+    Singleton<Module>().layer_increase();
+    auto tmp=items->GetInst(state);
+    Singleton<Module>().layer_decrease();
+    return tmp;
 }
 void Block::print(int x){
     items->print(x);
@@ -305,7 +329,8 @@ void FuncDef::codegen(){
     Singleton<Module>().layer_increase();
     if(params!=nullptr)params->GetVariable(f);
     assert(function_body!=nullptr);
-    function_body->GetInst(f.front_block());
+    GetInstState state={f.front_block(),nullptr,nullptr};
+    function_body->GetInst(state);
     Singleton<Module>().layer_decrease();
 }
 void FuncDef::print(int x){
@@ -317,8 +342,15 @@ void FuncDef::print(int x){
 
 LVal::LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
 Operand LVal::GetOperand(BasicBlock* block){
+    assert(array_descripters==nullptr);
+    if(auto var=dynamic_cast<Variable*>(Singleton<Module>().GetValueByName(ID)))
+        return block->GenerateLoadInst(var); 
+    std::cerr<<"Not a LVal\n";
     assert(0);
 }
+
+std::string LVal::GetName(){return ID;}
+
 void LVal::print(int x){
     AST_NODE::print(x);
     if(array_descripters!=nullptr)std::cout<<":with array descripters";
@@ -326,8 +358,17 @@ void LVal::print(int x){
     if(array_descripters!=nullptr)array_descripters->print(x+1);
 }
 AssignStmt::AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
-void AssignStmt::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* AssignStmt::GetInst(GetInstState state){
+    Operand tmp=exp->GetOperand(state.current_building);
+    // block->GenerateStoreInst(block,);
+    auto valueptr=Singleton<Module>().GetValueByName(lv->GetName());
+    
+    /// @warning design of StoreInst is not mature enough for ptr, be careful
+    if(auto variable=dynamic_cast<Variable*>(valueptr))
+        state.current_building->GenerateStoreInst(tmp,variable);
+    else
+        assert(0);
+    return state.current_building;
 }
 void AssignStmt::print(int x){
     AST_NODE::print(x);
@@ -338,8 +379,9 @@ void AssignStmt::print(int x){
 }
 
 ExpStmt::ExpStmt(AddExp* ptr):exp(ptr){}
-void ExpStmt::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* ExpStmt::GetInst(GetInstState state){
+    if(exp!=nullptr)Operand tmp=exp->GetOperand(state.current_building);
+    return state.current_building;
 }
 void ExpStmt::print(int x){
     if(exp==nullptr)AST_NODE::print(x);
@@ -347,8 +389,19 @@ void ExpStmt::print(int x){
 }
 
 WhileStmt::WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
-void WhileStmt::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* WhileStmt::GetInst(GetInstState state){
+    auto condition_part=state.current_building->GenerateNewBlock();
+    auto inner_loop=state.current_building->GenerateNewBlock();
+    auto nxt_building=state.current_building->GenerateNewBlock();
+
+    state.current_building->GenerateUnCondInst(condition_part);
+
+    Operand condi_judge=condition->GetOperand(condition_part);
+    condition_part->GenerateCondInst(condi_judge,inner_loop,nxt_building);
+    GetInstState loop_state={inner_loop,nxt_building,condition_part};
+    inner_loop=stmt->GetInst(loop_state);
+    if(!inner_loop->EndWithBranch())inner_loop->GenerateUnCondInst(condition_part);
+    return nxt_building;
 }
 void WhileStmt::print(int x){
     AST_NODE::print(x);
@@ -359,9 +412,28 @@ void WhileStmt::print(int x){
 }
 
 IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
-void IfStmt::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* IfStmt::GetInst(GetInstState state){
+    auto nxt_building=state.current_building->GenerateNewBlock();
+    Operand condi=condition->GetOperand(state.current_building);
+
+    auto istrue=state.current_building->GenerateNewBlock();
+    GetInstState t_state=state;t_state.current_building=istrue;
+    istrue=t->GetInst(t_state);
+    if(!istrue->EndWithBranch())istrue->GenerateUnCondInst(nxt_building);
+    
+    if(f!=nullptr)
+    {
+        auto isfalse=state.current_building->GenerateNewBlock();
+        GetInstState f_state=state;f_state.current_building=isfalse;
+        isfalse=f->GetInst(f_state);
+        if(!isfalse->EndWithBranch())isfalse->GenerateUnCondInst(nxt_building);
+        state.current_building->GenerateCondInst(condi,istrue,isfalse);
+    }
+    else state.current_building->GenerateCondInst(condi,istrue,nxt_building);
+    
+    return nxt_building;
 }
+
 void IfStmt::print(int x){
     AST_NODE::print(x);
     std::cout<<'\n';
@@ -369,23 +441,30 @@ void IfStmt::print(int x){
     t->print(x+1);
     if(f!=nullptr)f->print(x+1);
 }
-void BreakStmt::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* BreakStmt::GetInst(GetInstState state){
+    state.current_building->GenerateUnCondInst(state.break_block);
+    return state.current_building;
 }
 void BreakStmt::print(int x){
     AST_NODE::print(x);std::cout<<'\n';
 }
 
-void ContinueStmt::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* ContinueStmt::GetInst(GetInstState state){
+    state.current_building->GenerateUnCondInst(state.continue_block);
+    return state.current_building;
 }
 void ContinueStmt::print(int x){
     AST_NODE::print(x);std::cout<<'\n';
 }
 
 ReturnStmt::ReturnStmt(AddExp* ptr):return_val(ptr){}
-void ReturnStmt::GetInst(BasicBlock* block){
-    assert(0);
+BasicBlock* ReturnStmt::GetInst(GetInstState state){
+    if(return_val!=nullptr){
+        auto ret_val=return_val->GetOperand(state.current_building);
+        state.current_building->GenerateRetInst(ret_val);
+    }
+    else state.current_building->GenerateRetInst();
+    return state.current_building;
 }
 void ReturnStmt::print(int x){
     AST_NODE::print(x);std::cout<<'\n';

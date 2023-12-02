@@ -20,12 +20,23 @@ Value::Value(InnerDataType _tp):tp(_tp){}
 void Value::add_user(Use* __data){
     userlist.push_front(__data);
 }
+void Value::print(){
+    // only to use dynamic_cast
+    assert(0);
+}
 
 void User::add_use(Value* __data){
     uselist.push_back(Use(this,__data));
 }
 User::User():Value(InnerDataType::IR_Value_VOID){}
 User::User(InnerDataType tp):Value(tp){}
+void User::print(){
+    int status;
+    char* demangled_name = abi::__cxa_demangle(typeid(*this).name(), 0, 0, &status);
+    assert(status==0);
+    std::cout<<demangled_name<<'\n';
+    free(demangled_name);
+}
 
 Operand::Operand(int num):InnerOperand(num){}
 Operand::Operand(Value* num):InnerOperand(num){}

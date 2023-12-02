@@ -3,8 +3,6 @@
 #include "List.hpp"
 #include <list>
 #include <string>
-#include <iostream>
-#include <cxxabi.h>
 #include <cassert>
 #include "MagicEnum.hpp"
 #include "CFG.hpp"
@@ -42,11 +40,19 @@ class FunctionCall;
 template<typename T>class ConstValue;
 class BaseDef;
 
+struct GetInstState
+{
+    BasicBlock* current_building;
+    BasicBlock* break_block;
+    BasicBlock* continue_block;
+};
+
 /// @brief 最基础的AST_NODE，所有基础特性都应该放里面
 class AST_NODE 
 {
     /// @todo 可以加个enum type 表示这个是什么type，但是貌似 C++ 现在支持动态判定类型,指typeid
     public:
+    virtual ~AST_NODE()=default;
     virtual void codegen();
     virtual void print(int x);
 };
@@ -58,7 +64,8 @@ class HasOperand:public AST_NODE
 class Stmt:public AST_NODE
 {
     public:
-    virtual void GetInst(BasicBlock* block)=0;
+    /// @return 如果这个GetInst已经用到了下一个BasicBlock，则让GetInst自己创建，让后通过返回值修改 block=xx->GetInst(block,exit);
+    virtual BasicBlock* GetInst(GetInstState)=0;
 };
 /// @brief 由某种表达式和运算符构建起来的链表
 template<typename T>
@@ -116,7 +123,34 @@ class BaseExp:public HasOperand
         }
         else{
             /// @note 其他都是二元操作符
-            assert(0);
+            auto i=ls.begin();
+            auto oper=(*i)->GetOperand(block);
+            for(auto &j:oplist){
+                i++;
+                auto another=(*i)->GetOperand(block);
+                BinaryInst::Operation opcode;
+                switch (j)
+                {
+                case AST_ADD:opcode=BinaryInst::Op_Add;break;
+                case AST_SUB:opcode=BinaryInst::Op_Sub;break;
+                case AST_DIV:opcode=BinaryInst::Op_Div;break;
+                case AST_MUL:opcode=BinaryInst::Op_Mul;break;
+                case AST_EQ:opcode=BinaryInst::Op_E;break;
+                case AST_AND:opcode=BinaryInst::Op_And;break;
+                case AST_GREAT:opcode=BinaryInst::Op_G;break;
+                case AST_LESS:opcode=BinaryInst::Op_L;break;
+                case AST_GREATEQ:opcode=BinaryInst::Op_GE;break;
+                case AST_LESSEQ:opcode=BinaryInst::Op_LE;break;
+                case AST_MODULO:opcode=BinaryInst::Op_Mod;break;
+                case AST_NOTEQ:opcode=BinaryInst::Op_NE;break;
+                case AST_OR:opcode=BinaryInst::Op_Or;break;
+                default:
+                    std::cerr<<"No such Opcode\n";
+                    assert(0);
+                }
+                oper=block->GenerateBinaryInst(oper,opcode,another);
+            }
+            return oper;
         }
     }
 };
@@ -176,12 +210,13 @@ class InitVal:public AST_NODE
 
 class BaseDef:public Stmt
 {
-    private:
+    protected:
     std::string ID;
     std::unique_ptr<Exps> array_descripters; 
     std::unique_ptr<InitVal> civ;
     public:
     BaseDef(std::string _id,Exps* _ad,InitVal* _iv);
+    BasicBlock* GetInst(GetInstState)final;
     void codegen();
     void print(int x);
 };
@@ -190,13 +225,11 @@ class VarDef:public BaseDef
 {
     public:
     VarDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr);
-    void GetInst(BasicBlock* ptr);
 };
 class ConstDef:public BaseDef
 {
     public:
     ConstDef(std::string,Exps*,InitVal*);
-    void GetInst(BasicBlock*);
 };
 
 /// @brief CompUnit是一个由Decl和FuncDef组成的链表，链表里面是AST_NODE*
@@ -221,7 +254,7 @@ class ConstDefs:public Stmt
     void push_back(ConstDef* __data);
     void codegen();
     void print(int x);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
 };
 
 class ConstDecl:public Stmt
@@ -231,7 +264,7 @@ class ConstDecl:public Stmt
     std::unique_ptr<ConstDefs> cdfs;
     public:
     ConstDecl(AST_Type tp,ConstDefs* content);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
     void codegen();
     void print(int x);
 };
@@ -244,7 +277,7 @@ class VarDefs:public Stmt
     void push_back(VarDef* _data);
     void codegen();
     void print(int x);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
 };
 
 class VarDecl:public Stmt
@@ -254,7 +287,7 @@ class VarDecl:public Stmt
     std::unique_ptr<VarDefs> vdfs;
     public:
     VarDecl(AST_Type tp,VarDefs* ptr);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
     void codegen();
     void print(int x);
 };
@@ -288,7 +321,7 @@ class BlockItems:public Stmt
     public:
     BlockItems(Stmt* ptr);
     void push_back(Stmt* ptr);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -298,7 +331,7 @@ class Block:public Stmt
     std::unique_ptr<BlockItems> items;
     public:
     Block(BlockItems* ptr);
-    void GetInst(BasicBlock* tmp);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -322,6 +355,7 @@ class LVal:public HasOperand
     public:
     LVal(std::string _id,Exps* ptr=nullptr);
     Operand GetOperand(BasicBlock* block);
+    std::string GetName();
     void print(int x);
 };
 
@@ -332,7 +366,7 @@ class AssignStmt:public Stmt
     std::unique_ptr<AddExp> exp;
     public:
     AssignStmt(LVal* p1,AddExp* p2);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -342,7 +376,7 @@ class ExpStmt:public Stmt
     std::unique_ptr<AddExp> exp;
     public:
     ExpStmt(AddExp* ptr);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -353,7 +387,7 @@ class WhileStmt:public Stmt
     std::unique_ptr<Stmt> stmt;
     public:
     WhileStmt(LOrExp* p1,Stmt* p2);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -364,20 +398,20 @@ class IfStmt:public Stmt
     std::unique_ptr<Stmt> t,f;
     public:
     IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2=nullptr);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 }; 
 
 /// @brief 这个很奇怪，因为break和continue本身就代表了一种信息
 class BreakStmt:public Stmt
 {
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
 class ContinueStmt:public Stmt
 {
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -386,7 +420,7 @@ class ReturnStmt:public Stmt
     std::unique_ptr<AddExp> return_val;
     public:
     ReturnStmt(AddExp* ptr=nullptr);
-    void GetInst(BasicBlock* block);
+    BasicBlock* GetInst(GetInstState)final;
     void print(int x);
 };
 
@@ -407,6 +441,6 @@ class ConstValue:public HasOperand
     public:
     ConstValue(T _data):data(_data){}
     Operand GetOperand(BasicBlock* block){
-        assert(0);
+        return Operand(data);
     }
 };

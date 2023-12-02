@@ -1,6 +1,18 @@
 #pragma once
 #include "SymbolTable.hpp"
 #include "Singleton.hpp"
+// #include "BaseCFG.hpp"
+/// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
+class BasicBlock;
+class Function;
+class Variable:public Value
+{
+    std::string name;
+    public:
+    Variable(std::string _id);
+    Variable(InnerDataType tp,std::string _id);
+    std::string get_name();
+};
 /// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
 class InstWithDef:public User
 {
@@ -25,10 +37,10 @@ class AllocaInst:public User
 /// @param des Value*
 class StoreInst:public User
 {
-    Value* des;
+    Variable* des;
     Operand src;
     public:
-    StoreInst(Operand __src,Value* __des);
+    StoreInst(Operand,Variable*);
 };
 /// @brief load src to def
 /// @note inst use src;def def
@@ -55,6 +67,37 @@ class SITFP:public InstWithDef
     public:
     SITFP(Operand __src);
 };
+class UnCondInst:public User
+{
+    BasicBlock* des;
+    public:
+    UnCondInst(BasicBlock*);
+};
+class CondInst:public User
+{
+    Operand condition;
+    BasicBlock *istrue,*isfalse;
+    public:
+    CondInst(Operand,BasicBlock*,BasicBlock*);
+};
+/// @brief Maybe don't has Def if it calls void function
+class CallInst:public InstWithDef
+{
+    Function* call_handle;
+    std::vector<Operand> args;
+    public:
+    CallInst(Function*,std::vector<Operand>);
+    bool HasDef();
+    Value* GetDef()final;
+};
+/// @brief Ret, maybe has return value
+class RetInst:public User
+{
+    Operand ret_val;
+    public:
+    RetInst();
+    RetInst(Operand);
+};
 /// @brief BinaryInst use A B,def C
 /// @param A operand
 /// @param op define inside class
@@ -75,25 +118,28 @@ class BinaryInst:public InstWithDef
     public:
     BinaryInst(Operand _A,Operation __op,Operand _B);
 };
-/// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
-class Variable:public Value
-{
-    std::string name;
-    public:
-    Variable(std::string _id);
-    Variable(InnerDataType tp,std::string _id);
-    std::string get_name();
-};
 class BasicBlock:public Value
 {
     List<User> insts;
+    Function& master;
     public:
-    BasicBlock();
+    BasicBlock(Function& __master);
+    void print()final;
     void push_front(User* ptr);
     void push_back(User* ptr);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
+    Operand GenerateLoadInst(Variable*);
+    void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
+    void GenerateUnCondInst(BasicBlock*);
+    void GenerateRetInst(Operand);
+    void GenerateRetInst();
+    void GenerateCallInst(std::string,std::vector<Operand> args);
+    void GenerateStoreInst(Operand,Variable*);
+    void GenerateAlloca(Variable*);
+    BasicBlock* GenerateNewBlock();
+    bool EndWithBranch();
 };
 /// @brief 以function为最大单元生成CFG
 //其实function本质是就是CFG了
@@ -110,6 +156,8 @@ class Function:public Value
     public:
     Function(InnerDataType _tp,std::string _id);
     BasicBlock* front_block();
+    void print()final;
+    void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
 };
@@ -117,10 +165,12 @@ class Function:public Value
 class Module:public SymbolTable
 {
     using GlobalVariblePtr=std::unique_ptr<Variable>;
-    std::vector<Function> ls;
+    using FunctionPtr=std::unique_ptr<Function>;
+    std::vector<FunctionPtr> ls;
     std::vector<GlobalVariblePtr> globalvaribleptr;
     public:
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
+    void Test();
 };

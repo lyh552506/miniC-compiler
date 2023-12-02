@@ -3,6 +3,9 @@
 #include <cassert>
 #include "List.hpp"
 #include <variant>
+#include <functional>
+#include <iostream>
+#include <cxxabi.h>
 class User;
 class Value;
 /// @brief Use关系，User析构时析构
@@ -37,10 +40,12 @@ class Value
     UserList userlist;
     InnerDataType tp;
     public:
-    InnerDataType GetType();
+    virtual ~Value()=default;
     Value()=delete;
     Value(InnerDataType _tp);
+    InnerDataType GetType();
     void add_user(Use* __data);
+    virtual void print();
 };
 class User:public Value
 {
@@ -50,6 +55,7 @@ class User:public Value
     public:
     User();
     User(InnerDataType tp);
+    void print();
 };
 class Operand:public std::variant<Value*,int,float>
 {
