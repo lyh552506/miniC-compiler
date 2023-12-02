@@ -1,8 +1,24 @@
 //test add of hex and oct
+//int add(int x)
+//{
+//    while(x>0)
+//    {
+//        if(x<100)
+//        {
+//            return 1;
+//        }
+//        else
+//        {
+//            return 2;
+//        }
+//    }
+//    return x;
+//}
 int main(){
     int a, b;
     a = 0xf;
     b = 0xc;
+    //a=add(a+b);
     while(a<10086)
     {
         a=a+1;
