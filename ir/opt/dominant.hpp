@@ -4,35 +4,50 @@
 #include <memory.h>
 #include <vector>
 #include<algorithm>
+#include <unordered_set>
+#include "CFG.hpp"
 
 //SDOM(MIN_SDOM(x))即代表获取离x最近的sdom结点
 #define SDOM(x) node[x].sdom //获取x对应结点的sdom
 #define MIN_SDOM(x) dsu[x].min_sdom //获取结点最近的sdom的index
 #define IDOM(x) node[x].idom  //获取结点的idom
 
+//auto& func=Singleton<Module>().Test();
+
+
+
+
 //纯属yy
-class Function{
-public:
-  std::vector<BasicBlock> bbs;
-};
-
-class BasicBlock{
-public:
-   std::list<Instruction> Inst;
-};
-
-class Instruction{
-public:
-   std::vector<_Node> use;
-   std::vector<_Node> def;
-};
 
 struct _Node{
   std::string name;
-  std::vector<int> block;
+  std::vector<int> defblock;
+  bool operator==(const _Node& other){
+    return name==other.name;
+  }
 };
 
-Function function;
+// class Function{
+// public:
+//   std::vector<BasicBlock> bbs;
+// };
+
+// class BasicBlock{
+// public:
+//    std::list<Instruction> Inst;
+//    std::vector<int> rev;
+//    std::vector<int> des;
+// };
+
+// class Instruction{
+// public:
+//    std::vector<_Node> use;
+//    std::vector<_Node> def;
+// };
+
+
+
+// Function function;
 
 
 class dominance{
@@ -72,48 +87,15 @@ private:
 public:
     /// @brief 从CFG的根节点开始计算出每个节点的dominate frontier
     /// @param x 
-    void computeDF(int x){
-      for(auto de:node[x].des){//找到结点x的所有后继结点，计算DF_local
-         if(node[de].idom!=x){ //de是x的一个后继并且x不是de的严格支配节点
-            df[x].df.push_front(de);
-         }
-      }
-      //计算DP_up
-      for(auto child:node[x].idom_child){
-        computeDF(child);
-        for(auto frontier:df[child].df){
-          if(node[frontier].idom!=x||x==frontier){
-            df[x].df.push_front(frontier);
-          }
-        }
-      }
-    }
+    void computeDF(int x);
 
     /// @brief 初始化边关系
     /// @param m 
-    void Init(int m) {
-    for (int i = 0; i < m; i++) { // u-->v
-      int u, v;
-      scanf("%d%d", &u, &v);//TODO 需要适配后续CFG流图
-      node[u].des.push_front(v);
-      node[v].rev.push_front(u);
-    }
-  }
+    void Init(int m);
     
   /// @brief 获取每个节点的DFS序，同时初始化sdom为自己
   /// @param pos
-  void DFS(int pos) {
-    node[pos].dfnum = count;
-    node[pos].sdom = count; // 每个节点的sdom先初始化为自己
-    vertex[count] = pos;    // 记录每一个dfnum对应的结点
-    count++;
-    for (auto p : node[pos].des) {
-      if (node[p].dfnum == 0) {
-        DFS(p);
-        node[p].father = pos;
-      }
-    }
-  }
+  void DFS(int pos);
 private:
 
   /// @brief 路径压缩，并更新最小sdom
@@ -136,49 +118,10 @@ private:
   }
 public:
   /// @brief 支配节点查找
-   void find_dom() {
-    int n, fat;
-    for (int i = block_num; i > 1; i--) { // 从dfs最大的结点开始
-      int sdom_cadidate=999999;
-      n = vertex[i]; //获取dfs序对应的结点号       
-      fat = node[n].father;
-      for (auto front : node[n].rev) {
-        if(node[front].dfnum!=0){
-          sdom_cadidate=std::min(sdom_cadidate,SDOM(eval(front)));//半必经结点定理
-        }
-      }
-      node[n].sdom=sdom_cadidate;//注意此处记录的是dfs序 
-      bucket[vertex[sdom_cadidate]].push_back(n);//所以此处需要进行转换vertex[sdom_cadidate]
-      dsu[n].ancestor=fat;
-      for(auto s:bucket[fat]){//必经结点定理
-        if(SDOM(eval(s))==SDOM(s)){
-          IDOM(s)=fat; //idom(s)==sdom(s)==fat
-        }
-        else{
-          IDOM(s)=eval(s);//留到第四步处理
-        }
-      }
-      bucket[fat].clear();
-    }
-      //按照标号从小到大再跑一次，得到所有点的idom
-      for(int i=2;i<=block_num;i++){
-        int N=vertex[i];
-        SDOM(N)=vertex[SDOM(N)];//将sdom的内容更新为dfs序对应的结点号
-        if(IDOM(N)!=SDOM(N)){
-          IDOM(N)=IDOM(IDOM(N));
-        }
-      }
-  }
+   void find_dom();
    
    /// @brief 建立支配树
-   void build_tree(){
-    for(int i=2;i<=block_num;i++){
-      int idom=IDOM(i);
-      if(idom>0){
-        node[idom].idom_child.push_front(i);
-      }
-    }
-   }
+   void build_tree();
   dominance(int n, int m):node(n + 1), block_num{n},vertex(n + 1), dsu(n + 1),count{1},df(n+1)
   {
     for (int i = 1; i <= n; i++) {
@@ -190,21 +133,23 @@ public:
 
 class phi_function:public dominance{
 public:
-   std::vector<_Node> var;//记录每一个basicblock的定值的变量
-   std::vector<_Node> defsite;//记录每个node
+   std::vector<std::vector<_Node>> var;//记录每一个basicblock的定值的变量
+   std::unordered_set<std::string> defsite;
 
    phi_function(int n,int m):dominance(n,m)
    {}
 
    void place_phy(){
-    for(int node=1;node<=block_num;node++){
-      //TODO 获取到所有的定值
+    for(int block=1;block<=block_num;block++){
+      for(auto& v:var[block]){//将一个块的变量定值装入
+        if(defsite.find(v.name)!=defsite.end()){
+          v.defblock.push_back(block);
+          defsite.insert(v.name);
+        }
+      }
+
     }
-    for(int node=1;node<=block_num;node++){
-      // for(auto& v:var){
-      //   v.block.push_back(node);
-      // }
-    }
+
    }
 };
 
