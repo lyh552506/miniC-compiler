@@ -122,7 +122,6 @@ protected:
     MachineOperand *rd;
     MachineOperand *rs1;
     MachineOperand *rs2;
-    int num;
     // std::vector<MachineOperand *> defList;
     // std::vector<MachineOperand *> useList;
 public:
@@ -138,10 +137,10 @@ enum InstType {
 };
 
     void setParent(MachineBlock *parent);
+    int getType();
     // void addDef(MachineOperand *def);
     // void addUse(MachineOperand *use);
-    
-    int getnum();
+    void PrintInst(std::ofstream &outputFile) {};
 };
 
 class BinaryInst : public MachineInst
@@ -187,7 +186,7 @@ private:
 
 public:
     BinaryInst(MachineBlock *parent, Binary_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
-    void print(std::ofstream &outputFile);
+    void PrintInst(std::ofstream &outputFile);
 };
 
 class LoadInst : public MachineInst
@@ -205,7 +204,7 @@ private:
     Load_Inst opcode;
 public:
     LoadInst(MachineBlock *parent, Load_Inst opcode, MachineOperand *rd, MachineOperand *rs1);
-    void print(std::ofstream &outputFile);
+    void PrintInst(std::ofstream &outputFile);
 };
 
 class StoreInst : public MachineInst
@@ -221,7 +220,7 @@ private:
     Store_Inst opcode;
 public:
     StoreInst(MachineBlock *parent, Store_Inst opcode, MachineOperand *rs2, MachineOperand *rs1, MachineOperand *offset);
-    void print(std::ofstream &outputFile);
+    void PrintInst(std::ofstream &outputFile);
 };
 
 class BranchInst : public MachineInst
@@ -247,7 +246,7 @@ private:
 public:
     BranchInst(MachineBlock *parent, Branch_Inst opcode, MachineOperand *rs1, MachineOperand *rs2);
     BranchInst(MachineBlock *parent, Branch_Inst opcode, MachineOperand *rs1);
-    void print(std::ofstream &outputFile);
+    void PrintInst(std::ofstream &outputFile);
 
 };
 
@@ -267,7 +266,7 @@ public:
     JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd, MachineOperand *rs1);
     JumpInst(MachineBlock *parent, Jump_Inst opcode);
     JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rs1);
-    void print(std::ofstream &outputFile);
+    void PrintInst(std::ofstream &outputFile);
 };
 
 class CmpInst : public MachineInst
@@ -285,7 +284,7 @@ private:
 public:
     CmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
     CmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, MachineOperand *rs1);
-    void print(std::ofstream &outputFile);
+    void PrintInst(std::ofstream &outputFile);
 };
 
 class PseudoInst : public MachineInst
@@ -302,7 +301,7 @@ private:
 public:
     PseudoInst(MachineBlock *parent, Pseudo_Inst opcode, MachineOperand *rd, MachineOperand *rs1);
     PseudoInst(MachineBlock *parent, Pseudo_Inst opcode);
-    void print(std::ofstream &outputFile);
+    void PrintInst(std::ofstream &outputFile);
 };
 
 class MachineBlock
@@ -317,7 +316,7 @@ private:
 
 public:
     MachineBlock(MachineFunction *parent, int num);
-    std::vector<MachineInst *> &getInsts();
+    std::vector<MachineInst *> &getInstList();
 };
 
 class MachineFunction
@@ -327,18 +326,15 @@ private:
     std::vector<MachineBlock *> BlockList;
     std::vector<MachineOperand *> arglist;
     int stacksize;
-    int offset;
 
 public:
     MachineFunction(MachineUnit *parent);
 
+    std::vector<MachineBlock *> &getBlockList();
     int getstacksize();
-    int getoffset();
+    void setstacksize();
 
-    void setstacksize(int size);
-    void setoffset(int offset);
-
-    void print();
+    void PrintInstStack();
 };
 
 class MachineUnit
@@ -351,5 +347,5 @@ public:
 
     ~MachineUnit();
 
-    std::vector<MachineFunction *> &getFuncs();
+    std::vector<MachineFunction *> &getFuncList();
 };
