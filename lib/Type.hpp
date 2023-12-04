@@ -26,6 +26,7 @@ class PointerType:public Type
     std::shared_ptr<Type> subtype;
     public:
     PointerType(std::shared_ptr<Type>);
+    InnerDataType GetInnerType();
 };
 class ArrayType:public Type
 {

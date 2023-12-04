@@ -12,7 +12,8 @@ StoreInst::StoreInst(Operand __src,Operand __des){
 }
 LoadInst::LoadInst(Value* __src){
     add_use(__src);
-    def=std::make_unique<Value>(__src->CopyType());
+    auto tmp=dynamic_cast<PointerType*>(__src->CopyType().get());
+    def=std::make_unique<Value>(tmp->GetInnerType());
 }
 FPTSI::FPTSI(Operand __src){
     add_use(__src);
@@ -110,9 +111,12 @@ Operand BasicBlock::GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Opera
     return Operand(tmp->GetDef());
 }
 void BasicBlock::GenerateStoreInst(Operand src,Operand des){
-    if(des->GetType()!=src->GetType()){
-        if(des->GetType()==IR_Value_INT)this->GenerateFPTSI(src);
-        else this->GenerateSITFP(src);
+    assert(des->GetType()==IR_PTR);
+    auto tmp=dynamic_cast<PointerType*>(des->CopyType().get());
+    
+    if(tmp->GetInnerType()!=src->GetType()){
+        if(tmp->GetInnerType()==IR_Value_INT)src=this->GenerateFPTSI(src);
+        else src=this->GenerateSITFP(src);
     }
     auto storeinst=new StoreInst(src,des);
     this->push_back(storeinst);
