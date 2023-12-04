@@ -61,11 +61,12 @@ class ConstIRInt:public Value
 {
     int val;
     public:
-    ConstIRInt();
+    ConstIRInt(int);
 };
 class ConstIRFloat:public Value
 {
     float val;
     public:
-    ConstIRFloat();
+    ConstIRFloat(float);
 };
+using Operand=Value*;

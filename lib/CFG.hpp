@@ -1,7 +1,7 @@
 #pragma once
 #include "SymbolTable.hpp"
 #include "Singleton.hpp"
-// #include "BaseCFG.hpp"
+#include "BaseCFG.hpp"
 /// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
 class BasicBlock;
 class Function;
@@ -10,7 +10,8 @@ class Variable:public Value
     std::string name;
     public:
     Variable(std::string _id);
-    Variable(Type* tp,std::string _id);
+    Variable(std::shared_ptr<Type> tp,std::string _id);
+    Variable(InnerDataType tp,std::string _id);
     std::string get_name();
 };
 /// @brief %1=alloca i32

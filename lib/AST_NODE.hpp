@@ -441,6 +441,7 @@ class ConstValue:public HasOperand
     public:
     ConstValue(T _data):data(_data){}
     Operand GetOperand(BasicBlock* block){
-        return Operand(data);
+        if(std::is_same<T,int>::value)return new ConstIRInt(data);
+        else return new ConstIRFloat(data);
     }
 };

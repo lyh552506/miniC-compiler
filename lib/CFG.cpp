@@ -6,7 +6,7 @@ AllocaInst::AllocaInst(Value* __data):data(__data){
     /// @note 注意__data的实际类型一定是Varible或者数组，所以Type在里面找
 }
 StoreInst::StoreInst(Operand __src,Value* __des):src(__src),des(__des){
-    if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
+    add_use(src);
     add_use(des);
 }
 LoadInst::LoadInst(Value* __src):src(__src){
@@ -14,11 +14,11 @@ LoadInst::LoadInst(Value* __src):src(__src){
     def=std::make_unique<Value>(src->CopyType());
 }
 FPTSI::FPTSI(Operand __src):src(__src){
-    if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
+    add_use(src);
     def=std::make_unique<Value>(IR_Value_INT);
 }
 SITFP::SITFP(Operand __src):src(__src){
-    if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
+    add_use(src);
     def=std::make_unique<Value>(IR_Value_Float);
 }
 
@@ -27,7 +27,7 @@ UnCondInst::UnCondInst(BasicBlock* __des):des(__des){
 }
 
 CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse):condition(__cond),istrue(__istrue),isfalse(__isfalse){
-    if(std::holds_alternative<Value*>(condition))add_use(std::get<Value*>(condition));
+    add_use(condition);
     add_use(istrue);
     add_use(isfalse);
 }
@@ -39,12 +39,13 @@ RetInst::RetInst():ret_val(nullptr){}
 RetInst::RetInst(Operand op):ret_val(op){}
 
 BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):A(_A),op(__op),B(_B){
-    if(std::holds_alternative<Value*>(A))add_use(std::get<Value*>(A));
-    if(std::holds_alternative<Value*>(B))add_use(std::get<Value*>(B));
-    def=std::make_unique<Value>(_A.GetType());
+    add_use(A);
+    add_use(B);
+    def=std::make_unique<Value>(A->GetType());
 }
 Variable::Variable(std::string _id):name(_id),Value(Singleton<InnerDataType>()){}
-Variable::Variable(Type* tp,std::string _id):Value(std::make_shared<Type>(tp)),name(_id){}
+Variable::Variable(std::shared_ptr<Type> _tp,std::string _id):Value(_tp),name(_id){}
+Variable::Variable(InnerDataType _tp,std::string _id):Value(_tp),name(_id){}
 std::string Variable::get_name(){
     return name;
 }
@@ -71,8 +72,8 @@ Operand BasicBlock::GenerateFPTSI(Operand _B){
     return Operand(tmp->GetDef());
 }
 Operand BasicBlock::GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B){
-    bool tpA=(_A.GetType()==InnerDataType::IR_Value_INT);
-    bool tpB=(_B.GetType()==InnerDataType::IR_Value_INT);
+    bool tpA=(_A->GetType()==InnerDataType::IR_Value_INT);
+    bool tpB=(_B->GetType()==InnerDataType::IR_Value_INT);
     // 一个int一个float
     BinaryInst* tmp;
     if(tpA^tpB){
@@ -91,7 +92,7 @@ Operand BasicBlock::GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Opera
     return Operand(tmp->GetDef());
 }
 void BasicBlock::GenerateStoreInst(Operand src,Variable* des){
-    if(des->GetType()!=src.GetType()){
+    if(des->GetType()!=src->GetType()){
         if(des->GetType()==IR_Value_INT)this->GenerateFPTSI(src);
         else this->GenerateSITFP(src);
     }
@@ -140,8 +141,8 @@ void BasicBlock::GenerateUnCondInst(BasicBlock* des){
     insts.push_back(inst);
 }
 void BasicBlock::GenerateRetInst(Operand ret_val){
-    if(master.GetType()!=ret_val.GetType()){
-        if(ret_val.GetType()==IR_Value_INT)
+    if(master.GetType()!=ret_val->GetType()){
+        if(ret_val->GetType()==IR_Value_INT)
             ret_val=GenerateSITFP(ret_val);
         else
             ret_val=GenerateFPTSI(ret_val);

@@ -32,7 +32,7 @@ void Value::print(){
 void User::add_use(Value* __data){
     uselist.push_back(Use(this,__data));
 }
-User::User():Value(std::make_shared<Type>(new Type(IR_Value_VOID))){}
+User::User():Value(std::make_shared<Type>(IR_Value_VOID)){}
 User::User(std::shared_ptr<Type> _tp):Value(_tp){}
 void User::print(){
     int status;
@@ -43,16 +43,5 @@ void User::print(){
 }
 Value* User::GetDef(){return def.get();}
 
-Operand::Operand(int num):InnerOperand(num){}
-Operand::Operand(Value* num):InnerOperand(num){}
-Operand::Operand(float num):InnerOperand(num){}
-InnerDataType Operand::GetType(){
-    auto fat=*static_cast<InnerOperand*>(this);
-    if(std::holds_alternative<Value*>(fat)){
-        return std::get<Value*>(fat)->GetType();
-    }
-    else if(std::holds_alternative<int>(fat)){
-        return InnerDataType::IR_Value_INT;
-    }
-    else return InnerDataType::IR_Value_Float;
-}
+ConstIRInt::ConstIRInt(int _val):Value(IR_Value_INT),val(_val){};
+ConstIRFloat::ConstIRFloat(float _val):Value(IR_Value_Float),val(_val){};
