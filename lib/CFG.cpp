@@ -2,53 +2,65 @@
 #include <string>
 #include <memory>
 #include <iostream>
-AllocaInst::AllocaInst(Value* __data):data(__data){
-    /// @note 注意__data的实际类型一定是Varible或者数组，所以Type在里面找
+AllocaInst::AllocaInst(std::shared_ptr<Type> _tp){
+    auto tmp=std::make_shared<PointerType>(_tp);
+    def=std::make_unique<Value>(tmp);
 }
-StoreInst::StoreInst(Operand __src,Value* __des):src(__src),des(__des){
-    add_use(src);
-    add_use(des);
+StoreInst::StoreInst(Operand __src,Operand __des){
+    add_use(__src);
+    add_use(__des);
 }
-LoadInst::LoadInst(Value* __src):src(__src){
-    add_use(src);
-    def=std::make_unique<Value>(src->CopyType());
+LoadInst::LoadInst(Value* __src){
+    add_use(__src);
+    def=std::make_unique<Value>(__src->CopyType());
 }
-FPTSI::FPTSI(Operand __src):src(__src){
-    add_use(src);
+FPTSI::FPTSI(Operand __src){
+    add_use(__src);
     def=std::make_unique<Value>(IR_Value_INT);
 }
-SITFP::SITFP(Operand __src):src(__src){
-    add_use(src);
+SITFP::SITFP(Operand __src){
+    add_use(__src);
     def=std::make_unique<Value>(IR_Value_Float);
 }
 
-UnCondInst::UnCondInst(BasicBlock* __des):des(__des){
+UnCondInst::UnCondInst(BasicBlock* __des){
     add_use(__des);
 }
 
-CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse):condition(__cond),istrue(__istrue),isfalse(__isfalse){
-    add_use(condition);
-    add_use(istrue);
-    add_use(isfalse);
+CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse){
+    add_use(__cond);
+    add_use(__istrue);
+    add_use(__isfalse);
 }
 
-CallInst::CallInst(Function* _func,std::vector<Operand> _args):call_handle(_func),args(_args){}
-
-RetInst::RetInst():ret_val(nullptr){}
-
-RetInst::RetInst(Operand op):ret_val(op){}
-
-BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):A(_A),op(__op),B(_B){
-    add_use(A);
-    add_use(B);
-    def=std::make_unique<Value>(A->GetType());
+CallInst::CallInst(Function* _func,std::vector<Operand>& _args){
+    add_use(_func);
+    for(auto&i:_args)
+        add_use(i);
 }
-Variable::Variable(std::string _id):name(_id),Value(Singleton<InnerDataType>()){}
-Variable::Variable(std::shared_ptr<Type> _tp,std::string _id):Value(_tp),name(_id){}
-Variable::Variable(InnerDataType _tp,std::string _id):Value(_tp),name(_id){}
+
+RetInst::RetInst(){}
+
+RetInst::RetInst(Operand op){add_use(op);}
+
+BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B){
+    add_use(_A);
+    add_use(_B);
+    def=std::make_unique<Value>(_A->GetType());
+}
+
+Variable::Variable(std::string _id):name(_id){
+    tp=std::make_shared<Type>(Singleton<InnerDataType>());
+}
+Variable::Variable(std::shared_ptr<Type> _tp,std::string _id):name(_id),tp(_tp){}
+Variable::Variable(InnerDataType _tp,std::string _id):name(_id){
+    tp=std::make_shared<Type>(_tp);
+}
+void Variable::SetObj(Operand _data){obj=_data;}
 std::string Variable::get_name(){
     return name;
 }
+std::shared_ptr<Type> Variable::CopyType(){return tp;}
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& offs){
     add_use(base_ptr);
@@ -62,7 +74,7 @@ void BasicBlock::push_front(User* ptr){
 void BasicBlock::push_back(User* ptr){
     insts.push_back(ptr);
 }
-Operand BasicBlock::GenerateLoadInst(Variable* data){
+Operand BasicBlock::GenerateLoadInst(Operand data){
     auto tmp=new LoadInst(data);
     insts.push_back(tmp);
     return tmp->GetDef();
@@ -97,7 +109,7 @@ Operand BasicBlock::GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Opera
     push_back(tmp);
     return Operand(tmp->GetDef());
 }
-void BasicBlock::GenerateStoreInst(Operand src,Variable* des){
+void BasicBlock::GenerateStoreInst(Operand src,Operand des){
     if(des->GetType()!=src->GetType()){
         if(des->GetType()==IR_Value_INT)this->GenerateFPTSI(src);
         else this->GenerateSITFP(src);
@@ -173,13 +185,23 @@ void BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
 void BasicBlock::GenerateAlloca(Variable* var){
     master.push_alloca(var);
 }
+Operand BasicBlock::push_alloca(std::shared_ptr<Type> _tp){
+    auto tmp=new AllocaInst(_tp);
+    insts.push_front(tmp);
+    return tmp->GetDef();
+}
+
 void Function::push_alloca(Variable* ptr){
     alloca_variables.push_back(VarPtr(ptr));
-    Singleton<Module>().Register(ptr->get_name(),ptr);
+    auto obj=bbs.front()->push_alloca(ptr->CopyType());
+    Singleton<Module>().Register(ptr->get_name(),obj);
+    ptr->SetObj(obj);
 }
 void Function::push_param(Variable* var){
     params.push_back(ParamPtr(var));
-    Singleton<Module>().Register(var->get_name(),var);
+    /// @warning RNM这个new没人回收
+    auto tmp=std::make_shared<PointerType>(var->CopyType());
+    Singleton<Module>().Register(var->get_name(),new Value(tmp));
 }
 void Function::add_block(BasicBlock* __block){
     bbs.push_back(BasicBlockPtr(__block));
@@ -197,6 +219,8 @@ Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
     return *ls.back();
 }
 void Module::GenerateGlobalVariable(Variable* ptr){
-    SymbolTable::Register(ptr->get_name(),ptr);
+    auto obj=new Value(std::make_shared<PointerType>(ptr->CopyType()));
+    ptr->SetObj(obj);
+    SymbolTable::Register(ptr->get_name(),obj);
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }

@@ -343,8 +343,7 @@ void FuncDef::print(int x){
 LVal::LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
 Operand LVal::GetOperand(BasicBlock* block){
     assert(array_descripters==nullptr);
-    if(auto var=dynamic_cast<Variable*>(Singleton<Module>().GetValueByName(ID)))
-        return block->GenerateLoadInst(var); 
+    return block->GenerateLoadInst(Singleton<Module>().GetValueByName(ID)); 
     std::cerr<<"Not a LVal\n";
     assert(0);
 }
@@ -360,14 +359,9 @@ void LVal::print(int x){
 AssignStmt::AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
 BasicBlock* AssignStmt::GetInst(GetInstState state){
     Operand tmp=exp->GetOperand(state.current_building);
-    // block->GenerateStoreInst(block,);
     auto valueptr=Singleton<Module>().GetValueByName(lv->GetName());
     
-    /// @warning design of StoreInst is not mature enough for ptr, be careful
-    if(auto variable=dynamic_cast<Variable*>(valueptr))
-        state.current_building->GenerateStoreInst(tmp,variable);
-    else
-        assert(0);
+    state.current_building->GenerateStoreInst(tmp,valueptr);
     return state.current_building;
 }
 void AssignStmt::print(int x){

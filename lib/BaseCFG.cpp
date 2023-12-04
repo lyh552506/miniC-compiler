@@ -30,7 +30,7 @@ void Value::print(){
 }
 
 void User::add_use(Value* __data){
-    uselist.push_back(Use(this,__data));
+    uselist.push_back(std::make_unique<Use>(this,__data));
 }
 User::User():Value(std::make_shared<Type>(IR_Value_VOID)){}
 User::User(std::shared_ptr<Type> _tp):Value(_tp){}

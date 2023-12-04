@@ -45,9 +45,11 @@ class Value
     void add_user(Use* __data);
     virtual void print();
 };
+using Operand=Value*;
 class User:public Value
 {
-    std::vector<Use> uselist;
+    using UsePtr=std::unique_ptr<Use>;
+    std::vector<UsePtr> uselist;
     protected:
     void add_use(Value* __data);
     std::unique_ptr<Value> def=nullptr;
@@ -69,4 +71,3 @@ class ConstIRFloat:public Value
     public:
     ConstIRFloat(float);
 };
-using Operand=Value*;
