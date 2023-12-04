@@ -10,16 +10,8 @@ class Variable:public Value
     std::string name;
     public:
     Variable(std::string _id);
-    Variable(InnerDataType tp,std::string _id);
+    Variable(Type* tp,std::string _id);
     std::string get_name();
-};
-/// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
-class InstWithDef:public User
-{
-    protected:
-    Value* def;
-    public:
-    virtual Value* GetDef();
 };
 /// @brief %1=alloca i32
 /// @note inst def %1, but no ultra def
@@ -37,15 +29,15 @@ class AllocaInst:public User
 /// @param des Value*
 class StoreInst:public User
 {
-    Variable* des;
+    Value* des;
     Operand src;
     public:
-    StoreInst(Operand,Variable*);
+    StoreInst(Operand,Value*);
 };
 /// @brief load src to def
 /// @note inst use src;def def
 /// @param src Value*
-class LoadInst:public InstWithDef
+class LoadInst:public User
 {
     Value* src;
     public:
@@ -54,14 +46,14 @@ class LoadInst:public InstWithDef
     LoadInst(Value* __src);
 };
 /// @brief float to int
-class FPTSI:public InstWithDef
+class FPTSI:public User
 {
     Operand src;
     public:
     FPTSI(Operand __src);
 };
 /// @brief int to float
-class SITFP:public InstWithDef
+class SITFP:public User
 {
     Operand src;
     public:
@@ -81,14 +73,12 @@ class CondInst:public User
     CondInst(Operand,BasicBlock*,BasicBlock*);
 };
 /// @brief Maybe don't has Def if it calls void function
-class CallInst:public InstWithDef
+class CallInst:public User
 {
     Function* call_handle;
     std::vector<Operand> args;
     public:
     CallInst(Function*,std::vector<Operand>);
-    bool HasDef();
-    Value* GetDef()final;
 };
 /// @brief Ret, maybe has return value
 class RetInst:public User
@@ -103,7 +93,7 @@ class RetInst:public User
 /// @param op define inside class
 /// @param B operand
 /// @param C operand
-class BinaryInst:public InstWithDef
+class BinaryInst:public User
 {
     public:
     enum Operation

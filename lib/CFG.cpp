@@ -2,27 +2,24 @@
 #include <string>
 #include <memory>
 #include <iostream>
-Value* InstWithDef::GetDef(){
-    return def;
-}
 AllocaInst::AllocaInst(Value* __data):data(__data){
     /// @note 注意__data的实际类型一定是Varible或者数组，所以Type在里面找
 }
-StoreInst::StoreInst(Operand __src,Variable* __des):src(__src),des(__des){
+StoreInst::StoreInst(Operand __src,Value* __des):src(__src),des(__des){
     if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
     add_use(des);
 }
 LoadInst::LoadInst(Value* __src):src(__src){
     add_use(src);
-    def=new Value(src->GetType());
+    def=std::make_unique<Value>(src->CopyType());
 }
 FPTSI::FPTSI(Operand __src):src(__src){
     if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
-    def=new Value(IR_Value_INT);
+    def=std::make_unique<Value>(IR_Value_INT);
 }
 SITFP::SITFP(Operand __src):src(__src){
     if(std::holds_alternative<Value*>(src))add_use(std::get<Value*>(src));
-    def=new Value(IR_Value_Float);
+    def=std::make_unique<Value>(IR_Value_Float);
 }
 
 UnCondInst::UnCondInst(BasicBlock* __des):des(__des){
@@ -37,16 +34,6 @@ CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse):co
 
 CallInst::CallInst(Function* _func,std::vector<Operand> _args):call_handle(_func),args(_args){}
 
-bool CallInst::HasDef(){
-    if(call_handle->GetType()!=IR_Value_VOID)return true;
-    else return false;
-}
-
-Value* CallInst::GetDef(){
-    assert(HasDef());
-    return def;
-}
-
 RetInst::RetInst():ret_val(nullptr){}
 
 RetInst::RetInst(Operand op):ret_val(op){}
@@ -54,10 +41,10 @@ RetInst::RetInst(Operand op):ret_val(op){}
 BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):A(_A),op(__op),B(_B){
     if(std::holds_alternative<Value*>(A))add_use(std::get<Value*>(A));
     if(std::holds_alternative<Value*>(B))add_use(std::get<Value*>(B));
-    def=new Value(_A.GetType());
+    def=std::make_unique<Value>(_A.GetType());
 }
 Variable::Variable(std::string _id):name(_id),Value(Singleton<InnerDataType>()){}
-Variable::Variable(InnerDataType tp,std::string _id):Value(tp),name(_id){}
+Variable::Variable(Type* tp,std::string _id):Value(std::make_shared<Type>(tp)),name(_id){}
 std::string Variable::get_name(){
     return name;
 }

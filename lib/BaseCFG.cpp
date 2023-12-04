@@ -14,9 +14,13 @@ void UserList::push_front(Use* _data){
 }
 
 InnerDataType Value::GetType(){
-    return tp;
+    return tp->GetType();
 }
-Value::Value(InnerDataType _tp):tp(_tp){}
+
+
+Value::Value(std::shared_ptr<Type> _tp):tp(_tp){}
+Value::Value(InnerDataType _tp){tp=std::make_shared<Type>(_tp);}
+std::shared_ptr<Type> Value::CopyType(){return tp;}
 void Value::add_user(Use* __data){
     userlist.push_front(__data);
 }
@@ -28,8 +32,8 @@ void Value::print(){
 void User::add_use(Value* __data){
     uselist.push_back(Use(this,__data));
 }
-User::User():Value(InnerDataType::IR_Value_VOID){}
-User::User(InnerDataType tp):Value(tp){}
+User::User():Value(std::make_shared<Type>(new Type(IR_Value_VOID))){}
+User::User(std::shared_ptr<Type> _tp):Value(_tp){}
 void User::print(){
     int status;
     char* demangled_name = abi::__cxa_demangle(typeid(*this).name(), 0, 0, &status);
@@ -37,6 +41,7 @@ void User::print(){
     std::cout<<demangled_name<<'\n';
     free(demangled_name);
 }
+Value* User::GetDef(){return def.get();}
 
 Operand::Operand(int num):InnerOperand(num){}
 Operand::Operand(Value* num):InnerOperand(num){}
