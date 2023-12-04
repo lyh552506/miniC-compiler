@@ -49,6 +49,12 @@ Variable::Variable(InnerDataType _tp,std::string _id):Value(_tp),name(_id){}
 std::string Variable::get_name(){
     return name;
 }
+
+GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& offs){
+    add_use(base_ptr);
+    for(auto &i:offs)add_use(i);
+}
+
 BasicBlock::BasicBlock(Function& __master):Value(IR_Value_VOID),master(__master){};
 void BasicBlock::push_front(User* ptr){
     insts.push_front(ptr);

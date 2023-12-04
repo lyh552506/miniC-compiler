@@ -109,6 +109,11 @@ class BinaryInst:public User
     public:
     BinaryInst(Operand _A,Operation __op,Operand _B);
 };
+class GetElementPtrInst:public User
+{
+    public:
+    GetElementPtrInst(Operand,std::vector<Operand>&);
+};
 class BasicBlock:public Value
 {
     List<User> insts;
