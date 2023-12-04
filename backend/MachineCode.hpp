@@ -3,6 +3,7 @@
 #include<vector>
 #include<iostream>  
 #include"../lib/MagicEnum.hpp"
+#include"../lib/CFG.hpp"
 
 class MachineUnit;
 class MachineFunction;
@@ -135,12 +136,11 @@ enum InstType {
     Neg, // 取反，取负数
     Pseudo, // 伪指令
 };
-
     void setParent(MachineBlock *parent);
     int getType();
     // void addDef(MachineOperand *def);
     // void addUse(MachineOperand *use);
-    void PrintInst(std::ofstream &outputFile) {};
+    virtual void PrintInst(std::ofstream &outputFile) = 0;
 };
 
 class BinaryInst : public MachineInst
@@ -183,7 +183,6 @@ enum Binary_Inst {
 };
 private:
     Binary_Inst opcode;
-
 public:
     BinaryInst(MachineBlock *parent, Binary_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
     void PrintInst(std::ofstream &outputFile);
@@ -233,7 +232,6 @@ enum Branch_Inst {
     ble, // <=
     blt, // <
     bne, // !=  bne = 6;
-
     beqz, // == 0 beqz rs1, offset
     bgez,
     bgtz,
@@ -247,7 +245,6 @@ public:
     BranchInst(MachineBlock *parent, Branch_Inst opcode, MachineOperand *rs1, MachineOperand *rs2);
     BranchInst(MachineBlock *parent, Branch_Inst opcode, MachineOperand *rs1);
     void PrintInst(std::ofstream &outputFile);
-
 };
 
 class JumpInst : public MachineInst
@@ -275,7 +272,6 @@ public:
 enum Cmp_Inst {
     slt, //有符号比较 slt rd, rs1, rs2
     slti,//slti rd, rs1, imm
-
     sltz,//sltz rd, rs1
     snez,//sne rd, rs1
 };
@@ -307,45 +303,45 @@ public:
 class MachineBlock
 {
 private:
-    MachineFunction *parent;
-    int num;
-    std::vector<MachineInst *> InstList;
-
-    std::vector<MachineBlock *> pred;//前驱
-    std::vector<MachineBlock *> succ;//后继
-
+    List<User> insts;
+    // std::vector<MachineInst *> InstList;
+    // std::vector<MachineBlock *> pred;//前驱
+    // std::vector<MachineBlock *> succ;//后继
 public:
-    MachineBlock(MachineFunction *parent, int num);
+    MachineBlock();
     std::vector<MachineInst *> &getInstList();
 };
 
 class MachineFunction
 {
 private:
-    MachineUnit *parent;
-    std::vector<MachineBlock *> BlockList;
-    std::vector<MachineOperand *> arglist;
+    using ParamPtr=std::unique_ptr<Variable>; 
+    using VarPtr=std::unique_ptr<Variable>;
+    using BasicBlockPtr=std::unique_ptr<BasicBlock>;
+    std::vector<ParamPtr> params;
+    std::vector<VarPtr> alloca_variables;
+    std::vector<BasicBlockPtr> bbs;
+    // std::vector<MachineBlock *> BlockList;
+    // std::vector<MachineOperand *> arglist;
+    std::unordered_map<std::string, int> offsetmap;
     int stacksize;
-
 public:
     MachineFunction(MachineUnit *parent);
-
     std::vector<MachineBlock *> &getBlockList();
     int getstacksize();
     void setstacksize();
-
     void PrintInstStack();
 };
 
 class MachineUnit
 {
 private:
-    std::vector<MachineFunction *> FuncList;
-
+    //std::vector<MachineFunction *> FuncList;
+    using FunctionPtr=std::unique_ptr<Function>;
+    std::vector<FunctionPtr>& FuncList;
+    std::unordered_map<std::string, int> labelmap;
 public:
     MachineUnit();
-
     ~MachineUnit();
-
     std::vector<MachineFunction *> &getFuncList();
 };
