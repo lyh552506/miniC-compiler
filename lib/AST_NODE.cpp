@@ -30,9 +30,17 @@ void InnerBaseExps::print(int x){
 }
 
 Exps::Exps(AddExp* _data):InnerBaseExps(_data){}
-std::vector<Operand> GetArrayDescripter(){
-    std::cerr<<"Array Not Impl\n";
-    assert(0);
+std::shared_ptr<Type> Exps::GetDeclDescipter(){
+    auto tmp=std::make_shared<Type>(Singleton<InnerDataType>());
+    for(auto i=ls.rbegin();i!=ls.rend();i++)
+        tmp=std::make_shared<ArrayType>((*i)->GetConstOperand(),tmp);
+    return tmp;
+}
+
+std::vector<Operand> Exps::GetVisitDescripter(BasicBlock* cur){
+    std::vector<Operand> tmp;
+    for(auto&i:ls)tmp.push_back(i->GetOperand(cur));
+    return tmp;
 }
 
 CallParams::CallParams(AddExp* _data):InnerBaseExps(_data){}
@@ -85,8 +93,12 @@ BaseDef::BaseDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):ID(_id)
 void BaseDef::codegen(){
     if(array_descripters!=nullptr)
     {
-        std::cerr<<"Array Not Implenmented!\n";
-        assert(0);
+        ///@todo 
+        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
+        assert(civ==nullptr);
+        std::shared_ptr<Type> tmp=array_descripters->GetDeclDescipter();
+        auto var=new Variable(tmp,ID);
+        Singleton<Module>().GenerateGlobalVariable(var);
     }
     else
     {
@@ -108,8 +120,11 @@ VarDef::VarDef(std::string _id,Exps* _ad,InitVal* _iv):BaseDef(_id,_ad,_iv){}
 BasicBlock* BaseDef::GetInst(GetInstState state){
     if(array_descripters!=nullptr)
     {
-        std::cerr<<"Array Not Implenmented!\n";
-        assert(0);
+        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
+        assert(civ==nullptr);
+        std::shared_ptr<Type> tmp=array_descripters->GetDeclDescipter();
+        auto var=new Variable(tmp,ID);
+        state.current_building->GenerateAlloca(var);
     }
     else
     {
@@ -342,10 +357,14 @@ void FuncDef::print(int x){
 
 LVal::LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
 Operand LVal::GetOperand(BasicBlock* block){
-    assert(array_descripters==nullptr);
-    return block->GenerateLoadInst(Singleton<Module>().GetValueByName(ID)); 
-    std::cerr<<"Not a LVal\n";
-    assert(0);
+    auto ptr=Singleton<Module>().GetValueByName(ID);
+    if(array_descripters!=nullptr)
+    {
+        ///@todo
+        std::vector<Operand> tmp=array_descripters->GetVisitDescripter(block);
+        ptr=block->GenerateGEPInst(ptr,tmp);
+    }
+    return block->GenerateLoadInst(ptr);
 }
 
 std::string LVal::GetName(){return ID;}

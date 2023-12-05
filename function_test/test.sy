@@ -3,6 +3,7 @@ int main(){
     int a, b;
     a = 0xf;
     b = 0xc;
+    a = b;
     while(a<10086)
     {
         a=a+1;

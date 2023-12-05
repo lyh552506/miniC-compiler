@@ -113,6 +113,7 @@ class BasicBlock:public Value
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
     Operand GenerateLoadInst(Operand);
+    Operand GenerateGEPInst(Operand,std::vector<Operand>&);
     void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);

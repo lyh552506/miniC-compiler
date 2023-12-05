@@ -60,6 +60,7 @@ class HasOperand:public AST_NODE
 {
     public:
     virtual Operand GetOperand(BasicBlock* block)=0;
+    virtual int GetConstOperand()=0;
 };
 class Stmt:public AST_NODE
 {
@@ -178,7 +179,8 @@ class Exps:public InnerBaseExps//数组声明修饰符/访问修饰符号
 {
     public:
     Exps(AddExp* _data);
-    std::vector<Operand> GetArrayDescripter();
+    std::shared_ptr<Type> GetDeclDescipter();
+    std::vector<Operand> GetVisitDescripter(BasicBlock*);
 };
 
 class CallParams:public InnerBaseExps//函数调用时的Params
