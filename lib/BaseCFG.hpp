@@ -64,10 +64,12 @@ class ConstIRInt:public Value
     int val;
     public:
     ConstIRInt(int);
+    int GetVal();
 };
 class ConstIRFloat:public Value
 {
     float val;
     public:
     ConstIRFloat(float);
+    float GetVal();
 };

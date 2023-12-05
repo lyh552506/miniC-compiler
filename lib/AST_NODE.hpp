@@ -60,7 +60,6 @@ class HasOperand:public AST_NODE
 {
     public:
     virtual Operand GetOperand(BasicBlock* block)=0;
-    virtual int GetConstOperand()=0;
 };
 class Stmt:public AST_NODE
 {
@@ -207,7 +206,7 @@ class InitVal:public AST_NODE
     InitVal()=default;
     InitVal(AST_NODE* _data);
     void print(int x);
-    void DealInitVal(Variable* structure);
+    void StoreFirst(Operand);
 };
 
 class BaseDef:public Stmt

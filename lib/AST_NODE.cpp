@@ -1,5 +1,22 @@
 #include "AST_NODE.hpp"
 /// @brief 最基础的AST_NODE，所有基础特性都应该放里面
+void TypeForward(AST_Type type)
+{
+    switch (type)
+    {
+    case AST_INT:
+        Singleton<InnerDataType>()=IR_Value_INT;
+        break;
+    case AST_FLOAT:
+        Singleton<InnerDataType>()=IR_Value_Float;
+        break;
+    case AST_VOID:
+    default:
+        std::cerr<<"void as variable is not allowed!\n";
+        assert(0);
+    }
+}
+
 void AST_NODE::codegen(){
     std::cerr<<"In AST some nodes are forbidden to call codegen()\n";
     assert(0);
@@ -33,7 +50,16 @@ Exps::Exps(AddExp* _data):InnerBaseExps(_data){}
 std::shared_ptr<Type> Exps::GetDeclDescipter(){
     auto tmp=std::make_shared<Type>(Singleton<InnerDataType>());
     for(auto i=ls.rbegin();i!=ls.rend();i++)
-        tmp=std::make_shared<ArrayType>((*i)->GetConstOperand(),tmp);
+    {
+        auto con=(*i)->GetOperand(nullptr);
+        if(auto fuc=dynamic_cast<ConstIRInt*>(con)){
+            tmp=std::make_shared<ArrayType>(fuc->GetVal(),tmp);
+        }
+        else if(auto fuc=dynamic_cast<ConstIRFloat*>(con)){
+            tmp=std::make_shared<ArrayType>(fuc->GetVal(),tmp);
+        }
+        else assert(0);
+    }
     return tmp;
 }
 
@@ -71,29 +97,12 @@ void InitVal::print(int x){
     else
         std::cout<<'\n',val->print(x+1);
 }
-void InitVal::DealInitVal(Variable* structure){
-    if(val==nullptr){
-        ///@todo notice it's a empty initialize
-        assert(0);
-    }
-    else if(InitVals* ivs=dynamic_cast<InitVals*>(val.get())){
-        ///@todo 是个数组的初始化
-        assert(0);
-    }
-    else if(AddExp* exp=dynamic_cast<AddExp*>(val.get())){
-        assert(0);
-    }
-    else{
-        assert(0);
-    }
-}
 
 BaseDef::BaseDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):ID(_id),array_descripters(_ad),civ(_iv){}
 
 void BaseDef::codegen(){
     if(array_descripters!=nullptr)
     {
-        ///@todo 
         if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
         assert(civ==nullptr);
         std::shared_ptr<Type> tmp=array_descripters->GetDeclDescipter();
@@ -102,10 +111,18 @@ void BaseDef::codegen(){
     }
     else
     {
-        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
-        assert(civ==nullptr);
         auto tmp=new Variable(ID);
-        Singleton<Module>().GenerateGlobalVariable(tmp);
+        if(Singleton<IR_CONSTDECL_FLAG>().flag==1){
+            Operand var;
+            if(Singleton<InnerDataType>()==IR_Value_INT)
+                var=new ConstIRInt(0);
+            else if(Singleton<InnerDataType>()==IR_Value_Float)
+                var=new ConstIRFloat(0.0);
+            else assert(0);
+            civ->StoreFirst(var);
+            Singleton<Module>().Register(ID,var);
+        }
+        else Singleton<Module>().GenerateGlobalVariable(tmp);
     }
 }
 void BaseDef::print(int x){
@@ -128,12 +145,20 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
     }
     else
     {
-        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
-        assert(civ==nullptr);
         auto tmp=new Variable(ID);
-        state.current_building->GenerateAlloca(tmp);
-        return state.current_building;
+        if(Singleton<IR_CONSTDECL_FLAG>().flag==1){
+            Operand var;
+            if(Singleton<InnerDataType>()==IR_Value_INT)
+                var=new ConstIRInt(0);
+            else if(Singleton<InnerDataType>()==IR_Value_Float)
+                var=new ConstIRFloat(0.0);
+            else assert(0);
+            civ->StoreFirst(var);
+            Singleton<Module>().Register(ID,var);
+        }
+        else state.current_building->GenerateAlloca(tmp);
     }
+    return state.current_building;
 }
 
 ConstDef::ConstDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):BaseDef(_id,_ad,_iv){}
@@ -180,23 +205,14 @@ BasicBlock* ConstDefs::GetInst(GetInstState state){
 ConstDecl::ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
 }
 BasicBlock* ConstDecl::GetInst(GetInstState state){
+    TypeForward(type);
+    Singleton<IR_CONSTDECL_FLAG>().flag=1;
     return cdfs->GetInst(state);
 }
 void ConstDecl::codegen(){
     /// @warning copy from VarDecl
-    switch (type)
-    {
-    case AST_INT:
-        Singleton<InnerDataType>()=IR_Value_INT;
-        break;
-    case AST_FLOAT:
-        Singleton<InnerDataType>()=IR_Value_Float;
-        break;
-    case AST_VOID:
-    default:
-        std::cerr<<"void as variable is not allowed!\n";
-        assert(0);
-    }
+    TypeForward(type);
+    Singleton<IR_CONSTDECL_FLAG>().flag=1;
     cdfs->codegen();
 }
 void ConstDecl::print(int x){
@@ -226,22 +242,13 @@ BasicBlock* VarDefs::GetInst(GetInstState state){
 
 VarDecl::VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
 BasicBlock* VarDecl::GetInst(GetInstState state){
+    Singleton<IR_CONSTDECL_FLAG>().flag=0;
+    TypeForward(type);
     return vdfs->GetInst(state);
 }
 void VarDecl::codegen(){
-    switch (type)
-    {
-    case AST_INT:
-        Singleton<InnerDataType>()=IR_Value_INT;
-        break;
-    case AST_FLOAT:
-        Singleton<InnerDataType>()=IR_Value_Float;
-        break;
-    case AST_VOID:
-    default:
-        std::cerr<<"void as variable is not allowed!\n";
-        assert(0);
-    }
+    Singleton<IR_CONSTDECL_FLAG>().flag=0;
+    TypeForward(type);
     vdfs->codegen();
 }
 
