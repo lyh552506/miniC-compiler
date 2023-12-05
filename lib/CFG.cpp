@@ -67,7 +67,16 @@ std::shared_ptr<Type> Variable::CopyType(){return tp;}
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& offs){
     add_use(base_ptr);
-    for(auto &i:offs)add_use(i);
+    std::shared_ptr<Type> fuc=nullptr;
+    for(auto &i:offs){
+        if(fuc==nullptr)
+            fuc=base_ptr->CopyType();
+        else
+            if(auto ptr=dynamic_cast<PointerType*>(fuc.get()))
+                fuc=ptr->GetSubType();
+        add_use(i);
+    }
+    def=std::make_unique<Value>(fuc);
 }
 
 BasicBlock::BasicBlock(Function& __master):Value(IR_Value_VOID),master(__master){};

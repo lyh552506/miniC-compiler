@@ -24,14 +24,21 @@ class FloatType:public Type
     public:
     FloatType();
 };
-class PointerType:public Type
+class HasSubType:public Type
 {
+    protected:
     std::shared_ptr<Type> subtype;
+    public:
+    HasSubType(InnerDataType,std::shared_ptr<Type>);
+    std::shared_ptr<Type> GetSubType();
+};
+class PointerType:public HasSubType
+{
     public:
     PointerType(std::shared_ptr<Type>);
     InnerDataType GetInnerType();
 };
-class ArrayType:public Type
+class ArrayType:public HasSubType
 {
     /// @warning prepare for 32 bits machine, int is enough for the number of elements 
     int NumEle;
