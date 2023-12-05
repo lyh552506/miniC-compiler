@@ -120,7 +120,7 @@ class BasicBlock:public Value
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);
     void GenerateRetInst();
-    void GenerateCallInst(std::string,std::vector<Operand> args);
+    Operand GenerateCallInst(std::string,std::vector<Operand> args);
     void GenerateStoreInst(Operand,Operand);
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();

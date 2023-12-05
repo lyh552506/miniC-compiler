@@ -516,7 +516,8 @@ void ReturnStmt::print(int x){
 
 FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){}
 Operand FunctionCall::GetOperand(BasicBlock* block){
-    assert(0);
+    std::vector<Operand> args=cp->GetParams(block);
+    return block->GenerateCallInst(id,args);
 }
 void FunctionCall::print(int x){
     AST_NODE::print(x);

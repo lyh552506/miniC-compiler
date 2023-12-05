@@ -232,10 +232,11 @@ void BasicBlock::GenerateRetInst(){
     auto inst=new RetInst();
     insts.push_back(inst);
 }
-void BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
+Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
     if(auto func=dynamic_cast<Function*>(Singleton<Module>().GetValueByName(id))){
         auto inst=new CallInst(func,args);
         insts.push_back(inst);
+        return inst->GetDef();
     }
     else{
         std::cerr<<"No Such Function!\n";
@@ -245,8 +246,10 @@ void BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
 void BasicBlock::GenerateAlloca(Variable* var){
     master.push_alloca(var);
 }
-Operand BasicBlock::GenerateGEPInst(Operand ptr,std::vector<Operand>&){
-    assert(0);
+Operand BasicBlock::GenerateGEPInst(Operand ptr,std::vector<Operand>& offs){
+    auto tmp=new GetElementPtrInst(ptr,offs);
+    insts.push_back(tmp);
+    return tmp->GetDef();
 }
 Operand BasicBlock::push_alloca(std::shared_ptr<Type> _tp){
     auto tmp=new AllocaInst(_tp);
