@@ -65,6 +65,8 @@ std::shared_ptr<Type> Exps::GetDeclDescipter(){
 
 std::vector<Operand> Exps::GetVisitDescripter(BasicBlock* cur){
     std::vector<Operand> tmp;
+    /// @note 因为我们拿到的是一个指向数组的指针，所以第一个必须是0
+    tmp.push_back(new ConstIRInt(0));
     for(auto&i:ls)tmp.push_back(i->GetOperand(cur));
     return tmp;
 }

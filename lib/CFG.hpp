@@ -146,6 +146,7 @@ class Function:public Value
     void push_param(Variable*);
     void push_alloca(Variable*);
     BasicBlock* front();
+    std::vector<ParamPtr>& GetParams();
 };
 /// @brief 编译单元
 class Module:public SymbolTable

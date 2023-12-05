@@ -6,10 +6,13 @@ enum InnerDataType
 class Type
 {
     InnerDataType tp;
+    protected:
+    int indirect_layer;
     public:
     Type(InnerDataType);
     InnerDataType GetType();
     virtual ~Type()=default;
+    virtual int layer();
 };
 class IntType:public Type
 {

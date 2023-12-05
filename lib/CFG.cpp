@@ -234,6 +234,23 @@ void BasicBlock::GenerateRetInst(){
 }
 Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
     if(auto func=dynamic_cast<Function*>(Singleton<Module>().GetValueByName(id))){
+        /// @note match the type of param and arg
+        auto& params=func->GetParams();
+        assert(args.size()==params.size());
+        assert(0);
+        auto i=args.begin();
+        auto j=params.begin();
+        for(auto j=params.begin();j!=params.end();j++,i++){
+            auto& ii=*i;auto& jj=*j;
+            int dif=ii->CopyType()->layer()-jj->CopyType()->layer();
+            assert(dif>=0);
+            if(dif>0)
+            {
+                std::vector<Operand>gep_args(dif+1,new ConstIRInt(0));
+                ii=this->GenerateGEPInst(ii,gep_args);
+            }
+        }
+        
         auto inst=new CallInst(func,args);
         insts.push_back(inst);
         return inst->GetDef();
@@ -266,11 +283,15 @@ void Function::push_alloca(Variable* ptr){
 void Function::push_param(Variable* var){
     params.push_back(ParamPtr(var));
     /// @warning RNM这个new没人回收
-    auto tmp=std::make_shared<PointerType>(var->CopyType());
-    Singleton<Module>().Register(var->get_name(),new Value(tmp));
+    auto tmp=new Value(std::make_shared<PointerType>(var->CopyType()));
+    Singleton<Module>().Register(var->get_name(),tmp);
+    var->SetObj(tmp);
 }
 void Function::add_block(BasicBlock* __block){
     bbs.push_back(BasicBlockPtr(__block));
+}
+std::vector<std::unique_ptr<Variable>>& Function::GetParams(){
+    return params;
 }
 // void Module::visit(std::function<void(Function*)> call_back){
 //     for(auto&i:ls)
