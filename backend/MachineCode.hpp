@@ -13,11 +13,9 @@ class MachineInst;
 class MachineOperand
 {
 private:
-    MachineInst *parent;
     int type;
     int val;
     std::string lable;
-
 public:
 enum OperandType{
     REG, 
@@ -96,7 +94,7 @@ public:
     bool isMem();
     bool isLabel();
 
-    MachineInst *getParent();
+    //MachineInst *getParent();
     int getType();
     int getVal();
     int getRegnum();
@@ -106,7 +104,7 @@ public:
 }
     std::string getlable();
 
-    void setParent(MachineInst *parent);
+    //void setParent(MachineInst *parent);
     void setReg(Register regnum);
 
     friend std::ostream& operator<<(std::ostream& os, MachineOperand& operand) {
@@ -118,7 +116,6 @@ public:
 class MachineInst
 {
 protected:
-    MachineBlock *parent;
     int type;
     MachineOperand *rd;
     MachineOperand *rs1;
@@ -136,7 +133,7 @@ enum InstType {
     Neg, // 取反，取负数
     Pseudo, // 伪指令
 };
-    void setParent(MachineBlock *parent);
+    //void setParent();
     int getType();
     // void addDef(MachineOperand *def);
     // void addUse(MachineOperand *use);
@@ -303,13 +300,14 @@ public:
 class MachineBlock
 {
 private:
-    List<User> insts;
+    List<User> InstList;
+
     // std::vector<MachineInst *> InstList;
     // std::vector<MachineBlock *> pred;//前驱
     // std::vector<MachineBlock *> succ;//后继
 public:
     MachineBlock();
-    std::vector<MachineInst *> &getInstList();
+    List<User> &getInstList();
 };
 
 class MachineFunction
@@ -320,16 +318,16 @@ private:
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;
     std::vector<VarPtr> alloca_variables;
-    std::vector<BasicBlockPtr> bbs;
+    std::vector<BasicBlockPtr> BlockList;
     // std::vector<MachineBlock *> BlockList;
     // std::vector<MachineOperand *> arglist;
     std::unordered_map<std::string, int> offsetmap;
     int stacksize;
 public:
-    MachineFunction(MachineUnit *parent);
-    std::vector<MachineBlock *> &getBlockList();
-    int getstacksize();
     void setstacksize();
+    MachineFunction();
+    std::vector<BasicBlockPtr> &getBlockList();
+    int getstacksize();
     void PrintInstStack();
 };
 
@@ -343,5 +341,6 @@ private:
 public:
     MachineUnit();
     ~MachineUnit();
-    std::vector<MachineFunction *> &getFuncList();
+    std::vector<FunctionPtr> &getFuncList();
+    bool isLableLegal();
 };
