@@ -106,12 +106,12 @@ class BaseExp:public HasOperand
                 switch (*i)
                 {
                 case AST_NOT:
-                    ptr=block->GenerateBinaryInst(Operand(0),BinaryInst::Op_Sub,ptr);
+                    ptr=BasicBlock::GenerateBinaryInst(block,Operand(0),BinaryInst::Op_Sub,ptr);
                     break;
                 case AST_ADD:
                     break;
                 case AST_SUB:
-                    ptr=block->GenerateBinaryInst(Operand(0),BinaryInst::Op_Sub,ptr);
+                    ptr=BasicBlock::GenerateBinaryInst(block,Operand(0),BinaryInst::Op_Sub,ptr);
                     break;
                 default:
                     assert(0);
@@ -148,7 +148,7 @@ class BaseExp:public HasOperand
                     std::cerr<<"No such Opcode\n";
                     assert(0);
                 }
-                oper=block->GenerateBinaryInst(oper,opcode,another);
+                oper=BasicBlock::GenerateBinaryInst(block,oper,opcode,another);
             }
             return oper;
         }
@@ -206,7 +206,7 @@ class InitVal:public AST_NODE
     InitVal()=default;
     InitVal(AST_NODE* _data);
     void print(int x);
-    void StoreFirst(Operand);
+    Operand GetFirst(BasicBlock*);
 };
 
 class BaseDef:public Stmt

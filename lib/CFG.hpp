@@ -17,6 +17,7 @@ class Variable
     std::string get_name();
     std::shared_ptr<Type> CopyType();
     void SetObj(Operand);
+    Operand GetObj();
 };
 /// @brief AllocaInst接受一个Value*(Variable)，产生一个PTR，指向Value*的Type类型
 class AllocaInst:public User
@@ -112,6 +113,7 @@ class BasicBlock:public Value
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
+    static Operand GenerateBinaryInst(BasicBlock*,Operand,BinaryInst::Operation,Operand);
     Operand GenerateLoadInst(Operand);
     Operand GenerateGEPInst(Operand,std::vector<Operand>&);
     void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);

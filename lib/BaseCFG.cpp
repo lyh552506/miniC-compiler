@@ -44,4 +44,13 @@ void User::print(){
 Value* User::GetDef(){return def.get();}
 
 ConstIRInt::ConstIRInt(int _val):Value(IR_Value_INT),val(_val){};
+
+int ConstIRInt::GetVal(){
+    return val;
+}
+
 ConstIRFloat::ConstIRFloat(float _val):Value(IR_Value_Float),val(_val){};
+
+float ConstIRFloat::GetVal(){
+    return val;
+}

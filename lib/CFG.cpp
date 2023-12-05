@@ -61,6 +61,8 @@ void Variable::SetObj(Operand _data){obj=_data;}
 std::string Variable::get_name(){
     return name;
 }
+Operand Variable::GetObj(){return obj;}
+
 std::shared_ptr<Type> Variable::CopyType(){return tp;}
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& offs){
@@ -109,6 +111,60 @@ Operand BasicBlock::GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Opera
     else tmp=new BinaryInst(_A,op,_B);
     push_back(tmp);
     return Operand(tmp->GetDef());
+}
+Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Operation op,Operand _B)
+{
+    if(_A->isConst()&&_B->isConst())
+    {
+        auto calc=[](auto a,BinaryInst::Operation op,auto b)->std::variant<float,int>{
+            switch (op)
+            {
+            case BinaryInst::Op_Add:return a+b;
+            case BinaryInst::Op_Sub:return a-b;
+            case BinaryInst::Op_Mul:return a*b;
+            case BinaryInst::Op_Div:return a/b;
+            case BinaryInst::Op_And:return (a!=0)&&(b!=0);
+            case BinaryInst::Op_Or:return (a!=0)||(b!=0);
+            case BinaryInst::Op_Mod:return (int)a%(int)b;
+            case BinaryInst::Op_E:return a==b;
+            case BinaryInst::Op_NE:return a!=b;
+            case BinaryInst::Op_G:return a>b;
+            case BinaryInst::Op_GE:return a>=b;
+            case BinaryInst::Op_L:return a<b;
+            case BinaryInst::Op_LE:return a<=b;
+            default:
+                assert(0);
+                break;
+            }
+        };
+        std::variant<float,int> fuc;
+        if(auto A=dynamic_cast<ConstIRInt*>(_A))
+        {
+            if(auto B=dynamic_cast<ConstIRInt*>(_B))
+                fuc=calc(A->GetVal(),op,B->GetVal());
+            else if(auto B=dynamic_cast<ConstIRFloat*>(_B))
+                fuc=calc(A->GetVal(),op,B->GetVal());
+            else assert(0);
+        }
+        else if(auto A=dynamic_cast<ConstIRFloat*>(_A))
+        {
+            if(auto B=dynamic_cast<ConstIRInt*>(_B))
+                fuc=calc(A->GetVal(),op,B->GetVal());
+            else if(auto B=dynamic_cast<ConstIRFloat*>(_B))
+                fuc=calc(A->GetVal(),op,B->GetVal());
+            else assert(0);
+        }
+        else assert(0);
+        if(std::holds_alternative<int>(fuc))
+            return new ConstIRInt(std::get<int>(fuc));
+        else
+            return new ConstIRFloat(std::get<float>(fuc));
+    }
+    else
+    {
+        assert(bb!=nullptr);
+        return bb->GenerateBinaryInst(_A,op,_B);
+    }
 }
 void BasicBlock::GenerateStoreInst(Operand src,Operand des){
     assert(des->GetType()==IR_PTR);
@@ -188,6 +244,9 @@ void BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
 }
 void BasicBlock::GenerateAlloca(Variable* var){
     master.push_alloca(var);
+}
+Operand BasicBlock::GenerateGEPInst(Operand ptr,std::vector<Operand>&){
+    assert(0);
 }
 Operand BasicBlock::push_alloca(std::shared_ptr<Type> _tp){
     auto tmp=new AllocaInst(_tp);

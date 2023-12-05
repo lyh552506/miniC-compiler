@@ -97,6 +97,13 @@ void InitVal::print(int x){
     else
         std::cout<<'\n',val->print(x+1);
 }
+Operand InitVal::GetFirst(BasicBlock* cur){
+    if(auto fuc=dynamic_cast<AddExp*>(val.get())){
+        return fuc->GetOperand(cur);
+    }
+    else assert(0);
+}
+
 
 BaseDef::BaseDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):ID(_id),array_descripters(_ad),civ(_iv){}
 
@@ -114,15 +121,22 @@ void BaseDef::codegen(){
         auto tmp=new Variable(ID);
         if(Singleton<IR_CONSTDECL_FLAG>().flag==1){
             Operand var;
-            if(Singleton<InnerDataType>()==IR_Value_INT)
-                var=new ConstIRInt(0);
-            else if(Singleton<InnerDataType>()==IR_Value_Float)
-                var=new ConstIRFloat(0.0);
-            else assert(0);
-            civ->StoreFirst(var);
+            if(civ==nullptr)
+            {
+                if(Singleton<InnerDataType>()==IR_Value_INT)
+                    var=new ConstIRInt(0);
+                else if(Singleton<InnerDataType>()==IR_Value_Float)
+                    var=new ConstIRFloat(0.0);
+                else assert(0);
+            }
+            else var=civ->GetFirst(nullptr);
             Singleton<Module>().Register(ID,var);
         }
-        else Singleton<Module>().GenerateGlobalVariable(tmp);
+        else
+        {
+            tmp->SetObj(civ->GetFirst(nullptr));
+            Singleton<Module>().GenerateGlobalVariable(tmp);
+        }
     }
 }
 void BaseDef::print(int x){
@@ -148,15 +162,23 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
         auto tmp=new Variable(ID);
         if(Singleton<IR_CONSTDECL_FLAG>().flag==1){
             Operand var;
-            if(Singleton<InnerDataType>()==IR_Value_INT)
-                var=new ConstIRInt(0);
-            else if(Singleton<InnerDataType>()==IR_Value_Float)
-                var=new ConstIRFloat(0.0);
-            else assert(0);
-            civ->StoreFirst(var);
+            if(civ==nullptr)
+            {
+                if(Singleton<InnerDataType>()==IR_Value_INT)
+                    var=new ConstIRInt(0);
+                else if(Singleton<InnerDataType>()==IR_Value_Float)
+                    var=new ConstIRFloat(0.0);
+                else assert(0);
+            }
+            else var=civ->GetFirst(nullptr);
             Singleton<Module>().Register(ID,var);
         }
-        else state.current_building->GenerateAlloca(tmp);
+        else{
+            state.current_building->GenerateAlloca(tmp);
+            if(civ!=nullptr){
+                state.current_building->GenerateStoreInst(civ->GetFirst(state.current_building),tmp->GetObj());
+            }
+        }
     }
     return state.current_building;
 }
@@ -371,6 +393,7 @@ Operand LVal::GetOperand(BasicBlock* block){
         std::vector<Operand> tmp=array_descripters->GetVisitDescripter(block);
         ptr=block->GenerateGEPInst(ptr,tmp);
     }
+    if(ptr->isConst())return ptr;
     return block->GenerateLoadInst(ptr);
 }
 

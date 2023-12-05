@@ -44,6 +44,7 @@ class Value
     std::shared_ptr<Type> CopyType();
     void add_user(Use* __data);
     virtual void print();
+    virtual bool isConst(){return false;}
 };
 using Operand=Value*;
 class User:public Value
@@ -65,6 +66,7 @@ class ConstIRInt:public Value
     public:
     ConstIRInt(int);
     int GetVal();
+    bool isConst()final{return true;}
 };
 class ConstIRFloat:public Value
 {
@@ -72,4 +74,5 @@ class ConstIRFloat:public Value
     public:
     ConstIRFloat(float);
     float GetVal();
+    bool isConst()final{return true;}
 };
