@@ -321,14 +321,14 @@ private:
     std::vector<BasicBlockPtr> BlockList;
     // std::vector<MachineBlock *> BlockList;
     // std::vector<MachineOperand *> arglist;
-    std::unordered_map<std::string, int> offsetmap;
+    std::unordered_map<std::string, int> Blockmap;
     int stacksize;
 public:
     void setstacksize();
     MachineFunction();
     std::vector<BasicBlockPtr> &getBlockList();
     int getstacksize();
-    void PrintInstStack();
+    void PrintInstStack(std::ofstream &outputFile);
 };
 
 class MachineUnit

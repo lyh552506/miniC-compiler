@@ -5,11 +5,6 @@
 #include "MachineCode.hpp"
 
 class AsmPrinter {
-private:
-    int row;
-    std::unordered_map<std::string, int> labelmap;
-    std::vector<MachineFunction *> FuncList;
-
 public:
     AsmPrinter(MachineUnit* unit);
 

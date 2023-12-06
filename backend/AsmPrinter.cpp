@@ -11,10 +11,15 @@ void AsmPrinter::PrintCode(MachineUnit* Unit, std::ofstream &outputFile) {
             //打印每个Block，计算偏移量
             
             for (auto Inst : Block->getInstList()) {
+                //进行指令匹配
+
                 //打印每个Inst
+                Inst->PrintInst(outputFile);
 
             }
+            //打印每个Block的跳转
         }
+        //打印每个Func的返回
     }
 }
 
