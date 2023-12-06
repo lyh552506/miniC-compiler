@@ -313,6 +313,7 @@ public:
 class MachineFunction
 {
 private:
+    std::string Funcname;
     using ParamPtr=std::unique_ptr<Variable>; 
     using VarPtr=std::unique_ptr<Variable>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
@@ -328,7 +329,7 @@ public:
     MachineFunction();
     std::vector<BasicBlockPtr> &getBlockList();
     int getstacksize();
-    void PrintInstStack(std::ofstream &outputFile);
+    void PrintInstStack(MachineUnit* Unit, std::ofstream &outputFile);
 };
 
 class MachineUnit

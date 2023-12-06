@@ -146,7 +146,7 @@ class BasicBlock:public Value
 class Function:public Value
 {
     std::string name;
-    using ParamPtr=std::unique_ptr<Variable>;
+    using ParamPtr=std::unique_ptr<Variable>; 
     using VarPtr=std::unique_ptr<Variable>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;
@@ -156,6 +156,13 @@ class Function:public Value
     public:
     Function(InnerDataType _tp,std::string _id);
     BasicBlock* front_block();
+    
+    //todo
+    std::string getFuncName();
+    std::vector<BasicBlockPtr>& getBlockList();
+    std::vector<ParamPtr>& getParams();
+    std::vector<VarPtr>& getAllocaVariables();
+    
     void print()final;
     void add_block(BasicBlock*);
     void push_param(Variable*);
@@ -172,5 +179,9 @@ class Module:public SymbolTable
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
+    
+    //todo
+    std::vector <FunctionPtr> &getFuncList();
+    
     void Test();
 };

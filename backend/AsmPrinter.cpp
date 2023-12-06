@@ -6,7 +6,7 @@
 void AsmPrinter::PrintCode(MachineUnit* Unit, std::ofstream &outputFile) {
     for (auto Func : Unit->getFuncList()) {
         //打印每个Func，及栈帧
-        Func->PrintInstStack();
+        Func->PrintInstStack(outputFile);
         for (auto Block : Func->getBlockList()) {
             //打印每个Block，计算偏移量
             

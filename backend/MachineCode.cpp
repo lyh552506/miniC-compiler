@@ -333,6 +333,7 @@ void MachineFunction::setstacksize() {
 }
 
 MachineFunction::MachineFunction() {
+    this->Funcname = Singleton<Function>().getFuncName();
     this->params = Singleton<Function>().getParams();
     this->alloca_variables = Singleton<Function>().getAllocaVariables();
     this->BlockList = Singleton<Function>().getBlockList();
@@ -348,10 +349,25 @@ int MachineFunction::getstacksize() {
     return this->stacksize;
 }
 
-void MachineFunction::PrintInstStack(std::ofstream &outputFile) {
-    row++;
-
+void MachineFunction::PrintInstStack(MachineUnit* Unit, std::ofstream &outputFile) {
     //完成栈帧基本结构
+    row++;
+    outputFile << this->Funcname << std::endl;
+    row++;
+    outputFile << "    addi sp, sp, -" << this->stacksize << std::endl;
+    row++;
+    outputFile << "    sd ra, " << this->stacksize - 8 << "(sp)" << std::endl;
+    row++;
+    outputFile << "    sd s0, " << this->stacksize - 16 << "(sp)" << std::endl;
+    row++;
+    outputFile << "    addi s0, sp, " << this->stacksize << std::endl;
+    //打印保存参数部分
+    
+    //打印保存局部变量部分
+
+    //打印函数体
+
+    //打印恢复状态部分
 }
 
 //MachineUnit
