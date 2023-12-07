@@ -45,6 +45,7 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(){
 
 void AllocaInfo::AnalyzeAlloca(AllocaInst* Inst){
 
+
 }
 
 bool RewriteSingleStoreAlloca(){
@@ -53,4 +54,8 @@ bool RewriteSingleStoreAlloca(){
 
 void PreWorkingAfterInsertPhi(std::vector<BasicBlock*> DefineBlock){
 
+}
+
+bool IsAllocaPromotable(AllocaInst* AI){
+  
 }

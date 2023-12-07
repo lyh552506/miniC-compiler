@@ -22,7 +22,7 @@ public:
 };
 
 /// @brief 检验送入的alloca指令能否被promote
-bool IsAllocaPromotable();
+bool IsAllocaPromotable(AllocaInst* AI);
 
 //记录alloca
 class AllocaInfo {

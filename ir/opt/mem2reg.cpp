@@ -15,7 +15,7 @@ bool promoteMemoryToRegister(Function &func, dominance &dom) {
         User *user = Instruct.get();
         if (auto allocaInst =
                 dynamic_cast<AllocaInst *>(user)) //确保是alloc指令
-          if (IsAllocaPromotable())
+          if (IsAllocaPromotable(allocaInst))
             Allocas.push_back(allocaInst);
       }
     }
