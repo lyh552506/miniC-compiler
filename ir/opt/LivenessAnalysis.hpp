@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 #ifndef LIVENESSANALYSIS_HPP
 #define LIVENESSANALYSIS_HPP
 #include <iostream>
@@ -40,3 +41,31 @@ void liveVariableAnalysis(std ::vector<BasicBlock*>& blocks);
 void liveVariavleAnalysisandPrintRanges(std ::vector<BasicBlock*>& blocks);
 
 #endif   // LIVENESSANALYSIS_HPP
+=======
+#include "../lib/CFG.hpp"
+#include "../backend/MachineCode.hpp"
+#include <set>
+#include <map>
+
+class MachineFunction;
+class MachineUnit;
+class MachineOperand;
+class MachineBlock;
+class LiveVariableAnalysis
+{
+private:
+    std::map<MachineOperand, std::set<MachineOperand *>> use_inst;
+    std::map<MachineBlock *, std::set<MachineOperand *>> def, use;
+    void BlockUseInstr(MachineFunction *);
+    void BlockDefUse(MachineFunction *);
+    void iterate(MachineFunction *);
+
+public:
+    void pass(MachineUnit *unit);
+    void pass(MachineFunction *func);
+    std::map<MachineOperand, std::set<MachineOperand *>> &getAllUses()
+    {
+        return use_inst;
+    };
+};
+>>>>>>> Stashed changes
