@@ -24,8 +24,6 @@ bool promoteMemoryToRegister(Function &func, dominance &dom) {
       break;
     
     RunPromoteMem2Reg(dom,Allocas);
-
-
   }
 }
 

@@ -3,11 +3,6 @@
 //所有后继找这个basicblock块的最后一个跳转语句
 
 
-
-
-
-
-
 void dominance::computeDF(int x) {
   for (auto de : node[x].des) { // 找到结点x的所有后继结点，计算DF_local
     if (node[de].idom != x) { // de是x的一个后继并且x不是de的严格支配节点
@@ -47,6 +42,25 @@ void dominance::DFS(int pos) {
     if (node[p].dfnum == 0) {
       DFS(p);
       node[p].father = pos;
+    }
+  }
+}
+
+void dominance::DFS_new(){
+  int DfsIn=0,DfsOut=0;
+  std::vector<std::pair<int,std::forward_list<int>::iterator>> worklists;
+  std::forward_list<int>::iterator it1=node[1].des.begin();
+  worklists.push_back(std::make_pair(1,it1));//push root node
+  node[1].DfsIn=++DfsIn;
+  //vertex[DfsIn]=1;
+  while(!worklists.empty()){
+    int index=worklists.back().first;
+    std::forward_list<int>::iterator it=worklists.back().second;
+    if(it==node[index].des.end()){//孩子全部访问完毕，则添加dfsout
+       node[index].DfsOut=++DfsOut;
+       worklists.pop_back();   
+    }else{
+      
     }
   }
 }

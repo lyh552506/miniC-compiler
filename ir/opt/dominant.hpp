@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <vector>
 #include <typeinfo>
+#include <utility>
 
 // SDOM(MIN_SDOM(x))即代表获取离x最近的sdom结点
 #define SDOM(x) node[x].sdom        //获取x对应结点的sdom
@@ -33,6 +34,7 @@ public:
     int father; //此处是dfs序中遍历的father，区别rev链表
     int sdom;
     int idom;
+    int DfsIn,DfsOut;
     std::forward_list<int> des;        // 记录该结点的下一个结点
     std::forward_list<int> rev;        // 记录该节点的上一个结点
     std::forward_list<int> idom_child; //支配树上的孩子
@@ -51,6 +53,7 @@ private:
   std::vector<int> bucket[20]; // bucket[u]代表sdom为u的点集
   std::vector<DSU> dsu;        //辅助数据结构实现路径压缩
   std::vector<DF> df;          //存储每个结点的必经结点边界
+  BasicBlock* root;            //保存支配树的根节点
 
   int block_num, count; // count是当前的dfs序号
 
@@ -66,7 +69,8 @@ public:
   /// @brief 获取每个节点的DFS序，同时初始化sdom为自己
   /// @param pos
   void DFS(int pos);
-
+  
+  void DFS_new();
 private:
   /// @brief 路径压缩，并更新最小sdom
   /// @param x
