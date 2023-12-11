@@ -105,8 +105,9 @@ int MachineInst::getType() {
     return this->type;
 }
 
-//BinaryInst
-BinaryInst::BinaryInst(MachineBlock *parent, Binary_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2) {
+//MachineBinaryInst
+MachineBinaryInst::MachineBinaryInst(MachineBlock *parent, Binary_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2) {
+    this->type = InstType::Binary;
     //this->parent = parent;
     this->opcode = opcode;
     this->rd = rd;
@@ -114,7 +115,7 @@ BinaryInst::BinaryInst(MachineBlock *parent, Binary_Inst opcode, MachineOperand 
     this->rs2 = rs2;
 }
 
-void BinaryInst::PrintInst(std::ofstream &outputFile) {
+void MachineBinaryInst::PrintInst(std::ofstream &outputFile) {
     row++;
     if (this->opcode == Binary_Inst::And) {
         outputFile << "and " << this->rd->getRegName() << ", " << this->rs1->getRegName() << ", " << this->rs2->getRegName() << std::endl;
@@ -130,8 +131,9 @@ void BinaryInst::PrintInst(std::ofstream &outputFile) {
     //std::cout << this->opcode << this->rs1->getRegnum() << this->rs2->getRegnum() << this->rs2->getRegnum() << std::endl;
 }
 
-//LoadInst
-LoadInst::LoadInst(MachineBlock *parent, Load_Inst opcode, MachineOperand *rd, MachineOperand *rs1) {
+//MachineLoadInst
+MachineLoadInst::MachineLoadInst(MachineBlock *parent, Load_Inst opcode, MachineOperand *rd, MachineOperand *rs1) {
+    this->type = InstType::Load;
     // this->parent = parent;
     this->opcode = opcode;
     this->rd = rd;
@@ -139,7 +141,7 @@ LoadInst::LoadInst(MachineBlock *parent, Load_Inst opcode, MachineOperand *rd, M
     this->rs2 = rs2;
 }
 
-void LoadInst::PrintInst(std::ofstream &outputFile) {
+void MachineLoadInst::PrintInst(std::ofstream &outputFile) {
     row++;
     if (this->opcode == Load_Inst::li) {
     outputFile << "li" << this->rd->getRegName() << ", " << this->rs1->getVal() << std::endl;
@@ -153,8 +155,9 @@ void LoadInst::PrintInst(std::ofstream &outputFile) {
     }
 }
 
-//StoreInst
-StoreInst::StoreInst(MachineBlock *parent, Store_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2) {
+//MachineStoreInst
+MachineStoreInst::MachineStoreInst(MachineBlock *parent, Store_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2) {
+    this->type = InstType::Store;
     //this->parent = parent;
     this->opcode = opcode;
     this->rd = rd;
@@ -162,14 +165,15 @@ StoreInst::StoreInst(MachineBlock *parent, Store_Inst opcode, MachineOperand *rd
     this->rs2 = rs2;
 }
 
-void StoreInst::PrintInst(std::ofstream &outputFile) {
+void MachineStoreInst::PrintInst(std::ofstream &outputFile) {
     row++;
     outputFile << magic_enum::enum_name(this->opcode) << this->rs2->getRegName() << ", %d(",offset;
     outputFile << this->rs1->getRegName() << ")" << std::endl;
 }
 
-//BranchInst
-BranchInst::BranchInst(MachineBlock *parent,Branch_Inst opcode, MachineOperand *rs1, MachineOperand *rs2) {
+//MachineBranchInst
+MachineBranchInst::MachineBranchInst(MachineBlock *parent,Branch_Inst opcode, MachineOperand *rs1, MachineOperand *rs2) {
+    this->type = InstType::Branch;
     if (opcode > Branch_Inst::bne)
         printf("error: wrong instruction!\n");
     //this->parent = parent;
@@ -177,10 +181,10 @@ BranchInst::BranchInst(MachineBlock *parent,Branch_Inst opcode, MachineOperand *
     this->rd = nullptr;
     this->rs1 = rs1;
     this->rs2 = rs2;
-
 }
 
-BranchInst::BranchInst(MachineBlock *parent,Branch_Inst opcode, MachineOperand *rs1) {
+MachineBranchInst::MachineBranchInst(MachineBlock *parent,Branch_Inst opcode, MachineOperand *rs1) {
+    this->type = InstType::Branch;
     if (opcode <= Branch_Inst::bne)
         printf("error: wrong instruction!\n");
     //this->parent = parent;
@@ -190,7 +194,7 @@ BranchInst::BranchInst(MachineBlock *parent,Branch_Inst opcode, MachineOperand *
     this->rs2 = nullptr;
 }
 
-void BranchInst::PrintInst(std::ofstream &outputFile) {
+void MachineBranchInst::PrintInst(std::ofstream &outputFile) {
     row++;
     if (this->opcode <= Branch_Inst::bne) {
         outputFile << magic_enum::enum_name(this->opcode) << " " << this->rs1->getRegName() << ", " << this->rs2->getRegName() << ", " << "%d",offset;
@@ -202,8 +206,9 @@ void BranchInst::PrintInst(std::ofstream &outputFile) {
     }
 }
 
-//JumpInst
-JumpInst::JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd) {
+//MachineJumpInst
+MachineJumpInst::MachineJumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd) {
+    this->type = InstType::Jump;
     //this->parent = parent;
     this->opcode = opcode;
     this->rd = rd;
@@ -211,7 +216,8 @@ JumpInst::JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd) {
     this->rs2 = nullptr;  
 }
 
-JumpInst::JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd, MachineOperand *rs1) {
+MachineJumpInst::MachineJumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd, MachineOperand *rs1) {
+    this->type = InstType::Jump;
     //this->parent = parent;
     this->opcode = opcode;
     this->rd = rd;
@@ -219,7 +225,7 @@ JumpInst::JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd, M
     this->rs2 = nullptr;
 }
 
-JumpInst::JumpInst(MachineBlock *parent, Jump_Inst opcode) {
+MachineJumpInst::MachineJumpInst(MachineBlock *parent, Jump_Inst opcode) {
     //this->parent = parent;
     this->opcode = opcode;
     this->rd = nullptr;
@@ -227,7 +233,7 @@ JumpInst::JumpInst(MachineBlock *parent, Jump_Inst opcode) {
     this->rs2 = nullptr;
 }
 
-JumpInst::JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rs1) {
+MachineJumpInst::MachineJumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rs1) {
     //this->parent = parent;
     this->opcode = opcode;
     this->rd = nullptr;
@@ -235,7 +241,7 @@ JumpInst::JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rs1) 
     this->rs2 = nullptr;
 }
 
-void JumpInst::PrintInst(std::ofstream &outputFile) {
+void MachineJumpInst::PrintInst(std::ofstream &outputFile) {
     row++;
     if (this->opcode == Jump_Inst::jal) {
         outputFile << "jal " << this->rd->getRegName() << "%d",offset;
@@ -254,8 +260,9 @@ void JumpInst::PrintInst(std::ofstream &outputFile) {
     }
 }
 
-//CmpInst
-CmpInst::CmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2) {
+//MachineCmpInst
+MachineCmpInst::MachineCmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2) {
+    this->type = InstType::Cmp;
     //this->parent = parent;
     this->opcode = opcode;
     this->rd = rd;
@@ -263,7 +270,8 @@ CmpInst::CmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, Mach
     this->rs2 = rs2;
 }
 
-CmpInst::CmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, MachineOperand *rs1) {
+MachineCmpInst::MachineCmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, MachineOperand *rs1) {
+    this->type = InstType::Cmp;
     //this->parent = parent;
     this->opcode = opcode;
     this->rd = rd;
@@ -271,7 +279,7 @@ CmpInst::CmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, Mach
     this->rs2 = nullptr; 
 }
 
-void CmpInst::PrintInst(std::ofstream &outputFile) {
+void MachineCmpInst::PrintInst(std::ofstream &outputFile) {
     row++;
     if (this->opcode == Cmp_Inst::slt) {
         outputFile << "slt " << this->rd->getRegName() << ", " << this->rs1->getRegName() << this->rs2->getRegName() << std::endl;
@@ -284,9 +292,9 @@ void CmpInst::PrintInst(std::ofstream &outputFile) {
     }
 }
 
-
 //PseudoInst
 PseudoInst::PseudoInst(MachineBlock *parent, Pseudo_Inst opcode, MachineOperand *rd, MachineOperand *rs1) {
+    this->type = InstType::Pseudo;
     //this->parent = parent;
     this->opcode = opcode;
     this->rd = rd;
@@ -295,6 +303,7 @@ PseudoInst::PseudoInst(MachineBlock *parent, Pseudo_Inst opcode, MachineOperand 
 }
 
 PseudoInst::PseudoInst(MachineBlock *parent, Pseudo_Inst opcode) {
+    this->type = InstType::Pseudo;
     //this->parent = parent;
     this->opcode = opcode;
     this->rd = nullptr;
@@ -318,14 +327,17 @@ MachineBlock::MachineBlock() {
     // this->num = num;
 }
 
-List<User> &MachineBlock::getInstList() {
+void MachineBlock::addInst(MachineInst *inst) {
+    this->InstList.push_back(inst);
+}
+
+std::vector<MachineInst *> &MachineBlock::getInstList() {
     return this->InstList;
 }
 
-
 //MachineFunction
 void MachineFunction::setstacksize() {
-    int argnum = this->params.size() + this->alloca_variables.size();
+    int argnum = this->paramList.size() + this->alloca_variables.size();
     this->stacksize = 16 + argnum * 4;
     //RISC-V 栈帧以16字节对齐
     int x = this->stacksize % 16;
@@ -333,20 +345,43 @@ void MachineFunction::setstacksize() {
 }
 
 MachineFunction::MachineFunction() {
-    this->Funcname = Singleton<Function>().getFuncName();
-    this->params = Singleton<Function>().getParams();
-    this->alloca_variables = Singleton<Function>().getAllocaVariables();
-    this->BlockList = Singleton<Function>().getBlockList();
+    this->Funcname ;
+    this->paramList ;
+    this->alloca_variables ;
+    this->BlockList ;
     setstacksize();
-}
-
-using BasicBlockPtr=std::unique_ptr<BasicBlock>;
-std::vector<BasicBlockPtr> &MachineFunction::getBlockList() {
-    return this->BlockList;
 }
 
 int MachineFunction::getstacksize() {
     return this->stacksize;
+}
+
+void MachineFunction::addBlock(MachineBlock *block) {
+    this->BlockList.push_back(block);
+}
+
+void MachineFunction::addParam(MachineOperand *param) {
+    this->paramList.push_back(param);
+}
+
+void MachineFunction::addAlloca(MachineOperand *alloca) {
+    this->alloca_variables.push_back(alloca);
+}
+
+std::string MachineFunction::getFuncName() {
+    return this->Funcname;
+}
+
+std::vector<MachineBlock *> &MachineFunction::getBlockList() {
+    return this->BlockList;
+}
+
+std::vector<MachineOperand *> &MachineFunction::getParams() {
+    return this->paramList;
+}
+
+std::vector<MachineOperand *> &MachineFunction::getAllocaVariables() {
+    return this->alloca_variables;
 }
 
 void MachineFunction::PrintInstStack(MachineUnit* Unit, std::ofstream &outputFile) {
@@ -372,17 +407,10 @@ void MachineFunction::PrintInstStack(MachineUnit* Unit, std::ofstream &outputFil
 
 //MachineUnit
 MachineUnit::MachineUnit() {
-    this->FuncList = Singleton<Module>().getFuncList();
-    for (auto Fun : this->getFuncList()) {
+    for (auto& Fun : this->FunctionList) {
         this->labelmap.insert(std::make_pair(Fun->getFuncName(), -1));
     }
-    //int size = this->getFuncList().size();
-    this->labelmap[FuncList[0]->getFuncName()] = row;
-}
-
-using FunctionPtr=std::unique_ptr<Function>;
-std::vector<FunctionPtr> & MachineUnit::getFuncList() {
-    return this->FuncList;
+    this->labelmap[FunctionList[0]->getFuncName()] = row;
 }
 
 bool MachineUnit::isLableLegal() {
@@ -393,3 +421,68 @@ bool MachineUnit::isLableLegal() {
         }
     }
 }
+
+void MachineUnit::addFunction(MachineFunction *func) {
+    this->FunctionList.push_back(func);
+}
+
+std::vector<MachineFunction *> &MachineUnit::getFuncList() {
+    return this->FunctionList;
+}
+
+
+
+//  转换实例
+// #include <iostream>
+// #include <vector>
+// #include <unordered_map>
+// #include <string>
+
+// class Variable {};
+// class BasicBlock {};
+// class AllocaInst {};
+
+// class Function {
+// public:
+//     std::string name;
+//     using ParamPtr = std::unique_ptr<Variable>;
+//     using VarPtr = std::unique_ptr<Variable>;
+//     using BasicBlockPtr = std::unique_ptr<BasicBlock>;
+//     std::vector<ParamPtr> params;
+//     std::vector<VarPtr> alloca_variables;
+//     std::vector<BasicBlockPtr> bbs;
+//     void InsertAlloca(AllocaInst* ptr) {}
+// };
+
+// class MachineFunction {
+// public:
+//     std::unordered_map<std::string, int> Blockmap;
+//     int stacksize;
+// };
+
+// int main() {
+//     std::vector<Function> functionVec; // 原始的 Function 对象的 vector
+
+//     std::vector<MachineFunction> machineFunctionVec; // 转换后的 MachineFunction 对象的 vector
+
+//     // 遍历 functionVec，逐个转换并复制到 machineFunctionVec
+//     for (const auto& function : functionVec) {
+//         MachineFunction machineFunction;
+
+//         // 复制 Function 的成员变量到 MachineFunction
+//         machineFunction.Blockmap = function.Blockmap;
+//         machineFunction.stacksize = function.stacksize;
+
+//         // 将转换后的 MachineFunction 添加到 machineFunctionVec
+//         machineFunctionVec.push_back(machineFunction);
+//     }
+
+//     // 输出转换后的结果
+//     for (const auto& machineFunction : machineFunctionVec) {
+//         std::cout << "Blockmap size: " << machineFunction.Blockmap.size() << std::endl;
+//         std::cout << "Stacksize: " << machineFunction.stacksize << std::endl;
+//         std::cout << std::endl;
+//     }
+
+//     return 0;
+// }

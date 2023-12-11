@@ -137,10 +137,10 @@ enum InstType {
     int getType();
     // void addDef(MachineOperand *def);
     // void addUse(MachineOperand *use);
-    virtual void PrintInst(std::ofstream &outputFile) = 0;
+    virtual void PrintInst(std::ofstream &outputFile);
 };
 
-class BinaryInst : public MachineInst
+class MachineBinaryInst : public MachineInst
 {  
 public:
 enum Binary_Inst {
@@ -181,11 +181,11 @@ enum Binary_Inst {
 private:
     Binary_Inst opcode;
 public:
-    BinaryInst(MachineBlock *parent, Binary_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    MachineBinaryInst(MachineBlock *parent, Binary_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
     void PrintInst(std::ofstream &outputFile);
 };
 
-class LoadInst : public MachineInst
+class MachineLoadInst : public MachineInst
 {
 public:
 enum Load_Inst {
@@ -199,11 +199,11 @@ enum Load_Inst {
 private: 
     Load_Inst opcode;
 public:
-    LoadInst(MachineBlock *parent, Load_Inst opcode, MachineOperand *rd, MachineOperand *rs1);
+    MachineLoadInst(MachineBlock *parent, Load_Inst opcode, MachineOperand *rd, MachineOperand *rs1);
     void PrintInst(std::ofstream &outputFile);
 };
 
-class StoreInst : public MachineInst
+class MachineStoreInst : public MachineInst
 {
 public:
 enum Store_Inst {
@@ -215,11 +215,11 @@ enum Store_Inst {
 private:
     Store_Inst opcode;
 public:
-    StoreInst(MachineBlock *parent, Store_Inst opcode, MachineOperand *rs2, MachineOperand *rs1, MachineOperand *offset);
+    MachineStoreInst(MachineBlock *parent, Store_Inst opcode, MachineOperand *rs2, MachineOperand *rs1, MachineOperand *offset);
     void PrintInst(std::ofstream &outputFile);
 };
 
-class BranchInst : public MachineInst
+class MachineBranchInst : public MachineInst
 {
 public:
 enum Branch_Inst {
@@ -239,12 +239,12 @@ enum Branch_Inst {
 private:
     Branch_Inst opcode;
 public:
-    BranchInst(MachineBlock *parent, Branch_Inst opcode, MachineOperand *rs1, MachineOperand *rs2);
-    BranchInst(MachineBlock *parent, Branch_Inst opcode, MachineOperand *rs1);
+    MachineBranchInst(MachineBlock *parent, Branch_Inst opcode, MachineOperand *rs1, MachineOperand *rs2);
+    MachineBranchInst(MachineBlock *parent, Branch_Inst opcode, MachineOperand *rs1);
     void PrintInst(std::ofstream &outputFile);
 };
 
-class JumpInst : public MachineInst
+class MachineJumpInst : public MachineInst
 {
 public:
 enum Jump_Inst {
@@ -256,14 +256,14 @@ enum Jump_Inst {
 private:
     Jump_Inst opcode;
 public:
-    JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd);
-    JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd, MachineOperand *rs1);
-    JumpInst(MachineBlock *parent, Jump_Inst opcode);
-    JumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rs1);
+    MachineJumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd);
+    MachineJumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rd, MachineOperand *rs1);
+    MachineJumpInst(MachineBlock *parent, Jump_Inst opcode);
+    MachineJumpInst(MachineBlock *parent, Jump_Inst opcode, MachineOperand *rs1);
     void PrintInst(std::ofstream &outputFile);
 };
 
-class CmpInst : public MachineInst
+class MachineCmpInst : public MachineInst
 {
 public:
 enum Cmp_Inst {
@@ -275,8 +275,8 @@ enum Cmp_Inst {
 private:
     Cmp_Inst opcode;
 public:
-    CmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
-    CmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, MachineOperand *rs1);
+    MachineCmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2);
+    MachineCmpInst(MachineBlock *parent, Cmp_Inst opcode, MachineOperand *rd, MachineOperand *rs1);
     void PrintInst(std::ofstream &outputFile);
 };
 
@@ -300,48 +300,50 @@ public:
 class MachineBlock
 {
 private:
-    List<User> InstList;
-
-    // std::vector<MachineInst *> InstList;
+    std::vector<MachineInst *> InstList;
     // std::vector<MachineBlock *> pred;//前驱
     // std::vector<MachineBlock *> succ;//后继
 public:
     MachineBlock();
-    List<User> &getInstList();
+    ~MachineBlock();
+    void addInst(MachineInst *inst);
+    std::vector<MachineInst *> &getInstList();
 };
 
-class MachineFunction
+class MachineFunction 
 {
 private:
     std::string Funcname;
-    using ParamPtr=std::unique_ptr<Variable>; 
-    using VarPtr=std::unique_ptr<Variable>;
-    using BasicBlockPtr=std::unique_ptr<BasicBlock>;
-    std::vector<ParamPtr> params;
-    std::vector<VarPtr> alloca_variables;
-    std::vector<BasicBlockPtr> BlockList;
-    // std::vector<MachineBlock *> BlockList;
-    // std::vector<MachineOperand *> arglist;
+    std::vector<MachineBlock *> BlockList;
+    std::vector<MachineOperand *> paramList;
+    std::vector<MachineOperand *> alloca_variables;
     std::unordered_map<std::string, int> Blockmap;
     int stacksize;
 public:
     void setstacksize();
     MachineFunction();
-    std::vector<BasicBlockPtr> &getBlockList();
     int getstacksize();
+
+    void addBlock(MachineBlock *block);
+    void addParam(MachineOperand *param);
+    void addAlloca(MachineOperand *alloca);
+    std::string getFuncName();
+    std::vector<MachineBlock *> &getBlockList();
+    std::vector<MachineOperand *> &getParams();
+    std::vector<MachineOperand *> &getAllocaVariables();
+
     void PrintInstStack(MachineUnit* Unit, std::ofstream &outputFile);
 };
 
 class MachineUnit
 {
 private:
-    //std::vector<MachineFunction *> FuncList;
-    using FunctionPtr=std::unique_ptr<Function>;
-    std::vector<FunctionPtr>& FuncList;
+    std::vector<MachineFunction *> FunctionList;
     std::unordered_map<std::string, int> labelmap;
 public:
     MachineUnit();
     ~MachineUnit();
-    std::vector<FunctionPtr> &getFuncList();
+    void addFunction(MachineFunction *func);
+    std::vector<MachineFunction *> &getFuncList();
     bool isLableLegal();
 };
