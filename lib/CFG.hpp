@@ -20,6 +20,7 @@ class InstWithDef:public User
     Value* def;
     public:
     virtual Value* GetDef();
+    
 };
 /// @brief %1=alloca i32
 /// @note inst def %1, but no ultra def
@@ -118,6 +119,7 @@ class BinaryInst:public InstWithDef
     public:
     BinaryInst(Operand _A,Operation __op,Operand _B);
 };
+
 class BasicBlock:public Value
 {
     List<User> insts;
@@ -129,7 +131,7 @@ class BasicBlock:public Value
     void push_back(User* ptr);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
-    Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
+    Operand GenerateBinaryInst(Operand _A,BinaryInst op,Operand _B);
     Operand GenerateLoadInst(Variable*);
     void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
     void GenerateUnCondInst(BasicBlock*);
@@ -139,6 +141,9 @@ class BasicBlock:public Value
     void GenerateStoreInst(Operand,Variable*);
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
+    //todo
+    std::vector<User*>& getInstList();
+
     bool EndWithBranch();
 };
 /// @brief 以function为最大单元生成CFG
