@@ -69,13 +69,12 @@ GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& offs
     add_use(base_ptr);
     std::shared_ptr<Type> fuc=nullptr;
     for(auto &i:offs){
-        if(fuc==nullptr)
-            fuc=base_ptr->CopyType();
-        else
-            if(auto ptr=dynamic_cast<PointerType*>(fuc.get()))
-                fuc=ptr->GetSubType();
+        auto select=(fuc==nullptr?base_ptr->CopyType():fuc);
+        if(auto _tp=dynamic_cast<HasSubType*>(select.get()))fuc=_tp->GetSubType();
+        else assert("Not a valid type");
         add_use(i);
     }
+    fuc=std::make_shared<PointerType>(fuc);
     def=std::make_unique<Value>(fuc);
 }
 
@@ -315,6 +314,7 @@ Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
     return *ls.back();
 }
 void Module::GenerateGlobalVariable(Variable* ptr){
+    /// @todo 初始化单元
     auto obj=new Value(std::make_shared<PointerType>(ptr->CopyType()));
     ptr->SetObj(obj);
     SymbolTable::Register(ptr->get_name(),obj);

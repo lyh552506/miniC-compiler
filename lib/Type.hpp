@@ -42,7 +42,6 @@ class ArrayType:public HasSubType
 {
     /// @warning prepare for 32 bits machine, int is enough for the number of elements 
     int NumEle;
-    std::shared_ptr<Type> subtype;
     public:
     ArrayType(int,std::shared_ptr<Type>);
 };
