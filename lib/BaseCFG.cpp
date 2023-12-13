@@ -14,9 +14,13 @@ void UserList::push_front(Use* _data){
 }
 
 InnerDataType Value::GetType(){
-    return tp;
+    return tp->GetType();
 }
-Value::Value(InnerDataType _tp):tp(_tp){}
+
+
+Value::Value(std::shared_ptr<Type> _tp):tp(_tp){}
+Value::Value(InnerDataType _tp){tp=std::make_shared<Type>(_tp);}
+std::shared_ptr<Type> Value::CopyType(){return tp;}
 void Value::add_user(Use* __data){
     userlist.push_front(__data);
 }
@@ -26,10 +30,10 @@ void Value::print(){
 }
 
 void User::add_use(Value* __data){
-    uselist.push_back(Use(this,__data));
+    uselist.push_back(std::make_unique<Use>(this,__data));
 }
-User::User():Value(InnerDataType::IR_Value_VOID){}
-User::User(InnerDataType tp):Value(tp){}
+User::User():Value(std::make_shared<Type>(IR_Value_VOID)){}
+User::User(std::shared_ptr<Type> _tp):Value(_tp){}
 void User::print(){
     int status;
     char* demangled_name = abi::__cxa_demangle(typeid(*this).name(), 0, 0, &status);
@@ -37,17 +41,16 @@ void User::print(){
     std::cout<<demangled_name<<'\n';
     free(demangled_name);
 }
+Value* User::GetDef(){return static_cast<Value*>(this);}
 
-Operand::Operand(int num):InnerOperand(num){}
-Operand::Operand(Value* num):InnerOperand(num){}
-Operand::Operand(float num):InnerOperand(num){}
-InnerDataType Operand::GetType(){
-    auto fat=*static_cast<InnerOperand*>(this);
-    if(std::holds_alternative<Value*>(fat)){
-        return std::get<Value*>(fat)->GetType();
-    }
-    else if(std::holds_alternative<int>(fat)){
-        return InnerDataType::IR_Value_INT;
-    }
-    else return InnerDataType::IR_Value_Float;
+ConstIRInt::ConstIRInt(int _val):Value(IR_Value_INT),val(_val){};
+
+int ConstIRInt::GetVal(){
+    return val;
+}
+
+ConstIRFloat::ConstIRFloat(float _val):Value(IR_Value_Float),val(_val){};
+
+float ConstIRFloat::GetVal(){
+    return val;
 }

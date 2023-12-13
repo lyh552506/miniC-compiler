@@ -1,5 +1,22 @@
 #include "AST_NODE.hpp"
 /// @brief 最基础的AST_NODE，所有基础特性都应该放里面
+void TypeForward(AST_Type type)
+{
+    switch (type)
+    {
+    case AST_INT:
+        Singleton<InnerDataType>()=IR_Value_INT;
+        break;
+    case AST_FLOAT:
+        Singleton<InnerDataType>()=IR_Value_Float;
+        break;
+    case AST_VOID:
+    default:
+        std::cerr<<"void as variable is not allowed!\n";
+        assert(0);
+    }
+}
+
 void AST_NODE::codegen(){
     std::cerr<<"In AST some nodes are forbidden to call codegen()\n";
     assert(0);
@@ -30,9 +47,28 @@ void InnerBaseExps::print(int x){
 }
 
 Exps::Exps(AddExp* _data):InnerBaseExps(_data){}
-std::vector<Operand> GetArrayDescripter(){
-    std::cerr<<"Array Not Impl\n";
-    assert(0);
+std::shared_ptr<Type> Exps::GetDeclDescipter(){
+    auto tmp=std::make_shared<Type>(Singleton<InnerDataType>());
+    for(auto i=ls.rbegin();i!=ls.rend();i++)
+    {
+        auto con=(*i)->GetOperand(nullptr);
+        if(auto fuc=dynamic_cast<ConstIRInt*>(con)){
+            tmp=std::make_shared<ArrayType>(fuc->GetVal(),tmp);
+        }
+        else if(auto fuc=dynamic_cast<ConstIRFloat*>(con)){
+            tmp=std::make_shared<ArrayType>(fuc->GetVal(),tmp);
+        }
+        else assert(0);
+    }
+    return tmp;
+}
+
+std::vector<Operand> Exps::GetVisitDescripter(bool is_array,BasicBlock* cur){
+    std::vector<Operand> tmp;
+    /// @note 因为我们拿到的是一个指向数组的指针，所以第一个必须是0
+    if(is_array)tmp.push_back(new ConstIRInt(0));
+    for(auto&i:ls)tmp.push_back(i->GetOperand(cur));
+    return tmp;
 }
 
 CallParams::CallParams(AddExp* _data):InnerBaseExps(_data){}
@@ -63,37 +99,45 @@ void InitVal::print(int x){
     else
         std::cout<<'\n',val->print(x+1);
 }
-void InitVal::DealInitVal(Variable* structure){
-    if(val==nullptr){
-        ///@todo notice it's a empty initialize
-        assert(0);
+Operand InitVal::GetFirst(BasicBlock* cur){
+    if(auto fuc=dynamic_cast<AddExp*>(val.get())){
+        return fuc->GetOperand(cur);
     }
-    else if(InitVals* ivs=dynamic_cast<InitVals*>(val.get())){
-        ///@todo 是个数组的初始化
-        assert(0);
-    }
-    else if(AddExp* exp=dynamic_cast<AddExp*>(val.get())){
-        assert(0);
-    }
-    else{
-        assert(0);
-    }
+    else assert(0);
 }
+
 
 BaseDef::BaseDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):ID(_id),array_descripters(_ad),civ(_iv){}
 
 void BaseDef::codegen(){
     if(array_descripters!=nullptr)
     {
-        std::cerr<<"Array Not Implenmented!\n";
-        assert(0);
+        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
+        assert(civ==nullptr);
+        std::shared_ptr<Type> tmp=array_descripters->GetDeclDescipter();
+        auto var=new Variable(tmp,ID);
+        Singleton<Module>().GenerateGlobalVariable(var);
     }
     else
     {
-        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
-        assert(civ==nullptr);
         auto tmp=new Variable(ID);
-        Singleton<Module>().GenerateGlobalVariable(tmp);
+        if(Singleton<IR_CONSTDECL_FLAG>().flag==1){
+            Operand var;
+            if(civ==nullptr)
+            {
+                if(Singleton<InnerDataType>()==IR_Value_INT)
+                    var=new ConstIRInt(0);
+                else if(Singleton<InnerDataType>()==IR_Value_Float)
+                    var=new ConstIRFloat(0.0);
+                else assert(0);
+            }
+            else var=civ->GetFirst(nullptr);
+            Singleton<Module>().Register(ID,var);
+        }
+        else
+        {
+            Singleton<Module>().GenerateGlobalVariable(tmp);
+        }
     }
 }
 void BaseDef::print(int x){
@@ -108,17 +152,36 @@ VarDef::VarDef(std::string _id,Exps* _ad,InitVal* _iv):BaseDef(_id,_ad,_iv){}
 BasicBlock* BaseDef::GetInst(GetInstState state){
     if(array_descripters!=nullptr)
     {
-        std::cerr<<"Array Not Implenmented!\n";
-        assert(0);
+        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
+        assert(civ==nullptr);
+        std::shared_ptr<Type> tmp=array_descripters->GetDeclDescipter();
+        auto var=new Variable(tmp,ID);
+        state.current_building->GenerateAlloca(var);
     }
     else
     {
-        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
-        assert(civ==nullptr);
         auto tmp=new Variable(ID);
-        state.current_building->GenerateAlloca(tmp);
-        return state.current_building;
+        if(Singleton<IR_CONSTDECL_FLAG>().flag==1){
+            Operand var;
+            if(civ==nullptr)
+            {
+                if(Singleton<InnerDataType>()==IR_Value_INT)
+                    var=new ConstIRInt(0);
+                else if(Singleton<InnerDataType>()==IR_Value_Float)
+                    var=new ConstIRFloat(0.0);
+                else assert(0);
+            }
+            else var=civ->GetFirst(nullptr);
+            Singleton<Module>().Register(ID,var);
+        }
+        else{
+            state.current_building->GenerateAlloca(tmp);
+            if(civ!=nullptr){
+                state.current_building->GenerateStoreInst(civ->GetFirst(state.current_building),Singleton<Module>().GetValueByName(ID));
+            }
+        }
     }
+    return state.current_building;
 }
 
 ConstDef::ConstDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):BaseDef(_id,_ad,_iv){}
@@ -165,23 +228,14 @@ BasicBlock* ConstDefs::GetInst(GetInstState state){
 ConstDecl::ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
 }
 BasicBlock* ConstDecl::GetInst(GetInstState state){
+    TypeForward(type);
+    Singleton<IR_CONSTDECL_FLAG>().flag=1;
     return cdfs->GetInst(state);
 }
 void ConstDecl::codegen(){
     /// @warning copy from VarDecl
-    switch (type)
-    {
-    case AST_INT:
-        Singleton<InnerDataType>()=IR_Value_INT;
-        break;
-    case AST_FLOAT:
-        Singleton<InnerDataType>()=IR_Value_Float;
-        break;
-    case AST_VOID:
-    default:
-        std::cerr<<"void as variable is not allowed!\n";
-        assert(0);
-    }
+    TypeForward(type);
+    Singleton<IR_CONSTDECL_FLAG>().flag=1;
     cdfs->codegen();
 }
 void ConstDecl::print(int x){
@@ -211,22 +265,13 @@ BasicBlock* VarDefs::GetInst(GetInstState state){
 
 VarDecl::VarDecl(AST_Type tp,VarDefs* ptr):type(tp),vdfs(ptr){}
 BasicBlock* VarDecl::GetInst(GetInstState state){
+    Singleton<IR_CONSTDECL_FLAG>().flag=0;
+    TypeForward(type);
     return vdfs->GetInst(state);
 }
 void VarDecl::codegen(){
-    switch (type)
-    {
-    case AST_INT:
-        Singleton<InnerDataType>()=IR_Value_INT;
-        break;
-    case AST_FLOAT:
-        Singleton<InnerDataType>()=IR_Value_Float;
-        break;
-    case AST_VOID:
-    default:
-        std::cerr<<"void as variable is not allowed!\n";
-        assert(0);
-    }
+    Singleton<IR_CONSTDECL_FLAG>().flag=0;
+    TypeForward(type);
     vdfs->codegen();
 }
 
@@ -250,7 +295,24 @@ void FuncParam::GetVariable(Function& tmp){
                 assert(0);
         }
     };
-    tmp.push_param(new Variable(get_type(tp),ID));
+    /// @note 见CFG中GenerateCallInst的处理
+    /// @note 有点问题 形参!=实参
+    if(array_subscripts!=nullptr)
+    {
+        auto vec=array_subscripts->GetDeclDescipter();
+        if(emptySquare)vec=std::make_shared<PointerType>(vec);
+        else
+        {
+            auto inner=dynamic_cast<PointerType*>(vec.get());
+            vec=std::make_shared<PointerType>(inner->GetSubType());
+        }
+        tmp.push_param(new Variable(vec,ID));
+    }
+    else
+    {
+        if(emptySquare)tmp.push_param(new Variable(std::make_shared<PointerType>(std::make_shared<Type>(get_type(tp))),ID));
+        else tmp.push_param(new Variable(get_type(tp),ID));
+    }
 }
 void FuncParam::print(int x){
     AST_NODE::print(x);
@@ -342,11 +404,17 @@ void FuncDef::print(int x){
 
 LVal::LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
 Operand LVal::GetOperand(BasicBlock* block){
-    assert(array_descripters==nullptr);
-    if(auto var=dynamic_cast<Variable*>(Singleton<Module>().GetValueByName(ID)))
-        return block->GenerateLoadInst(var); 
-    std::cerr<<"Not a LVal\n";
-    assert(0);
+    auto ptr=Singleton<Module>().GetValueByName(ID);
+    if(array_descripters!=nullptr)
+    {
+        /// @note [][10] **[10] GEP 0(*[10]) 
+        /// @note []/[10] ** GEP 0(*) 
+        assert(ptr->GetType()==InnerDataType::IR_PTR);
+        std::vector<Operand> tmp=array_descripters->GetVisitDescripter(1,block);
+        ptr=block->GenerateGEPInst(ptr,tmp);
+    }
+    if(ptr->isConst())return ptr;
+    return block->GenerateLoadInst(ptr);
 }
 
 std::string LVal::GetName(){return ID;}
@@ -360,14 +428,9 @@ void LVal::print(int x){
 AssignStmt::AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
 BasicBlock* AssignStmt::GetInst(GetInstState state){
     Operand tmp=exp->GetOperand(state.current_building);
-    // block->GenerateStoreInst(block,);
     auto valueptr=Singleton<Module>().GetValueByName(lv->GetName());
     
-    /// @warning design of StoreInst is not mature enough for ptr, be careful
-    if(auto variable=dynamic_cast<Variable*>(valueptr))
-        state.current_building->GenerateStoreInst(tmp,variable);
-    else
-        assert(0);
+    state.current_building->GenerateStoreInst(tmp,valueptr);
     return state.current_building;
 }
 void AssignStmt::print(int x){
@@ -473,7 +536,8 @@ void ReturnStmt::print(int x){
 
 FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){}
 Operand FunctionCall::GetOperand(BasicBlock* block){
-    assert(0);
+    std::vector<Operand> args=cp->GetParams(block);
+    return block->GenerateCallInst(id,args);
 }
 void FunctionCall::print(int x){
     AST_NODE::print(x);
