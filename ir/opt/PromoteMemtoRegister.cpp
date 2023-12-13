@@ -22,7 +22,7 @@ void PromoteMem2Reg::run() {
     //看下哪些基本块在使用这些ALLOC，哪些基本块定义了这个ALLOC
     Info.AnalyzeAlloca(AI);
     if (Info.DefineBlocks.size() == 1) { //只有一个定义基本块
-      if (RewriteSingleStoreAlloca(Info,AI)) {
+      if (RewriteSingleStoreAlloca(Info, AI)) {
         SingleStore++; // rewrite success
         RemoveFromAllocaList(i);
         continue;
@@ -44,15 +44,15 @@ void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
   init();
   //遍历这个allocaInst的user链
   for (User *user : AI->GetUsers()) {
-    BasicBlock* BB;
+    BasicBlock *BB;
     if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
       DefineBlocks.push_back(SI->GetParent());
-      BB=SI->GetParent();
+      BB = SI->GetParent();
       OnlyStore = SI;
       AllocaPtrValue = SI->GetOperand(0);
     } else { //由于IsAllocaPromotable，所以只会是storeinst或者loadinst
       LoadInst *LI = dynamic_cast<LoadInst *>(user);
-      BB=LI->GetParent();
+      BB = LI->GetParent();
       UsingBlocks.push_back(LI->GetParent());
       AllocaPtrValue = LI;
     }
@@ -66,32 +66,46 @@ void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
   }
 }
 
-bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo& Info,AllocaInst* AI) {
-  StoreInst* OnlySt=Info.OnlyStore;
-  int StoreIndex=-1;
-  bool GlobalVal;//TODO判断store语句的第一个操作数是否是全局变量
-  BasicBlock* StoreBB=OnlySt->GetParent();
-  for(User* user:AI->GetUsers()){
-    LoadInst* LI=dynamic_cast<LoadInst*>(user);
-    if(!LI)
+bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info,
+                                              AllocaInst *AI) {
+  StoreInst *OnlySt = Info.OnlyStore;
+  int StoreIndex = -1;
+  bool GlobalVal;
+
+  Value *val = OnlySt->GetOperand(0);
+  User *u = dynamic_cast<User *>(val);
+  if (u == nullptr)
+    GlobalVal = true; //判断store语句的第一个操作数是否是全局变量/常量
+  BasicBlock *StoreBB = OnlySt->GetParent();
+
+  // Info.UsingBlocks.clear();
+  for (User *user : AI->GetUsers()) {
+    LoadInst *LI = dynamic_cast<LoadInst *>(user);
+    if (!LI)
       continue;
-    
-    if(!GlobalVal){//
-       if(LI->GetParent()==StoreBB){//load语句和当前的store在同一个块如果不是全局变量，需要寻找store和load的次序关系，此时需要查看二者的先后关系
-         if(StoreIndex==-1)
-           StoreIndex=CaculateIndex(StoreBB,OnlySt);
-         int LoadIndex=CaculateIndex(StoreBB,LI);
-         if(LoadIndex<StoreIndex){//如果load比store还早一些出现，那么出现undef
-            Info.UsingBlocks.push_back(StoreBB);
-            continue;
-         }  
-       }else if(LI->GetParent()!=StoreBB){//TODO
 
-       }
+    if (!GlobalVal) {
+      if (LI->GetParent() ==
+          StoreBB) { // load语句和当前的store在同一个块如果不是全局变量，需要寻找store和load的次序关系，此时需要查看二者的先后关系
+        if (StoreIndex == -1)
+          StoreIndex = CaculateIndex(StoreBB, OnlySt);
+        int LoadIndex = CaculateIndex(StoreBB, LI);
+        if (LoadIndex <
+            StoreIndex) { //如果load比store还早一些出现，那么出现undef
+          Info.UsingBlocks.push_back(StoreBB);
+          continue;
+        }
+      } else if (
+          LI->GetParent() != StoreBB &&
+          !m_dom.dominates(
+              StoreBB,
+              LI->GetParent())) { // loadinst不在唯一store的bb，并且其所在bb不被支配
+        Info.UsingBlocks.push_back(LI->GetParent());
+        continue;
+      }
     }
+    
   }
-
-
 }
 
 void PreWorkingAfterInsertPhi(std::vector<BasicBlock *> DefineBlock) {}

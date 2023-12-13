@@ -15,11 +15,11 @@
 #define MIN_SDOM(x) dsu[x].min_sdom //获取结点最近的sdom的index
 #define IDOM(x) node[x].idom        //获取结点的idom
 
-struct _Node {
-  std::string name;
-  std::vector<int> defblock;
-  bool operator==(const _Node &other) { return name == other.name; }
-};
+// struct _Node {
+//   std::string name;
+//   std::vector<int> defblock;
+//   bool operator==(const _Node &other) { return name == other.name; }
+// };
 
 class dominance {
 public:
@@ -30,16 +30,18 @@ public:
   };
   class Node {
   public:
-    int dfnum;  //记录dfs序
+    //int dfnum;  //记录dfs序
     int father; //此处是dfs序中遍历的father，区别rev链表
     int sdom;
     int idom;
     int DfsIn,DfsOut;
+    int visited;
     std::forward_list<int> des;        // 记录该结点的下一个结点
     std::forward_list<int> rev;        // 记录该节点的上一个结点
     std::forward_list<int> idom_child; //支配树上的孩子
     Node()
-        : dfnum{0}, father{0}, des{}, rev{}, sdom{0}, idom{0}, idom_child{} {}
+        : father{0}, des{}, rev{}, sdom{0}, idom{0}, idom_child{}, visited{0},DfsIn{0},DfsOut{0}
+        {}
   };
   class DF {
   public:
@@ -97,6 +99,9 @@ public:
 
   /// @brief 建立支配树
   void build_tree();
+  
+  /// @brief 判断bb1是否支配bb2
+  bool dominates(BasicBlock* bb1,BasicBlock* bb2);
 
   /// @brief 插入phi函数
   void place_phi() {}
