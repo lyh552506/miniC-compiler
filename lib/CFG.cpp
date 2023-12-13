@@ -2,28 +2,24 @@
 #include <string>
 #include <memory>
 #include <iostream>
-AllocaInst::AllocaInst(std::shared_ptr<Type> _tp){
-    auto tmp=std::make_shared<PointerType>(_tp);
-    def=std::make_unique<Value>(tmp);
-}
+AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
     add_use(__des);
 }
-LoadInst::LoadInst(Value* __src){
+Operand StoreInst::GetDef(){return nullptr;}
+LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->CopyType().get())->GetSubType()){
+    assert(GetType()==IR_Value_INT||GetType()==IR_Value_Float);
     add_use(__src);
-    auto tmp=dynamic_cast<PointerType*>(__src->CopyType().get());
-    assert(tmp->GetInnerType()==IR_Value_INT||tmp->GetInnerType()==IR_Value_Float);
-    def=std::make_unique<Value>(tmp->GetInnerType());
 }
-FPTSI::FPTSI(Operand __src){
+FPTSI::FPTSI(Operand __src):User(std::make_shared<Type>(IR_Value_INT)){
     add_use(__src);
-    def=std::make_unique<Value>(IR_Value_INT);
 }
-SITFP::SITFP(Operand __src){
+SITFP::SITFP(Operand __src):User(std::make_shared<Type>(IR_Value_Float)){
     add_use(__src);
-    def=std::make_unique<Value>(IR_Value_Float);
 }
+
+Operand UnCondInst::GetDef(){return nullptr;}
 
 UnCondInst::UnCondInst(BasicBlock* __des){
     add_use(__des);
@@ -35,7 +31,9 @@ CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse){
     add_use(__isfalse);
 }
 
-CallInst::CallInst(Function* _func,std::vector<Operand>& _args){
+Operand CondInst::GetDef(){return nullptr;}
+
+CallInst::CallInst(Function* _func,std::vector<Operand>& _args):User(_func->CopyType()){
     add_use(_func);
     for(auto&i:_args)
         add_use(i);
@@ -45,10 +43,11 @@ RetInst::RetInst(){}
 
 RetInst::RetInst(Operand op){add_use(op);}
 
-BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B){
+Operand RetInst::GetDef(){return nullptr;}
+
+BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(_A->CopyType()){
     add_use(_A);
     add_use(_B);
-    def=std::make_unique<Value>(_A->GetType());
 }
 
 Variable::Variable(std::string _id):name(_id){
@@ -65,16 +64,15 @@ std::string Variable::get_name(){
 std::shared_ptr<Type> Variable::CopyType(){return tp;}
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& offs){
-    add_use(base_ptr);
     std::shared_ptr<Type> fuc=nullptr;
     for(auto &i:offs){
         auto select=(fuc==nullptr?base_ptr->CopyType():fuc);
         if(auto _tp=dynamic_cast<HasSubType*>(select.get()))fuc=_tp->GetSubType();
         else assert("Not a valid type");
-        add_use(i);
     }
-    fuc=std::make_shared<PointerType>(fuc);
-    def=std::make_unique<Value>(fuc);
+    tp=std::make_shared<PointerType>(fuc);
+    add_use(base_ptr);
+    for(auto &i:offs)add_use(i);
 }
 
 BasicBlock::BasicBlock(Function& __master):Value(IR_Value_VOID),master(__master){};

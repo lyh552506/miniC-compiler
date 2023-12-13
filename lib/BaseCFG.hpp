@@ -34,6 +34,7 @@ class Value
 {
     /// @brief 用来找到一个Value的所有User
     UserList userlist;
+    protected:
     std::shared_ptr<Type> tp;
     public:
     virtual ~Value()=default;
@@ -53,12 +54,11 @@ class User:public Value
     std::vector<UsePtr> uselist;
     protected:
     void add_use(Value* __data);
-    std::unique_ptr<Value> def=nullptr;
     public:
     User();
     User(std::shared_ptr<Type> tp);
     void print();
-    Value* GetDef();
+    virtual Operand GetDef();
 };
 class ConstIRInt:public Value
 {

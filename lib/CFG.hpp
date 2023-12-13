@@ -33,6 +33,7 @@ class StoreInst:public User
     Operand src;
     public:
     StoreInst(Operand,Operand);
+    Operand GetDef()final;
 };
 class LoadInst:public User
 {
@@ -55,11 +56,13 @@ class UnCondInst:public User
 {
     public:
     UnCondInst(BasicBlock*);
+    Operand GetDef()final;
 };
 class CondInst:public User
 {
     public:
     CondInst(Operand,BasicBlock*,BasicBlock*);
+    Operand GetDef()final;
 };
 class CallInst:public User
 {
@@ -72,6 +75,7 @@ class RetInst:public User
     public:
     RetInst();
     RetInst(Operand);
+    Operand GetDef()final;
 };
 /// @brief BinaryInst use A B,def C
 /// @param A operand

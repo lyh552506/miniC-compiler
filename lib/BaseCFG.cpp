@@ -41,7 +41,7 @@ void User::print(){
     std::cout<<demangled_name<<'\n';
     free(demangled_name);
 }
-Value* User::GetDef(){return def.get();}
+Value* User::GetDef(){return static_cast<Value*>(this);}
 
 ConstIRInt::ConstIRInt(int _val):Value(IR_Value_INT),val(_val){};
 
