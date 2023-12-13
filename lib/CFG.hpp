@@ -17,11 +17,21 @@ class Variable
     std::shared_ptr<Type> CopyType();
 };
 /// @brief AllocaInst接受一个Value*(Variable)，产生一个PTR，指向Value*的Type类型
+
+class undef{
+
+};
+/// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
+
 class AllocaInst:public User
 {
     public:
     /// @brief Alloca语句要Type的结构,所以是Value*
     AllocaInst(std::shared_ptr<Type>);
+    bool IsUsed();//TODO 返回当前alloca出来的对象后续有没有被使用过
+    void DeletFromList();//删除当前指令
+    std::vector<User*> GetUsers(); //返回使用过alloca分配出的虚拟寄存器的指令
+    BasicBlock* GetParent();//返回当前指令所在的bb
 };
 /// @brief src->des
 /// @note inst use %src %des
@@ -34,11 +44,17 @@ class StoreInst:public User
     public:
     StoreInst(Operand,Operand);
     Operand GetDef()final;
+    Value* GetOperand(int index);//返回storeinst的第index个操作数，   
+    BasicBlock* GetParent();//返回当前指令所在的bb
 };
 class LoadInst:public User
 {
     public:
     LoadInst(Operand __src);
+    /// @brief 一般都是只有src,def是load产生的
+    /// @param __src 
+    BasicBlock* GetParent();//返回当前指令所在的bb
+    Value* GetSrc();
 };
 /// @brief float to int
 class FPTSI:public User
@@ -129,6 +145,8 @@ class BasicBlock:public Value
     std::vector<User*>& getInstList();
 
     bool EndWithBranch();
+    List<User>& GetInsts();
+    int dfs;
 };
 /// @brief 以function为最大单元生成CFG
 //其实function本质是就是CFG了
@@ -156,6 +174,7 @@ class Function:public Value
     void push_alloca(Variable*);
     BasicBlock* front();
     std::vector<ParamPtr>& GetParams();
+    std::vector<BasicBlockPtr> GetBasicBlock();
 };
 /// @brief 编译单元
 class Module:public SymbolTable
@@ -173,4 +192,5 @@ class Module:public SymbolTable
     std::vector <FunctionPtr> &getFuncList();
     
     void Test();
+    std::vector<FunctionPtr> GetFuncTion();
 };

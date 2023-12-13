@@ -1,4 +1,5 @@
-#include "parser.hpp"
+//#include "parser.hpp"
+#include "yacc/parser.hpp"
 extern FILE* yyin;
 int main(int argc,char** argv)
 {
