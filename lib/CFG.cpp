@@ -13,6 +13,7 @@ StoreInst::StoreInst(Operand __src,Operand __des){
 LoadInst::LoadInst(Value* __src){
     add_use(__src);
     auto tmp=dynamic_cast<PointerType*>(__src->CopyType().get());
+    assert(tmp->GetInnerType()==IR_Value_INT||tmp->GetInnerType()==IR_Value_Float);
     def=std::make_unique<Value>(tmp->GetInnerType());
 }
 FPTSI::FPTSI(Operand __src){
@@ -57,11 +58,9 @@ Variable::Variable(std::shared_ptr<Type> _tp,std::string _id):name(_id),tp(_tp){
 Variable::Variable(InnerDataType _tp,std::string _id):name(_id){
     tp=std::make_shared<Type>(_tp);
 }
-void Variable::SetObj(Operand _data){obj=_data;}
 std::string Variable::get_name(){
     return name;
 }
-Operand Variable::GetObj(){return obj;}
 
 std::shared_ptr<Type> Variable::CopyType(){return tp;}
 
@@ -245,9 +244,26 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
         /// @note match the type of param and arg
         auto& params=func->GetParams();
         assert(args.size()==params.size());
-        assert(0);
+        /// @warning 这里肯定是有bug的,但是实际我只要保证他指针地址没错，肯定能跑
+        /// @note llvm对于类型的处理感觉有点傻逼，好像新版本在弱化ptr类型的子类型，有一种只要它地址是对的，你就别管的美（实际我也想这样），评价是初衷是好的，但是执行错了
+        /// 支持情况 1 
+        /// 形参:int crr[][10] 
+        /// int arr[10];func(arr) 完全不进行类型的转换
+        /// 因为实际ir的处理就是crr是指向[i32x10]的指针,arr也是指向[i32x10]的指针，就是这么jb怪
+        /// 支持情况 2
+        /// 形参:int crr[][10]
+        /// 实参:int arr[10][10]，填func(arr[2])
+        /// arr[2]自动调用GEP 0 2，转换为[i32x10]*
+        /// 支持情况 3
+        /// 形参:int crr[][10]
+        /// 实参:int arr[10][10][10]，填func(arr)
+        /// arr会在本函数中调用 GEP 0 0 0转化成正确类型
+        /// 支持情况 4
+        /// 形参:int crr[10]
+        /// 实参:int arr[10]
+        /// 其实crr在ir中的类型是i32*...
+        /// arr会在本函数中调用GEP 0 0
         auto i=args.begin();
-        auto j=params.begin();
         for(auto j=params.begin();j!=params.end();j++,i++){
             auto& ii=*i;auto& jj=*j;
             int dif=ii->CopyType()->layer()-jj->CopyType()->layer();
@@ -283,22 +299,20 @@ Operand BasicBlock::push_alloca(std::shared_ptr<Type> _tp){
 }
 
 void Function::push_alloca(Variable* ptr){
-    alloca_variables.push_back(VarPtr(ptr));
     auto obj=bbs.front()->push_alloca(ptr->CopyType());
     Singleton<Module>().Register(ptr->get_name(),obj);
-    ptr->SetObj(obj);
 }
 void Function::push_param(Variable* var){
-    params.push_back(ParamPtr(var));
-    /// @warning RNM这个new没人回收
-    auto tmp=new Value(std::make_shared<PointerType>(var->CopyType()));
-    Singleton<Module>().Register(var->get_name(),tmp);
-    var->SetObj(tmp);
+    /// @note 形参类型是var->CopyType()
+    /// @note 需要alloca和store
+    push_alloca(var);
+    params.push_back(ParamPtr(new Value(var->CopyType())));
+    bbs.front()->GenerateStoreInst(params.back().get(),Singleton<Module>().GetValueByName(var->get_name()));
 }
 void Function::add_block(BasicBlock* __block){
     bbs.push_back(BasicBlockPtr(__block));
 }
-std::vector<std::unique_ptr<Variable>>& Function::GetParams(){
+std::vector<std::unique_ptr<Value>>& Function::GetParams(){
     return params;
 }
 // void Module::visit(std::function<void(Function*)> call_back){
@@ -316,7 +330,6 @@ Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
 void Module::GenerateGlobalVariable(Variable* ptr){
     /// @todo 初始化单元
     auto obj=new Value(std::make_shared<PointerType>(ptr->CopyType()));
-    ptr->SetObj(obj);
     SymbolTable::Register(ptr->get_name(),obj);
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }

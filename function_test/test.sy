@@ -1,4 +1,8 @@
 //test add of hex and oct
+int fuck(int x[])
+{
+    return x[3];
+}
 int main(){
     const int x=1231;
     int arr[x*x+2*x+100];

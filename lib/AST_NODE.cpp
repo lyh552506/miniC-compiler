@@ -63,10 +63,10 @@ std::shared_ptr<Type> Exps::GetDeclDescipter(){
     return tmp;
 }
 
-std::vector<Operand> Exps::GetVisitDescripter(BasicBlock* cur){
+std::vector<Operand> Exps::GetVisitDescripter(bool is_array,BasicBlock* cur){
     std::vector<Operand> tmp;
     /// @note 因为我们拿到的是一个指向数组的指针，所以第一个必须是0
-    tmp.push_back(new ConstIRInt(0));
+    if(is_array)tmp.push_back(new ConstIRInt(0));
     for(auto&i:ls)tmp.push_back(i->GetOperand(cur));
     return tmp;
 }
@@ -136,7 +136,6 @@ void BaseDef::codegen(){
         }
         else
         {
-            tmp->SetObj(civ->GetFirst(nullptr));
             Singleton<Module>().GenerateGlobalVariable(tmp);
         }
     }
@@ -178,7 +177,7 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
         else{
             state.current_building->GenerateAlloca(tmp);
             if(civ!=nullptr){
-                state.current_building->GenerateStoreInst(civ->GetFirst(state.current_building),tmp->GetObj());
+                state.current_building->GenerateStoreInst(civ->GetFirst(state.current_building),Singleton<Module>().GetValueByName(ID));
             }
         }
     }
@@ -296,7 +295,24 @@ void FuncParam::GetVariable(Function& tmp){
                 assert(0);
         }
     };
-    tmp.push_param(new Variable(get_type(tp),ID));
+    /// @note 见CFG中GenerateCallInst的处理
+    /// @note 有点问题 形参!=实参
+    if(array_subscripts!=nullptr)
+    {
+        auto vec=array_subscripts->GetDeclDescipter();
+        if(emptySquare)vec=std::make_shared<PointerType>(vec);
+        else
+        {
+            auto inner=dynamic_cast<PointerType*>(vec.get());
+            vec=std::make_shared<PointerType>(inner->GetSubType());
+        }
+        tmp.push_param(new Variable(vec,ID));
+    }
+    else
+    {
+        if(emptySquare)tmp.push_param(new Variable(std::make_shared<PointerType>(std::make_shared<Type>(get_type(tp))),ID));
+        else tmp.push_param(new Variable(get_type(tp),ID));
+    }
 }
 void FuncParam::print(int x){
     AST_NODE::print(x);
@@ -391,8 +407,10 @@ Operand LVal::GetOperand(BasicBlock* block){
     auto ptr=Singleton<Module>().GetValueByName(ID);
     if(array_descripters!=nullptr)
     {
-        ///@todo
-        std::vector<Operand> tmp=array_descripters->GetVisitDescripter(block);
+        /// @note [][10] **[10] GEP 0(*[10]) 
+        /// @note []/[10] ** GEP 0(*) 
+        assert(ptr->GetType()==InnerDataType::IR_PTR);
+        std::vector<Operand> tmp=array_descripters->GetVisitDescripter(1,block);
         ptr=block->GenerateGEPInst(ptr,tmp);
     }
     if(ptr->isConst())return ptr;

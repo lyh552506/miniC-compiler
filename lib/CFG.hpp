@@ -9,15 +9,12 @@ class Variable
 {
     std::string name;
     std::shared_ptr<Type> tp;
-    Operand obj=nullptr;
     public:
     Variable(std::string _id);
     Variable(std::shared_ptr<Type> tp,std::string _id);
     Variable(InnerDataType tp,std::string _id);
     std::string get_name();
     std::shared_ptr<Type> CopyType();
-    void SetObj(Operand);
-    Operand GetObj();
 };
 /// @brief AllocaInst接受一个Value*(Variable)，产生一个PTR，指向Value*的Type类型
 class AllocaInst:public User
@@ -131,11 +128,9 @@ class BasicBlock:public Value
 class Function:public Value
 {
     std::string name;
-    using ParamPtr=std::unique_ptr<Variable>;
-    using VarPtr=std::unique_ptr<Variable>;
+    using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
-    std::vector<ParamPtr> params;
-    std::vector<VarPtr> alloca_variables;
+    std::vector<ParamPtr> params;//存放形式参数
     std::vector<BasicBlockPtr> bbs;
     void InsertAlloca(AllocaInst* ptr);
     public:
