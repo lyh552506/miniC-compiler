@@ -23,7 +23,19 @@ public:
     AllocaPtrValue=nullptr;
     OnlyStore=nullptr;
    }
+};
 
+
+struct BlockInfo{
+  std::vector<std::pair<User*,int>> IndexInfo;
+  /// @brief 获取index
+  int GetInstIndex(User* Inst);
+  /// @brief  判断是否是和alloca相关的读写操作
+  bool IsAllocaRelated(User* Inst);
+
+  int valid;
+  BlockInfo():valid{0}
+  {}
 };
 
 class PromoteMem2Reg {
@@ -36,11 +48,13 @@ public:
   /// @brief 将对应的alloca语句的index的alloca消除
   void RemoveFromAllocaList(int& index);
   /// @brief  用STORE的右值直接替换使用LOAD指令的那些值
-  bool Rewrite_IO_SingleBlock();//TODO 
+  bool Rewrite_IO_SingleBlock(AllocaInfo& Info,AllocaInst* AI,BlockInfo& BBInfo);
   /// @brief 插入phi之前先进行一波预处理，避免一些无效插入
   void PreWorkingAfterInsertPhi(std::vector<BasicBlock*> DefineBlock);//TODO
   /// @brief 当这个alloca只有一个store语句，被定义基本块所支配的所有LOAD都要被替换为STORE语句中的那个右值
-  bool RewriteSingleStoreAlloca(AllocaInfo& Info,AllocaInst* AI);
+  bool RewriteSingleStoreAlloca(AllocaInfo& Info,AllocaInst* AI,BlockInfo& BBInfo);
+  /// @brief 计算指令的index
+  int CaculateIndex(BasicBlock* CurBlock,User* use);
 
   dominance &m_dom;
   std::vector<AllocaInst *> m_Allocas;
@@ -52,9 +66,9 @@ public:
 bool IsAllocaPromotable(AllocaInst* AI);
 
 /// @brief 提供当前块bb和指令inst，返回当前指令所在bb的index
-template<typename T>
-int CaculateIndex(BasicBlock* CurBlock,T Inst){
+int PromoteMem2Reg::CaculateIndex(BasicBlock* CurBlock,User* use){
   int index=0;
+  std::vector<std::pair<User*,int>> InstNum;
   for(auto& Instructs:CurBlock->GetInsts()){
     User* user=Instructs.get();
     //TODO

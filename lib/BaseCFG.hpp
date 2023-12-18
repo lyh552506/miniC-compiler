@@ -9,6 +9,7 @@
 #include "Type.hpp"
 class User;
 class Value;
+class BasicBlock;
 class Use
 {
     friend class UserList;
@@ -46,6 +47,7 @@ class Value
     void add_user(Use* __data);
     virtual void print();
     virtual bool isConst(){return false;}
+    void RAUW(Value* val);
 };
 using Operand=Value*;
 class User:public Value
@@ -59,6 +61,8 @@ class User:public Value
     User(std::shared_ptr<Type> tp);
     void print();
     virtual Operand GetDef();
+    virtual void EraseFromBlock();
+    virtual BasicBlock* GetParent();
 };
 class ConstIRInt:public Value
 {

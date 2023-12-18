@@ -30,7 +30,7 @@ public:
   };
   class Node {
   public:
-    //int dfnum;  //记录dfs序
+    int dfnum;  //记录dfs序
     int father; //此处是dfs序中遍历的father，区别rev链表
     int sdom;
     int idom;
@@ -55,9 +55,10 @@ private:
   std::vector<int> bucket[20]; // bucket[u]代表sdom为u的点集
   std::vector<DSU> dsu;        //辅助数据结构实现路径压缩
   std::vector<DF> df;          //存储每个结点的必经结点边界
-  BasicBlock* root;            //保存支配树的根节点
+  //BasicBlock* root;            //保存支配树的根节点
 
   int block_num, count; // count是当前的dfs序号
+  bool IsDFSValid;
 
 public:
   /// @brief 从CFG的根节点开始计算出每个节点的dominate frontier
@@ -73,6 +74,9 @@ public:
   void DFS(int pos);
   
   void DFS_new();
+  
+  /// @brief 对支配树进行dfs遍历
+  void DfsDominator(int root);
 private:
   /// @brief 路径压缩，并更新最小sdom
   /// @param x
@@ -106,7 +110,7 @@ public:
   /// @brief 插入phi函数
   void place_phi() {}
   dominance(int n, int m)
-      : node(n + 1), block_num{n}, vertex(n + 1), dsu(n + 1), count{1},
+      : node(n + 1), block_num{n}, vertex(n + 1), dsu(n + 1), count{1},IsDFSValid{false},
         df(n + 1) {
     for (int i = 1; i <= n; i++) {
       dsu[i].ancestor = i;

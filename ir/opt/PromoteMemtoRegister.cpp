@@ -8,6 +8,7 @@ void PromoteMem2Reg::RemoveFromAllocaList(int &index) {
 
 void PromoteMem2Reg::run() {
   AllocaInfo Info;
+  BlockInfo BBInfo;
   // starting to deal alloca with promotable,this place are method3,method4
   for (int i = 0; i != m_Allocas.size(); i++) {
     AllocaInst *AI = m_Allocas[i];
@@ -22,13 +23,15 @@ void PromoteMem2Reg::run() {
     //看下哪些基本块在使用这些ALLOC，哪些基本块定义了这个ALLOC
     Info.AnalyzeAlloca(AI);
     if (Info.DefineBlocks.size() == 1) { //只有一个定义基本块
-      if (RewriteSingleStoreAlloca(Info, AI)) {
+      if (RewriteSingleStoreAlloca(Info, AI,BBInfo)) {
         SingleStore++; // rewrite success
         RemoveFromAllocaList(i);
         continue;
       }
     }
-    if (Info.IO_OnlySingleBlock && Rewrite_IO_SingleBlock()) {
+    if (Info.IO_OnlySingleBlock &&
+        Rewrite_IO_SingleBlock(
+            Info, AI,BBInfo)) { // ALLOC出来的局部变量的读或者写都只存在一个基本块中
       RemoveFromAllocaList(i);
       continue;
     }
@@ -38,7 +41,15 @@ void PromoteMem2Reg::run() {
   }
 }
 
-bool PromoteMem2Reg::Rewrite_IO_SingleBlock() {}
+bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,BlockInfo& BBInfo) {
+  std::vector<std::pair<int, StoreInst *>> AllStoreInst;
+  //遍历alloca的所有use-def
+  for (User *user : AI->GetUsers()) {
+    if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
+      // int index=CaculateIndex(); //TODO
+    }
+  }
+}
 
 void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
   init();
@@ -66,8 +77,8 @@ void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
   }
 }
 
-bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info,
-                                              AllocaInst *AI) {
+bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
+                                              BlockInfo &BBInfo) {
   StoreInst *OnlySt = Info.OnlyStore;
   int StoreIndex = -1;
   bool GlobalVal;
@@ -104,8 +115,14 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info,
         continue;
       }
     }
-    
+    LI->ReplaceAllUsersWith(val); // TODO
+    LI->EraseFromBlock();         //可以将这个LoadInstruction删除了
   }
+  if (!Info.UsingBlocks.empty())
+    return false;
+  OnlySt->EraseFromBlock(); //结束后删除alloca和store
+  AI->EraseFromBlock();
+  return true;
 }
 
 void PreWorkingAfterInsertPhi(std::vector<BasicBlock *> DefineBlock) {}
@@ -123,4 +140,32 @@ bool IsAllocaPromotable(AllocaInst *AI) {
     }
   }
   return true;
+}
+
+bool BlockInfo::IsAllocaRelated(User *Inst) {
+  if (LoadInst *LI = dynamic_cast<LoadInst *>(Inst)) { // if read this alloca
+    AllocaInst *AI = dynamic_cast<AllocaInst *>(LI->GetSrc());
+    if (AI != nullptr)
+      return true;
+  } else if (StoreInst *ST =
+                 dynamic_cast<StoreInst *>(Inst)) { // if store to this alloca
+    AllocaInst *AI = dynamic_cast<AllocaInst *>(ST->GetOperand(1));
+    if (AI != nullptr)
+      return true;
+  }
+  return false;
+}
+
+int BlockInfo::GetInstIndex(User *Inst) {
+  if (valid) {
+    // std::find(IndexInfo.begin(),IndexInfo.end(),);
+    auto it = std::find_if(
+        IndexInfo.begin(), IndexInfo.end(),
+        [Inst](std::pair<User *, int> &src) { return src.first == Inst; });
+    if (it != IndexInfo.end())
+      return it->second;
+  }
+  //目前user查找到当前的bb
+  BasicBlock* BB=Inst->GetParent();
+  
 }

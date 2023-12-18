@@ -55,6 +55,7 @@ class LoadInst:public User
     /// @param __src 
     BasicBlock* GetParent();//返回当前指令所在的bb
     Value* GetSrc();
+    void ReplaceAllUsersWith(Value* val);
 };
 /// @brief float to int
 class FPTSI:public User

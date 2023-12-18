@@ -32,111 +32,103 @@ void dominance::Init(int m, Function &function) {
   }
 }
 
-// void dominance::DFS(int pos) {
-//   node[pos].dfnum = count;
-//   node[pos].sdom = count; // 每个节点的sdom先初始化为自己
-//   vertex[count] = pos;    // 记录每一个dfnum对应的结点
-//   count++;
-//   for (auto p : node[pos].des) {
-//     if (node[p].dfnum == 0) {
-//       DFS(p);
-//       node[p].father = pos;
-//     }
-//   }
-// }
+void dominance::DFS(int pos) {
+  node[pos].dfnum = count;
+  node[pos].sdom = count; // 每个节点的sdom先初始化为自己
+  vertex[count] = pos;    // 记录每一个dfnum对应的结点
+  count++;
+  for (auto p : node[pos].des) {
+    if (node[p].dfnum == 0) {
+      DFS(p);
+      node[p].father = pos;
+    }
+  }
+}
 
-void dominance::DFS_new() {
-  int DfsIn = 1, DfsOut = 1;
+void dominance::DfsDominator(int root) {
+  int DfsNum = 0;
   std::vector<std::pair<int, std::forward_list<int>::iterator>> worklists;
-  std::forward_list<int>::iterator it1 = node[1].des.begin();
-  worklists.push_back(std::make_pair(1, it1)); // push root node
-  node[1].DfsIn = DfsIn;
-  node[1].visited = 1;
-  node[1].sdom = 1;  // 每个节点的sdom先初始化为自己
-  vertex[DfsIn] = 1; // 记录每一个dfnum对应的结点
-  DfsIn++;
+  std::forward_list<int>::iterator it1 = node[root].idom_child.begin();
+  worklists.push_back(std::make_pair(root, it1));
+  node[root].DfsIn = DfsNum++;
   while (!worklists.empty()) {
     int index = worklists.back().first;
     std::forward_list<int>::iterator it = worklists.back().second;
     if (it == node[index].des.end()) { //孩子全部访问完毕，则添加dfsout
-      node[index].DfsOut = DfsOut++;
+      node[index].DfsOut = DfsNum++;
       worklists.pop_back();
-    } else {
-      int nxt = *it;
-      ++worklists.back().second; // update the iterator
-      if (node[nxt].visited)
-        continue;
-      worklists.push_back(std::make_pair(nxt, node[nxt].des.begin()));
-      node[nxt].visited = 1;
-      node[nxt].sdom = DfsIn;
-      node[nxt].DfsIn = DfsIn;
-      node[nxt].father = index;
-      vertex[DfsIn] = nxt;
-      DfsIn++;
+    }else{
+      int nxt=*it;
+      ++worklists.back().second;
+      worklists.push_back(std::make_pair(nxt,node[nxt].idom_child.begin()));
+      node[nxt].DfsIn=DfsNum++;
     }
   }
+  IsDFSValid=true;
 }
 
-void dominance::find_dom() {
-  int n, fat;
-  for (int i = block_num; i > 1; i--) { // 从dfs最大的结点开始
-    int sdom_cadidate = 999999;
-    n = vertex[i]; // 获取dfs序对应的结点号
-    fat = node[n].father;
-    for (auto front : node[n].rev) {
-      if (node[front].DfsIn != 0) {
-        sdom_cadidate =
-            std::min(sdom_cadidate, SDOM(eval(front))); // 半必经结点定理
+  void dominance::find_dom() {
+    int n, fat;
+    for (int i = block_num; i > 1; i--) { // 从dfs最大的结点开始
+      int sdom_cadidate = 999999;
+      n = vertex[i]; // 获取dfs序对应的结点号
+      fat = node[n].father;
+      for (auto front : node[n].rev) {
+        if (node[front].dfnum != 0) {
+          sdom_cadidate =
+              std::min(sdom_cadidate, SDOM(eval(front))); // 半必经结点定理
+        }
+      }
+      node[n].sdom = sdom_cadidate; // 注意此处记录的是dfs序
+      bucket[vertex[sdom_cadidate]].push_back(
+          n); // 所以此处需要进行转换vertex[sdom_cadidate]
+      dsu[n].ancestor = fat;
+      for (auto s : bucket[fat]) { // 必经结点定理
+        if (SDOM(eval(s)) == SDOM(s)) {
+          IDOM(s) = fat; // idom(s)==sdom(s)==fat
+        } else {
+          IDOM(s) = eval(s); // 留到第四步处理
+        }
+      }
+      bucket[fat].clear();
+    }
+    // 按照标号从小到大再跑一次，得到所有点的idom
+    for (int i = 2; i <= block_num; i++) {
+      int N = vertex[i];
+      SDOM(N) = vertex[SDOM(N)]; // 将sdom的内容更新为dfs序对应的结点号
+      if (IDOM(N) != SDOM(N)) {
+        IDOM(N) = IDOM(IDOM(N));
       }
     }
-    node[n].sdom = sdom_cadidate; // 注意此处记录的是dfs序
-    bucket[vertex[sdom_cadidate]].push_back(
-        n); // 所以此处需要进行转换vertex[sdom_cadidate]
-    dsu[n].ancestor = fat;
-    for (auto s : bucket[fat]) { // 必经结点定理
-      if (SDOM(eval(s)) == SDOM(s)) {
-        IDOM(s) = fat; // idom(s)==sdom(s)==fat
-      } else {
-        IDOM(s) = eval(s); // 留到第四步处理
+  }
+
+  void dominance::build_tree() {
+    for (int i = 2; i <= block_num; i++) {
+      int idom = IDOM(i);
+      if (idom > 0) {
+        node[idom].idom_child.push_front(i);
       }
     }
-    bucket[fat].clear();
   }
-  // 按照标号从小到大再跑一次，得到所有点的idom
-  for (int i = 2; i <= block_num; i++) {
-    int N = vertex[i];
-    SDOM(N) = vertex[SDOM(N)]; // 将sdom的内容更新为dfs序对应的结点号
-    if (IDOM(N) != SDOM(N)) {
-      IDOM(N) = IDOM(IDOM(N));
+
+  /// @brief 预备phi函数关系
+  void dom_begin() {
+    int n, m; // CFG的结点数和边数
+    dominance Dom{n, m};
+    // Dom.Init(m);      // 记录有向边的关系
+    Dom.DFS(1); // 起始节点的序号记为1
+    // Dom.DFS_new();
+    Dom.find_dom();   // 寻找支配节点
+    Dom.build_tree(); // 构建支配树
+    Dom.computeDF(1);
+  }
+
+  bool dominance::dominates(BasicBlock* bb1,BasicBlock* bb2){
+    if(!IsDFSValid){
+      DfsDominator(1);
     }
+    int node_bb1=vertex[bb1->dfs];
+    int node_bb2=vertex[bb2->dfs];
+
+    return (node[node_bb1].DfsIn<=node[node_bb2].DfsIn)&&(node[node_bb1].DfsOut>=node[node_bb2].DfsOut);
   }
-}
-
-void dominance::build_tree() {
-  for (int i = 2; i <= block_num; i++) {
-    int idom = IDOM(i);
-    if (idom > 0) {
-      node[idom].idom_child.push_front(i);
-    }
-  }
-}
-
-/// @brief 预备phi函数关系
-void dom_begin() {
-  int n, m; // CFG的结点数和边数
-  dominance Dom{n, m};
-  // Dom.Init(m);      // 记录有向边的关系
-  //Dom.DFS(1);       // 起始节点的序号记为1
-  Dom.DFS_new();
-  Dom.find_dom();   // 寻找支配节点
-  Dom.build_tree(); // 构建支配树
-  Dom.computeDF(1);
-}
-
-
-bool dominance::dominates(BasicBlock* bb1,BasicBlock* bb2){
-  // return (bb1.DfsIn<=bb2.DfsIn)&&(bb1.DfsOut>=bb2.DfsOut);
-  Node& node_bb1=node[vertex[bb1->dfs]];
-  Node& node_bb2=node[vertex[bb2->dfs]];
-  return (node_bb1.DfsIn<=node_bb2.DfsIn)&&(node_bb1.DfsOut>=node_bb2.DfsOut);
-}
