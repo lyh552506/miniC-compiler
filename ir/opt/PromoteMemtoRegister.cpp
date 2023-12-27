@@ -22,8 +22,9 @@ void PromoteMem2Reg::run() {
     }
     //看下哪些基本块在使用这些ALLOC，哪些基本块定义了这个ALLOC
     Info.AnalyzeAlloca(AI);
+
     if (Info.DefineBlocks.size() == 1) { //只有一个定义基本块
-      if (RewriteSingleStoreAlloca(Info, AI,BBInfo)) {
+      if (RewriteSingleStoreAlloca(Info, AI, BBInfo)) {
         SingleStore++; // rewrite success
         RemoveFromAllocaList(i);
         continue;
@@ -31,22 +32,52 @@ void PromoteMem2Reg::run() {
     }
     if (Info.IO_OnlySingleBlock &&
         Rewrite_IO_SingleBlock(
-            Info, AI,BBInfo)) { // ALLOC出来的局部变量的读或者写都只存在一个基本块中
+            Info, AI,
+            BBInfo)) { // ALLOC出来的局部变量的读或者写都只存在一个基本块中
       RemoveFromAllocaList(i);
       continue;
     }
     std::vector<BasicBlock *> DefineBlock(Info.DefineBlocks.begin(),
                                           Info.DefineBlocks.end());
-    PreWorkingAfterInsertPhi(DefineBlock);
+    std::vector<BasicBlock *> LiveInBlocks;
+    PreWorkingAfterInsertPhi(DefineBlock, BBInfo, Info, AI, LiveInBlocks);
   }
 }
 
-bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,BlockInfo& BBInfo) {
-  std::vector<std::pair<int, StoreInst *>> AllStoreInst;
-  //遍历alloca的所有use-def
+bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
+                                            BlockInfo &BBInfo) {
+  std::vector<std::pair<int, StoreInst *>> StoreInstWithIndex;
+  //遍历alloca的所有user
   for (User *user : AI->GetUsers()) {
-    if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
-      // int index=CaculateIndex(); //TODO
+    if (StoreInst *SI = dynamic_cast<StoreInst *>(user))
+      StoreInstWithIndex.push_back(std::make_pair(BBInfo.GetInstIndex(SI), SI));
+  }
+  std::sort(StoreInstWithIndex.begin(), StoreInstWithIndex.end(),
+            [](const std::pair<int, StoreInst *> &T1,
+               const std::pair<int, StoreInst *> &T2) -> bool {
+              return T1.first < T2.first;
+            }); //方便进行后续的二分搜索
+
+  for (User *user : AI->GetUsers()) {
+    if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
+      int loadindex = BBInfo.GetInstIndex(LI);
+      auto it = std::lower_bound(
+          StoreInstWithIndex.begin(), StoreInstWithIndex.end(),
+          std::make_pair(loadindex, static_cast<StoreInst *>(nullptr)),
+          [](const std::pair<int, StoreInst *> &T1,
+             const std::pair<int, StoreInst *> &T2) -> bool {
+            return T1.first < T2.first;
+          }); // find the first value which index is bigger than the inst in
+              // container
+      if (it == StoreInstWithIndex.begin()) {
+        if (!StoreInstWithIndex.empty()) // no stores
+          LI->ReplaceAllUsersWith(UndefValue::get(LI->CopyType().get()));
+        else            // no store before load
+          return false; /// @note why is this
+      } else {
+        LI->ReplaceAllUsersWith(std::prev(it)->second->GetOperand(0));
+        LI->EraseFromBlock();
+      }
     }
   }
 }
@@ -89,7 +120,7 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
     GlobalVal = true; //判断store语句的第一个操作数是否是全局变量/常量
   BasicBlock *StoreBB = OnlySt->GetParent();
 
-  // Info.UsingBlocks.clear();
+  Info.UsingBlocks.clear();
   for (User *user : AI->GetUsers()) {
     LoadInst *LI = dynamic_cast<LoadInst *>(user);
     if (!LI)
@@ -125,7 +156,41 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
   return true;
 }
 
-void PreWorkingAfterInsertPhi(std::vector<BasicBlock *> DefineBlock) {}
+/// @brief preworking phi
+void PromoteMem2Reg::PreWorkingAfterInsertPhi(
+    std::vector<BasicBlock *> &DefineBlock, BlockInfo &BBInfo, AllocaInfo &Info,
+    AllocaInst *AI, std::vector<BasicBlock *> &LiveInBlocks) {
+  std::vector<BasicBlock *> LiveIn(Info.UsingBlocks.begin(),
+                                   Info.UsingBlocks.end());
+  for (int i = 0, length = LiveIn.size(); i != length; i++) {
+    BasicBlock *BB = LiveIn[i];
+    auto it = std::find(DefineBlock.begin(), DefineBlock.end(), BB);
+    if (it == DefineBlock.end())
+      continue; //当前use的block没有define，不能简化
+
+    for (auto it = BB->getInstList().begin();; it++) {
+      User *user = *it;
+      if (StoreInst *ST = dynamic_cast<StoreInst *>(
+              user)) { //相当于直接给这个变量赋了一个确定值
+        if (ST->GetDef() != AI)
+          continue;
+
+        LiveIn[i] = LiveIn.back();
+        LiveIn.pop_back();
+        --i, --length;
+        break;
+      }
+
+      if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
+        if (LI->GetDef() == AI)
+          break;
+      }
+    }
+  }
+  while(!LiveIn.empty()){
+    
+  }
+}
 
 bool IsAllocaPromotable(AllocaInst *AI) {
   for (User *user : AI->GetUsers()) {
@@ -166,6 +231,5 @@ int BlockInfo::GetInstIndex(User *Inst) {
       return it->second;
   }
   //目前user查找到当前的bb
-  BasicBlock* BB=Inst->GetParent();
-  
+  BasicBlock *BB = Inst->GetParent();
 }

@@ -22,7 +22,6 @@ bool promoteMemoryToRegister(Function &func, dominance &dom) {
 
     if(Allocas.empty())//当前没有可以promote的alloca指令
       break;
-    
     RunPromoteMem2Reg(dom,Allocas);
   }
 }

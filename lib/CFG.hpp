@@ -18,8 +18,10 @@ class Variable
 };
 /// @brief AllocaInst接受一个Value*(Variable)，产生一个PTR，指向Value*的Type类型
 
-class undef{
-
+class UndefValue:public User{
+  UndefValue(Type* Ty){}
+public:
+  static UndefValue* get(Type *Ty);
 };
 /// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
 

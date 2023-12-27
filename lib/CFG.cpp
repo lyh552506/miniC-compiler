@@ -2,6 +2,9 @@
 #include <string>
 #include <memory>
 #include <iostream>
+#include<map>
+
+std::map<Type*,UndefValue*> Undefs;
 AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
@@ -330,4 +333,11 @@ void Module::GenerateGlobalVariable(Variable* ptr){
     auto obj=new Value(std::make_shared<PointerType>(ptr->CopyType()));
     SymbolTable::Register(ptr->get_name(),obj);
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
+}
+
+UndefValue* UndefValue::get(Type *Ty){
+    UndefValue *& UV=Undefs[Ty];
+    if(!UV)
+      UV=new UndefValue(Ty);
+    return UV;    
 }
