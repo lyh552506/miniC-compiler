@@ -1,7 +1,11 @@
 #include<iostream>
 #include<fstream>
-#include"MachineCode.hpp"
 #include"AsmPrinter.hpp"
+
+//将栈帧中参数对应虚拟寄存器分配到机器寄存器
+void shiftpass(MachineFunction* machinefunction) {
+
+}
 
 //合法化
 void shift(MachineUnit* unit) {
@@ -16,16 +20,22 @@ void shift(MachineUnit* unit) {
             for (auto& Inst : Block->getInstList()) {
                 MachineInst* machineinst;
                 //指令选择
-
+                machineinst=InstSelect(Inst);
                 machineblock->addInst(machineinst);
             }
             machinefunction->addBlock(machineblock);
+            //将栈帧中参数对应虚拟寄存器分配到机器寄存器
+            shiftpass(machinefunction);
         }
         unit->addFunction(machinefunction);
     }
 }
 
-void AsmPrinter::PrintCode(MachineUnit* Unit, std::ofstream &outputFile) {
+//寄存器分配 将剩余的虚拟寄存器分配到机器寄存器
+
+
+//打印机器指令
+void PrintCode(MachineUnit* Unit, std::ofstream &outputFile) {
     for (auto& Func : Unit->getFuncList()) {
         //打印每个Func，及栈帧
         Func->PrintInstStack(Unit, outputFile);
@@ -33,7 +43,7 @@ void AsmPrinter::PrintCode(MachineUnit* Unit, std::ofstream &outputFile) {
             //打印每个Block，计算偏移量
             
             for (auto& Inst : Block->getInstList()) {
-                //进行指令匹配
+                //生成机器指令
 
                 //打印每个Inst
                 Inst->PrintInst(outputFile);
@@ -45,7 +55,8 @@ void AsmPrinter::PrintCode(MachineUnit* Unit, std::ofstream &outputFile) {
     }
 }
 
-void AsmPrinter::PrintCodeToTxt(MachineUnit* unit) {
+//dump出机器指令文本
+void PrintCodeToTxt(MachineUnit* unit) {
     std::ofstream outputFile("output.ll", std::ios::app); // 以追加模式打开文件
     if (outputFile.is_open()) {
         PrintCode(unit, outputFile);

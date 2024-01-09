@@ -55,6 +55,9 @@ class User:public Value
     public:
     User();
     User(InnerDataType tp);
+    //todo int是乱写的
+    int GetDes();
+    int getuserlist();
     void print();
 };
 class Operand:public std::variant<Value*,int,float>

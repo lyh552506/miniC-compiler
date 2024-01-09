@@ -1,13 +1,8 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <unordered_map>
 #include "MachineCode.hpp"
+#include "InstSelection.hpp"
 
-class AsmPrinter {
-public:
-    AsmPrinter(MachineUnit* unit);
-
-    void PrintCode(MachineUnit* unit, std::ofstream &outputFile);
-    void PrintCodeToTxt(MachineUnit* unit);
-};
+void shiftpass(MachineFunction* machinefunction);
+void shift(MachineUnit* unit);
+void PrintCode(MachineUnit* unit, std::ofstream &outputFile);
+void PrintCodeToTxt(MachineUnit* unit);

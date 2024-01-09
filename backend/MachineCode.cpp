@@ -156,6 +156,15 @@ void MachineLoadInst::PrintInst(std::ofstream &outputFile) {
 }
 
 //MachineStoreInst
+MachineStoreInst::MachineStoreInst(Store_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2) {
+    this->type = InstType::Store;
+    //this->parent = parent;
+    this->opcode = opcode;
+    this->rd = rd;
+    this->rs1 = rs1;
+    this->rs2 = rs2;
+}
+
 MachineStoreInst::MachineStoreInst(MachineBlock *parent, Store_Inst opcode, MachineOperand *rd, MachineOperand *rs1, MachineOperand *rs2) {
     this->type = InstType::Store;
     //this->parent = parent;
@@ -351,6 +360,17 @@ MachineFunction::MachineFunction() {
     this->BlockList ;
     setstacksize();
 }
+
+// int MachineFunction::getoffset(Function *func, char* name) {
+//     std::vector<std::string, int>*next = getoffset_list();
+//     while(next != NULL) {
+//         if(strcmp(next->name, name) == 0) {
+//             return next->offset;
+//         }
+//         else next = next->next;
+//     }
+//     return -1;
+// }
 
 int MachineFunction::getstacksize() {
     return this->stacksize;

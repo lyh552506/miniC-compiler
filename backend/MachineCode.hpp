@@ -2,6 +2,7 @@
 #include<string>
 #include<vector>
 #include<iostream>  
+#include <unordered_map>
 #include"../lib/MagicEnum.hpp"
 #include"../lib/CFG.hpp"
 
@@ -18,6 +19,7 @@ private:
     std::string lable;
 public:
 enum OperandType{
+    FREG,//虚拟寄存器
     REG, 
     IMM, 
     //MEM, // MEM[REG + IMM]
@@ -31,7 +33,6 @@ enum Register {
     x14 = 14, x15 = 15, x16 = 16, x17 = 17, x18 = 18, x19 = 19, 
     x20 = 20, x21 = 21, x22 = 22, x23 = 23, x24 = 24, x25 = 25, 
     x26 = 26, x27 = 27, x28 = 28, x29 = 29, x30 = 30, x31 = 31,
-
     //0值寄存器
     zero = x0,
     //返回地址
@@ -133,6 +134,7 @@ enum InstType {
     Neg, // 取反，取负数
     Pseudo, // 伪指令
 };
+
     //void setParent();
     int getType();
     // void addDef(MachineOperand *def);
@@ -215,6 +217,7 @@ enum Store_Inst {
 private:
     Store_Inst opcode;
 public:
+    MachineStoreInst(Store_Inst opcode, MachineOperand *rs2, MachineOperand *rs1, MachineOperand *offset);    
     MachineStoreInst(MachineBlock *parent, Store_Inst opcode, MachineOperand *rs2, MachineOperand *rs1, MachineOperand *offset);
     void PrintInst(std::ofstream &outputFile);
 };
@@ -320,6 +323,10 @@ private:
     std::unordered_map<std::string, int> Blockmap;
     int stacksize;
 public:
+    // std::vector<std::string, int> offset_list;
+    // int  getoffset(Function *func, char* name);
+    // std::vector<std::string, int>* getoffset_list();
+    //offset_list offsetarray;
     void setstacksize();
     MachineFunction();
     int getstacksize();
