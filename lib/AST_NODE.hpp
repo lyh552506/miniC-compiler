@@ -106,12 +106,12 @@ class BaseExp:public HasOperand
                 switch (*i)
                 {
                 case AST_NOT:
-                    ptr=block->GenerateBinaryInst(Operand(0),BinaryInst::Op_Sub,ptr);
+                    ptr=BasicBlock::GenerateBinaryInst(block,Operand(0),BinaryInst::Op_Sub,ptr);
                     break;
                 case AST_ADD:
                     break;
                 case AST_SUB:
-                    ptr=block->GenerateBinaryInst(Operand(0),BinaryInst::Op_Sub,ptr);
+                    ptr=BasicBlock::GenerateBinaryInst(block,Operand(0),BinaryInst::Op_Sub,ptr);
                     break;
                 default:
                     assert(0);
@@ -148,7 +148,7 @@ class BaseExp:public HasOperand
                     std::cerr<<"No such Opcode\n";
                     assert(0);
                 }
-                oper=block->GenerateBinaryInst(oper,opcode,another);
+                oper=BasicBlock::GenerateBinaryInst(block,oper,opcode,another);
             }
             return oper;
         }
@@ -178,7 +178,8 @@ class Exps:public InnerBaseExps//数组声明修饰符/访问修饰符号
 {
     public:
     Exps(AddExp* _data);
-    std::vector<Operand> GetArrayDescripter();
+    std::shared_ptr<Type> GetDeclDescipter();
+    std::vector<Operand> GetVisitDescripter(bool,BasicBlock*);
 };
 
 class CallParams:public InnerBaseExps//函数调用时的Params
@@ -205,7 +206,7 @@ class InitVal:public AST_NODE
     InitVal()=default;
     InitVal(AST_NODE* _data);
     void print(int x);
-    void DealInitVal(Variable* structure);
+    Operand GetFirst(BasicBlock*);
 };
 
 class BaseDef:public Stmt
@@ -441,6 +442,7 @@ class ConstValue:public HasOperand
     public:
     ConstValue(T _data):data(_data){}
     Operand GetOperand(BasicBlock* block){
-        return Operand(data);
+        if(std::is_same<T,int>::value)return new ConstIRInt(data);
+        else return new ConstIRFloat(data);
     }
 };

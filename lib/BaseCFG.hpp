@@ -6,13 +6,9 @@
 #include <functional>
 #include <iostream>
 #include <cxxabi.h>
+#include "Type.hpp"
 class User;
 class Value;
-/// @brief Use关系，User析构时析构
-enum InnerDataType
-{
-    IR_Value_INT,IR_Value_VOID,IR_Value_Float
-};
 class Use
 {
     friend class UserList;
@@ -38,34 +34,52 @@ class Value
 {
     /// @brief 用来找到一个Value的所有User
     UserList userlist;
-    InnerDataType tp;
+    protected:
+    std::shared_ptr<Type> tp;
     public:
     virtual ~Value()=default;
     Value()=delete;
+    Value(std::shared_ptr<Type> _tp);
     Value(InnerDataType _tp);
     InnerDataType GetType();
+    std::shared_ptr<Type> CopyType();
     void add_user(Use* __data);
     virtual void print();
+    virtual bool isConst(){return false;}
 };
+using Operand=Value*;
 class User:public Value
 {
-    std::vector<Use> uselist;
+    using UsePtr=std::unique_ptr<Use>;
+    std::vector<UsePtr> uselist;
     protected:
     void add_use(Value* __data);
     public:
     User();
+<<<<<<< HEAD
     User(InnerDataType tp);
     //todo int是乱写的
     int GetDes();
     int getuserlist();
+=======
+    User(std::shared_ptr<Type> tp);
+>>>>>>> 7419fa8e041c2c21f0df386693f8e01cdcf3f3dd
     void print();
+    virtual Operand GetDef();
 };
-class Operand:public std::variant<Value*,int,float>
+class ConstIRInt:public Value
 {
-    using InnerOperand=std::variant<Value*,int,float>;
+    int val;
     public:
-    Operand(int num);
-    Operand(Value* num);
-    Operand(float num);
-    InnerDataType GetType();
+    ConstIRInt(int);
+    int GetVal();
+    bool isConst()final{return true;}
+};
+class ConstIRFloat:public Value
+{
+    float val;
+    public:
+    ConstIRFloat(float);
+    float GetVal();
+    bool isConst()final{return true;}
 };
