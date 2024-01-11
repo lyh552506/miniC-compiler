@@ -22,6 +22,7 @@ class AllocaInst:public User
     public:
     /// @brief Alloca语句要Type的结构,所以是Value*
     AllocaInst(std::shared_ptr<Type>);
+    void print(int&)final;
 };
 /// @brief src->des
 /// @note inst use %src %des
@@ -29,45 +30,50 @@ class AllocaInst:public User
 /// @param des Value* 必须是个指针类型
 class StoreInst:public User
 {
-    Operand des;
-    Operand src;
     public:
     StoreInst(Operand,Operand);
     Operand GetDef()final;
+    void print(int&)final;
 };
 class LoadInst:public User
 {
     public:
     LoadInst(Operand __src);
+    void print(int&)final;
 };
 /// @brief float to int
 class FPTSI:public User
 {
     public:
     FPTSI(Operand __src);
+    void print(int&)final;
 };
 /// @brief int to float
 class SITFP:public User
 {
     public:
     SITFP(Operand __src);
+    void print(int&)final;
 };
 class UnCondInst:public User
 {
     public:
     UnCondInst(BasicBlock*);
     Operand GetDef()final;
+    void print(int&)final;
 };
 class CondInst:public User
 {
     public:
     CondInst(Operand,BasicBlock*,BasicBlock*);
     Operand GetDef()final;
+    void print(int&)final;
 };
 class CallInst:public User
 {
     public:
     CallInst(Function*,std::vector<Operand>&);
+    void print(int&)final;
 };
 /// @brief Ret, maybe has return value
 class RetInst:public User
@@ -76,6 +82,7 @@ class RetInst:public User
     RetInst();
     RetInst(Operand);
     Operand GetDef()final;
+    void print(int&)final;
 };
 /// @brief BinaryInst use A B,def C
 /// @param A operand
@@ -95,11 +102,13 @@ class BinaryInst:public User
     Operation op;
     public:
     BinaryInst(Operand _A,Operation __op,Operand _B);
+    void print(int&)final;
 };
 class GetElementPtrInst:public User
 {
     public:
     GetElementPtrInst(Operand,std::vector<Operand>&);
+    void print(int&)final;
 };
 class BasicBlock:public Value
 {
@@ -107,7 +116,7 @@ class BasicBlock:public Value
     Function& master;
     public:
     BasicBlock(Function& __master);
-    void print()final;
+    void print(int&);
     void push_front(User* ptr);
     void push_back(User* ptr);
     Operand push_alloca(std::shared_ptr<Type>);
@@ -150,11 +159,12 @@ class Function:public Value
     std::vector<ParamPtr>& getParams();
     // std::vector<VarPtr>& getAllocaVariables();
     
-    void print()final;
+    void print();
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
     BasicBlock* front();
+    std::string GetName();
     std::vector<ParamPtr>& GetParams();
 };
 /// @brief 编译单元

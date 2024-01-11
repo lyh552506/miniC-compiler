@@ -21,7 +21,7 @@ class SymbolTable
     }
     Value* GetValueByName(std::string name){
         auto &i=mp[name];
-        assert(!i->empty());
+        assert(i!=nullptr&&!i->empty());
         return i->top();
     }
     void Register(std::string name,Value* val){

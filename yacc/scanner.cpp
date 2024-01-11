@@ -526,8 +526,8 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "./lex.l"
-#line 4 "./lex.l"
+#line 1 "lex.l"
+#line 4 "lex.l"
 #define YY_DECL yy::parser::symbol_type yylex(void)
 #include "parser.hpp"
 #include <iostream>
@@ -751,7 +751,7 @@ YY_DECL
 		}
 
 	{
-#line 77 "./lex.l"
+#line 77 "lex.l"
 
 #line 757 "scanner.cpp"
 
@@ -812,229 +812,229 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 78 "./lex.l"
-{return yy::parser::make_Y_INT();}
+#line 78 "lex.l"
+{std::cout<<"T_int\n";return yy::parser::make_Y_INT();}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 79 "./lex.l"
-{return yy::parser::make_Y_FLOAT();}
+#line 79 "lex.l"
+{std::cout<<"T_float\n";return yy::parser::make_Y_FLOAT();}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 80 "./lex.l"
-{return yy::parser::make_Y_VOID();}
+#line 80 "lex.l"
+{std::cout<<"T_void\n";return yy::parser::make_Y_VOID();}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 81 "./lex.l"
-{return yy::parser::make_Y_CONST();}
+#line 81 "lex.l"
+{std::cout<<"T_const\n";return yy::parser::make_Y_CONST();}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 82 "./lex.l"
-{return yy::parser::make_Y_BREAK();}
+#line 82 "lex.l"
+{std::cout<<"T_break\n";return yy::parser::make_Y_BREAK();}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 83 "./lex.l"
-{return yy::parser::make_Y_WHILE();}
+#line 83 "lex.l"
+{std::cout<<"T_while\n";return yy::parser::make_Y_WHILE();}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 84 "./lex.l"
-{return yy::parser::make_Y_IF();}
+#line 84 "lex.l"
+{std::cout<<"T_if\n";return yy::parser::make_Y_IF();}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 85 "./lex.l"
-{return yy::parser::make_Y_ELSE();}
+#line 85 "lex.l"
+{std::cout<<"T_else\n";return yy::parser::make_Y_ELSE();}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 86 "./lex.l"
-{return yy::parser::make_Y_RETURN();}
+#line 86 "lex.l"
+{std::cout<<"T_return\n";return yy::parser::make_Y_RETURN();}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 87 "./lex.l"
-{return yy::parser::make_Y_CONTINUE();}
+#line 87 "lex.l"
+{std::cout<<"T_continue\n";return yy::parser::make_Y_CONTINUE();}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 89 "./lex.l"
-{return yy::parser::make_Y_ID(yytext);} 
+#line 89 "lex.l"
+{std::cout<<"Identifier: "<<yytext<<"\n";return yy::parser::make_Y_ID(yytext);} 
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 91 "./lex.l"
-{return yy::parser::make_num_FLOAT(std::stof(yytext));}
+#line 91 "lex.l"
+{std::cout<<"ConstValue: "<<yytext<<"\n";return yy::parser::make_num_FLOAT(std::stof(yytext));}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 92 "./lex.l"
-{return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16));}
+#line 92 "lex.l"
+{std::cout<<"ConstValue: "<<yytext<<"\n";return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16));}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 93 "./lex.l"
-{return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8));}
+#line 93 "lex.l"
+{std::cout<<"ConstValue: "<<yytext<<"\n";return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8));}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 94 "./lex.l"
-{return yy::parser::make_num_INT(std::stoi(yytext));}
+#line 94 "lex.l"
+{std::cout<<"ConstValue: "<<yytext<<"\n";return yy::parser::make_num_INT(std::stoi(yytext));}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 96 "./lex.l"
-{return yy::parser::make_Y_ADD();}
+#line 96 "lex.l"
+{std::cout<<"ADD"<<"\n";return yy::parser::make_Y_ADD();}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 97 "./lex.l"
-{return yy::parser::make_Y_SUB();}
+#line 97 "lex.l"
+{std::cout<<"DEL"<<"\n";return yy::parser::make_Y_SUB();}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 98 "./lex.l"
-{return yy::parser::make_Y_MUL();}
+#line 98 "lex.l"
+{std::cout<<"MUL"<<"\n";return yy::parser::make_Y_MUL();}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 99 "./lex.l"
-{return yy::parser::make_Y_MODULO();}
+#line 99 "lex.l"
+{std::cout<<"MOD"<<"\n";return yy::parser::make_Y_MODULO();}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 100 "./lex.l"
-{return yy::parser::make_Y_DIV();}
+#line 100 "lex.l"
+{std::cout<<"DIV"<<"\n";return yy::parser::make_Y_DIV();}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 101 "./lex.l"
-{return yy::parser::make_Y_GREAT();}
+#line 101 "lex.l"
+{std::cout<<"BIG"<<"\n";return yy::parser::make_Y_GREAT();}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 102 "./lex.l"
-{return yy::parser::make_Y_GREATEQ();}
+#line 102 "lex.l"
+{std::cout<<"BIG_Equ"<<"\n";return yy::parser::make_Y_GREATEQ();}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 103 "./lex.l"
-{return yy::parser::make_Y_LESS();}
+#line 103 "lex.l"
+{std::cout<<"SMALL"<<"\n";return yy::parser::make_Y_LESS();}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 104 "./lex.l"
-{return yy::parser::make_Y_LESSEQ();}
+#line 104 "lex.l"
+{std::cout<<"SMALL_Equ"<<"\n";return yy::parser::make_Y_LESSEQ();}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 105 "./lex.l"
-{return yy::parser::make_Y_EQ();}
+#line 105 "lex.l"
+{std::cout<<"EquEqu"<<"\n";return yy::parser::make_Y_EQ();}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 106 "./lex.l"
-{return yy::parser::make_Y_ASSIGN();}
+#line 106 "lex.l"
+{std::cout<<"Equ"<<"\n";return yy::parser::make_Y_ASSIGN();}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 107 "./lex.l"
-{return yy::parser::make_Y_NOTEQ();}
+#line 107 "lex.l"
+{std::cout<<"NotEqu"<<"\n";return yy::parser::make_Y_NOTEQ();}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 108 "./lex.l"
-{return yy::parser::make_Y_NOT();}
+#line 108 "lex.l"
+{std::cout<<"NOT"<<"\n";return yy::parser::make_Y_NOT();}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 109 "./lex.l"
-{return yy::parser::make_Y_AND();}
+#line 109 "lex.l"
+{std::cout<<"AND"<<"\n";return yy::parser::make_Y_AND();}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 110 "./lex.l"
-{return yy::parser::make_Y_OR();}
+#line 110 "lex.l"
+{std::cout<<"OR"<<"\n";return yy::parser::make_Y_OR();}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 111 "./lex.l"
-{return yy::parser::make_Y_LPAR();}
+#line 111 "lex.l"
+{std::cout<<yytext<<"\n";return yy::parser::make_Y_LPAR();}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 112 "./lex.l"
-{return yy::parser::make_Y_RPAR();}
+#line 112 "lex.l"
+{std::cout<<yytext<<"\n";return yy::parser::make_Y_RPAR();}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 113 "./lex.l"
-{return yy::parser::make_Y_LSQUARE();}
+#line 113 "lex.l"
+{std::cout<<yytext<<"\n";return yy::parser::make_Y_LSQUARE();}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 114 "./lex.l"
-{return yy::parser::make_Y_RSQUARE();}
+#line 114 "lex.l"
+{std::cout<<yytext<<"\n";return yy::parser::make_Y_RSQUARE();}
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 115 "./lex.l"
-{return yy::parser::make_Y_LBRACKET();}
+#line 115 "lex.l"
+{std::cout<<yytext<<"\n";return yy::parser::make_Y_LBRACKET();}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 116 "./lex.l"
-{return yy::parser::make_Y_RBRACKET();}
+#line 116 "lex.l"
+{std::cout<<yytext<<"\n";return yy::parser::make_Y_RBRACKET();}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 117 "./lex.l"
-{return yy::parser::make_Y_SEMICOLON();}
+#line 117 "lex.l"
+{std::cout<<yytext<<"\n";return yy::parser::make_Y_SEMICOLON();}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 118 "./lex.l"
-{return yy::parser::make_Y_COMMA();}
+#line 118 "lex.l"
+{std::cout<<yytext<<"\n";return yy::parser::make_Y_COMMA();}
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
-#line 120 "./lex.l"
+#line 120 "lex.l"
 {return yy::parser::make_YYEOF();}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 122 "./lex.l"
+#line 122 "lex.l"
 {}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 123 "./lex.l"
+#line 123 "lex.l"
 {BEGIN COMMENT;}
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 124 "./lex.l"
+#line 124 "lex.l"
 {BEGIN INITIAL;}
 	YY_BREAK
 case 42:
 /* rule 42 can match eol */
 YY_RULE_SETUP
-#line 125 "./lex.l"
+#line 125 "lex.l"
 {}
 	YY_BREAK
 case 43:
 /* rule 43 can match eol */
 YY_RULE_SETUP
-#line 126 "./lex.l"
+#line 126 "lex.l"
 {}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 127 "./lex.l"
+#line 127 "lex.l"
 ECHO;
 	YY_BREAK
 #line 1041 "scanner.cpp"
@@ -2040,7 +2040,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 127 "./lex.l"
+#line 127 "lex.l"
 
 
 int yywrap(){
