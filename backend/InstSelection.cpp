@@ -3,22 +3,6 @@
 #include"InstSelection.hpp"
 #include"../lib/CFG.hpp"
 
-MachineInst* MatchStoreInst(User* inst) {
-    //左操作数
-    //auto rd = inst->GetDes();
-    MachineOperand* offset ;
-
-    //右操作数  std::list 遍历
-    // for (auto rs : inst->getuselist()) {
-        
-    // }
-    MachineOperand* rs2 ;
-    MachineOperand* rs1 ;
-    MachineInst* machineinst = new MachineStoreInst(MachineStoreInst::sw, rs2, rs1, offset);
-    return machineinst;
-}
-
-
 //指令选择
 //new inst;
 MachineInst* InstSelect(User* inst) {
@@ -71,3 +55,140 @@ MachineInst* InstSelect(User* inst) {
     }
     return machineinst;
 } 
+
+MachineInst* MatchAllocaInst(User* inst) {
+    //左操作数
+    //auto rd = inst->GetDes();
+    MachineOperand* offset ;
+
+    //右操作数  std::list 遍历
+    // for (auto rs : inst->getuselist()) {
+        
+    // }
+    MachineOperand* rs2 ;
+    MachineOperand* rs1 ;
+    MachineInst* machineinst = new MachineStoreInst(MachineStoreInst::sw, rs2, rs1, offset);
+    return machineinst;
+}
+
+MachineInst* MatchStoreInst(User* inst) {
+    //左操作数
+    //auto rd = inst->GetDes();
+    MachineOperand* offset ;
+
+    //右操作数  std::list 遍历
+    // for (auto rs : inst->getuselist()) {
+        
+    // }
+    MachineOperand* rs2 ;
+    MachineOperand* rs1 ;
+    MachineInst* machineinst = new MachineStoreInst(MachineStoreInst::sw, rs2, rs1, offset);
+    return machineinst;
+}
+
+MachineInst* MatchFPTSI(User* inst) {
+    //左操作数
+    //auto rd = inst->GetDes();
+    MachineOperand* offset ;
+
+    //右操作数  std::list 遍历
+    // for (auto rs : inst->getuselist()) {
+        
+    // }
+    MachineOperand* rs2 ;
+    MachineOperand* rs1 ;
+    MachineInst* machineinst = new MachineStoreInst(MachineStoreInst::sw, rs2, rs1, offset);
+    return machineinst;
+}
+
+MachineInst* MatchSITFP(User* inst) {
+    //左操作数
+    //auto rd = inst->GetDes();
+    MachineOperand* offset ;
+
+    //右操作数  std::list 遍历
+    // for (auto rs : inst->getuselist()) {
+        
+    // }
+    MachineOperand* rs2 ;
+    MachineOperand* rs1 ;
+    MachineInst* machineinst = new MachineStoreInst(MachineStoreInst::sw, rs2, rs1, offset);
+    return machineinst;
+}
+
+MachineInst* MatchUnCondInst(User* inst) {
+    //左操作数
+    //auto rd = inst->GetDes();
+    MachineOperand* offset ;
+
+    //右操作数  std::list 遍历
+    // for (auto rs : inst->getuselist()) {
+        
+    // }
+    MachineOperand* rs2 ;
+    MachineOperand* rs1 ;
+    MachineInst* machineinst = new MachineStoreInst(MachineStoreInst::sw, rs2, rs1, offset);
+    return machineinst;
+}
+
+MachineInst* MatchCallInst(User* inst) {
+    //左操作数
+    //auto rd = inst->GetDes();
+    MachineOperand* offset ;
+
+    //右操作数  std::list 遍历
+    // for (auto rs : inst->getuselist()) {
+        
+    // }
+    MachineOperand* rs2 ;
+    MachineOperand* rs1 ;
+    MachineInst* machineinst = new MachineStoreInst(MachineStoreInst::sw, rs2, rs1, offset);
+    return machineinst;
+}
+
+MachineInst* MatchRetInst(User* inst) {
+    //左操作数
+    //auto rd = inst->GetDes();
+    MachineOperand* offset ;
+
+    //右操作数  std::list 遍历
+    // for (auto rs : inst->getuselist()) {
+        
+    // }
+    MachineOperand* rs2 ;
+    MachineOperand* rs1 ;
+    MachineInst* machineinst = new MachineStoreInst(MachineStoreInst::sw, rs2, rs1, offset);
+    return machineinst;
+}
+
+MachineInst* MatchBinaryInst(User* inst) {
+    //左操作数
+    //auto rd = inst->GetDes();
+    MachineOperand* offset ;
+
+    //右操作数  std::list 遍历
+    // for (auto rs : inst->getuselist()) {
+        
+    // }
+    MachineOperand* rs2 ;
+    MachineOperand* rs1 ;
+    MachineInst* machineinst = new MachineStoreInst(MachineStoreInst::sw, rs2, rs1, offset);
+    return machineinst;
+}
+
+MachineInst* MatchLoadInst(User* inst) {
+    //左操作数
+    //auto rd = inst->GetDes();
+    MachineOperand* offset ;
+
+    //右操作数  std::list 遍历
+    // for (auto rs : inst->getuselist()) {
+        
+    // }
+    MachineOperand* rs2 ;
+    MachineOperand* rs1 ;
+    MachineInst* machineinst = new MachineStoreInst(MachineStoreInst::sw, rs2, rs1, offset);
+    return machineinst;
+}
+
+

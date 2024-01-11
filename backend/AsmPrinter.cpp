@@ -4,7 +4,7 @@
 
 //将栈帧中参数对应虚拟寄存器分配到机器寄存器
 void shiftpass(MachineFunction* machinefunction) {
-
+    
 }
 
 //合法化
