@@ -2,19 +2,78 @@
 #include <string>
 #include <memory>
 #include <iostream>
+#include "MagicEnum.hpp"
 AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
+void AllocaInst::print(int &cnt){
+    Value::print(cnt);
+    /// @todo typesystem 
+    std::cout<<" = alloca ";
+    dynamic_cast<PointerType*>(tp.get())->GetSubType()->print();
+    std::cout<<"\n";
+}
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
     add_use(__des);
 }
 Operand StoreInst::GetDef(){return nullptr;}
+void StoreInst::print(int &cnt){
+    std::cout<<"store ";
+    for(auto&i:uselist){
+        i->GetValue()->CopyType()->print();
+        std::cout<<" ";
+        i->GetValue()->print(cnt);
+        std::cout<<" ";
+    }
+    std::cout<<'\n';
+}
+
 LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->CopyType().get())->GetSubType()){
     assert(GetType()==IR_Value_INT||GetType()==IR_Value_Float);
     add_use(__src);
 }
+
+void LoadInst::print(int &cnt){
+    Value::print(cnt);
+    std::cout<<" = load ";
+    for(auto&i:uselist){
+        i->GetValue()->CopyType()->print();
+        std::cout<<" ";
+        i->GetValue()->print(cnt);
+        std::cout<<" ";
+    }
+    std::cout<<'\n';
+}
+
+
+
+void FPTSI::print(int &cnt){
+    Value::print(cnt);
+    std::cout<<" = fptosi ";
+    for(auto&i:uselist){
+        i->GetValue()->CopyType()->print();
+        std::cout<<" ";
+        i->GetValue()->print(cnt);
+        std::cout<<" ";
+    }
+    std::cout<<'\n';
+}
+
 FPTSI::FPTSI(Operand __src):User(std::make_shared<Type>(IR_Value_INT)){
     add_use(__src);
 }
+
+void SITFP::print(int &cnt){
+    Value::print(cnt);
+    std::cout<<" = sitofp ";
+    for(auto&i:uselist){
+        i->GetValue()->CopyType()->print();
+        std::cout<<" ";
+        i->GetValue()->print(cnt);
+        std::cout<<" ";
+    }
+    std::cout<<'\n';
+}
+
 SITFP::SITFP(Operand __src):User(std::make_shared<Type>(IR_Value_Float)){
     add_use(__src);
 }
@@ -25,10 +84,36 @@ UnCondInst::UnCondInst(BasicBlock* __des){
     add_use(__des);
 }
 
+void UnCondInst::print(int &cnt){
+    std::cout<<"br ";
+    for(auto&i:uselist){
+        std::cout<<"label ";
+        i->GetValue()->print(cnt);
+        std::cout<<" ";
+    }
+    std::cout<<'\n';
+}
+
 CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse){
     add_use(__cond);
     add_use(__istrue);
     add_use(__isfalse);
+}
+
+void CondInst::print(int &cnt){
+    std::cout<<"br ";
+    bool flag=0;
+    for(auto&i:uselist){
+        if(flag==0){
+            i->GetValue()->CopyType()->print();
+            std::cout<<" ";
+            flag=1;
+        }
+        else std::cout<<"label ";
+        i->GetValue()->print(cnt);
+        std::cout<<" ";
+    }
+    std::cout<<'\n';
 }
 
 Operand CondInst::GetDef(){return nullptr;}
@@ -39,15 +124,56 @@ CallInst::CallInst(Function* _func,std::vector<Operand>& _args):User(_func->Copy
         add_use(i);
 }
 
+void CallInst::print(int &cnt){
+    Value::print(cnt);
+    std::cout<<" = call ";
+    for(auto&i:uselist){
+        i->GetValue()->CopyType()->print();
+        std::cout<<" ";
+        i->GetValue()->print(cnt);
+        std::cout<<" ";
+    }
+    std::cout<<'\n';
+}
+
 RetInst::RetInst(){}
 
 RetInst::RetInst(Operand op){add_use(op);}
 
+void RetInst::print(int &cnt){
+    std::cout<<"ret ";
+    for(auto&i:uselist){
+        i->GetValue()->CopyType()->print();
+        std::cout<<" ";
+        i->GetValue()->print(cnt);
+        std::cout<<" ";
+    }
+    std::cout<<'\n';
+}
+
 Operand RetInst::GetDef(){return nullptr;}
 
 BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(_A->CopyType()){
+    op=__op;
     add_use(_A);
     add_use(_B);
+}
+
+void BinaryInst::print(int &cnt){
+    Value::print(cnt);
+    std::cout<<" = ";
+    bool flag=false;
+    for(auto&i:uselist){
+        i->GetValue()->CopyType()->print();
+        std::cout<<" ";
+        i->GetValue()->print(cnt);
+        std::cout<<" ";
+        if(flag==false){
+            flag=true;
+            std::cout<<magic_enum::enum_name(op)<<" ";
+        }
+    }
+    std::cout<<'\n';
 }
 
 Variable::Variable(std::string _id):name(_id){
@@ -73,6 +199,18 @@ GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& offs
     tp=std::make_shared<PointerType>(fuc);
     add_use(base_ptr);
     for(auto &i:offs)add_use(i);
+}
+
+void GetElementPtrInst::print(int &cnt){
+    Value::print(cnt);
+    std::cout<<" = ";
+    for(auto&i:uselist){
+        i->GetValue()->CopyType()->print();
+        std::cout<<" ";
+        i->GetValue()->print(cnt);
+        std::cout<<" ";
+    }
+    std::cout<<'\n';
 }
 
 BasicBlock::BasicBlock(Function& __master):Value(IR_Value_VOID),master(__master){};
@@ -187,18 +325,26 @@ BasicBlock* BasicBlock::GenerateNewBlock(){
     master.add_block(tmp);
     return tmp;
 }
-void BasicBlock::print(){
-    std::cout<<"---BasicBlock---\n";
+void BasicBlock::print(int &cnt){
+    Value::print(cnt);
+    std::cout<<":\n";
     for(auto &i:insts)
-        i->print();
-    std::cout<<"---EndBasicBlock\n";
+    {
+        std::cout<<"  ";
+        i->print(cnt);
+    }
 }
 void Function::print(){
-    std::cout<<"---Function---:"<<name<<"\n";
+    std::cout<<"define dso_local i32 @"<<name<<"{\n";
+    int cnt=0;
     for(auto &i:bbs)
-        i->print();
-    std::cout<<"---EndFunction---\n";
+    {
+        i->print(cnt);
+        std::cout<<"\n";
+    }
+    std::cout<<"}\n";
 }
+std::string Function::GetName(){return name;}
 void Function::InsertAlloca(AllocaInst* ptr){
     bbs.front()->push_back(ptr);
 }
@@ -322,7 +468,9 @@ void Module::Test(){
         i->print();
 }
 Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
-    ls.push_back(FunctionPtr(new Function(_tp,_id)));
+    auto tmp=new Function(_tp,_id);
+    Register(_id,tmp);
+    ls.push_back(FunctionPtr(tmp));
     return *ls.back();
 }
 void Module::GenerateGlobalVariable(Variable* ptr){

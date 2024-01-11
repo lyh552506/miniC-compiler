@@ -1,9 +1,34 @@
 #include "Type.hpp"
+#include <iostream>
+#include <cassert>
 
 Type::Type(InnerDataType _tp):tp(_tp){}
 int Type::layer(){return indirect_layer;}
+void Type::print(){
+    switch (tp)
+    {
+    case IR_Value_INT:
+        std::cout<<"i32";
+        break;
+    case IR_Value_Float:
+        std::cout<<"float";
+        break;
+    case IR_Value_VOID:
+        std::cout<<"void";
+        break;
+    case IR_PTR:
+        std::cout<<"ptr";
+        break;
+    case IR_ARRAY:
+        std::cout<<"array";
+        break;
+    default:
+        assert(1);
+    }
+}
 
 InnerDataType Type::GetType(){return tp;}
+
 
 IntType::IntType():Type(IR_Value_INT){
     indirect_layer=0;
