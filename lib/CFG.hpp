@@ -1,135 +1,186 @@
 #pragma once
 #include "SymbolTable.hpp"
-class BaseInst:public User
+#include "Singleton.hpp"
+#include "BaseCFG.hpp"
+/// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
+class BasicBlock;
+class Function;
+class Variable
 {
+    std::string name;
+    std::shared_ptr<Type> tp;
+    public:
+    Variable(std::string _id);
+    Variable(std::shared_ptr<Type> tp,std::string _id);
+    Variable(InnerDataType tp,std::string _id);
+    std::string get_name();
+    std::shared_ptr<Type> CopyType();
 };
-class BranchInst:public BaseInst
+/// @brief AllocaInst接受一个Value*(Variable)，产生一个PTR，指向Value*的Type类型
+class AllocaInst:public User
 {
+    public:
+    /// @brief Alloca语句要Type的结构,所以是Value*
+    AllocaInst(std::shared_ptr<Type>);
+    void print(int&)final;
 };
-class BinaryInst:public BaseInst
+/// @brief src->des
+/// @note inst use %src %des
+/// @param src Operand
+/// @param des Value* 必须是个指针类型
+class StoreInst:public User
 {
+    public:
+    StoreInst(Operand,Operand);
+    Operand GetDef()final;
+    void print(int&)final;
+};
+class LoadInst:public User
+{
+    public:
+    LoadInst(Operand __src);
+    void print(int&)final;
+};
+/// @brief float to int
+class FPTSI:public User
+{
+    public:
+    FPTSI(Operand __src);
+    void print(int&)final;
+};
+/// @brief int to float
+class SITFP:public User
+{
+    public:
+    SITFP(Operand __src);
+    void print(int&)final;
+};
+class UnCondInst:public User
+{
+    public:
+    UnCondInst(BasicBlock*);
+    Operand GetDef()final;
+    void print(int&)final;
+};
+class CondInst:public User
+{
+    public:
+    CondInst(Operand,BasicBlock*,BasicBlock*);
+    Operand GetDef()final;
+    void print(int&)final;
+};
+class CallInst:public User
+{
+    public:
+    CallInst(Function*,std::vector<Operand>&);
+    void print(int&)final;
+};
+/// @brief Ret, maybe has return value
+class RetInst:public User
+{
+    public:
+    RetInst();
+    RetInst(Operand);
+    Operand GetDef()final;
+    void print(int&)final;
+};
+/// @brief BinaryInst use A B,def C
+/// @param A operand
+/// @param op define inside class
+/// @param B operand
+/// @param C operand
+class BinaryInst:public User
+{
+    public:
     enum Operation
     {
         Op_Add,Op_Sub,Op_Mul,Op_Div,Op_And,Op_Or,Op_Mod,
         //what's below should be translate to cmp inst in llvm
         Op_E,Op_NE,Op_GE,Op_L,Op_LE,Op_G
-    }op;
+    };//卧槽，原批
+    private:
+    Operation op;
     public:
-    BinaryInst(Value* A,Value* B){
-        
-    }
+    BinaryInst(Operand _A,Operation __op,Operand _B);
+    void print(int&)final;
 };
-/// @brief allocainst 什么都没有use
-class AllocaInst:public BaseInst
+class GetElementPtrInst:public User
 {
-    Value* data;
     public:
-    /// @brief Alloca语句要Type的结构,所以是Value*
-    AllocaInst(Value* __data):data(__data){
-        /// @note 注意__data的实际类型一定是Varible或者数组，所以Type在里面找
-    }
+    GetElementPtrInst(Operand,std::vector<Operand>&);
+    void print(int&)final;
 };
-/// @brief src->des
-class StoreInst:public BaseInst
-{
-    Value* des;
-    Value* src;
-    public:
-    StoreInst(Value* __src,Value* __des):src(__src),des(__des){
-        add_use(src);
-        add_use(des);
-    }
-};
-/// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
 class BasicBlock:public Value
 {
-    List<BaseInst> insts;
+    List<User> insts;
+    Function& master;
     public:
-    void push_front(BaseInst* ptr){
-        insts.push_front(ptr);
-    }
-    void push_back(BaseInst* ptr){
-        insts.push_back(ptr);
-    }
-};
-/// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
-class Variable:public Value
-{
-    std::string name;
-    public:
-    Variable(std::string _id):name(_id),Value(Singleton<InnerDataType>()){}
-    std::string get_name(){
-        return name;
-    }
-};
-/// @brief 源代码中显示字面量的处理等同于const int a=10;
-/// @tparam T float/int 
-template<typename T>
-class ConstantVariable:public Variable
-{
+    BasicBlock(Function& __master);
+    void print(int&);
+    void push_front(User* ptr);
+    void push_back(User* ptr);
+    Operand push_alloca(std::shared_ptr<Type>);
+    Operand GenerateSITFP(Operand _A);
+    Operand GenerateFPTSI(Operand _B);
+    Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
+    static Operand GenerateBinaryInst(BasicBlock*,Operand,BinaryInst::Operation,Operand);
+    Operand GenerateLoadInst(Operand);
+    Operand GenerateGEPInst(Operand,std::vector<Operand>&);
+    void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
+    void GenerateUnCondInst(BasicBlock*);
+    void GenerateRetInst(Operand);
+    void GenerateRetInst();
+    Operand GenerateCallInst(std::string,std::vector<Operand> args);
+    void GenerateStoreInst(Operand,Operand);
+    void GenerateAlloca(Variable*);
+    BasicBlock* GenerateNewBlock();
+    //todo
+    std::vector<User*>& getInstList();
 
+    bool EndWithBranch();
 };
-// /// @brief 数组类型，在这个语言里const array纯属烂活
-// class IRArray:public Value
-// {
-//     /// @brief 比如说int a[1025][12][2];因为只有float和int类型，所以按4字节=32位编址
-//     /// 同时实现方法中可以空掉第一位（1025），因为访存只需要后续位置，在统一ir中GEP指令要方便一点
-//     /// 同时struct的实现可以类似当成一个复用结构的Array
-//     /// 同时ptr类型至少在IR层面等同于GEP指令
-//     /// 如果第一个是-1，则是指针类型的
-//     std::string name;
-//     std::vector<size_t> size_tables;
-//     public:
-//     std::string get_name(){
-//         return name;
-//     }
-//     IRArray(std::string _id,std::vector<size_t> __table){
-//         name=_id;
-//         size_tables=__table;
-//     }
-// };
 /// @brief 以function为最大单元生成CFG
 //其实function本质是就是CFG了
 class Function:public Value
 {
-    //Contains BasicBlock
-    //Function used by CallInst
-    std::vector<BasicBlock> bbs;
+    std::string name;
+    using ParamPtr=std::unique_ptr<Value>;
+    using BasicBlockPtr=std::unique_ptr<BasicBlock>;
+    std::vector<ParamPtr> params;//存放形式参数
+    std::vector<BasicBlockPtr> bbs;
+    void InsertAlloca(AllocaInst* ptr);
     public:
-    BasicBlock& entry_block(){
-        return bbs.front();
-    }
-    BasicBlock& cur_building(){
-        return bbs.back();
-    }
+    Function(InnerDataType _tp,std::string _id);
+    BasicBlock* front_block();
+    
+    //todo
+    std::string getFuncName();
+    std::vector<BasicBlockPtr>& getBlockList();
+    std::vector<ParamPtr>& getParams();
+    // std::vector<VarPtr>& getAllocaVariables();
+    
+    void print();
+    void add_block(BasicBlock*);
+    void push_param(Variable*);
+    void push_alloca(Variable*);
+    BasicBlock* front();
+    std::string GetName();
+    std::vector<ParamPtr>& GetParams();
 };
 /// @brief 编译单元
 class Module:public SymbolTable
 {
-    /// @todo Module中需要一个Factory类似的东西来确保自动析构一些指针指向的对象
-    std::vector<Function> ls;
+    using GlobalVariblePtr=std::unique_ptr<Variable>;
+    using FunctionPtr=std::unique_ptr<Function>;
+    std::vector<FunctionPtr> ls;
+    std::vector<GlobalVariblePtr> globalvaribleptr;
     public:
     Module()=default;
-    /// @brief Generate函数组，Module会符号表注册，生成Alloca语句并放在正确的位置
-    // void Generate(IRArray* __data){
-    //     SymbolTable::Register(__data->get_name(),__data);
-    //     if(SymbolTable::rec.empty()){
-    //         /// @todo Global Alloca
-    //     }
-    // }
-    void Place(AllocaInst* alloca,StoreInst* store){
-        /// @note global declaration
-        if(rec.empty()){
-            /// @todo impl global decl
-            assert(0);
-        }
-        /// @note local declaration
-        else{
-            ls.back().entry_block().push_front(alloca);
-            ls.back().cur_building().push_back(store);
-        }
-    }
-    void Place(BinaryInst* bs){
-
-    }
+    Function& GenerateFunction(InnerDataType _tp,std::string _id);
+    void GenerateGlobalVariable(Variable* ptr);
+    
+    //todo
+    std::vector <FunctionPtr> &getFuncList();
+    
+    void Test();
 };

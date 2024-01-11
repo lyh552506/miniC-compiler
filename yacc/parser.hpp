@@ -381,104 +381,100 @@ namespace yy {
     /// An auxiliary type to compute the largest semantic type.
     union union_type
     {
-      // Stmt
-      char dummy1[sizeof (AST_NODE*)];
-
       // Type
-      char dummy2[sizeof (AST_Type)];
+      char dummy1[sizeof (AST_Type)];
 
       // AddExp
-      char dummy3[sizeof (AddExp*)];
+      char dummy2[sizeof (AddExp*)];
 
       // Block
-      char dummy4[sizeof (Block*)];
-
-      // BlockItem
-      char dummy5[sizeof (BlockItem*)];
+      char dummy3[sizeof (Block*)];
 
       // BlockItems
-      char dummy6[sizeof (BlockItems*)];
+      char dummy4[sizeof (BlockItems*)];
 
       // CallParams
-      char dummy7[sizeof (CallParams*)];
+      char dummy5[sizeof (CallParams*)];
 
       // CompUnit
-      char dummy8[sizeof (CompUnit*)];
+      char dummy6[sizeof (CompUnit*)];
 
       // ConstDecl
-      char dummy9[sizeof (ConstDecl*)];
+      char dummy7[sizeof (ConstDecl*)];
 
       // ConstDef
-      char dummy10[sizeof (ConstDef*)];
+      char dummy8[sizeof (ConstDef*)];
 
       // ConstDefs
-      char dummy11[sizeof (ConstDefs*)];
-
-      // Decl
-      char dummy12[sizeof (Decl*)];
+      char dummy9[sizeof (ConstDefs*)];
 
       // EqExp
-      char dummy13[sizeof (EqExp*)];
+      char dummy10[sizeof (EqExp*)];
 
       // ConstExps
       // ArraySubscripts
-      char dummy14[sizeof (Exps*)];
+      char dummy11[sizeof (Exps*)];
 
       // FuncDef
-      char dummy15[sizeof (FuncDef*)];
+      char dummy12[sizeof (FuncDef*)];
 
       // FuncParam
-      char dummy16[sizeof (FuncParam*)];
+      char dummy13[sizeof (FuncParam*)];
 
       // FuncParams
-      char dummy17[sizeof (FuncParams*)];
+      char dummy14[sizeof (FuncParams*)];
+
+      // PrimaryExp
+      char dummy15[sizeof (HasOperand*)];
 
       // ConstInitVal
       // InitVal
-      char dummy18[sizeof (InitVal*)];
+      char dummy16[sizeof (InitVal*)];
 
       // ConstInitVals
       // InitVals
-      char dummy19[sizeof (InitVals*)];
+      char dummy17[sizeof (InitVals*)];
 
       // LAndExp
-      char dummy20[sizeof (LAndExp*)];
+      char dummy18[sizeof (LAndExp*)];
 
       // LOrExp
-      char dummy21[sizeof (LOrExp*)];
+      char dummy19[sizeof (LOrExp*)];
 
       // LVal
-      char dummy22[sizeof (LVal*)];
+      char dummy20[sizeof (LVal*)];
 
       // MulExp
-      char dummy23[sizeof (MulExp*)];
-
-      // PrimaryExp
-      char dummy24[sizeof (PrimaryExp*)];
+      char dummy21[sizeof (MulExp*)];
 
       // RelExp
-      char dummy25[sizeof (RelExp*)];
+      char dummy22[sizeof (RelExp*)];
+
+      // Decl
+      // BlockItem
+      // Stmt
+      char dummy23[sizeof (Stmt*)];
 
       // UnaryExp
-      char dummy26[sizeof (UnaryExp*)];
+      char dummy24[sizeof (UnaryExp*)];
 
       // VarDecl
-      char dummy27[sizeof (VarDecl*)];
+      char dummy25[sizeof (VarDecl*)];
 
       // VarDef
-      char dummy28[sizeof (VarDef*)];
+      char dummy26[sizeof (VarDef*)];
 
       // VarDefs
-      char dummy29[sizeof (VarDefs*)];
+      char dummy27[sizeof (VarDefs*)];
 
       // num_FLOAT
-      char dummy30[sizeof (float)];
+      char dummy28[sizeof (float)];
 
       // num_INT
-      char dummy31[sizeof (int)];
+      char dummy29[sizeof (int)];
 
       // Y_ID
-      char dummy32[sizeof (std::string)];
+      char dummy30[sizeof (std::string)];
     };
 
     /// The size of the largest semantic type.
@@ -683,10 +679,6 @@ namespace yy {
       {
         switch (this->kind ())
     {
-      case symbol_kind::S_Stmt: // Stmt
-        value.move< AST_NODE* > (std::move (that.value));
-        break;
-
       case symbol_kind::S_Type: // Type
         value.move< AST_Type > (std::move (that.value));
         break;
@@ -697,10 +689,6 @@ namespace yy {
 
       case symbol_kind::S_Block: // Block
         value.move< Block* > (std::move (that.value));
-        break;
-
-      case symbol_kind::S_BlockItem: // BlockItem
-        value.move< BlockItem* > (std::move (that.value));
         break;
 
       case symbol_kind::S_BlockItems: // BlockItems
@@ -727,10 +715,6 @@ namespace yy {
         value.move< ConstDefs* > (std::move (that.value));
         break;
 
-      case symbol_kind::S_Decl: // Decl
-        value.move< Decl* > (std::move (that.value));
-        break;
-
       case symbol_kind::S_EqExp: // EqExp
         value.move< EqExp* > (std::move (that.value));
         break;
@@ -750,6 +734,10 @@ namespace yy {
 
       case symbol_kind::S_FuncParams: // FuncParams
         value.move< FuncParams* > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_PrimaryExp: // PrimaryExp
+        value.move< HasOperand* > (std::move (that.value));
         break;
 
       case symbol_kind::S_ConstInitVal: // ConstInitVal
@@ -778,12 +766,14 @@ namespace yy {
         value.move< MulExp* > (std::move (that.value));
         break;
 
-      case symbol_kind::S_PrimaryExp: // PrimaryExp
-        value.move< PrimaryExp* > (std::move (that.value));
-        break;
-
       case symbol_kind::S_RelExp: // RelExp
         value.move< RelExp* > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_Decl: // Decl
+      case symbol_kind::S_BlockItem: // BlockItem
+      case symbol_kind::S_Stmt: // Stmt
+        value.move< Stmt* > (std::move (that.value));
         break;
 
       case symbol_kind::S_UnaryExp: // UnaryExp
@@ -836,18 +826,6 @@ namespace yy {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, AST_NODE*&& v)
-        : Base (t)
-        , value (std::move (v))
-      {}
-#else
-      basic_symbol (typename Base::kind_type t, const AST_NODE*& v)
-        : Base (t)
-        , value (v)
-      {}
-#endif
-
-#if 201103L <= YY_CPLUSPLUS
       basic_symbol (typename Base::kind_type t, AST_Type&& v)
         : Base (t)
         , value (std::move (v))
@@ -878,18 +856,6 @@ namespace yy {
       {}
 #else
       basic_symbol (typename Base::kind_type t, const Block*& v)
-        : Base (t)
-        , value (v)
-      {}
-#endif
-
-#if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, BlockItem*&& v)
-        : Base (t)
-        , value (std::move (v))
-      {}
-#else
-      basic_symbol (typename Base::kind_type t, const BlockItem*& v)
         : Base (t)
         , value (v)
       {}
@@ -968,18 +934,6 @@ namespace yy {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, Decl*&& v)
-        : Base (t)
-        , value (std::move (v))
-      {}
-#else
-      basic_symbol (typename Base::kind_type t, const Decl*& v)
-        : Base (t)
-        , value (v)
-      {}
-#endif
-
-#if 201103L <= YY_CPLUSPLUS
       basic_symbol (typename Base::kind_type t, EqExp*&& v)
         : Base (t)
         , value (std::move (v))
@@ -1034,6 +988,18 @@ namespace yy {
       {}
 #else
       basic_symbol (typename Base::kind_type t, const FuncParams*& v)
+        : Base (t)
+        , value (v)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, HasOperand*&& v)
+        : Base (t)
+        , value (std::move (v))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const HasOperand*& v)
         : Base (t)
         , value (v)
       {}
@@ -1112,24 +1078,24 @@ namespace yy {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
-      basic_symbol (typename Base::kind_type t, PrimaryExp*&& v)
-        : Base (t)
-        , value (std::move (v))
-      {}
-#else
-      basic_symbol (typename Base::kind_type t, const PrimaryExp*& v)
-        : Base (t)
-        , value (v)
-      {}
-#endif
-
-#if 201103L <= YY_CPLUSPLUS
       basic_symbol (typename Base::kind_type t, RelExp*&& v)
         : Base (t)
         , value (std::move (v))
       {}
 #else
       basic_symbol (typename Base::kind_type t, const RelExp*& v)
+        : Base (t)
+        , value (v)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, Stmt*&& v)
+        : Base (t)
+        , value (std::move (v))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const Stmt*& v)
         : Base (t)
         , value (v)
       {}
@@ -1243,10 +1209,6 @@ namespace yy {
         // Value type destructor.
 switch (yykind)
     {
-      case symbol_kind::S_Stmt: // Stmt
-        value.template destroy< AST_NODE* > ();
-        break;
-
       case symbol_kind::S_Type: // Type
         value.template destroy< AST_Type > ();
         break;
@@ -1257,10 +1219,6 @@ switch (yykind)
 
       case symbol_kind::S_Block: // Block
         value.template destroy< Block* > ();
-        break;
-
-      case symbol_kind::S_BlockItem: // BlockItem
-        value.template destroy< BlockItem* > ();
         break;
 
       case symbol_kind::S_BlockItems: // BlockItems
@@ -1287,10 +1245,6 @@ switch (yykind)
         value.template destroy< ConstDefs* > ();
         break;
 
-      case symbol_kind::S_Decl: // Decl
-        value.template destroy< Decl* > ();
-        break;
-
       case symbol_kind::S_EqExp: // EqExp
         value.template destroy< EqExp* > ();
         break;
@@ -1310,6 +1264,10 @@ switch (yykind)
 
       case symbol_kind::S_FuncParams: // FuncParams
         value.template destroy< FuncParams* > ();
+        break;
+
+      case symbol_kind::S_PrimaryExp: // PrimaryExp
+        value.template destroy< HasOperand* > ();
         break;
 
       case symbol_kind::S_ConstInitVal: // ConstInitVal
@@ -1338,12 +1296,14 @@ switch (yykind)
         value.template destroy< MulExp* > ();
         break;
 
-      case symbol_kind::S_PrimaryExp: // PrimaryExp
-        value.template destroy< PrimaryExp* > ();
-        break;
-
       case symbol_kind::S_RelExp: // RelExp
         value.template destroy< RelExp* > ();
+        break;
+
+      case symbol_kind::S_Decl: // Decl
+      case symbol_kind::S_BlockItem: // BlockItem
+      case symbol_kind::S_Stmt: // Stmt
+        value.template destroy< Stmt* > ();
         break;
 
       case symbol_kind::S_UnaryExp: // UnaryExp
@@ -2502,10 +2462,6 @@ switch (yykind)
   {
     switch (this->kind ())
     {
-      case symbol_kind::S_Stmt: // Stmt
-        value.copy< AST_NODE* > (YY_MOVE (that.value));
-        break;
-
       case symbol_kind::S_Type: // Type
         value.copy< AST_Type > (YY_MOVE (that.value));
         break;
@@ -2516,10 +2472,6 @@ switch (yykind)
 
       case symbol_kind::S_Block: // Block
         value.copy< Block* > (YY_MOVE (that.value));
-        break;
-
-      case symbol_kind::S_BlockItem: // BlockItem
-        value.copy< BlockItem* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_BlockItems: // BlockItems
@@ -2546,10 +2498,6 @@ switch (yykind)
         value.copy< ConstDefs* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_Decl: // Decl
-        value.copy< Decl* > (YY_MOVE (that.value));
-        break;
-
       case symbol_kind::S_EqExp: // EqExp
         value.copy< EqExp* > (YY_MOVE (that.value));
         break;
@@ -2569,6 +2517,10 @@ switch (yykind)
 
       case symbol_kind::S_FuncParams: // FuncParams
         value.copy< FuncParams* > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_PrimaryExp: // PrimaryExp
+        value.copy< HasOperand* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_ConstInitVal: // ConstInitVal
@@ -2597,12 +2549,14 @@ switch (yykind)
         value.copy< MulExp* > (YY_MOVE (that.value));
         break;
 
-      case symbol_kind::S_PrimaryExp: // PrimaryExp
-        value.copy< PrimaryExp* > (YY_MOVE (that.value));
-        break;
-
       case symbol_kind::S_RelExp: // RelExp
         value.copy< RelExp* > (YY_MOVE (that.value));
+        break;
+
+      case symbol_kind::S_Decl: // Decl
+      case symbol_kind::S_BlockItem: // BlockItem
+      case symbol_kind::S_Stmt: // Stmt
+        value.copy< Stmt* > (YY_MOVE (that.value));
         break;
 
       case symbol_kind::S_UnaryExp: // UnaryExp
@@ -2664,10 +2618,6 @@ switch (yykind)
     super_type::move (s);
     switch (this->kind ())
     {
-      case symbol_kind::S_Stmt: // Stmt
-        value.move< AST_NODE* > (YY_MOVE (s.value));
-        break;
-
       case symbol_kind::S_Type: // Type
         value.move< AST_Type > (YY_MOVE (s.value));
         break;
@@ -2678,10 +2628,6 @@ switch (yykind)
 
       case symbol_kind::S_Block: // Block
         value.move< Block* > (YY_MOVE (s.value));
-        break;
-
-      case symbol_kind::S_BlockItem: // BlockItem
-        value.move< BlockItem* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_BlockItems: // BlockItems
@@ -2708,10 +2654,6 @@ switch (yykind)
         value.move< ConstDefs* > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_Decl: // Decl
-        value.move< Decl* > (YY_MOVE (s.value));
-        break;
-
       case symbol_kind::S_EqExp: // EqExp
         value.move< EqExp* > (YY_MOVE (s.value));
         break;
@@ -2731,6 +2673,10 @@ switch (yykind)
 
       case symbol_kind::S_FuncParams: // FuncParams
         value.move< FuncParams* > (YY_MOVE (s.value));
+        break;
+
+      case symbol_kind::S_PrimaryExp: // PrimaryExp
+        value.move< HasOperand* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_ConstInitVal: // ConstInitVal
@@ -2759,12 +2705,14 @@ switch (yykind)
         value.move< MulExp* > (YY_MOVE (s.value));
         break;
 
-      case symbol_kind::S_PrimaryExp: // PrimaryExp
-        value.move< PrimaryExp* > (YY_MOVE (s.value));
-        break;
-
       case symbol_kind::S_RelExp: // RelExp
         value.move< RelExp* > (YY_MOVE (s.value));
+        break;
+
+      case symbol_kind::S_Decl: // Decl
+      case symbol_kind::S_BlockItem: // BlockItem
+      case symbol_kind::S_Stmt: // Stmt
+        value.move< Stmt* > (YY_MOVE (s.value));
         break;
 
       case symbol_kind::S_UnaryExp: // UnaryExp
@@ -2860,7 +2808,7 @@ switch (yykind)
 
 
 } // yy
-#line 2864 "parser.hpp"
+#line 2812 "parser.hpp"
 
 
 
