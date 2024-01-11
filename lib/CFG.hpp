@@ -8,20 +8,20 @@ class Function;
 class Variable
 {
     std::string name;
-    std::shared_ptr<Type> tp;
+    Type* tp;
     public:
-    Variable(std::string _id);
-    Variable(std::shared_ptr<Type> tp,std::string _id);
-    Variable(InnerDataType tp,std::string _id);
+    Variable(std::string);
+    Variable(Type*,std::string);
+    Variable(InnerDataType,std::string);
     std::string get_name();
-    std::shared_ptr<Type> CopyType();
+    Type* GetType();
 };
 /// @brief AllocaInst接受一个Value*(Variable)，产生一个PTR，指向Value*的Type类型
 class AllocaInst:public User
 {
     public:
     /// @brief Alloca语句要Type的结构,所以是Value*
-    AllocaInst(std::shared_ptr<Type>);
+    AllocaInst(Type*);
     void print(int&)final;
 };
 /// @brief src->des
@@ -119,7 +119,7 @@ class BasicBlock:public Value
     void print(int&);
     void push_front(User* ptr);
     void push_back(User* ptr);
-    Operand push_alloca(std::shared_ptr<Type>);
+    Operand push_alloca(Type*);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);

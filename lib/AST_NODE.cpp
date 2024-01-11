@@ -47,16 +47,16 @@ void InnerBaseExps::print(int x){
 }
 
 Exps::Exps(AddExp* _data):InnerBaseExps(_data){}
-std::shared_ptr<Type> Exps::GetDeclDescipter(){
-    auto tmp=std::make_shared<Type>(Singleton<InnerDataType>());
+Type* Exps::GetDeclDescipter(){
+    auto tmp=Type::NewTypeByEnum(Singleton<InnerDataType>());
     for(auto i=ls.rbegin();i!=ls.rend();i++)
     {
         auto con=(*i)->GetOperand(nullptr);
         if(auto fuc=dynamic_cast<ConstIRInt*>(con)){
-            tmp=std::make_shared<ArrayType>(fuc->GetVal(),tmp);
+            tmp=ArrayType::NewArrayTypeGet(fuc->GetVal(),tmp);
         }
         else if(auto fuc=dynamic_cast<ConstIRFloat*>(con)){
-            tmp=std::make_shared<ArrayType>(fuc->GetVal(),tmp);
+            tmp=ArrayType::NewArrayTypeGet(fuc->GetVal(),tmp);
         }
         else assert(0);
     }
@@ -114,7 +114,7 @@ void BaseDef::codegen(){
     {
         if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
         assert(civ==nullptr);
-        std::shared_ptr<Type> tmp=array_descripters->GetDeclDescipter();
+        auto tmp=array_descripters->GetDeclDescipter();
         auto var=new Variable(tmp,ID);
         Singleton<Module>().GenerateGlobalVariable(var);
     }
@@ -154,7 +154,7 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
     {
         if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
         assert(civ==nullptr);
-        std::shared_ptr<Type> tmp=array_descripters->GetDeclDescipter();
+        auto tmp=array_descripters->GetDeclDescipter();
         auto var=new Variable(tmp,ID);
         state.current_building->GenerateAlloca(var);
     }
@@ -300,17 +300,17 @@ void FuncParam::GetVariable(Function& tmp){
     if(array_subscripts!=nullptr)
     {
         auto vec=array_subscripts->GetDeclDescipter();
-        if(emptySquare)vec=std::make_shared<PointerType>(vec);
+        if(emptySquare)vec=PointerType::NewPointerTypeGet(vec);
         else
         {
-            auto inner=dynamic_cast<PointerType*>(vec.get());
-            vec=std::make_shared<PointerType>(inner->GetSubType());
+            auto inner=dynamic_cast<PointerType*>(vec);
+            vec=PointerType::NewPointerTypeGet(inner->GetSubType());
         }
         tmp.push_param(new Variable(vec,ID));
     }
     else
     {
-        if(emptySquare)tmp.push_param(new Variable(std::make_shared<PointerType>(std::make_shared<Type>(get_type(tp))),ID));
+        if(emptySquare)tmp.push_param(new Variable(PointerType::NewPointerTypeGet(Type::NewTypeByEnum(get_type(tp))),ID));
         else tmp.push_param(new Variable(get_type(tp),ID));
     }
 }
@@ -409,7 +409,7 @@ Operand LVal::GetOperand(BasicBlock* block){
     {
         /// @note [][10] **[10] GEP 0(*[10]) 
         /// @note []/[10] ** GEP 0(*) 
-        assert(ptr->GetType()==InnerDataType::IR_PTR);
+        assert(ptr->GetTypeEnum()==InnerDataType::IR_PTR);
         std::vector<Operand> tmp=array_descripters->GetVisitDescripter(1,block);
         ptr=block->GenerateGEPInst(ptr,tmp);
     }

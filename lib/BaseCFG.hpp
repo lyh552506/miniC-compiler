@@ -41,19 +41,18 @@ class Value
     /// @brief 存储所有的User
     UserList userlist;
     protected:
-    std::shared_ptr<Type> tp;
+    Type* tp;
     public:
     virtual ~Value()=default;
     Value()=delete;
-    Value(std::shared_ptr<Type> _tp);
-    Value(InnerDataType _tp);
+    Value(Type* _tp);
     /// @brief 为dump出ll作准备
     void SetNum(int&);
     int GetNum();
     void print(int&);    
     /// @brief Type System还在被批判的过程中 
-    InnerDataType GetType();
-    std::shared_ptr<Type> CopyType();
+    InnerDataType GetTypeEnum();
+    Type* GetType();
     /// @brief  
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
@@ -68,7 +67,7 @@ class User:public Value
     public:
     virtual void print(int&)=0;
     User();
-    User(std::shared_ptr<Type> tp);
+    User(Type* tp);
     virtual Operand GetDef();
 };
 class ConstIRInt:public Value

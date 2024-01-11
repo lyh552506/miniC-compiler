@@ -7,42 +7,65 @@ class Type
 {
     InnerDataType tp;
     protected:
-    int indirect_layer;
-    public:
     Type(InnerDataType);
-    InnerDataType GetType();
+    public:
+    static Type* NewTypeByEnum(InnerDataType);
     virtual ~Type()=default;
-    virtual int layer();
-    void print();
+    virtual void print()=0;
+    virtual int get_layer();
+    InnerDataType GetTypeEnum();
 };
 class IntType:public Type
 {
-    public:
     IntType();
+    public:
+    static IntType* NewIntTypeGet();
+    void print()final;
 };
 class FloatType:public Type
 {
-    public:
     FloatType();
+    public:
+    static FloatType* NewFloatTypeGet();
+    void print()final;
+};
+class VoidType:public Type
+{
+    VoidType();
+    public:
+    static VoidType* NewVoidTypeGet();
+    void print()final;
+};
+class BoolType:public Type
+{
+    BoolType();
+    public:
+    static BoolType* NewBoolTypeGet();
+    void print()final;
 };
 class HasSubType:public Type
 {
     protected:
-    std::shared_ptr<Type> subtype;
+    Type* subtype;
+    int layer;
     public:
-    HasSubType(InnerDataType,std::shared_ptr<Type>);
-    std::shared_ptr<Type> GetSubType();
+    HasSubType(InnerDataType,Type*);
+    Type* GetSubType();
+    int get_layer()final;
 };
 class PointerType:public HasSubType
 {
+    PointerType(Type*);
     public:
-    PointerType(std::shared_ptr<Type>);
-    InnerDataType GetInnerType();
+    static PointerType* NewPointerTypeGet(Type*);
+    void print()final;
 };
 class ArrayType:public HasSubType
 {
     /// @warning prepare for 32 bits machine, int is enough for the number of elements 
     int NumEle;
+    ArrayType(int,Type*);
     public:
-    ArrayType(int,std::shared_ptr<Type>);
+    static ArrayType* NewArrayTypeGet(int,Type*);
+    void print()final;
 };

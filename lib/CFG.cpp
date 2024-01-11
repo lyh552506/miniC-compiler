@@ -3,12 +3,12 @@
 #include <memory>
 #include <iostream>
 #include "MagicEnum.hpp"
-AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
+AllocaInst::AllocaInst(Type* _tp):User(PointerType::NewPointerTypeGet(_tp)){}
 void AllocaInst::print(int &cnt){
     Value::print(cnt);
     /// @todo typesystem 
     std::cout<<" = alloca ";
-    dynamic_cast<PointerType*>(tp.get())->GetSubType()->print();
+    dynamic_cast<PointerType*>(tp)->GetSubType()->print();
     std::cout<<"\n";
 }
 StoreInst::StoreInst(Operand __src,Operand __des){
@@ -19,7 +19,7 @@ Operand StoreInst::GetDef(){return nullptr;}
 void StoreInst::print(int &cnt){
     std::cout<<"store ";
     for(auto&i:uselist){
-        i->GetValue()->CopyType()->print();
+        i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
         std::cout<<" ";
@@ -27,8 +27,8 @@ void StoreInst::print(int &cnt){
     std::cout<<'\n';
 }
 
-LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->CopyType().get())->GetSubType()){
-    assert(GetType()==IR_Value_INT||GetType()==IR_Value_Float);
+LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType())->GetSubType()){
+    assert(GetTypeEnum()==IR_Value_INT||GetTypeEnum()==IR_Value_Float);
     add_use(__src);
 }
 
@@ -36,7 +36,7 @@ void LoadInst::print(int &cnt){
     Value::print(cnt);
     std::cout<<" = load ";
     for(auto&i:uselist){
-        i->GetValue()->CopyType()->print();
+        i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
         std::cout<<" ";
@@ -50,7 +50,7 @@ void FPTSI::print(int &cnt){
     Value::print(cnt);
     std::cout<<" = fptosi ";
     for(auto&i:uselist){
-        i->GetValue()->CopyType()->print();
+        i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
         std::cout<<" ";
@@ -58,7 +58,7 @@ void FPTSI::print(int &cnt){
     std::cout<<'\n';
 }
 
-FPTSI::FPTSI(Operand __src):User(std::make_shared<Type>(IR_Value_INT)){
+FPTSI::FPTSI(Operand __src):User(IntType::NewIntTypeGet()){
     add_use(__src);
 }
 
@@ -66,7 +66,7 @@ void SITFP::print(int &cnt){
     Value::print(cnt);
     std::cout<<" = sitofp ";
     for(auto&i:uselist){
-        i->GetValue()->CopyType()->print();
+        i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
         std::cout<<" ";
@@ -74,7 +74,7 @@ void SITFP::print(int &cnt){
     std::cout<<'\n';
 }
 
-SITFP::SITFP(Operand __src):User(std::make_shared<Type>(IR_Value_Float)){
+SITFP::SITFP(Operand __src):User(FloatType::NewFloatTypeGet()){
     add_use(__src);
 }
 
@@ -105,7 +105,7 @@ void CondInst::print(int &cnt){
     bool flag=0;
     for(auto&i:uselist){
         if(flag==0){
-            i->GetValue()->CopyType()->print();
+            i->GetValue()->GetType()->print();
             std::cout<<" ";
             flag=1;
         }
@@ -118,7 +118,7 @@ void CondInst::print(int &cnt){
 
 Operand CondInst::GetDef(){return nullptr;}
 
-CallInst::CallInst(Function* _func,std::vector<Operand>& _args):User(_func->CopyType()){
+CallInst::CallInst(Function* _func,std::vector<Operand>& _args):User(_func->GetType()){
     add_use(_func);
     for(auto&i:_args)
         add_use(i);
@@ -128,7 +128,7 @@ void CallInst::print(int &cnt){
     Value::print(cnt);
     std::cout<<" = call ";
     for(auto&i:uselist){
-        i->GetValue()->CopyType()->print();
+        i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
         std::cout<<" ";
@@ -143,7 +143,7 @@ RetInst::RetInst(Operand op){add_use(op);}
 void RetInst::print(int &cnt){
     std::cout<<"ret ";
     for(auto&i:uselist){
-        i->GetValue()->CopyType()->print();
+        i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
         std::cout<<" ";
@@ -153,7 +153,7 @@ void RetInst::print(int &cnt){
 
 Operand RetInst::GetDef(){return nullptr;}
 
-BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(_A->CopyType()){
+BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(_A->GetType()){
     op=__op;
     add_use(_A);
     add_use(_B);
@@ -164,7 +164,7 @@ void BinaryInst::print(int &cnt){
     std::cout<<" = ";
     bool flag=false;
     for(auto&i:uselist){
-        i->GetValue()->CopyType()->print();
+        i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
         std::cout<<" ";
@@ -177,26 +177,26 @@ void BinaryInst::print(int &cnt){
 }
 
 Variable::Variable(std::string _id):name(_id){
-    tp=std::make_shared<Type>(Singleton<InnerDataType>());
+    tp=Type::NewTypeByEnum(Singleton<InnerDataType>());
 }
-Variable::Variable(std::shared_ptr<Type> _tp,std::string _id):name(_id),tp(_tp){}
+Variable::Variable(Type* _tp,std::string _id):name(_id),tp(_tp){}
 Variable::Variable(InnerDataType _tp,std::string _id):name(_id){
-    tp=std::make_shared<Type>(_tp);
+    tp=Type::NewTypeByEnum(Singleton<InnerDataType>());
 }
 std::string Variable::get_name(){
     return name;
 }
 
-std::shared_ptr<Type> Variable::CopyType(){return tp;}
+Type* Variable::GetType(){return tp;}
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& offs){
-    std::shared_ptr<Type> fuc=nullptr;
+    Type* fuc=nullptr;
     for(auto &i:offs){
-        auto select=(fuc==nullptr?base_ptr->CopyType():fuc);
-        if(auto _tp=dynamic_cast<HasSubType*>(select.get()))fuc=_tp->GetSubType();
+        auto select=(fuc==nullptr?base_ptr->GetType():fuc);
+        if(auto _tp=dynamic_cast<HasSubType*>(select))fuc=_tp->GetSubType();
         else assert("Not a valid type");
     }
-    tp=std::make_shared<PointerType>(fuc);
+    tp=PointerType::NewPointerTypeGet(fuc);
     add_use(base_ptr);
     for(auto &i:offs)add_use(i);
 }
@@ -205,7 +205,7 @@ void GetElementPtrInst::print(int &cnt){
     Value::print(cnt);
     std::cout<<" = ";
     for(auto&i:uselist){
-        i->GetValue()->CopyType()->print();
+        i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
         std::cout<<" ";
@@ -213,7 +213,7 @@ void GetElementPtrInst::print(int &cnt){
     std::cout<<'\n';
 }
 
-BasicBlock::BasicBlock(Function& __master):Value(IR_Value_VOID),master(__master){};
+BasicBlock::BasicBlock(Function& __master):Value(VoidType::NewVoidTypeGet()),master(__master){};
 void BasicBlock::push_front(User* ptr){
     insts.push_front(ptr);
 }
@@ -236,8 +236,8 @@ Operand BasicBlock::GenerateFPTSI(Operand _B){
     return Operand(tmp->GetDef());
 }
 Operand BasicBlock::GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B){
-    bool tpA=(_A->GetType()==InnerDataType::IR_Value_INT);
-    bool tpB=(_B->GetType()==InnerDataType::IR_Value_INT);
+    bool tpA=(_A->GetTypeEnum()==InnerDataType::IR_Value_INT);
+    bool tpB=(_B->GetTypeEnum()==InnerDataType::IR_Value_INT);
     // 一个int一个float
     BinaryInst* tmp;
     if(tpA^tpB){
@@ -310,11 +310,11 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
     }
 }
 void BasicBlock::GenerateStoreInst(Operand src,Operand des){
-    assert(des->GetType()==IR_PTR);
-    auto tmp=dynamic_cast<PointerType*>(des->CopyType().get());
+    assert(des->GetTypeEnum()==IR_PTR);
+    auto tmp=dynamic_cast<PointerType*>(des->GetType());
     
-    if(tmp->GetInnerType()!=src->GetType()){
-        if(tmp->GetInnerType()==IR_Value_INT)src=this->GenerateFPTSI(src);
+    if(tmp->GetSubType()->GetTypeEnum()!=src->GetTypeEnum()){
+        if(tmp->GetSubType()->GetTypeEnum()==IR_Value_INT)src=this->GenerateFPTSI(src);
         else src=this->GenerateSITFP(src);
     }
     auto storeinst=new StoreInst(src,des);
@@ -348,7 +348,7 @@ std::string Function::GetName(){return name;}
 void Function::InsertAlloca(AllocaInst* ptr){
     bbs.front()->push_back(ptr);
 }
-Function::Function(InnerDataType _tp,std::string _id):Value(_tp),name(_id){
+Function::Function(InnerDataType _tp,std::string _id):Value(Type::NewTypeByEnum(_tp)),name(_id){
     //至少有一个bbs
     bbs.push_back(BasicBlockPtr(new BasicBlock(*this)));
 }
@@ -370,8 +370,8 @@ void BasicBlock::GenerateUnCondInst(BasicBlock* des){
     insts.push_back(inst);
 }
 void BasicBlock::GenerateRetInst(Operand ret_val){
-    if(master.GetType()!=ret_val->GetType()){
-        if(ret_val->GetType()==IR_Value_INT)
+    if(master.GetTypeEnum()!=ret_val->GetTypeEnum()){
+        if(ret_val->GetTypeEnum()==IR_Value_INT)
             ret_val=GenerateSITFP(ret_val);
         else
             ret_val=GenerateFPTSI(ret_val);
@@ -410,7 +410,7 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
         auto i=args.begin();
         for(auto j=params.begin();j!=params.end();j++,i++){
             auto& ii=*i;auto& jj=*j;
-            int dif=ii->CopyType()->layer()-jj->CopyType()->layer();
+            int dif=ii->GetType()->get_layer()-jj->GetType()->get_layer();
             assert(dif>=0);
             if(dif>0)
             {
@@ -436,21 +436,21 @@ Operand BasicBlock::GenerateGEPInst(Operand ptr,std::vector<Operand>& offs){
     insts.push_back(tmp);
     return tmp->GetDef();
 }
-Operand BasicBlock::push_alloca(std::shared_ptr<Type> _tp){
+Operand BasicBlock::push_alloca(Type* _tp){
     auto tmp=new AllocaInst(_tp);
     insts.push_front(tmp);
     return tmp->GetDef();
 }
 
 void Function::push_alloca(Variable* ptr){
-    auto obj=bbs.front()->push_alloca(ptr->CopyType());
+    auto obj=bbs.front()->push_alloca(ptr->GetType());
     Singleton<Module>().Register(ptr->get_name(),obj);
 }
 void Function::push_param(Variable* var){
-    /// @note 形参类型是var->CopyType()
+    /// @note 形参类型是var->GetType()
     /// @note 需要alloca和store
     push_alloca(var);
-    params.push_back(ParamPtr(new Value(var->CopyType())));
+    params.push_back(ParamPtr(new Value(var->GetType())));
     bbs.front()->GenerateStoreInst(params.back().get(),Singleton<Module>().GetValueByName(var->get_name()));
 }
 void Function::add_block(BasicBlock* __block){
@@ -475,7 +475,7 @@ Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
 }
 void Module::GenerateGlobalVariable(Variable* ptr){
     /// @todo 初始化单元
-    auto obj=new Value(std::make_shared<PointerType>(ptr->CopyType()));
+    auto obj=new Value(PointerType::NewPointerTypeGet(ptr->GetType()));
     SymbolTable::Register(ptr->get_name(),obj);
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }
