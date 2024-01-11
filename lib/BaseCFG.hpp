@@ -78,6 +78,7 @@ class User:public Value
     User(std::shared_ptr<Type> tp);
 >>>>>>> 0f23fb8a294eb75d3f86784145997f65219c77a5
     virtual Operand GetDef();
+    std::vector<UsePtr>& Getuselist();
 };
 class ConstIRInt:public Value
 {
