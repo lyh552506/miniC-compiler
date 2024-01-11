@@ -56,16 +56,14 @@ class User:public Value
     void add_use(Value* __data);
     public:
     User();
-<<<<<<< HEAD
     User(InnerDataType tp);
     //todo int是乱写的
     int GetDes();
     int getuserlist();
-=======
     User(std::shared_ptr<Type> tp);
->>>>>>> 7419fa8e041c2c21f0df386693f8e01cdcf3f3dd
     void print();
     virtual Operand GetDef();
+    std::vector<UsePtr>& Getuselist();
 };
 class ConstIRInt:public Value
 {
