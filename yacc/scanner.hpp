@@ -467,7 +467,7 @@ extern int yylex (void);
 #undef yyTABLES_NAME
 #endif
 
-#line 127 "./lex.l"
+#line 127 "lex.l"
 
 
 #line 474 "scanner.hpp"

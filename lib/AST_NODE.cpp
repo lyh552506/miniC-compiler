@@ -357,7 +357,7 @@ BasicBlock* BlockItems::GetInst(GetInstState state){
 void BlockItems::print(int x){
     AST_NODE::print(x);
     std::cout<<'\n';
-    // for(auto &i:ls)i->print(x+1);
+    for(auto &i:ls)i->print(x+1);
 }
 
 Block::Block(BlockItems* ptr):items(ptr){}
@@ -476,25 +476,33 @@ void WhileStmt::print(int x){
 
 IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
 BasicBlock* IfStmt::GetInst(GetInstState state){
-    auto nxt_building=state.current_building->GenerateNewBlock();
+    BasicBlock* nxt_building=nullptr;
     Operand condi=condition->GetOperand(state.current_building);
 
     auto istrue=state.current_building->GenerateNewBlock();
     GetInstState t_state=state;t_state.current_building=istrue;
     istrue=t->GetInst(t_state);
-    if(!istrue->EndWithBranch())istrue->GenerateUnCondInst(nxt_building);
+
+    auto make_uncond=[&](BasicBlock* tmp){
+        if(!tmp->EndWithBranch()){
+            if(nxt_building==nullptr)nxt_building=state.current_building->GenerateNewBlock();
+            tmp->GenerateUnCondInst(nxt_building);
+        }
+    };
+
+    make_uncond(istrue);
     
     if(f!=nullptr)
     {
         auto isfalse=state.current_building->GenerateNewBlock();
         GetInstState f_state=state;f_state.current_building=isfalse;
         isfalse=f->GetInst(f_state);
-        if(!isfalse->EndWithBranch())isfalse->GenerateUnCondInst(nxt_building);
+        make_uncond(isfalse);
         state.current_building->GenerateCondInst(condi,istrue,isfalse);
     }
     else state.current_building->GenerateCondInst(condi,istrue,nxt_building);
     
-    return nxt_building;
+    return (nxt_building!=nullptr)?nxt_building:state.current_building;
 }
 
 void IfStmt::print(int x){
@@ -536,7 +544,8 @@ void ReturnStmt::print(int x){
 
 FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){}
 Operand FunctionCall::GetOperand(BasicBlock* block){
-    std::vector<Operand> args=cp->GetParams(block);
+    std::vector<Operand> args;
+    if(cp!=nullptr)args=cp->GetParams(block);
     return block->GenerateCallInst(id,args);
 }
 void FunctionCall::print(int x){

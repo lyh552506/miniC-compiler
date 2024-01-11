@@ -1,4 +1,5 @@
 #include "BaseCFG.hpp"
+#include "CFG.hpp"
 Use::Use(User* __fat,Value* __usee):fat(__fat),usee(__usee){
     usee->add_user(this);
 }
@@ -12,6 +13,7 @@ void UserList::push_front(Use* _data){
     if(head!=nullptr)head->prev=&(_data->nxt);
     _data->prev=&head;
 }
+Value* Use::GetValue(){return usee;}
 
 InnerDataType Value::GetType(){
     return tp->GetType();
@@ -20,13 +22,25 @@ InnerDataType Value::GetType(){
 
 Value::Value(std::shared_ptr<Type> _tp):tp(_tp){}
 Value::Value(InnerDataType _tp){tp=std::make_shared<Type>(_tp);}
+
+void Value::SetNum(int &cnt){if(GetNum()<0)number=cnt++;}
+int Value::GetNum(){return number;}
+
 std::shared_ptr<Type> Value::CopyType(){return tp;}
 void Value::add_user(Use* __data){
     userlist.push_front(__data);
 }
-void Value::print(){
-    // only to use dynamic_cast
-    assert(0);
+void Value::print(int& cnt){
+    if(auto tmp=dynamic_cast<Function*>(this))
+        std::cout<<"@"<<tmp->GetName();
+    else if(auto tmp=dynamic_cast<ConstIRInt*>(this))
+        std::cout<<tmp->GetVal();
+    else if(auto tmp=dynamic_cast<ConstIRFloat*>(this))
+        std::cout<<tmp->GetVal();
+    else{
+        SetNum(cnt);
+        std::cout<<"%"<<GetNum();
+    }
 }
 
 void User::add_use(Value* __data){
@@ -34,13 +48,6 @@ void User::add_use(Value* __data){
 }
 User::User():Value(std::make_shared<Type>(IR_Value_VOID)){}
 User::User(std::shared_ptr<Type> _tp):Value(_tp){}
-void User::print(){
-    int status;
-    char* demangled_name = abi::__cxa_demangle(typeid(*this).name(), 0, 0, &status);
-    assert(status==0);
-    std::cout<<demangled_name<<'\n';
-    free(demangled_name);
-}
 Value* User::GetDef(){return static_cast<Value*>(this);}
 
 ConstIRInt::ConstIRInt(int _val):Value(IR_Value_INT),val(_val){};

@@ -6,8 +6,8 @@ int main(int argc,char** argv)
     yy::parser parse;
     parse();
     std::cout<<Singleton<CompUnit*>()<<'\n';
+    Singleton<CompUnit*>()->print(0);
     Singleton<CompUnit*>()->codegen();
     Singleton<Module>().Test();
-    std::cout<<"Program Terminated!\n";
     return 0;
 }

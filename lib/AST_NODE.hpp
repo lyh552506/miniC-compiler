@@ -91,8 +91,13 @@ class BaseExp:public HasOperand
         ls.push_front(data);
     }
     void print(int x) final {
-        AST_NODE::print(x);
-        std::cout<<'\n';
+        // AST_NODE::print(x);
+        // std::cout<<'\n';
+        if(!oplist.empty()){
+            for(int i=0;i<x;i++)std::cout<<"  ";
+            std::cout<<magic_enum::enum_name(oplist.front())<<" Level Expression\n";
+        }
+        for(auto&i:ls)i->print(x+!oplist.empty());
     }
     Operand GetOperand(BasicBlock* block) final{
         /// UnaryExp 是一元操作符，单独取出来研究
@@ -444,5 +449,9 @@ class ConstValue:public HasOperand
     Operand GetOperand(BasicBlock* block){
         if(std::is_same<T,int>::value)return new ConstIRInt(data);
         else return new ConstIRFloat(data);
+    }
+    void print(int x)final{
+        AST_NODE::print(x);
+        std::cout<<":"<<data<<'\n';
     }
 };

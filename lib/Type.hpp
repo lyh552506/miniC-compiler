@@ -13,6 +13,7 @@ class Type
     InnerDataType GetType();
     virtual ~Type()=default;
     virtual int layer();
+    void print();
 };
 class IntType:public Type
 {
