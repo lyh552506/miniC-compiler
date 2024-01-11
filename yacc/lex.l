@@ -75,47 +75,47 @@ Sharp "#"
 %x COMMENT
 
 %%
-{T_int} {return yy::parser::make_Y_INT();}
-{T_float} {return yy::parser::make_Y_FLOAT();}
-{T_void} {return yy::parser::make_Y_VOID();}
-{T_const} {return yy::parser::make_Y_CONST();}
-{T_break} {return yy::parser::make_Y_BREAK();}
-{T_while} {return yy::parser::make_Y_WHILE();}
-{T_if} {return yy::parser::make_Y_IF();}
-{T_else} {return yy::parser::make_Y_ELSE();}
-{T_return} {return yy::parser::make_Y_RETURN();}
-{T_continue} {return yy::parser::make_Y_CONTINUE();}
+{T_int} {std::cout<<"T_int\n";return yy::parser::make_Y_INT();}
+{T_float} {std::cout<<"T_float\n";return yy::parser::make_Y_FLOAT();}
+{T_void} {std::cout<<"T_void\n";return yy::parser::make_Y_VOID();}
+{T_const} {std::cout<<"T_const\n";return yy::parser::make_Y_CONST();}
+{T_break} {std::cout<<"T_break\n";return yy::parser::make_Y_BREAK();}
+{T_while} {std::cout<<"T_while\n";return yy::parser::make_Y_WHILE();}
+{T_if} {std::cout<<"T_if\n";return yy::parser::make_Y_IF();}
+{T_else} {std::cout<<"T_else\n";return yy::parser::make_Y_ELSE();}
+{T_return} {std::cout<<"T_return\n";return yy::parser::make_Y_RETURN();}
+{T_continue} {std::cout<<"T_continue\n";return yy::parser::make_Y_CONTINUE();}
 
-{identifier} {return yy::parser::make_Y_ID(yytext);} 
+{identifier} {std::cout<<"Identifier: "<<yytext<<"\n";return yy::parser::make_Y_ID(yytext);} 
 
-{FLOAT} {return yy::parser::make_num_FLOAT(std::stof(yytext));}
-{HEX} {return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16));}
-{OCTAL} {return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8));}
-{DECIMAL} {return yy::parser::make_num_INT(std::stoi(yytext));}
+{FLOAT} {std::cout<<"ConstValue: "<<yytext<<"\n";return yy::parser::make_num_FLOAT(std::stof(yytext));}
+{HEX} {std::cout<<"ConstValue: "<<yytext<<"\n";return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16));}
+{OCTAL} {std::cout<<"ConstValue: "<<yytext<<"\n";return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8));}
+{DECIMAL} {std::cout<<"ConstValue: "<<yytext<<"\n";return yy::parser::make_num_INT(std::stoi(yytext));}
 
-{ADD} {return yy::parser::make_Y_ADD();}
-{DEL} {return yy::parser::make_Y_SUB();}
-{MUL} {return yy::parser::make_Y_MUL();}
-{MOD} {return yy::parser::make_Y_MODULO();}
-{DIV} {return yy::parser::make_Y_DIV();}
-{BIG} {return yy::parser::make_Y_GREAT();}
-{BIG_Equ} {return yy::parser::make_Y_GREATEQ();}
-{SMALL} {return yy::parser::make_Y_LESS();}
-{SMALL_Equ} {return yy::parser::make_Y_LESSEQ();}
-{EquEqu} {return yy::parser::make_Y_EQ();}
-{Equ} {return yy::parser::make_Y_ASSIGN();}
-{NotEqu} {return yy::parser::make_Y_NOTEQ();}
-{NOT} {return yy::parser::make_Y_NOT();}
-{AND} {return yy::parser::make_Y_AND();}
-{OR} {return yy::parser::make_Y_OR();}
-"(" {return yy::parser::make_Y_LPAR();}
-")"	{return yy::parser::make_Y_RPAR();}
-"["	{return yy::parser::make_Y_LSQUARE();}
-"]"	{return yy::parser::make_Y_RSQUARE();}
-"{"	{return yy::parser::make_Y_LBRACKET();}
-"}"	{return yy::parser::make_Y_RBRACKET();}
-{Colon} {return yy::parser::make_Y_SEMICOLON();}
-{Comma} {return yy::parser::make_Y_COMMA();}
+{ADD} {std::cout<<"ADD"<<"\n";return yy::parser::make_Y_ADD();}
+{DEL} {std::cout<<"DEL"<<"\n";return yy::parser::make_Y_SUB();}
+{MUL} {std::cout<<"MUL"<<"\n";return yy::parser::make_Y_MUL();}
+{MOD} {std::cout<<"MOD"<<"\n";return yy::parser::make_Y_MODULO();}
+{DIV} {std::cout<<"DIV"<<"\n";return yy::parser::make_Y_DIV();}
+{BIG} {std::cout<<"BIG"<<"\n";return yy::parser::make_Y_GREAT();}
+{BIG_Equ} {std::cout<<"BIG_Equ"<<"\n";return yy::parser::make_Y_GREATEQ();}
+{SMALL} {std::cout<<"SMALL"<<"\n";return yy::parser::make_Y_LESS();}
+{SMALL_Equ} {std::cout<<"SMALL_Equ"<<"\n";return yy::parser::make_Y_LESSEQ();}
+{EquEqu} {std::cout<<"EquEqu"<<"\n";return yy::parser::make_Y_EQ();}
+{Equ} {std::cout<<"Equ"<<"\n";return yy::parser::make_Y_ASSIGN();}
+{NotEqu} {std::cout<<"NotEqu"<<"\n";return yy::parser::make_Y_NOTEQ();}
+{NOT} {std::cout<<"NOT"<<"\n";return yy::parser::make_Y_NOT();}
+{AND} {std::cout<<"AND"<<"\n";return yy::parser::make_Y_AND();}
+{OR} {std::cout<<"OR"<<"\n";return yy::parser::make_Y_OR();}
+"(" {std::cout<<yytext<<"\n";return yy::parser::make_Y_LPAR();}
+")"	{std::cout<<yytext<<"\n";return yy::parser::make_Y_RPAR();}
+"["	{std::cout<<yytext<<"\n";return yy::parser::make_Y_LSQUARE();}
+"]"	{std::cout<<yytext<<"\n";return yy::parser::make_Y_RSQUARE();}
+"{"	{std::cout<<yytext<<"\n";return yy::parser::make_Y_LBRACKET();}
+"}"	{std::cout<<yytext<<"\n";return yy::parser::make_Y_RBRACKET();}
+{Colon} {std::cout<<yytext<<"\n";return yy::parser::make_Y_SEMICOLON();}
+{Comma} {std::cout<<yytext<<"\n";return yy::parser::make_Y_COMMA();}
 
 <<EOF>>  {return yy::parser::make_YYEOF();}
 
