@@ -68,12 +68,10 @@ class User:public Value
     public:
     virtual void print(int&)=0;
     User();
-<<<<<<< HEAD
     User(InnerDataType tp);
     //todo int是乱写的
     int GetDes();
     int getuserlist();
-=======
     User(std::shared_ptr<Type> tp);
     virtual Operand GetDef();
 };
