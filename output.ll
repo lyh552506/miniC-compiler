@@ -18,5 +18,7 @@ define i32 @fib(i32){
 }
 define i32 @main(){
   %1 = call i32 @fib(i32 14)
-  ret i32 %1 
+  %2 = call i32 @fib(i32 3)
+  %3 = mul i32 %1, %2
+  ret i32 %3 
 }

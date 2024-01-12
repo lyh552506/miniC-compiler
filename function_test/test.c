@@ -3,5 +3,5 @@ int fib(int x){
   else return fib(x-1)+fib(x-2);
 }
 int main(){
-  return fib(14);
+  return fib(14)*fib(3);
 }
