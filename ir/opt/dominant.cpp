@@ -19,62 +19,69 @@ void dominance::computeDF(int x) {
   }
 }
 
-void dominance::Init(int m, Function &function) {
-  // auto &bbs = function.GetBasicBlock();
-  // for (auto &bb : bbs) {
-  //   auto &Insts = bb->GetInsts();
+void dominance::Init() {
+  auto bbs = thisFunc.GetBasicBlock();
+  for (auto &bb : bbs) {
+    std::vector<User *> _User = bb->getInstList();
+    User *Inst = _User.back(); //获取到最后一条指令
+    if (CondInst *cond = dynamic_cast<CondInst *>(Inst)) {
+      auto uselist = cond->Getuselist();
+      BasicBlock *des_true = dynamic_cast<BasicBlock *>(uselist[1]->GetValue());
+      BasicBlock *des_false =
+          dynamic_cast<BasicBlock *>(uselist[2]->GetValue());
+      node[bb->num].des.push_front(des_true->num);
+      node[bb->num].des.push_front(des_false->num);
+      node[des_true->num].rev.push_front(bb->num);
+      node[des_false->num].rev.push_front(bb->num);
+    } else if (UnCondInst *uncond = dynamic_cast<UnCondInst *>(Inst)) {
+      auto uselist = uncond->Getuselist();
+      BasicBlock *des = dynamic_cast<BasicBlock *>(uselist[0]->GetValue());
+      node[bb->num].des.push_front(des->num);
+      node[des->num].rev.push_front(bb->num);
+    }
+  }
+
+  // for (int i = 0; i < m; i++) { // u-->v
+  //   int u, v;
+  //   scanf("%d%d", &u, &v); // TODO 需要适配后续CFG流图
+  //   node[u].des.push_front(v);
+  //   node[v].rev.push_front(u);
   // }
-  for (int i = 0; i < m; i++) { // u-->v
-    int u, v;
-    scanf("%d%d", &u, &v); // TODO 需要适配后续CFG流图
-    node[u].des.push_front(v);
-    node[v].rev.push_front(u);
+}
+
+void dominance::DFS(int pos) {
+  node[pos].dfnum = count;
+  node[pos].sdom = count; // 每个节点的sdom先初始化为自己
+  vertex[count] = pos;    // 记录每一个dfnum对应的结点
+  count++;
+  for (auto p : node[pos].des) {
+    if (node[p].dfnum == 0) {
+      DFS(p);
+      node[p].father = pos;
+    }
   }
 }
 
-// void dominance::DFS(int pos) {
-//   node[pos].dfnum = count;
-//   node[pos].sdom = count; // 每个节点的sdom先初始化为自己
-//   vertex[count] = pos;    // 记录每一个dfnum对应的结点
-//   count++;
-//   for (auto p : node[pos].des) {
-//     if (node[p].dfnum == 0) {
-//       DFS(p);
-//       node[p].father = pos;
-//     }
-//   }
-// }
-
-void dominance::DFS_new() {
-  int DfsIn = 1, DfsOut = 1;
+void dominance::DfsDominator(int root) {
+  int DfsNum = 0;
   std::vector<std::pair<int, std::forward_list<int>::iterator>> worklists;
-  std::forward_list<int>::iterator it1 = node[1].des.begin();
-  worklists.push_back(std::make_pair(1, it1)); // push root node
-  node[1].DfsIn = DfsIn;
-  node[1].visited = 1;
-  node[1].sdom = 1;  // 每个节点的sdom先初始化为自己
-  vertex[DfsIn] = 1; // 记录每一个dfnum对应的结点
-  DfsIn++;
+  std::forward_list<int>::iterator it1 = node[root].idom_child.begin();
+  worklists.push_back(std::make_pair(root, it1));
+  node[root].DfsIn = DfsNum++;
   while (!worklists.empty()) {
     int index = worklists.back().first;
     std::forward_list<int>::iterator it = worklists.back().second;
     if (it == node[index].des.end()) { //孩子全部访问完毕，则添加dfsout
-      node[index].DfsOut = DfsOut++;
+      node[index].DfsOut = DfsNum++;
       worklists.pop_back();
     } else {
       int nxt = *it;
-      ++worklists.back().second; // update the iterator
-      if (node[nxt].visited)
-        continue;
-      worklists.push_back(std::make_pair(nxt, node[nxt].des.begin()));
-      node[nxt].visited = 1;
-      node[nxt].sdom = DfsIn;
-      node[nxt].DfsIn = DfsIn;
-      node[nxt].father = index;
-      vertex[DfsIn] = nxt;
-      DfsIn++;
+      ++worklists.back().second;
+      worklists.push_back(std::make_pair(nxt, node[nxt].idom_child.begin()));
+      node[nxt].DfsIn = DfsNum++;
     }
   }
+  IsDFSValid = true;
 }
 
 void dominance::find_dom() {
@@ -84,7 +91,7 @@ void dominance::find_dom() {
     n = vertex[i]; // 获取dfs序对应的结点号
     fat = node[n].father;
     for (auto front : node[n].rev) {
-      if (node[front].DfsIn != 0) {
+      if (node[front].dfnum != 0) {
         sdom_cadidate =
             std::min(sdom_cadidate, SDOM(eval(front))); // 半必经结点定理
       }
@@ -121,22 +128,29 @@ void dominance::build_tree() {
   }
 }
 
-/// @brief 预备phi函数关系
-void dom_begin() {
-  int n, m; // CFG的结点数和边数
-  dominance Dom{n, m};
-  // Dom.Init(m);      // 记录有向边的关系
-  //Dom.DFS(1);       // 起始节点的序号记为1
-  Dom.DFS_new();
-  Dom.find_dom();   // 寻找支配节点
-  Dom.build_tree(); // 构建支配树
-  Dom.computeDF(1);
+/// @brief 准备计算支配树
+void dominance::dom_begin() {
+  Init();      // 记录有向边的关系
+  BasicBlock* EntryBB=thisFunc.front_block();
+  DFS(EntryBB->num); // 起始节点的序号记为1
+  // Dom.DFS_new();
+  find_dom();   // 寻找支配节点
+  build_tree(); // 构建支配树
+  //computeDF(1);
 }
 
+bool dominance::dominates(BasicBlock *bb1, BasicBlock *bb2) {
+  if (!IsDFSValid) {
+    DfsDominator(1);
+  }
+  int node_bb1 = vertex[bb1->dfs];
+  int node_bb2 = vertex[bb2->dfs];
 
-bool dominance::dominates(BasicBlock* bb1,BasicBlock* bb2){
-  // return (bb1.DfsIn<=bb2.DfsIn)&&(bb1.DfsOut>=bb2.DfsOut);
-  Node& node_bb1=node[vertex[bb1->dfs]];
-  Node& node_bb2=node[vertex[bb2->dfs]];
-  return (node_bb1.DfsIn<=node_bb2.DfsIn)&&(node_bb1.DfsOut>=node_bb2.DfsOut);
+  return (node[node_bb1].DfsIn <= node[node_bb2].DfsIn) &&
+         (node[node_bb1].DfsOut >= node[node_bb2].DfsOut);
+}
+
+BasicBlock *dominance::DfsToBB(int d) {
+  int index = vertex[d];
+  return node[index].thisBlock;
 }

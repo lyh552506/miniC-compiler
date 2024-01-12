@@ -11,6 +11,10 @@ void AllocaInst::print(){
     dynamic_cast<PointerType*>(tp)->GetSubType()->print();
     std::cout<<"\n";
 }
+#include<map>
+
+std::map<Type*,UndefValue*> Undefs;
+AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
     add_use(__des);
@@ -593,4 +597,11 @@ void Module::GenerateGlobalVariable(Variable* ptr){
     auto obj=new Value(PointerType::NewPointerTypeGet(ptr->GetType()));
     SymbolTable::Register(ptr->get_name(),obj);
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
+}
+
+UndefValue* UndefValue::get(Type *Ty){
+    UndefValue *& UV=Undefs[Ty];
+    if(!UV)
+      UV=new UndefValue(Ty);
+    return UV;    
 }

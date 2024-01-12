@@ -10,6 +10,7 @@
 #include <string>
 class User;
 class Value;
+class BasicBlock;
 class Use
 {
     friend class UserList;
@@ -55,6 +56,7 @@ class Value
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
     virtual void ir_mark();
+    void RAUW(Value* val);
 };
 using Operand=Value*;
 class User:public Value
@@ -69,6 +71,8 @@ class User:public Value
     User(Type* tp);
     virtual Operand GetDef();
     void ir_mark();
+    virtual void EraseFromBlock();
+    virtual BasicBlock* GetParent();
 };
 class ConstIRInt:public Value
 {
