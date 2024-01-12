@@ -25,6 +25,7 @@ void Type::align_print()
         break;
     case IR_Value_INT:
     case IR_Value_Float:
+    case IR_ARRAY:
         std::cout<<"align 4";
         break;
     default:
@@ -103,7 +104,7 @@ ArrayType* ArrayType::NewArrayTypeGet(int NumEle,Type* _subtype){
 }
 ArrayType::ArrayType(int _numEle,Type* _subtype):NumEle(_numEle),HasSubType(IR_ARRAY,_subtype){}
 void ArrayType::print(){
-    std::cout<<"[ ";
+    std::cout<<"["<<NumEle<<" x ";
     subtype->print();
-    std::cout<<" ]";
+    std::cout<<"]";
 }

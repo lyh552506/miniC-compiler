@@ -9,5 +9,6 @@ int main(int argc,char** argv)
     Singleton<CompUnit*>()->print(0);
     Singleton<CompUnit*>()->codegen();
     Singleton<Module>().Test();
+    
     return 0;
 }

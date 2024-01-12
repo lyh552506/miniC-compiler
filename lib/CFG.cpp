@@ -4,8 +4,8 @@
 #include <iostream>
 #include "MagicEnum.hpp"
 AllocaInst::AllocaInst(Type* _tp):User(PointerType::NewPointerTypeGet(_tp)){}
-void AllocaInst::print(int &cnt){
-    Value::print(cnt);
+void AllocaInst::print(){
+    Value::print();
     /// @todo typesystem 
     std::cout<<" = alloca ";
     dynamic_cast<PointerType*>(tp)->GetSubType()->print();
@@ -18,12 +18,12 @@ StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__des);
 }
 Operand StoreInst::GetDef(){return nullptr;}
-void StoreInst::print(int &cnt){
+void StoreInst::print(){
     std::cout<<"store ";
     for(auto&i:uselist){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
-        i->GetValue()->print(cnt);
+        i->GetValue()->print();
         std::cout<<", ";
     }
     uselist[0]->GetValue()->GetType()->align_print();
@@ -35,15 +35,15 @@ LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType(
     add_use(__src);
 }
 
-void LoadInst::print(int &cnt){
-    Value::print(cnt);
+void LoadInst::print(){
+    Value::print();
     std::cout<<" = load ";
     tp->print();
     std::cout<<", ";
     for(auto&i:uselist){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
-        i->GetValue()->print(cnt);
+        i->GetValue()->print();
         std::cout<<", ";
     }
     tp->align_print();
@@ -52,13 +52,13 @@ void LoadInst::print(int &cnt){
 
 
 
-void FPTSI::print(int &cnt){
-    Value::print(cnt);
+void FPTSI::print(){
+    Value::print();
     std::cout<<" = fptosi ";
     for(auto&i:uselist){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
-        i->GetValue()->print(cnt);
+        i->GetValue()->print();
         std::cout<<" ";
     }
     std::cout<<"to ";
@@ -70,13 +70,13 @@ FPTSI::FPTSI(Operand __src):User(IntType::NewIntTypeGet()){
     add_use(__src);
 }
 
-void SITFP::print(int &cnt){
-    Value::print(cnt);
+void SITFP::print(){
+    Value::print();
     std::cout<<" = sitofp ";
     for(auto&i:uselist){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
-        i->GetValue()->print(cnt);
+        i->GetValue()->print();
         std::cout<<" ";
     }
     std::cout<<"to ";
@@ -94,11 +94,11 @@ UnCondInst::UnCondInst(BasicBlock* __des){
     add_use(__des);
 }
 
-void UnCondInst::print(int &cnt){
+void UnCondInst::print(){
     std::cout<<"br ";
     for(auto&i:uselist){
         std::cout<<"label ";
-        i->GetValue()->print(cnt);
+        i->GetValue()->print();
         std::cout<<" ";
     }
     std::cout<<'\n';
@@ -110,7 +110,7 @@ CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse){
     add_use(__isfalse);
 }
 
-void CondInst::print(int &cnt){
+void CondInst::print(){
     std::cout<<"br ";
     bool flag=0;
     for(auto&i:uselist){
@@ -120,7 +120,7 @@ void CondInst::print(int &cnt){
             flag=1;
         }
         else std::cout<<"label ";
-        i->GetValue()->print(cnt);
+        i->GetValue()->print();
         if(i.get()!=uselist.back().get())
             std::cout<<", ";
     }
@@ -135,13 +135,13 @@ CallInst::CallInst(Function* _func,std::vector<Operand>& _args):User(_func->GetT
         add_use(i);
 }
 
-void CallInst::print(int &cnt){
-    Value::print(cnt);
+void CallInst::print(){
+    Value::print();
     std::cout<<" = call ";
     for(auto&i:uselist){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
-        i->GetValue()->print(cnt);
+        i->GetValue()->print();
         if(i.get()==uselist.front().get())
             std::cout<<"(";
         else if(i.get()!=uselist.back().get())
@@ -154,12 +154,12 @@ RetInst::RetInst(){}
 
 RetInst::RetInst(Operand op){add_use(op);}
 
-void RetInst::print(int &cnt){
+void RetInst::print(){
     std::cout<<"ret ";
     for(auto&i:uselist){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
-        i->GetValue()->print(cnt);
+        i->GetValue()->print();
         std::cout<<" ";
     }
     std::cout<<'\n';
@@ -173,14 +173,14 @@ BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(_A->GetType())
     add_use(_B);
 }
 
-void BinaryInst::print(int &cnt){
-    Value::print(cnt);
+void BinaryInst::print(){
+    Value::print();
     std::cout<<" = ";
     bool flag=false;
     for(auto&i:uselist){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
-        i->GetValue()->print(cnt);
+        i->GetValue()->print();
         std::cout<<" ";
         if(flag==false){
             flag=true;
@@ -216,14 +216,16 @@ Type* GetElementPtrInst::GetType(){
 }
 
 
-void GetElementPtrInst::print(int &cnt){
-    Value::print(cnt);
-    std::cout<<" = ";
-    for(auto&i:uselist){
-        i->GetValue()->GetType()->print();
+void GetElementPtrInst::print(){
+    Value::print();
+    std::cout<<" = getelementptr inbounds ";
+    dynamic_cast<HasSubType*>(uselist[0]->GetValue()->GetType())->GetSubType()->print();
+    std::cout<<", ";
+    for(int i=0;i<uselist.size();i++){
+        std::cout<<", ";
+        uselist[i]->GetValue()->GetType()->print();
         std::cout<<" ";
-        i->GetValue()->print(cnt);
-        std::cout<<" ";
+        uselist[i]->GetValue()->print();
     }
     std::cout<<'\n';
 }
@@ -340,21 +342,32 @@ BasicBlock* BasicBlock::GenerateNewBlock(){
     master.add_block(tmp);
     return tmp;
 }
-void BasicBlock::print(int &cnt){
-    Value::print(cnt);
-    std::cout<<":\n";
+void BasicBlock::print(){
     for(auto &i:insts)
     {
         std::cout<<"  ";
-        i->print(cnt);
+        i->print();
     }
 }
 void Function::print(){
-    std::cout<<"define dso_local i32 @"<<name<<"{\n";
-    int cnt=0;
+    Singleton<IR_MARK>().Reset();
+    std::cout<<"define dso_local i32 @"<<name<<"(";
+    for(auto &i:params){
+        i->GetType()->print();
+        Singleton<IR_MARK>().GetNum(i.get());
+        if(i.get()!=params.back().get())std::cout<<", ";
+    }
+    std::cout<<") #0 {\n";
     for(auto &i:bbs)
     {
-        i->print(cnt);
+        if(i.get()!=bbs.front().get()){
+            dynamic_cast<Value*>(i.get())->print();
+            std::cout<<":\n";
+        }
+        else{
+            Singleton<IR_MARK>().GetNum(i.get());
+        } 
+        i->print();
         if(i.get()!=bbs.back().get())std::cout<<"\n";
     }
     std::cout<<"}\n";

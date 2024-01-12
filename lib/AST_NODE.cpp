@@ -426,9 +426,10 @@ Operand LVal::GetOperand(BasicBlock* block){
             handle=block->GenerateLoadInst(handle);
     }
 
-    if(handle->GetType()->GetTypeEnum()==IR_ARRAY)
-        dynamic_cast<GetElementPtrInst*>(handle)->add_use(new ConstIRInt(0));
-    
+    if(auto ptr=dynamic_cast<HasSubType*>(handle->GetType())){
+        if(ptr->GetSubType()->GetTypeEnum()==IR_ARRAY)
+            dynamic_cast<GetElementPtrInst*>(handle)->add_use(new ConstIRInt(0));
+    }
     return handle;
 }
 

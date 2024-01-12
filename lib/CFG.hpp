@@ -22,7 +22,7 @@ class AllocaInst:public User
     public:
     /// @brief Alloca语句要Type的结构,所以是Value*
     AllocaInst(Type*);
-    void print(int&)final;
+    void print()final;
 };
 /// @brief src->des
 /// @note inst use %src %des
@@ -33,47 +33,47 @@ class StoreInst:public User
     public:
     StoreInst(Operand,Operand);
     Operand GetDef()final;
-    void print(int&)final;
+    void print()final;
 };
 class LoadInst:public User
 {
     public:
     LoadInst(Operand __src);
-    void print(int&)final;
+    void print()final;
 };
 /// @brief float to int
 class FPTSI:public User
 {
     public:
     FPTSI(Operand __src);
-    void print(int&)final;
+    void print()final;
 };
 /// @brief int to float
 class SITFP:public User
 {
     public:
     SITFP(Operand __src);
-    void print(int&)final;
+    void print()final;
 };
 class UnCondInst:public User
 {
     public:
     UnCondInst(BasicBlock*);
     Operand GetDef()final;
-    void print(int&)final;
+    void print()final;
 };
 class CondInst:public User
 {
     public:
     CondInst(Operand,BasicBlock*,BasicBlock*);
     Operand GetDef()final;
-    void print(int&)final;
+    void print()final;
 };
 class CallInst:public User
 {
     public:
     CallInst(Function*,std::vector<Operand>&);
-    void print(int&)final;
+    void print()final;
 };
 /// @brief Ret, maybe has return value
 class RetInst:public User
@@ -82,7 +82,7 @@ class RetInst:public User
     RetInst();
     RetInst(Operand);
     Operand GetDef()final;
-    void print(int&)final;
+    void print()final;
 };
 /// @brief BinaryInst use A B,def C
 /// @param A operand
@@ -102,14 +102,14 @@ class BinaryInst:public User
     Operation op;
     public:
     BinaryInst(Operand _A,Operation __op,Operand _B);
-    void print(int&)final;
+    void print()final;
 };
 class GetElementPtrInst:public User
 {
     public:
     GetElementPtrInst(Operand);
     Type* GetType();
-    void print(int&)final;
+    void print()final;
 };
 class BasicBlock:public Value
 {
@@ -117,7 +117,7 @@ class BasicBlock:public Value
     Function& master;
     public:
     BasicBlock(Function& __master);
-    void print(int&);
+    void print();
     void push_front(User* ptr);
     void push_back(User* ptr);
     Operand push_alloca(Type*);

@@ -24,13 +24,10 @@ InnerDataType Value::GetTypeEnum(){return tp->GetTypeEnum();}
 
 Value::Value(Type* _tp):tp(_tp){}
 
-void Value::SetNum(int &cnt){if(GetNum()<0)number=cnt++;}
-int Value::GetNum(){return number;}
-
 void Value::add_user(Use* __data){
     userlist.push_front(__data);
 }
-void Value::print(int& cnt){
+void Value::print(){
     if(auto tmp=dynamic_cast<Function*>(this))
         std::cout<<"@"<<tmp->GetName();
     else if(auto tmp=dynamic_cast<ConstIRInt*>(this))
@@ -38,8 +35,7 @@ void Value::print(int& cnt){
     else if(auto tmp=dynamic_cast<ConstIRFloat*>(this))
         std::cout<<tmp->GetVal();
     else{
-        SetNum(cnt);
-        std::cout<<"%"<<GetNum();
+        std::cout<<"%"<<Singleton<IR_MARK>().GetNum(this);
     }
 }
 

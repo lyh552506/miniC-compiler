@@ -37,7 +37,6 @@ class UserList
 };
 class Value
 {
-    int number=-1;
     /// @brief 存储所有的User
     UserList userlist;
     protected:
@@ -47,9 +46,7 @@ class Value
     Value()=delete;
     Value(Type* _tp);
     /// @brief 为dump出ll作准备
-    void SetNum(int&);
-    int GetNum();
-    void print(int&);    
+    void print();    
     /// @brief Type System还在被批判的过程中 
     InnerDataType GetTypeEnum();
     virtual Type* GetType();
@@ -65,7 +62,7 @@ class User:public Value
     std::vector<UsePtr> uselist;
     public:
     void add_use(Value* __data);
-    virtual void print(int&)=0;
+    virtual void print()=0;
     User();
     User(Type* tp);
     virtual Operand GetDef();
