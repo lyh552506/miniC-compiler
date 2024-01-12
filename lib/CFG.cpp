@@ -145,6 +145,12 @@ CallInst::CallInst(Function* _func,std::vector<Operand>& _args):User(_func->GetT
         add_use(i);
 }
 
+void CallInst::ir_mark(){
+    Value::ir_mark();
+    for(int i=1;i<uselist.size();i++)
+        uselist[i]->GetValue()->ir_mark();
+}
+
 void CallInst::print(){
     Value::print();
     std::cout<<" = call ";
@@ -273,8 +279,8 @@ void BinaryInst::print(){
         if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"i";
         else std::cout<<"f";
         std::cout<<"cmp ";
-        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_Float)std::cout<<"uge ";
-        else std::cout<<"sge ";
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_Float)std::cout<<"ule ";
+        else std::cout<<"sle ";
         break;
     default:
         break;
@@ -459,7 +465,6 @@ void BasicBlock::print(){
 }
 void Function::print(){
     Singleton<IR_MARK>().Reset();
-    for(auto&i:bbs)i->ir_mark();
     std::cout<<"define i32 @"<<name<<"(";
     for(auto &i:params){
         i->GetType()->print();
@@ -467,6 +472,7 @@ void Function::print(){
         if(i.get()!=params.back().get())std::cout<<", ";
     }
     std::cout<<"){\n";
+    for(auto&i:bbs)i->ir_mark();
     // for(auto &i:bbs)
     // {
     //     if(i.get()!=bbs.front().get()){

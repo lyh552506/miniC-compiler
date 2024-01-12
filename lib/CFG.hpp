@@ -77,6 +77,7 @@ class CallInst:public User
     public:
     CallInst(Function*,std::vector<Operand>&);
     void print()final;
+    void ir_mark();
 };
 /// @brief Ret, maybe has return value
 class RetInst:public User

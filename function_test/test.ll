@@ -4,49 +4,39 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16
 target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @whileIf() #0 {
-  %1 = alloca i32, align 4
+define dso_local i32 @fib(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
-  store i32 0, ptr %1, align 4
-  store i32 0, ptr %2, align 4
-  br label %3
+  %3 = alloca i32, align 4
+  store i32 %0, ptr %3, align 4
+  %4 = load i32, ptr %3, align 4
+  %5 = icmp sle i32 %4, 2
+  br i1 %5, label %6, label %7
 
-3:                                                ; preds = %13, %0
-  %4 = load i32, ptr %1, align 4
-  %5 = icmp slt i32 %4, 100
-  br i1 %5, label %6, label %16
+6:                                                ; preds = %1
+  store i32 1, ptr %2, align 4
+  br label %15
 
-6:                                                ; preds = %3
-  %7 = load i32, ptr %1, align 4
-  %8 = icmp eq i32 %7, 5
-  br i1 %8, label %9, label %10
+7:                                                ; preds = %1
+  %8 = load i32, ptr %3, align 4
+  %9 = sub nsw i32 %8, 1
+  %10 = call i32 @fib(i32 noundef %9)
+  %11 = load i32, ptr %3, align 4
+  %12 = sub nsw i32 %11, 2
+  %13 = call i32 @fib(i32 noundef %12)
+  %14 = add nsw i32 %10, %13
+  store i32 %14, ptr %2, align 4
+  br label %15
 
-9:                                                ; preds = %6
-  store i32 25, ptr %2, align 4
-  br label %13
-
-10:                                               ; preds = %6
-  %11 = load i32, ptr %1, align 4
-  %12 = mul nsw i32 %11, 2
-  store i32 %12, ptr %2, align 4
-  br label %13
-
-13:                                               ; preds = %10, %9
-  %14 = load i32, ptr %1, align 4
-  %15 = add nsw i32 %14, 1
-  store i32 %15, ptr %1, align 4
-  br label %3, !llvm.loop !6
-
-16:                                               ; preds = %3
-  %17 = load i32, ptr %2, align 4
-  ret i32 %17
+15:                                               ; preds = %7, %6
+  %16 = load i32, ptr %2, align 4
+  ret i32 %16
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %1 = alloca i32, align 4
   store i32 0, ptr %1, align 4
-  %2 = call i32 @whileIf()
+  %2 = call i32 @fib(i32 noundef 14)
   ret i32 %2
 }
 
@@ -61,5 +51,3 @@ attributes #0 = { noinline nounwind optnone uwtable "frame-pointer"="all" "min-l
 !3 = !{i32 7, !"uwtable", i32 2}
 !4 = !{i32 7, !"frame-pointer", i32 2}
 !5 = !{!"Ubuntu clang version 15.0.7"}
-!6 = distinct !{!6, !7}
-!7 = !{!"llvm.loop.mustprogress"}
