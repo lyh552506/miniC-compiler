@@ -33,10 +33,10 @@ void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
   {
     auto _Use = inst->Getuselist(); 
     BlockLivein[block].insert(_Use[1]->GetValue());
-    auto _block_Pred1 = dynamic_cast<BasicBlock *>(_Use[1]->GetValue());
-    auto _block_Pred2 = dynamic_cast<BasicBlock *>(_Use[2]->GetValue());
-    BlockLiveout[block].insert(BlockLivein[_block_Pred1].begin(), BlockLivein[_block_Pred1].end());
-    BlockLiveout[block].insert(BlockLivein[_block_Pred2].begin(), BlockLivein[_block_Pred2].end());
+    auto _block_Succ1 = dynamic_cast<BasicBlock *>(_Use[1]->GetValue());
+    auto _block_Succ2 = dynamic_cast<BasicBlock *>(_Use[2]->GetValue());
+    BlockLiveout[block].insert(BlockLivein[_block_Succ1].begin(), BlockLivein[_block_Succ1].end());
+    BlockLiveout[block].insert(BlockLivein[_block_Succ2].begin(), BlockLivein[_block_Succ2].end());
   }
   if(auto _UnCondInst = dynamic_cast<UnCondInst *>(inst))
   {
