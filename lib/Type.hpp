@@ -11,7 +11,6 @@ class Type
     public:
     static Type* NewTypeByEnum(InnerDataType);
     virtual ~Type()=default;
-    void align_print();
     virtual void print()=0;
     virtual int get_layer();
     InnerDataType GetTypeEnum();

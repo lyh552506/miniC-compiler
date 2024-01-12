@@ -1,18 +1,14 @@
 int whileIf(){
   int a;
-  a = 0;
+  a = 100;
   int b;
-  b = 0;
-  while (a < 100) {
-    if (a == 5) {
-      b = 25;
-    }
-    else {
-      b = a * 2;
-    }
-    a = a + 1;
+  b = 101;
+  if(a>b){
+    return 100;
   }
-  return (b);
+  else{
+    return 201;
+  }
 }
 
 int main(){

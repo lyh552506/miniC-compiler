@@ -34,6 +34,7 @@ class StoreInst:public User
     StoreInst(Operand,Operand);
     Operand GetDef()final;
     void print()final;
+    void ir_mark();
 };
 class LoadInst:public User
 {
@@ -61,6 +62,7 @@ class UnCondInst:public User
     UnCondInst(BasicBlock*);
     Operand GetDef()final;
     void print()final;
+    void ir_mark();
 };
 class CondInst:public User
 {
@@ -68,6 +70,7 @@ class CondInst:public User
     CondInst(Operand,BasicBlock*,BasicBlock*);
     Operand GetDef()final;
     void print()final;
+    void ir_mark();
 };
 class CallInst:public User
 {
@@ -83,6 +86,7 @@ class RetInst:public User
     RetInst(Operand);
     Operand GetDef()final;
     void print()final;
+    void ir_mark();
 };
 /// @brief BinaryInst use A B,def C
 /// @param A operand
@@ -136,6 +140,7 @@ class BasicBlock:public Value
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
     bool EndWithBranch();
+    void ir_mark();
 };
 /// @brief 以function为最大单元生成CFG
 //其实function本质是就是CFG了

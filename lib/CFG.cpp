@@ -9,8 +9,6 @@ void AllocaInst::print(){
     /// @todo typesystem 
     std::cout<<" = alloca ";
     dynamic_cast<PointerType*>(tp)->GetSubType()->print();
-    std::cout<<", ";
-    dynamic_cast<PointerType*>(tp)->GetSubType()->align_print();
     std::cout<<"\n";
 }
 StoreInst::StoreInst(Operand __src,Operand __des){
@@ -24,10 +22,12 @@ void StoreInst::print(){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print();
-        std::cout<<", ";
+        if(i.get()!=uselist.back().get())std::cout<<", ";
     }
-    uselist[0]->GetValue()->GetType()->align_print();
     std::cout<<'\n';
+}
+void StoreInst::ir_mark(){
+    return;
 }
 
 LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType())->GetSubType()){
@@ -44,9 +44,8 @@ void LoadInst::print(){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print();
-        std::cout<<", ";
+        if(i.get()!=uselist.back().get())std::cout<<", ";
     }
-    tp->align_print();
     std::cout<<'\n';
 }
 
@@ -101,7 +100,17 @@ void UnCondInst::print(){
         i->GetValue()->print();
         std::cout<<" ";
     }
-    std::cout<<'\n';
+    std::cout<<"\n\n";
+    dynamic_cast<BasicBlock*>(uselist[0]->GetValue())->print();
+}
+
+void UnCondInst::ir_mark(){
+    uselist[0]->GetValue()->ir_mark();
+}
+
+void CondInst::ir_mark(){
+    for(int i=1;i<uselist.size();i++)
+        uselist[i]->GetValue()->ir_mark();
 }
 
 CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse){
@@ -124,7 +133,8 @@ void CondInst::print(){
         if(i.get()!=uselist.back().get())
             std::cout<<", ";
     }
-    std::cout<<'\n';
+    std::cout<<"\n\n";
+    for(int i=1;i<=2;i++)dynamic_cast<BasicBlock*>(uselist[i]->GetValue())->print();
 }
 
 Operand CondInst::GetDef(){return nullptr;}
@@ -154,6 +164,10 @@ RetInst::RetInst(){}
 
 RetInst::RetInst(Operand op){add_use(op);}
 
+void RetInst::ir_mark(){
+    return;
+}
+
 void RetInst::print(){
     std::cout<<"ret ";
     for(auto&i:uselist){
@@ -162,6 +176,7 @@ void RetInst::print(){
         i->GetValue()->print();
         std::cout<<" ";
     }
+    if(uselist.empty())std::cout<<"void";
     std::cout<<'\n';
 }
 
@@ -176,17 +191,84 @@ BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(_A->GetType())
 void BinaryInst::print(){
     Value::print();
     std::cout<<" = ";
-    bool flag=false;
-    for(auto&i:uselist){
-        i->GetValue()->GetType()->print();
-        std::cout<<" ";
-        i->GetValue()->print();
-        std::cout<<" ";
-        if(flag==false){
-            flag=true;
-            std::cout<<magic_enum::enum_name(op)<<" ";
-        }
+    switch (op)
+    {
+    case BinaryInst::Op_Add:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"add ";
+        else std::cout<<"fadd ";
+        break;
+    case BinaryInst::Op_Sub:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"sub ";
+        else std::cout<<"fsub ";
+        break;
+    case BinaryInst::Op_Mul:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"mul ";
+        else std::cout<<"fmul ";
+        break;
+    case BinaryInst::Op_Div:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"sdiv ";
+        else std::cout<<"fdiv ";
+        break;
+    case BinaryInst::Op_Mod:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"srem ";
+        else std::cout<<"frem ";///应该不存在
+        break;
+    case BinaryInst::Op_And:
+        std::cout<<"and ";
+        break;
+    case BinaryInst::Op_Or:
+        std::cout<<"Or ";
+        break;
+    case BinaryInst::Op_E:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"i";
+        else std::cout<<"f";
+        std::cout<<"cmp ";
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_Float)std::cout<<"u";
+        std::cout<<"eq ";
+        break;
+    case BinaryInst::Op_NE:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"i";
+        else std::cout<<"f";
+        std::cout<<"cmp ";
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_Float)std::cout<<"u";
+        std::cout<<"ne ";
+        break;
+    case BinaryInst::Op_G:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"i";
+        else std::cout<<"f";
+        std::cout<<"cmp ";
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_Float)std::cout<<"ugt ";
+        else std::cout<<"sgt ";
+        break;
+    case BinaryInst::Op_GE:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"i";
+        else std::cout<<"f";
+        std::cout<<"cmp ";
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_Float)std::cout<<"uge ";
+        else std::cout<<"sge ";
+        break;
+    case BinaryInst::Op_L:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"i";
+        else std::cout<<"f";
+        std::cout<<"cmp ";
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_Float)std::cout<<"ult ";
+        else std::cout<<"slt ";
+        break;
+    case BinaryInst::Op_LE:
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_INT)std::cout<<"i";
+        else std::cout<<"f";
+        std::cout<<"cmp ";
+        if(uselist[0]->GetValue()->GetTypeEnum()==IR_Value_Float)std::cout<<"uge ";
+        else std::cout<<"sge ";
+        break;
+    default:
+        break;
     }
+    uselist[0]->GetValue()->GetType()->print();
+    std::cout<<" ";
+    uselist[0]->GetValue()->print();
+    std::cout<<", ";
+    uselist[1]->GetValue()->print();
     std::cout<<'\n';
 }
 
@@ -326,6 +408,14 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
         return bb->GenerateBinaryInst(_A,op,_B);
     }
 }
+
+void BasicBlock::ir_mark(){
+    if(!Singleton<IR_MARK>().mark(this))return;
+    Value::ir_mark();
+    for(auto&i:insts)
+        i->ir_mark();
+}
+
 void BasicBlock::GenerateStoreInst(Operand src,Operand des){
     assert(des->GetTypeEnum()==IR_PTR);
     auto tmp=dynamic_cast<PointerType*>(des->GetType());
@@ -343,33 +433,37 @@ BasicBlock* BasicBlock::GenerateNewBlock(){
     return tmp;
 }
 void BasicBlock::print(){
-    for(auto &i:insts)
-    {
+    if(Singleton<IR_MARK>().isprint(this)==1)return;
+    Singleton<IR_MARK>().isprint(this)=1;
+    if(master.front_block()!=this)
+        std::cout<<Singleton<IR_MARK>().GetNum(this)<<":\n";
+    for(auto &i:insts){
         std::cout<<"  ";
         i->print();
     }
 }
 void Function::print(){
     Singleton<IR_MARK>().Reset();
-    std::cout<<"define dso_local i32 @"<<name<<"(";
+    for(auto&i:bbs)i->ir_mark();
+    std::cout<<"define i32 @"<<name<<"(";
     for(auto &i:params){
         i->GetType()->print();
         Singleton<IR_MARK>().GetNum(i.get());
         if(i.get()!=params.back().get())std::cout<<", ";
     }
-    std::cout<<") #0 {\n";
-    for(auto &i:bbs)
-    {
-        if(i.get()!=bbs.front().get()){
-            dynamic_cast<Value*>(i.get())->print();
-            std::cout<<":\n";
-        }
-        else{
-            Singleton<IR_MARK>().GetNum(i.get());
-        } 
-        i->print();
-        if(i.get()!=bbs.back().get())std::cout<<"\n";
-    }
+    std::cout<<"){\n";
+    // for(auto &i:bbs)
+    // {
+    //     if(i.get()!=bbs.front().get()){
+    //         std::cout<<Singleton<IR_MARK>().GetNum(i.get())<<":\n";
+    //     }
+    //     else{
+    //         Singleton<IR_MARK>().GetNum(i.get());
+    //     } 
+    //     i->print();
+    //     if(i.get()!=bbs.back().get())std::cout<<"\n";
+    // }
+    bbs.front()->print();
     std::cout<<"}\n";
 }
 std::string Function::GetName(){return name;}

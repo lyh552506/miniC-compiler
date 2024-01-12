@@ -53,6 +53,7 @@ class Value
     /// @brief  
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
+    virtual void ir_mark();
 };
 using Operand=Value*;
 class User:public Value
@@ -66,6 +67,7 @@ class User:public Value
     User();
     User(Type* tp);
     virtual Operand GetDef();
+    void ir_mark();
 };
 class ConstIRInt:public Value
 {
@@ -74,6 +76,7 @@ class ConstIRInt:public Value
     ConstIRInt(int);
     int GetVal();
     bool isConst()final{return true;}
+    void ir_mark();
 };
 class ConstIRFloat:public Value
 {
@@ -82,4 +85,5 @@ class ConstIRFloat:public Value
     ConstIRFloat(float);
     float GetVal();
     bool isConst()final{return true;}
+    void ir_mark();
 };

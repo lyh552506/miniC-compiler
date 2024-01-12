@@ -39,11 +39,24 @@ void Value::print(){
     }
 }
 
+void Value::ir_mark(){
+    Singleton<IR_MARK>().mark(this);
+}
+
 void User::add_use(Value* __data){
     uselist.push_back(std::make_unique<Use>(this,__data));
 }
+
 User::User():Value(VoidType::NewVoidTypeGet()){}
+
 User::User(Type* _tp):Value(_tp){}
+
+void User::ir_mark(){
+    Value::ir_mark();
+    for(auto&i:uselist)
+        i->GetValue()->ir_mark();
+}
+
 Value* User::GetDef(){return static_cast<Value*>(this);}
 
 ConstIRInt::ConstIRInt(int _val):Value(IntType::NewIntTypeGet()),val(_val){};
@@ -52,8 +65,16 @@ int ConstIRInt::GetVal(){
     return val;
 }
 
+void ConstIRInt::ir_mark(){
+    return;
+}
+
 ConstIRFloat::ConstIRFloat(float _val):Value(FloatType::NewFloatTypeGet()),val(_val){};
 
 float ConstIRFloat::GetVal(){
     return val;
+}
+
+void ConstIRFloat::ir_mark(){
+    return;
 }

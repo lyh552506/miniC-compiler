@@ -16,23 +16,6 @@ Type* Type::NewTypeByEnum(InnerDataType _tp){
     default:assert(0);
     }
 }
-void Type::align_print()
-{
-    switch (tp)
-    {
-    case IR_PTR:
-        std::cout<<"align 8";
-        break;
-    case IR_Value_INT:
-    case IR_Value_Float:
-    case IR_ARRAY:
-        std::cout<<"align 4";
-        break;
-    default:
-        assert(0);
-        break;
-    }
-}
 
 /*IntType*/
 IntType::IntType():Type(IR_Value_INT){}
