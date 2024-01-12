@@ -9,6 +9,8 @@ void AllocaInst::print(int &cnt){
     /// @todo typesystem 
     std::cout<<" = alloca ";
     dynamic_cast<PointerType*>(tp)->GetSubType()->print();
+    std::cout<<", ";
+    dynamic_cast<PointerType*>(tp)->GetSubType()->align_print();
     std::cout<<"\n";
 }
 StoreInst::StoreInst(Operand __src,Operand __des){
@@ -22,8 +24,9 @@ void StoreInst::print(int &cnt){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
-        std::cout<<" ";
+        std::cout<<", ";
     }
+    uselist[0]->GetValue()->GetType()->align_print();
     std::cout<<'\n';
 }
 
@@ -35,12 +38,15 @@ LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType(
 void LoadInst::print(int &cnt){
     Value::print(cnt);
     std::cout<<" = load ";
+    tp->print();
+    std::cout<<", ";
     for(auto&i:uselist){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
-        std::cout<<" ";
+        std::cout<<", ";
     }
+    tp->align_print();
     std::cout<<'\n';
 }
 
@@ -55,7 +61,9 @@ void FPTSI::print(int &cnt){
         i->GetValue()->print(cnt);
         std::cout<<" ";
     }
-    std::cout<<'\n';
+    std::cout<<"to ";
+    tp->print();
+    std::cout<<"\n";
 }
 
 FPTSI::FPTSI(Operand __src):User(IntType::NewIntTypeGet()){
@@ -71,6 +79,8 @@ void SITFP::print(int &cnt){
         i->GetValue()->print(cnt);
         std::cout<<" ";
     }
+    std::cout<<"to ";
+    tp->print();
     std::cout<<'\n';
 }
 
@@ -111,7 +121,8 @@ void CondInst::print(int &cnt){
         }
         else std::cout<<"label ";
         i->GetValue()->print(cnt);
-        std::cout<<" ";
+        if(i.get()!=uselist.back().get())
+            std::cout<<", ";
     }
     std::cout<<'\n';
 }
@@ -131,9 +142,12 @@ void CallInst::print(int &cnt){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
         i->GetValue()->print(cnt);
-        std::cout<<" ";
+        if(i.get()==uselist.front().get())
+            std::cout<<"(";
+        else if(i.get()!=uselist.back().get())
+            std::cout<<", ";
     }
-    std::cout<<'\n';
+    std::cout<<")\n";
 }
 
 RetInst::RetInst(){}
@@ -189,17 +203,18 @@ std::string Variable::get_name(){
 
 Type* Variable::GetType(){return tp;}
 
-GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& offs){
-    Type* fuc=nullptr;
-    for(auto &i:offs){
-        auto select=(fuc==nullptr?base_ptr->GetType():fuc);
-        if(auto _tp=dynamic_cast<HasSubType*>(select))fuc=_tp->GetSubType();
-        else assert("Not a valid type");
-    }
-    tp=PointerType::NewPointerTypeGet(fuc);
+GetElementPtrInst::GetElementPtrInst(Operand base_ptr){
     add_use(base_ptr);
-    for(auto &i:offs)add_use(i);
 }
+
+Type* GetElementPtrInst::GetType(){
+    int limi=uselist.size()-1;
+    tp=uselist[0]->GetValue()->GetType();
+    for(int i=1;i<=limi;i++)
+        tp=dynamic_cast<HasSubType*>(tp)->GetSubType();
+    return tp=PointerType::NewPointerTypeGet(tp);
+}
+
 
 void GetElementPtrInst::print(int &cnt){
     Value::print(cnt);
@@ -340,7 +355,7 @@ void Function::print(){
     for(auto &i:bbs)
     {
         i->print(cnt);
-        std::cout<<"\n";
+        if(i.get()!=bbs.back().get())std::cout<<"\n";
     }
     std::cout<<"}\n";
 }
@@ -385,40 +400,13 @@ void BasicBlock::GenerateRetInst(){
 }
 Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
     if(auto func=dynamic_cast<Function*>(Singleton<Module>().GetValueByName(id))){
-        /// @note match the type of param and arg
         auto& params=func->GetParams();
         assert(args.size()==params.size());
-        /// @warning 这里肯定是有bug的,但是实际我只要保证他指针地址没错，肯定能跑
-        /// @note llvm对于类型的处理感觉有点傻逼，好像新版本在弱化ptr类型的子类型，有一种只要它地址是对的，你就别管的美（实际我也想这样），评价是初衷是好的，但是执行错了
-        /// 支持情况 1 
-        /// 形参:int crr[][10] 
-        /// int arr[10];func(arr) 完全不进行类型的转换
-        /// 因为实际ir的处理就是crr是指向[i32x10]的指针,arr也是指向[i32x10]的指针，就是这么jb怪
-        /// 支持情况 2
-        /// 形参:int crr[][10]
-        /// 实参:int arr[10][10]，填func(arr[2])
-        /// arr[2]自动调用GEP 0 2，转换为[i32x10]*
-        /// 支持情况 3
-        /// 形参:int crr[][10]
-        /// 实参:int arr[10][10][10]，填func(arr)
-        /// arr会在本函数中调用 GEP 0 0 0转化成正确类型
-        /// 支持情况 4
-        /// 形参:int crr[10]
-        /// 实参:int arr[10]
-        /// 其实crr在ir中的类型是i32*...
-        /// arr会在本函数中调用GEP 0 0
         auto i=args.begin();
         for(auto j=params.begin();j!=params.end();j++,i++){
             auto& ii=*i;auto& jj=*j;
-            int dif=ii->GetType()->get_layer()-jj->GetType()->get_layer();
-            assert(dif>=0);
-            if(dif>0)
-            {
-                std::vector<Operand>gep_args(dif+1,new ConstIRInt(0));
-                ii=this->GenerateGEPInst(ii,gep_args);
-            }
+            assert(ii->GetType()==jj->GetType());
         }
-        
         auto inst=new CallInst(func,args);
         insts.push_back(inst);
         return inst->GetDef();
@@ -431,8 +419,8 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
 void BasicBlock::GenerateAlloca(Variable* var){
     master.push_alloca(var);
 }
-Operand BasicBlock::GenerateGEPInst(Operand ptr,std::vector<Operand>& offs){
-    auto tmp=new GetElementPtrInst(ptr,offs);
+Operand BasicBlock::GenerateGEPInst(Operand ptr){
+    auto tmp=new GetElementPtrInst(ptr);
     insts.push_back(tmp);
     return tmp->GetDef();
 }
@@ -447,9 +435,8 @@ void Function::push_alloca(Variable* ptr){
     Singleton<Module>().Register(ptr->get_name(),obj);
 }
 void Function::push_param(Variable* var){
-    /// @note 形参类型是var->GetType()
-    /// @note 需要alloca和store
     push_alloca(var);
+    /// @brief 实参
     params.push_back(ParamPtr(new Value(var->GetType())));
     bbs.front()->GenerateStoreInst(params.back().get(),Singleton<Module>().GetValueByName(var->get_name()));
 }

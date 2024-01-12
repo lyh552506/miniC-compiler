@@ -16,6 +16,22 @@ Type* Type::NewTypeByEnum(InnerDataType _tp){
     default:assert(0);
     }
 }
+void Type::align_print()
+{
+    switch (tp)
+    {
+    case IR_PTR:
+        std::cout<<"align 8";
+        break;
+    case IR_Value_INT:
+    case IR_Value_Float:
+        std::cout<<"align 4";
+        break;
+    default:
+        assert(0);
+        break;
+    }
+}
 
 /*IntType*/
 IntType::IntType():Type(IR_Value_INT){}
@@ -85,6 +101,7 @@ ArrayType* ArrayType::NewArrayTypeGet(int NumEle,Type* _subtype){
     if(tmp==nullptr)tmp=new ArrayType(NumEle, _subtype);
     return tmp;
 }
+ArrayType::ArrayType(int _numEle,Type* _subtype):NumEle(_numEle),HasSubType(IR_ARRAY,_subtype){}
 void ArrayType::print(){
     std::cout<<"[ ";
     subtype->print();

@@ -107,7 +107,8 @@ class BinaryInst:public User
 class GetElementPtrInst:public User
 {
     public:
-    GetElementPtrInst(Operand,std::vector<Operand>&);
+    GetElementPtrInst(Operand);
+    Type* GetType();
     void print(int&)final;
 };
 class BasicBlock:public Value
@@ -125,7 +126,7 @@ class BasicBlock:public Value
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
     static Operand GenerateBinaryInst(BasicBlock*,Operand,BinaryInst::Operation,Operand);
     Operand GenerateLoadInst(Operand);
-    Operand GenerateGEPInst(Operand,std::vector<Operand>&);
+    Operand GenerateGEPInst(Operand);
     void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);

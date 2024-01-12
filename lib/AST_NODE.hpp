@@ -184,7 +184,7 @@ class Exps:public InnerBaseExps//数组声明修饰符/访问修饰符号
     public:
     Exps(AddExp* _data);
     Type* GetDeclDescipter();
-    std::vector<Operand> GetVisitDescripter(bool,BasicBlock*);
+    std::vector<Operand> GetVisitDescripter(BasicBlock*);
 };
 
 class CallParams:public InnerBaseExps//函数调用时的Params

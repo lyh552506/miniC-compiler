@@ -52,7 +52,7 @@ class Value
     void print(int&);    
     /// @brief Type System还在被批判的过程中 
     InnerDataType GetTypeEnum();
-    Type* GetType();
+    virtual Type* GetType();
     /// @brief  
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
@@ -63,8 +63,8 @@ class User:public Value
     using UsePtr=std::unique_ptr<Use>;
     protected:
     std::vector<UsePtr> uselist;
-    void add_use(Value* __data);
     public:
+    void add_use(Value* __data);
     virtual void print(int&)=0;
     User();
     User(Type* tp);
