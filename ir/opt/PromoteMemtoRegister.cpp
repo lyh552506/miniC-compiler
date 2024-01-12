@@ -9,6 +9,7 @@ void PromoteMem2Reg::RemoveFromAllocaList(int &index) {
 void PromoteMem2Reg::run() {
   AllocaInfo Info;
   BlockInfo BBInfo;
+  IDF idf(m_dom);
   // starting to deal alloca with promotable,this place are method3,method4
   for (int i = 0; i != m_Allocas.size(); i++) {
     AllocaInst *AI = m_Allocas[i];
@@ -37,10 +38,12 @@ void PromoteMem2Reg::run() {
       RemoveFromAllocaList(i);
       continue;
     }
-    std::vector<BasicBlock *> DefineBlock(Info.DefineBlocks.begin(),
+    std::set<BasicBlock *> DefineBlock(Info.DefineBlocks.begin(),
                                           Info.DefineBlocks.end());
-    std::vector<BasicBlock *> LiveInBlocks;
+    std::set<BasicBlock *> LiveInBlocks;
     PreWorkingAfterInsertPhi(DefineBlock, BBInfo, Info, AI, LiveInBlocks);
+    std::vector<BasicBlock*> PhiBlocks;
+
   }
 }
 
@@ -156,22 +159,21 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
   return true;
 }
 
-/// @brief preworking phi
+/// @brief preworking befor insert phi(compute live-in blocks)
 void PromoteMem2Reg::PreWorkingAfterInsertPhi(
-    std::vector<BasicBlock *> &DefineBlock, BlockInfo &BBInfo, AllocaInfo &Info,
-    AllocaInst *AI, std::vector<BasicBlock *> &LiveInBlocks) {
+    std::set<BasicBlock *> &DefineBlock, BlockInfo &BBInfo, AllocaInfo &Info,
+    AllocaInst *AI, std::set<BasicBlock *> &LiveInBlocks) {
   std::vector<BasicBlock *> LiveIn(Info.UsingBlocks.begin(),
                                    Info.UsingBlocks.end());
   for (int i = 0, length = LiveIn.size(); i != length; i++) {
     BasicBlock *BB = LiveIn[i];
-    auto it = std::find(DefineBlock.begin(), DefineBlock.end(), BB);
-    if (it == DefineBlock.end())
+    if (DefineBlock.find(BB)==DefineBlock.end())
       continue; //当前use的block没有define，不能简化
 
     for (auto it = BB->getInstList().begin();; it++) {
       User *user = *it;
       if (StoreInst *ST = dynamic_cast<StoreInst *>(
-              user)) { //相当于直接给这个变量赋了一个确定值
+              user)) { //相当于直接给这个变量赋了一个确定值,不再需要phi
         if (ST->GetDef() != AI)
           continue;
 
@@ -187,8 +189,31 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
       }
     }
   }
+// 递归将这些基本块的前驱全部加进来，包括没有load当前alloca的基本块，因为alloca当然能直接流过这些不load它的基本块。
+//	当然，有store这个alloca变量的基本块就不能加进来了，不然上面的操作白做了。
+//	为什么要加入前驱？
+//	比如基本块B和基本C都用了变量a，且B和C的前驱基本块是A，即：
+//						  A
+//					  /   \
+//					 B     C
+//	那么正常来说，我们会在B和C都添加PHI节点，一共2个，但是，其实在A基本块中只需要添加一次即可。
   while(!LiveIn.empty()){
-    
+    BasicBlock* bb=LiveIn.back();
+    LiveIn.pop_back();
+    if(!LiveInBlocks.insert(bb).second)//插入当前block
+      continue;
+    int _Dfs=bb->dfs;
+    dominance::Node& node=m_dom.GetNode(_Dfs);
+    //遍历他的前驱,以简化phi函数的插入
+    for(auto it:node.rev){
+      BasicBlock* rev= m_dom.DfsToBB(it);
+      
+      //遍历到目前的前驱块刚好是定义块，则不添加
+      if(DefineBlock.find(rev)!=DefineBlock.end())
+        continue;
+
+      LiveIn.push_back(rev);  
+    }
   }
 }
 

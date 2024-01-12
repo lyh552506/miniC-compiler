@@ -19,17 +19,34 @@ void dominance::computeDF(int x) {
   }
 }
 
-void dominance::Init(int m, Function &function) {
-  // auto &bbs = function.GetBasicBlock();
-  // for (auto &bb : bbs) {
-  //   auto &Insts = bb->GetInsts();
-  // }
-  for (int i = 0; i < m; i++) { // u-->v
-    int u, v;
-    scanf("%d%d", &u, &v); // TODO 需要适配后续CFG流图
-    node[u].des.push_front(v);
-    node[v].rev.push_front(u);
+void dominance::Init() {
+  auto bbs = thisFunc.GetBasicBlock();
+  for (auto &bb : bbs) {
+    std::vector<User *> _User = bb->getInstList();
+    User *Inst = _User.back(); //获取到最后一条指令
+    if (CondInst *cond = dynamic_cast<CondInst *>(Inst)) {
+      auto uselist = cond->Getuselist();
+      BasicBlock *des_true = dynamic_cast<BasicBlock *>(uselist[1]->GetValue());
+      BasicBlock *des_false =
+          dynamic_cast<BasicBlock *>(uselist[2]->GetValue());
+      node[bb->num].des.push_front(des_true->num);
+      node[bb->num].des.push_front(des_false->num);
+      node[des_true->num].rev.push_front(bb->num);
+      node[des_false->num].rev.push_front(bb->num);
+    } else if (UnCondInst *uncond = dynamic_cast<UnCondInst *>(Inst)) {
+      auto uselist = uncond->Getuselist();
+      BasicBlock *des = dynamic_cast<BasicBlock *>(uselist[0]->GetValue());
+      node[bb->num].des.push_front(des->num);
+      node[des->num].rev.push_front(bb->num);
+    }
   }
+
+  // for (int i = 0; i < m; i++) { // u-->v
+  //   int u, v;
+  //   scanf("%d%d", &u, &v); // TODO 需要适配后续CFG流图
+  //   node[u].des.push_front(v);
+  //   node[v].rev.push_front(u);
+  // }
 }
 
 void dominance::DFS(int pos) {
@@ -111,16 +128,15 @@ void dominance::build_tree() {
   }
 }
 
-/// @brief 预备phi函数关系
-void dom_begin() {
-  int n, m; // CFG的结点数和边数
-  dominance Dom{n, m};
-  // Dom.Init(m);      // 记录有向边的关系
-  Dom.DFS(1); // 起始节点的序号记为1
+/// @brief 准备计算支配树
+void dominance::dom_begin() {
+  Init();      // 记录有向边的关系
+  BasicBlock* EntryBB=thisFunc.front_block();
+  DFS(EntryBB->num); // 起始节点的序号记为1
   // Dom.DFS_new();
-  Dom.find_dom();   // 寻找支配节点
-  Dom.build_tree(); // 构建支配树
-  Dom.computeDF(1);
+  find_dom();   // 寻找支配节点
+  build_tree(); // 构建支配树
+  //computeDF(1);
 }
 
 bool dominance::dominates(BasicBlock *bb1, BasicBlock *bb2) {
@@ -132,4 +148,9 @@ bool dominance::dominates(BasicBlock *bb1, BasicBlock *bb2) {
 
   return (node[node_bb1].DfsIn <= node[node_bb2].DfsIn) &&
          (node[node_bb1].DfsOut >= node[node_bb2].DfsOut);
+}
+
+BasicBlock *dominance::DfsToBB(int d) {
+  int index = vertex[d];
+  return node[index].thisBlock;
 }

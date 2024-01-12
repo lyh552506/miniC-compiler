@@ -1,5 +1,6 @@
 #pragma once
 #include "dominant.hpp"
+#include "IDF.hpp"
 
 //记录alloca
 class AllocaInfo {
@@ -53,9 +54,9 @@ public:
                               BlockInfo &BBInfo);
   /// @brief 插入phi之前先进行一波预处理，避免一些无效插入
   void
-  PreWorkingAfterInsertPhi(std::vector<BasicBlock *> &DefineBlock,
+  PreWorkingAfterInsertPhi(std::set<BasicBlock *> &DefineBlock,
                            BlockInfo &BBInfo, AllocaInfo &Info, AllocaInst *AI,
-                           std::vector<BasicBlock *> &LiveInBlocks); // TODO
+                           std::set<BasicBlock *> &LiveInBlocks); // TODO
   /// @brief
   /// 当这个alloca只有一个store语句，被定义基本块所支配的所有LOAD都要被替换为STORE语句中的那个右值
   bool RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
