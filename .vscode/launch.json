@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/build/SYSY-compiler",
             "cwd": "${workspaceFolder}",
             "targetArchitecture": "x64",
-            "args": ["/home/nanqin/compiler/SB-compiler/function_test/test.sy"],
+            "args": ["{workspaceFolder}/function_test/test.c"],
             "stopAtEntry": false,
             // "environment": [
             //   {

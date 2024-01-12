@@ -38,29 +38,23 @@ class UserList
 };
 class Value
 {
-    int number=-1;
-    std::string name; 
     /// @brief 存储所有的User
     UserList userlist;
     protected:
-    std::shared_ptr<Type> tp;
+    Type* tp;
     public:
     virtual ~Value()=default;
     Value()=delete;
-    Value(std::shared_ptr<Type> _tp);
-    Value(InnerDataType _tp);
+    Value(Type* _tp);
     /// @brief 为dump出ll作准备
-    void SetNum(int&);
-    int GetNum();
-    /// @brief 增加std::strign name
-    std::string GetName();
-    void print(int&);    
+    void print();    
     /// @brief Type System还在被批判的过程中 
-    InnerDataType GetType();
-    std::shared_ptr<Type> CopyType();
+    InnerDataType GetTypeEnum();
+    virtual Type* GetType();
     /// @brief  
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
+    virtual void ir_mark();
 };
 using Operand=Value*;
 class User:public Value
@@ -68,17 +62,13 @@ class User:public Value
     using UsePtr=std::unique_ptr<Use>;
     protected:
     std::vector<UsePtr> uselist;
-    void add_use(Value* __data);
     public:
-    virtual void print(int&)=0;
-    /// @brief 新增打印机器指令的接口
-    virtual void printmachineinst(std::ofstream &outputFile)=0;
-    /// @brief 
+    void add_use(Value* __data);
+    virtual void print()=0;
     User();
-    User(InnerDataType tp);
-    User(std::shared_ptr<Type> tp);
+    User(Type* tp);
     virtual Operand GetDef();
-    std::vector<UsePtr>& Getuselist();  // TODO
+    void ir_mark();
 };
 class ConstIRInt:public Value
 {
@@ -87,6 +77,7 @@ class ConstIRInt:public Value
     ConstIRInt(int);
     int GetVal();
     bool isConst()final{return true;}
+    void ir_mark();
 };
 class ConstIRFloat:public Value
 {
@@ -95,4 +86,5 @@ class ConstIRFloat:public Value
     ConstIRFloat(float);
     float GetVal();
     bool isConst()final{return true;}
+    void ir_mark();
 };

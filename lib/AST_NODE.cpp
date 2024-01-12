@@ -47,26 +47,24 @@ void InnerBaseExps::print(int x){
 }
 
 Exps::Exps(AddExp* _data):InnerBaseExps(_data){}
-std::shared_ptr<Type> Exps::GetDeclDescipter(){
-    auto tmp=std::make_shared<Type>(Singleton<InnerDataType>());
+Type* Exps::GetDeclDescipter(){
+    auto tmp=Type::NewTypeByEnum(Singleton<InnerDataType>());
     for(auto i=ls.rbegin();i!=ls.rend();i++)
     {
         auto con=(*i)->GetOperand(nullptr);
         if(auto fuc=dynamic_cast<ConstIRInt*>(con)){
-            tmp=std::make_shared<ArrayType>(fuc->GetVal(),tmp);
+            tmp=ArrayType::NewArrayTypeGet(fuc->GetVal(),tmp);
         }
         else if(auto fuc=dynamic_cast<ConstIRFloat*>(con)){
-            tmp=std::make_shared<ArrayType>(fuc->GetVal(),tmp);
+            tmp=ArrayType::NewArrayTypeGet(fuc->GetVal(),tmp);
         }
         else assert(0);
     }
     return tmp;
 }
 
-std::vector<Operand> Exps::GetVisitDescripter(bool is_array,BasicBlock* cur){
+std::vector<Operand> Exps::GetVisitDescripter(BasicBlock* cur){
     std::vector<Operand> tmp;
-    /// @note 因为我们拿到的是一个指向数组的指针，所以第一个必须是0
-    if(is_array)tmp.push_back(new ConstIRInt(0));
     for(auto&i:ls)tmp.push_back(i->GetOperand(cur));
     return tmp;
 }
@@ -114,7 +112,7 @@ void BaseDef::codegen(){
     {
         if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
         assert(civ==nullptr);
-        std::shared_ptr<Type> tmp=array_descripters->GetDeclDescipter();
+        auto tmp=array_descripters->GetDeclDescipter();
         auto var=new Variable(tmp,ID);
         Singleton<Module>().GenerateGlobalVariable(var);
     }
@@ -154,7 +152,7 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
     {
         if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
         assert(civ==nullptr);
-        std::shared_ptr<Type> tmp=array_descripters->GetDeclDescipter();
+        auto tmp=array_descripters->GetDeclDescipter();
         auto var=new Variable(tmp,ID);
         state.current_building->GenerateAlloca(var);
     }
@@ -202,9 +200,9 @@ void CompUnit::codegen(){
 void CompUnit::print(int x){
     AST_NODE::print(x);
     std::cout<<'\n';
-    for(auto &i:ls){
+    for(auto &i:ls)
         i->print(x+1);
-    }
+    std::cout<<'\n';
 }
 
 ConstDefs::ConstDefs(ConstDef* __data){
@@ -225,8 +223,7 @@ BasicBlock* ConstDefs::GetInst(GetInstState state){
     return state.current_building;
 }
 
-ConstDecl::ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){
-}
+ConstDecl::ConstDecl(AST_Type tp,ConstDefs* content):type(tp),cdfs(content){}
 BasicBlock* ConstDecl::GetInst(GetInstState state){
     TypeForward(type);
     Singleton<IR_CONSTDECL_FLAG>().flag=1;
@@ -295,22 +292,20 @@ void FuncParam::GetVariable(Function& tmp){
                 assert(0);
         }
     };
-    /// @note 见CFG中GenerateCallInst的处理
-    /// @note 有点问题 形参!=实参
     if(array_subscripts!=nullptr)
     {
         auto vec=array_subscripts->GetDeclDescipter();
-        if(emptySquare)vec=std::make_shared<PointerType>(vec);
+        if(emptySquare)vec=PointerType::NewPointerTypeGet(vec);
         else
         {
-            auto inner=dynamic_cast<PointerType*>(vec.get());
-            vec=std::make_shared<PointerType>(inner->GetSubType());
+            auto inner=dynamic_cast<HasSubType*>(vec);
+            vec=PointerType::NewPointerTypeGet(inner->GetSubType());
         }
         tmp.push_param(new Variable(vec,ID));
     }
     else
     {
-        if(emptySquare)tmp.push_param(new Variable(std::make_shared<PointerType>(std::make_shared<Type>(get_type(tp))),ID));
+        if(emptySquare)tmp.push_param(new Variable(PointerType::NewPointerTypeGet(Type::NewTypeByEnum(get_type(tp))),ID));
         else tmp.push_param(new Variable(get_type(tp),ID));
     }
 }
@@ -405,16 +400,37 @@ void FuncDef::print(int x){
 LVal::LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
 Operand LVal::GetOperand(BasicBlock* block){
     auto ptr=Singleton<Module>().GetValueByName(ID);
-    if(array_descripters!=nullptr)
-    {
-        /// @note [][10] **[10] GEP 0(*[10]) 
-        /// @note []/[10] ** GEP 0(*) 
-        assert(ptr->GetType()==InnerDataType::IR_PTR);
-        std::vector<Operand> tmp=array_descripters->GetVisitDescripter(1,block);
-        ptr=block->GenerateGEPInst(ptr,tmp);
-    }
     if(ptr->isConst())return ptr;
-    return block->GenerateLoadInst(ptr);
+    std::vector<Operand> tmp;
+    if(array_descripters!=nullptr)tmp=array_descripters->GetVisitDescripter(block);
+
+    Operand handle;
+    if(dynamic_cast<PointerType*>(ptr->GetType())->GetSubType()->GetTypeEnum()==IR_ARRAY){
+        handle=block->GenerateGEPInst(ptr);
+        dynamic_cast<GetElementPtrInst*>(handle)->add_use(new ConstIRInt(0));
+    }
+    else{
+        handle=block->GenerateLoadInst(ptr);
+    }
+
+    for(auto &i:tmp){
+        if(auto gep=dynamic_cast<GetElementPtrInst*>(handle)){
+            gep->add_use(i);
+        }
+        else{
+            handle=block->GenerateGEPInst(handle);
+            dynamic_cast<GetElementPtrInst*>(handle)->add_use(i);
+        }
+        auto tp=dynamic_cast<PointerType*>(handle->GetType())->GetSubType();
+        if(tp->GetTypeEnum()!=IR_ARRAY)
+            handle=block->GenerateLoadInst(handle);
+    }
+
+    if(auto ptr=dynamic_cast<HasSubType*>(handle->GetType())){
+        if(ptr->GetSubType()->GetTypeEnum()==IR_ARRAY)
+            dynamic_cast<GetElementPtrInst*>(handle)->add_use(new ConstIRInt(0));
+    }
+    return handle;
 }
 
 std::string LVal::GetName(){return ID;}
