@@ -78,6 +78,7 @@ class User:public Value
     User(InnerDataType tp);
     User(std::shared_ptr<Type> tp);
     virtual Operand GetDef();
+    std::vector<UsePtr>& Getuselist();  // TODO
 };
 class ConstIRInt:public Value
 {
