@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cxxabi.h>
 #include "Type.hpp"
+#include <string>
 class User;
 class Value;
 class Use
@@ -38,6 +39,7 @@ class UserList
 class Value
 {
     int number=-1;
+    std::string name; 
     /// @brief 存储所有的User
     UserList userlist;
     protected:
@@ -50,6 +52,8 @@ class Value
     /// @brief 为dump出ll作准备
     void SetNum(int&);
     int GetNum();
+    /// @brief 增加std::strign name
+    std::string GetName();
     void print(int&);    
     /// @brief Type System还在被批判的过程中 
     InnerDataType GetType();
@@ -67,18 +71,13 @@ class User:public Value
     void add_use(Value* __data);
     public:
     virtual void print(int&)=0;
+    /// @brief 新增打印机器指令的接口
+    virtual void printmachineinst(std::ofstream &outputFile)=0;
+    /// @brief 
     User();
     User(InnerDataType tp);
-<<<<<<< HEAD
-    //todo int是乱写的
-    int GetDes();
-    int getuserlist();
-    void print();
-=======
     User(std::shared_ptr<Type> tp);
->>>>>>> 0f23fb8a294eb75d3f86784145997f65219c77a5
     virtual Operand GetDef();
-    std::vector<UsePtr>& Getuselist();
 };
 class ConstIRInt:public Value
 {

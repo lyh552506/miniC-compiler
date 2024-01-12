@@ -231,7 +231,7 @@ enum Branch_Inst {
     bgt, // >
     ble, // <=
     blt, // <
-    bne, // !=  bne = 6;
+    bne, // !=  
     beqz, // == 0 beqz rs1, offset
     bgez,
     bgtz,

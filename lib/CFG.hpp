@@ -135,8 +135,7 @@ class BasicBlock:public Value
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
     //todo
-    std::vector<User*>& getInstList();
-
+    List<User>& getInstList();
     bool EndWithBranch();
 };
 /// @brief 以function为最大单元生成CFG
@@ -154,9 +153,9 @@ class Function:public Value
     BasicBlock* front_block();
     
     //todo
-    std::string getFuncName();
-    std::vector<BasicBlockPtr>& getBlockList();
+    // std::string getFuncName();
     std::vector<ParamPtr>& getParams();
+    std::vector<BasicBlockPtr>& getBlockList();
     // std::vector<VarPtr>& getAllocaVariables();
     
     void print();
