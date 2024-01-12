@@ -100,7 +100,7 @@ void UnCondInst::print(){
         i->GetValue()->print();
         std::cout<<" ";
     }
-    std::cout<<"\n\n";
+    std::cout<<"\n";
     dynamic_cast<BasicBlock*>(uselist[0]->GetValue())->print();
 }
 
@@ -133,7 +133,7 @@ void CondInst::print(){
         if(i.get()!=uselist.back().get())
             std::cout<<", ";
     }
-    std::cout<<"\n\n";
+    std::cout<<"\n";
     for(int i=1;i<=2;i++)dynamic_cast<BasicBlock*>(uselist[i]->GetValue())->print();
 }
 
@@ -182,7 +182,22 @@ void RetInst::print(){
 
 Operand RetInst::GetDef(){return nullptr;}
 
-BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(_A->GetType()){
+bool check_binary_boolean(BinaryInst::Operation op){
+    switch (op)
+    {
+    case BinaryInst::Op_E:
+    case BinaryInst::Op_NE:
+    case BinaryInst::Op_G:
+    case BinaryInst::Op_GE:
+    case BinaryInst::Op_L:
+    case BinaryInst::Op_LE:
+        return true;
+    default:
+        return false;
+    }
+}
+
+BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(check_binary_boolean(__op)?BoolType::NewBoolTypeGet():_A->GetType()){
     op=__op;
     add_use(_A);
     add_use(_B);
