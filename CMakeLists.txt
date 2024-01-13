@@ -14,9 +14,9 @@ add_executable(SYSY-compiler main.cpp)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/yacc)
 #add_subdirectory(${PROJECT_SOURCE_DIR}/back_end)
-add_subdirectory(${PROJECT_SOURCE_DIR}/ir)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/ir)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib)
-add_subdirectory(${PROJECT_SOURCE_DIR}/backend)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/backend)
 target_link_libraries(SYSY-compiler Yacc Lib )
 # add_subdirectory(${PROJECT_SOURCE_DIR}/backend)
 

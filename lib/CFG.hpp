@@ -2,7 +2,6 @@
 #include "SymbolTable.hpp"
 #include "Singleton.hpp"
 #include "BaseCFG.hpp"
-/// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
 class BasicBlock;
 class Function;
 class Variable
@@ -16,31 +15,23 @@ class Variable
     std::string get_name();
     Type* GetType();
 };
-/// @brief AllocaInst接受一个Value*(Variable)，产生一个PTR，指向Value*的Type类型
 
 class UndefValue:public User{
   UndefValue(Type* Ty){}
 public:
   static UndefValue* get(Type *Ty);
+  void print();
 };
-/// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
 
 class AllocaInst:public User
 {
     public:
-    /// @brief Alloca语句要Type的结构,所以是Value*
     AllocaInst(Type*);
     void print()final;
-    AllocaInst(std::shared_ptr<Type>);
     bool IsUsed();//TODO 返回当前alloca出来的对象后续有没有被使用过
-    void DeletFromList();//删除当前指令
-    std::vector<User*> GetUsers(); //返回使用过alloca分配出的虚拟寄存器的指令
-    BasicBlock* GetParent();//返回当前指令所在的bb
+    // std::vector<User*> GetUsers(); //返回使用过alloca分配出的虚拟寄存器的指令
 };
-/// @brief src->des
-/// @note inst use %src %des
-/// @param src Operand
-/// @param des Value* 必须是个指针类型
+
 class StoreInst:public User
 {
     public:
@@ -48,17 +39,12 @@ class StoreInst:public User
     Operand GetDef()final;
     void print()final;
     void ir_mark();
-    Value* GetOperand(int index);//返回storeinst的第index个操作数，   
-    BasicBlock* GetParent();//返回当前指令所在的bb
 };
 class LoadInst:public User
 {
     public:
     LoadInst(Operand __src);
     void print()final;
-    /// @brief 一般都是只有src,def是load产生的
-    /// @param __src 
-    BasicBlock* GetParent();//返回当前指令所在的bb
     Value* GetSrc();
     void ReplaceAllUsersWith(Value* val);
 };
@@ -99,7 +85,6 @@ class CallInst:public User
     void print()final;
     void ir_mark();
 };
-/// @brief Ret, maybe has return value
 class RetInst:public User
 {
     public:
@@ -109,11 +94,6 @@ class RetInst:public User
     void print()final;
     void ir_mark();
 };
-/// @brief BinaryInst use A B,def C
-/// @param A operand
-/// @param op define inside class
-/// @param B operand
-/// @param C operand
 class BinaryInst:public User
 {
     public:
@@ -160,14 +140,11 @@ class BasicBlock:public Value
     void GenerateStoreInst(Operand,Operand);
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
-    List<User>& getInstList(){return this->insts;}
+    List<User>& GetInstList(){return this->insts;}
     bool EndWithBranch();
     void ir_mark();
-    List<User>& GetInsts();
     int dfs;
 };
-/// @brief 以function为最大单元生成CFG
-//其实function本质是就是CFG了
 class Function:public Value
 {
     std::string name;
@@ -179,23 +156,14 @@ class Function:public Value
     public:
     Function(InnerDataType _tp,std::string _id);
     BasicBlock* front_block();
-    
-    //todo
-    // std::string getFuncName();
-    std::vector<ParamPtr>& getParams();
-    std::vector<BasicBlockPtr>& getBlockList();
-    // std::vector<VarPtr>& getAllocaVariables();
-    
     void print();
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
-    BasicBlock* front();
     std::string GetName();
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlockPtr> GetBasicBlock();
 };
-/// @brief 编译单元
 class Module:public SymbolTable
 {
     using GlobalVariblePtr=std::unique_ptr<Variable>;
@@ -206,10 +174,6 @@ class Module:public SymbolTable
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
-    
-    //todo
-    std::vector <FunctionPtr> &getFuncList();
-    
-    void Test();
     std::vector<FunctionPtr> GetFuncTion();
+    void Test();
 };

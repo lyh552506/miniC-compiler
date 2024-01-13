@@ -14,7 +14,7 @@ void AllocaInst::print(){
 #include<map>
 
 std::map<Type*,UndefValue*> Undefs;
-AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
+// AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
     add_use(__des);
@@ -604,4 +604,9 @@ UndefValue* UndefValue::get(Type *Ty){
     if(!UV)
       UV=new UndefValue(Ty);
     return UV;    
+}
+
+void UndefValue::print(){
+    std::cout<<"undef";
+    return;
 }
