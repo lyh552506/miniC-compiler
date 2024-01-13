@@ -166,6 +166,7 @@ class BasicBlock:public Value
     void ir_mark();
     List<User>& GetInsts();
     int dfs;
+    int num;
 };
 /// @brief 以function为最大单元生成CFG
 //其实function本质是就是CFG了
