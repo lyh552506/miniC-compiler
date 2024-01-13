@@ -59,7 +59,7 @@ class Value
     void RAUW(Value* val);
 };
 using Operand=Value*;
-class User:public Value
+class User:public Value,public list_node<BasicBlock,User>
 {
     using UsePtr=std::unique_ptr<Use>;
     protected:
@@ -71,9 +71,8 @@ class User:public Value
     User(Type* tp);
     virtual Operand GetDef();
     void ir_mark();
-    virtual void EraseFromBlock();
-    virtual BasicBlock* GetParent();
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
+
 };
 class ConstIRInt:public Value
 {

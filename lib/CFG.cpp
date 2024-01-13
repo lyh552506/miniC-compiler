@@ -14,7 +14,7 @@ void AllocaInst::print(){
 #include<map>
 
 std::map<Type*,UndefValue*> Undefs;
-AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
+// AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
     add_use(__des);
@@ -338,15 +338,9 @@ void GetElementPtrInst::print(){
 }
 
 BasicBlock::BasicBlock(Function& __master):Value(VoidType::NewVoidTypeGet()),master(__master){};
-void BasicBlock::push_front(User* ptr){
-    insts.push_front(ptr);
-}
-void BasicBlock::push_back(User* ptr){
-    insts.push_back(ptr);
-}
 Operand BasicBlock::GenerateLoadInst(Operand data){
     auto tmp=new LoadInst(data);
-    insts.push_back(tmp);
+    push_back(tmp);
     return tmp->GetDef();
 }
 Operand BasicBlock::GenerateSITFP(Operand _A){
@@ -437,7 +431,7 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
 void BasicBlock::ir_mark(){
     if(!Singleton<IR_MARK>().mark(this))return;
     Value::ir_mark();
-    for(auto&i:insts)
+    for(auto i:(*this))
         i->ir_mark();
 }
 
@@ -462,7 +456,7 @@ void BasicBlock::print(){
     Singleton<IR_MARK>().isprint(this)=1;
     if(master.front_block()!=this)
         std::cout<<Singleton<IR_MARK>().GetNum(this)<<":\n";
-    for(auto &i:insts){
+    for(auto i:(*this)){
         std::cout<<"  ";
         i->print();
     }
@@ -503,18 +497,18 @@ BasicBlock* Function::front_block(){
     return bbs.front().get();
 }
 bool BasicBlock::EndWithBranch(){
-    if(auto data=dynamic_cast<UnCondInst*>(insts.back().get()))return 1;
-    else if(auto data=dynamic_cast<CondInst*>(insts.back().get()))return 1;
-    else if(auto data=dynamic_cast<RetInst*>(insts.back().get()))return 1;
+    if(auto data=dynamic_cast<UnCondInst*>(back()))return 1;
+    else if(auto data=dynamic_cast<CondInst*>(back()))return 1;
+    else if(auto data=dynamic_cast<RetInst*>(back()))return 1;
     else return 0;
 }
 void BasicBlock::GenerateCondInst(Operand condi,BasicBlock* is_true,BasicBlock* is_false){
     auto inst=new CondInst(condi,is_true,is_false);
-    insts.push_back(inst);
+    push_back(inst);
 }
 void BasicBlock::GenerateUnCondInst(BasicBlock* des){
     auto inst=new UnCondInst(des);
-    insts.push_back(inst);
+    push_back(inst);
 }
 void BasicBlock::GenerateRetInst(Operand ret_val){
     if(master.GetTypeEnum()!=ret_val->GetTypeEnum()){
@@ -524,11 +518,11 @@ void BasicBlock::GenerateRetInst(Operand ret_val){
             ret_val=GenerateFPTSI(ret_val);
     }
     auto inst=new RetInst(ret_val);
-    insts.push_back(inst);
+    push_back(inst);
 }
 void BasicBlock::GenerateRetInst(){
     auto inst=new RetInst();
-    insts.push_back(inst);
+    push_back(inst);
 }
 Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
     if(auto func=dynamic_cast<Function*>(Singleton<Module>().GetValueByName(id))){
@@ -540,7 +534,7 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
             assert(ii->GetType()==jj->GetType());
         }
         auto inst=new CallInst(func,args);
-        insts.push_back(inst);
+        push_back(inst);
         return inst->GetDef();
     }
     else{
@@ -553,12 +547,12 @@ void BasicBlock::GenerateAlloca(Variable* var){
 }
 Operand BasicBlock::GenerateGEPInst(Operand ptr){
     auto tmp=new GetElementPtrInst(ptr);
-    insts.push_back(tmp);
+    push_back(tmp);
     return tmp->GetDef();
 }
 Operand BasicBlock::push_alloca(Type* _tp){
     auto tmp=new AllocaInst(_tp);
-    insts.push_front(tmp);
+    push_front(tmp);
     return tmp->GetDef();
 }
 
@@ -604,4 +598,9 @@ UndefValue* UndefValue::get(Type *Ty){
     if(!UV)
       UV=new UndefValue(Ty);
     return UV;    
+}
+
+void UndefValue::print(){
+    std::cout<<"undef";
+    return;
 }
