@@ -160,8 +160,7 @@ class BasicBlock:public Value
     void GenerateStoreInst(Operand,Operand);
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
-    //todo
-    List<User>& getInstList();
+    List<User>& getInstList(){return this->insts;}
     bool EndWithBranch();
     void ir_mark();
     List<User>& GetInsts();

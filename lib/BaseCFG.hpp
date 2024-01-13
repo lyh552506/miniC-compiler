@@ -73,6 +73,7 @@ class User:public Value
     void ir_mark();
     virtual void EraseFromBlock();
     virtual BasicBlock* GetParent();
+    std::vector<UsePtr>& Getuselist(){return this->uselist;}
 };
 class ConstIRInt:public Value
 {

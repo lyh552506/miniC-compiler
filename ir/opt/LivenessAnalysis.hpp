@@ -13,5 +13,6 @@ class LivenessAnalysis
     std::map<BasicBlock*, std::set<Value*>> BlockLivein;
     std::map<BasicBlock*, std::set<Value*>> BlockLiveout;
     void pass(Function* func);
+    void PrintLiveness_Analysis(Function* func);
 
 };

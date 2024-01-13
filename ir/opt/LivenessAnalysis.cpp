@@ -11,6 +11,27 @@ void LivenessAnalysis::pass(Function* func)
   }
   iterate(func);
 }
+void LivenessAnalysis::PrintLiveness_Analysis(Function* func)
+{
+    std::cout<<"---------LivenessAnalysis_Result---------"<<std::endl;
+    for(auto &_block:func->getBlockList())
+    {
+      std::cout<<"--------- Current Block ";
+      _block.get()->print();
+      std::cout<<"---------"<<std::endl;
+      std::cout<<"---------Current Block Livein ---------"<<std::endl;
+      for(auto _print:BlockLivein[_block.get()])
+      {
+        _print->print();
+      }
+      std::cout<<"---------Current Block Liveout ---------"<<std::endl;
+      for(auto _print:BlockLiveout[_block.get()])
+      {
+        _print->print();
+      }
+    }
+
+}
 
 void LivenessAnalysis::GetBlockLivein(BasicBlock* block)
 {
