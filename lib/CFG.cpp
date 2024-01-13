@@ -3,18 +3,23 @@
 #include <memory>
 #include <iostream>
 #include "MagicEnum.hpp"
-AllocaInst::AllocaInst(Type* _tp):User(PointerType::NewPointerTypeGet(_tp)){}
+#include<map>
+
+AllocaInst::AllocaInst(std::string str,Type* _tp):User(PointerType::NewPointerTypeGet(_tp)){
+    name=str;
+    name+="_";
+    name+=std::to_string(Singleton<Module>().IR_number(str));
+}
+
 void AllocaInst::print(){
     Value::print();
-    /// @todo typesystem 
     std::cout<<" = alloca ";
     dynamic_cast<PointerType*>(tp)->GetSubType()->print();
     std::cout<<"\n";
 }
-#include<map>
 
 std::map<Type*,UndefValue*> Undefs;
-// AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
+
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
     add_use(__des);
@@ -104,17 +109,7 @@ void UnCondInst::print(){
         i->GetValue()->print();
         std::cout<<" ";
     }
-    std::cout<<"\n";
-    dynamic_cast<BasicBlock*>(uselist[0]->GetValue())->print();
-}
-
-void UnCondInst::ir_mark(){
-    uselist[0]->GetValue()->ir_mark();
-}
-
-void CondInst::ir_mark(){
-    for(int i=1;i<uselist.size();i++)
-        uselist[i]->GetValue()->ir_mark();
+    std::cout<<'\n';
 }
 
 CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse){
@@ -137,8 +132,7 @@ void CondInst::print(){
         if(i.get()!=uselist.back().get())
             std::cout<<", ";
     }
-    std::cout<<"\n";
-    for(int i=1;i<=2;i++)dynamic_cast<BasicBlock*>(uselist[i]->GetValue())->print();
+    std::cout<<'\n';
 }
 
 Operand CondInst::GetDef(){return nullptr;}
@@ -147,12 +141,6 @@ CallInst::CallInst(Function* _func,std::vector<Operand>& _args):User(_func->GetT
     add_use(_func);
     for(auto&i:_args)
         add_use(i);
-}
-
-void CallInst::ir_mark(){
-    Value::ir_mark();
-    for(int i=1;i<uselist.size();i++)
-        uselist[i]->GetValue()->ir_mark();
 }
 
 void CallInst::print(){
@@ -428,13 +416,6 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
     }
 }
 
-void BasicBlock::ir_mark(){
-    if(!Singleton<IR_MARK>().mark(this))return;
-    Value::ir_mark();
-    for(auto i:(*this))
-        i->ir_mark();
-}
-
 void BasicBlock::GenerateStoreInst(Operand src,Operand des){
     assert(des->GetTypeEnum()==IR_PTR);
     auto tmp=dynamic_cast<PointerType*>(des->GetType());
@@ -452,37 +433,23 @@ BasicBlock* BasicBlock::GenerateNewBlock(){
     return tmp;
 }
 void BasicBlock::print(){
-    if(Singleton<IR_MARK>().isprint(this)==1)return;
-    Singleton<IR_MARK>().isprint(this)=1;
-    if(master.front_block()!=this)
-        std::cout<<Singleton<IR_MARK>().GetNum(this)<<":\n";
+    std::cout<<GetName()<<":\n";
     for(auto i:(*this)){
         std::cout<<"  ";
         i->print();
     }
 }
 void Function::print(){
-    Singleton<IR_MARK>().Reset();
     std::cout<<"define i32 @"<<name<<"(";
     for(auto &i:params){
         i->GetType()->print();
-        Singleton<IR_MARK>().GetNum(i.get());
+        std::cout<<" %"<<i->GetName();
+        // Singleton<IR_MARK>().GetNum(i.get());
         if(i.get()!=params.back().get())std::cout<<", ";
     }
     std::cout<<"){\n";
-    for(auto&i:bbs)i->ir_mark();
-    // for(auto &i:bbs)
-    // {
-    //     if(i.get()!=bbs.front().get()){
-    //         std::cout<<Singleton<IR_MARK>().GetNum(i.get())<<":\n";
-    //     }
-    //     else{
-    //         Singleton<IR_MARK>().GetNum(i.get());
-    //     } 
-    //     i->print();
-    //     if(i.get()!=bbs.back().get())std::cout<<"\n";
-    // }
-    bbs.front()->print();
+    for(auto &i:bbs)
+        i->print();
     std::cout<<"}\n";
 }
 std::string Function::GetName(){return name;}
@@ -550,14 +517,14 @@ Operand BasicBlock::GenerateGEPInst(Operand ptr){
     push_back(tmp);
     return tmp->GetDef();
 }
-Operand BasicBlock::push_alloca(Type* _tp){
-    auto tmp=new AllocaInst(_tp);
+Operand BasicBlock::push_alloca(std::string name,Type* _tp){
+    auto tmp=new AllocaInst(name,_tp);
     push_front(tmp);
     return tmp->GetDef();
 }
 
 void Function::push_alloca(Variable* ptr){
-    auto obj=bbs.front()->push_alloca(ptr->GetType());
+    auto obj=bbs.front()->push_alloca(ptr->get_name(),ptr->GetType());
     Singleton<Module>().Register(ptr->get_name(),obj);
 }
 void Function::push_param(Variable* var){

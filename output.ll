@@ -1,24 +1,26 @@
-define i32 @fib(i32){
-  %2 = alloca i32
-  store i32 %0, i32* %2
-  %3 = load i32, i32* %2
-  %4 = icmp sle i32 %3, 2
-  br i1 %4, label %5, label %6
-5:
+define i32 @fib(i32 %.3){
+.1:
+  %x_0 = alloca i32
+  store i32 %.3, i32* %x_0
+  %.5 = load i32, i32* %x_0
+  %.7 = icmp sle i32 %.5, 2
+  br i1 %.7, label %.8, label %.11
+.8:
   ret i32 1 
-6:
-  %7 = load i32, i32* %2
-  %8 = sub i32 %7, 1
-  %9 = call i32 @fib(i32 %8)
-  %10 = load i32, i32* %2
-  %11 = sub i32 %10, 2
-  %12 = call i32 @fib(i32 %11)
-  %13 = add i32 %9, %12
-  ret i32 %13 
+.11:
+  %.12 = load i32, i32* %x_0
+  %.14 = sub i32 %.12, 1
+  %.15 = call i32 @fib(i32 %.14)
+  %.16 = load i32, i32* %x_0
+  %.18 = sub i32 %.16, 2
+  %.19 = call i32 @fib(i32 %.18)
+  %.20 = add i32 %.15, %.19
+  ret i32 %.20 
 }
 define i32 @main(){
-  %1 = call i32 @fib(i32 14)
-  %2 = call i32 @fib(i32 3)
-  %3 = mul i32 %1, %2
-  ret i32 %3 
+.24:
+  %.26 = call i32 @fib(i32 14)
+  %.28 = call i32 @fib(i32 3)
+  %.29 = mul i32 %.26, %.28
+  ret i32 %.29 
 }
