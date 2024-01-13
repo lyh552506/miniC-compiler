@@ -26,7 +26,7 @@ public:
 class AllocaInst:public User
 {
     public:
-    AllocaInst(Type*);
+    AllocaInst(std::string,Type*);
     void print()final;
     bool IsUsed();//TODO 返回当前alloca出来的对象后续有没有被使用过
     // std::vector<User*> GetUsers(); //返回使用过alloca分配出的虚拟寄存器的指令
@@ -122,7 +122,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     public:
     BasicBlock(Function& __master);
     void print();
-    Operand push_alloca(Type*);
+    Operand push_alloca(std::string,Type*);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);

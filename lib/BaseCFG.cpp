@@ -22,11 +22,20 @@ Type* Value::GetType(){
 InnerDataType Value::GetTypeEnum(){return tp->GetTypeEnum();}
 
 
-Value::Value(Type* _tp):tp(_tp){}
+
+Value::Value(Type* _tp):tp(_tp){
+    name=".";
+    name+=std::to_string(Singleton<Module>().IR_number("."));
+}
 
 void Value::add_user(Use* __data){
     userlist.push_front(__data);
 }
+
+std::string Value::GetName(){
+    return name;
+}
+
 void Value::print(){
     if(auto tmp=dynamic_cast<Function*>(this))
         std::cout<<"@"<<tmp->GetName();
@@ -35,26 +44,18 @@ void Value::print(){
     else if(auto tmp=dynamic_cast<ConstIRFloat*>(this))
         std::cout<<tmp->GetVal();
     else{
-        std::cout<<"%"<<Singleton<IR_MARK>().GetNum(this);
+        std::cout<<"%"<<GetName();
     }
-}
-
-void Value::ir_mark(){
-    Singleton<IR_MARK>().mark(this);
 }
 
 void User::add_use(Value* __data){
     uselist.push_back(std::make_unique<Use>(this,__data));
 }
 
-User::User():Value(VoidType::NewVoidTypeGet()){}
+User::User():Value(VoidType::NewVoidTypeGet()){
+}
 
-User::User(Type* _tp):Value(_tp){}
-
-void User::ir_mark(){
-    Value::ir_mark();
-    for(auto&i:uselist)
-        i->GetValue()->ir_mark();
+User::User(Type* _tp):Value(_tp){
 }
 
 Value* User::GetDef(){return static_cast<Value*>(this);}

@@ -31,4 +31,8 @@ class SymbolTable
         /// @todo 函数重定义是科学的
         i->push(val);
     }
+    int IR_number(std::string str){
+        static std::unordered_map<std::string,int> cnt;
+        return cnt[str]++;
+    }
 };
