@@ -10,25 +10,26 @@ void LivenessAnalysis::pass(Function* func)
     GetBlockLivein(BB.get());
   }
   iterate(func);
+  PrintLiveness_Analysis(func);
 }
 void LivenessAnalysis::PrintLiveness_Analysis(Function* func)
 {
     std::cout<<"---------LivenessAnalysis_Result---------"<<std::endl;
+    std::cout<<"\n";
     for(auto &_block:func->getBlockList())
     {
-      std::cout<<"--------- Current Block ";
-      _block.get()->print();
-      std::cout<<"---------"<<std::endl;
       std::cout<<"---------Current Block Livein ---------"<<std::endl;
       for(auto _print:BlockLivein[_block.get()])
       {
         _print->print();
       }
+      std::cout<<"\n";
       std::cout<<"---------Current Block Liveout ---------"<<std::endl;
       for(auto _print:BlockLiveout[_block.get()])
       {
         _print->print();
       }
+      std::cout<<"\n";
     }
 
 }
@@ -52,7 +53,7 @@ void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
   auto inst = block->getInstList().back().get();
   if(auto _CondInst = dynamic_cast<CondInst *>(inst))
   {
-    auto _Use = inst->Getuselist(); 
+    auto &_Use = inst->Getuselist(); 
     BlockLivein[block].insert(_Use[1]->GetValue());
     auto _block_Succ1 = dynamic_cast<BasicBlock *>(_Use[1]->GetValue());
     auto _block_Succ2 = dynamic_cast<BasicBlock *>(_Use[2]->GetValue());
@@ -61,7 +62,7 @@ void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
   }
   if(auto _UnCondInst = dynamic_cast<UnCondInst *>(inst))
   {
-    auto _Use = inst->Getuselist();
+    auto &_Use = inst->Getuselist();
     auto _block_Pred = dynamic_cast<BasicBlock *>(_Use[0]->GetValue());
     BlockLiveout[block].insert(BlockLivein[_block_Pred].begin(),BlockLivein[_block_Pred].end());
   }
@@ -91,13 +92,13 @@ void LivenessAnalysis::iterate(Function* func)
       auto inst = _block->getInstList().back().get();
       if(auto _CondInst = dynamic_cast<CondInst*>(inst))
         {
-          auto _Use = inst->Getuselist();
+          auto &_Use = inst->Getuselist();
           worklist.insert(dynamic_cast<BasicBlock*>(_Use[1]->GetValue()));
           worklist.insert(dynamic_cast<BasicBlock*>(_Use[2]->GetValue()));
         }
       if(auto _UnCondInst = dynamic_cast<UnCondInst*>(inst))
       {
-        auto _Use = inst->Getuselist();
+        auto &_Use = inst->Getuselist();
         worklist.insert(dynamic_cast<BasicBlock*>(_Use[0]->GetValue()));
       }
     }

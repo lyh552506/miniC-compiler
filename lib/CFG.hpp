@@ -183,7 +183,7 @@ class Function:public Value
     //todo
     // std::string getFuncName();
     std::vector<ParamPtr>& getParams();
-    std::vector<BasicBlockPtr>& getBlockList();
+    std::vector<BasicBlockPtr>& getBlockList(){return this->bbs;}
     // std::vector<VarPtr>& getAllocaVariables();
     
     void print();
