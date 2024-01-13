@@ -116,15 +116,12 @@ class GetElementPtrInst:public User
     Type* GetType();
     void print()final;
 };
-class BasicBlock:public Value
+class BasicBlock:public Value,public mylist<BasicBlock,User>
 {
-    List<User> insts;
     Function& master;
     public:
     BasicBlock(Function& __master);
     void print();
-    void push_front(User* ptr);
-    void push_back(User* ptr);
     Operand push_alloca(Type*);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
@@ -140,7 +137,6 @@ class BasicBlock:public Value
     void GenerateStoreInst(Operand,Operand);
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
-    List<User>& GetInstList(){return this->insts;}
     bool EndWithBranch();
     void ir_mark();
     int dfs;
