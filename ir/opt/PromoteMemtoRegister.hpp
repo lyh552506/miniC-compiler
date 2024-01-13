@@ -39,8 +39,8 @@ struct BlockInfo {
 
 class PromoteMem2Reg {
 public:
-  PromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas)
-      : m_dom(dom), DeadAlloca(0), SingleStore(0),
+  PromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas,Function& func)
+      : m_dom(dom), DeadAlloca(0), SingleStore(0),Func(func),
         m_Allocas(Allocas.begin(),
                   Allocas.end()) //不能直接赋值，这样会转移所有权
   {}
@@ -65,13 +65,15 @@ public:
   int CaculateIndex(BasicBlock *CurBlock, User *use);
   
   /// @brief 初步的插入phi函数 
-  bool InsertPhiNode();
+  bool InsertPhiNode(BasicBlock* bb);
 
   dominance &m_dom;
   std::vector<AllocaInst *> m_Allocas;
   int DeadAlloca;  // Number of dead alloca's removed
   int SingleStore; // Number of alloca's promoted with a single store
-  
+  Function& Func;
+  std::map<int,PhiInst*> PrePhiNode;//由Block到PhiNode的映射
+  std::map<PhiInst*,int> PhiToAllocl;//Phi函数对应的Alloca指令
 };
 
 /// @brief 检验送入的alloca指令能否被promote
@@ -87,4 +89,4 @@ int PromoteMem2Reg::CaculateIndex(BasicBlock *CurBlock, User *use) {
   }
 }
 
-void RunPromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas);
+void RunPromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas,Function& func);

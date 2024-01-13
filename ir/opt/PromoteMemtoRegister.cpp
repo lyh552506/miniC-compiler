@@ -44,11 +44,30 @@ void PromoteMem2Reg::run() {
     PreWorkingAfterInsertPhi(DefineBlock, BBInfo, Info, AI, LiveInBlocks);
     std::vector<BasicBlock*> PhiBlocks;
     
+    idf.SetDefBB(DefineBlock);
+    idf.SetLiveInBlock(LiveInBlocks);
+    std::vector<std::unique_ptr<BasicBlock>> vec=Func.GetBasicBlock();
+    idf.SetBBs(vec);
+    for(int dex=0;dex<PhiBlocks.size();dex++)
+      InsertPhiNode(PhiBlocks[dex]);
+
   }
 }
 
-bool PromoteMem2Reg::InsertPhiNode(){
-  
+bool PromoteMem2Reg::InsertPhiNode(BasicBlock* bb){ 
+   std::vector<std::unique_ptr<BasicBlock>> vect=Func.GetBasicBlock();
+   auto it=std::find_if(vect.begin(),vect.end(),[bb](std::unique_ptr<BasicBlock>& base)->bool{
+     return base.get()==bb;
+   });
+
+   if(it!=vect.end()){
+    int index=std::distance(vect.begin(),it); //获取下标
+    PhiInst *&Phi=PrePhiNode[index];
+    if(Phi)
+      return false;
+    Phi=PhiInst::NewPhiNode();
+    
+   }
 }
 
 bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
