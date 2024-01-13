@@ -28,6 +28,7 @@ class Use
     /// @brief 注意，调用这个方法的一定是User，所以我加了个鉴权
     void RemoveFromUserList(User* is_valid);
     Value* GetValue();
+    
 };
 /// @brief prepare for Value to quickly find out its User
 class UserList
@@ -73,6 +74,7 @@ class User:public Value
     void ir_mark();
     virtual void EraseFromBlock();
     virtual BasicBlock* GetParent();
+    std::vector<UsePtr>& Getuselist();
 };
 class ConstIRInt:public Value
 {

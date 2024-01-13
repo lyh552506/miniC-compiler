@@ -74,7 +74,8 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
               // container
       if (it == StoreInstWithIndex.begin()) {
         if (!StoreInstWithIndex.empty()) // no stores
-          LI->ReplaceAllUsersWith(UndefValue::get(LI->CopyType().get()));
+          //LI->ReplaceAllUsersWith(UndefValue::get(LI->CopyType().get()));
+          continue;
         else            // no store before load
           return false; /// @note why is this
       } else {
@@ -171,7 +172,7 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
       continue; //当前use的block没有define，不能简化
 
     for (auto it = BB->getInstList().begin();; it++) {
-      User *user = *it;
+      User *user = &(*it->get());//TODO
       if (StoreInst *ST = dynamic_cast<StoreInst *>(
               user)) { //相当于直接给这个变量赋了一个确定值,不再需要phi
         if (ST->GetDef() != AI)

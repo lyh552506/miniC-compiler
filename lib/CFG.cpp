@@ -599,9 +599,9 @@ void Module::GenerateGlobalVariable(Variable* ptr){
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }
 
-UndefValue* UndefValue::get(Type *Ty){
-    UndefValue *& UV=Undefs[Ty];
-    if(!UV)
-      UV=new UndefValue(Ty);
-    return UV;    
-}
+// UndefValue* UndefValue::get(Type *Ty){
+//     UndefValue *& UV=Undefs[Ty];
+//     if(!UV)
+//       UV=new UndefValue(Ty);
+//     return UV;    
+// }

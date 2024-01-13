@@ -1,0 +1,14 @@
+//test add of hex and oct
+int fuck(int x[])
+{
+    return x[3];
+}
+//int main(){
+//    const int x=1231;
+  //  int y=10;
+    //if(y>9)
+    //  x=x+2;
+   // else
+    //  x=x+1;  
+    //return 0
+//}
