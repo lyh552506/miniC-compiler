@@ -50,7 +50,7 @@ void LivenessAnalysis::GetBlockLivein(BasicBlock* block)
 
 void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
 {
-  auto inst = block->getInstList().back().get();
+  auto inst = block->back();
   if(auto _CondInst = dynamic_cast<CondInst *>(inst))
   {
     auto &_Use = inst->Getuselist(); 
@@ -89,7 +89,7 @@ void LivenessAnalysis::iterate(Function* func)
     GetBlockLivein(_block);
     if(old_BlockLivein != BlockLivein[_block])
     {
-      auto inst = _block->getInstList().back().get();
+      auto inst = _block->back();
       if(auto _CondInst = dynamic_cast<CondInst*>(inst))
         {
           auto &_Use = inst->Getuselist();
