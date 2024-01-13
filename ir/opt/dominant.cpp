@@ -22,8 +22,8 @@ void dominance::computeDF(int x) {
 void dominance::Init() {
   auto bbs = thisFunc.GetBasicBlock();
   for (auto &bb : bbs) {
-    List<User> _User = bb->getInstList();
-    User *Inst = _User.back().get(); //获取到最后一条指令
+    // List<User> _User = bb->getInstList();
+    User *Inst = bb->back(); //获取到最后一条指令
     if (CondInst *cond = dynamic_cast<CondInst *>(Inst)) {
       auto uselist = cond->Getuselist();
       BasicBlock *des_true = dynamic_cast<BasicBlock *>(uselist[1]->GetValue());
@@ -130,12 +130,12 @@ void dominance::build_tree() {
 
 /// @brief 准备计算支配树
 void dominance::dom_begin() {
-  Init();      // 记录有向边的关系
-  BasicBlock* EntryBB=thisFunc.front_block();
+  Init(); // 记录有向边的关系
+  BasicBlock *EntryBB = thisFunc.front_block();
   DFS(EntryBB->num);
   find_dom();   // 寻找支配节点
   build_tree(); // 构建支配树
-  //computeDF(1);
+  // computeDF(1);
 }
 
 bool dominance::dominates(BasicBlock *bb1, BasicBlock *bb2) {

@@ -79,14 +79,12 @@ void IDF::caculateIDF(std::vector<BasicBlock *> &IDFBlocks) {
   }
 }
 //计算Dt上的Level
-/// @fix
-void IDF::caculateDTlevel(dominance::Node *node) {
-  // dominance::Node& root=m_dom.GetNode(0);
-  worklists.push(node);
-  Level[node] = worklists.size() - 1;
+void IDF::caculateDTlevel(dominance::Node *node,int depth=0) {
+  Level[node] = depth;
   for (int i : node->idom_child) {
-    if (!WorklistVisited[&m_dom.node[i]]) {
-      caculateDTlevel(&m_dom.node[i]);
-    }
+    DTNode child=&m_dom.node[i];
+
+    if(Level.find(child)!=Level.end())
+      caculateDTlevel(child,depth+1);
   }
 }

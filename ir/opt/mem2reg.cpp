@@ -8,11 +8,10 @@ bool promoteMemoryToRegister(Function &func, dominance &dom) {
   auto BB = func.GetBasicBlock(); // BB是一个std::vector<BasicBlockPtr>
   while (true) {
     Allocas.clear();
-
     for (auto &it : BB) {
-      List<User> &insts = it->GetInsts(); //获取到当前的block中的insts序列
-      for (auto &Instruct : insts) {
-        User *user = Instruct.get();
+      //List<User> &insts = it->GetInsts(); //获取到当前的block中的insts序列
+      for (auto Instruct : *(it.get())) {
+        User *user = Instruct;
         if (auto allocaInst =
                 dynamic_cast<AllocaInst *>(user)) //确保是alloc指令
           if (IsAllocaPromotable(allocaInst))

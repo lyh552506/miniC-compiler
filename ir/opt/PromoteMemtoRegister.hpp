@@ -63,11 +63,15 @@ public:
                                 BlockInfo &BBInfo);
   /// @brief 计算指令的index
   int CaculateIndex(BasicBlock *CurBlock, User *use);
+  
+  /// @brief 初步的插入phi函数 
+  bool InsertPhiNode();
 
   dominance &m_dom;
   std::vector<AllocaInst *> m_Allocas;
   int DeadAlloca;  // Number of dead alloca's removed
   int SingleStore; // Number of alloca's promoted with a single store
+  
 };
 
 /// @brief 检验送入的alloca指令能否被promote
@@ -77,8 +81,8 @@ bool IsAllocaPromotable(AllocaInst *AI);
 int PromoteMem2Reg::CaculateIndex(BasicBlock *CurBlock, User *use) {
   int index = 0;
   std::vector<std::pair<User *, int>> InstNum;
-  for (auto &Instructs : CurBlock->GetInsts()) {
-    User *user = Instructs.get();
+  for (auto Instructs : *CurBlock) {
+    User *user = Instructs;
     // TODO
   }
 }

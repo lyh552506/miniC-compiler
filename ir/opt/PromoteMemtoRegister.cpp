@@ -43,8 +43,12 @@ void PromoteMem2Reg::run() {
     std::set<BasicBlock *> LiveInBlocks;
     PreWorkingAfterInsertPhi(DefineBlock, BBInfo, Info, AI, LiveInBlocks);
     std::vector<BasicBlock*> PhiBlocks;
-
+    
   }
+}
+
+bool PromoteMem2Reg::InsertPhiNode(){
+  
 }
 
 bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
@@ -80,7 +84,8 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
           return false; /// @note why is this
       } else {
         LI->ReplaceAllUsersWith(std::prev(it)->second->GetOperand(0));
-        LI->EraseFromBlock();
+        //LI->EraseFromBlock();
+        LI->EraseFromParent();
       }
     }
   }
