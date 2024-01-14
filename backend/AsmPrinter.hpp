@@ -5,5 +5,5 @@
 
 void RegAlloca(Function* function);
 //void shift(MachineUnit* unit);
-void PrintCode(Module* unit, std::ofstream &outputFile);
+void PrintCode(Module* unit);
 void PrintCodeToTxt(Module* unit);

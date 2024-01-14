@@ -48,6 +48,7 @@ void User::add_use(Value* __data){
 }
 User::User():Value(std::make_shared<Type>(IR_Value_VOID)){}
 User::User(std::shared_ptr<Type> _tp):Value(_tp){}
+std::vector<std::unique_ptr<Use>>& User::Getuselist() {return uselist;}
 Value* User::GetDef(){return static_cast<Value*>(this);}
 
 ConstIRInt::ConstIRInt(int _val):Value(IR_Value_INT),val(_val){};

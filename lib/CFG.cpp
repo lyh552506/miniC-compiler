@@ -159,6 +159,11 @@ BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(_A->CopyType()
     add_use(_B);
 }
 
+std::string BinaryInst:: GetOperation() {
+    std::string opcode = magic_enum::enum_name(op).data();
+    return opcode;
+}
+
 void BinaryInst::print(int &cnt){
     Value::print(cnt);
     std::cout<<" = ";

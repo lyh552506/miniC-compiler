@@ -5,16 +5,13 @@ message(${CMAKE_CXX_FLAGS})
 
 project(SYSY-compiler VERSION 0.1.0 LANGUAGES C CXX)
 
-
-
 include(CTest)
 enable_testing()
 
 add_executable(SYSY-compiler main.cpp)
-
 add_subdirectory(${PROJECT_SOURCE_DIR}/yacc)
 #add_subdirectory(${PROJECT_SOURCE_DIR}/back_end)
-# add_subdirectory(${PROJECT_SOURCE_DIR}/ir)
+#add_subdirectory(${PROJECT_SOURCE_DIR}/ir)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/backend)
 
@@ -22,7 +19,6 @@ target_link_libraries(SYSY-compiler Yacc Lib Backend)
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/yacc)
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/lib)
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/backend)
-#target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/back_end)
 # target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/ir)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

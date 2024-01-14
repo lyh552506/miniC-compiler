@@ -1,5 +1,5 @@
 #include "parser.hpp"
-#include "../backend/AsmPrinter.hpp"
+#include "AsmPrinter.hpp"
 extern FILE* yyin;
 int main(int argc,char** argv)
 {

@@ -3,6 +3,7 @@ int whileIf(){
   a = 0;
   int b;
   b = 0;
+  a + b;
   while (a < 100) {
     if (a == 5) {
       b = 25;

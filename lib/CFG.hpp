@@ -2,6 +2,7 @@
 #include "SymbolTable.hpp"
 #include "Singleton.hpp"
 #include "BaseCFG.hpp"
+#include "MagicEnum.hpp"
 /// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
 class BasicBlock;
 class Function;
@@ -102,6 +103,7 @@ class BinaryInst:public User
     Operation op;
     public:
     BinaryInst(Operand _A,Operation __op,Operand _B);
+    std::string GetOperation();
     void print(int&)final;
 };
 class GetElementPtrInst:public User

@@ -39,7 +39,7 @@ class UserList
 class Value
 {
     int number=-1;
-    std::string name; 
+    std::string name;
     /// @brief 存储所有的User
     UserList userlist;
     protected:
@@ -72,11 +72,11 @@ class User:public Value
     public:
     virtual void print(int&)=0;
     /// @brief 新增打印机器指令的接口
-    virtual void printmachineinst(std::ofstream &outputFile)=0;
     /// @brief 
     User();
     User(InnerDataType tp);
     User(std::shared_ptr<Type> tp);
+    std::vector<UsePtr>& Getuselist();
     virtual Operand GetDef();
 };
 class ConstIRInt:public Value

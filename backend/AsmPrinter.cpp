@@ -32,8 +32,9 @@ void RegAlloca(Function* function) {
 // }
 
 //打印机器指令
-void PrintCode(Module& Unit, std::ofstream &outputFile) {
-    for (auto& Func : Unit.getFuncList()) {
+void PrintCode(Module* Unit) {
+    int i = 1;
+    for (auto& Func : Unit->getFuncList()) {
         //打印每个Func，及栈帧
         MachineFunction* machinefunction = dynamic_cast<MachineFunction*>(Func.get());
         machinefunction->print_func_name();
@@ -43,10 +44,10 @@ void PrintCode(Module& Unit, std::ofstream &outputFile) {
             MachineBasicBlock* machineblock = dynamic_cast<MachineBasicBlock*>(Block.get());
             machineblock->print_block_lable(machinefunction->get_func_num());
             for (auto& Inst : Block->getInstList()) {
-                //生成机器指令
-                User* machineinst = InstSelect(*Inst.get());
+                //生成机器指令 
+                MachineInst* machineinst = InstSelect(*Inst.get());
                 //打印每个Inst
-                machineinst->printmachineinst(outputFile);
+                machineinst->printinst();
             }
             //打印每个Block的跳转
 
@@ -56,14 +57,14 @@ void PrintCode(Module& Unit, std::ofstream &outputFile) {
 }
 
 //dump出机器指令文本
-void PrintCodeToTxt(Module& unit) {
+void PrintCodeToTxt(Module* unit) {
     std::ofstream outputFile("output.ll", std::ios::app); // 以追加模式打开文件
     if (outputFile.is_open()) {
         std::cout << "opended successfully" << std::endl;
-        //std::cout 重定向到文件
+        // std::cout 重定向到文件
         std::streambuf* coutBuffer = std::cout.rdbuf();
         std::cout.rdbuf(outputFile.rdbuf());
-        PrintCode(unit, outputFile);
+        PrintCode(unit);
         std::cout.rdbuf(coutBuffer);
         outputFile.close(); // 关闭文件
         std::cout << "Output redirected to file." << std::endl;
