@@ -21,6 +21,7 @@ void AST_NODE::codegen(){
     std::cerr<<"In AST some nodes are forbidden to call codegen()\n";
     assert(0);
 };
+
 void AST_NODE::print(int x)
 {
     for(int i=0;i<x;i++)std::cout<<"  ";
@@ -343,9 +344,8 @@ BasicBlock* BlockItems::GetInst(GetInstState state){
     {
         state.current_building=i->GetInst(state);
         ///@warning 已经是一个basicblock了，后面的肯定访问不到
-        if(state.current_building->EndWithBranch()){
+        if(state.current_building->EndWithBranch())
             return state.current_building;
-        }
     }
     return state.current_building;
 }
@@ -387,7 +387,11 @@ void FuncDef::codegen(){
     if(params!=nullptr)params->GetVariable(f);
     assert(function_body!=nullptr);
     GetInstState state={f.front_block(),nullptr,nullptr};
-    function_body->GetInst(state);
+    auto end_block=function_body->GetInst(state);
+    if(!end_block->EndWithBranch()){
+        assert(f.GetType()->GetTypeEnum()==IR_Value_VOID);
+        end_block->GenerateRetInst();
+    }
     Singleton<Module>().layer_decrease();
 }
 void FuncDef::print(int x){
@@ -398,7 +402,8 @@ void FuncDef::print(int x){
 }
 
 LVal::LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
-Operand LVal::GetOperand(BasicBlock* block){
+
+Operand LVal::GetPointer(BasicBlock* block){
     auto ptr=Singleton<Module>().GetValueByName(ID);
     if(ptr->isConst())return ptr;
     std::vector<Operand> tmp;
@@ -409,28 +414,36 @@ Operand LVal::GetOperand(BasicBlock* block){
         handle=block->GenerateGEPInst(ptr);
         dynamic_cast<GetElementPtrInst*>(handle)->add_use(new ConstIRInt(0));
     }
-    else{
+    else if(dynamic_cast<PointerType*>(ptr->GetType())->GetSubType()->GetTypeEnum()==IR_PTR)
         handle=block->GenerateLoadInst(ptr);
+    else{
+        assert(tmp.empty());
+        return ptr;
     }
 
     for(auto &i:tmp){
-        if(auto gep=dynamic_cast<GetElementPtrInst*>(handle)){
-            gep->add_use(i);
-        }
-        else{
+        auto tp=dynamic_cast<PointerType*>(handle->GetType())->GetSubType();
+        if(tp->GetTypeEnum()==IR_ARRAY)
+            dynamic_cast<GetElementPtrInst*>(handle)->add_use(i);
+        else
+        {
+            handle=block->GenerateLoadInst(handle);
             handle=block->GenerateGEPInst(handle);
             dynamic_cast<GetElementPtrInst*>(handle)->add_use(i);
         }
-        auto tp=dynamic_cast<PointerType*>(handle->GetType())->GetSubType();
-        if(tp->GetTypeEnum()!=IR_ARRAY)
-            handle=block->GenerateLoadInst(handle);
-    }
-
-    if(auto ptr=dynamic_cast<HasSubType*>(handle->GetType())){
-        if(ptr->GetSubType()->GetTypeEnum()==IR_ARRAY)
-            dynamic_cast<GetElementPtrInst*>(handle)->add_use(new ConstIRInt(0));
     }
     return handle;
+}
+
+Operand LVal::GetOperand(BasicBlock* block){
+    auto ptr=GetPointer(block);
+    if(auto gep=dynamic_cast<GetElementPtrInst*>(ptr)){
+        if(dynamic_cast<PointerType*>(gep->GetType())->GetSubType()->GetTypeEnum()==IR_ARRAY){
+            gep->add_use(new ConstIRInt(0));
+            return gep;
+        }
+    }
+    return block->GenerateLoadInst(ptr);
 }
 
 std::string LVal::GetName(){return ID;}
@@ -444,8 +457,7 @@ void LVal::print(int x){
 AssignStmt::AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
 BasicBlock* AssignStmt::GetInst(GetInstState state){
     Operand tmp=exp->GetOperand(state.current_building);
-    auto valueptr=Singleton<Module>().GetValueByName(lv->GetName());
-    
+    auto valueptr=lv->GetPointer(state.current_building);
     state.current_building->GenerateStoreInst(tmp,valueptr);
     return state.current_building;
 }
@@ -469,9 +481,9 @@ void ExpStmt::print(int x){
 
 WhileStmt::WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
 BasicBlock* WhileStmt::GetInst(GetInstState state){
-    auto condition_part=state.current_building->GenerateNewBlock();
-    auto inner_loop=state.current_building->GenerateNewBlock();
-    auto nxt_building=state.current_building->GenerateNewBlock();
+    auto condition_part=state.current_building->GenerateNewBlock("WhileCond");
+    auto inner_loop=state.current_building->GenerateNewBlock("WhileLoop");
+    auto nxt_building=state.current_building->GenerateNewBlock("WhileNext");
 
     state.current_building->GenerateUnCondInst(condition_part);
 
@@ -492,12 +504,18 @@ void WhileStmt::print(int x){
 
 IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
 BasicBlock* IfStmt::GetInst(GetInstState state){
-    BasicBlock* nxt_building=nullptr;
+    BasicBlock* nxt_building=state.current_building->GenerateNewBlock();
     Operand condi=condition->GetOperand(state.current_building);
 
     auto istrue=state.current_building->GenerateNewBlock();
+    BasicBlock* isfalse=nullptr;
     GetInstState t_state=state;t_state.current_building=istrue;
-    istrue=t->GetInst(t_state);
+    if(f!=nullptr)
+    {
+        isfalse=state.current_building->GenerateNewBlock();
+        state.current_building->GenerateCondInst(condi,istrue,isfalse);
+    }
+    else state.current_building->GenerateCondInst(condi,istrue,nxt_building);
 
     auto make_uncond=[&](BasicBlock* tmp){
         if(!tmp->EndWithBranch()){
@@ -506,19 +524,15 @@ BasicBlock* IfStmt::GetInst(GetInstState state){
         }
     };
 
+    istrue=t->GetInst(t_state);
     make_uncond(istrue);
-    
-    if(f!=nullptr)
-    {
-        auto isfalse=state.current_building->GenerateNewBlock();
+    if(isfalse!=nullptr){
         GetInstState f_state=state;f_state.current_building=isfalse;
         isfalse=f->GetInst(f_state);
         make_uncond(isfalse);
-        state.current_building->GenerateCondInst(condi,istrue,isfalse);
     }
-    else state.current_building->GenerateCondInst(condi,istrue,nxt_building);
     
-    return (nxt_building!=nullptr)?nxt_building:state.current_building;
+    return nxt_building;
 }
 
 void IfStmt::print(int x){
@@ -558,11 +572,30 @@ void ReturnStmt::print(int x){
     if(return_val!=nullptr)return_val->print(x+1);
 }
 
-FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){}
+FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){
+    auto check_builtin=[](std::string _id){
+        if(_id=="getint")return true;
+        if(_id=="getfloat")return true;
+        if(_id=="getch")return true;
+        if(_id=="getarray")return true;
+        if(_id=="getfarray")return true;        
+        if(_id=="putint")return true;
+        if(_id=="putch")return true;
+        if(_id=="putarray")return true;
+        if(_id=="putfloat")return true;
+        if(_id=="putfarray")return true;
+        if(_id=="starttime")return true;
+        if(_id=="stoptime")return true;
+        if(_id=="putf")return true;
+        return false;
+    };
+    if(check_builtin(id))run_time=yylineno;
+    else run_time=0;
+}
 Operand FunctionCall::GetOperand(BasicBlock* block){
     std::vector<Operand> args;
     if(cp!=nullptr)args=cp->GetParams(block);
-    return block->GenerateCallInst(id,args);
+    return block->GenerateCallInst(id,args,run_time);
 }
 void FunctionCall::print(int x){
     AST_NODE::print(x);

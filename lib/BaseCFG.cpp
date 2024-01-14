@@ -39,13 +39,16 @@ std::string Value::GetName(){
 void Value::print(){
     if(auto tmp=dynamic_cast<Function*>(this))
         std::cout<<"@"<<tmp->GetName();
+    else if(auto tmp=dynamic_cast<BuildInFunction*>(this))
+        std::cout<<"@"<<tmp->GetName();
     else if(auto tmp=dynamic_cast<ConstIRInt*>(this))
         std::cout<<tmp->GetVal();
     else if(auto tmp=dynamic_cast<ConstIRFloat*>(this))
         std::cout<<tmp->GetVal();
-    else{
+    else if(GetName()[1]=='g')
+        std::cout<<"@"<<GetName();
+    else
         std::cout<<"%"<<GetName();
-    }
 }
 
 void User::add_use(Value* __data){

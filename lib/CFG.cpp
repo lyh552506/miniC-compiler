@@ -137,15 +137,18 @@ void CondInst::print(){
 
 Operand CondInst::GetDef(){return nullptr;}
 
-CallInst::CallInst(Function* _func,std::vector<Operand>& _args):User(_func->GetType()){
+CallInst::CallInst(Value* _func,std::vector<Operand>& _args):User(_func->GetType()){
     add_use(_func);
     for(auto&i:_args)
         add_use(i);
 }
 
 void CallInst::print(){
-    Value::print();
-    std::cout<<" = call ";
+    if(tp!=VoidType::NewVoidTypeGet()){
+        Value::print();
+        std::cout<<" = ";
+    }
+    std::cout<<"call ";
     for(auto&i:uselist){
         i->GetValue()->GetType()->print();
         std::cout<<" ";
@@ -161,10 +164,6 @@ void CallInst::print(){
 RetInst::RetInst(){}
 
 RetInst::RetInst(Operand op){add_use(op);}
-
-void RetInst::ir_mark(){
-    return;
-}
 
 void RetInst::print(){
     std::cout<<"ret ";
@@ -320,7 +319,6 @@ void GetElementPtrInst::print(){
     Value::print();
     std::cout<<" = getelementptr inbounds ";
     dynamic_cast<HasSubType*>(uselist[0]->GetValue()->GetType())->GetSubType()->print();
-    std::cout<<", ";
     for(int i=0;i<uselist.size();i++){
         std::cout<<", ";
         uselist[i]->GetValue()->GetType()->print();
@@ -432,11 +430,20 @@ void BasicBlock::GenerateStoreInst(Operand src,Operand des){
     auto storeinst=new StoreInst(src,des);
     this->push_back(storeinst);
 }
+
 BasicBlock* BasicBlock::GenerateNewBlock(){
     BasicBlock* tmp=new BasicBlock(master);
     master.add_block(tmp);
     return tmp;
 }
+
+BasicBlock* BasicBlock::GenerateNewBlock(std::string name){
+    BasicBlock* tmp=new BasicBlock(master);
+    tmp->name+=name;
+    master.add_block(tmp);
+    return tmp;
+}
+
 void BasicBlock::print(){
     std::cout<<GetName()<<":\n";
     for(auto i:(*this)){
@@ -444,8 +451,11 @@ void BasicBlock::print(){
         i->print();
     }
 }
+
 void Function::print(){
-    std::cout<<"define i32 @"<<name<<"(";
+    std::cout<<"define ";
+    tp->print();
+    std::cout<<" @"<<name<<"(";
     for(auto &i:params){
         i->GetType()->print();
         std::cout<<" %"<<i->GetName();
@@ -457,14 +467,46 @@ void Function::print(){
         i->print();
     std::cout<<"}\n";
 }
-std::string Function::GetName(){return name;}
+
 void Function::InsertAlloca(AllocaInst* ptr){
     bbs.front()->push_back(ptr);
 }
-Function::Function(InnerDataType _tp,std::string _id):Value(Type::NewTypeByEnum(_tp)),name(_id){
+
+BuildInFunction::BuildInFunction(Type* tp,std::string _id):Value(tp){
+    name=_id;
+    if(name=="starttime"||name=="stoptime")name="_sysy_"+name;
+}
+
+BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
+    static std::map<std::string,BuildInFunction*> mp;
+    auto get_type=[&_id]()->Type*{
+        if(_id=="getint")return IntType::NewIntTypeGet();
+        if(_id=="getfloat")return FloatType::NewFloatTypeGet();
+        if(_id=="getch")return IntType::NewIntTypeGet();
+        if(_id=="getarray")return IntType::NewIntTypeGet();
+        if(_id=="getfarray")return IntType::NewIntTypeGet();        
+        if(_id=="putint")return VoidType::NewVoidTypeGet();
+        if(_id=="putch")return VoidType::NewVoidTypeGet();
+        if(_id=="putarray")return VoidType::NewVoidTypeGet();
+        if(_id=="putfloat")return VoidType::NewVoidTypeGet();
+        if(_id=="putfarray")return VoidType::NewVoidTypeGet();
+        if(_id=="starttime")return VoidType::NewVoidTypeGet();
+        if(_id=="stoptime")return VoidType::NewVoidTypeGet();
+        if(_id=="putf")return VoidType::NewVoidTypeGet();
+        assert(0);
+    };
+    if(mp.find(_id)==mp.end()){
+        mp[_id]=new BuildInFunction(get_type(),_id);
+    }
+    return mp[_id];
+}
+
+Function::Function(InnerDataType _tp,std::string _id):Value(Type::NewTypeByEnum(_tp)){
+    name=_id;
     //至少有一个bbs
     bbs.push_back(BasicBlockPtr(new BasicBlock(*this)));
 }
+
 BasicBlock* Function::front_block(){
     return bbs.front().get();
 }
@@ -496,7 +538,17 @@ void BasicBlock::GenerateRetInst(){
     auto inst=new RetInst();
     push_back(inst);
 }
-Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args){
+
+Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,int run_time){
+    if(run_time!=0){
+        if(id=="starttime"||id=="stoptime"){
+            assert(args.size()==0);
+            args.push_back(new ConstIRInt(run_time));
+        }
+        auto tmp=new CallInst(BuildInFunction::GetBuildInFunction(id),args);
+        push_back(tmp);
+        return tmp->GetDef();
+    }
     if(auto func=dynamic_cast<Function*>(Singleton<Module>().GetValueByName(id))){
         auto& params=func->GetParams();
         assert(args.size()==params.size());
@@ -532,15 +584,18 @@ void Function::push_alloca(Variable* ptr){
     auto obj=bbs.front()->push_alloca(ptr->get_name(),ptr->GetType());
     Singleton<Module>().Register(ptr->get_name(),obj);
 }
+
 void Function::push_param(Variable* var){
     push_alloca(var);
     /// @brief 实参
     params.push_back(ParamPtr(new Value(var->GetType())));
     bbs.front()->GenerateStoreInst(params.back().get(),Singleton<Module>().GetValueByName(var->get_name()));
 }
+
 void Function::add_block(BasicBlock* __block){
     bbs.push_back(BasicBlockPtr(__block));
 }
+
 std::vector<std::unique_ptr<Value>>& Function::GetParams(){
     return params;
 }
@@ -549,9 +604,15 @@ std::vector<std::unique_ptr<Value>>& Function::GetParams(){
 //         call_back(i.get());
 // }
 void Module::Test(){
+    for(auto &i:globalvaribleptr){
+        std::cout<<"@.g."<<i->get_name()<<" = global ";
+        i->GetType()->print();
+        std::cout<<" zeroinitializer\n";
+    }
     for(auto&i:ls)
         i->print();
 }
+
 Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
     auto tmp=new Function(_tp,_id);
     Register(_id,tmp);
@@ -561,6 +622,7 @@ Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
 void Module::GenerateGlobalVariable(Variable* ptr){
     /// @todo 初始化单元
     auto obj=new Value(PointerType::NewPointerTypeGet(ptr->GetType()));
+    obj->name=".g."+ptr->get_name();
     SymbolTable::Register(ptr->get_name(),obj);
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }

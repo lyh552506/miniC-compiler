@@ -68,7 +68,6 @@ class UnCondInst:public User
     UnCondInst(BasicBlock*);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class CondInst:public User
 {
@@ -76,14 +75,12 @@ class CondInst:public User
     CondInst(Operand,BasicBlock*,BasicBlock*);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class CallInst:public User
 {
     public:
-    CallInst(Function*,std::vector<Operand>&);
+    CallInst(Value*,std::vector<Operand>&);
     void print()final;
-    void ir_mark();
 };
 class RetInst:public User
 {
@@ -92,7 +89,6 @@ class RetInst:public User
     RetInst(Operand);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class BinaryInst:public User
 {
@@ -134,17 +130,33 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);
     void GenerateRetInst();
-    Operand GenerateCallInst(std::string,std::vector<Operand> args);
+    Operand GenerateCallInst(std::string,std::vector<Operand>,int);
     void GenerateStoreInst(Operand,Operand);
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
+    BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
     void ir_mark();
     int dfs;
 };
+
+class ExternFunction:public Value
+{
+    public:
+    ExternFunction(std::string);
+    void print();
+    std::string GetName();
+};
+
+class BuildInFunction:public Value
+{
+    BuildInFunction(Type*,std::string);
+    public:
+    static BuildInFunction* GetBuildInFunction(std::string);
+};
+
 class Function:public Value
 {
-    std::string name;
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
@@ -157,7 +169,6 @@ class Function:public Value
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
-    std::string GetName();
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlockPtr> GetBasicBlock();
 };

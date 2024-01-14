@@ -39,6 +39,7 @@ class UserList
 };
 class Value
 {
+    friend class Module;
     /// @brief 存储所有的User
     UserList userlist;
     protected:

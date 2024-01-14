@@ -331,38 +331,3 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.x = global i32 zeroinitializer
-define i32 @fib(i32 %.4){
-.2:
-  %x_0 = alloca i32
-  store i32 %.4, i32* %x_0
-  %.6 = load i32, i32* %x_0
-  %.8 = icmp sle i32 %.6, 2
-  br i1 %.8, label %.9, label %.12
-.9:
-  ret i32 1 
-.12:
-  %.13 = load i32, i32* %x_0
-  %.15 = sub i32 %.13, 1
-  %.16 = call i32 @fib(i32 %.15)
-  %.17 = load i32, i32* %x_0
-  %.19 = sub i32 %.17, 2
-  %.20 = call i32 @fib(i32 %.19)
-  %.21 = add i32 %.16, %.20
-  ret i32 %.21 
-}
-define i32 @main(){
-.25:
-  call void @_sysy_starttime(i32 7)
-  %.30 = call i32 @getint()
-  store i32 %.30, i32* @.g.x
-  call void @_sysy_stoptime(i32 9)
-  %.35 = load i32, i32* @.g.x
-  %.37 = add i32 %.35, 14
-  %.38 = call i32 @fib(i32 %.37)
-  %.39 = load i32, i32* @.g.x
-  %.41 = add i32 %.39, 3
-  %.42 = call i32 @fib(i32 %.41)
-  %.43 = mul i32 %.38, %.42
-  ret i32 %.43 
-}
