@@ -314,7 +314,6 @@ void GetElementPtrInst::print(){
     Value::print();
     std::cout<<" = getelementptr inbounds ";
     dynamic_cast<HasSubType*>(uselist[0]->GetValue()->GetType())->GetSubType()->print();
-    std::cout<<", ";
     for(int i=0;i<uselist.size();i++){
         std::cout<<", ";
         uselist[i]->GetValue()->GetType()->print();
@@ -426,11 +425,20 @@ void BasicBlock::GenerateStoreInst(Operand src,Operand des){
     auto storeinst=new StoreInst(src,des);
     this->push_back(storeinst);
 }
+
 BasicBlock* BasicBlock::GenerateNewBlock(){
     BasicBlock* tmp=new BasicBlock(master);
     master.add_block(tmp);
     return tmp;
 }
+
+BasicBlock* BasicBlock::GenerateNewBlock(std::string name){
+    BasicBlock* tmp=new BasicBlock(master);
+    tmp->name+=name;
+    master.add_block(tmp);
+    return tmp;
+}
+
 void BasicBlock::print(){
     std::cout<<GetName()<<":\n";
     for(auto i:(*this)){
@@ -440,7 +448,9 @@ void BasicBlock::print(){
 }
 
 void Function::print(){
-    std::cout<<"define i32 @"<<name<<"(";
+    std::cout<<"define ";
+    tp->print();
+    std::cout<<" @"<<name<<"(";
     for(auto &i:params){
         i->GetType()->print();
         std::cout<<" %"<<i->GetName();

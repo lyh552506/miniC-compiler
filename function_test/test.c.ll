@@ -331,57 +331,79 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.k = global i32 zeroinitializer
+@.g.a = global i32 zeroinitializer
+@.g.b = global i32 zeroinitializer
+define i32 @inc_a(){
+.3:
+  %b_0 = alloca i32
+  %.5 = load i32, i32* @.g.a
+  store i32 %.5, i32* %b_0
+  %.7 = load i32, i32* %b_0
+  %.9 = add i32 %.7, 1
+  store i32 %.9, i32* %b_0
+  %.11 = load i32, i32* %b_0
+  store i32 %.11, i32* @.g.a
+  %.13 = load i32, i32* @.g.a
+  ret i32 %.13 
+}
 define i32 @main(){
-.2:
-  %g_1 = alloca i32
-  %l_0 = alloca i32
-  %g_0 = alloca i32
+.16:
   %k_0 = alloca i32
-  store i32 3389, i32* @.g.k
-  %.6 = load i32, i32* @.g.k
-  %.8 = icmp slt i32 %.6, 10000
-  br i1 %.8, label %.9, label %.5
-.5:
-  %.63 = load i32, i32* @.g.k
-  ret i32 %.63 
-.9:
-  %.11 = load i32, i32* @.g.k
-  %.13 = add i32 %.11, 1
-  store i32 %.13, i32* @.g.k
-  store i32 112, i32* %k_0
-  br label %.18 
-.18:
-  %.22 = load i32, i32* %k_0
-  %.24 = icmp sgt i32 %.22, 10
-  br i1 %.24, label %.19, label %.20
-.19:
-  %.26 = load i32, i32* %k_0
-  %.28 = sub i32 %.26, 88
-  store i32 %.28, i32* %k_0
-  %.31 = load i32, i32* %k_0
-  %.33 = icmp slt i32 %.31, 1000
-  br i1 %.33, label %.34, label %.30
-.20:
-  %.59 = load i32, i32* %k_0
-  call void @putint(i32 %.59)
-  br label %.5 
-.30:
-  br label %.18 
+  store i32 5, i32* %k_0
+  br label %.20WhileCond 
+.20WhileCond:
+  %.24 = load i32, i32* %k_0
+  %.26 = icmp sge i32 %.24, 0
+  br i1 %.26, label %.21WhileLoop, label %.22WhileNext
+.21WhileLoop:
+  %.29 = call i32 @inc_a()
+  %.30 = call i32 @inc_a()
+  %.31 = and i32 %.29, %.30
+  %.32 = call i32 @inc_a()
+  %.33 = and i32 %.31, %.32
+  br i32 %.33, label %.34, label %.28
+.22WhileNext:
+  %.78 = load i32, i32* @.g.a
+  call void @putint(i32 %.78)
+  call void @putch(i32 32)
+  %.82 = load i32, i32* @.g.b
+  call void @putint(i32 %.82)
+  call void @putch(i32 10)
+  %.86 = load i32, i32* @.g.a
+  ret i32 %.86 
+.28:
+  %.48 = call i32 @inc_a()
+  %.50 = icmp slt i32 %.48, 14
+  %.51 = call i32 @inc_a()
+  %.52 = call i32 @inc_a()
+  %.53 = call i32 @inc_a()
+  %.54 = sub i32 %.52, %.53
+  %.56 = add i32 %.54, 1
+  %.57 = and i32 %.51, %.56
+  %.58 = Or i1 %.50, %.57
+  br i1 %.58, label %.59, label %.60
 .34:
-  store i32 9, i32* %g_0
-  store i32 11, i32* %l_0
-  store i32 10, i32* %g_0
-  %.44 = load i32, i32* %k_0
-  %.45 = load i32, i32* %g_0
-  %.46 = sub i32 %.44, %.45
-  store i32 %.46, i32* %k_0
-  store i32 11, i32* %g_1
-  %.51 = load i32, i32* %k_0
-  %.52 = load i32, i32* %g_1
-  %.53 = add i32 %.51, %.52
-  %.54 = load i32, i32* %l_0
-  %.55 = add i32 %.53, %.54
-  store i32 %.55, i32* %k_0
-  br label %.30 
+  %.36 = load i32, i32* @.g.a
+  call void @putint(i32 %.36)
+  call void @putch(i32 32)
+  %.42 = load i32, i32* @.g.b
+  call void @putint(i32 %.42)
+  call void @putch(i32 10)
+  br label %.28 
+.47:
+  %.73 = load i32, i32* %k_0
+  %.75 = sub i32 %.73, 1
+  store i32 %.75, i32* %k_0
+  br label %.20WhileCond 
+.59:
+  %.62 = load i32, i32* @.g.a
+  call void @putint(i32 %.62)
+  call void @putch(i32 10)
+  %.66 = load i32, i32* @.g.b
+  %.68 = mul i32 %.66, 2
+  store i32 %.68, i32* @.g.b
+  br label %.47 
+.60:
+  %.71 = call i32 @inc_a()
+  br label %.47 
 }

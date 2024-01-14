@@ -1,26 +1,29 @@
-int k;
 
-int main() {
-  k = 3389;
-  if (k < 10000) {
-    k = k + 1;
-    int k = 112;
-    while (k > 10) {
-      k = k - 88;
-      if (k < 1000) {
-        int g = 9;
-        {
-          int l = 11;
-          {
-            g = 10;
-            k = k - g;
-            int g = 11;
-            k = k + g + l;
-          }
+int a = -1, b = 1;
+
+int inc_a()
+{
+    int b = a;
+    b = b + 1;
+    a = b;
+    return a;
+}
+
+int main()
+{
+    int k = 5;
+    while (k >= 0) {
+        if (inc_a() && inc_a() && inc_a()) {
+            putint(a); putch(32); putint(b); putch(10);
         }
-      }
+        if (inc_a() < 14 || inc_a() && inc_a() - inc_a() + 1) {
+            putint(a); putch(10);
+            b = b * 2;
+        } else {
+            inc_a();
+        }
+        k = k - 1;
     }
-    putint(k);
-  }
-  return k;
+    putint(a); putch(32); putint(b); putch(10);
+    return a;
 }

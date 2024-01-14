@@ -1,5 +1,4 @@
 #include "AST_NODE.hpp"
-extern int yylineno;
 /// @brief 最基础的AST_NODE，所有基础特性都应该放里面
 void TypeForward(AST_Type type)
 {
@@ -22,6 +21,7 @@ void AST_NODE::codegen(){
     std::cerr<<"In AST some nodes are forbidden to call codegen()\n";
     assert(0);
 };
+
 void AST_NODE::print(int x)
 {
     for(int i=0;i<x;i++)std::cout<<"  ";
@@ -344,9 +344,8 @@ BasicBlock* BlockItems::GetInst(GetInstState state){
     {
         state.current_building=i->GetInst(state);
         ///@warning 已经是一个basicblock了，后面的肯定访问不到
-        if(state.current_building->EndWithBranch()){
+        if(state.current_building->EndWithBranch())
             return state.current_building;
-        }
     }
     return state.current_building;
 }
@@ -388,7 +387,11 @@ void FuncDef::codegen(){
     if(params!=nullptr)params->GetVariable(f);
     assert(function_body!=nullptr);
     GetInstState state={f.front_block(),nullptr,nullptr};
-    function_body->GetInst(state);
+    auto end_block=function_body->GetInst(state);
+    if(!end_block->EndWithBranch()){
+        assert(f.GetType()->GetTypeEnum()==IR_Value_VOID);
+        end_block->GenerateRetInst();
+    }
     Singleton<Module>().layer_decrease();
 }
 void FuncDef::print(int x){
@@ -399,7 +402,8 @@ void FuncDef::print(int x){
 }
 
 LVal::LVal(std::string _id,Exps* ptr):ID(_id),array_descripters(ptr){}
-Operand LVal::GetOperand(BasicBlock* block){
+
+Operand LVal::GetPointer(BasicBlock* block){
     auto ptr=Singleton<Module>().GetValueByName(ID);
     if(ptr->isConst())return ptr;
     std::vector<Operand> tmp;
@@ -410,28 +414,36 @@ Operand LVal::GetOperand(BasicBlock* block){
         handle=block->GenerateGEPInst(ptr);
         dynamic_cast<GetElementPtrInst*>(handle)->add_use(new ConstIRInt(0));
     }
-    else{
+    else if(dynamic_cast<PointerType*>(ptr->GetType())->GetSubType()->GetTypeEnum()==IR_PTR)
         handle=block->GenerateLoadInst(ptr);
+    else{
+        assert(tmp.empty());
+        return ptr;
     }
 
     for(auto &i:tmp){
-        if(auto gep=dynamic_cast<GetElementPtrInst*>(handle)){
-            gep->add_use(i);
-        }
-        else{
+        auto tp=dynamic_cast<PointerType*>(handle->GetType())->GetSubType();
+        if(tp->GetTypeEnum()==IR_ARRAY)
+            dynamic_cast<GetElementPtrInst*>(handle)->add_use(i);
+        else
+        {
+            handle=block->GenerateLoadInst(handle);
             handle=block->GenerateGEPInst(handle);
             dynamic_cast<GetElementPtrInst*>(handle)->add_use(i);
         }
-        auto tp=dynamic_cast<PointerType*>(handle->GetType())->GetSubType();
-        if(tp->GetTypeEnum()!=IR_ARRAY)
-            handle=block->GenerateLoadInst(handle);
-    }
-
-    if(auto ptr=dynamic_cast<HasSubType*>(handle->GetType())){
-        if(ptr->GetSubType()->GetTypeEnum()==IR_ARRAY)
-            dynamic_cast<GetElementPtrInst*>(handle)->add_use(new ConstIRInt(0));
     }
     return handle;
+}
+
+Operand LVal::GetOperand(BasicBlock* block){
+    auto ptr=GetPointer(block);
+    if(auto gep=dynamic_cast<GetElementPtrInst*>(ptr)){
+        if(dynamic_cast<PointerType*>(gep->GetType())->GetSubType()->GetTypeEnum()==IR_ARRAY){
+            gep->add_use(new ConstIRInt(0));
+            return gep;
+        }
+    }
+    return block->GenerateLoadInst(ptr);
 }
 
 std::string LVal::GetName(){return ID;}
@@ -445,8 +457,7 @@ void LVal::print(int x){
 AssignStmt::AssignStmt(LVal* p1,AddExp* p2):lv(p1),exp(p2){}
 BasicBlock* AssignStmt::GetInst(GetInstState state){
     Operand tmp=exp->GetOperand(state.current_building);
-    auto valueptr=Singleton<Module>().GetValueByName(lv->GetName());
-    
+    auto valueptr=lv->GetPointer(state.current_building);
     state.current_building->GenerateStoreInst(tmp,valueptr);
     return state.current_building;
 }
@@ -470,9 +481,9 @@ void ExpStmt::print(int x){
 
 WhileStmt::WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
 BasicBlock* WhileStmt::GetInst(GetInstState state){
-    auto condition_part=state.current_building->GenerateNewBlock();
-    auto inner_loop=state.current_building->GenerateNewBlock();
-    auto nxt_building=state.current_building->GenerateNewBlock();
+    auto condition_part=state.current_building->GenerateNewBlock("WhileCond");
+    auto inner_loop=state.current_building->GenerateNewBlock("WhileLoop");
+    auto nxt_building=state.current_building->GenerateNewBlock("WhileNext");
 
     state.current_building->GenerateUnCondInst(condition_part);
 

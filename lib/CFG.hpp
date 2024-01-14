@@ -133,6 +133,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     void GenerateStoreInst(Operand,Operand);
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
+    BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
     void ir_mark();
     int dfs;

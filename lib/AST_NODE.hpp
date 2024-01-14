@@ -7,6 +7,8 @@
 #include "MagicEnum.hpp"
 #include "CFG.hpp"
 
+extern int yylineno;
+
 enum AST_Type
 {
     AST_INT,AST_FLOAT,AST_VOID,AST_ADD,AST_SUB,AST_MUL,AST_MODULO,AST_DIV,AST_GREAT,AST_GREATEQ,AST_LESS,AST_LESSEQ,AST_EQ,AST_ASSIGN,AST_NOTEQ,AST_NOT,AST_AND,AST_OR,
@@ -360,6 +362,7 @@ class LVal:public HasOperand
     std::unique_ptr<Exps> array_descripters;
     public:
     LVal(std::string _id,Exps* ptr=nullptr);
+    Operand GetPointer(BasicBlock* block);
     Operand GetOperand(BasicBlock* block);
     std::string GetName();
     void print(int x);
