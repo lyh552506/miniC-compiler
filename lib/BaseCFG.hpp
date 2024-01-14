@@ -10,6 +10,7 @@
 #include <string>
 class User;
 class Value;
+class BasicBlock;
 class Use
 {
     friend class UserList;
@@ -38,46 +39,36 @@ class UserList
 };
 class Value
 {
-    int number=-1;
-    std::string name;
     /// @brief 存储所有的User
     UserList userlist;
     protected:
-    std::shared_ptr<Type> tp;
+    std::string name;
+    Type* tp;
     public:
     virtual ~Value()=default;
     Value()=delete;
-    Value(std::shared_ptr<Type> _tp);
-    Value(InnerDataType _tp);
-    /// @brief 为dump出ll作准备
-    void SetNum(int&);
-    int GetNum();
-    /// @brief 增加std::strign name
-    std::string GetName();
-    void print(int&);    
-    /// @brief Type System还在被批判的过程中 
-    InnerDataType GetType();
-    std::shared_ptr<Type> CopyType();
-    /// @brief  
+    Value(Type*);
+    void print();
+    InnerDataType GetTypeEnum();
+    virtual Type* GetType();
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
+    void RAUW(Value* val);
+    virtual std::string GetName();
 };
 using Operand=Value*;
-class User:public Value
+class User:public Value,public list_node<BasicBlock,User>
 {
     using UsePtr=std::unique_ptr<Use>;
     protected:
     std::vector<UsePtr> uselist;
-    void add_use(Value* __data);
     public:
-    virtual void print(int&)=0;
-    /// @brief 新增打印机器指令的接口
-    /// @brief 
+    void add_use(Value* __data);
+    virtual void print()=0;
     User();
-    User(InnerDataType tp);
-    User(std::shared_ptr<Type> tp);
-    std::vector<UsePtr>& Getuselist();
+    User(Type* tp);
     virtual Operand GetDef();
+    std::vector<UsePtr>& Getuselist(){return this->uselist;}
 };
 class ConstIRInt:public Value
 {
@@ -86,6 +77,7 @@ class ConstIRInt:public Value
     ConstIRInt(int);
     int GetVal();
     bool isConst()final{return true;}
+    void ir_mark();
 };
 class ConstIRFloat:public Value
 {
@@ -94,4 +86,5 @@ class ConstIRFloat:public Value
     ConstIRFloat(float);
     float GetVal();
     bool isConst()final{return true;}
+    void ir_mark();
 };

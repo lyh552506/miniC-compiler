@@ -8,111 +8,99 @@ void LivenessAnalysis::pass(Function* func)
   {
     GetBlockLiveout(BB.get());
     GetBlockLivein(BB.get());
-    iterate(BB.get());
   }
+  iterate(func);
+  PrintLiveness_Analysis(func);
+}
+void LivenessAnalysis::PrintLiveness_Analysis(Function* func)
+{
+    std::cout<<"---------LivenessAnalysis_Result---------"<<std::endl;
+    std::cout<<"\n";
+    for(auto &_block:func->getBlockList())
+    {
+      std::cout<<"---------Current Block Livein ---------"<<std::endl;
+      for(auto _print:BlockLivein[_block.get()])
+      {
+        _print->print();
+      }
+      std::cout<<"\n";
+      std::cout<<"---------Current Block Liveout ---------"<<std::endl;
+      for(auto _print:BlockLiveout[_block.get()])
+      {
+        _print->print();
+      }
+      std::cout<<"\n";
+    }
+
 }
 
 void LivenessAnalysis::GetBlockLivein(BasicBlock* block)
 {
-  std::set<Value*> _BlockLiveout = BlockLiveout[block];
   for(auto inst = block->getInstList().rbegin();inst != block->getInstList().rend(); ++inst)
   {
     for(auto &usePtr:(*inst)->Getuselist())
     {
       Value* useValue = usePtr->GetValue();
-      _BlockLiveout.insert(useValue);
+      BlockLivein[block].insert(useValue);
     }
     Value* DefValue = (*inst)->GetDef();
-    _BlockLiveout.erase(DefValue);
+    BlockLivein[block].erase(DefValue);
   }
-  BlockLivein[block] = _BlockLiveout;
 }
 
 void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
 {
-  std::set<Value*> _BlockLivein = BlockLivein[block];
-  std::set<Value*> _BlockLiveout = BlockLiveout[block];
-  auto inst = block->getInstList().back();
+  auto inst = block->back();
   if(auto _CondInst = dynamic_cast<CondInst *>(inst))
   {
-    auto _Use = inst->Getuselist(); 
+    auto &_Use = inst->Getuselist(); 
     BlockLivein[block].insert(_Use[1]->GetValue());
-    auto _block_Pred1 = dynamic_cast<BasicBlock *>(_Use[1]->GetValue());
-    auto _block_Pred2 = dynamic_cast<BasicBlock *>(_Use[2]->GetValue());
-    BlockLiveout[block].insert(BlockLivein[_block_Pred1]);
+    auto _block_Succ1 = dynamic_cast<BasicBlock *>(_Use[1]->GetValue());
+    auto _block_Succ2 = dynamic_cast<BasicBlock *>(_Use[2]->GetValue());
+    BlockLiveout[block].insert(BlockLivein[_block_Succ1].begin(), BlockLivein[_block_Succ1].end());
+    BlockLiveout[block].insert(BlockLivein[_block_Succ2].begin(), BlockLivein[_block_Succ2].end());
   }
   if(auto _UnCondInst = dynamic_cast<UnCondInst *>(inst))
   {
-    auto _Use = inst->Getuselist();
+    auto &_Use = inst->Getuselist();
     auto _block_Pred = dynamic_cast<BasicBlock *>(_Use[0]->GetValue());
-    
+    BlockLiveout[block].insert(BlockLivein[_block_Pred].begin(),BlockLivein[_block_Pred].end());
+  }
+}
+
+
+void LivenessAnalysis::iterate(Function* func)
+{
+  std::set<BasicBlock*> worklist;
+  for(auto &block : func->getBlockList())
+  {
+    auto _block = block.get();
+    BlockLivein[_block].clear();
+    worklist.insert(_block);
   }
 
+  while(!worklist.empty())
+  {
+    auto _block = *worklist.begin();
+    worklist.erase(worklist.begin());
+    BlockLiveout[_block].clear();
+    auto old_BlockLivein = BlockLivein[_block];
+    GetBlockLiveout(_block);
+    GetBlockLivein(_block);
+    if(old_BlockLivein != BlockLivein[_block])
+    {
+      auto inst = _block->back();
+      if(auto _CondInst = dynamic_cast<CondInst*>(inst))
+        {
+          auto &_Use = inst->Getuselist();
+          worklist.insert(dynamic_cast<BasicBlock*>(_Use[1]->GetValue()));
+          worklist.insert(dynamic_cast<BasicBlock*>(_Use[2]->GetValue()));
+        }
+      if(auto _UnCondInst = dynamic_cast<UnCondInst*>(inst))
+      {
+        auto &_Use = inst->Getuselist();
+        worklist.insert(dynamic_cast<BasicBlock*>(_Use[0]->GetValue()));
+      }
+    }
+  }
 }
-// void LiveVariableAnalysis::pass(MachineUnit *unit) {
-//   for (auto &func : unit->getFuncList()) {
-//     BlockUseInstr(func);
-//     BlockDefUse(func);
-//     iterate(func);
-//   } 
-// }
-
-// void LiveVariableAnalysis::pass(MachineFunction *func) {
-//   BlockUseInstr(func);
-//   BlockDefUse(func);
-//   iterate(func);
-// }
-
-// void LiveVariableAnalysis::BlockDefUse(MachineFunction *func) {
-//   for (auto &block : func->getBlockList()) {
-//     for (auto inst = block->getInstList().begin();
-//          inst != block->getInstList().end(); inst++) {
-//       auto user = (*inst)->getUseList();
-//       std::set<MachineOperand *> temp(user.begin(), user.end());
-//       set_difference(temp.begin(), temp.end(), def[block].begin(),
-//                      def[block].end(), inserter(use[block], use[block].end()));
-//       auto defs = (*inst)->getDefList();
-//       for (auto &Defs : defs)
-//         def[block].insert(use_inst[*Defs].begin(), use_inst[*Defs].end());
-//     }
-//   }
-// }
-
-// void LiveVariableAnalysis::iterate(MachineFunction *func) {
-//   std::set<MachineBlock *> workList;
-//   for (auto &block : func->getBlockList()) {
-//     block->live_in.clear();
-//     workList.insert(block);
-//   }
-
-//   while (!workList.empty()) {
-//     auto block = *workList.begin();
-//     workList.erase(workList.begin());
-//     block->live_out.clear();
-//     auto old = block->live_in;
-//     for (auto &succ : block->getSuccs()) {
-//       block->live_out.insert(succ->live_in.begin(), succ->live_in.end());
-//     }
-//     block->live_in = use[block];
-//     set_difference(block->live_out.begin(), block->live_out.end(),
-//                    def[block].begin(), def[block].end(),
-//                    inserter(block->live_in, block->live_in.end()));
-//     if (old != block->live_in) {
-//       for (auto &pred : block->getPreds())
-//         workList.insert(pred);
-//     }
-//   }
-// }
-
-// void LiveVariableAnalysis::BlockUseInstr(MachineFunction *func) {
-//   for (auto &block : func->getBlockList()) {
-//     for (auto &inst : block->getInstList()) {
-//       auto uses = inst->getUseList();
-//       for (auto &use : uses) {
-//         use_inst[*use].insert(use);
-//       }
-//     }
-//   }
-// }
-
-
