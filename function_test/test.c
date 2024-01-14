@@ -1,11 +1,26 @@
-int x;
-int fib(int x){
-  if(x<=2)return 1;
-  else return fib(x-1)+fib(x-2);
-}
-int main(){
-  starttime();
-  x=getint();
-  stoptime();
-  return fib(x+14)*fib(x+3);
+int k;
+
+int main() {
+  k = 3389;
+  if (k < 10000) {
+    k = k + 1;
+    int k = 112;
+    while (k > 10) {
+      k = k - 88;
+      if (k < 1000) {
+        int g = 9;
+        {
+          int l = 11;
+          {
+            g = 10;
+            k = k - g;
+            int g = 11;
+            k = k + g + l;
+          }
+        }
+      }
+    }
+    putint(k);
+  }
+  return k;
 }
