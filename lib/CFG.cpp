@@ -480,7 +480,7 @@ BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
         assert(0);
     };
     if(mp.find(_id)==mp.end()){
-        mp[_id]=BuildInFunction::GetBuildInFunction(_id);
+        mp[_id]=new BuildInFunction(get_type(),_id);
     }
     return mp[_id];
 }
@@ -588,6 +588,11 @@ std::vector<std::unique_ptr<Value>>& Function::GetParams(){
 //         call_back(i.get());
 // }
 void Module::Test(){
+    for(auto &i:globalvaribleptr){
+        std::cout<<"@.g."<<i->get_name()<<" = global ";
+        i->GetType()->print();
+        std::cout<<" zeroinitializer\n";
+    }
     for(auto&i:ls)
         i->print();
 }
@@ -601,6 +606,7 @@ Function& Module::GenerateFunction(InnerDataType _tp,std::string _id){
 void Module::GenerateGlobalVariable(Variable* ptr){
     /// @todo 初始化单元
     auto obj=new Value(PointerType::NewPointerTypeGet(ptr->GetType()));
+    obj->name=".g."+ptr->get_name();
     SymbolTable::Register(ptr->get_name(),obj);
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }
