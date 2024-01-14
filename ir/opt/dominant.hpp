@@ -1,8 +1,10 @@
 #pragma once
 #include "CFG.hpp"
+#include "IDF.hpp"
 #include <algorithm>
 #include <forward_list>
 #include <iostream>
+#include <iterator>
 #include <list>
 #include <memory.h>
 #include <set>
@@ -10,7 +12,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include "IDF.hpp"
 
 // SDOM(MIN_SDOM(x))即代表获取离x最近的sdom结点
 #define SDOM(x) node[x].sdom        //获取x对应结点的sdom
@@ -25,6 +26,7 @@
 
 class dominance {
   friend class IDF;
+
 public:
   class DSU { //并查集实现路径压缩
   public:
@@ -61,8 +63,8 @@ private:
   std::vector<DSU> dsu;        //辅助数据结构实现路径压缩
   std::vector<DF> df;          //存储每个结点的必经结点边界
   // BasicBlock* root;            //保存支配树的根节点
-  
-  Function& thisFunc;
+
+  Function &thisFunc;
   int block_num, count; // count是当前的dfs序号
   bool IsDFSValid;
 
@@ -123,14 +125,14 @@ public:
   /// @brief 插入phi函数
   void place_phi() {}
 
-  dominance(int n, int m,Function& Func)
+  dominance(int n, int m, Function &Func)
       : node(n + 1), block_num{n}, vertex(n + 1),
-        dsu(n + 1), count{1}, IsDFSValid{false}, df(n + 1) ,thisFunc{Func}{
+        dsu(n + 1), count{1}, IsDFSValid{false}, df(n + 1), thisFunc{Func} {
     for (int i = 1; i <= n; i++) {
       dsu[i].ancestor = i;
       dsu[i].min_sdom = i;
     }
-    dom_begin();//标志开始函数
+    dom_begin(); //标志开始函数
   }
 
   void dom_begin();

@@ -64,16 +64,21 @@ public:
   /// @brief 计算指令的index
   int CaculateIndex(BasicBlock *CurBlock, User *use);
   
-  /// @brief 初步的插入phi函数 
-  bool InsertPhiNode(BasicBlock* bb);
+  /// @brief 此处的插入phi函数只是先暂且插入一个空壳
+  // eg：%1 = PHI i32
+  bool InsertPhiNode(BasicBlock* bb,int AllocaNum);
+  
+  /// @brief 进一步的设置phi的incoming值，以及重命名
+  void RenamePass();
 
   dominance &m_dom;
-  std::vector<AllocaInst *> m_Allocas;
+  std::vector<AllocaInst *> m_Allocas; //index->AllocaInst的映射
+  std::map<AllocaInst*,int> AllocaToIndex; //AllocaInst->index的映射
   int DeadAlloca;  // Number of dead alloca's removed
   int SingleStore; // Number of alloca's promoted with a single store
   Function& Func;
   std::map<int,PhiInst*> PrePhiNode;//由Block到PhiNode的映射
-  std::map<PhiInst*,int> PhiToAllocl;//Phi函数对应的Alloca指令
+  std::map<PhiInst*,int> PhiToAlloca;//Phi函数对应的Alloca指令
 };
 
 /// @brief 检验送入的alloca指令能否被promote

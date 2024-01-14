@@ -21,13 +21,13 @@ bool promoteMemoryToRegister(Function &func, dominance &dom) {
 
     if(Allocas.empty())//当前没有可以promote的alloca指令
       break;
-    RunPromoteMem2Reg(dom,Allocas);
+    RunPromoteMem2Reg(dom,Allocas,func);
   }
 }
 
 /// @brief 一个wrapper，在这里创建对象 
-void RunPromoteMem2Reg(dominance &dom,std::vector<AllocaInst *> Allocas){
-    PromoteMem2Reg(dom,Allocas).run();
+void RunPromoteMem2Reg(dominance &dom,std::vector<AllocaInst *> Allocas,Function& func){
+    PromoteMem2Reg(dom,Allocas,func).run();
 }
 
 

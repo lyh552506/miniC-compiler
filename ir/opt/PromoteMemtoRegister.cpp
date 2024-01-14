@@ -39,35 +39,36 @@ void PromoteMem2Reg::run() {
       continue;
     }
     std::set<BasicBlock *> DefineBlock(Info.DefineBlocks.begin(),
-                                          Info.DefineBlocks.end());
+                                       Info.DefineBlocks.end());
     std::set<BasicBlock *> LiveInBlocks;
     PreWorkingAfterInsertPhi(DefineBlock, BBInfo, Info, AI, LiveInBlocks);
-    std::vector<BasicBlock*> PhiBlocks;
-    
+    std::vector<BasicBlock *> PhiBlocks;
+
     idf.SetDefBB(DefineBlock);
     idf.SetLiveInBlock(LiveInBlocks);
-    std::vector<std::unique_ptr<BasicBlock>> vec=Func.GetBasicBlock();
+    std::vector<std::unique_ptr<BasicBlock>> vec = Func.GetBasicBlock();
     idf.SetBBs(vec);
-    for(int dex=0;dex<PhiBlocks.size();dex++)
-      InsertPhiNode(PhiBlocks[dex]);
-
+    for (int dex = 0; dex < PhiBlocks.size(); dex++)
+      InsertPhiNode(PhiBlocks[dex], i);
   }
+
+  //下面开始为重命名做准备
 }
 
-bool PromoteMem2Reg::InsertPhiNode(BasicBlock* bb){ 
-   std::vector<std::unique_ptr<BasicBlock>> vect=Func.GetBasicBlock();
-   auto it=std::find_if(vect.begin(),vect.end(),[bb](std::unique_ptr<BasicBlock>& base)->bool{
-     return base.get()==bb;
-   });
+bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
+  std::vector<std::unique_ptr<BasicBlock>> vect = Func.GetBasicBlock();
+  auto it = std::find_if(vect.begin(), vect.end(),
+                         [bb](std::unique_ptr<BasicBlock> &base) -> bool {
+                           return base.get() == bb;
+                         }); // get index
 
-   if(it!=vect.end()){
-    int index=std::distance(vect.begin(),it); //获取下标
-    PhiInst *&Phi=PrePhiNode[index];
-    if(Phi)
-      return false;
-    Phi=PhiInst::NewPhiNode();
-    
-   }
+  int index = std::distance(vect.begin(), it); //获取下标
+  PhiInst *&Phi = PrePhiNode[index];
+  if (Phi)
+    return false;
+  Phi = PhiInst::NewPhiNode(bb->front(),bb);//insert into the head of block
+  PhiToAlloca[Phi] = AllocaNum;
+  return true;
 }
 
 bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
@@ -97,13 +98,13 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
               // container
       if (it == StoreInstWithIndex.begin()) {
         if (!StoreInstWithIndex.empty()) // no stores
-          //LI->ReplaceAllUsersWith(UndefValue::get(LI->CopyType().get()));
+          // LI->ReplaceAllUsersWith(UndefValue::get(LI->CopyType().get()));
           continue;
         else            // no store before load
           return false; /// @note why is this
       } else {
         LI->ReplaceAllUsersWith(std::prev(it)->second->GetOperand(0));
-        //LI->EraseFromBlock();
+        // LI->EraseFromBlock();
         LI->EraseFromParent();
       }
     }
@@ -175,12 +176,15 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
       }
     }
     LI->ReplaceAllUsersWith(val); // TODO
-    LI->EraseFromBlock();         //可以将这个LoadInstruction删除了
+    //LI->EraseFromBlock();         //可以将这个LoadInstruction删除了
+    LI->EraseFromParent();
   }
   if (!Info.UsingBlocks.empty())
     return false;
-  OnlySt->EraseFromBlock(); //结束后删除alloca和store
-  AI->EraseFromBlock();
+  //OnlySt->EraseFromBlock(); //结束后删除alloca和store
+  OnlySt->EraseFromParent();
+  //AI->EraseFromBlock();
+  AI->EraseFromParent();
   return true;
 }
 
@@ -192,11 +196,11 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
                                    Info.UsingBlocks.end());
   for (int i = 0, length = LiveIn.size(); i != length; i++) {
     BasicBlock *BB = LiveIn[i];
-    if (DefineBlock.find(BB)==DefineBlock.end())
+    if (DefineBlock.find(BB) == DefineBlock.end())
       continue; //当前use的block没有define，不能简化
 
     for (auto it = BB->getInstList().begin();; it++) {
-      User *user = &(*it->get());//TODO
+      User *user = &(*it->get()); // TODO
       if (StoreInst *ST = dynamic_cast<StoreInst *>(
               user)) { //相当于直接给这个变量赋了一个确定值,不再需要phi
         if (ST->GetDef() != AI)
@@ -214,30 +218,30 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
       }
     }
   }
-// 递归将这些基本块的前驱全部加进来，包括没有load当前alloca的基本块，因为alloca当然能直接流过这些不load它的基本块。
-//	当然，有store这个alloca变量的基本块就不能加进来了，不然上面的操作白做了。
-//	为什么要加入前驱？
-//	比如基本块B和基本C都用了变量a，且B和C的前驱基本块是A，即：
-//						  A
-//					  /   \
+  // 递归将这些基本块的前驱全部加进来，包括没有load当前alloca的基本块，因为alloca当然能直接流过这些不load它的基本块。
+  //	当然，有store这个alloca变量的基本块就不能加进来了，不然上面的操作白做了。
+  //	为什么要加入前驱？
+  //	比如基本块B和基本C都用了变量a，且B和C的前驱基本块是A，即：
+  //						  A
+  //					  /   \
 //					 B     C
-//	那么正常来说，我们会在B和C都添加PHI节点，一共2个，但是，其实在A基本块中只需要添加一次即可。
-  while(!LiveIn.empty()){
-    BasicBlock* bb=LiveIn.back();
+  //	那么正常来说，我们会在B和C都添加PHI节点，一共2个，但是，其实在A基本块中只需要添加一次即可。
+  while (!LiveIn.empty()) {
+    BasicBlock *bb = LiveIn.back();
     LiveIn.pop_back();
-    if(!LiveInBlocks.insert(bb).second)//插入当前block
+    if (!LiveInBlocks.insert(bb).second) //插入当前block
       continue;
-    int _Dfs=bb->dfs;
-    dominance::Node& node=m_dom.GetNode(_Dfs);
+    int _Dfs = bb->dfs;
+    dominance::Node &node = m_dom.GetNode(_Dfs);
     //遍历他的前驱,以简化phi函数的插入
-    for(auto it:node.rev){
-      BasicBlock* rev= m_dom.DfsToBB(it);
-      
+    for (auto it : node.rev) {
+      BasicBlock *rev = m_dom.DfsToBB(it);
+
       //遍历到目前的前驱块刚好是定义块，则不添加
-      if(DefineBlock.find(rev)!=DefineBlock.end())
+      if (DefineBlock.find(rev) != DefineBlock.end())
         continue;
 
-      LiveIn.push_back(rev);  
+      LiveIn.push_back(rev);
     }
   }
 }

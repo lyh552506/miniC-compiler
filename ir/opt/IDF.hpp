@@ -14,8 +14,6 @@ private:
    std::set<BasicBlock *>* DefineBlock;
    std::set<BasicBlock *>* LiveInBlocks;
    std::map<DTNode,unsigned> Level;//记录支配树上的结点的层级
-   std::stack<DTNode> worklists;//深度遍历栈
-   std::map<DTNode,bool> WorklistVisited;
    std::vector<std::unique_ptr<BasicBlock>> bbs;
 public:
    IDF(dominance& dom):m_dom(dom),uselivein{false}
@@ -27,7 +25,7 @@ public:
 
    void SetBBs(std::vector<std::unique_ptr<BasicBlock>>& bbs);
 
-   void caculateDTlevel(DTNode node);
+   void caculateDTlevel(DTNode node,int depth);
 
    void caculateIDF(std::vector<BasicBlock*>& IDFBlocks);
    

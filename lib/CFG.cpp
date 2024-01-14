@@ -13,7 +13,6 @@ void AllocaInst::print(){
 }
 #include<map>
 
-std::map<Type*,UndefValue*> Undefs;
 // AllocaInst::AllocaInst(std::shared_ptr<Type> _tp):User(std::make_shared<PointerType>(_tp)){}
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
@@ -556,6 +555,12 @@ Operand BasicBlock::push_alloca(Type* _tp){
     return tmp->GetDef();
 }
 
+PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB){
+    PhiInst *tmp = new PhiInst{BeforeInst};
+    currentBB->push_front(tmp);
+    return tmp;
+}
+
 void Function::push_alloca(Variable* ptr){
     auto obj=bbs.front()->push_alloca(ptr->GetType());
     Singleton<Module>().Register(ptr->get_name(),obj);
@@ -605,3 +610,5 @@ void UndefValue::print(){
     std::cout<<"undef";
     return;
 }
+
+
