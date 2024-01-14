@@ -353,14 +353,16 @@ define i32 @fib(i32 %.4){
 }
 define i32 @main(){
 .25:
-  %.27 = call i32 @getint()
-  store i32 %.27, i32* @.g.x
-  %.29 = load i32, i32* @.g.x
-  %.31 = add i32 %.29, 14
-  %.32 = call i32 @fib(i32 %.31)
-  %.33 = load i32, i32* @.g.x
-  %.35 = add i32 %.33, 3
-  %.36 = call i32 @fib(i32 %.35)
-  %.37 = mul i32 %.32, %.36
-  ret i32 %.37 
+  call void @_sysy_starttime(i32 7)
+  %.30 = call i32 @getint()
+  store i32 %.30, i32* @.g.x
+  call void @_sysy_stoptime(i32 9)
+  %.35 = load i32, i32* @.g.x
+  %.37 = add i32 %.35, 14
+  %.38 = call i32 @fib(i32 %.37)
+  %.39 = load i32, i32* @.g.x
+  %.41 = add i32 %.39, 3
+  %.42 = call i32 @fib(i32 %.41)
+  %.43 = mul i32 %.38, %.42
+  ret i32 %.43 
 }

@@ -459,6 +459,7 @@ void Function::InsertAlloca(AllocaInst* ptr){
 
 BuildInFunction::BuildInFunction(Type* tp,std::string _id):Value(tp){
     name=_id;
+    if(name=="starttime"||name=="stoptime")name="_sysy_"+name;
 }
 
 BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
