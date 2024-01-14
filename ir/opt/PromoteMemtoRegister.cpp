@@ -38,6 +38,9 @@ void PromoteMem2Reg::run() {
       RemoveFromAllocaList(i);
       continue;
     }
+
+    AllocaToIndex[m_Allocas[i]] = i;
+
     std::set<BasicBlock *> DefineBlock(Info.DefineBlocks.begin(),
                                        Info.DefineBlocks.end());
     std::set<BasicBlock *> LiveInBlocks;
@@ -53,6 +56,38 @@ void PromoteMem2Reg::run() {
   }
 
   //下面开始为重命名做准备
+  std::vector<Value *> AllocaDict;
+  for (int x = 0; x < m_Allocas.size(); x++)
+    AllocaDict[x] = UndefValue::get(
+        m_Allocas[x]->GetType()); //首先对所有待处理的Alloca标记为Undef
+
+  std::vector<RenamePass> WorkLists; //采用工作表法，传入EntryBlock
+  WorkLists.emplace_back(Func.front_block(), nullptr, AllocaDict);
+  do {
+    auto tmp = std::move(WorkLists.back()); // FIXME maybe have some problems
+    WorkLists.pop_back();
+    Rename(tmp.CurBlock, tmp.Pred, tmp.IncomingVal, WorkLists);
+  } while (!WorkLists.empty());
+}
+
+void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
+                            std::vector<Value *> &IncomingVal,
+                            std::vector<RenamePass> WorkLists) {
+  while (1) {
+    if (PhiInst *Phi = dynamic_cast<PhiInst *>(BB->front())) {
+      if (PhiToAlloca.count(Phi)) {
+        auto tmp = m_dom.GetNode(Pred->num);
+        int length = std::count(tmp.des.begin(), tmp.des.end(),
+                                BB->num); //找到前驱有几个通往当前BB的Edge
+
+        for(auto Inst=BB->begin();Inst!=BB->end();++Inst){
+          int Allocanum=PhiToAlloca[Phi];
+          Phi->updateIncoming(m_Allocas[Allocanum],BB);
+          
+        }              
+      }
+    }
+  }
 }
 
 bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
@@ -66,7 +101,8 @@ bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
   PhiInst *&Phi = PrePhiNode[index];
   if (Phi)
     return false;
-  Phi = PhiInst::NewPhiNode(bb->front(),bb);//insert into the head of block
+  AllocaInst *target=m_Allocas[AllocaNum];
+  Phi = PhiInst::NewPhiNode(bb->front(), bb,target->GetType()); // insert into the head of block
   PhiToAlloca[Phi] = AllocaNum;
   return true;
 }
@@ -176,14 +212,14 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
       }
     }
     LI->ReplaceAllUsersWith(val); // TODO
-    //LI->EraseFromBlock();         //可以将这个LoadInstruction删除了
+    // LI->EraseFromBlock();         //可以将这个LoadInstruction删除了
     LI->EraseFromParent();
   }
   if (!Info.UsingBlocks.empty())
     return false;
-  //OnlySt->EraseFromBlock(); //结束后删除alloca和store
+  // OnlySt->EraseFromBlock(); //结束后删除alloca和store
   OnlySt->EraseFromParent();
-  //AI->EraseFromBlock();
+  // AI->EraseFromBlock();
   AI->EraseFromParent();
   return true;
 }
