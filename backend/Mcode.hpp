@@ -4,6 +4,7 @@
 #include <variant>
 class MachineInst : public User {
     public: virtual void printinst() = 0;
+    void print() {};  
 };
 class MachineBinaryInst : public MachineInst {
 private:

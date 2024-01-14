@@ -34,18 +34,18 @@ void RegAlloca(Function* function) {
 //打印机器指令
 void PrintCode(Module* Unit) {
     int i = 1;
-    for (auto& Func : Unit->getFuncList()) {
+    for (auto& Func : Unit->GetFuncTion()) {
         //打印每个Func，及栈帧
         MachineFunction* machinefunction = dynamic_cast<MachineFunction*>(Func.get());
-        machinefunction->print_func_name();
-        machinefunction->print_stack_frame();
-        for (auto& Block : Func->getBlockList()) {
+        //machinefunction->print_func_name();
+        //machinefunction->print_stack_frame();
+        for (auto& Block : Func->GetBasicBlock()) {
             //打印每个Block的标签
             MachineBasicBlock* machineblock = dynamic_cast<MachineBasicBlock*>(Block.get());
-            machineblock->print_block_lable(machinefunction->get_func_num());
-            for (auto& Inst : Block->getInstList()) {
+            // machineblock->print_block_lable(machinefunction->get_func_num());
+            for (auto Inst : *Block) {
                 //生成机器指令 
-                MachineInst* machineinst = InstSelect(*Inst.get());
+                MachineInst* machineinst = InstSelect(*Inst);
                 //打印每个Inst
                 machineinst->printinst();
             }
@@ -58,7 +58,7 @@ void PrintCode(Module* Unit) {
 
 //dump出机器指令文本
 void PrintCodeToTxt(Module* unit) {
-    std::ofstream outputFile("output.ll", std::ios::app); // 以追加模式打开文件
+    std::ofstream outputFile("output.a", std::ios::app); // 以追加模式打开文件
     if (outputFile.is_open()) {
         std::cout << "opended successfully" << std::endl;
         // std::cout 重定向到文件
