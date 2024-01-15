@@ -331,3 +331,79 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
+@.g.a = global i32 zeroinitializer
+@.g.b = global i32 zeroinitializer
+define i32 @inc_a(){
+.3:
+  %b_0 = alloca i32
+  %.5 = load i32, i32* @.g.a
+  store i32 %.5, i32* %b_0
+  %.7 = load i32, i32* %b_0
+  %.9 = add i32 %.7, 1
+  store i32 %.9, i32* %b_0
+  %.11 = load i32, i32* %b_0
+  store i32 %.11, i32* @.g.a
+  %.13 = load i32, i32* @.g.a
+  ret i32 %.13 
+}
+define i32 @main(){
+.16:
+  %k_0 = alloca i32
+  store i32 5, i32* %k_0
+  br label %.20wc15 
+.20wc15:
+  %.24 = load i32, i32* %k_0
+  %.26 = icmp sge i32 %.24, 0
+  br i1 %.26, label %.21wloop.15.26, label %.22wn26
+.21wloop.15.26:
+  %.29 = call i32 @inc_a()
+  %.30 = call i32 @inc_a()
+  %.31 = and i32 %.29, %.30
+  %.32 = call i32 @inc_a()
+  %.33 = and i32 %.31, %.32
+  br i32 %.33, label %.34, label %.28
+.22wn26:
+  %.78 = load i32, i32* @.g.a
+  call void @putint(i32 %.78)
+  call void @putch(i32 32)
+  %.82 = load i32, i32* @.g.b
+  call void @putint(i32 %.82)
+  call void @putch(i32 10)
+  %.86 = load i32, i32* @.g.a
+  ret i32 %.86 
+.28:
+  %.48 = call i32 @inc_a()
+  %.50 = icmp slt i32 %.48, 14
+  %.51 = call i32 @inc_a()
+  %.52 = call i32 @inc_a()
+  %.53 = call i32 @inc_a()
+  %.54 = sub i32 %.52, %.53
+  %.56 = add i32 %.54, 1
+  %.57 = and i32 %.51, %.56
+  %.58 = Or i1 %.50, %.57
+  br i1 %.58, label %.59, label %.60
+.34:
+  %.36 = load i32, i32* @.g.a
+  call void @putint(i32 %.36)
+  call void @putch(i32 32)
+  %.42 = load i32, i32* @.g.b
+  call void @putint(i32 %.42)
+  call void @putch(i32 10)
+  br label %.28 
+.47:
+  %.73 = load i32, i32* %k_0
+  %.75 = sub i32 %.73, 1
+  store i32 %.75, i32* %k_0
+  br label %.20wc15 
+.59:
+  %.62 = load i32, i32* @.g.a
+  call void @putint(i32 %.62)
+  call void @putch(i32 10)
+  %.66 = load i32, i32* @.g.b
+  %.68 = mul i32 %.66, 2
+  store i32 %.68, i32* @.g.b
+  br label %.47 
+.60:
+  %.71 = call i32 @inc_a()
+  br label %.47 
+}

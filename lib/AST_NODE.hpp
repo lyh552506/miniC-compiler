@@ -44,15 +44,13 @@ class BaseDef;
 
 class LocType
 {
-    int lineno;
     public:
-    int& begin;
-    int& end;
+    int begin;
+    int end;
     void SET(const LocType&);
     LocType();
     LocType(int);
-    LocType& operator=(const LocType&);
-    LocType(const LocType&);
+    LocType& operator=(const LocType&)=default;
 };
 
 struct GetInstState

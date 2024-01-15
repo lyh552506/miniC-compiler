@@ -1,24 +1,12 @@
 #include "AST_NODE.hpp"
 
-LocType::LocType():begin(lineno),end(lineno){
-    lineno=0;
+LocType::LocType():begin(0),end(0){
 }
 
-LocType::LocType(int _line):begin(lineno),end(lineno){
-    lineno=_line;
-}
-
-LocType::LocType(const LocType& _):begin(lineno),end(lineno){
-    lineno=_.lineno;
-}
+LocType::LocType(int _line):begin(_line),end(_line){}
 
 void LocType::SET(const LocType& _){
-    lineno=_.lineno;
-}
-
-LocType& LocType::operator=(const LocType& _){
-    lineno=_.lineno;
-    return *this;
+    *this=_;
 }
 
 void TypeForward(AST_Type type)
@@ -502,9 +490,9 @@ void ExpStmt::print(int x){
 
 WhileStmt::WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
 BasicBlock* WhileStmt::GetInst(GetInstState state){
-    auto condition_part=state.current_building->GenerateNewBlock("WhileCond");
-    auto inner_loop=state.current_building->GenerateNewBlock("WhileLoop");
-    auto nxt_building=state.current_building->GenerateNewBlock("WhileNext");
+    auto condition_part=state.current_building->GenerateNewBlock("wc"+std::to_string(begin));
+    auto inner_loop=state.current_building->GenerateNewBlock("wloop."+std::to_string(begin)+"."+std::to_string(end));
+    auto nxt_building=state.current_building->GenerateNewBlock("wn"+std::to_string(end));
 
     state.current_building->GenerateUnCondInst(condition_part);
 
