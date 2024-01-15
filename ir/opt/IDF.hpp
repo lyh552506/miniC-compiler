@@ -4,14 +4,17 @@
 
 class IDF{
 private:
+   using NodePair = std::pair<dominance::Node *, int>;
+   using NodeContainer = std::vector<NodePair>;
+   using DTNode=dominance::Node*;
+  
    dominance& m_dom;
    bool uselivein;//是否可以使用livein来进行剪枝
    //bool Level;
    std::set<BasicBlock *>* DefineBlock;
    std::set<BasicBlock *>* LiveInBlocks;
-   std::map<dominance::Node*,unsigned> Level;//记录支配树上的结点的层级
-   std::stack<dominance::Node*> worklists;//深度遍历栈
-   std::map<dominance::Node*,bool> WorklistVisited;
+   std::map<DTNode,unsigned> Level;//记录支配树上的结点的层级
+   std::vector<std::unique_ptr<BasicBlock>> bbs;
 public:
    IDF(dominance& dom):m_dom(dom),uselivein{false}
    {}
@@ -20,8 +23,10 @@ public:
 
    void SetLiveInBlock(std::set<BasicBlock *> LiveInBlock);
 
-   void caculateDTlevel(dominance::Node* node);
+   void SetBBs(std::vector<std::unique_ptr<BasicBlock>>& bbs);
 
-   void caculateIDF(std::vector<BasicBlock*>& PhiBlocks);
+   void caculateDTlevel(DTNode node,int depth);
+
+   void caculateIDF(std::vector<BasicBlock*>& IDFBlocks);
    
 };
