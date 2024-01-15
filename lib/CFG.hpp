@@ -187,7 +187,7 @@ class Function:public Value
     void push_param(Variable*);
     void push_alloca(Variable*);
     std::vector<ParamPtr>& GetParams();
-    std::vector<BasicBlockPtr> GetBasicBlock();
+    std::vector<BasicBlockPtr> GetBasicBlock(){return this->bbs;}
 };
 class Module:public SymbolTable
 {

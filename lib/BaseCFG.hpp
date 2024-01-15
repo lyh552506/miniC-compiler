@@ -55,7 +55,7 @@ class Value
     virtual Type* GetType();
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
-    void RAUW(Value* val);
+    void RAUW(Value* val); //ReplaceAllUseWith
     virtual std::string GetName();
 };
 using Operand=Value*;
