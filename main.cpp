@@ -21,7 +21,7 @@ int main(int argc,char** argv)
     parse();
     Singleton<CompUnit*>()->codegen();
     Singleton<Module>().Test();
-
+    
     // PrintCode(&Singleton<Module>());
     return 0;
 }
