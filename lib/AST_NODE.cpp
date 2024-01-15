@@ -1,5 +1,14 @@
 #include "AST_NODE.hpp"
-/// @brief 最基础的AST_NODE，所有基础特性都应该放里面
+
+LocType::LocType():begin(0),end(0){
+}
+
+LocType::LocType(int _line):begin(_line),end(_line){}
+
+void LocType::SET(const LocType& _){
+    *this=_;
+}
+
 void TypeForward(AST_Type type)
 {
     switch (type)
@@ -135,6 +144,7 @@ void BaseDef::codegen(){
         }
         else
         {
+            if(civ!=nullptr)tmp->attach(civ->GetFirst(nullptr));
             Singleton<Module>().GenerateGlobalVariable(tmp);
         }
     }
@@ -481,14 +491,13 @@ void ExpStmt::print(int x){
 
 WhileStmt::WhileStmt(LOrExp* p1,Stmt* p2):condition(p1),stmt(p2){}
 BasicBlock* WhileStmt::GetInst(GetInstState state){
-    auto condition_part=state.current_building->GenerateNewBlock("WhileCond");
-    auto inner_loop=state.current_building->GenerateNewBlock("WhileLoop");
-    auto nxt_building=state.current_building->GenerateNewBlock("WhileNext");
+    auto condition_part=state.current_building->GenerateNewBlock("wc"+std::to_string(begin));
+    auto inner_loop=state.current_building->GenerateNewBlock("wloop."+std::to_string(begin)+"."+std::to_string(end));
+    auto nxt_building=state.current_building->GenerateNewBlock("wn"+std::to_string(end));
 
     state.current_building->GenerateUnCondInst(condition_part);
 
-    Operand condi_judge=condition->GetOperand(condition_part);
-    condition_part->GenerateCondInst(condi_judge,inner_loop,nxt_building);
+    condition->GetOperand(condition_part,inner_loop,nxt_building);
     GetInstState loop_state={inner_loop,nxt_building,condition_part};
     inner_loop=stmt->GetInst(loop_state);
     if(!inner_loop->EndWithBranch())inner_loop->GenerateUnCondInst(condition_part);
@@ -505,17 +514,14 @@ void WhileStmt::print(int x){
 IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
 BasicBlock* IfStmt::GetInst(GetInstState state){
     BasicBlock* nxt_building=state.current_building->GenerateNewBlock();
-    Operand condi=condition->GetOperand(state.current_building);
-
     auto istrue=state.current_building->GenerateNewBlock();
     BasicBlock* isfalse=nullptr;
     GetInstState t_state=state;t_state.current_building=istrue;
     if(f!=nullptr)
-    {
         isfalse=state.current_building->GenerateNewBlock();
-        state.current_building->GenerateCondInst(condi,istrue,isfalse);
-    }
-    else state.current_building->GenerateCondInst(condi,istrue,nxt_building);
+
+    if(isfalse!=nullptr)condition->GetOperand(state.current_building,istrue,isfalse);
+    else condition->GetOperand(state.current_building,istrue,nxt_building);
 
     auto make_uncond=[&](BasicBlock* tmp){
         if(!tmp->EndWithBranch()){
@@ -572,30 +578,11 @@ void ReturnStmt::print(int x){
     if(return_val!=nullptr)return_val->print(x+1);
 }
 
-FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){
-    auto check_builtin=[](std::string _id){
-        if(_id=="getint")return true;
-        if(_id=="getfloat")return true;
-        if(_id=="getch")return true;
-        if(_id=="getarray")return true;
-        if(_id=="getfarray")return true;        
-        if(_id=="putint")return true;
-        if(_id=="putch")return true;
-        if(_id=="putarray")return true;
-        if(_id=="putfloat")return true;
-        if(_id=="putfarray")return true;
-        if(_id=="starttime")return true;
-        if(_id=="stoptime")return true;
-        if(_id=="putf")return true;
-        return false;
-    };
-    if(check_builtin(id))run_time=yylineno;
-    else run_time=0;
-}
+FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){}
 Operand FunctionCall::GetOperand(BasicBlock* block){
     std::vector<Operand> args;
     if(cp!=nullptr)args=cp->GetParams(block);
-    return block->GenerateCallInst(id,args,run_time);
+    return block->GenerateCallInst(id,args,LocType::begin);
 }
 void FunctionCall::print(int x){
     AST_NODE::print(x);

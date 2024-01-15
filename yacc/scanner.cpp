@@ -849,197 +849,197 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 YY_RULE_SETUP
 #line 79 "lex.l"
-{return yy::parser::make_Y_INT();}
+{return yy::parser::make_Y_INT(LocType(yylineno));}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
 #line 80 "lex.l"
-{return yy::parser::make_Y_FLOAT();}
+{return yy::parser::make_Y_FLOAT(LocType(yylineno));}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
 #line 81 "lex.l"
-{return yy::parser::make_Y_VOID();}
+{return yy::parser::make_Y_VOID(LocType(yylineno));}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
 #line 82 "lex.l"
-{return yy::parser::make_Y_CONST();}
+{return yy::parser::make_Y_CONST(LocType(yylineno));}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
 #line 83 "lex.l"
-{return yy::parser::make_Y_BREAK();}
+{return yy::parser::make_Y_BREAK(LocType(yylineno));}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
 #line 84 "lex.l"
-{return yy::parser::make_Y_WHILE();}
+{return yy::parser::make_Y_WHILE(LocType(yylineno));}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
 #line 85 "lex.l"
-{return yy::parser::make_Y_IF();}
+{return yy::parser::make_Y_IF(LocType(yylineno));}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
 #line 86 "lex.l"
-{return yy::parser::make_Y_ELSE();}
+{return yy::parser::make_Y_ELSE(LocType(yylineno));}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
 #line 87 "lex.l"
-{return yy::parser::make_Y_RETURN();}
+{return yy::parser::make_Y_RETURN(LocType(yylineno));}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
 #line 88 "lex.l"
-{return yy::parser::make_Y_CONTINUE();}
+{return yy::parser::make_Y_CONTINUE(LocType(yylineno));}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
 #line 90 "lex.l"
-{return yy::parser::make_Y_ID(yytext);} 
+{return yy::parser::make_Y_ID(yytext,LocType(yylineno));} 
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
 #line 92 "lex.l"
-{return yy::parser::make_num_FLOAT(std::stof(yytext));}
+{return yy::parser::make_num_FLOAT(std::stof(yytext),LocType(yylineno));}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 #line 93 "lex.l"
-{return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16));}
+{return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16),LocType(yylineno));}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
 #line 94 "lex.l"
-{return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8));}
+{return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8),LocType(yylineno));}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
 #line 95 "lex.l"
-{return yy::parser::make_num_INT(std::stoi(yytext));}
+{return yy::parser::make_num_INT(std::stoi(yytext),LocType(yylineno));}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
 #line 97 "lex.l"
-{return yy::parser::make_Y_ADD();}
+{return yy::parser::make_Y_ADD(LocType(yylineno));}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
 #line 98 "lex.l"
-{return yy::parser::make_Y_SUB();}
+{return yy::parser::make_Y_SUB(LocType(yylineno));}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 #line 99 "lex.l"
-{return yy::parser::make_Y_MUL();}
+{return yy::parser::make_Y_MUL(LocType(yylineno));}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
 #line 100 "lex.l"
-{return yy::parser::make_Y_MODULO();}
+{return yy::parser::make_Y_MODULO(LocType(yylineno));}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 #line 101 "lex.l"
-{return yy::parser::make_Y_DIV();}
+{return yy::parser::make_Y_DIV(LocType(yylineno));}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 #line 102 "lex.l"
-{return yy::parser::make_Y_GREAT();}
+{return yy::parser::make_Y_GREAT(LocType(yylineno));}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
 #line 103 "lex.l"
-{return yy::parser::make_Y_GREATEQ();}
+{return yy::parser::make_Y_GREATEQ(LocType(yylineno));}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
 #line 104 "lex.l"
-{return yy::parser::make_Y_LESS();}
+{return yy::parser::make_Y_LESS(LocType(yylineno));}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
 #line 105 "lex.l"
-{return yy::parser::make_Y_LESSEQ();}
+{return yy::parser::make_Y_LESSEQ(LocType(yylineno));}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
 #line 106 "lex.l"
-{return yy::parser::make_Y_EQ();}
+{return yy::parser::make_Y_EQ(LocType(yylineno));}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
 #line 107 "lex.l"
-{return yy::parser::make_Y_ASSIGN();}
+{return yy::parser::make_Y_ASSIGN(LocType(yylineno));}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
 #line 108 "lex.l"
-{return yy::parser::make_Y_NOTEQ();}
+{return yy::parser::make_Y_NOTEQ(LocType(yylineno));}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
 #line 109 "lex.l"
-{return yy::parser::make_Y_NOT();}
+{return yy::parser::make_Y_NOT(LocType(yylineno));}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
 #line 110 "lex.l"
-{return yy::parser::make_Y_AND();}
+{return yy::parser::make_Y_AND(LocType(yylineno));}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
 #line 111 "lex.l"
-{return yy::parser::make_Y_OR();}
+{return yy::parser::make_Y_OR(LocType(yylineno));}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
 #line 112 "lex.l"
-{return yy::parser::make_Y_LPAR();}
+{return yy::parser::make_Y_LPAR(LocType(yylineno));}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
 #line 113 "lex.l"
-{return yy::parser::make_Y_RPAR();}
+{return yy::parser::make_Y_RPAR(LocType(yylineno));}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
 #line 114 "lex.l"
-{return yy::parser::make_Y_LSQUARE();}
+{return yy::parser::make_Y_LSQUARE(LocType(yylineno));}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
 #line 115 "lex.l"
-{return yy::parser::make_Y_RSQUARE();}
+{return yy::parser::make_Y_RSQUARE(LocType(yylineno));}
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
 #line 116 "lex.l"
-{return yy::parser::make_Y_LBRACKET();}
+{return yy::parser::make_Y_LBRACKET(LocType(yylineno));}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
 #line 117 "lex.l"
-{return yy::parser::make_Y_RBRACKET();}
+{return yy::parser::make_Y_RBRACKET(LocType(yylineno));}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
 #line 118 "lex.l"
-{return yy::parser::make_Y_SEMICOLON();}
+{return yy::parser::make_Y_SEMICOLON(LocType(yylineno));}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
 #line 119 "lex.l"
-{return yy::parser::make_Y_COMMA();}
+{return yy::parser::make_Y_COMMA(LocType(yylineno));}
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
 #line 121 "lex.l"
-{return yy::parser::make_YYEOF();}
+{return yy::parser::make_YYEOF(LocType(yylineno));}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
