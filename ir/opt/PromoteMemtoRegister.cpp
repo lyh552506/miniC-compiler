@@ -358,7 +358,7 @@ bool IsAllocaPromotable(AllocaInst *AI) {
     } else if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
       // if (SI->GetOperand(0) == AI) // can not let the first operand be
                                    // AllocaInst
-         if(SI->Getuselist()[0]->GetValue()==AI)
+      if(SI->Getuselist()[0]->GetValue()==AI)
         return false;
     } else {
       return false;

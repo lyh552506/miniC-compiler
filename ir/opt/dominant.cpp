@@ -29,13 +29,17 @@ void dominance::Init() {
       BasicBlock *des_true = dynamic_cast<BasicBlock *>(uselist[1]->GetValue());
       BasicBlock *des_false =
           dynamic_cast<BasicBlock *>(uselist[2]->GetValue());
+
       node[bb->num].des.push_front(des_true->num);
       node[bb->num].des.push_front(des_false->num);
+
       node[des_true->num].rev.push_front(bb->num);
       node[des_false->num].rev.push_front(bb->num);
+
     } else if (UnCondInst *uncond = dynamic_cast<UnCondInst *>(Inst)) {
       auto uselist = uncond->Getuselist();
       BasicBlock *des = dynamic_cast<BasicBlock *>(uselist[0]->GetValue());
+
       node[bb->num].des.push_front(des->num);
       node[des->num].rev.push_front(bb->num);
     }

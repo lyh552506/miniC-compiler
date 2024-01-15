@@ -113,6 +113,22 @@ class GetElementPtrInst:public User
     Type* GetType();
     void print()final;
 };
+
+class PhiInst : public User {
+public:
+  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {}
+
+  PhiInst(User *BeforeInst):oprandNum(0) {}
+
+  void print() final;
+  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB);
+  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
+  void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
+
+public:
+  std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord;
+  int oprandNum;
+};
 class BasicBlock:public Value,public mylist<BasicBlock,User>
 {
     Function& master;

@@ -580,6 +580,22 @@ Operand BasicBlock::push_alloca(std::string name,Type* _tp){
     return tmp->GetDef();
 }
 
+PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB){
+    PhiInst *tmp = new PhiInst{BeforeInst};
+    currentBB->push_front(tmp);
+    return tmp;
+}
+
+PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty){
+    PhiInst *tmp = new PhiInst{BeforeInst,ty};
+    currentBB->push_front(tmp);
+    return tmp;
+}
+
+void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
+    PhiRecord[oprandNum++]=std::make_pair(Income,BB);
+}
+
 void Function::push_alloca(Variable* ptr){
     auto obj=bbs.front()->push_alloca(ptr->get_name(),ptr->GetType());
     Singleton<Module>().Register(ptr->get_name(),obj);
