@@ -28,6 +28,7 @@ class Use
     /// @brief 注意，调用这个方法的一定是User，所以我加了个鉴权
     void RemoveFromUserList(User* is_valid);
     Value* GetValue();
+    User* GetUser();
     
 };
 /// @brief prepare for Value to quickly find out its User
@@ -37,6 +38,27 @@ class UserList
     public:
     UserList()=default;
     void push_front(Use* _data);
+    class iterator{
+        Use *ptr;
+        public:
+        iterator(Use *_ptr):ptr(_ptr){}
+
+        iterator& operator++(){
+            ptr=ptr->nxt;
+            return *this;
+        }
+
+        iterator& operator--(){
+            ptr=*(ptr->prev);
+            return *this;
+        }
+
+        Use* operator*(){return ptr;}
+        bool operator==(const iterator& other){return ptr==other.ptr;}
+        bool operator!=(const iterator& other){return ptr!=other.ptr;}
+    };
+    iterator begin(){return iterator(head);}
+    iterator end(){return iterator(nullptr);}
 };
 class Value
 {
