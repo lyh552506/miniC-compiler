@@ -144,6 +144,7 @@ void BaseDef::codegen(){
         }
         else
         {
+            if(civ!=nullptr)tmp->attach(civ->GetFirst(nullptr));
             Singleton<Module>().GenerateGlobalVariable(tmp);
         }
     }
@@ -496,8 +497,7 @@ BasicBlock* WhileStmt::GetInst(GetInstState state){
 
     state.current_building->GenerateUnCondInst(condition_part);
 
-    Operand condi_judge=condition->GetOperand(condition_part);
-    condition_part->GenerateCondInst(condi_judge,inner_loop,nxt_building);
+    condition->GetOperand(condition_part,inner_loop,nxt_building);
     GetInstState loop_state={inner_loop,nxt_building,condition_part};
     inner_loop=stmt->GetInst(loop_state);
     if(!inner_loop->EndWithBranch())inner_loop->GenerateUnCondInst(condition_part);
@@ -514,17 +514,14 @@ void WhileStmt::print(int x){
 IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
 BasicBlock* IfStmt::GetInst(GetInstState state){
     BasicBlock* nxt_building=state.current_building->GenerateNewBlock();
-    Operand condi=condition->GetOperand(state.current_building);
-
     auto istrue=state.current_building->GenerateNewBlock();
     BasicBlock* isfalse=nullptr;
     GetInstState t_state=state;t_state.current_building=istrue;
     if(f!=nullptr)
-    {
         isfalse=state.current_building->GenerateNewBlock();
-        state.current_building->GenerateCondInst(condi,istrue,isfalse);
-    }
-    else state.current_building->GenerateCondInst(condi,istrue,nxt_building);
+
+    if(isfalse!=nullptr)condition->GetOperand(state.current_building,istrue,isfalse);
+    else condition->GetOperand(state.current_building,istrue,nxt_building);
 
     auto make_uncond=[&](BasicBlock* tmp){
         if(!tmp->EndWithBranch()){

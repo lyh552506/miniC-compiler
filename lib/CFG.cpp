@@ -137,7 +137,8 @@ void CondInst::print(){
 
 Operand CondInst::GetDef(){return nullptr;}
 
-CallInst::CallInst(Value* _func,std::vector<Operand>& _args):User(_func->GetType()){
+CallInst::CallInst(Value* _func,std::vector<Operand>& _args,std::string appendix):User(_func->GetType()){
+    name+=appendix;
     add_use(_func);
     for(auto&i:_args)
         add_use(i);
@@ -289,6 +290,8 @@ void BinaryInst::print(){
     std::cout<<'\n';
 }
 
+void Variable::attach(Operand _init){attached_initializer=_init;}
+
 Variable::Variable(std::string _id):name(_id){
     tp=Type::NewTypeByEnum(Singleton<InnerDataType>());
 }
@@ -301,6 +304,17 @@ std::string Variable::get_name(){
 }
 
 Type* Variable::GetType(){return tp;}
+
+void Variable::print(){
+    std::cout<<"@.g."<<get_name()<<" = global ";
+    GetType()->print();
+    if(attached_initializer){
+        std::cout<<" ";
+        attached_initializer->print();
+    }
+    else std::cout<<" zeroinitializer";
+    std::cout<<'\n';
+} 
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr){
     add_use(base_ptr);
@@ -479,7 +493,7 @@ BuildInFunction::BuildInFunction(Type* tp,std::string _id):Value(tp){
 
 BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
     static std::map<std::string,BuildInFunction*> mp;
-    auto get_type=[&_id]()->Type*{
+    auto get_type=[&_id]()->Type* {
         if(_id=="getint")return IntType::NewIntTypeGet();
         if(_id=="getfloat")return FloatType::NewFloatTypeGet();
         if(_id=="getch")return IntType::NewIntTypeGet();
@@ -562,7 +576,7 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
             assert(args.size()==0);
             args.push_back(new ConstIRInt(run_time));
         }
-        auto tmp=new CallInst(BuildInFunction::GetBuildInFunction(id),args);
+        auto tmp=new CallInst(BuildInFunction::GetBuildInFunction(id),args,"at"+std::to_string(run_time));
         push_back(tmp);
         return tmp->GetDef();
     }
@@ -574,7 +588,7 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
             auto& ii=*i;auto& jj=*j;
             assert(ii->GetType()==jj->GetType());
         }
-        auto inst=new CallInst(func,args);
+        auto inst=new CallInst(func,args,"at"+std::to_string(run_time));
         push_back(inst);
         return inst->GetDef();
     }
@@ -621,11 +635,7 @@ std::vector<std::unique_ptr<Value>>& Function::GetParams(){
 //         call_back(i.get());
 // }
 void Module::Test(){
-    for(auto &i:globalvaribleptr){
-        std::cout<<"@.g."<<i->get_name()<<" = global ";
-        i->GetType()->print();
-        std::cout<<" zeroinitializer\n";
-    }
+    for(auto &i:globalvaribleptr)i->print();
     for(auto&i:ls)
         i->print();
 }

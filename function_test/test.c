@@ -1,29 +1,14 @@
-
-int a = -1, b = 1;
-
-int inc_a()
-{
-    int b = a;
-    b = b + 1;
-    a = b;
-    return a;
-}
-
-int main()
-{
-    int k = 5;
-    while (k >= 0) {
-        if (inc_a() && inc_a() && inc_a()) {
-            putint(a); putch(32); putint(b); putch(10);
-        }
-        if (inc_a() < 14 || inc_a() && inc_a() - inc_a() + 1) {
-            putint(a); putch(10);
-            b = b * 2;
-        } else {
-            inc_a();
-        }
-        k = k - 1;
+int main() {
+    int a, b;
+    a = 070;
+    b = 0x4;
+    a = a - - 4 + + b;
+    if (+-!!!a) {
+        a = - - -1;
     }
-    putint(a); putch(32); putint(b); putch(10);
-    return a;
+    else {
+        a = 0 + + b;
+    }
+    putint(a);
+    return 0;
 }

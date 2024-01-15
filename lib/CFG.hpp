@@ -6,14 +6,17 @@ class BasicBlock;
 class Function;
 class Variable
 {
+    Operand attached_initializer;
     std::string name;
     Type* tp;
     public:
     Variable(std::string);
     Variable(Type*,std::string);
     Variable(InnerDataType,std::string);
+    void attach(Operand);
     std::string get_name();
     Type* GetType();
+    void print();
 };
 
 class UndefValue:public User{
@@ -79,7 +82,7 @@ class CondInst:public User
 class CallInst:public User
 {
     public:
-    CallInst(Value*,std::vector<Operand>&);
+    CallInst(Value*,std::vector<Operand>&,std::string);
     void print()final;
 };
 class RetInst:public User
