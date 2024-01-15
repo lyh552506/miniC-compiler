@@ -19,8 +19,50 @@ define i32 @fib(i32 %.3){
 }
 define i32 @main(){
 .24:
-  %.26 = call i32 @fib(i32 14)
-  %.28 = call i32 @fib(i32 3)
-  %.29 = mul i32 %.26, %.28
-  ret i32 %.29 
+  %b_0 = alloca i32
+  %a_0 = alloca i32
+  %.28 = call i32 @fib(i32 14)
+  %.30 = call i32 @fib(i32 3)
+  %.31 = mul i32 %.28, %.30
+  ret i32 %.31 
 }
+fib:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    addi s0, sp, 32
+    sw a0, -20(s0)
+InstSelect Error
+InstSelect Error
+error: no such machineinst!
+InstSelect Error
+.LBB0_1:
+InstSelect Error
+.LBB0_2:
+InstSelect Error
+error: no such machineinst!
+InstSelect Error
+InstSelect Error
+error: no such machineinst!
+InstSelect Error
+InstSelect Error
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    addi sp, sp, 32
+    ret
+main:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    addi s0, sp, 32
+    sw a0, -20(s0)
+    sw a1, -24(s0)
+InstSelect Error
+InstSelect Error
+error: no such machineinst!
+InstSelect Error
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    addi sp, sp, 32
+    ret
+Output redirected to file.

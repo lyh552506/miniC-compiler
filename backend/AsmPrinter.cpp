@@ -1,71 +1,56 @@
-#include<iostream>
-#include<fstream>
 #include"AsmPrinter.hpp"
-
 
 //寄存器分配 将剩余的虚拟寄存器分配到机器寄存器
 void RegAlloca(Function* function) {
 }
 
-// //合法化
-// void shift(MachineUnit* unit) {
-//     for (auto& Fun : Singleton<Module>().getFuncList()) {
-//         MachineFunction* machinefunction;
-//         //todo
-//         //匹配生成参数及变量的vector
-//         // machinefunction->addParam();
-//         // machinefunction->addAlloca();
-//         for (auto& Block : Fun->getBlockList()) {
-//             MachineBlock* machineblock;
-//             for (auto& Inst : Block->getInstList()) {
-//                 MachineInst* machineinst;
-//                 //指令选择
-//                 machineinst=InstSelect(Inst);
-//                 machineblock->addInst(machineinst);
-//             }
-//             machinefunction->addBlock(machineblock);
-//             //将栈帧中参数对应虚拟寄存器分配到机器寄存器
-//             shiftpass(machinefunction);
-//         }
-//         unit->addFunction(machinefunction);
-//     }
-// }
-
 //打印机器指令
 void PrintCode(Module* Unit) {
-    int i = 1;
+    int func_num = 0;
     for (auto& Func : Unit->GetFuncTion()) {
+        int block_num = 0;
         //打印每个Func，及栈帧
-        MachineFunction* machinefunction = dynamic_cast<MachineFunction*>(Func.get());
-        //machinefunction->print_func_name();
-        //machinefunction->print_stack_frame();
+        MachineFunction* machinefunction = new MachineFunction(Func.get());
+        if (machinefunction == nullptr) {
+            std::cout << "machinefunction is nullptr" << std::endl;
+        }
+        machinefunction->print_func_name();
+        machinefunction->print_stack_frame();
+        machinefunction->print_stack_offset();
         for (auto& Block : Func->GetBasicBlock()) {
             //打印每个Block的标签
-            MachineBasicBlock* machineblock = dynamic_cast<MachineBasicBlock*>(Block.get());
-            // machineblock->print_block_lable(machinefunction->get_func_num());
+            MachineBasicBlock* machineblock = (MachineBasicBlock*)(Block.get());
+            if (block_num != 0) {
+                machineblock->print_block_lable(func_num, block_num);
+            }
             for (auto Inst : *Block) {
                 //生成机器指令 
                 MachineInst* machineinst = InstSelect(*Inst);
                 //打印每个Inst
-                machineinst->printinst();
+                //machineinst->print();
+
+                //特殊： Alloca 语句
+                //特殊：ret 语句
             }
             //打印每个Block的跳转
-
+            block_num++;
         }
         //打印每个Func的返回
+        machinefunction->print_func_end();
+        func_num++;
     }
 }
 
 //dump出机器指令文本
 void PrintCodeToTxt(Module* unit) {
-    std::ofstream outputFile("output.a", std::ios::app); // 以追加模式打开文件
+    std::ofstream outputFile("output.a", std::ios::out); // 以追加模式打开文件
     if (outputFile.is_open()) {
-        std::cout << "opended successfully" << std::endl;
-        // std::cout 重定向到文件
-        std::streambuf* coutBuffer = std::cout.rdbuf();
-        std::cout.rdbuf(outputFile.rdbuf());
+        //std::cout << "opended successfully" << std::endl;
+        // // std::cout 重定向到文件
+        // std::streambuf* coutBuffer = std::cout.rdbuf();
+        // std::cout.rdbuf(outputFile.rdbuf());
         PrintCode(unit);
-        std::cout.rdbuf(coutBuffer);
+        // std::cout.rdbuf(coutBuffer);
         outputFile.close(); // 关闭文件
         std::cout << "Output redirected to file." << std::endl;
     } else {

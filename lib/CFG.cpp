@@ -544,6 +544,12 @@ void Function::add_block(BasicBlock* __block){
 std::vector<std::unique_ptr<Value>>& Function::GetParams(){
     return params;
 }
+
+std::vector<std::unique_ptr<BasicBlock>>& Function::GetBasicBlock() {
+    return bbs;
+}
+
+
 // void Module::visit(std::function<void(Function*)> call_back){
 //     for(auto&i:ls)
 //         call_back(i.get());
@@ -564,6 +570,11 @@ void Module::GenerateGlobalVariable(Variable* ptr){
     SymbolTable::Register(ptr->get_name(),obj);
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }
+
+std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() {
+    return ls;
+}
+
 
 UndefValue* UndefValue::get(Type *Ty){
     UndefValue *& UV=Undefs[Ty];

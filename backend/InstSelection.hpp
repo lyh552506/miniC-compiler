@@ -1,10 +1,13 @@
 #pragma once
 #include "Mcode.hpp"
 #include "../lib/CFG.hpp"
-#include<iostream>
+#include <variant>
+#include <iostream>
 
-//将参数放进栈帧
-// void MatchAllocaInst(User& inst);
+bool is_int(Operand op);
+bool is_float(Operand op);
+
+//void MatchAllocaInst(User& inst);
 //一条一条翻译
 // MachineStoreInst MatchStoreInst(User& inst);
 // MachineLoadInst MatchLoadInst(User& inst);
@@ -14,6 +17,6 @@
 // User* MatchCondInst(User& inst);
 // User* MatchCallInst(User& inst);
 // User* MatchRetInst(User& inst);
-MachineBinaryInst* MatchBinaryInst(BinaryInst* inst);
-
+MachineInst* ConvertToMachineInst (std::variant<MachineBinaryInst*, MachineCmpInst*>& variant);
+std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* inst);
 MachineInst* InstSelect(User& inst);

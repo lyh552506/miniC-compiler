@@ -7,12 +7,14 @@ class Type
 {
     InnerDataType tp;
     protected:
+    size_t size;
     Type(InnerDataType);
     public:
     static Type* NewTypeByEnum(InnerDataType);
     virtual ~Type()=default;
     virtual void print()=0;
     virtual int get_layer();
+    size_t get_size();
     InnerDataType GetTypeEnum();
 };
 class IntType:public Type
@@ -67,5 +69,6 @@ class ArrayType:public HasSubType
     ArrayType(int,Type*);
     public:
     static ArrayType* NewArrayTypeGet(int,Type*);
+    int GetNumEle();
     void print()final;
 };

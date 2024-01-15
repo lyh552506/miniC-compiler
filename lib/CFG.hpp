@@ -68,7 +68,6 @@ class UnCondInst:public User
     UnCondInst(BasicBlock*);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class CondInst:public User
 {
@@ -76,7 +75,6 @@ class CondInst:public User
     CondInst(Operand,BasicBlock*,BasicBlock*);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class CallInst:public User
 {
@@ -139,7 +137,6 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
     bool EndWithBranch();
-    void ir_mark();
     int dfs;
 };
 class Function:public Value
@@ -153,13 +150,13 @@ class Function:public Value
     public:
     Function(InnerDataType _tp,std::string _id);
     BasicBlock* front_block();
-    void print();
+    virtual void print();
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
     std::string GetName();
     std::vector<ParamPtr>& GetParams();
-    std::vector<BasicBlockPtr> GetBasicBlock();
+    std::vector<BasicBlockPtr>& GetBasicBlock();
 };
 class Module:public SymbolTable
 {
@@ -171,6 +168,6 @@ class Module:public SymbolTable
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
-    std::vector<FunctionPtr> GetFuncTion();
+    std::vector<FunctionPtr>& GetFuncTion();
     void Test();
 };

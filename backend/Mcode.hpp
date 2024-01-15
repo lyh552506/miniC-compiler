@@ -3,14 +3,18 @@
 #include "../lib/CFG.hpp"
 #include <variant>
 class MachineInst : public User {
-    public: virtual void printinst() = 0;
-    void print() {};  
-};
-class MachineBinaryInst : public MachineInst {
-private:
+    protected:
     Operand rd;
     Operand rs1;
     Operand rs2;
+    std::string opcode;
+    public: 
+    MachineInst(std::string opcode);
+    MachineInst(std::string opcode, Operand rd, Operand rs1);
+    MachineInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);
+    void print();
+};
+class MachineBinaryInst : public MachineInst {
 enum Binary_Inst {
     //算数运算
     add, //加法 add rd, rs1, rs2
@@ -45,22 +49,12 @@ enum Binary_Inst {
     // Xor, //按位异或 xor rd, rs1, rs2
     // xori
 };
-    Binary_Inst opcode;
-    std::string oprator;
 public:
-    // MachineBinaryInst(Binary_Inst opcode, Operand rd, Operand rs1, Operand rs2);//imm
-    // friend std::ofstream& operator<<(std::ostream& os, const MachineBinaryInst& inst) {
-    //     os << inst.rd->GetName() << ", " << inst.rs1->GetName() << ", " << inst.rs2->GetName();
-    //     return os;
-    //}
-    MachineBinaryInst(std::string oprator, Operand rd, Operand rs1, Operand rs2);//imm
-
-    //void printmachineinst(std::ofstream &outputFile) ;
-    void print(int&) {};
-    void printinst();
+    MachineBinaryInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);//imm
+    void print() {};
 };
 
-// class MachineLoadInst : public User {
+// class MachineLoadInst : public MachineInst {
 // private:
 //     Operand rd;
 //     Operand offset;
@@ -79,7 +73,7 @@ public:
 //     void printmachineinst(std::ofstream &outputFile) final;
 // };
 
-// class MachineStoreInst : public User {
+// class MachineStoreInst : public MachineInst {
 // private:
 //     Operand rs1;
 //     Operand offset;
@@ -96,7 +90,7 @@ public:
 //     void printmachineinst(std::ofstream &outputFile) final;
 // };
 
-// class MachineBranchInst : public User {
+// class MachineBranchInst : public MachineInst {
 // private:
 //     Operand rs1;
 //     Operand rs2;
@@ -122,7 +116,7 @@ public:
 //     void printmachineinst(std::ofstream &outputFile) final;
 // };
 
-// class MachineJumpInst : public User {
+// class MachineJumpInst : public MachineInst {
 // private:
 //     Operand rd;
 //     Operand rs1;
@@ -143,26 +137,21 @@ public:
 //     void printmachineinst(std::ofstream &outputFile) final;
 // };
 
-// class MachineCmpInst : public User {
-// private:
-//     Operand rd;
-//     Operand rs1;
-//     Operand rs2;
-//     //Operand imm;
-// enum Cmp_Inst {
-//     slt, //有符号比较 slt rd, rs1, rs2
-//     slti,//slti rd, rs1, imm
-//     sltz,//sltz rd, rs1
-//     snez,//sne rd, rs1
-// };
-//     Cmp_Inst opcode;
-// public:
-//     MachineCmpInst(Cmp_Inst opcode, Operand rd, Operand rs1, Operand rs2);//imm
-//     MachineCmpInst(Cmp_Inst opcode, Operand rd, Operand rs1);
-//     void printmachineinst(std::ofstream &outputFile) final;
-// };
+class MachineCmpInst : public MachineInst {
+private:
+enum Cmp_Inst {
+    slt, //有符号比较 slt rd, rs1, rs2
+    slti,//slti rd, rs1, imm
+    sltz,//sltz rd, rs1
+    snez,//sne rd, rs1
+};
+public:
+    MachineCmpInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);//imm
+    MachineCmpInst(std::string opcode, Operand rd, Operand rs1);
+    void print();
+};
 
-// class PseudoInst : public User {
+// class PseudoInst : public MachineInst {
 // private:
 //     Operand rd;
 //     Operand rs1;
@@ -180,22 +169,29 @@ public:
 // };
 
 class MachineBasicBlock :public BasicBlock {
-    int block_num;
     public:
-    void print_block_lable(int func_num);
+    void print_block_lable(int func_num, int block_num);
 };
 
-class MachineFunction : public Function {
-    int func_num;
-    int offset;
-    std::map<std::string, int> offsetMap;
+class MachineFunction {
+    protected:
+    Function* func;
+    size_t offset;
+    int alloca_num;
+    size_t stacksize;
+    std::map<size_t, std::string> offsetMap;
     public:
-    int get_func_num();
-    int get_stack_size();
-    int get_offset(std::string name);
-    //alloca 指令中找name?
-    //临时寄存器能否找到变量名？
-    std::map<std::string, int> set_offset_map(std::string& name, int& offset);
+    MachineFunction(Function* func);
+    void set_offset_map(size_t offset, std::string name);
+    void set_alloca_and_num();
+    void set_stacksize();
+
+    size_t get_offset(std::string name);
+    int get_allocanum();
+    int get_stacksize();
+
     void print_func_name();
     void print_stack_frame();
+    void print_stack_offset();
+    void print_func_end();
 };

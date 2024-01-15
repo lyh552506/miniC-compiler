@@ -1,5 +1,6 @@
 #include "parser.hpp"
 #include "AsmPrinter.hpp"
+
 extern FILE* yyin;
 int main(int argc,char** argv)
 {
@@ -10,6 +11,6 @@ int main(int argc,char** argv)
     Singleton<CompUnit*>()->codegen();
     Singleton<Module>().Test();
 
-    PrintCode(&Singleton<Module>());
+    PrintCodeToTxt(&Singleton<Module>());
     return 0;
 }

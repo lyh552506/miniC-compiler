@@ -1,14 +1,22 @@
 #include"InstSelection.hpp"
 
+bool is_int(Operand op) {
+    if (op->GetType()->GetTypeEnum() == InnerDataType::IR_Value_INT) 
+        return true;
+    else return false;
+}
+bool is_float(Operand op) {
+    if (op->GetType()->GetTypeEnum() == InnerDataType::IR_Value_Float) 
+        return true;
+    else return false;
+}
 //指令选择
 MachineInst* InstSelect(User& inst) {
     MachineInst* machineinst = nullptr;
-    // if (auto Tempinst = dynamic_cast<AllocaInst*>(&inst)) {
-    //     //将参数放进栈帧
-        
-    //     //MachineInst* machineinst = MatchAllocaInst(inst);
-    //     //return machineinst;
-    // }
+     if (auto Tempinst = dynamic_cast<AllocaInst*>(&inst)) {
+        //To Do
+        std::cout << "This is an alloca inst." << std::endl;
+    }
     // else if (auto Tempinst = dynamic_cast<StoreInst*>(inst)) {
     //     MachineStoreInst* machineinst = dynamic_cast<MachineStoreInst*>(inst);
     //     return machineinst;
@@ -38,33 +46,129 @@ MachineInst* InstSelect(User& inst) {
     //     MachineInst* machineinst = MatchRetInst(inst);
     //     return machineinst;
     // }
-    if (auto Tempinst = dynamic_cast<BinaryInst*>(&inst)) {
-        machineinst = (MachineInst*)MatchBinaryInst(Tempinst);
+    // else if (auto Tempinst = dynamic_cast<GetElementPtrInst*>(inst)) {
+    //     MachineInst* machineinst = MatchCallInst(inst);
+    //     MachineInst* machineinst = MatchRetInst(inst);
+    //     return machineinst;
+    // }
+    else if (auto Tempinst = dynamic_cast<BinaryInst*>(&inst)) {
+        machineinst = ConvertToMachineInst(MatchBinaryInst(Tempinst));
     }
     // else if (auto Tempinst = dynamic_cast<RetInst*>(inst)) {
     //     MachineInst* machineinst = MatchRetInst(inst);
     //     return machineinst;
     // }
     else {
-        std::cout << "InstSelect Error" << std::endl;
+        std::cout << "Error: No Such Instruction." << std::endl;
     }
     return machineinst;
 } 
 
-MachineBinaryInst* MatchBinaryInst(BinaryInst* inst) {
+MachineInst* ConvertToMachineInst (std::variant<MachineBinaryInst*, MachineCmpInst*>& variant) {
+    return std::visit([](auto&& arg) -> MachineInst* {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, MachineBinaryInst*>) {
+            return static_cast<MachineInst*>(arg);
+        } else if constexpr (std::is_same_v<T, MachineCmpInst*>) {
+            return static_cast<MachineInst*>(arg);
+        } else {
+            return nullptr;
+        }
+    }, variant);    
+}
+std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* inst) {
     std::string op = inst->GetOperation();
     Operand rd = inst->GetDef();
     //std::vector<std::unique_ptr<Use>> list = inst->Getuselist();
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
     Operand rs2 = (inst->Getuselist())[0]->GetValue();
     if (op == "Op_Add") {
-        MachineBinaryInst* inst = new MachineBinaryInst("add", rd, rs1, rs2);
-        return inst;
+        if (is_int(rs1) && is_int(rs2)) {
+            MachineBinaryInst* inst = new MachineBinaryInst("addw", rd, rs1, rs2);
+            return inst;
+        }
+        else if (0) {
+            //To Do
+            //imm
+        }
     }
+    else if (op == "Op_Sub") {
+        if (is_int(rs1) && is_int(rs2)) {
+            MachineBinaryInst* inst = new MachineBinaryInst("subw", rd, rs1, rs2);
+            return inst;
+        }
+        else if (0) {
+            //To Do
+            //imm
+        }
+    }
+    else if (op == "Op_Mul") {
+        if (is_int(rs1) && is_int(rs2)) {
+            MachineBinaryInst* inst = new MachineBinaryInst("mulw", rd, rs1, rs2);
+            return inst;
+        }
+        else if (0) {
+            //To Do
+            //imm
+        }
+    }    
+    else if (op == "Op_Div") {
+        if (is_int(rs1) && is_int(rs2)) {
+            MachineBinaryInst* inst = new MachineBinaryInst("divw", rd, rs1, rs2);
+            return inst;
+        }
+        else if (0) {
+            //To Do
+            //imm
+        }
+    }      
+    else if (op == "Op_Mod") {
+        if (is_int(rs1) && is_int(rs2)) {
+            MachineBinaryInst* inst = new MachineBinaryInst("remw", rd, rs1, rs2);
+            return inst;
+        }
+        else if (0) {
+            //To Do
+            //imm
+        }
+    }
+    else if (op == "Op_And") {
+        if (is_int(rs1) && is_int(rs2)) {
+            MachineBinaryInst* inst = new MachineBinaryInst("and", rd, rs1, rs2);
+            return inst;
+        }
+        else if (0) {
+            //To Do
+            //imm
+        }
+    }
+    else if (op == "Op_Or") {
+        if (is_int(rs1) && is_int(rs2)) {
+            MachineBinaryInst* inst = new MachineBinaryInst("or", rd, rs1, rs2);
+            return inst;
+        }
+        else if (0) {
+            //To Do
+            //imm
+        }
+    }
+    //To Do 
+    else if (op == "Op_E") {
+        if (is_int(rs1) && is_int(rs2)) {
+            MachineCmpInst* inst = new MachineBinaryInst("eq", rd, rs1, rs2);
+            return inst;
+        }
+        else if (0) {
+            //To Do
+            //imm
+        }
+    }
+    //...
     else {
         std::cout << "error: no such machineinst!" << std::endl; 
-        return 0;
+        //return 0;
     }
+    
 }
 
 
