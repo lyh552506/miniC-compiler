@@ -1,7 +1,7 @@
 #pragma once
 #include <list>
 #include <memory>
-/// @brief 要写什么自己加，最简单的一集
+/// @brief 设计的先发劣势，要写什么自己加，最简单的一集
 /// @tparam T 
 template<typename T>
 class List:public std::list<std::unique_ptr<T>>
@@ -15,4 +15,88 @@ class List:public std::list<std::unique_ptr<T>>
     void push_back(T* data){
         Father::push_back(DataType(data));
     }
+};
+
+template<typename derived_mylist,typename derived_list_node>
+class list_node;
+template<typename derived_mylist,typename derived_list_node>
+class mylist;
+
+template<typename derived_mylist,typename derived_list_node>
+class list_node
+{
+    friend class mylist<derived_mylist,derived_list_node>;
+    
+    derived_list_node* prev;
+    derived_list_node* next;
+    derived_mylist* fat;
+
+    void SetParent(derived_mylist* _fat){fat=_fat;}
+    public:
+    list_node(){
+        this->prev=nullptr;
+        this->next=nullptr;
+    };
+    virtual void EraseFromParent(){
+        if(this->prev!=nullptr)this->prev->next=this->next;
+        if(this->next!=nullptr)this->next->prev=this->prev;
+    }
+    virtual derived_mylist* GetParent(){return this->fat;};
+};
+
+template<typename derived_mylist,typename derived_list_node>
+class mylist
+{
+    derived_list_node* head;
+    derived_list_node* tail;
+    public:
+    class iterator
+    {
+        derived_list_node* ptr;
+        public:
+        iterator(derived_list_node* _ptr):ptr(_ptr){}
+        iterator& operator++(){
+            ptr=ptr->next;
+            return *this;
+        }
+        iterator& operator--(){
+            ptr=ptr->prev;
+            return *this;
+        }
+        derived_list_node* operator*(){return ptr;}
+        bool operator==(const iterator& other){return ptr==other.ptr;}
+        bool operator!=(const iterator& other){return ptr!=other.ptr;}
+    };
+    mylist(){
+        this->head=nullptr;
+        this->tail=nullptr;
+    }
+    virtual iterator begin(){return iterator(this->head);}
+    virtual iterator end(){return iterator(nullptr);}
+    void push_back(derived_list_node* data){
+        data->SetParent(reinterpret_cast<derived_mylist*>(this));
+        if(this->head==nullptr){
+            this->head=data;
+            this->tail=data;
+        }
+        else{
+            this->tail->next=data;
+            data->prev=this->tail;
+            this->tail=data;
+        }
+    }
+    void push_front(derived_list_node* data){
+        data->SetParent(reinterpret_cast<derived_mylist*>(this));
+        if(this->head==nullptr){
+            this->head=data;
+            this->tail=data;
+        }
+        else{
+            this->head->prev=data;
+            data->next=this->head;
+            this->head=data;
+        }
+    }
+    derived_list_node* front(){return this->head;}
+    derived_list_node* back(){return this->tail;}
 };
