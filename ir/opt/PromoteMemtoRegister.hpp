@@ -99,6 +99,7 @@ public:
   Function &Func;
   std::map<int, PhiInst *> PrePhiNode;  //由Block到PhiNode的映射
   std::map<PhiInst *, int> PhiToAlloca; // Phi函数对应的Alloca指令
+  std::set<BasicBlock*> RenameVisited;  //记录重命名时访问过的Block
 };
 
 /// @brief 检验送入的alloca指令能否被promote
