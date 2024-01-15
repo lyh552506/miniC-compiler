@@ -1,6 +1,6 @@
 #pragma once
-#include "dominant.hpp"
 #include "IDF.hpp"
+#include "dominant.hpp"
 
 //记录alloca
 class AllocaInfo {
@@ -37,10 +37,28 @@ struct BlockInfo {
   BlockInfo() : valid{0} {}
 };
 
+struct RenamePass {
+  RenamePass(BasicBlock *CurrentBB, BasicBlock *Pred,
+             std::vector<Value *> &IncomingVal)
+      : CurBlock(CurrentBB), Pred(Pred), IncomingVal(IncomingVal) {}
+
+  RenamePass(RenamePass &&other)
+      : IncomingVal(other.IncomingVal), Pred(other.Pred),
+        CurBlock(other.CurBlock) { //避免重新创建类
+    other.Pred = nullptr;
+    other.CurBlock = nullptr;
+  }
+
+  BasicBlock *CurBlock;
+  BasicBlock *Pred;
+  std::vector<Value *> &IncomingVal;
+};
+
 class PromoteMem2Reg {
 public:
-  PromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas)
-      : m_dom(dom), DeadAlloca(0), SingleStore(0),
+  PromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas,
+                 Function &func)
+      : m_dom(dom), DeadAlloca(0), SingleStore(0), Func(func),
         m_Allocas(Allocas.begin(),
                   Allocas.end()) //不能直接赋值，这样会转移所有权
   {}
@@ -53,10 +71,10 @@ public:
   bool Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
                               BlockInfo &BBInfo);
   /// @brief 插入phi之前先进行一波预处理，避免一些无效插入
-  void
-  PreWorkingAfterInsertPhi(std::set<BasicBlock *> &DefineBlock,
-                           BlockInfo &BBInfo, AllocaInfo &Info, AllocaInst *AI,
-                           std::set<BasicBlock *> &LiveInBlocks); // TODO
+  void PreWorkingAfterInsertPhi(std::set<BasicBlock *> &DefineBlock,
+                                BlockInfo &BBInfo, AllocaInfo &Info,
+                                AllocaInst *AI,
+                                std::set<BasicBlock *> &LiveInBlocks);
   /// @brief
   /// 当这个alloca只有一个store语句，被定义基本块所支配的所有LOAD都要被替换为STORE语句中的那个右值
   bool RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
@@ -64,10 +82,24 @@ public:
   /// @brief 计算指令的index
   int CaculateIndex(BasicBlock *CurBlock, User *use);
 
+  /// @brief 此处的插入phi函数只是先暂且插入一个空壳
+  // eg：%1 = PHI i32
+  bool InsertPhiNode(BasicBlock *bb, int AllocaNum);
+
+  /// @brief 进一步的设置phi的incoming值，以及重命名
+  void Rename(BasicBlock *BB, BasicBlock *Pred,
+              std::vector<Value *> &IncomingVal,
+              std::vector<RenamePass> WorkLists);
+
   dominance &m_dom;
-  std::vector<AllocaInst *> m_Allocas;
-  int DeadAlloca;  // Number of dead alloca's removed
+  std::vector<AllocaInst *> m_Allocas;       // index->AllocaInst的映射
+  std::map<AllocaInst *, int> AllocaToIndex; // AllocaInst->index的映射
+  int DeadAlloca;                            // Number of dead alloca's removed
   int SingleStore; // Number of alloca's promoted with a single store
+  Function &Func;
+  std::map<int, PhiInst *> PrePhiNode;  //由Block到PhiNode的映射
+  std::map<PhiInst *, int> PhiToAlloca; // Phi函数对应的Alloca指令
+  std::set<BasicBlock*> RenameVisited;  //记录重命名时访问过的Block
 };
 
 /// @brief 检验送入的alloca指令能否被promote
@@ -77,10 +109,11 @@ bool IsAllocaPromotable(AllocaInst *AI);
 int PromoteMem2Reg::CaculateIndex(BasicBlock *CurBlock, User *use) {
   int index = 0;
   std::vector<std::pair<User *, int>> InstNum;
-  for (auto &Instructs : CurBlock->GetInsts()) {
-    User *user = Instructs.get();
+  for (auto Instructs : *CurBlock) {
+    User *user = Instructs;
     // TODO
   }
 }
 
-void RunPromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas);
+void RunPromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas,
+                       Function &func);

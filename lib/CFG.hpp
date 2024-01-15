@@ -79,9 +79,8 @@ class CondInst:public User
 class CallInst:public User
 {
     public:
-    CallInst(Function*,std::vector<Operand>&);
+    CallInst(Value*,std::vector<Operand>&);
     void print()final;
-    void ir_mark();
 };
 class RetInst:public User
 {
@@ -90,7 +89,6 @@ class RetInst:public User
     RetInst(Operand);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class BinaryInst:public User
 {
@@ -115,6 +113,22 @@ class GetElementPtrInst:public User
     Type* GetType();
     void print()final;
 };
+
+class PhiInst : public User {
+public:
+  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {}
+
+  PhiInst(User *BeforeInst):oprandNum(0) {}
+
+  void print() final;
+  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB);
+  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
+  void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
+
+public:
+  std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord;
+  int oprandNum;
+};
 class BasicBlock:public Value,public mylist<BasicBlock,User>
 {
     Function& master;
@@ -132,16 +146,33 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);
     void GenerateRetInst();
-    Operand GenerateCallInst(std::string,std::vector<Operand> args);
+    Operand GenerateCallInst(std::string,std::vector<Operand>,int);
     void GenerateStoreInst(Operand,Operand);
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
+    BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
     int dfs;
+    int num;
 };
+
+class ExternFunction:public Value
+{
+    public:
+    ExternFunction(std::string);
+    void print();
+    std::string GetName();
+};
+
+class BuildInFunction:public Value
+{
+    BuildInFunction(Type*,std::string);
+    public:
+    static BuildInFunction* GetBuildInFunction(std::string);
+};
+
 class Function:public Value
 {
-    std::string name;
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
@@ -154,7 +185,6 @@ class Function:public Value
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
-    std::string GetName();
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlockPtr>& GetBasicBlock();
 };

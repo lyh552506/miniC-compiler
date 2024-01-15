@@ -16,7 +16,7 @@ class SymbolTable
     }
     void layer_decrease(){
         for(auto &i:rec.back())
-            while(!i->empty())i->pop();
+            if(!i->empty())i->pop();
         rec.pop_back();
     }
     Value* GetValueByName(std::string name){

@@ -1,47 +1,15 @@
 #include "LivenessAnalysis.hpp"
 #include <algorithm>
-#include <iostream>
-
-void LivenessAnalysis::pass(Function* func)
-{
-  for(auto &BB:func->getBlockList())
-  {
-    GetBlockLiveout(BB.get());
-    GetBlockLivein(BB.get());
-  }
-  iterate(func);
-  PrintLiveness_Analysis(func);
-}
-void LivenessAnalysis::PrintLiveness_Analysis(Function* func)
-{
-    std::cout<<"---------LivenessAnalysis_Result---------"<<std::endl;
-    std::cout<<"\n";
-    for(auto &_block:func->getBlockList())
-    {
-      std::cout<<"---------Current Block Livein ---------"<<std::endl;
-      for(auto _print:BlockLivein[_block.get()])
-      {
-        _print->print();
-      }
-      std::cout<<"\n";
-      std::cout<<"---------Current Block Liveout ---------"<<std::endl;
-      for(auto _print:BlockLiveout[_block.get()])
-      {
-        _print->print();
-      }
-      std::cout<<"\n";
-    }
-
-}
+#include <map>
 
 void LivenessAnalysis::GetBlockLivein(BasicBlock* block)
 {
-  for(auto inst = block->getInstList().rbegin();inst != block->getInstList().rend(); ++inst)
+  for(auto inst = block->rbegin();inst != block->rend(); --inst)
   {
     for(auto &usePtr:(*inst)->Getuselist())
     {
       Value* useValue = usePtr->GetValue();
-      BlockLivein[block].insert(useValue);
+      BlockLivein[block].insert(useValue); 
     }
     Value* DefValue = (*inst)->GetDef();
     BlockLivein[block].erase(DefValue);
@@ -54,7 +22,6 @@ void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
   if(auto _CondInst = dynamic_cast<CondInst *>(inst))
   {
     auto &_Use = inst->Getuselist(); 
-    BlockLivein[block].insert(_Use[1]->GetValue());
     auto _block_Succ1 = dynamic_cast<BasicBlock *>(_Use[1]->GetValue());
     auto _block_Succ2 = dynamic_cast<BasicBlock *>(_Use[2]->GetValue());
     BlockLiveout[block].insert(BlockLivein[_block_Succ1].begin(), BlockLivein[_block_Succ1].end());
@@ -63,44 +30,53 @@ void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
   if(auto _UnCondInst = dynamic_cast<UnCondInst *>(inst))
   {
     auto &_Use = inst->Getuselist();
-    auto _block_Pred = dynamic_cast<BasicBlock *>(_Use[0]->GetValue());
-    BlockLiveout[block].insert(BlockLivein[_block_Pred].begin(),BlockLivein[_block_Pred].end());
+    auto _block_Succ = dynamic_cast<BasicBlock *>(_Use[0]->GetValue());
+    BlockLiveout[block].insert(BlockLivein[_block_Succ].begin(),BlockLivein[_block_Succ].end());
   }
 }
 
-
-void LivenessAnalysis::iterate(Function* func)
+void LivenessAnalysis::pass(Function *func)
 {
-  std::set<BasicBlock*> worklist;
-  for(auto &block : func->getBlockList())
+  for(auto &_block:func->GetBasicBlock())
   {
-    auto _block = block.get();
-    BlockLivein[_block].clear();
-    worklist.insert(_block);
+    BlockLivein[_block.get()].clear();
+    BlockLiveout[_block.get()].clear();
+    GetBlockLivein(_block.get());
+    GetBlockLiveout(_block.get());
   }
+  iterate(func); 
+  while(isChanged)
+    iterate(func);
+}
 
-  while(!worklist.empty())
+void LivenessAnalysis::iterate(Function *func)
+{
+  RunOnFunction(func);  
+  bool isChanged = false;
+  for(auto &_block:func->GetBasicBlock())
   {
-    auto _block = *worklist.begin();
-    worklist.erase(worklist.begin());
-    BlockLiveout[_block].clear();
-    auto old_BlockLivein = BlockLivein[_block];
-    GetBlockLiveout(_block);
-    GetBlockLivein(_block);
-    if(old_BlockLivein != BlockLivein[_block])
+    if(!UnChanged[_block.get()])
     {
-      auto inst = _block->back();
-      if(auto _CondInst = dynamic_cast<CondInst*>(inst))
-        {
-          auto &_Use = inst->Getuselist();
-          worklist.insert(dynamic_cast<BasicBlock*>(_Use[1]->GetValue()));
-          worklist.insert(dynamic_cast<BasicBlock*>(_Use[2]->GetValue()));
-        }
-      if(auto _UnCondInst = dynamic_cast<UnCondInst*>(inst))
-      {
-        auto &_Use = inst->Getuselist();
-        worklist.insert(dynamic_cast<BasicBlock*>(_Use[0]->GetValue()));
-      }
+      isChanged = true;
+      break;
     }
   }
+}
+
+void LivenessAnalysis::RunOnFunction(Function *func)
+{
+  auto _block = func->GetBasicBlock();
+  for(auto __block = _block.rbegin(); __block != _block.rend(); ++__block)
+  {
+    auto _Block = (*__block).get();
+    auto old_BlockLivein = BlockLivein[_Block];
+    auto old_BlockLiveout = BlockLiveout[_Block];
+    GetBlockLiveout(_Block);
+    BlockLivein[_Block] = BlockLiveout[_Block];
+    GetBlockLivein(_Block);
+    if(BlockLivein[_Block] == old_BlockLivein)
+      UnChanged[_Block] = true;
+    else
+      UnChanged[_Block] = false;
+}
 }

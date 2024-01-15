@@ -73,6 +73,8 @@ class mylist
     }
     virtual iterator begin(){return iterator(this->head);}
     virtual iterator end(){return iterator(nullptr);}
+    virtual iterator rbegin(){return iterator(this->tail);}
+    virtual iterator rend(){return iterator(nullptr);}
     void push_back(derived_list_node* data){
         data->SetParent(reinterpret_cast<derived_mylist*>(this));
         if(this->head==nullptr){
