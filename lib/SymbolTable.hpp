@@ -16,7 +16,7 @@ class SymbolTable
     }
     void layer_decrease(){
         for(auto &i:rec.back())
-            while(!i->empty())i->pop();
+            if(!i->empty())i->pop();
         rec.pop_back();
     }
     Value* GetValueByName(std::string name){
@@ -30,5 +30,9 @@ class SymbolTable
         if(!rec.empty())rec.back().push_back(i.get());
         /// @todo 函数重定义是科学的
         i->push(val);
+    }
+    int IR_number(std::string str){
+        static std::unordered_map<std::string,int> cnt;
+        return cnt[str]++;
     }
 };

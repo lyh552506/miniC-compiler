@@ -1,4 +1,5 @@
 %option outfile="scanner.cpp" header-file="scanner.hpp"
+%option yylineno
 
 %{
 #define YY_DECL yy::parser::symbol_type yylex(void)

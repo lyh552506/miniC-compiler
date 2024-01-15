@@ -39,27 +39,26 @@ class UserList
 };
 class Value
 {
+    friend class Module;
     /// @brief 存储所有的User
     UserList userlist;
     protected:
+    std::string name;
     Type* tp;
     public:
     virtual ~Value()=default;
     Value()=delete;
-    Value(Type* _tp);
-    /// @brief 为dump出ll作准备
-    void print();    
-    /// @brief Type System还在被批判的过程中 
+    Value(Type*);
+    void print();
     InnerDataType GetTypeEnum();
     virtual Type* GetType();
-    /// @brief  
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
-    virtual void ir_mark();
     void RAUW(Value* val);
+    virtual std::string GetName();
 };
 using Operand=Value*;
-class User:public Value
+class User:public Value,public list_node<BasicBlock,User>
 {
     using UsePtr=std::unique_ptr<Use>;
     protected:
@@ -70,9 +69,7 @@ class User:public Value
     User();
     User(Type* tp);
     virtual Operand GetDef();
-    void ir_mark();
-    virtual void EraseFromBlock();
-    virtual BasicBlock* GetParent();
+    std::vector<UsePtr>& Getuselist(){return this->uselist;}
 };
 class ConstIRInt:public Value
 {

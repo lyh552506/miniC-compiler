@@ -5,13 +5,10 @@ message(${CMAKE_CXX_FLAGS})
 
 project(SYSY-compiler VERSION 0.1.0 LANGUAGES C CXX)
 
-
-
 include(CTest)
 enable_testing()
 
 add_executable(SYSY-compiler main.cpp)
-
 add_subdirectory(${PROJECT_SOURCE_DIR}/yacc)
 #add_subdirectory(${PROJECT_SOURCE_DIR}/back_end)
 #add_subdirectory(${PROJECT_SOURCE_DIR}/ir)
