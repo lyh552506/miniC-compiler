@@ -1,14 +1,25 @@
+int deepWhileBr(int a, int b) {
+  int c;
+  c = a + b;
+  while (c < 75) {
+    int d;
+    d = 42;
+    if (c < 100) {
+      c = c + d;
+      if (c > 99) {
+        int e;
+        e = d * 2;
+        if (1 == 1) {
+          c = e * 2;
+        }
+      }
+    }
+  }
+  return (c);
+}
+
 int main() {
-    int a, b;
-    a = 070;
-    b = 0x4;
-    a = a - - 4 + + b;
-    if (+-!!!a) {
-        a = - - -1;
-    }
-    else {
-        a = 0 + + b;
-    }
-    putint(a);
-    return 0;
+  int p;
+  p = 2;
+  return deepWhileBr(p, p);
 }

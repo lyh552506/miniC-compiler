@@ -195,7 +195,7 @@ bool check_binary_boolean(BinaryInst::Operation op){
     }
 }
 
-BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(check_binary_boolean(__op)?BoolType::NewBoolTypeGet():_A->GetType()){
+BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(check_binary_boolean(__op)?BoolType::NewBoolTypeGet():_B->GetType()){
     op=__op;
     add_use(_A);
     add_use(_B);
@@ -282,7 +282,7 @@ void BinaryInst::print(){
     default:
         break;
     }
-    uselist[0]->GetValue()->GetType()->print();
+    uselist[1]->GetValue()->GetType()->print();
     std::cout<<" ";
     uselist[0]->GetValue()->print();
     std::cout<<", ";

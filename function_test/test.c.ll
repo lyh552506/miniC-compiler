@@ -331,104 +331,63 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.g = global i32 0
-define i32 @func(i32 %.5){
-.3:
-  %n_0 = alloca i32
-  store i32 %.5, i32* %n_0
-  %.7 = load i32, i32* @.g.g
-  %.8 = load i32, i32* %n_0
-  %.9 = add i32 %.7, %.8
-  store i32 %.9, i32* @.g.g
-  %.11 = load i32, i32* @.g.g
-  call void @putint(i32 %.11)
-  %.14 = load i32, i32* @.g.g
-  ret i32 %.14 
+define i32 @deepWhileBr(i32 %.3, i32 %.6){
+.1:
+  %e_0 = alloca i32
+  %d_0 = alloca i32
+  %c_0 = alloca i32
+  %b_0 = alloca i32
+  %a_0 = alloca i32
+  store i32 %.3, i32* %a_0
+  store i32 %.6, i32* %b_0
+  %.9 = load i32, i32* %a_0
+  %.10 = load i32, i32* %b_0
+  %.11 = add i32 %.9, %.10
+  store i32 %.11, i32* %c_0
+  br label %.13wc4 
+.13wc4:
+  %.17 = load i32, i32* %c_0
+  %.19 = icmp slt i32 %.17, 75
+  br i1 %.19, label %.14wloop.4.17, label %.15wn17
+.14wloop.4.17:
+  store i32 42, i32* %d_0
+  %.26 = load i32, i32* %c_0
+  %.28 = icmp slt i32 %.26, 100
+  br i1 %.28, label %.25, label %.24
+.15wn17:
+  %.59 = load i32, i32* %c_0
+  ret i32 %.59 
+.24:
+  br label %.13wc4 
+.25:
+  %.30 = load i32, i32* %c_0
+  %.31 = load i32, i32* %d_0
+  %.32 = add i32 %.30, %.31
+  store i32 %.32, i32* %c_0
+  %.36 = load i32, i32* %c_0
+  %.38 = icmp sgt i32 %.36, 99
+  br i1 %.38, label %.35, label %.34
+.34:
+  br label %.24 
+.35:
+  %.41 = load i32, i32* %d_0
+  %.43 = mul i32 %.41, 2
+  store i32 %.43, i32* %e_0
+  br i1 1, label %.46, label %.45
+.45:
+  br label %.34 
+.46:
+  %.51 = load i32, i32* %e_0
+  %.53 = mul i32 %.51, 2
+  store i32 %.53, i32* %c_0
+  br label %.45 
 }
 define i32 @main(){
-.17:
-  %i_0 = alloca i32
-  %.20at11 = call i32 @getint()
-  store i32 %.20at11, i32* %i_0
-  %.25 = load i32, i32* %i_0
-  %.27 = icmp sgt i32 %.25, 10
-  br i1 %.27, label %.28, label %.24
-.22:
-  %.41at13 = call i32 @getint()
-  store i32 %.41at13, i32* %i_0
-  %.46 = load i32, i32* %i_0
-  %.48 = icmp sgt i32 %.46, 11
-  br i1 %.48, label %.49, label %.45
-.23:
-  store i32 1, i32* %i_0
-  br label %.22 
-.24:
-  store i32 0, i32* %i_0
-  br label %.22 
-.28:
-  %.30 = load i32, i32* %i_0
-  %.31at12 = call i32 @func(i32 %.30)
-  %.33 = icmp ne i32 %.31at12, 0
-  br i1 %.33, label %.23, label %.24
-.43:
-  %.62at15 = call i32 @getint()
-  store i32 %.62at15, i32* %i_0
-  %.68 = load i32, i32* %i_0
-  %.70 = icmp sle i32 %.68, 99
-  br i1 %.70, label %.65, label %.67
-.44:
-  store i32 1, i32* %i_0
-  br label %.43 
-.45:
-  store i32 0, i32* %i_0
-  br label %.43 
-.49:
-  %.51 = load i32, i32* %i_0
-  %.52at14 = call i32 @func(i32 %.51)
-  %.54 = icmp ne i32 %.52at14, 0
-  br i1 %.54, label %.44, label %.45
-.64:
-  %.83at17 = call i32 @getint()
-  store i32 %.83at17, i32* %i_0
-  %.89 = load i32, i32* %i_0
-  %.91 = icmp sle i32 %.89, 100
-  br i1 %.91, label %.86, label %.88
-.65:
-  store i32 1, i32* %i_0
-  br label %.64 
-.66:
-  store i32 0, i32* %i_0
-  br label %.64 
-.67:
-  %.72 = load i32, i32* %i_0
-  %.73at16 = call i32 @func(i32 %.72)
-  %.75 = icmp ne i32 %.73at16, 0
-  br i1 %.75, label %.65, label %.66
-.85:
-  %.108at19 = call i32 @func(i32 99)
-  %.110 = icmp eq i32 0, %.108at19
-  br i1 %.110, label %.111, label %.106
-.86:
-  store i32 1, i32* %i_0
-  br label %.85 
-.87:
-  store i32 0, i32* %i_0
-  br label %.85 
-.88:
-  %.93 = load i32, i32* %i_0
-  %.94at18 = call i32 @func(i32 %.93)
-  %.96 = icmp ne i32 %.94at18, 0
-  br i1 %.96, label %.86, label %.87
-.104:
-  ret i32 0 
-.105:
-  store i32 1, i32* %i_0
-  br label %.104 
-.106:
-  store i32 0, i32* %i_0
-  br label %.104 
-.111:
-  %.114at19 = call i32 @func(i32 100)
-  %.116 = icmp ne i32 %.114at19, 0
-  br i1 %.116, label %.105, label %.106
+.62:
+  %p_0 = alloca i32
+  store i32 2, i32* %p_0
+  %.66 = load i32, i32* %p_0
+  %.67 = load i32, i32* %p_0
+  %.68at24 = call i32 @deepWhileBr(i32 %.66, i32 %.67)
+  ret i32 %.68at24 
 }
