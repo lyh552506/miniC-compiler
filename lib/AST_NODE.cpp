@@ -1,5 +1,14 @@
 #include "AST_NODE.hpp"
-/// @brief 最基础的AST_NODE，所有基础特性都应该放里面
+
+LocType::LocType():lineno(0),begin(lineno),end(lineno){}
+
+LocType::LocType(int _line):lineno(_line),begin(lineno),end(lineno){}
+
+LocType& LocType::operator=(const LocType& _){
+    lineno=_.lineno;
+    return *this;
+}
+
 void TypeForward(AST_Type type)
 {
     switch (type)
@@ -589,7 +598,7 @@ FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){
         if(_id=="putf")return true;
         return false;
     };
-    if(check_builtin(id))run_time=yylineno;
+    if(check_builtin(id))run_time=LocType::begin;
     else run_time=0;
 }
 Operand FunctionCall::GetOperand(BasicBlock* block){

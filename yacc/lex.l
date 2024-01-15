@@ -76,49 +76,49 @@ Sharp "#"
 %x COMMENT
 
 %%
-{T_int} {return yy::parser::make_Y_INT();}
-{T_float} {return yy::parser::make_Y_FLOAT();}
-{T_void} {return yy::parser::make_Y_VOID();}
-{T_const} {return yy::parser::make_Y_CONST();}
-{T_break} {return yy::parser::make_Y_BREAK();}
-{T_while} {return yy::parser::make_Y_WHILE();}
-{T_if} {return yy::parser::make_Y_IF();}
-{T_else} {return yy::parser::make_Y_ELSE();}
-{T_return} {return yy::parser::make_Y_RETURN();}
-{T_continue} {return yy::parser::make_Y_CONTINUE();}
+{T_int} {return yy::parser::make_Y_INT(LocType(yylineno));}
+{T_float} {return yy::parser::make_Y_FLOAT(LocType(yylineno));}
+{T_void} {return yy::parser::make_Y_VOID(LocType(yylineno));}
+{T_const} {return yy::parser::make_Y_CONST(LocType(yylineno));}
+{T_break} {return yy::parser::make_Y_BREAK(LocType(yylineno));}
+{T_while} {return yy::parser::make_Y_WHILE(LocType(yylineno));}
+{T_if} {return yy::parser::make_Y_IF(LocType(yylineno));}
+{T_else} {return yy::parser::make_Y_ELSE(LocType(yylineno));}
+{T_return} {return yy::parser::make_Y_RETURN(LocType(yylineno));}
+{T_continue} {return yy::parser::make_Y_CONTINUE(LocType(yylineno));}
 
-{identifier} {return yy::parser::make_Y_ID(yytext);} 
+{identifier} {return yy::parser::make_Y_ID(yytext,LocType(yylineno));} 
 
-{FLOAT} {return yy::parser::make_num_FLOAT(std::stof(yytext));}
-{HEX} {return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16));}
-{OCTAL} {return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8));}
-{DECIMAL} {return yy::parser::make_num_INT(std::stoi(yytext));}
+{FLOAT} {return yy::parser::make_num_FLOAT(std::stof(yytext),LocType(yylineno));}
+{HEX} {return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16),LocType(yylineno));}
+{OCTAL} {return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8),LocType(yylineno));}
+{DECIMAL} {return yy::parser::make_num_INT(std::stoi(yytext),LocType(yylineno));}
 
-{ADD} {return yy::parser::make_Y_ADD();}
-{DEL} {return yy::parser::make_Y_SUB();}
-{MUL} {return yy::parser::make_Y_MUL();}
-{MOD} {return yy::parser::make_Y_MODULO();}
-{DIV} {return yy::parser::make_Y_DIV();}
-{BIG} {return yy::parser::make_Y_GREAT();}
-{BIG_Equ} {return yy::parser::make_Y_GREATEQ();}
-{SMALL} {return yy::parser::make_Y_LESS();}
-{SMALL_Equ} {return yy::parser::make_Y_LESSEQ();}
-{EquEqu} {return yy::parser::make_Y_EQ();}
-{Equ} {return yy::parser::make_Y_ASSIGN();}
-{NotEqu} {return yy::parser::make_Y_NOTEQ();}
-{NOT} {return yy::parser::make_Y_NOT();}
-{AND} {return yy::parser::make_Y_AND();}
-{OR} {return yy::parser::make_Y_OR();}
-"(" {return yy::parser::make_Y_LPAR();}
-")"	{return yy::parser::make_Y_RPAR();}
-"["	{return yy::parser::make_Y_LSQUARE();}
-"]"	{return yy::parser::make_Y_RSQUARE();}
-"{"	{return yy::parser::make_Y_LBRACKET();}
-"}"	{return yy::parser::make_Y_RBRACKET();}
-{Colon} {return yy::parser::make_Y_SEMICOLON();}
-{Comma} {return yy::parser::make_Y_COMMA();}
+{ADD} {return yy::parser::make_Y_ADD(LocType(yylineno));}
+{DEL} {return yy::parser::make_Y_SUB(LocType(yylineno));}
+{MUL} {return yy::parser::make_Y_MUL(LocType(yylineno));}
+{MOD} {return yy::parser::make_Y_MODULO(LocType(yylineno));}
+{DIV} {return yy::parser::make_Y_DIV(LocType(yylineno));}
+{BIG} {return yy::parser::make_Y_GREAT(LocType(yylineno));}
+{BIG_Equ} {return yy::parser::make_Y_GREATEQ(LocType(yylineno));}
+{SMALL} {return yy::parser::make_Y_LESS(LocType(yylineno));}
+{SMALL_Equ} {return yy::parser::make_Y_LESSEQ(LocType(yylineno));}
+{EquEqu} {return yy::parser::make_Y_EQ(LocType(yylineno));}
+{Equ} {return yy::parser::make_Y_ASSIGN(LocType(yylineno));}
+{NotEqu} {return yy::parser::make_Y_NOTEQ(LocType(yylineno));}
+{NOT} {return yy::parser::make_Y_NOT(LocType(yylineno));}
+{AND} {return yy::parser::make_Y_AND(LocType(yylineno));}
+{OR} {return yy::parser::make_Y_OR(LocType(yylineno));}
+"(" {return yy::parser::make_Y_LPAR(LocType(yylineno));}
+")"	{return yy::parser::make_Y_RPAR(LocType(yylineno));}
+"["	{return yy::parser::make_Y_LSQUARE(LocType(yylineno));}
+"]"	{return yy::parser::make_Y_RSQUARE(LocType(yylineno));}
+"{"	{return yy::parser::make_Y_LBRACKET(LocType(yylineno));}
+"}"	{return yy::parser::make_Y_RBRACKET(LocType(yylineno));}
+{Colon} {return yy::parser::make_Y_SEMICOLON(LocType(yylineno));}
+{Comma} {return yy::parser::make_Y_COMMA(LocType(yylineno));}
 
-<<EOF>>  {return yy::parser::make_YYEOF();}
+<<EOF>>  {return yy::parser::make_YYEOF(LocType(yylineno));}
 
 "//".*        {}
 "/*" {BEGIN COMMENT;}

@@ -11,9 +11,9 @@ extern yy::parser::symbol_type yylex();
 namespace yy
 {
   // Report an error to the user.
-  auto parser::error (const std::string& msg) -> void
+  auto parser::error (location_type const& loc,const std::string& msg) -> void
   {
-    std::cerr << msg << '\n';
+    std::cerr <<loc.begin <<" "<< msg << '\n';
   }
 }
 }
@@ -30,6 +30,8 @@ namespace yy
 //生成header,flex需要用Bison++自动定义的类
 %header "parser.hpp"
 %output "parser.cpp"
+%locations
+%define api.location.type {LocType}
 // %no-lines
 //token的enum前缀
 

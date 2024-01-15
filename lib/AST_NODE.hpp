@@ -7,7 +7,7 @@
 #include "MagicEnum.hpp"
 #include "CFG.hpp"
 
-extern int yylineno;
+// extern int yylineno;
 
 enum AST_Type
 {
@@ -42,6 +42,17 @@ class FunctionCall;
 template<typename T>class ConstValue;
 class BaseDef;
 
+class LocType
+{
+    int lineno;
+    public:
+    int& begin;
+    int& end;
+    LocType();
+    LocType(int);
+    LocType& operator=(const LocType&);
+};
+
 struct GetInstState
 {
     BasicBlock* current_building;
@@ -50,7 +61,7 @@ struct GetInstState
 };
 
 /// @brief 最基础的AST_NODE，所有基础特性都应该放里面
-class AST_NODE 
+class AST_NODE:public LocType
 {
     /// @todo 可以加个enum type 表示这个是什么type，但是貌似 C++ 现在支持动态判定类型,指typeid
     public:
