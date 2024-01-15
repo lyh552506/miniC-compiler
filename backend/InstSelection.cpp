@@ -52,7 +52,7 @@ MachineInst* InstSelect(User& inst) {
     //     return machineinst;
     // }
     else if (auto Tempinst = dynamic_cast<BinaryInst*>(&inst)) {
-        machineinst = ConvertToMachineInst(MatchBinaryInst(Tempinst));
+        machineinst = MatchBinaryInst(Tempinst);
     }
     // else if (auto Tempinst = dynamic_cast<RetInst*>(inst)) {
     //     MachineInst* machineinst = MatchRetInst(inst);
@@ -64,19 +64,19 @@ MachineInst* InstSelect(User& inst) {
     return machineinst;
 } 
 
-MachineInst* ConvertToMachineInst (std::variant<MachineBinaryInst*, MachineCmpInst*>& variant) {
-    return std::visit([](auto&& arg) -> MachineInst* {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, MachineBinaryInst*>) {
-            return static_cast<MachineInst*>(arg);
-        } else if constexpr (std::is_same_v<T, MachineCmpInst*>) {
-            return static_cast<MachineInst*>(arg);
-        } else {
-            return nullptr;
-        }
-    }, variant);    
-}
-std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* inst) {
+// MachineInst* ConvertToMachineInst (std::variant<MachineBinaryInst*, MachineCmpInst*>& variant) {
+//     return std::visit([](auto&& arg) -> MachineInst* {
+//         using T = std::decay_t<decltype(arg)>;
+//         if constexpr (std::is_same_v<T, MachineBinaryInst*>) {
+//             return static_cast<MachineInst*>(arg);
+//         } else if constexpr (std::is_same_v<T, MachineCmpInst*>) {
+//             return static_cast<MachineInst*>(arg);
+//         } else {
+//             return nullptr;
+//         }
+//     }, variant);    
+// }
+MachineInst* MatchBinaryInst(BinaryInst* inst) {
     std::string op = inst->GetOperation();
     Operand rd = inst->GetDef();
     //std::vector<std::unique_ptr<Use>> list = inst->Getuselist();
@@ -84,7 +84,7 @@ std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* in
     Operand rs2 = (inst->Getuselist())[0]->GetValue();
     if (op == "Op_Add") {
         if (is_int(rs1) && is_int(rs2)) {
-            MachineBinaryInst* inst = new MachineBinaryInst("addw", rd, rs1, rs2);
+            MachineInst* inst = new MachineInst("addw", rd, rs1, rs2);
             return inst;
         }
         else if (0) {
@@ -94,7 +94,7 @@ std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* in
     }
     else if (op == "Op_Sub") {
         if (is_int(rs1) && is_int(rs2)) {
-            MachineBinaryInst* inst = new MachineBinaryInst("subw", rd, rs1, rs2);
+            MachineInst* inst = new MachineInst("subw", rd, rs1, rs2);
             return inst;
         }
         else if (0) {
@@ -104,7 +104,7 @@ std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* in
     }
     else if (op == "Op_Mul") {
         if (is_int(rs1) && is_int(rs2)) {
-            MachineBinaryInst* inst = new MachineBinaryInst("mulw", rd, rs1, rs2);
+            MachineInst* inst = new MachineInst("mulw", rd, rs1, rs2);
             return inst;
         }
         else if (0) {
@@ -114,7 +114,7 @@ std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* in
     }    
     else if (op == "Op_Div") {
         if (is_int(rs1) && is_int(rs2)) {
-            MachineBinaryInst* inst = new MachineBinaryInst("divw", rd, rs1, rs2);
+            MachineInst* inst = new MachineInst("divw", rd, rs1, rs2);
             return inst;
         }
         else if (0) {
@@ -124,7 +124,7 @@ std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* in
     }      
     else if (op == "Op_Mod") {
         if (is_int(rs1) && is_int(rs2)) {
-            MachineBinaryInst* inst = new MachineBinaryInst("remw", rd, rs1, rs2);
+            MachineInst* inst = new MachineInst("remw", rd, rs1, rs2);
             return inst;
         }
         else if (0) {
@@ -134,7 +134,7 @@ std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* in
     }
     else if (op == "Op_And") {
         if (is_int(rs1) && is_int(rs2)) {
-            MachineBinaryInst* inst = new MachineBinaryInst("and", rd, rs1, rs2);
+            MachineInst* inst = new MachineInst("and", rd, rs1, rs2);
             return inst;
         }
         else if (0) {
@@ -144,7 +144,7 @@ std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* in
     }
     else if (op == "Op_Or") {
         if (is_int(rs1) && is_int(rs2)) {
-            MachineBinaryInst* inst = new MachineBinaryInst("or", rd, rs1, rs2);
+            MachineInst* inst = new MachineInst("or", rd, rs1, rs2);
             return inst;
         }
         else if (0) {
@@ -155,7 +155,7 @@ std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* in
     //To Do 
     else if (op == "Op_E") {
         if (is_int(rs1) && is_int(rs2)) {
-            MachineCmpInst* inst = new MachineBinaryInst("eq", rd, rs1, rs2);
+            MachineInst* inst = new MachineInst("eq", rd, rs1, rs2);
             return inst;
         }
         else if (0) {

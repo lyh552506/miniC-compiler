@@ -50,8 +50,8 @@ enum Binary_Inst {
     // xori
 };
 public:
-    MachineBinaryInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);//imm
-    void print() {};
+    // MachineBinaryInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);//imm
+    // void print() {};
 };
 
 // class MachineLoadInst : public MachineInst {
@@ -146,9 +146,9 @@ enum Cmp_Inst {
     snez,//sne rd, rs1
 };
 public:
-    MachineCmpInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);//imm
-    MachineCmpInst(std::string opcode, Operand rd, Operand rs1);
-    void print();
+    // MachineCmpInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);//imm
+    // MachineCmpInst(std::string opcode, Operand rd, Operand rs1);
+    // void print();
 };
 
 // class PseudoInst : public MachineInst {

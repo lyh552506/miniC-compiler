@@ -17,6 +17,6 @@ bool is_float(Operand op);
 // User* MatchCondInst(User& inst);
 // User* MatchCallInst(User& inst);
 // User* MatchRetInst(User& inst);
-MachineInst* ConvertToMachineInst (std::variant<MachineBinaryInst*, MachineCmpInst*>& variant);
-std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* inst);
+// MachineInst* ConvertToMachineInst (std::variant<MachineBinaryInst*, MachineCmpInst*>& variant);
+MachineInst* MatchBinaryInst(BinaryInst* inst);
 MachineInst* InstSelect(User& inst);

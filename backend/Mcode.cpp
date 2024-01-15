@@ -12,34 +12,39 @@ MachineInst::MachineInst(std::string opcode, Operand rd, Operand rs1, Operand rs
 }
 void MachineInst::print() {
     std::cout << opcode << " ";
-    std::cout << rd->GetName() << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl;
+    if (rd && rs1 && rs2)
+        std::cout << rd->GetName() << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl;
+    else if (rd && rs1)
+        std::cout << rd->GetName() << ", " << rs1->GetName() << std::endl;
+    else 
+        std::cout << std::endl;
 }
 
 
 /*MachineBinaryInst*/
-MachineBinaryInst::MachineBinaryInst(std::string opcode, Operand rd, Operand rs1, Operand rs2)
-    : opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
-        // add_use(rd);
-        // add_use(rs1);
-        // add_use(rs2);
-    }
-void MachineBinaryInst::print() {
-    std::cout << opcode << " ";
-    std::cout << rd->GetName() << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl;
-}
+// MachineBinaryInst::MachineBinaryInst(std::string opcode, Operand rd, Operand rs1, Operand rs2)
+//     : opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
+//         // add_use(rd);
+//         // add_use(rs1);
+//         // add_use(rs2);
+//     }
+// void MachineBinaryInst::print() {
+//     std::cout << opcode << " ";
+//     std::cout << rd->GetName() << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl;
+// }
 
 /*MachineCmpInst*/
-MachineCmpInst::MachineCmpInst(std::string opcode, Operand rd, Operand rs1, Operand rs2)
-    : opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
-        // add_use(rd);
-        // add_use(rs1);
-        // add_use(rs2);
-    }
-MachineCmpInst::MachineCmpInst(std::string opcode, Operand rd, Operand rs1)
-    : opcode(opcode), rd(rd), rs1(rs1) {
-        // add_use(rd);
-        // add_use(rs1);
-    }
+// MachineCmpInst::MachineCmpInst(std::string opcode, Operand rd, Operand rs1, Operand rs2)
+//     : opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
+//         // add_use(rd);
+//         // add_use(rs1);
+//         // add_use(rs2);
+//     }
+// MachineCmpInst::MachineCmpInst(std::string opcode, Operand rd, Operand rs1)
+//     : opcode(opcode), rd(rd), rs1(rs1) {
+//         // add_use(rd);
+//         // add_use(rs1);
+//     }
 
 /*MachineBasicBlock*/
 void MachineBasicBlock::print_block_lable(int func_num, int block_num) {
