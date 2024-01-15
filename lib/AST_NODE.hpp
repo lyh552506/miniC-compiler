@@ -48,9 +48,11 @@ class LocType
     public:
     int& begin;
     int& end;
+    void SET(const LocType&);
     LocType();
     LocType(int);
     LocType& operator=(const LocType&);
+    LocType(const LocType&);
 };
 
 struct GetInstState
@@ -446,7 +448,6 @@ class ReturnStmt:public Stmt
 
 class FunctionCall:public HasOperand
 {
-    int run_time;
     std::string id;
     std::unique_ptr<CallParams> cp;
     public:

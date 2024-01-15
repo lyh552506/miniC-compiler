@@ -1,8 +1,20 @@
 #include "AST_NODE.hpp"
 
-LocType::LocType():lineno(0),begin(lineno),end(lineno){}
+LocType::LocType():begin(lineno),end(lineno){
+    lineno=0;
+}
 
-LocType::LocType(int _line):lineno(_line),begin(lineno),end(lineno){}
+LocType::LocType(int _line):begin(lineno),end(lineno){
+    lineno=_line;
+}
+
+LocType::LocType(const LocType& _):begin(lineno),end(lineno){
+    lineno=_.lineno;
+}
+
+void LocType::SET(const LocType& _){
+    lineno=_.lineno;
+}
 
 LocType& LocType::operator=(const LocType& _){
     lineno=_.lineno;
@@ -581,30 +593,11 @@ void ReturnStmt::print(int x){
     if(return_val!=nullptr)return_val->print(x+1);
 }
 
-FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){
-    auto check_builtin=[](std::string _id){
-        if(_id=="getint")return true;
-        if(_id=="getfloat")return true;
-        if(_id=="getch")return true;
-        if(_id=="getarray")return true;
-        if(_id=="getfarray")return true;        
-        if(_id=="putint")return true;
-        if(_id=="putch")return true;
-        if(_id=="putarray")return true;
-        if(_id=="putfloat")return true;
-        if(_id=="putfarray")return true;
-        if(_id=="starttime")return true;
-        if(_id=="stoptime")return true;
-        if(_id=="putf")return true;
-        return false;
-    };
-    if(check_builtin(id))run_time=LocType::begin;
-    else run_time=0;
-}
+FunctionCall::FunctionCall(std::string _id,CallParams* ptr):id(_id),cp(ptr){}
 Operand FunctionCall::GetOperand(BasicBlock* block){
     std::vector<Operand> args;
     if(cp!=nullptr)args=cp->GetParams(block);
-    return block->GenerateCallInst(id,args,run_time);
+    return block->GenerateCallInst(id,args,LocType::begin);
 }
 void FunctionCall::print(int x){
     AST_NODE::print(x);

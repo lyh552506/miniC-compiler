@@ -540,7 +540,24 @@ void BasicBlock::GenerateRetInst(){
 }
 
 Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,int run_time){
-    if(run_time!=0){
+    auto check_builtin=[](std::string _id){
+        if(_id=="getint")return true;
+        if(_id=="getfloat")return true;
+        if(_id=="getch")return true;
+        if(_id=="getarray")return true;
+        if(_id=="getfarray")return true;        
+        if(_id=="putint")return true;
+        if(_id=="putch")return true;
+        if(_id=="putarray")return true;
+        if(_id=="putfloat")return true;
+        if(_id=="putfarray")return true;
+        if(_id=="starttime")return true;
+        if(_id=="stoptime")return true;
+        if(_id=="putf")return true;
+        return false;
+    };
+    
+    if(check_builtin(id)){
         if(id=="starttime"||id=="stoptime"){
             assert(args.size()==0);
             args.push_back(new ConstIRInt(run_time));
