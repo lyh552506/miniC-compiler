@@ -79,6 +79,7 @@ class Value
     virtual bool isConst(){return false;}
     void RAUW(Value* val);
     virtual std::string GetName();
+    UserList GetUses();
 };
 using Operand=Value*;
 class User:public Value,public list_node<BasicBlock,User>

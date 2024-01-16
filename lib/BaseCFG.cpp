@@ -60,7 +60,7 @@ void Value::RAUW(Value* val){
     for(auto use=list.begin();use!=list.end();++use){
         User *user=(*use)->GetUser();
 
-        auto uselist=user->Getuselist();
+        auto& uselist=user->Getuselist();
         using UsePtr=decltype(uselist[0]);
 
         auto it=std::find_if(uselist.begin(),uselist.end(),[this](UsePtr& tmp)->bool{

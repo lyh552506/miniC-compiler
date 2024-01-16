@@ -1,106 +1,106 @@
-#include "LivenessAnalysis.hpp"
-#include <algorithm>
-#include <iostream>
+// #include "LivenessAnalysis.hpp"
+// #include <algorithm>
+// #include <iostream>
 
-void LivenessAnalysis::pass(Function* func)
-{
-  for(auto &BB:func->getBlockList())
-  {
-    GetBlockLiveout(BB.get());
-    GetBlockLivein(BB.get());
-  }
-  iterate(func);
-  PrintLiveness_Analysis(func);
-}
-void LivenessAnalysis::PrintLiveness_Analysis(Function* func)
-{
-    std::cout<<"---------LivenessAnalysis_Result---------"<<std::endl;
-    std::cout<<"\n";
-    for(auto &_block:func->getBlockList())
-    {
-      std::cout<<"---------Current Block Livein ---------"<<std::endl;
-      for(auto _print:BlockLivein[_block.get()])
-      {
-        _print->print();
-      }
-      std::cout<<"\n";
-      std::cout<<"---------Current Block Liveout ---------"<<std::endl;
-      for(auto _print:BlockLiveout[_block.get()])
-      {
-        _print->print();
-      }
-      std::cout<<"\n";
-    }
+// void LivenessAnalysis::pass(Function* func)
+// {
+//   for(auto &BB:func->getBlockList())
+//   {
+//     GetBlockLiveout(BB.get());
+//     GetBlockLivein(BB.get());
+//   }
+//   iterate(func);
+//   PrintLiveness_Analysis(func);
+// }
+// void LivenessAnalysis::PrintLiveness_Analysis(Function* func)
+// {
+//     std::cout<<"---------LivenessAnalysis_Result---------"<<std::endl;
+//     std::cout<<"\n";
+//     for(auto &_block:func->getBlockList())
+//     {
+//       std::cout<<"---------Current Block Livein ---------"<<std::endl;
+//       for(auto _print:BlockLivein[_block.get()])
+//       {
+//         _print->print();
+//       }
+//       std::cout<<"\n";
+//       std::cout<<"---------Current Block Liveout ---------"<<std::endl;
+//       for(auto _print:BlockLiveout[_block.get()])
+//       {
+//         _print->print();
+//       }
+//       std::cout<<"\n";
+//     }
 
-}
+// }
 
-void LivenessAnalysis::GetBlockLivein(BasicBlock* block)
-{
-  for(auto inst = block->getInstList().rbegin();inst != block->getInstList().rend(); ++inst)
-  {
-    for(auto &usePtr:(*inst)->Getuselist())
-    {
-      Value* useValue = usePtr->GetValue();
-      BlockLivein[block].insert(useValue);
-    }
-    Value* DefValue = (*inst)->GetDef();
-    BlockLivein[block].erase(DefValue);
-  }
-}
+// void LivenessAnalysis::GetBlockLivein(BasicBlock* block)
+// {
+//   for(auto inst = block->getInstList().rbegin();inst != block->getInstList().rend(); ++inst)
+//   {
+//     for(auto &usePtr:(*inst)->Getuselist())
+//     {
+//       Value* useValue = usePtr->GetValue();
+//       BlockLivein[block].insert(useValue);
+//     }
+//     Value* DefValue = (*inst)->GetDef();
+//     BlockLivein[block].erase(DefValue);
+//   }
+// }
 
-void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
-{
-  auto inst = block->back();
-  if(auto _CondInst = dynamic_cast<CondInst *>(inst))
-  {
-    auto &_Use = inst->Getuselist(); 
-    BlockLivein[block].insert(_Use[1]->GetValue());
-    auto _block_Succ1 = dynamic_cast<BasicBlock *>(_Use[1]->GetValue());
-    auto _block_Succ2 = dynamic_cast<BasicBlock *>(_Use[2]->GetValue());
-    BlockLiveout[block].insert(BlockLivein[_block_Succ1].begin(), BlockLivein[_block_Succ1].end());
-    BlockLiveout[block].insert(BlockLivein[_block_Succ2].begin(), BlockLivein[_block_Succ2].end());
-  }
-  if(auto _UnCondInst = dynamic_cast<UnCondInst *>(inst))
-  {
-    auto &_Use = inst->Getuselist();
-    auto _block_Pred = dynamic_cast<BasicBlock *>(_Use[0]->GetValue());
-    BlockLiveout[block].insert(BlockLivein[_block_Pred].begin(),BlockLivein[_block_Pred].end());
-  }
-}
+// void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
+// {
+//   auto inst = block->back();
+//   if(auto _CondInst = dynamic_cast<CondInst *>(inst))
+//   {
+//     auto &_Use = inst->Getuselist(); 
+//     BlockLivein[block].insert(_Use[1]->GetValue());
+//     auto _block_Succ1 = dynamic_cast<BasicBlock *>(_Use[1]->GetValue());
+//     auto _block_Succ2 = dynamic_cast<BasicBlock *>(_Use[2]->GetValue());
+//     BlockLiveout[block].insert(BlockLivein[_block_Succ1].begin(), BlockLivein[_block_Succ1].end());
+//     BlockLiveout[block].insert(BlockLivein[_block_Succ2].begin(), BlockLivein[_block_Succ2].end());
+//   }
+//   if(auto _UnCondInst = dynamic_cast<UnCondInst *>(inst))
+//   {
+//     auto &_Use = inst->Getuselist();
+//     auto _block_Pred = dynamic_cast<BasicBlock *>(_Use[0]->GetValue());
+//     BlockLiveout[block].insert(BlockLivein[_block_Pred].begin(),BlockLivein[_block_Pred].end());
+//   }
+// }
 
 
-void LivenessAnalysis::iterate(Function* func)
-{
-  std::set<BasicBlock*> worklist;
-  for(auto &block : func->getBlockList())
-  {
-    auto _block = block.get();
-    BlockLivein[_block].clear();
-    worklist.insert(_block);
-  }
+// void LivenessAnalysis::iterate(Function* func)
+// {
+//   std::set<BasicBlock*> worklist;
+//   for(auto &block : func->getBlockList())
+//   {
+//     auto _block = block.get();
+//     BlockLivein[_block].clear();
+//     worklist.insert(_block);
+//   }
 
-  while(!worklist.empty())
-  {
-    auto _block = *worklist.begin();
-    worklist.erase(worklist.begin());
-    BlockLiveout[_block].clear();
-    auto old_BlockLivein = BlockLivein[_block];
-    GetBlockLiveout(_block);
-    GetBlockLivein(_block);
-    if(old_BlockLivein != BlockLivein[_block])
-    {
-      auto inst = _block->back();
-      if(auto _CondInst = dynamic_cast<CondInst*>(inst))
-        {
-          auto &_Use = inst->Getuselist();
-          worklist.insert(dynamic_cast<BasicBlock*>(_Use[1]->GetValue()));
-          worklist.insert(dynamic_cast<BasicBlock*>(_Use[2]->GetValue()));
-        }
-      if(auto _UnCondInst = dynamic_cast<UnCondInst*>(inst))
-      {
-        auto &_Use = inst->Getuselist();
-        worklist.insert(dynamic_cast<BasicBlock*>(_Use[0]->GetValue()));
-      }
-    }
-  }
-}
+//   while(!worklist.empty())
+//   {
+//     auto _block = *worklist.begin();
+//     worklist.erase(worklist.begin());
+//     BlockLiveout[_block].clear();
+//     auto old_BlockLivein = BlockLivein[_block];
+//     GetBlockLiveout(_block);
+//     GetBlockLivein(_block);
+//     if(old_BlockLivein != BlockLivein[_block])
+//     {
+//       auto inst = _block->back();
+//       if(auto _CondInst = dynamic_cast<CondInst*>(inst))
+//         {
+//           auto &_Use = inst->Getuselist();
+//           worklist.insert(dynamic_cast<BasicBlock*>(_Use[1]->GetValue()));
+//           worklist.insert(dynamic_cast<BasicBlock*>(_Use[2]->GetValue()));
+//         }
+//       if(auto _UnCondInst = dynamic_cast<UnCondInst*>(inst))
+//       {
+//         auto &_Use = inst->Getuselist();
+//         worklist.insert(dynamic_cast<BasicBlock*>(_Use[0]->GetValue()));
+//       }
+//     }
+//   }
+// }

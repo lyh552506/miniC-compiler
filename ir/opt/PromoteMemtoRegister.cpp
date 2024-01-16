@@ -118,39 +118,40 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
         if (it == AllocaToIndex.end())
           continue;
 
-        Value* RepL=IncomingVal[it->second];//使用Alloca的value来替换
+        Value *RepL = IncomingVal[it->second]; //使用Alloca的value来替换
         LI->RAUW(RepL);
         LI->EraseFromParent();
       } else if (StoreInst *ST = dynamic_cast<StoreInst *>(user)) {
-        auto des=ST->Getuselist();
-        Value* Des=des[1]->GetValue();//获取Store的第二个操作数
-        AllocaInst* AI=dynamic_cast<AllocaInst *>(Des);
-        if(!AI)
+        auto des = ST->Getuselist();
+        Value *Des = des[1]->GetValue(); //获取Store的第二个操作数
+        AllocaInst *AI = dynamic_cast<AllocaInst *>(Des);
+        if (!AI)
           continue;
-        
-        auto it=AllocaToIndex.find(AI);
-        if(it==AllocaToIndex.end())
+
+        auto it = AllocaToIndex.find(AI);
+        if (it == AllocaToIndex.end())
           continue;
-        
-        Value* RepL=ST->Getuselist()[0]->GetValue();//使用Store的第一个操作数来替换
-        IncomingVal[it->second]=RepL;//--->更新前面初始化的undef
+
+        Value *RepL =
+            ST->Getuselist()[0]->GetValue(); //使用Store的第一个操作数来替换
+        IncomingVal[it->second] = RepL; //--->更新前面初始化的undef
 
         ST->EraseFromParent();
       }
     }
-    
+
     //将BB的后继添加到worklist继续循环处理
-    auto cur=m_dom.GetNode(BB->num);
-    if(cur.des.empty())
-       return;
+    auto cur = m_dom.GetNode(BB->num);
+    if (cur.des.empty())
+      return;
 
-    auto It=cur.des.begin();
+    auto It = cur.des.begin();
 
-    Pred=BB;
-    BB=m_dom.GetNode(*It++).thisBlock;
+    Pred = BB;
+    BB = m_dom.GetNode(*It++).thisBlock;
 
-    while(It!=cur.des.end()){
-      WorkLists.emplace_back(BB,Pred,IncomingVal);
+    while (It != cur.des.end()) {
+      WorkLists.emplace_back(BB, Pred, IncomingVal);
       ++It;
     }
   }
@@ -178,7 +179,9 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
                                             BlockInfo &BBInfo) {
   std::vector<std::pair<int, StoreInst *>> StoreInstWithIndex;
   //遍历alloca的所有user
-  for (User *user : AI->GetUsers()) {
+  // for (User *user : AI->GetUsers()) {
+  for (Use *use : AI->GetUses()) {
+    User *user = use->GetUser();
     if (StoreInst *SI = dynamic_cast<StoreInst *>(user))
       StoreInstWithIndex.push_back(std::make_pair(BBInfo.GetInstIndex(SI), SI));
   }
@@ -188,7 +191,9 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
               return T1.first < T2.first;
             }); //方便进行后续的二分搜索
 
-  for (User *user : AI->GetUsers()) {
+  //for (User *user : AI->GetUsers()) {
+  for (Use *use : AI->GetUses()) {
+    User* user=use->GetUser();
     if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
       int loadindex = BBInfo.GetInstIndex(LI);
       auto it = std::lower_bound(
@@ -206,7 +211,8 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
         else            // no store before load
           return false; /// @note why is this
       } else {
-        LI->ReplaceAllUsersWith(std::prev(it)->second->Getuselist()[0]->GetValue());
+        LI->ReplaceAllUsersWith(
+            std::prev(it)->second->Getuselist()[0]->GetValue());
         // LI->EraseFromBlock();
         LI->EraseFromParent();
       }
@@ -217,14 +223,16 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
 void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
   init();
   //遍历这个allocaInst的user链
-  for (User *user : AI->GetUsers()) {
+  // for (User *user : AI->GetUsers()) {
+  for (Use *use : AI->GetUses()) {
+    User* user=use->GetUser();
     BasicBlock *BB;
     if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
       DefineBlocks.push_back(SI->GetParent());
       BB = SI->GetParent();
       OnlyStore = SI;
       // AllocaPtrValue = SI->GetOperand(0);
-      AllocaPtrValue=SI->Getuselist()[0]->GetValue();
+      AllocaPtrValue = SI->Getuselist()[0]->GetValue();
     } else { //由于IsAllocaPromotable，所以只会是storeinst或者loadinst
       LoadInst *LI = dynamic_cast<LoadInst *>(user);
       BB = LI->GetParent();
@@ -248,14 +256,16 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
   bool GlobalVal;
 
   // Value *val = OnlySt->GetOperand(0);
-  Value* val=OnlySt->Getuselist()[0]->GetValue();
+  Value *val = OnlySt->Getuselist()[0]->GetValue();
   User *u = dynamic_cast<User *>(val);
   if (u == nullptr)
     GlobalVal = true; //判断store语句的第一个操作数是否是全局变量/常量
   BasicBlock *StoreBB = OnlySt->GetParent();
 
   Info.UsingBlocks.clear();
-  for (User *user : AI->GetUsers()) {
+  //for (User *user : AI->GetUsers()) {
+  for (Use *use : AI->GetUses()){
+    User* user=use->GetUser();  
     LoadInst *LI = dynamic_cast<LoadInst *>(user);
     if (!LI)
       continue;
@@ -280,7 +290,7 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
         continue;
       }
     }
-    LI->ReplaceAllUsersWith(val); // TODO
+    LI->RAUW(val); // TODO
     // LI->EraseFromBlock();         //可以将这个LoadInstruction删除了
     LI->EraseFromParent();
   }
@@ -352,13 +362,15 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
 }
 
 bool IsAllocaPromotable(AllocaInst *AI) {
-  for (User *user : AI->GetUsers()) {
+  //for (User *user : AI->GetUsers()) {
+  for (Use *use : AI->GetUses()){
+    User* user=use->GetUser();
     if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
       // do nothing
     } else if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
       // if (SI->GetOperand(0) == AI) // can not let the first operand be
-                                   // AllocaInst
-      if(SI->Getuselist()[0]->GetValue()==AI)
+      // AllocaInst
+      if (SI->Getuselist()[0]->GetValue() == AI)
         return false;
     } else {
       return false;
@@ -374,8 +386,9 @@ bool BlockInfo::IsAllocaRelated(User *Inst) {
       return true;
   } else if (StoreInst *ST =
                  dynamic_cast<StoreInst *>(Inst)) { // if store to this alloca
-    //AllocaInst *AI = dynamic_cast<AllocaInst *>(ST->GetOperand(1));
-    AllocaInst *AI = dynamic_cast<AllocaInst *>(ST->Getuselist()[1]->GetValue());
+    // AllocaInst *AI = dynamic_cast<AllocaInst *>(ST->GetOperand(1));
+    AllocaInst *AI =
+        dynamic_cast<AllocaInst *>(ST->Getuselist()[1]->GetValue());
     if (AI != nullptr)
       return true;
   }
