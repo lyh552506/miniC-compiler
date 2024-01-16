@@ -8,21 +8,34 @@ class Function;
 class Variable
 {
     std::string name;
-    std::shared_ptr<Type> tp;
+    Type* tp;
     public:
-    Variable(std::string _id);
-    Variable(std::shared_ptr<Type> tp,std::string _id);
-    Variable(InnerDataType tp,std::string _id);
+    Variable(std::string);
+    Variable(Type*,std::string);
+    Variable(InnerDataType,std::string);
     std::string get_name();
-    std::shared_ptr<Type> CopyType();
+    Type* GetType();
 };
 /// @brief AllocaInst接受一个Value*(Variable)，产生一个PTR，指向Value*的Type类型
+
+class UndefValue:public User{
+  UndefValue(Type* Ty){}
+public:
+  static UndefValue* get(Type *Ty);
+};
+/// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
+
 class AllocaInst:public User
 {
     public:
     /// @brief Alloca语句要Type的结构,所以是Value*
+    AllocaInst(Type*);
+    void print()final;
     AllocaInst(std::shared_ptr<Type>);
-    void print(int&)final;
+    bool IsUsed();//TODO 返回当前alloca出来的对象后续有没有被使用过
+    void DeletFromList();//删除当前指令
+    std::vector<User*> GetUsers(); //返回使用过alloca分配出的虚拟寄存器的指令
+    BasicBlock* GetParent();//返回当前指令所在的bb
 };
 /// @brief src->des
 /// @note inst use %src %des
@@ -33,47 +46,58 @@ class StoreInst:public User
     public:
     StoreInst(Operand,Operand);
     Operand GetDef()final;
-    void print(int&)final;
+    void print()final;
+    void ir_mark();
+    Value* GetOperand(int index);//返回storeinst的第index个操作数，   
+    BasicBlock* GetParent();//返回当前指令所在的bb
 };
 class LoadInst:public User
 {
     public:
     LoadInst(Operand __src);
-    void print(int&)final;
+    void print()final;
+    /// @brief 一般都是只有src,def是load产生的
+    /// @param __src 
+    BasicBlock* GetParent();//返回当前指令所在的bb
+    Value* GetSrc();
+    void ReplaceAllUsersWith(Value* val);
 };
 /// @brief float to int
 class FPTSI:public User
 {
     public:
     FPTSI(Operand __src);
-    void print(int&)final;
+    void print()final;
 };
 /// @brief int to float
 class SITFP:public User
 {
     public:
     SITFP(Operand __src);
-    void print(int&)final;
+    void print()final;
 };
 class UnCondInst:public User
 {
     public:
     UnCondInst(BasicBlock*);
     Operand GetDef()final;
-    void print(int&)final;
+    void print()final;
+    void ir_mark();
 };
 class CondInst:public User
 {
     public:
     CondInst(Operand,BasicBlock*,BasicBlock*);
     Operand GetDef()final;
-    void print(int&)final;
+    void print()final;
+    void ir_mark();
 };
 class CallInst:public User
 {
     public:
     CallInst(Function*,std::vector<Operand>&);
-    void print(int&)final;
+    void print()final;
+    void ir_mark();
 };
 /// @brief Ret, maybe has return value
 class RetInst:public User
@@ -82,7 +106,8 @@ class RetInst:public User
     RetInst();
     RetInst(Operand);
     Operand GetDef()final;
-    void print(int&)final;
+    void print()final;
+    void ir_mark();
 };
 /// @brief BinaryInst use A B,def C
 /// @param A operand
@@ -102,13 +127,14 @@ class BinaryInst:public User
     Operation op;
     public:
     BinaryInst(Operand _A,Operation __op,Operand _B);
-    void print(int&)final;
+    void print()final;
 };
 class GetElementPtrInst:public User
 {
     public:
-    GetElementPtrInst(Operand,std::vector<Operand>&);
-    void print(int&)final;
+    GetElementPtrInst(Operand);
+    Type* GetType();
+    void print()final;
 };
 class BasicBlock:public Value
 {
@@ -116,16 +142,16 @@ class BasicBlock:public Value
     Function& master;
     public:
     BasicBlock(Function& __master);
-    void print(int&);
+    void print();
     void push_front(User* ptr);
     void push_back(User* ptr);
-    Operand push_alloca(std::shared_ptr<Type>);
+    Operand push_alloca(Type*);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
     static Operand GenerateBinaryInst(BasicBlock*,Operand,BinaryInst::Operation,Operand);
     Operand GenerateLoadInst(Operand);
-    Operand GenerateGEPInst(Operand,std::vector<Operand>&);
+    Operand GenerateGEPInst(Operand);
     void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);
@@ -135,9 +161,11 @@ class BasicBlock:public Value
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
     //todo
-    std::vector<User*>& getInstList();
-
+    List<User>& getInstList();
     bool EndWithBranch();
+    void ir_mark();
+    List<User>& GetInsts();
+    int dfs;
 };
 /// @brief 以function为最大单元生成CFG
 //其实function本质是就是CFG了
@@ -154,9 +182,9 @@ class Function:public Value
     BasicBlock* front_block();
     
     //todo
-    std::string getFuncName();
-    std::vector<BasicBlockPtr>& getBlockList();
+    // std::string getFuncName();
     std::vector<ParamPtr>& getParams();
+    std::vector<BasicBlockPtr>& getBlockList();
     // std::vector<VarPtr>& getAllocaVariables();
     
     void print();
@@ -166,6 +194,7 @@ class Function:public Value
     BasicBlock* front();
     std::string GetName();
     std::vector<ParamPtr>& GetParams();
+    std::vector<BasicBlockPtr> GetBasicBlock();
 };
 /// @brief 编译单元
 class Module:public SymbolTable
@@ -183,4 +212,5 @@ class Module:public SymbolTable
     std::vector <FunctionPtr> &getFuncList();
     
     void Test();
+    std::vector<FunctionPtr> GetFuncTion();
 };
