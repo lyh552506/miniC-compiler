@@ -65,7 +65,7 @@ void LivenessAnalysis::iterate(Function *func)
 
 void LivenessAnalysis::RunOnFunction(Function *func)
 {
-  auto _block = func->GetBasicBlock();
+  auto& _block = func->GetBasicBlock();
   for(auto __block = _block.rbegin(); __block != _block.rend(); ++__block)
   {
     auto _Block = (*__block).get();

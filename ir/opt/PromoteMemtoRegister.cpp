@@ -50,7 +50,7 @@ void PromoteMem2Reg::run() {
 
     idf.SetDefBB(DefineBlock);
     idf.SetLiveInBlock(LiveInBlocks);
-    std::vector<std::unique_ptr<BasicBlock>> vec = Func.GetBasicBlock();
+    auto& vec = Func.GetBasicBlock();
     idf.SetBBs(vec);
     for (int dex = 0; dex < PhiBlocks.size(); dex++)
       InsertPhiNode(PhiBlocks[dex], i);
@@ -63,7 +63,8 @@ void PromoteMem2Reg::run() {
         m_Allocas[x]->GetType()); //首先对所有待处理的Alloca标记为Undef
 
   std::vector<RenamePass> WorkLists; //采用工作表法，传入EntryBlock
-  WorkLists.emplace_back(Func.front_block(), nullptr, std::move(AllocaDict));
+  // WorkLists.emplace_back(Func.front_block(), nullptr, std::move(AllocaDict));
+  WorkLists.emplace_back(Func.front_block(), nullptr, AllocaDict);
   do {
     auto tmp = std::move(WorkLists.back()); // FIXME maybe have some problems
     WorkLists.pop_back();
@@ -73,7 +74,7 @@ void PromoteMem2Reg::run() {
 
 void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
                             std::vector<Value *> &IncomingVal,
-                            std::vector<RenamePass> WorkLists) {
+                            std::vector<RenamePass>& WorkLists) {
   while (1) {
     //当前块存在Phi指令
     if (PhiInst *Phi = dynamic_cast<PhiInst *>(BB->front())) {
@@ -122,7 +123,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
         LI->RAUW(RepL);
         LI->EraseFromParent();
       } else if (StoreInst *ST = dynamic_cast<StoreInst *>(user)) {
-        auto des = ST->Getuselist();
+        auto& des = ST->Getuselist();
         Value *Des = des[1]->GetValue(); //获取Store的第二个操作数
         AllocaInst *AI = dynamic_cast<AllocaInst *>(Des);
         if (!AI)
@@ -158,7 +159,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 }
 
 bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
-  std::vector<std::unique_ptr<BasicBlock>> vect = Func.GetBasicBlock();
+  auto& vect = Func.GetBasicBlock();
   auto it = std::find_if(vect.begin(), vect.end(),
                          [bb](std::unique_ptr<BasicBlock> &base) -> bool {
                            return base.get() == bb;

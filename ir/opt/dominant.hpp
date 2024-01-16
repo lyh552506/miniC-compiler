@@ -57,13 +57,13 @@ public:
 private:
   std::vector<Node> node;
   // std::vector<BasicBlockPtr> nod;
-  std::vector<int> vertex;     // 记录dfs对应的结点
+  std::vector<int> vertex;       // 记录dfs对应的结点
   std::vector<int> bucket[2000]; // bucket[u]代表sdom为u的点集
-  std::vector<DSU> dsu;        //辅助数据结构实现路径压缩
-  std::vector<DF> df;          //存储每个结点的必经结点边界
+  std::vector<DSU> dsu;          //辅助数据结构实现路径压缩
+  std::vector<DF> df;            //存储每个结点的必经结点边界
   // BasicBlock* root;            //保存支配树的根节点
 
-  Function &thisFunc;
+  Function *thisFunc;
   int block_num, count; // count是当前的dfs序号
   bool IsDFSValid;
 
@@ -124,13 +124,16 @@ public:
   /// @brief 插入phi函数
   void place_phi() {}
 
-  dominance(int n, int m, Function &Func)
-      : node(n + 1), block_num{n}, vertex(n + 1),
-        dsu(n + 1), count{1}, IsDFSValid{false}, df(n + 1), thisFunc{Func} {
-    for (int i = 1; i <= n; i++) {
-      dsu[i].ancestor = i;
-      dsu[i].min_sdom = i;
-    }
+  // dominance(int n, int m, Function &Func)
+  //     : node(n + 1), block_num{n}, vertex(n + 1),
+  //       dsu(n + 1), count{1}, IsDFSValid{false}, df(n + 1), thisFunc{Func} {
+  dominance(Function *Func)
+      : count{1}, IsDFSValid{false}, thisFunc{Func} {
+    Init();
+    // for (int i = 1; i <= n; i++) {
+    //   dsu[i].ancestor = i;
+    //   dsu[i].min_sdom = i;
+    // }
     dom_begin(); //标志开始函数
   }
 

@@ -89,7 +89,7 @@ public:
   /// @brief 进一步的设置phi的incoming值，以及重命名
   void Rename(BasicBlock *BB, BasicBlock *Pred,
               std::vector<Value *> &IncomingVal,
-              std::vector<RenamePass> WorkLists);
+              std::vector<RenamePass>& WorkLists);
 
   dominance &m_dom;
   std::vector<AllocaInst *> m_Allocas;       // index->AllocaInst的映射

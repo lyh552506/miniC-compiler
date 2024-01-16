@@ -5,7 +5,7 @@
 // mem2reg的开始函数
 bool promoteMemoryToRegister(Function &func, dominance &dom) {
   std::vector<AllocaInst *> Allocas;
-  auto BB = func.GetBasicBlock(); // BB是一个std::vector<BasicBlockPtr>
+  auto& BB = func.GetBasicBlock(); // BB是一个std::vector<BasicBlockPtr>
   while (true) {
     Allocas.clear();
     for (auto &it : BB) {

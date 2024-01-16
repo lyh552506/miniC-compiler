@@ -1,6 +1,6 @@
 #include "parser.hpp"
-#include "AsmPrinter.hpp"
-
+//#include "AsmPrinter.hpp"
+#include "opt/dominant.hpp"
 // #include "AsmPrinter.hpp"
 #include <fstream>
 extern FILE* yyin;
@@ -23,7 +23,8 @@ int main(int argc,char** argv)
     parse();
     Singleton<CompUnit*>()->codegen();
     Singleton<Module>().Test();
-
-    PrintCodeToTxt(&Singleton<Module>());
+    
+    dominance dom(Singleton<Module>().GetFuncTion()[0].get());
+    //PrintCodeToTxt(&Singleton<Module>());
     return 0;
 }

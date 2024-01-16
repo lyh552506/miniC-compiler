@@ -25,7 +25,7 @@ public:
 
    void SetLiveInBlock(std::set<BasicBlock *> LiveInBlock);
 
-   void SetBBs(std::vector<std::unique_ptr<BasicBlock>> bbs);
+   void SetBBs(std::vector<std::unique_ptr<BasicBlock>>& bbs);
 
    void caculateDTlevel(DTNode node,int depth);
 
