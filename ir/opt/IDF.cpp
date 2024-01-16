@@ -7,13 +7,13 @@ void IDF::SetLiveInBlock(std::set<BasicBlock *> LiveInBlock) {
   uselivein = true;
 }
 
-void IDF::SetBBs(std::vector<std::unique_ptr<BasicBlock>> &bbs) {
-  this->bbs = bbs;
+void IDF::SetBBs(std::vector<std::unique_ptr<BasicBlock>> bbs) {
+  this->bbs = &bbs;
 }
 
 // 论文的关键函数
 void IDF::caculateIDF(std::vector<BasicBlock *> &IDFBlocks) {
-  caculateDTlevel(&m_dom.GetNode(0));
+  caculateDTlevel(&m_dom.GetNode(0),0);
 
   std::function<bool(const NodePair &a1, const NodePair &a2)> Comp;
 
@@ -48,7 +48,7 @@ void IDF::caculateIDF(std::vector<BasicBlock *> &IDFBlocks) {
       BasicBlock *bb = root->thisBlock; //获取对应与CFG上的结点
 
       for (auto succIndex : m_dom.node[bb->num].des) {
-        BasicBlock *succ = bbs[succIndex].get();
+        BasicBlock *succ = bbs[succIndex]->get();
         DTNode succNode = &m_dom.node[succIndex]; //方便找到J-Edge
 
         DTNode temp = &m_dom.node[succNode->idom];
@@ -79,7 +79,7 @@ void IDF::caculateIDF(std::vector<BasicBlock *> &IDFBlocks) {
   }
 }
 //计算Dt上的Level
-void IDF::caculateDTlevel(dominance::Node *node,int depth=0) {
+void IDF::caculateDTlevel(DTNode node,int depth) {
   Level[node] = depth;
   for (int i : node->idom_child) {
     DTNode child=&m_dom.node[i];

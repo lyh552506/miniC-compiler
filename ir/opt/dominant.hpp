@@ -1,6 +1,6 @@
 #pragma once
 #include "CFG.hpp"
-#include "IDF.hpp"
+//#include "IDF.hpp"
 #include <algorithm>
 #include <forward_list>
 #include <iostream>
@@ -12,7 +12,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-
 // SDOM(MIN_SDOM(x))即代表获取离x最近的sdom结点
 #define SDOM(x) node[x].sdom        //获取x对应结点的sdom
 #define MIN_SDOM(x) dsu[x].min_sdom //获取结点最近的sdom的index
@@ -59,7 +58,7 @@ private:
   std::vector<Node> node;
   // std::vector<BasicBlockPtr> nod;
   std::vector<int> vertex;     // 记录dfs对应的结点
-  std::vector<int> bucket[20]; // bucket[u]代表sdom为u的点集
+  std::vector<int> bucket[2000]; // bucket[u]代表sdom为u的点集
   std::vector<DSU> dsu;        //辅助数据结构实现路径压缩
   std::vector<DF> df;          //存储每个结点的必经结点边界
   // BasicBlock* root;            //保存支配树的根节点
