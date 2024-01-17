@@ -421,10 +421,12 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
             else assert(0);
         }
         else assert(0);
-        if(std::holds_alternative<int>(fuc))
-            return new ConstIRInt(std::get<int>(fuc));
+        if(check_binary_boolean(op))
+            return ConstIRBoolean::GetNewConstant(std::get<int>(fuc));
+        else if(std::holds_alternative<int>(fuc))
+            return ConstIRInt::GetNewConstant(std::get<int>(fuc));
         else
-            return new ConstIRFloat(std::get<float>(fuc));
+            return ConstIRFloat::GetNewConstant(std::get<float>(fuc));
     }
     else
     {
@@ -574,7 +576,7 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
     if(check_builtin(id)){
         if(id=="starttime"||id=="stoptime"){
             assert(args.size()==0);
-            args.push_back(new ConstIRInt(run_time));
+            args.push_back(ConstIRInt::GetNewConstant(run_time));
         }
         auto tmp=new CallInst(BuildInFunction::GetBuildInFunction(id),args,"at"+std::to_string(run_time));
         push_back(tmp);

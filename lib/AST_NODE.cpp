@@ -134,9 +134,9 @@ void BaseDef::codegen(){
             if(civ==nullptr)
             {
                 if(Singleton<InnerDataType>()==IR_Value_INT)
-                    var=new ConstIRInt(0);
+                    var=ConstIRInt::GetNewConstant();
                 else if(Singleton<InnerDataType>()==IR_Value_Float)
-                    var=new ConstIRFloat(0.0);
+                    var=ConstIRFloat::GetNewConstant();
                 else assert(0);
             }
             else var=civ->GetFirst(nullptr);
@@ -175,9 +175,9 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
             if(civ==nullptr)
             {
                 if(Singleton<InnerDataType>()==IR_Value_INT)
-                    var=new ConstIRInt(0);
+                    var=ConstIRInt::GetNewConstant();
                 else if(Singleton<InnerDataType>()==IR_Value_Float)
-                    var=new ConstIRFloat(0.0);
+                    var=ConstIRFloat::GetNewConstant();
                 else assert(0);
             }
             else var=civ->GetFirst(nullptr);
@@ -422,7 +422,7 @@ Operand LVal::GetPointer(BasicBlock* block){
     Operand handle;
     if(dynamic_cast<PointerType*>(ptr->GetType())->GetSubType()->GetTypeEnum()==IR_ARRAY){
         handle=block->GenerateGEPInst(ptr);
-        dynamic_cast<GetElementPtrInst*>(handle)->add_use(new ConstIRInt(0));
+        dynamic_cast<GetElementPtrInst*>(handle)->add_use(ConstIRInt::GetNewConstant());
     }
     else if(dynamic_cast<PointerType*>(ptr->GetType())->GetSubType()->GetTypeEnum()==IR_PTR)
         handle=block->GenerateLoadInst(ptr);
@@ -449,7 +449,7 @@ Operand LVal::GetOperand(BasicBlock* block){
     auto ptr=GetPointer(block);
     if(auto gep=dynamic_cast<GetElementPtrInst*>(ptr)){
         if(dynamic_cast<PointerType*>(gep->GetType())->GetSubType()->GetTypeEnum()==IR_ARRAY){
-            gep->add_use(new ConstIRInt(0));
+            gep->add_use(ConstIRInt::GetNewConstant());
             return gep;
         }
     }

@@ -1,5 +1,7 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
+#include <sstream>
+
 Use::Use(User* __fat,Value* __usee):fat(__fat),usee(__usee){
     usee->add_user(this);
 }
@@ -37,15 +39,13 @@ std::string Value::GetName(){
 }
 
 void Value::print(){
-    if(auto tmp=dynamic_cast<Function*>(this))
+    if(isConst())
+        std::cout<<GetName();
+    else if(auto tmp=dynamic_cast<Function*>(this))
         std::cout<<"@"<<tmp->GetName();
     else if(auto tmp=dynamic_cast<BuildInFunction*>(this))
         std::cout<<"@"<<tmp->GetName();
-    else if(auto tmp=dynamic_cast<ConstIRInt*>(this))
-        std::cout<<tmp->GetVal();
-    else if(auto tmp=dynamic_cast<ConstIRFloat*>(this))
-        std::cout<<tmp->GetVal();
-    else if(GetName()[1]=='g')
+    else if(GetName().substr(0,2)==".g")
         std::cout<<"@"<<GetName();
     else
         std::cout<<"%"<<GetName();
@@ -63,22 +63,54 @@ User::User(Type* _tp):Value(_tp){
 
 Value* User::GetDef(){return static_cast<Value*>(this);}
 
-ConstIRInt::ConstIRInt(int _val):Value(IntType::NewIntTypeGet()),val(_val){};
+ConstantData::ConstantData(Type* _tp):Value(_tp){}
+
+ConstIRBoolean::ConstIRBoolean(bool _val):ConstantData(BoolType::NewBoolTypeGet()),val(_val){
+    if(val)name="true";
+    else name="false";
+};
+
+ConstIRInt::ConstIRInt(int _val):ConstantData(IntType::NewIntTypeGet()),val(_val){name=std::to_string(val);};    
 
 int ConstIRInt::GetVal(){
     return val;
 }
 
-void ConstIRInt::ir_mark(){
-    return;
-}
-
-ConstIRFloat::ConstIRFloat(float _val):Value(FloatType::NewFloatTypeGet()),val(_val){};
+ConstIRFloat::ConstIRFloat(float _val):ConstantData(FloatType::NewFloatTypeGet()),val(_val){
+    double tmp=val;
+    std::stringstream ss;
+    ss<<"0x"<<std::hex<<*(reinterpret_cast<long long*>(&tmp));
+    name=ss.str();
+};
 
 float ConstIRFloat::GetVal(){
     return val;
 }
 
-void ConstIRFloat::ir_mark(){
-    return;
+ConstIRBoolean* ConstIRBoolean::GetNewConstant(bool _val){
+    static ConstIRBoolean* true_const=new ConstIRBoolean(true);
+    static ConstIRBoolean* false_const=new ConstIRBoolean(false);
+    if(_val)return true_const;
+    else return false_const;
+}
+
+ConstIRInt* ConstIRInt::GetNewConstant(int _val){
+    static std::map<int,ConstIRInt*> int_const_map;
+    if(int_const_map.find(_val)==int_const_map.end())
+        int_const_map[_val]=new ConstIRInt(_val);
+    return int_const_map[_val];
+}
+
+ConstIRFloat* ConstIRFloat::GetNewConstant(float _val){
+    static std::map<float,ConstIRFloat*> float_const_map;
+    if(float_const_map.find(_val)==float_const_map.end())
+        float_const_map[_val]=new ConstIRFloat(_val);
+    return float_const_map[_val];
+}
+
+ConstPtr::ConstPtr(Type* _tp):ConstantData(_tp){}
+
+ConstPtr* ConstPtr::GetNewConstant(Type* _tp){
+    static ConstPtr* const_ptr=new ConstPtr(_tp);
+    return const_ptr;
 }
