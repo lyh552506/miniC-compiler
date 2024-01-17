@@ -130,7 +130,7 @@ public:
   //     : node(n + 1), block_num{n}, vertex(n + 1),
   //       dsu(n + 1), count{1}, IsDFSValid{false}, df(n + 1), thisFunc{Func} {
   dominance(Function *Func,int blockNum)
-      : count{1},node(blockNum+1),block_num(blockNum), vertex(blockNum+1),dsu(blockNum+1),df(blockNum+1) ,IsDFSValid{false}, thisFunc{Func} {
+      : count{1},node(blockNum),block_num(blockNum), vertex(blockNum+1),dsu(blockNum+1),df(blockNum+1) ,IsDFSValid{false}, thisFunc{Func} {
     Init();
     for (int i = 1; i <= blockNum; i++) {
       dsu[i].ancestor = i;

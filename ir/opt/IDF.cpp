@@ -1,19 +1,19 @@
 #include "IDF.hpp"
 
-void IDF::SetDefBB(std::set<BasicBlock *> DefBlock) { DefineBlock = &DefBlock; }
+void IDF::SetDefBB(std::set<BasicBlock *> &DefBlock) { DefineBlock = &DefBlock; }
 
-void IDF::SetLiveInBlock(std::set<BasicBlock *> LiveInBlock) {
+void IDF::SetLiveInBlock(std::set<BasicBlock *> &LiveInBlock) {
   LiveInBlocks = &LiveInBlock;
   uselivein = true;
 }
 
-void IDF::SetBBs(std::vector<std::unique_ptr<BasicBlock>>& bbs) {
+void IDF::SetBBs(std::vector<std::unique_ptr<BasicBlock>> &bbs) {
   this->bbs = &bbs;
 }
 
 // 论文的关键函数
 void IDF::caculateIDF(std::vector<BasicBlock *> &IDFBlocks) {
-  caculateDTlevel(&m_dom.GetNode(0),0);
+  caculateDTlevel(&m_dom.GetNode(0), 0);
 
   std::function<bool(const NodePair &a1, const NodePair &a2)> Comp;
 
@@ -23,8 +23,8 @@ void IDF::caculateIDF(std::vector<BasicBlock *> &IDFBlocks) {
       }); //装入处理好的DefinBlock
 
   for (BasicBlock *bb : *DefineBlock) {
-    auto DomNode = m_dom.GetNode(bb->dfs);
-    que.push(std::make_pair(&DomNode, Level[&DomNode]));
+    DTNode DomNode = &m_dom.GetNode(bb->num);
+    que.push(std::make_pair(DomNode, Level[DomNode]));
   } //装入初始Nα集合
 
   //工作表创建
@@ -69,22 +69,22 @@ void IDF::caculateIDF(std::vector<BasicBlock *> &IDFBlocks) {
         if (DefineBlock->find(succ) == DefineBlock->end())
           que.push(std::make_pair(succNode, SuccLevel));
       }
-      
-      for(auto Domchild:root->idom_child){
-        DTNode DC=&m_dom.node[Domchild];
-        if(VisitedWorklists.insert(DC).second)
+
+      for (auto Domchild : root->idom_child) {
+        DTNode DC = &m_dom.node[Domchild];
+        if (VisitedWorklists.insert(DC).second)
           Worklists.push_back(DC);
       }
     }
   }
 }
 //计算Dt上的Level
-void IDF::caculateDTlevel(DTNode node,int depth) {
+void IDF::caculateDTlevel(DTNode node, int depth) {
   Level[node] = depth;
   for (int i : node->idom_child) {
-    DTNode child=&m_dom.node[i];
+    DTNode child = &m_dom.GetNode(i);
 
-    if(Level.find(child)==Level.end())
-      caculateDTlevel(child,depth+1);
+    if (Level.find(child) == Level.end())
+      caculateDTlevel(child, depth + 1);
   }
 }
