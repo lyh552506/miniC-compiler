@@ -84,7 +84,7 @@ void IDF::caculateDTlevel(DTNode node,int depth) {
   for (int i : node->idom_child) {
     DTNode child=&m_dom.node[i];
 
-    if(Level.find(child)!=Level.end())
+    if(Level.find(child)==Level.end())
       caculateDTlevel(child,depth+1);
   }
 }

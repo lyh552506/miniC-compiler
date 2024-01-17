@@ -54,6 +54,7 @@ void PromoteMem2Reg::run() {
     idf.SetLiveInBlock(LiveInBlocks);
     auto& vec = Func.GetBasicBlock();
     idf.SetBBs(vec);
+    idf.caculateIDF(PhiBlocks);
     for (int dex = 0; dex < PhiBlocks.size(); dex++)
       InsertPhiNode(PhiBlocks[dex], i);
   }
@@ -343,10 +344,7 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
   //	那么正常来说，我们会在B和C都添加PHI节点，一共2个，但是，其实在A基本块中只需要添加一次即可。
   while (!LiveIn.empty()) {
     BasicBlock *bb = LiveIn.back();
-    User* li=bb->front();
 
-    //LoadInst* li=dynamic_cast<LoadInst*>(l);
-    
     LiveIn.pop_back();
     if (!LiveInBlocks.insert(bb).second) //插入当前block
       continue;
