@@ -49,7 +49,6 @@ class LoadInst:public User
     LoadInst(Operand __src);
     void print()final;
     Value* GetSrc();
-    void ReplaceAllUsersWith(Value* val);
 };
 /// @brief float to int
 class FPTSI:public User
@@ -156,7 +155,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
     int dfs;
-    int num;
+    int num=0;
 };
 
 class ExternFunction:public Value

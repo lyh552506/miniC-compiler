@@ -16,6 +16,10 @@ public:
 
   void AnalyzeAlloca(AllocaInst *AI);
   /// @brief 对所有变量进行初始化
+
+  AllocaInfo()
+      : DefineBlocks{}, UsingBlocks{}, OnlyBlock(nullptr),
+        IO_OnlySingleBlock(true), AllocaPtrValue(nullptr), OnlyStore(nullptr) {}
   void init() {
     DefineBlocks.clear();
     UsingBlocks.clear();
@@ -89,7 +93,7 @@ public:
   /// @brief 进一步的设置phi的incoming值，以及重命名
   void Rename(BasicBlock *BB, BasicBlock *Pred,
               std::vector<Value *> &IncomingVal,
-              std::vector<RenamePass>& WorkLists);
+              std::vector<RenamePass> &WorkLists);
 
   dominance &m_dom;
   std::vector<AllocaInst *> m_Allocas;       // index->AllocaInst的映射
@@ -99,21 +103,11 @@ public:
   Function &Func;
   std::map<int, PhiInst *> PrePhiNode;  //由Block到PhiNode的映射
   std::map<PhiInst *, int> PhiToAlloca; // Phi函数对应的Alloca指令
-  std::set<BasicBlock*> RenameVisited;  //记录重命名时访问过的Block
+  std::set<BasicBlock *> RenameVisited; //记录重命名时访问过的Block
 };
 
 /// @brief 检验送入的alloca指令能否被promote
 bool IsAllocaPromotable(AllocaInst *AI);
-
-/// @brief 提供当前块bb和指令inst，返回当前指令所在bb的index
-int PromoteMem2Reg::CaculateIndex(BasicBlock *CurBlock, User *use) {
-  int index = 0;
-  std::vector<std::pair<User *, int>> InstNum;
-  for (auto Instructs : *CurBlock) {
-    User *user = Instructs;
-    // TODO
-  }
-}
 
 void RunPromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas,
                        Function &func);

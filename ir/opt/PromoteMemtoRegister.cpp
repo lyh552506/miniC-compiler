@@ -22,13 +22,15 @@ void PromoteMem2Reg::run() {
       DeadAlloca++;
       continue;
     }
-    //看下哪些基本块在使用这些ALLOC，哪些基本块定义了这个ALLOC
+    //看下哪些基本块在使用这个ALLOC，哪些基本块定义了这个ALLOC
     Info.AnalyzeAlloca(AI);
 
     if (Info.DefineBlocks.size() == 1) { //只有一个定义基本块
       if (RewriteSingleStoreAlloca(Info, AI, BBInfo)) {
         SingleStore++; // rewrite success
         RemoveFromAllocaList(i);
+        // Singleton<Module>().Test();
+        // return;
         continue;
       }
     }
@@ -181,7 +183,7 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
   std::vector<std::pair<int, StoreInst *>> StoreInstWithIndex;
   //遍历alloca的所有user
   // for (User *user : AI->GetUsers()) {
-  for (Use *use : AI->GetUses()) {
+  for (Use *use : AI->GetUserlist()) {
     User *user = use->GetUser();
     if (StoreInst *SI = dynamic_cast<StoreInst *>(user))
       StoreInstWithIndex.push_back(std::make_pair(BBInfo.GetInstIndex(SI), SI));
@@ -193,7 +195,7 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
             }); //方便进行后续的二分搜索
 
   //for (User *user : AI->GetUsers()) {
-  for (Use *use : AI->GetUses()) {
+  for (Use *use : AI->GetUserlist()) {
     User* user=use->GetUser();
     if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
       int loadindex = BBInfo.GetInstIndex(LI);
@@ -212,7 +214,7 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
         else            // no store before load
           return false; /// @note why is this
       } else {
-        LI->ReplaceAllUsersWith(
+        LI->RAUW(
             std::prev(it)->second->Getuselist()[0]->GetValue());
         // LI->EraseFromBlock();
         LI->EraseFromParent();
@@ -225,19 +227,18 @@ void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
   init();
   //遍历这个allocaInst的user链
   // for (User *user : AI->GetUsers()) {
-  for (Use *use : AI->GetUses()) {
+  for (Use *use : AI->GetUserlist()) {
     User* user=use->GetUser();
     BasicBlock *BB;
     if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
       DefineBlocks.push_back(SI->GetParent());
       BB = SI->GetParent();
       OnlyStore = SI;
-      // AllocaPtrValue = SI->GetOperand(0);
       AllocaPtrValue = SI->Getuselist()[0]->GetValue();
     } else { //由于IsAllocaPromotable，所以只会是storeinst或者loadinst
       LoadInst *LI = dynamic_cast<LoadInst *>(user);
       BB = LI->GetParent();
-      UsingBlocks.push_back(LI->GetParent());
+      UsingBlocks.push_back(BB);
       AllocaPtrValue = LI;
     }
 
@@ -256,7 +257,7 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
   int StoreIndex = -1;
   bool GlobalVal;
 
-  // Value *val = OnlySt->GetOperand(0);
+
   Value *val = OnlySt->Getuselist()[0]->GetValue();
   User *u = dynamic_cast<User *>(val);
   if (u == nullptr)
@@ -265,7 +266,7 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
 
   Info.UsingBlocks.clear();
   //for (User *user : AI->GetUsers()) {
-  for (Use *use : AI->GetUses()){
+  for (Use *use : AI->GetUserlist()){
     User* user=use->GetUser();  
     LoadInst *LI = dynamic_cast<LoadInst *>(user);
     if (!LI)
@@ -291,20 +292,18 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
         continue;
       }
     }
-    LI->RAUW(val); // TODO
-    // LI->EraseFromBlock();         //可以将这个LoadInstruction删除了
-    LI->EraseFromParent();
+    LI->RAUW(val);
+    LI->EraseFromParent();     //可以将这个LoadInstruction删除了
   }
   if (!Info.UsingBlocks.empty())
     return false;
-  // OnlySt->EraseFromBlock(); //结束后删除alloca和store
-  OnlySt->EraseFromParent();
-  // AI->EraseFromBlock();
+
+  OnlySt->EraseFromParent();//结束后删除alloca和store
   AI->EraseFromParent();
   return true;
 }
 
-/// @brief preworking befor insert phi(compute live-in blocks)
+/// @brief preworking befor insert phi(compute live-in blocks) //TODO waiting ti repair
 void PromoteMem2Reg::PreWorkingAfterInsertPhi(
     std::set<BasicBlock *> &DefineBlock, BlockInfo &BBInfo, AllocaInfo &Info,
     AllocaInst *AI, std::set<BasicBlock *> &LiveInBlocks) {
@@ -316,7 +315,7 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
       continue; //当前use的block没有define，不能简化
 
     for (auto it = BB->begin();; ++it) {
-      User *user = *it; // TODO
+      User *user = *it;
       if (StoreInst *ST = dynamic_cast<StoreInst *>(
               user)) { //相当于直接给这个变量赋了一个确定值,不再需要phi
         if (ST->GetDef() != AI)
@@ -334,24 +333,27 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
       }
     }
   }
-  // 递归将这些基本块的前驱全部加进来，包括没有load当前alloca的基本块，因为alloca当然能直接流过这些不load它的基本块。
+  //  递归将这些基本块的前驱全部加进来，包括没有load当前alloca的基本块，因为alloca当然能直接流过这些不load它的基本块。
   //	当然，有store这个alloca变量的基本块就不能加进来了，不然上面的操作白做了。
   //	为什么要加入前驱？
   //	比如基本块B和基本C都用了变量a，且B和C的前驱基本块是A，即：
   //						  A
   //					  /   \
-//					 B     C
+  //					 B     C
   //	那么正常来说，我们会在B和C都添加PHI节点，一共2个，但是，其实在A基本块中只需要添加一次即可。
   while (!LiveIn.empty()) {
     BasicBlock *bb = LiveIn.back();
+    User* li=bb->front();
+
+    //LoadInst* li=dynamic_cast<LoadInst*>(l);
+    
     LiveIn.pop_back();
     if (!LiveInBlocks.insert(bb).second) //插入当前block
       continue;
-    int _Dfs = bb->dfs;
-    dominance::Node &node = m_dom.GetNode(_Dfs);
+    dominance::Node &node = m_dom.GetNode(bb->num);
     //遍历他的前驱,以简化phi函数的插入
     for (auto it : node.rev) {
-      BasicBlock *rev = m_dom.DfsToBB(it);
+      BasicBlock *rev = m_dom.GetNode(it).thisBlock;
 
       //遍历到目前的前驱块刚好是定义块，则不添加
       if (DefineBlock.find(rev) != DefineBlock.end())
@@ -364,9 +366,10 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
 
 bool IsAllocaPromotable(AllocaInst *AI) {
   //for (User *user : AI->GetUsers()) {
-  for (Use *use : AI->GetUses()){
+  for (Use *use : AI->GetUserlist()){
     User* user=use->GetUser();
     if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
+      assert(LI&&"LoadInst can not be nullptr");
       // do nothing
     } else if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
       // if (SI->GetOperand(0) == AI) // can not let the first operand be
@@ -377,7 +380,7 @@ bool IsAllocaPromotable(AllocaInst *AI) {
       return false;
     }
   }
-  return true;
+  return true;//到这步也可能是AI没有user，所以后续需要做一下判断
 }
 
 bool BlockInfo::IsAllocaRelated(User *Inst) {
@@ -407,4 +410,15 @@ int BlockInfo::GetInstIndex(User *Inst) {
   }
   //目前user查找到当前的bb
   BasicBlock *BB = Inst->GetParent();
+}
+
+
+/// @brief 提供当前块bb和指令inst，返回当前指令所在bb的index
+int PromoteMem2Reg::CaculateIndex(BasicBlock *CurBlock, User *use) {
+  int index = 0;
+  std::vector<std::pair<User *, int>> InstNum;
+  for (auto Instructs : *CurBlock) {
+    User *user = Instructs;
+    // TODO
+  }
 }

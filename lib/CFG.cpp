@@ -18,11 +18,19 @@ void AllocaInst::print(){
     std::cout<<"\n";
 }
 
+bool AllocaInst::IsUsed(){
+    auto& list=GetUserlist();
+    if(list.is_empty())
+      return false;
+    return true;
+}
+
 std::map<Type*,UndefValue*> Undefs;
 
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
     add_use(__des);
+    name="StoreInst";
 }
 Operand StoreInst::GetDef(){return nullptr;}
 void StoreInst::print(){
@@ -42,6 +50,11 @@ void StoreInst::ir_mark(){
 LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType())->GetSubType()){
     assert(GetTypeEnum()==IR_Value_INT||GetTypeEnum()==IR_Value_Float);
     add_use(__src);
+}
+
+Value* LoadInst::GetSrc(){
+    
+
 }
 
 void LoadInst::print(){

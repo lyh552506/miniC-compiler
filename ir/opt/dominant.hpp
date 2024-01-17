@@ -16,12 +16,14 @@
 #define SDOM(x) node[x].sdom        //获取x对应结点的sdom
 #define MIN_SDOM(x) dsu[x].min_sdom //获取结点最近的sdom的index
 #define IDOM(x) node[x].idom        //获取结点的idom
-
+class dominance;
 // struct _Node {
 //   std::string name;
 //   std::vector<int> defblock;
 //   bool operator==(const _Node &other) { return name == other.name; }
 // };
+
+bool promoteMemoryToRegister(Function &func, dominance &dom);
 
 class dominance {
   friend class IDF;
@@ -127,14 +129,15 @@ public:
   // dominance(int n, int m, Function &Func)
   //     : node(n + 1), block_num{n}, vertex(n + 1),
   //       dsu(n + 1), count{1}, IsDFSValid{false}, df(n + 1), thisFunc{Func} {
-  dominance(Function *Func)
-      : count{1}, IsDFSValid{false}, thisFunc{Func} {
+  dominance(Function *Func,int blockNum)
+      : count{1},node(blockNum+1),block_num(blockNum), vertex(blockNum+1),dsu(blockNum+1),df(blockNum+1) ,IsDFSValid{false}, thisFunc{Func} {
     Init();
-    // for (int i = 1; i <= n; i++) {
-    //   dsu[i].ancestor = i;
-    //   dsu[i].min_sdom = i;
-    // }
+    for (int i = 1; i <= blockNum; i++) {
+      dsu[i].ancestor = i;
+      dsu[i].min_sdom = i;
+    }
     dom_begin(); //标志开始函数
+    promoteMemoryToRegister(*thisFunc, *this);
   }
 
   void dom_begin();

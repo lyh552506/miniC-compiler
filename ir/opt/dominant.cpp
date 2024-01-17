@@ -24,6 +24,7 @@ void dominance::Init() {
   for (auto &bb : bbs) {
     // List<User> _User = bb->getInstList();
     User *Inst = bb->back(); //获取到最后一条指令
+    node[bb->num].thisBlock=bb.get();
     if (CondInst *cond = dynamic_cast<CondInst *>(Inst)) {
       auto& uselist = cond->Getuselist();
       BasicBlock *des_true = dynamic_cast<BasicBlock *>(uselist[1]->GetValue());
@@ -124,9 +125,9 @@ void dominance::find_dom() {
 }
 
 void dominance::build_tree() {
-  for (int i = 2; i <= block_num; i++) {
+  for (int i = 1; i < block_num; i++) {
     int idom = IDOM(i);
-    if (idom > 0) {
+    if (idom >= 0) {
       node[idom].idom_child.push_front(i);
     }
   }
@@ -134,7 +135,7 @@ void dominance::build_tree() {
 
 /// @brief 准备计算支配树
 void dominance::dom_begin() {
-  Init(); // 记录有向边的关系
+  //Init(); // 记录有向边的关系
   BasicBlock *EntryBB = thisFunc->front_block();
   DFS(EntryBB->num);
   find_dom();   // 寻找支配节点

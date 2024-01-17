@@ -12,10 +12,15 @@ void UserList::push_front(Use* _data){
     _data->nxt=head;
     if(head!=nullptr)head->prev=&(_data->nxt);
     _data->prev=&head;
+    head=_data;
 }
 Value* Use::GetValue(){return usee;}
 
 User* Use::GetUser(){return fat;}
+
+User*& Use::SetUser(){return fat;}
+
+Value*& Use::SetValue(){return usee;}
 
 Type* Value::GetType(){
     return tp;
@@ -58,21 +63,28 @@ void Value::RAUW(Value* val){
     UserList list=this->userlist;
     /*tranverse the userlist and replace value*/
     for(auto use=list.begin();use!=list.end();++use){
-        User *user=(*use)->GetUser();
-
-        auto& uselist=user->Getuselist();
-        using UsePtr=decltype(uselist[0]);
-
-        auto it=std::find_if(uselist.begin(),uselist.end(),[this](UsePtr& tmp)->bool{
-            return tmp.get()->GetValue()==this;
-        });
-        //this 一定在他的User的uselist value中，不用判断是否来到end
-        //在User的uselist中删除掉it
-        uselist.erase(it);
+        User *&user=(*use)->SetUser();
+        Value*& usee=(*use)->SetValue();
+        usee=val;
 
         Use *tmp=new Use(user,val);
         val->add_user(tmp);
-        user->add_use(val);
+        //val->add_user();
+        // val->add_user()
+
+        // auto& uselist=user->Getuselist();
+        // using UsePtr=decltype(uselist[0]);
+
+        // auto it=std::find_if(uselist.begin(),uselist.end(),[this](UsePtr& tmp)->bool{
+        //     return tmp.get()->GetValue()==this;
+        // });
+        // //this 一定在他的User的uselist value中，不用判断是否来到end
+        // //在User的uselist中删除掉it
+        // uselist.erase(it);
+
+        //Use *tmp=new Use(user,val);
+        //val->add_user(tmp);
+        //user->add_use(val);
     }
 }
 

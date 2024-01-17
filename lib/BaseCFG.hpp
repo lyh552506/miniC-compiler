@@ -27,6 +27,8 @@ class Use
     Use(User*,Value*);
     /// @brief 注意，调用这个方法的一定是User，所以我加了个鉴权
     void RemoveFromUserList(User* is_valid);
+    User*& SetUser();
+    Value*& SetValue();
     Value* GetValue();
     User* GetUser();
     
@@ -48,17 +50,18 @@ class UserList
             return *this;
         }
 
-        iterator& operator--(){
-            ptr=*(ptr->prev);
-            return *this;
-        }
+        // iterator& operator--(){
+        //     ptr=*(ptr->prev);
+        //     return *this;
+        // }
 
         Use* operator*(){return ptr;}
         bool operator==(const iterator& other){return ptr==other.ptr;}
         bool operator!=(const iterator& other){return ptr!=other.ptr;}
     };
-    iterator begin(){return iterator(head);}
+    iterator begin(){return iterator(this->head);}
     iterator end(){return iterator(nullptr);}
+    bool is_empty(){return head==nullptr;}
 };
 class Value
 {
@@ -79,7 +82,7 @@ class Value
     virtual bool isConst(){return false;}
     void RAUW(Value* val); //ReplaceAllUseWith
     virtual std::string GetName();
-    UserList GetUses();
+    UserList& GetUserlist(){return userlist;};
 };
 using Operand=Value*;
 class User:public Value,public list_node<BasicBlock,User>
