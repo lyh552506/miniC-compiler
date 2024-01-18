@@ -52,7 +52,7 @@ void PromoteMem2Reg::run() {
 
     idf.SetDefBB(DefineBlock);
     idf.SetLiveInBlock(LiveInBlocks);
-    auto& vec = Func.GetBasicBlock();
+    auto &vec = Func.GetBasicBlock();
     idf.SetBBs(vec);
     idf.caculateIDF(PhiBlocks);
     for (int dex = 0; dex < PhiBlocks.size(); dex++)
@@ -60,16 +60,15 @@ void PromoteMem2Reg::run() {
   }
 
   //下面开始为重命名做准备
-  std::vector<Value *> AllocaDict;
+  std::vector<Value *> AllocaDict(m_Allocas.size());
   for (int x = 0; x < m_Allocas.size(); x++)
     AllocaDict[x] = UndefValue::get(
         m_Allocas[x]->GetType()); //首先对所有待处理的Alloca标记为Undef
 
   std::vector<RenamePass> WorkLists; //采用工作表法，传入EntryBlock
-  // WorkLists.emplace_back(Func.front_block(), nullptr, std::move(AllocaDict));
   WorkLists.emplace_back(Func.front_block(), nullptr, AllocaDict);
   do {
-    auto tmp = std::move(WorkLists.back()); // FIXME maybe have some problems
+    auto tmp = std::move(WorkLists.back());
     WorkLists.pop_back();
     Rename(tmp.CurBlock, tmp.Pred, tmp.IncomingVal, WorkLists);
   } while (!WorkLists.empty());
@@ -77,7 +76,7 @@ void PromoteMem2Reg::run() {
 
 void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
                             std::vector<Value *> &IncomingVal,
-                            std::vector<RenamePass>& WorkLists) {
+                            std::vector<RenamePass> &WorkLists) {
   while (1) {
     //当前块存在Phi指令
     if (PhiInst *Phi = dynamic_cast<PhiInst *>(BB->front())) {
@@ -88,9 +87,9 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 
         for (auto Inst = BB->begin(); Inst != BB->end();) {
           int Allocanum = PhiToAlloca[Phi];
-          Phi->updateIncoming(IncomingVal[Allocanum], BB);
+          Phi->updateIncoming(IncomingVal[Allocanum], Pred);
 
-          // IncomingVal[Allocanum]=Phi;
+          IncomingVal[Allocanum] = Phi;
 
           ++Inst;
           PhiInst *Phi = dynamic_cast<PhiInst *>(*Inst);
@@ -113,7 +112,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
     for (auto inst = BB->begin(); inst != BB->end(); ++inst) {
       User *user = *inst;
       if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
-        Value *Src = LI->GetSrc();
+        Value *Src = LI->GetLoadTarget();
         AllocaInst *AI = dynamic_cast<AllocaInst *>(Src); // src---->%a
         if (!AI)
           continue;
@@ -126,7 +125,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
         LI->RAUW(RepL);
         LI->EraseFromParent();
       } else if (StoreInst *ST = dynamic_cast<StoreInst *>(user)) {
-        auto& des = ST->Getuselist();
+        auto &des = ST->Getuselist();
         Value *Des = des[1]->GetValue(); //获取Store的第二个操作数
         AllocaInst *AI = dynamic_cast<AllocaInst *>(Des);
         if (!AI)
@@ -155,14 +154,15 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
     BB = m_dom.GetNode(*It++).thisBlock;
 
     while (It != cur.des.end()) {
-      WorkLists.emplace_back(BB, Pred, IncomingVal);
-      ++It;
+      BasicBlock *tmp = m_dom.GetNode(*It++).thisBlock;
+      // if (RenameVisited.insert(tmp).second)
+      WorkLists.emplace_back(tmp, Pred, IncomingVal);
     }
   }
 }
 
 bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
-  auto& vect = Func.GetBasicBlock();
+  auto &vect = Func.GetBasicBlock();
   auto it = std::find_if(vect.begin(), vect.end(),
                          [bb](std::unique_ptr<BasicBlock> &base) -> bool {
                            return base.get() == bb;
@@ -195,9 +195,9 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
               return T1.first < T2.first;
             }); //方便进行后续的二分搜索
 
-  //for (User *user : AI->GetUsers()) {
+  // for (User *user : AI->GetUsers()) {
   for (Use *use : AI->GetUserlist()) {
-    User* user=use->GetUser();
+    User *user = use->GetUser();
     if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
       int loadindex = BBInfo.GetInstIndex(LI);
       auto it = std::lower_bound(
@@ -215,8 +215,7 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
         else            // no store before load
           return false; /// @note why is this
       } else {
-        LI->RAUW(
-            std::prev(it)->second->Getuselist()[0]->GetValue());
+        LI->RAUW(std::prev(it)->second->Getuselist()[0]->GetValue());
         // LI->EraseFromBlock();
         LI->EraseFromParent();
       }
@@ -229,7 +228,7 @@ void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
   //遍历这个allocaInst的user链
   // for (User *user : AI->GetUsers()) {
   for (Use *use : AI->GetUserlist()) {
-    User* user=use->GetUser();
+    User *user = use->GetUser();
     BasicBlock *BB;
     if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
       DefineBlocks.push_back(SI->GetParent());
@@ -258,7 +257,6 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
   int StoreIndex = -1;
   bool GlobalVal;
 
-
   Value *val = OnlySt->Getuselist()[0]->GetValue();
   User *u = dynamic_cast<User *>(val);
   if (u == nullptr)
@@ -266,9 +264,9 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
   BasicBlock *StoreBB = OnlySt->GetParent();
 
   Info.UsingBlocks.clear();
-  //for (User *user : AI->GetUsers()) {
-  for (Use *use : AI->GetUserlist()){
-    User* user=use->GetUser();  
+  // for (User *user : AI->GetUsers()) {
+  for (Use *use : AI->GetUserlist()) {
+    User *user = use->GetUser();
     LoadInst *LI = dynamic_cast<LoadInst *>(user);
     if (!LI)
       continue;
@@ -294,17 +292,18 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
       }
     }
     LI->RAUW(val);
-    LI->EraseFromParent();     //可以将这个LoadInstruction删除了
+    LI->EraseFromParent(); //可以将这个LoadInstruction删除了
   }
   if (!Info.UsingBlocks.empty())
     return false;
 
-  OnlySt->EraseFromParent();//结束后删除alloca和store
+  OnlySt->EraseFromParent(); //结束后删除alloca和store
   AI->EraseFromParent();
   return true;
 }
 
-/// @brief preworking befor insert phi(compute live-in blocks) //TODO waiting ti repair
+/// @brief preworking befor insert phi(compute live-in blocks) //TODO waiting ti
+/// repair
 void PromoteMem2Reg::PreWorkingAfterInsertPhi(
     std::set<BasicBlock *> &DefineBlock, BlockInfo &BBInfo, AllocaInfo &Info,
     AllocaInst *AI, std::set<BasicBlock *> &LiveInBlocks) {
@@ -363,11 +362,11 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
 }
 
 bool IsAllocaPromotable(AllocaInst *AI) {
-  //for (User *user : AI->GetUsers()) {
-  for (Use *use : AI->GetUserlist()){
-    User* user=use->GetUser();
+  // for (User *user : AI->GetUsers()) {
+  for (Use *use : AI->GetUserlist()) {
+    User *user = use->GetUser();
     if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
-      assert(LI&&"LoadInst can not be nullptr");
+      assert(LI && "LoadInst can not be nullptr");
       // do nothing
     } else if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
       // if (SI->GetOperand(0) == AI) // can not let the first operand be
@@ -378,12 +377,12 @@ bool IsAllocaPromotable(AllocaInst *AI) {
       return false;
     }
   }
-  return true;//到这步也可能是AI没有user，所以后续需要做一下判断
+  return true; //到这步也可能是AI没有user，所以后续需要做一下判断
 }
 
 bool BlockInfo::IsAllocaRelated(User *Inst) {
   if (LoadInst *LI = dynamic_cast<LoadInst *>(Inst)) { // if read this alloca
-    AllocaInst *AI = dynamic_cast<AllocaInst *>(LI->GetSrc());
+    AllocaInst *AI = dynamic_cast<AllocaInst *>(LI->GetLoadTarget());
     if (AI != nullptr)
       return true;
   } else if (StoreInst *ST =
@@ -409,7 +408,6 @@ int BlockInfo::GetInstIndex(User *Inst) {
   //目前user查找到当前的bb
   BasicBlock *BB = Inst->GetParent();
 }
-
 
 /// @brief 提供当前块bb和指令inst，返回当前指令所在bb的index
 int PromoteMem2Reg::CaculateIndex(BasicBlock *CurBlock, User *use) {

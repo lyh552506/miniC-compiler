@@ -62,7 +62,7 @@ void IDF::caculateIDF(std::vector<BasicBlock *> &IDFBlocks) {
         if (!VisitedQue.insert(succNode).second) //标记inPhi
           continue;
 
-        if (uselivein && LiveInBlocks->find(succ) != LiveInBlocks->end())
+        if (uselivein && LiveInBlocks->find(succ) == LiveInBlocks->end())//不在live集合
           continue;
 
         IDFBlocks.push_back(succ);

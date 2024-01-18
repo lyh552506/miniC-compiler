@@ -97,8 +97,6 @@ class User:public Value,public list_node<BasicBlock,User>
     User(Type* tp);
     virtual Operand GetDef();
     void ir_mark();
-    //virtual void EraseFromBlock();
-    //virtual BasicBlock* GetParent();
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
 };
 class ConstIRInt:public Value

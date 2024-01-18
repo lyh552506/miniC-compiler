@@ -48,7 +48,7 @@ class LoadInst:public User
     public:
     LoadInst(Operand __src);
     void print()final;
-    Value* GetSrc();
+    Value* GetLoadTarget();
 };
 /// @brief float to int
 class FPTSI:public User
@@ -128,7 +128,7 @@ public:
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
 
 public:
-  std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord;
+  std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   int oprandNum;
 };
 class BasicBlock:public Value,public mylist<BasicBlock,User>

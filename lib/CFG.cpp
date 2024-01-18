@@ -52,9 +52,9 @@ LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType(
     add_use(__src);
 }
 
-Value* LoadInst::GetSrc(){
-    
-
+Value* LoadInst::GetLoadTarget(){
+    auto& list=Getuselist();
+    return list[0]->GetValue();
 }
 
 void LoadInst::print(){
@@ -702,11 +702,23 @@ UndefValue* UndefValue::get(Type *Ty){
 }
 
 void UndefValue::print(){
-    std::cout<<"undef";
+    std::cout<<"undef ";
     return;
 }
 
-void PhiInst::print(){
-    std::cout<<"Phi";
-    return;
+void PhiInst::print() {
+  std::cout << "Phi ";
+  dynamic_cast<PointerType *>(tp)->GetSubType()->print();
+  std::cout << " ";
+  for (int i = 0; i < oprandNum; i++) {
+    std::cout<<"[ ";
+    PhiRecord[i].first->print();
+    std::cout<<", ";
+    dynamic_cast<Value*>(PhiRecord[i].second)->print();
+    std::cout<<"] ";
+    if(i!=oprandNum-1)
+      std::cout<<", ";
+  }
+  std::cout << "\n";
+  return;
 }
