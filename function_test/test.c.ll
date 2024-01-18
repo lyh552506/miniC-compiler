@@ -331,104 +331,63 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.g = global i32 0
-define i32 @func(i32 %.5){
-.3:
-  %n_0 = alloca i32
-  store i32 %.5, i32* %n_0
-  %.7 = load i32, i32* @.g.g
-  %.8 = load i32, i32* %n_0
-  %.9 = add i32 %.7, %.8
-  store i32 %.9, i32* @.g.g
-  %.11 = load i32, i32* @.g.g
-  call void @putint(i32 %.11)
-  %.14 = load i32, i32* @.g.g
-  ret i32 %.14 
+define i32 @test(i32 %.3, i32 %.6){
+.1:
+  %b_0 = alloca i32
+  %a_0 = alloca i32
+  store i32 %.3, i32* %a_0
+  store i32 %.6, i32* %b_0
+  %.8 = load i32, i32* %a_0
+  %.9 = load i32, i32* %b_0
+  %.10 = add i32 %.8, %.9
+  store i32 %.10, i32* %a_0
+  %.12 = load i32, i32* %a_0
+  ret i32 %.12 
 }
 define i32 @main(){
-.17:
-  %i_0 = alloca i32
-  %.20at11 = call i32 @getint()
-  store i32 %.20at11, i32* %i_0
-  %.25 = load i32, i32* %i_0
-  %.27 = icmp sgt i32 %.25, 10
-  br i1 %.27, label %.28, label %.24
-.22:
-  %.41at13 = call i32 @getint()
-  store i32 %.41at13, i32* %i_0
-  %.46 = load i32, i32* %i_0
-  %.48 = icmp sgt i32 %.46, 11
-  br i1 %.48, label %.49, label %.45
-.23:
-  store i32 1, i32* %i_0
-  br label %.22 
-.24:
-  store i32 0, i32* %i_0
-  br label %.22 
-.28:
-  %.30 = load i32, i32* %i_0
-  %.31at12 = call i32 @func(i32 %.30)
-  %.33 = icmp ne i32 %.31at12, 0
-  br i1 %.33, label %.23, label %.24
-.43:
-  %.62at15 = call i32 @getint()
-  store i32 %.62at15, i32* %i_0
-  %.68 = load i32, i32* %i_0
-  %.70 = icmp sle i32 %.68, 99
-  br i1 %.70, label %.65, label %.67
-.44:
-  store i32 1, i32* %i_0
-  br label %.43 
-.45:
-  store i32 0, i32* %i_0
-  br label %.43 
-.49:
-  %.51 = load i32, i32* %i_0
-  %.52at14 = call i32 @func(i32 %.51)
-  %.54 = icmp ne i32 %.52at14, 0
-  br i1 %.54, label %.44, label %.45
-.64:
-  %.83at17 = call i32 @getint()
-  store i32 %.83at17, i32* %i_0
-  %.89 = load i32, i32* %i_0
-  %.91 = icmp sle i32 %.89, 100
-  br i1 %.91, label %.86, label %.88
-.65:
-  store i32 1, i32* %i_0
-  br label %.64 
-.66:
-  store i32 0, i32* %i_0
-  br label %.64 
-.67:
-  %.72 = load i32, i32* %i_0
-  %.73at16 = call i32 @func(i32 %.72)
-  %.75 = icmp ne i32 %.73at16, 0
-  br i1 %.75, label %.65, label %.66
-.85:
-  %.108at19 = call i32 @func(i32 99)
-  %.110 = icmp eq i32 0, %.108at19
-  br i1 %.110, label %.111, label %.106
-.86:
-  store i32 1, i32* %i_0
-  br label %.85 
-.87:
-  store i32 0, i32* %i_0
-  br label %.85 
-.88:
-  %.93 = load i32, i32* %i_0
-  %.94at18 = call i32 @func(i32 %.93)
-  %.96 = icmp ne i32 %.94at18, 0
-  br i1 %.96, label %.86, label %.87
-.104:
-  ret i32 0 
-.105:
-  store i32 1, i32* %i_0
-  br label %.104 
-.106:
-  store i32 0, i32* %i_0
-  br label %.104 
-.111:
-  %.114at19 = call i32 @func(i32 100)
-  %.116 = icmp ne i32 %.114at19, 0
-  br i1 %.116, label %.105, label %.106
+.15:
+  %b_1 = alloca i32
+  %a_1 = alloca i32
+  store i32 1, i32* %a_1
+  store i32 2, i32* %b_1
+  %.22 = load i32, i32* %a_1
+  %.23 = load i32, i32* %b_1
+  %.24at9 = call i32 @test(i32 %.22, i32 %.23)
+  store i32 %.24at9, i32* %a_1
+  %.26 = load i32, i32* %a_1
+  ret i32 %.26 
 }
+test: 
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    addi s0, sp, 32
+    sw .3, -24(s0)
+    sw .6, -20(s0)
+    lw .8, -24(s0)
+    lw .9, -20(s0)
+    addw .10, .8, .9
+    sw .10, -24(s0)
+    lw .12, -24(s0)
+    lw a0, .12
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    addi sp, sp, 32
+    ret
+main:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    addi s0, sp, 32
+    sw .17, -24(s0)
+    sw .20, -20(s0)
+    lw .22, -24(s0)
+    lw .23, -20(s0)
+    call test
+    sw .24at9, -24(s0)
+    lw .26, -24(s0)
+    lw a0, .26
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    addi sp, sp, 32
+    ret

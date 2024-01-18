@@ -56,6 +56,7 @@ class Value
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
     void RAUW(Value* val); //ReplaceAllUseWith
+    void SetName(std::string newname);
     virtual std::string GetName();
 };
 using Operand=Value*;

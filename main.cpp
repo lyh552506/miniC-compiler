@@ -22,6 +22,10 @@ int main(int argc,char** argv)
     Singleton<CompUnit*>()->codegen();
     Singleton<Module>().Test();
 
+    // output_path = argv[1];
+    // output_path += ".a";
+    // freopen(output_path.c_str(),"a",stdout);
     PrintCodeToTxt(&Singleton<Module>());
+    // freopen("/dev/tty", "a", stdout);
     return 0;
 }

@@ -31,7 +31,7 @@ Value::Value(Type* _tp):tp(_tp){
 void Value::add_user(Use* __data){
     userlist.push_front(__data);
 }
-
+void Value::SetName(std::string newname) {this->name = newname;}
 std::string Value::GetName(){
     return name;
 }
