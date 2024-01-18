@@ -692,3 +692,8 @@ void UndefValue::print(){
     std::cout<<"undef";
     return;
 }
+
+void PhiInst::print(){
+    std::cout<<"Phi";
+    return;
+}
