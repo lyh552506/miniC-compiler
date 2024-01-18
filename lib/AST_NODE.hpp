@@ -233,6 +233,19 @@ template<>
 inline void BaseExp<EqExp>::GetOperand(BasicBlock* block,BasicBlock* is_true,BasicBlock* is_false){
     for(auto &i:ls){
         auto tmp=i->GetOperand(block);
+        if(auto Const=dynamic_cast<ConstIRBoolean*>(tmp)){
+            if(Const->GetVal()==true){
+                if(i.get()!=ls.back().get())continue;
+                else{
+                    block->GenerateUnCondInst(is_true);
+                    return;
+                }
+            }
+            else{
+                block->GenerateUnCondInst(is_false);
+                return;
+            }
+        }
         if(i.get()!=ls.back().get()){
             auto nxt_building=block->GenerateNewBlock();
             block->GenerateCondInst(tmp,nxt_building,is_false);
