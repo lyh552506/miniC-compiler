@@ -94,6 +94,10 @@ ConstIRBoolean* ConstIRBoolean::GetNewConstant(bool _val){
     else return false_const;
 }
 
+bool ConstIRBoolean::GetVal(){
+    return val;
+}
+
 ConstIRInt* ConstIRInt::GetNewConstant(int _val){
     static std::map<int,ConstIRInt*> int_const_map;
     if(int_const_map.find(_val)==int_const_map.end())

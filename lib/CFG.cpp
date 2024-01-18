@@ -40,7 +40,7 @@ void StoreInst::ir_mark(){
 }
 
 LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType())->GetSubType()){
-    assert(GetTypeEnum()==IR_Value_INT||GetTypeEnum()==IR_Value_Float);
+    assert(GetTypeEnum()==IR_Value_INT||GetTypeEnum()==IR_Value_Float||GetTypeEnum()==IR_PTR);
     add_use(__src);
 }
 
@@ -297,7 +297,7 @@ Variable::Variable(std::string _id):name(_id){
 }
 Variable::Variable(Type* _tp,std::string _id):name(_id),tp(_tp){}
 Variable::Variable(InnerDataType _tp,std::string _id):name(_id){
-    tp=Type::NewTypeByEnum(Singleton<InnerDataType>());
+    tp=Type::NewTypeByEnum(_tp);
 }
 std::string Variable::get_name(){
     return name;
@@ -420,6 +420,11 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
                 fuc=calc(A->GetVal(),op,B->GetVal());
             else assert(0);
         }
+        else if(auto A=dynamic_cast<ConstIRBoolean*>(_A))
+        {
+            auto B=dynamic_cast<ConstIRBoolean*>(_B);
+            fuc=calc(A->GetVal(),op,B->GetVal());
+        }
         else assert(0);
         if(check_binary_boolean(op))
             return ConstIRBoolean::GetNewConstant(std::get<int>(fuc));
@@ -436,7 +441,7 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
 }
 
 void BasicBlock::GenerateStoreInst(Operand src,Operand des){
-    assert(des->GetTypeEnum()==IR_PTR);
+    assert(des->GetType()->GetTypeEnum()==IR_PTR);
     auto tmp=dynamic_cast<PointerType*>(des->GetType());
     
     if(tmp->GetSubType()->GetTypeEnum()!=src->GetTypeEnum()){
@@ -588,7 +593,14 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         auto i=args.begin();
         for(auto j=params.begin();j!=params.end();j++,i++){
             auto& ii=*i;auto& jj=*j;
-            assert(ii->GetType()==jj->GetType());
+            if(jj->GetType()!=ii->GetType())
+            {
+                auto a=ii->GetType()->GetTypeEnum(),b=jj->GetType()->GetTypeEnum();
+                assert(a==IR_Value_INT||a==IR_Value_Float);
+                assert(b==IR_Value_INT||b==IR_Value_Float);
+                if(b==IR_Value_Float)ii=GenerateSITFP(ii);
+                else ii=GenerateFPTSI(ii);
+            }
         }
         auto inst=new CallInst(func,args,"at"+std::to_string(run_time));
         push_back(inst);

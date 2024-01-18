@@ -432,21 +432,21 @@ Operand LVal::GetPointer(BasicBlock* block){
     }
 
     for(auto &i:tmp){
-        auto tp=dynamic_cast<PointerType*>(handle->GetType())->GetSubType();
-        if(tp->GetTypeEnum()==IR_ARRAY)
-            dynamic_cast<GetElementPtrInst*>(handle)->add_use(i);
-        else
-        {
-            handle=block->GenerateLoadInst(handle);
+        if(auto gep=dynamic_cast<GetElementPtrInst*>(handle))
+            gep->add_use(i);
+        else{
             handle=block->GenerateGEPInst(handle);
             dynamic_cast<GetElementPtrInst*>(handle)->add_use(i);
         }
+        if(i!=tmp.back()&&dynamic_cast<PointerType*>(handle->GetType())->GetSubType()->GetTypeEnum()==IR_PTR)
+            block->GenerateLoadInst(handle);
     }
     return handle;
 }
 
 Operand LVal::GetOperand(BasicBlock* block){
     auto ptr=GetPointer(block);
+    if(ptr->isConst())return ptr;
     if(auto gep=dynamic_cast<GetElementPtrInst*>(ptr)){
         if(dynamic_cast<PointerType*>(gep->GetType())->GetSubType()->GetTypeEnum()==IR_ARRAY){
             gep->add_use(ConstIRInt::GetNewConstant());
@@ -513,7 +513,7 @@ void WhileStmt::print(int x){
 
 IfStmt::IfStmt(LOrExp* p0,Stmt* p1,Stmt* p2):condition(p0),t(p1),f(p2){}
 BasicBlock* IfStmt::GetInst(GetInstState state){
-    BasicBlock* nxt_building=state.current_building->GenerateNewBlock();
+    BasicBlock* nxt_building=nullptr;
     auto istrue=state.current_building->GenerateNewBlock();
     BasicBlock* isfalse=nullptr;
     GetInstState t_state=state;t_state.current_building=istrue;
@@ -521,7 +521,10 @@ BasicBlock* IfStmt::GetInst(GetInstState state){
         isfalse=state.current_building->GenerateNewBlock();
 
     if(isfalse!=nullptr)condition->GetOperand(state.current_building,istrue,isfalse);
-    else condition->GetOperand(state.current_building,istrue,nxt_building);
+    else{
+        nxt_building=state.current_building->GenerateNewBlock();
+        condition->GetOperand(state.current_building,istrue,nxt_building);
+    }
 
     auto make_uncond=[&](BasicBlock* tmp){
         if(!tmp->EndWithBranch()){
@@ -538,7 +541,7 @@ BasicBlock* IfStmt::GetInst(GetInstState state){
         make_uncond(isfalse);
     }
     
-    return nxt_building;
+    return (nxt_building==nullptr?state.current_building:nxt_building);
 }
 
 void IfStmt::print(int x){

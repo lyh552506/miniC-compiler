@@ -1,145 +1,96 @@
-const int TOKEN_NUM = 0, TOKEN_OTHER = 1;
-int last_char = 32, num, other;
-int cur_token;
+/*
+ * Max flow EK with DFS.
+ */
+const int INF = 0x70000000;
 
-int next_char() {
-  last_char = getch();
-  return last_char;
-}
+int size[10];
+int to[10][10];
+int cap[10][10];
+int rev[10][10];
+int used[10];
 
-int is_space(int c) {
-  if (c == 32 || c == 10) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
-}
-
-int is_num(int c) {
-  if (c >= 48 && c <= 57) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
-}
-
-int next_token() {
-  while (is_space(last_char)) next_char();
-  if (is_num(last_char)) {
-    num = last_char - 48;
-    while (is_num(next_char())) {
-      num = num * 10 + last_char - 48;
+void my_memset(int arr[], int val, int n)
+{
+    int i = 0;
+    while (i < n) {
+        arr[i] = val;
+        i = i + 1;
     }
-    cur_token = TOKEN_NUM;
-  }
-  else {
-    other = last_char;
-    next_char();
-    cur_token = TOKEN_OTHER;
-  }
-  return cur_token;
 }
 
-int panic() {
-  putch(112);
-  putch(97);
-  putch(110);
-  putch(105);
-  putch(99);
-  putch(33);
-  putch(10);
-  return -1;
+void add_node(int u, int v, int c)
+{
+    to[u][size[u]] = v;
+    cap[u][size[u]] = c;
+    rev[u][size[u]] = size[v];
+
+    to[v][size[v]] = u;
+    cap[v][size[v]] = 0;
+    rev[v][size[v]] = size[u];
+
+    size[u] = size[u] + 1;
+    size[v] = size[v] + 1;
 }
 
-int get_op_prec(int op) {
-  // +, -
-  if (op == 43 || op == 45) return 10;
-  // *, /, %
-  if (op == 42 || op == 47 || op == 37) return 20;
-  // other
-  return 0;
-}
+int dfs(int s, int t, int f)
+{
+    if (s == t)
+        return f;
+    used[s] = 1;
 
-void stack_push(int s[], int v) {
-  s[0] = s[0] + 1;
-  s[s[0]] = v;
-}
+    int i = 0;
+    while (i < size[s]) {
+        if (used[to[s][i]]) { i = i + 1; continue; }
+        if (cap[s][i] <= 0) { i = i + 1; continue; }
 
-int stack_pop(int s[]) {
-  int last = s[s[0]];
-  s[0] = s[0] - 1;
-  return last;
-}
+        int min_f;
+        if (f < cap[s][i])
+            min_f = f;
+        else
+            min_f = cap[s][i];
+        int d = dfs(to[s][i], t, min_f);
 
-int stack_peek(int s[]) {
-  return s[s[0]];
-}
-
-int stack_size(int s[]) {
-  return s[0];
-}
-
-int eval_op(int op, int lhs, int rhs) {
-  // +
-  if (op == 43) return lhs + rhs;
-  // -
-  if (op == 45) return lhs - rhs;
-  // *
-  if (op == 42) return lhs * rhs;
-  // /
-  if (op == 47) return lhs / rhs;
-  // %
-  if (op == 37) return lhs % rhs;
-  // other
-  return 0;
-}
-
-int eval() {
-  int oprs[256] = {}, ops[256] = {};
-  // get the first value
-  if (cur_token != TOKEN_NUM) return panic();
-  stack_push(oprs, num);
-  next_token();
-  // evaluate
-  while (cur_token == TOKEN_OTHER) {
-    // get operator
-    int op = other;
-    if (!get_op_prec(op)) break;
-    next_token();
-    // handle operator
-    while (stack_size(ops) && get_op_prec(stack_peek(ops)) >= get_op_prec(op)) {
-      // evaluate the current operation
-      int cur_op = stack_pop(ops);
-      int rhs = stack_pop(oprs), lhs = stack_pop(oprs);
-      stack_push(oprs, eval_op(cur_op, lhs, rhs));
+        if (d > 0) {
+            cap[s][i] = cap[s][i] - d;
+            cap[to[s][i]][rev[s][i]] = cap[to[s][i]][rev[s][i]] + d;
+            return d;
+        }
+        i = i + 1;
     }
-    stack_push(ops, op);
-    // get next expression
-    if (cur_token != TOKEN_NUM) return panic();
-    stack_push(oprs, num);
-    next_token();
-  }
-  // eat ';'
-  next_token();
-  // clear the operator stack
-  while (stack_size(ops)) {
-    int cur_op = stack_pop(ops);
-    int rhs = stack_pop(oprs), lhs = stack_pop(oprs);
-    stack_push(oprs, eval_op(cur_op, lhs, rhs));
-  }
-  return stack_peek(oprs);
+    return 0;
 }
 
-int main() {
-  int count = getint();
-  getch();
-  next_token();
-  while (count) {
-    putint(eval());
+int max_flow(int s, int t)
+{
+    int flow = 0;
+
+    while (1) {
+        my_memset(used, 0, 10);
+
+        int f = dfs(s, t, INF);
+        if (f == 0)
+            return flow;
+        flow = flow + f;
+    }
+}
+
+int main()
+{
+    int V, E;
+    V = getint();
+    E = getint();
+    my_memset(size, 0, 10);
+
+    while (E > 0) {
+        int u, v;
+        u = getint();
+        v = getint();
+        int c = getint();
+        add_node(u, v, c);
+        E = E - 1;
+    }
+
+    putint(max_flow(1, V));
     putch(10);
-    count = count - 1;
-  }
-  return 0;
+    return 0;
 }

@@ -129,7 +129,7 @@ Decl: ConstDecl {$$=(Stmt*)$1;$$->SET(@1);}
 ConstDecl: Y_CONST Type ConstDefs Y_SEMICOLON {$$=new ConstDecl($2,$3);$$->SET(@1);}
          ;
 
-ConstDefs: ConstDefs Y_COMMA ConstDef {$1->push_back($3);$$->SET(@1);}
+ConstDefs: ConstDefs Y_COMMA ConstDef {$$=$1;$1->push_back($3);$$->SET(@1);}
          | ConstDef {$$=new ConstDefs($1);$$->SET(@1);}
          ;
 
