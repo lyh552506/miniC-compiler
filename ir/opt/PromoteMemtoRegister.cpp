@@ -10,13 +10,13 @@ void PromoteMem2Reg::run() {
   AllocaInfo Info;
   BlockInfo BBInfo;
   IDF idf(m_dom);
-  // starting to deal alloca with promotable,this place are method3,method4
+  // starting to deal alloc56a with promotable,this place are method3,method4
   for (int i = 0; i != m_Allocas.size(); i++) {
     AllocaInst *AI = m_Allocas[i];
     // do some basic opt
     if (!AI->IsUsed()) // if not used,then delete
     {
-      // AI->DeletFromList();
+      AI->ClearRelation();
       AI->EraseFromParent();
       RemoveFromAllocaList(i);
       DeadAlloca++;
@@ -72,6 +72,15 @@ void PromoteMem2Reg::run() {
     WorkLists.pop_back();
     Rename(tmp.CurBlock, tmp.Pred, tmp.IncomingVal, WorkLists);
   } while (!WorkLists.empty());
+
+  //替换phi之后前面的alloca可能已经没有user了，需要删除
+  Singleton<Module>().Test();
+  for (AllocaInst *clean : m_Allocas) {
+    if (!clean->IsUsed()) {
+      clean->ClearRelation();
+      clean->EraseFromParent();
+    }
+  }
 }
 
 void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
@@ -81,9 +90,6 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
     //当前块存在Phi指令
     if (PhiInst *Phi = dynamic_cast<PhiInst *>(BB->front())) {
       if (PhiToAlloca.count(Phi)) {
-        // auto tmp = m_dom.GetNode(Pred->num);
-        // int length = std::count(tmp.des.begin(), tmp.des.end(),
-        //                         BB->num); //找到前驱有几个通往当前BB的Edge
 
         for (auto Inst = BB->begin(); Inst != BB->end();) {
           int Allocanum = PhiToAlloca[Phi];
@@ -123,6 +129,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 
         Value *RepL = IncomingVal[it->second]; //使用Alloca的value来替换
         LI->RAUW(RepL);
+        LI->ClearRelation();
         LI->EraseFromParent();
       } else if (StoreInst *ST = dynamic_cast<StoreInst *>(user)) {
         auto &des = ST->Getuselist();
@@ -138,7 +145,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
         Value *RepL =
             ST->Getuselist()[0]->GetValue(); //使用Store的第一个操作数来替换
         IncomingVal[it->second] = RepL; //--->更新前面初始化的undef
-
+        ST->ClearRelation();
         ST->EraseFromParent();
       }
     }
@@ -183,7 +190,7 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
                                             BlockInfo &BBInfo) {
   std::vector<std::pair<int, StoreInst *>> StoreInstWithIndex;
   //遍历alloca的所有user
-  // for (User *user : AI->GetUsers()) {
+
   for (Use *use : AI->GetUserlist()) {
     User *user = use->GetUser();
     if (StoreInst *SI = dynamic_cast<StoreInst *>(user))
@@ -195,7 +202,6 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
               return T1.first < T2.first;
             }); //方便进行后续的二分搜索
 
-  // for (User *user : AI->GetUsers()) {
   for (Use *use : AI->GetUserlist()) {
     User *user = use->GetUser();
     if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
@@ -210,13 +216,14 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
               // container
       if (it == StoreInstWithIndex.begin()) {
         if (!StoreInstWithIndex.empty()) // no stores
-          // LI->ReplaceAllUsersWith(UndefValue::get(LI->CopyType().get()));
+        {
+          LI->RAUW(UndefValue::get(LI->GetType()));
           continue;
-        else            // no store before load
+        } else          // no store before load
           return false; /// @note why is this
       } else {
         LI->RAUW(std::prev(it)->second->Getuselist()[0]->GetValue());
-        // LI->EraseFromBlock();
+        LI->ClearRelation();
         LI->EraseFromParent();
       }
     }
@@ -226,7 +233,6 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
 void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
   init();
   //遍历这个allocaInst的user链
-  // for (User *user : AI->GetUsers()) {
   for (Use *use : AI->GetUserlist()) {
     User *user = use->GetUser();
     BasicBlock *BB;
@@ -292,18 +298,19 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
       }
     }
     LI->RAUW(val);
+    LI->ClearRelation();
     LI->EraseFromParent(); //可以将这个LoadInstruction删除了
   }
   if (!Info.UsingBlocks.empty())
     return false;
-
+  OnlySt->ClearRelation();
   OnlySt->EraseFromParent(); //结束后删除alloca和store
+  AI->ClearRelation();
   AI->EraseFromParent();
   return true;
 }
 
-/// @brief preworking befor insert phi(compute live-in blocks) //TODO waiting ti
-/// repair
+/// @brief preworking befor insert phi(compute live-in blocks)
 void PromoteMem2Reg::PreWorkingAfterInsertPhi(
     std::set<BasicBlock *> &DefineBlock, BlockInfo &BBInfo, AllocaInfo &Info,
     AllocaInst *AI, std::set<BasicBlock *> &LiveInBlocks) {

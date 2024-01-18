@@ -631,7 +631,7 @@ PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB){
 }
 
 PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty){
-    PhiInst *tmp = new PhiInst{BeforeInst,ty};
+    PhiInst *tmp = new PhiInst(BeforeInst,ty);
     currentBB->push_front(tmp);
     return tmp;
 }
@@ -707,7 +707,8 @@ void UndefValue::print(){
 }
 
 void PhiInst::print() {
-  std::cout << "Phi ";
+  dynamic_cast<Value*>(this)->print();
+  std::cout << " = Phi ";
   dynamic_cast<PointerType *>(tp)->GetSubType()->print();
   std::cout << " ";
   for (int i = 0; i < oprandNum; i++) {

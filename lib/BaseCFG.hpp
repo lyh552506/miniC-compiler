@@ -13,7 +13,7 @@ class Value;
 class BasicBlock;
 class Use
 {
-    friend class UserList;
+    public:
     /// @brief 使用者
     User* fat=nullptr;
     /// @brief 被使用者
@@ -62,6 +62,7 @@ class UserList
     iterator begin(){return iterator(this->head);}
     iterator end(){return iterator(nullptr);}
     bool is_empty(){return head==nullptr;}
+    Use* Front(){return head;}
 };
 class Value
 {
@@ -97,6 +98,7 @@ class User:public Value,public list_node<BasicBlock,User>
     User(Type* tp);
     virtual Operand GetDef();
     void ir_mark();
+    void ClearRelation();//在EraseFromBasic()前调用
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
 };
 class ConstIRInt:public Value

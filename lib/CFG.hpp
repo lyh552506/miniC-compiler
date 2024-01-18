@@ -31,8 +31,7 @@ class AllocaInst:public User
     public:
     AllocaInst(std::string,Type*);
     void print()final;
-    bool IsUsed();//TODO 返回当前alloca出来的对象后续有没有被使用过
-    // std::vector<User*> GetUsers(); //返回使用过alloca分配出的虚拟寄存器的指令
+    bool IsUsed();
 };
 
 class StoreInst:public User

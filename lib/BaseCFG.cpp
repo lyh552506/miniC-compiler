@@ -61,30 +61,12 @@ void Value::print(){
 //replace all uses with transferred value
 void Value::RAUW(Value* val){
     UserList list=this->userlist;
-    /*tranverse the userlist and replace value*/
-    for(auto use=list.begin();use!=list.end();++use){
-        User *&user=(*use)->SetUser();
-        Value*& usee=(*use)->SetValue();
-        usee=val;
-
-        Use *tmp=new Use(user,val);
-        val->add_user(tmp);
-        //val->add_user();
-        // val->add_user()
-
-        // auto& uselist=user->Getuselist();
-        // using UsePtr=decltype(uselist[0]);
-
-        // auto it=std::find_if(uselist.begin(),uselist.end(),[this](UsePtr& tmp)->bool{
-        //     return tmp.get()->GetValue()==this;
-        // });
-        // //this 一定在他的User的uselist value中，不用判断是否来到end
-        // //在User的uselist中删除掉it
-        // uselist.erase(it);
-
-        //Use *tmp=new Use(user,val);
-        //val->add_user(tmp);
-        //user->add_use(val);
+    Use* Head=list.Front();
+    while(Head){
+        Head->usee=val;
+        Use* tmp=Head->nxt;
+        val->userlist.push_front(Head);
+        Head=tmp;
     }
 }
 
@@ -96,6 +78,15 @@ User::User():Value(VoidType::NewVoidTypeGet()){
 }
 
 User::User(Type* _tp):Value(_tp){
+}
+
+void User::ClearRelation(){
+    assert(this->GetUserlist().is_empty()&&"the head must be nullptr!");
+    for(auto& use:uselist){
+        (*use->prev)=use->nxt;
+        if(use->nxt!=nullptr)
+          use->nxt->prev=use->prev;
+    }
 }
 
 Value* User::GetDef(){return static_cast<Value*>(this);}
