@@ -35,9 +35,6 @@ void StoreInst::print(){
     }
     std::cout<<'\n';
 }
-void StoreInst::ir_mark(){
-    return;
-}
 
 LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType())->GetSubType()){
     assert(GetTypeEnum()==IR_Value_INT||GetTypeEnum()==IR_Value_Float||GetTypeEnum()==IR_PTR);

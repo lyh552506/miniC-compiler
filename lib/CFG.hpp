@@ -41,7 +41,6 @@ class StoreInst:public User
     StoreInst(Operand,Operand);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class LoadInst:public User
 {
@@ -49,7 +48,6 @@ class LoadInst:public User
     LoadInst(Operand __src);
     void print()final;
     Value* GetSrc();
-    void ReplaceAllUsersWith(Value* val);
 };
 /// @brief float to int
 class FPTSI:public User
@@ -139,7 +137,6 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
-    void ir_mark();
     int dfs;
 };
 
