@@ -116,7 +116,7 @@ class GetElementPtrInst:public User
     Type* GetType();
     void print()final;
 };
-class BasicBlock:public Value,public mylist<BasicBlock,User>
+class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
 {
     Function& master;
     public:
@@ -158,22 +158,19 @@ class BuildInFunction:public Value
     static BuildInFunction* GetBuildInFunction(std::string);
 };
 
-class Function:public Value
+class Function:public Value,public mylist<Function,BasicBlock>
 {
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
-    std::vector<BasicBlockPtr> bbs;
     void InsertAlloca(AllocaInst* ptr);
     public:
     Function(InnerDataType _tp,std::string _id);
-    BasicBlock* front_block();
     void print();
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
     std::vector<ParamPtr>& GetParams();
-    std::vector<BasicBlockPtr> GetBasicBlock();
 };
 class Module:public SymbolTable
 {

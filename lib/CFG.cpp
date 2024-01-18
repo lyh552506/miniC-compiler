@@ -484,13 +484,13 @@ void Function::print(){
         if(i.get()!=params.back().get())std::cout<<", ";
     }
     std::cout<<"){\n";
-    for(auto &i:bbs)
+    for(auto i:(*this))
         i->print();
     std::cout<<"}\n";
 }
 
 void Function::InsertAlloca(AllocaInst* ptr){
-    bbs.front()->push_back(ptr);
+    front()->push_back(ptr);
 }
 
 BuildInFunction::BuildInFunction(Type* tp,std::string _id):Value(tp){
@@ -525,12 +525,9 @@ BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
 Function::Function(InnerDataType _tp,std::string _id):Value(Type::NewTypeByEnum(_tp)){
     name=_id;
     //至少有一个bbs
-    bbs.push_back(BasicBlockPtr(new BasicBlock(*this)));
+    push_back(new BasicBlock(*this));
 }
 
-BasicBlock* Function::front_block(){
-    return bbs.front().get();
-}
 bool BasicBlock::EndWithBranch(){
     if(auto data=dynamic_cast<UnCondInst*>(back()))return 1;
     else if(auto data=dynamic_cast<CondInst*>(back()))return 1;
@@ -626,7 +623,7 @@ Operand BasicBlock::push_alloca(std::string name,Type* _tp){
 }
 
 void Function::push_alloca(Variable* ptr){
-    auto obj=bbs.front()->push_alloca(ptr->get_name(),ptr->GetType());
+    auto obj=front()->push_alloca(ptr->get_name(),ptr->GetType());
     Singleton<Module>().Register(ptr->get_name(),obj);
 }
 
@@ -634,11 +631,11 @@ void Function::push_param(Variable* var){
     push_alloca(var);
     /// @brief 实参
     params.push_back(ParamPtr(new Value(var->GetType())));
-    bbs.front()->GenerateStoreInst(params.back().get(),Singleton<Module>().GetValueByName(var->get_name()));
+    front()->GenerateStoreInst(params.back().get(),Singleton<Module>().GetValueByName(var->get_name()));
 }
 
 void Function::add_block(BasicBlock* __block){
-    bbs.push_back(BasicBlockPtr(__block));
+    push_back(__block);
 }
 
 std::vector<std::unique_ptr<Value>>& Function::GetParams(){

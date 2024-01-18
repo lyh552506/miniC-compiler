@@ -396,7 +396,7 @@ void FuncDef::codegen(){
     Singleton<Module>().layer_increase();
     if(params!=nullptr)params->GetVariable(f);
     assert(function_body!=nullptr);
-    GetInstState state={f.front_block(),nullptr,nullptr};
+    GetInstState state={f.front(),nullptr,nullptr};
     auto end_block=function_body->GetInst(state);
     if(!end_block->EndWithBranch()){
         assert(f.GetType()->GetTypeEnum()==IR_Value_VOID);
