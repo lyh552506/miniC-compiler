@@ -187,7 +187,7 @@ class MachineBasicBlock {
     void set_name(std::string name);
     BasicBlock* get_block();
     MachineFunction* get_parent();
-    void print_block_lable(int func_num, int block_num);
+    void print_block_lable();
 };
 
 class MachineFunction {
@@ -197,14 +197,17 @@ class MachineFunction {
     int alloca_num;
     size_t stacksize;
     std::map<std::string, size_t> offsetMap;
+    std::map<std::string, std::string> lableMap;
     //std::map<size_t, std::string> offsetMap;
     public:
     MachineFunction(Function* func);
     void set_offset_map(std::string name, size_t offset);
+    void set_lable_map(std::string name, std::string lable);
     void set_alloca_and_num();
     void set_stacksize();
 
     size_t get_offset(std::string name);
+    std::string get_lable(std::string name);
     int get_allocanum();
     int get_stacksize();
 

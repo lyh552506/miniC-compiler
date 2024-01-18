@@ -331,33 +331,47 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @test(i32 %.3, i32 %.6){
+define i32 @whileIf(){
 .1:
   %b_0 = alloca i32
   %a_0 = alloca i32
-  store i32 %.3, i32* %a_0
-  store i32 %.6, i32* %b_0
+  store i32 0, i32* %a_0
+  store i32 0, i32* %b_0
   %.8 = load i32, i32* %a_0
   %.9 = load i32, i32* %b_0
   %.10 = add i32 %.8, %.9
-  store i32 %.10, i32* %a_0
-  %.12 = load i32, i32* %a_0
-  ret i32 %.12 
+  br label %.11wc7 
+.11wc7:
+  %.15 = load i32, i32* %a_0
+  %.17 = icmp slt i32 %.15, 100
+  br i1 %.17, label %.12wloop.7.15, label %.13wn15
+.12wloop.7.15:
+  %.22 = load i32, i32* %a_0
+  %.24 = icmp eq i32 %.22, 5
+  br i1 %.24, label %.20, label %.21
+.13wn15:
+  %.39 = load i32, i32* %b_0
+  ret i32 %.39 
+.19:
+  %.34 = load i32, i32* %a_0
+  %.36 = add i32 %.34, 1
+  store i32 %.36, i32* %a_0
+  br label %.11wc7 
+.20:
+  store i32 25, i32* %b_0
+  br label %.19 
+.21:
+  %.29 = load i32, i32* %a_0
+  %.31 = mul i32 %.29, 2
+  store i32 %.31, i32* %b_0
+  br label %.19 
 }
 define i32 @main(){
-.15:
-  %b_1 = alloca i32
-  %a_1 = alloca i32
-  store i32 1, i32* %a_1
-  store i32 2, i32* %b_1
-  %.22 = load i32, i32* %a_1
-  %.23 = load i32, i32* %b_1
-  %.24at9 = call i32 @test(i32 %.22, i32 %.23)
-  store i32 %.24at9, i32* %a_1
-  %.26 = load i32, i32* %a_1
-  ret i32 %.26 
+.42:
+  %.43at20 = call i32 @whileIf()
+  ret i32 %.43at20 
 }
-test: 
+whileIf:
     addi sp, sp, -32
     sd ra, 24(sp)
     sd s0, 16(sp)
@@ -367,26 +381,44 @@ test:
     lw .8, -24(s0)
     lw .9, -20(s0)
     addw .10, .8, .9
-    sw .10, -24(s0)
-    lw .12, -24(s0)
-    lw a0, .12
+    j .LBB0_1
+.LBB0_1:
+    lw .15, -24(s0)
+Error: No Such Binaryinst!
+Error: No Such Instruction.
+Error: No Such Instruction.
+.LBB0_2:
+    lw .22, -24(s0)
+Error: No Such Binaryinst!
+Error: No Such Instruction.
+Error: No Such Instruction.
+.LBB0_3:
+    lw .39, -20(s0)
+    lw a0, .39
     ld ra, 24(sp)
     ld s0, 16(sp)
     addi sp, sp, 32
     ret
+.LBB0_4:
+    lw .34, -24(s0)
+    addw .36, .34, .35
+    sw .36, -24(s0)
+    j .LBB0_1
+.LBB0_5:
+    sw .26, -20(s0)
+    j .LBB0_4
+.LBB0_6:
+    lw .29, -24(s0)
+    mulw .31, .29, .30
+    sw .31, -20(s0)
+    j .LBB0_4
 main:
     addi sp, sp, -32
     sd ra, 24(sp)
     sd s0, 16(sp)
     addi s0, sp, 32
-    sw .17, -24(s0)
-    sw .20, -20(s0)
-    lw .22, -24(s0)
-    lw .23, -20(s0)
-    call test
-    sw .24at9, -24(s0)
-    lw .26, -24(s0)
-    lw a0, .26
+    call whileIf
+    lw a0, .43at20
     ld ra, 24(sp)
     ld s0, 16(sp)
     addi sp, sp, 32

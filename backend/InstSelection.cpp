@@ -28,9 +28,9 @@ MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
     else if (auto Tempinst = dynamic_cast<SITFP*>(&inst)) {
         machineinst = MatchSITFP(parent, Tempinst);
     }
-    // else if (auto Tempinst = dynamic_cast<UnCondInst*>(inst)) {
-    //     machineinst = MatchUnCondInst(inst);
-    // }  
+    else if (auto Tempinst = dynamic_cast<UnCondInst*>(&inst)) {
+        machineinst = MatchUnCondInst(parent, Tempinst);
+    }  
     // else if (auto Tempinst = dynamic_cast<CondInst*>(&inst)) {
     //     machineinst = MatchCondInst(Tempinst);
     // }
@@ -83,10 +83,8 @@ MachineInst* MatchSITFP(MachineBasicBlock* parent,SITFP* inst) {
 }
 MachineInst* MatchUnCondInst(MachineBasicBlock* parent, UnCondInst* inst) {
     std::string op = "j";
-    std::string temp = parent->get_name();
-    parent->get_block()->SetName(temp);
-    parent->set_name(temp);
-    MachineInst* machineinst = new MachineInst(parent, op);
+    Operand rd = inst->Getuselist()[0]->GetValue();
+    MachineInst* machineinst = new MachineInst(parent, op, rd);
     return machineinst;
 }
 // MachineInst* MatchCondInst(CondInst* inst) {
@@ -100,11 +98,9 @@ MachineInst* MatchCallInst(MachineBasicBlock* parent, CallInst* inst) {
 }
 
 MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst) {
-    Operand rs = inst->Getuselist()[0]->GetValue();
-    std::cout << "    lw a0, " << rs->GetName() << std::endl; 
-    //size_t of = parent->get_parent()->get_offset(rs->GetName());
-    //std::cout << "    sw a0, -" << of << "(s0)" << std::endl; 
-    MachineInst* machineinst = new MachineInst(parent, "ret");
+    Operand rd = inst->Getuselist()[0]->GetValue();
+    //std::cout << "    lw a0, " << rd->GetName() << std::endl; 
+    MachineInst* machineinst = new MachineInst(parent, "ret", rd);
     return machineinst;
 }
 

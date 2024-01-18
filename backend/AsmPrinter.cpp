@@ -7,6 +7,7 @@ void RegAlloca(Function* function) {
 //打印机器指令
 void PrintCode(Module* Unit) {
     int func_num = 0;
+    /*MachineFunction*/
     for (auto& Func : Unit->GetFuncTion()) {
         int block_num = 0;
         //打印每个Func，及栈帧
@@ -16,26 +17,32 @@ void PrintCode(Module* Unit) {
         }
         machinefunction->print_func_name();
         machinefunction->print_stack_frame();
-        //machinefunction->print_stack_offset();
+        
+        /*MachineBasicBlock*/
+        std::vector<MachineBasicBlock*> Mvector;
         for (auto& Block : Func->GetBasicBlock()) {
-            //打印每个Block的标签
             MachineBasicBlock* machineblock = new MachineBasicBlock(Block.get(), machinefunction);
+            machineblock->set_lable(func_num, block_num);
+            machinefunction->set_lable_map(Block->GetName(), machineblock->get_name());
+            Mvector.push_back(machineblock);
+            block_num++;
+        }
+        block_num = 0;
+        for (auto& machineblock : Mvector) {
+            //打印MachineBasicBlock的标签
             if (block_num != 0) {
-                machineblock->print_block_lable(func_num, block_num);
+                machineblock->print_block_lable();
             }
-            for (auto Inst : *Block) {
+            /*MachineInst*/
+            for (auto Inst : *(machineblock->get_block())) {
                 //生成机器指令 
                 MachineInst* machineinst = InstSelect(machineblock, *Inst);
                 //打印每个Inst
                 machineinst->print();
-                //alloca指令此处未作处理
-                //特殊：ret 语句
             }
-            //打印每个Block的跳转
             block_num++;
         }
-        //打印每个Func的返回
-        machinefunction->print_func_end();
+        /*MachineFunction End*/
         func_num++;
     }
 }

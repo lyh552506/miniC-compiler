@@ -1,11 +1,21 @@
-int test (int a, int b) {
-    a = a + b;
-    return a;
+int whileIf(){
+  int a;
+  a = 0;
+  int b;
+  b = 0;
+  a + b;
+  while (a < 100) {
+    if (a == 5) {
+      b = 25;
+    }
+    else {
+      b = a * 2;
+    }
+    a = a + 1;
+  }
+  return (b);
 }
 
-int main() {
-    int a = 1;
-    int b = 2;
-    a = test(a, b);
-    return a;
+int main(){
+  return (whileIf());
 }

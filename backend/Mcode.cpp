@@ -35,17 +35,16 @@ void MachineInst::print() {
     }
     else if (opcode == "j") {
         std::cout << "    " << opcode << " ";
-        std::cout << rd->GetName() << std::endl;
-        std::string temp = this->get_machinebasicblock()->get_block()->GetName();
-        this->get_machinebasicblock()->get_block()->SetName(this->get_machinebasicblock()->get_name());
-        this->get_machinebasicblock()->set_name(temp);
+        std::string lable = mbb->get_parent()->get_lable(rd->GetName());
+        std::cout << lable << std::endl;
     }
     else if (opcode == "call" ) {
         std::cout << "    " << opcode << " ";
         std::cout << rd->GetName() << std::endl;
     }
     else if (opcode == "ret") {
-        return;
+        std::cout << "    lw a0, " << rd->GetName() << std::endl; 
+        this->get_machinebasicblock()->get_parent()->print_func_end();
     }
     else if (opcode == "white")
         std::cout << "Error: No Such Instruction." << std::endl;
@@ -92,8 +91,7 @@ std::string MachineBasicBlock::get_name() {return this->name;}
 void MachineBasicBlock::set_name(std::string name) {this->name = name;}
 BasicBlock* MachineBasicBlock::get_block() {return this->block;}
 MachineFunction* MachineBasicBlock::get_parent() {return this->mfuc;}
-void MachineBasicBlock::print_block_lable(int func_num, int block_num) {
-    set_lable(func_num, block_num);
+void MachineBasicBlock::print_block_lable() {
     std::cout << name << ":" << std::endl;
 }
 
@@ -101,6 +99,9 @@ void MachineBasicBlock::print_block_lable(int func_num, int block_num) {
 MachineFunction::MachineFunction(Function* func) : func(func), offset(0), alloca_num(0), stacksize(0) {}
 void MachineFunction::set_offset_map(std::string name, size_t offset) {
     offsetMap.insert(std::pair<std::string, size_t>(name, offset));
+}
+void MachineFunction::set_lable_map(std::string name, std::string lable) {
+    lableMap.insert(std::pair<std::string, std::string>(name, lable));
 }
 void MachineFunction::set_alloca_and_num() {
     alloca_num = 0;
@@ -124,6 +125,9 @@ void MachineFunction::set_stacksize() {
 }
 size_t MachineFunction::get_offset(std::string name) {
     return offsetMap.find(name)->second;
+}
+std::string MachineFunction::get_lable(std::string name) {
+    return lableMap.find(name)->second;
 }
 int MachineFunction::get_allocanum() {return this->alloca_num;}
 int MachineFunction::get_stacksize() {return this->stacksize;}

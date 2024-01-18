@@ -11,7 +11,7 @@ void copyFile(const std::string& sourcePath, const std::string& destinationPath)
 
 int main(int argc,char** argv)
 {
-    std::string output_path=argv[1];    
+    std::string output_path=argv[1];
     output_path+=".ll";
     copyFile("runtime.ll", output_path);
     freopen(output_path.c_str(),"a",stdout);
