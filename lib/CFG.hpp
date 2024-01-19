@@ -20,7 +20,7 @@ class Variable
 };
 
 class UndefValue:public User{
-  UndefValue(Type* Ty){}
+  UndefValue(Type* Ty){name="undef";}
 public:
   static UndefValue* get(Type *Ty);
   void print();

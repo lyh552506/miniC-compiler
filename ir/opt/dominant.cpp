@@ -135,7 +135,6 @@ void dominance::build_tree() {
 
 /// @brief 准备计算支配树
 void dominance::dom_begin() {
-  //Init(); // 记录有向边的关系
   BasicBlock *EntryBB = thisFunc->front_block();
   DFS(EntryBB->num);
   find_dom();   // 寻找支配节点

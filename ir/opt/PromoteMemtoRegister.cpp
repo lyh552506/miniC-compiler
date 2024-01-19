@@ -186,13 +186,14 @@ bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
 bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
                                             BlockInfo &BBInfo) {
   std::vector<std::pair<int, StoreInst *>> StoreInstWithIndex;
-  //遍历alloca的所有user
 
+  //遍历alloca的所有user
   for (Use *use : AI->GetUserlist()) {
     User *user = use->GetUser();
     if (StoreInst *SI = dynamic_cast<StoreInst *>(user))
       StoreInstWithIndex.push_back(std::make_pair(BBInfo.GetInstIndex(SI), SI));
   }
+
   std::sort(StoreInstWithIndex.begin(), StoreInstWithIndex.end(),
             [](const std::pair<int, StoreInst *> &T1,
                const std::pair<int, StoreInst *> &T2) -> bool {
@@ -212,19 +213,25 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
           }); // find the first value which index is bigger than the inst in
               // container
       if (it == StoreInstWithIndex.begin()) {
-        if (!StoreInstWithIndex.empty()) // no stores
+        if (StoreInstWithIndex.empty()) // no stores
         {
           LI->RAUW(UndefValue::get(LI->GetType()));
-          continue;
         } else          // no store before load
           return false; /// @note why is this
       } else {
         LI->RAUW(std::prev(it)->second->Getuselist()[0]->GetValue());
-        LI->ClearRelation();
-        LI->EraseFromParent();
       }
+
+      LI->ClearRelation();
+      LI->EraseFromParent();
+      BBInfo.DeleteIndex(LI);
     }
   }
+  AI->ClearRelation();
+  AI->EraseFromParent();
+  BBInfo.DeleteIndex(AI);
+  
+  return true;
 }
 
 void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
@@ -237,12 +244,12 @@ void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
       DefineBlocks.push_back(SI->GetParent());
       BB = SI->GetParent();
       OnlyStore = SI;
-      AllocaPtrValue = SI->Getuselist()[0]->GetValue();
+      // AllocaPtrValue = SI->Getuselist()[0]->GetValue();
     } else { //由于IsAllocaPromotable，所以只会是storeinst或者loadinst
       LoadInst *LI = dynamic_cast<LoadInst *>(user);
       BB = LI->GetParent();
       UsingBlocks.push_back(BB);
-      AllocaPtrValue = LI;
+      // AllocaPtrValue = LI;
     }
 
     if (IO_OnlySingleBlock) {
@@ -274,12 +281,13 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
     if (!LI)
       continue;
 
-    if (!GlobalVal) {
-      if (LI->GetParent() ==
-          StoreBB) { // load语句和当前的store在同一个块如果不是全局变量，需要寻找store和load的次序关系，此时需要查看二者的先后关系
+    if (!GlobalVal) { // load语句和当前的store在同一个块如果不是全局变量，需要寻找store和load的次序关系
+      if (LI->GetParent() == StoreBB) {
         if (StoreIndex == -1)
-          StoreIndex = CaculateIndex(StoreBB, OnlySt);
-        int LoadIndex = CaculateIndex(StoreBB, LI);
+          StoreIndex = BBInfo.GetInstIndex(OnlySt);
+        // StoreIndex = CaculateIndex(StoreBB, OnlySt);
+        // int LoadIndex = CaculateIndex(StoreBB, LI);
+        int LoadIndex = BBInfo.GetInstIndex(LI);
         if (LoadIndex <
             StoreIndex) { //如果load比store还早一些出现，那么出现undef
           Info.UsingBlocks.push_back(StoreBB);
@@ -400,25 +408,24 @@ bool BlockInfo::IsAllocaRelated(User *Inst) {
   return false;
 }
 
+/// @brief 提供当前块bb和指令inst，返回当前指令所在bb的index
 int BlockInfo::GetInstIndex(User *Inst) {
-  if (valid) {
-    // std::find(IndexInfo.begin(),IndexInfo.end(),);
-    auto it = std::find_if(
-        IndexInfo.begin(), IndexInfo.end(),
-        [Inst](std::pair<User *, int> &src) { return src.first == Inst; });
-    if (it != IndexInfo.end())
-      return it->second;
-  }
+  auto It = IndexInfo.find(Inst);
+  if (It != IndexInfo.end())
+    return It->second;
+
   //目前user查找到当前的bb
+  int num = 0;
   BasicBlock *BB = Inst->GetParent();
+  for (auto inst = BB->begin(); inst != BB->end(); ++inst) {
+    if (dynamic_cast<LoadInst *>(*inst) &&
+            dynamic_cast<AllocaInst *>((*inst)->Getuselist()[0]->usee) ||
+        dynamic_cast<StoreInst *>(*inst) &&
+            dynamic_cast<AllocaInst *>((*inst)->Getuselist()[1]->usee)) {
+      IndexInfo[*inst] = num++;
+    }
+  }
+  return IndexInfo[Inst];
 }
 
-/// @brief 提供当前块bb和指令inst，返回当前指令所在bb的index
-int PromoteMem2Reg::CaculateIndex(BasicBlock *CurBlock, User *use) {
-  int index = 0;
-  std::vector<std::pair<User *, int>> InstNum;
-  for (auto Instructs : *CurBlock) {
-    User *user = Instructs;
-    // TODO
-  }
-}
+void BlockInfo::DeleteIndex(User *Inst) { IndexInfo.erase(Inst); }

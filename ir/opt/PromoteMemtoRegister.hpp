@@ -31,14 +31,16 @@ public:
 };
 
 struct BlockInfo {
-  std::vector<std::pair<User *, int>> IndexInfo;
+  std::map<User *, int> IndexInfo;
   /// @brief 获取index
   int GetInstIndex(User *Inst);
   /// @brief  判断是否是和alloca相关的读写操作
   bool IsAllocaRelated(User *Inst);
+  
+  /// @brief 对于已经删除的指令，同时去除他的index 
+  void DeleteIndex(User *Inst);
 
-  int valid;
-  BlockInfo() : valid{0} {}
+  BlockInfo()=default;
 };
 
 struct RenamePass {

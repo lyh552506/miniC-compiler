@@ -702,7 +702,7 @@ UndefValue* UndefValue::get(Type *Ty){
 }
 
 void UndefValue::print(){
-    std::cout<<"undef ";
+    dynamic_cast<Value*>(this)->print();
     return;
 }
 
