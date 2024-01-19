@@ -35,6 +35,5 @@ int main(int argc, char **argv) {
   dominance dom(f, Li.size());
 
   Singleton<Module>().Test();
-  // PrintCodeToTxt(&Singleton<Module>());
   return 0;
 }

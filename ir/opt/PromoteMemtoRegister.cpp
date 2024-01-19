@@ -29,8 +29,6 @@ void PromoteMem2Reg::run() {
       if (RewriteSingleStoreAlloca(Info, AI, BBInfo)) {
         SingleStore++; // rewrite success
         RemoveFromAllocaList(i);
-        // Singleton<Module>().Test();
-        // return;
         continue;
       }
     }
@@ -74,7 +72,6 @@ void PromoteMem2Reg::run() {
   } while (!WorkLists.empty());
 
   //替换phi之后前面的alloca可能已经没有user了，需要删除
-  Singleton<Module>().Test();
   for (AllocaInst *clean : m_Allocas) {
     if (!clean->IsUsed()) {
       clean->ClearRelation();
@@ -270,7 +267,7 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
   BasicBlock *StoreBB = OnlySt->GetParent();
 
   Info.UsingBlocks.clear();
-  // for (User *user : AI->GetUsers()) {
+
   for (Use *use : AI->GetUserlist()) {
     User *user = use->GetUser();
     LoadInst *LI = dynamic_cast<LoadInst *>(user);

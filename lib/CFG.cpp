@@ -712,11 +712,11 @@ void PhiInst::print() {
   dynamic_cast<PointerType *>(tp)->GetSubType()->print();
   std::cout << " ";
   for (int i = 0; i < oprandNum; i++) {
-    std::cout<<"[ ";
+    std::cout<<"[";
     PhiRecord[i].first->print();
     std::cout<<", ";
     dynamic_cast<Value*>(PhiRecord[i].second)->print();
-    std::cout<<"] ";
+    std::cout<<"]";
     if(i!=oprandNum-1)
       std::cout<<", ";
   }

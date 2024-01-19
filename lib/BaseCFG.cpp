@@ -60,8 +60,8 @@ void Value::print(){
 
 //replace all uses with transferred value
 void Value::RAUW(Value* val){
-    UserList list=this->userlist;
-    Use* Head=list.Front();
+    UserList& list=this->userlist;
+    Use*& Head=list.Front();
     while(Head){
         Head->usee=val;
         Use* tmp=Head->nxt;

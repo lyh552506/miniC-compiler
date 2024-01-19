@@ -62,7 +62,7 @@ class UserList
     iterator begin(){return iterator(this->head);}
     iterator end(){return iterator(nullptr);}
     bool is_empty(){return head==nullptr;}
-    Use* Front(){return head;}
+    Use*& Front(){return head;}
 };
 class Value
 {
