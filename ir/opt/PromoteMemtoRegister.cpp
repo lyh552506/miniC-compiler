@@ -19,7 +19,7 @@ void PromoteMem2Reg::run() {
       AI->ClearRelation();
       AI->EraseFromParent();
       RemoveFromAllocaList(i);
-      DeadAlloca++;
+      // DeadAlloca++;
       continue;
     }
     //看下哪些基本块在使用这个ALLOC，哪些基本块定义了这个ALLOC
@@ -27,7 +27,7 @@ void PromoteMem2Reg::run() {
 
     if (Info.DefineBlocks.size() == 1) { //只有一个定义基本块
       if (RewriteSingleStoreAlloca(Info, AI, BBInfo)) {
-        SingleStore++; // rewrite success
+        // SingleStore++; // rewrite success
         RemoveFromAllocaList(i);
         continue;
       }
@@ -61,7 +61,7 @@ void PromoteMem2Reg::run() {
   std::vector<Value *> AllocaDict(m_Allocas.size());
   for (int x = 0; x < m_Allocas.size(); x++)
     AllocaDict[x] = UndefValue::get(
-        m_Allocas[x]->GetType()); //首先对所有待处理的Alloca标记为Undef
+        dynamic_cast<HasSubType *>(m_Allocas[x]->GetType())->GetSubType());
 
   std::vector<RenamePass> WorkLists; //采用工作表法，传入EntryBlock
   WorkLists.emplace_back(Func.front_block(), nullptr, AllocaDict);
@@ -159,7 +159,6 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 
     while (It != cur.des.end()) {
       BasicBlock *tmp = m_dom.GetNode(*It++).thisBlock;
-      // if (RenameVisited.insert(tmp).second)
       WorkLists.emplace_back(tmp, Pred, IncomingVal);
     }
   }
@@ -177,8 +176,9 @@ bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
   if (Phi)
     return false;
   AllocaInst *target = m_Allocas[AllocaNum];
-  Phi = PhiInst::NewPhiNode(bb->front(), bb,
-                            target->GetType()); // insert into the head of block
+  Phi = PhiInst::NewPhiNode(
+      bb->front(), bb,
+      dynamic_cast<HasSubType *>(target->GetType())->GetSubType());
   PhiToAlloca[Phi] = AllocaNum;
   return true;
 }
@@ -214,23 +214,30 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
               // container
       if (it == StoreInstWithIndex.begin()) {
         if (StoreInstWithIndex.empty()) // no stores
-        {
           LI->RAUW(UndefValue::get(LI->GetType()));
-        } else          // no store before load
+        else            // no store before load
           return false; /// @note why is this
-      } else {
+      } else
         LI->RAUW(std::prev(it)->second->Getuselist()[0]->GetValue());
-      }
 
       LI->ClearRelation();
       LI->EraseFromParent();
       BBInfo.DeleteIndex(LI);
     }
   }
+
+  for(Use* use:AI->GetUserlist()){
+    assert(dynamic_cast<StoreInst*>(use->fat)&&"must be a StoreInst");
+    StoreInst* st=dynamic_cast<StoreInst*>(use->fat);
+    st->ClearRelation();
+    st->EraseFromParent();
+    BBInfo.DeleteIndex(st);
+  }
+
   AI->ClearRelation();
   AI->EraseFromParent();
   BBInfo.DeleteIndex(AI);
-  
+
   return true;
 }
 
@@ -244,12 +251,10 @@ void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
       DefineBlocks.push_back(SI->GetParent());
       BB = SI->GetParent();
       OnlyStore = SI;
-      // AllocaPtrValue = SI->Getuselist()[0]->GetValue();
     } else { //由于IsAllocaPromotable，所以只会是storeinst或者loadinst
       LoadInst *LI = dynamic_cast<LoadInst *>(user);
       BB = LI->GetParent();
       UsingBlocks.push_back(BB);
-      // AllocaPtrValue = LI;
     }
 
     if (IO_OnlySingleBlock) {
@@ -281,12 +286,10 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
     if (!LI)
       continue;
 
-    if (!GlobalVal) { // load语句和当前的store在同一个块如果不是全局变量，需要寻找store和load的次序关系
+    if (!GlobalVal) { // load语句和当前的store在同一个块,如果不是全局变量，需要寻找store和load的次序关系
       if (LI->GetParent() == StoreBB) {
         if (StoreIndex == -1)
           StoreIndex = BBInfo.GetInstIndex(OnlySt);
-        // StoreIndex = CaculateIndex(StoreBB, OnlySt);
-        // int LoadIndex = CaculateIndex(StoreBB, LI);
         int LoadIndex = BBInfo.GetInstIndex(LI);
         if (LoadIndex <
             StoreIndex) { //如果load比store还早一些出现，那么出现undef
@@ -305,13 +308,16 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
     LI->RAUW(val);
     LI->ClearRelation();
     LI->EraseFromParent(); //可以将这个LoadInstruction删除了
+    BBInfo.DeleteIndex(LI);
   }
   if (!Info.UsingBlocks.empty())
     return false;
   OnlySt->ClearRelation();
   OnlySt->EraseFromParent(); //结束后删除alloca和store
+  BBInfo.DeleteIndex(OnlySt);
   AI->ClearRelation();
   AI->EraseFromParent();
+  BBInfo.DeleteIndex(AI);
   return true;
 }
 
@@ -330,7 +336,7 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
       User *user = *it;
       if (StoreInst *ST = dynamic_cast<StoreInst *>(
               user)) { //相当于直接给这个变量赋了一个确定值,不再需要phi
-        if (ST->GetDef() != AI)
+        if (ST->Getuselist()[1]->GetValue() != AI)
           continue;
 
         LiveIn[i] = LiveIn.back();
@@ -381,8 +387,6 @@ bool IsAllocaPromotable(AllocaInst *AI) {
       assert(LI && "LoadInst can not be nullptr");
       // do nothing
     } else if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
-      // if (SI->GetOperand(0) == AI) // can not let the first operand be
-      // AllocaInst
       if (SI->Getuselist()[0]->GetValue() == AI)
         return false;
     } else {
@@ -399,7 +403,6 @@ bool BlockInfo::IsAllocaRelated(User *Inst) {
       return true;
   } else if (StoreInst *ST =
                  dynamic_cast<StoreInst *>(Inst)) { // if store to this alloca
-    // AllocaInst *AI = dynamic_cast<AllocaInst *>(ST->GetOperand(1));
     AllocaInst *AI =
         dynamic_cast<AllocaInst *>(ST->Getuselist()[1]->GetValue());
     if (AI != nullptr)

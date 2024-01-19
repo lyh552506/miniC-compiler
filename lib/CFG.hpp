@@ -20,7 +20,7 @@ class Variable
 };
 
 class UndefValue:public User{
-  UndefValue(Type* Ty){name="undef";}
+  UndefValue(Type* Ty):User(Ty){name="undef";}
 public:
   static UndefValue* get(Type *Ty);
   void print();
@@ -117,7 +117,7 @@ class GetElementPtrInst:public User
 
 class PhiInst : public User {
 public:
-  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {}
+  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User(ty) {}
 
   PhiInst(User *BeforeInst):oprandNum(0) {}
 

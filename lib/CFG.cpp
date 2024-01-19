@@ -709,7 +709,7 @@ void UndefValue::print(){
 void PhiInst::print() {
   dynamic_cast<Value*>(this)->print();
   std::cout << " = Phi ";
-  dynamic_cast<PointerType *>(tp)->GetSubType()->print();
+  this->GetType()->print();
   std::cout << " ";
   for (int i = 0; i < oprandNum; i++) {
     std::cout<<"[";

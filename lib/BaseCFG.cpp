@@ -54,7 +54,9 @@ void Value::print(){
         std::cout<<tmp->GetVal();
     else if(GetName()[1]=='g')
         std::cout<<"@"<<GetName();
-    else
+    else if(GetName()=="undef")
+        std::cout<<GetName();
+    else 
         std::cout<<"%"<<GetName();
 }
 

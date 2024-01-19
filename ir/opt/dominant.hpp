@@ -1,6 +1,5 @@
 #pragma once
 #include "CFG.hpp"
-//#include "IDF.hpp"
 #include <algorithm>
 #include <forward_list>
 #include <iostream>
@@ -17,11 +16,7 @@
 #define MIN_SDOM(x) dsu[x].min_sdom //获取结点最近的sdom的index
 #define IDOM(x) node[x].idom        //获取结点的idom
 class dominance;
-// struct _Node {
-//   std::string name;
-//   std::vector<int> defblock;
-//   bool operator==(const _Node &other) { return name == other.name; }
-// };
+
 
 bool promoteMemoryToRegister(Function &func, dominance &dom);
 
@@ -58,27 +53,15 @@ public:
 
 private:
   std::vector<Node> node;
-  // std::vector<BasicBlockPtr> nod;
   std::vector<int> vertex;       // 记录dfs对应的结点
-  std::vector<int> bucket[2000]; // bucket[u]代表sdom为u的点集
+  std::vector<int> bucket[200];  // bucket[u]代表sdom为u的点集
   std::vector<DSU> dsu;          //辅助数据结构实现路径压缩
   std::vector<DF> df;            //存储每个结点的必经结点边界
-  // BasicBlock* root;            //保存支配树的根节点
 
   Function *thisFunc;
   int block_num, count; // count是当前的dfs序号
-  bool IsDFSValid;
 
 public:
-  /// @brief 从CFG的根节点开始计算出每个节点的dominate frontier
-  /// @param x
-  void computeDF(int x);
-
-  /// @brief 输入dfs序，返回对应的block
-  BasicBlock *DfsToBB(int d); // TODO
-
-  BasicBlock *DfsToBB(Node *node); // TODO
-
   Node &GetNode(int index) { return node[index]; }
 
   /// @brief 初始化边关系
@@ -87,11 +70,6 @@ public:
   /// @brief 获取每个节点的DFS序，同时初始化sdom为自己
   /// @param pos
   void DFS(int pos);
-
-  void DFS_new();
-
-  /// @brief 对支配树进行dfs遍历
-  void DfsDominator(int root);
 
 private:
   /// @brief 路径压缩，并更新最小sdom
@@ -123,14 +101,8 @@ public:
   /// @brief 判断bb1是否支配bb2
   bool dominates(BasicBlock *bb1, BasicBlock *bb2);
 
-  /// @brief 插入phi函数
-  void place_phi() {}
-
-  // dominance(int n, int m, Function &Func)
-  //     : node(n + 1), block_num{n}, vertex(n + 1),
-  //       dsu(n + 1), count{1}, IsDFSValid{false}, df(n + 1), thisFunc{Func} {
   dominance(Function *Func,int blockNum)
-      : count{1},node(blockNum),block_num(blockNum), vertex(blockNum+1),dsu(blockNum+1),df(blockNum+1) ,IsDFSValid{false}, thisFunc{Func} {
+      : count{1},node(blockNum),block_num(blockNum), vertex(blockNum+1),dsu(blockNum+1),df(blockNum+1) ,thisFunc{Func} {
     Init();
     for (int i = 1; i <= blockNum; i++) {
       dsu[i].ancestor = i;

@@ -64,7 +64,7 @@ class PromoteMem2Reg {
 public:
   PromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas,
                  Function &func)
-      : m_dom(dom), DeadAlloca(0), SingleStore(0), Func(func),
+      : m_dom(dom), Func(func),
         m_Allocas(Allocas.begin(),
                   Allocas.end()) //不能直接赋值，这样会转移所有权
   {}
@@ -100,8 +100,8 @@ public:
   dominance &m_dom;
   std::vector<AllocaInst *> m_Allocas;       // index->AllocaInst的映射
   std::map<AllocaInst *, int> AllocaToIndex; // AllocaInst->index的映射
-  int DeadAlloca;                            // Number of dead alloca's removed
-  int SingleStore; // Number of alloca's promoted with a single store
+  //int DeadAlloca;                            // Number of dead alloca's removed
+  //int SingleStore; // Number of alloca's promoted with a single store
   Function &Func;
   std::map<int, PhiInst *> PrePhiNode;  //由Block到PhiNode的映射
   std::map<PhiInst *, int> PhiToAlloca; // Phi函数对应的Alloca指令
