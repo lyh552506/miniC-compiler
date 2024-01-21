@@ -21,11 +21,11 @@ public:
    IDF(dominance& dom):m_dom(dom),uselivein{false}
    {}
 
-   void SetDefBB(std::set<BasicBlock*> DefBlock);
+   void SetDefBB(std::set<BasicBlock*> &DefBlock);
 
-   void SetLiveInBlock(std::set<BasicBlock *> LiveInBlock);
+   void SetLiveInBlock(std::set<BasicBlock *> &LiveInBlock);
 
-   void SetBBs(std::vector<std::unique_ptr<BasicBlock>> bbs);
+   void SetBBs(std::vector<std::unique_ptr<BasicBlock>>& bbs);
 
    void caculateDTlevel(DTNode node,int depth);
 

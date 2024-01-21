@@ -18,11 +18,19 @@ void AllocaInst::print(){
     std::cout<<"\n";
 }
 
+bool AllocaInst::IsUsed(){
+    auto& list=GetUserlist();
+    if(list.is_empty())
+      return false;
+    return true;
+}
+
 std::map<Type*,UndefValue*> Undefs;
 
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
     add_use(__des);
+    name="StoreInst";
 }
 Operand StoreInst::GetDef(){return nullptr;}
 void StoreInst::print(){
@@ -42,6 +50,11 @@ void StoreInst::ir_mark(){
 LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType())->GetSubType()){
     assert(GetTypeEnum()==IR_Value_INT||GetTypeEnum()==IR_Value_Float);
     add_use(__src);
+}
+
+Value* LoadInst::GetLoadTarget(){
+    auto& list=Getuselist();
+    return list[0]->GetValue();
 }
 
 void LoadInst::print(){
@@ -617,11 +630,11 @@ Operand BasicBlock::push_alloca(std::string name,Type* _tp){
 //     return tmp;
 // }
 
-// PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty){
-//     PhiInst *tmp = new PhiInst{BeforeInst,ty};
-//     currentBB->push_front(tmp);
-//     return tmp;
-// }
+PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty){
+    PhiInst *tmp = new PhiInst(BeforeInst,ty);
+    currentBB->push_front(tmp);
+    return tmp;
+}
 
 // void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
 //     PhiRecord[oprandNum++]=std::make_pair(Income,BB);
@@ -689,11 +702,24 @@ UndefValue* UndefValue::get(Type *Ty){
 }
 
 void UndefValue::print(){
-    std::cout<<"undef";
+    dynamic_cast<Value*>(this)->print();
     return;
 }
 
-void PhiInst::print(){
-    std::cout<<"Phi";
-    return;
+void PhiInst::print() {
+  dynamic_cast<Value*>(this)->print();
+  std::cout << " = Phi ";
+  this->GetType()->print();
+  std::cout << " ";
+  for (int i = 0; i < oprandNum; i++) {
+    std::cout<<"[";
+    PhiRecord[i].first->print();
+    std::cout<<", ";
+    dynamic_cast<Value*>(PhiRecord[i].second)->print();
+    std::cout<<"]";
+    if(i!=oprandNum-1)
+      std::cout<<", ";
+  }
+  std::cout << "\n";
+  return;
 }

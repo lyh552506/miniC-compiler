@@ -38,6 +38,8 @@ class list_node
         this->next=nullptr;
     };
     virtual void EraseFromParent(){
+        if(fat->head==dynamic_cast<derived_list_node*>(this))fat->head=this->next;
+        if(fat->tail==dynamic_cast<derived_list_node*>(this))fat->tail=this->prev;
         if(this->prev!=nullptr)this->prev->next=this->next;
         if(this->next!=nullptr)this->next->prev=this->prev;
     }
@@ -47,6 +49,7 @@ class list_node
 template<typename derived_mylist,typename derived_list_node>
 class mylist
 {
+    friend class list_node<derived_mylist,derived_list_node>;
     derived_list_node* head;
     derived_list_node* tail;
     public:
@@ -76,7 +79,7 @@ class mylist
     virtual iterator rbegin(){return iterator(this->tail);}
     virtual iterator rend(){return iterator(nullptr);}
     void push_back(derived_list_node* data){
-        data->SetParent(reinterpret_cast<derived_mylist*>(this));
+        data->SetParent(dynamic_cast<derived_mylist*>(this));
         if(this->head==nullptr){
             this->head=data;
             this->tail=data;
@@ -88,7 +91,7 @@ class mylist
         }
     }
     void push_front(derived_list_node* data){
-        data->SetParent(reinterpret_cast<derived_mylist*>(this));
+        data->SetParent(dynamic_cast<derived_mylist*>(this));
         if(this->head==nullptr){
             this->head=data;
             this->tail=data;

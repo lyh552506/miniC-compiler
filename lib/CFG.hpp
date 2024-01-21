@@ -20,7 +20,7 @@ class Variable
 };
 
 class UndefValue:public User{
-  UndefValue(Type* Ty){}
+  UndefValue(Type* Ty):User(Ty){name="undef";}
 public:
   static UndefValue* get(Type *Ty);
   void print();
@@ -31,8 +31,7 @@ class AllocaInst:public User
     public:
     AllocaInst(std::string,Type*);
     void print()final;
-    bool IsUsed();//TODO 返回当前alloca出来的对象后续有没有被使用过
-    // std::vector<User*> GetUsers(); //返回使用过alloca分配出的虚拟寄存器的指令
+    bool IsUsed();
 };
 
 class StoreInst:public User
@@ -48,8 +47,7 @@ class LoadInst:public User
     public:
     LoadInst(Operand __src);
     void print()final;
-    Value* GetSrc();
-    void ReplaceAllUsersWith(Value* val);
+    Value* GetLoadTarget();
 };
 /// @brief float to int
 class FPTSI:public User
@@ -117,21 +115,21 @@ class GetElementPtrInst:public User
     void print()final;
 };
 
-// class PhiInst : public User {
-// public:
-//   PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {}
+class PhiInst : public User {
+public:
+  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User(ty) {}
 
-//   PhiInst(User *BeforeInst):oprandNum(0) {}
+  PhiInst(User *BeforeInst):oprandNum(0) {}
 
-//   void print() final;
-//   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB);
-//   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
-//   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
+  void print() final;
+  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB);
+  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
+  void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
 
-// public:
-//   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord;
-//   int oprandNum;
-// };
+public:
+  std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
+  int oprandNum;
+};
 class BasicBlock:public Value,public mylist<BasicBlock,User>
 {
     Function& master;
@@ -156,7 +154,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
     int dfs;
-    int num;
+    int num=0;
 };
 
 class ExternFunction:public Value
