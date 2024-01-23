@@ -49,10 +49,10 @@ LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType(
     add_use(__src);
 }
 
-Value* LoadInst::GetLoadTarget(){
-    auto& list=Getuselist();
-    return list[0]->GetValue();
-}
+// Value* LoadInst::GetLoadTarget(){
+//     auto& list=Getuselist();
+//     return list[0]->GetValue();
+// }
 
 void LoadInst::print(){
     Value::print();
@@ -667,11 +667,6 @@ void Function::add_block(BasicBlock* __block){
 std::vector<std::unique_ptr<Value>>& Function::GetParams(){
     return params;
 }
-
-std::vector<std::unique_ptr<BasicBlock>>& Function::GetBasicBlock() {
-    return bbs;
-}
-
 
 // void Module::visit(std::function<void(Function*)> call_back){
 //     for(auto&i:ls)
