@@ -40,14 +40,13 @@ class StoreInst:public User
     StoreInst(Operand,Operand);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class LoadInst:public User
 {
     public:
     LoadInst(Operand __src);
     void print()final;
-    Value* GetLoadTarget();
+    Value* GetSrc();
 };
 /// @brief float to int
 class FPTSI:public User
@@ -130,7 +129,7 @@ public:
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   int oprandNum;
 };
-class BasicBlock:public Value,public mylist<BasicBlock,User>
+class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
 {
     Function& master;
     public:
@@ -172,22 +171,19 @@ class BuildInFunction:public Value
     static BuildInFunction* GetBuildInFunction(std::string);
 };
 
-class Function:public Value
+class Function:public Value,public mylist<Function,BasicBlock>
 {
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
-    std::vector<BasicBlockPtr> bbs;
     void InsertAlloca(AllocaInst* ptr);
     public:
     Function(InnerDataType _tp,std::string _id);
-    BasicBlock* front_block();
-    virtual void print();
+    void print();
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
     std::vector<ParamPtr>& GetParams();
-    std::vector<BasicBlockPtr>& GetBasicBlock();
 };
 class Module:public SymbolTable
 {

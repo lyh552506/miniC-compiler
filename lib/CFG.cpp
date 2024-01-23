@@ -43,12 +43,9 @@ void StoreInst::print(){
     }
     std::cout<<'\n';
 }
-void StoreInst::ir_mark(){
-    return;
-}
 
 LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType())->GetSubType()){
-    assert(GetTypeEnum()==IR_Value_INT||GetTypeEnum()==IR_Value_Float);
+    assert(GetTypeEnum()==IR_Value_INT||GetTypeEnum()==IR_Value_Float||GetTypeEnum()==IR_PTR);
     add_use(__src);
 }
 
@@ -208,7 +205,7 @@ bool check_binary_boolean(BinaryInst::Operation op){
     }
 }
 
-BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(check_binary_boolean(__op)?BoolType::NewBoolTypeGet():_A->GetType()){
+BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(check_binary_boolean(__op)?BoolType::NewBoolTypeGet():_B->GetType()){
     op=__op;
     add_use(_A);
     add_use(_B);
@@ -295,7 +292,7 @@ void BinaryInst::print(){
     default:
         break;
     }
-    uselist[0]->GetValue()->GetType()->print();
+    uselist[1]->GetValue()->GetType()->print();
     std::cout<<" ";
     uselist[0]->GetValue()->print();
     std::cout<<", ";
@@ -310,7 +307,7 @@ Variable::Variable(std::string _id):name(_id){
 }
 Variable::Variable(Type* _tp,std::string _id):name(_id),tp(_tp){}
 Variable::Variable(InnerDataType _tp,std::string _id):name(_id){
-    tp=Type::NewTypeByEnum(Singleton<InnerDataType>());
+    tp=Type::NewTypeByEnum(_tp);
 }
 std::string Variable::get_name(){
     return name;
@@ -433,11 +430,18 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
                 fuc=calc(A->GetVal(),op,B->GetVal());
             else assert(0);
         }
+        else if(auto A=dynamic_cast<ConstIRBoolean*>(_A))
+        {
+            auto B=dynamic_cast<ConstIRBoolean*>(_B);
+            fuc=calc(A->GetVal(),op,B->GetVal());
+        }
         else assert(0);
-        if(std::holds_alternative<int>(fuc))
-            return new ConstIRInt(std::get<int>(fuc));
+        if(check_binary_boolean(op))
+            return ConstIRBoolean::GetNewConstant(std::get<int>(fuc));
+        else if(std::holds_alternative<int>(fuc))
+            return ConstIRInt::GetNewConstant(std::get<int>(fuc));
         else
-            return new ConstIRFloat(std::get<float>(fuc));
+            return ConstIRFloat::GetNewConstant(std::get<float>(fuc));
     }
     else
     {
@@ -447,7 +451,7 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
 }
 
 void BasicBlock::GenerateStoreInst(Operand src,Operand des){
-    assert(des->GetTypeEnum()==IR_PTR);
+    assert(des->GetType()->GetTypeEnum()==IR_PTR);
     auto tmp=dynamic_cast<PointerType*>(des->GetType());
     
     if(tmp->GetSubType()->GetTypeEnum()!=src->GetTypeEnum()){
@@ -490,13 +494,13 @@ void Function::print(){
         if(i.get()!=params.back().get())std::cout<<", ";
     }
     std::cout<<"){\n";
-    for(auto &i:bbs)
+    for(auto i:(*this))
         i->print();
     std::cout<<"}\n";
 }
 
 void Function::InsertAlloca(AllocaInst* ptr){
-    bbs.front()->push_back(ptr);
+    front()->push_back(ptr);
 }
 
 BuildInFunction::BuildInFunction(Type* tp,std::string _id):Value(tp){
@@ -531,12 +535,9 @@ BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
 Function::Function(InnerDataType _tp,std::string _id):Value(Type::NewTypeByEnum(_tp)){
     name=_id;
     //至少有一个bbs
-    bbs.push_back(BasicBlockPtr(new BasicBlock(*this)));
+    push_back(new BasicBlock(*this));
 }
 
-BasicBlock* Function::front_block(){
-    return bbs.front().get();
-}
 bool BasicBlock::EndWithBranch(){
     if(auto data=dynamic_cast<UnCondInst*>(back()))return 1;
     else if(auto data=dynamic_cast<CondInst*>(back()))return 1;
@@ -587,7 +588,7 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
     if(check_builtin(id)){
         if(id=="starttime"||id=="stoptime"){
             assert(args.size()==0);
-            args.push_back(new ConstIRInt(run_time));
+            args.push_back(ConstIRInt::GetNewConstant(run_time));
         }
         auto tmp=new CallInst(BuildInFunction::GetBuildInFunction(id),args,"at"+std::to_string(run_time));
         push_back(tmp);
@@ -599,7 +600,14 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         auto i=args.begin();
         for(auto j=params.begin();j!=params.end();j++,i++){
             auto& ii=*i;auto& jj=*j;
-            assert(ii->GetType()==jj->GetType());
+            if(jj->GetType()!=ii->GetType())
+            {
+                auto a=ii->GetType()->GetTypeEnum(),b=jj->GetType()->GetTypeEnum();
+                assert(a==IR_Value_INT||a==IR_Value_Float);
+                assert(b==IR_Value_INT||b==IR_Value_Float);
+                if(b==IR_Value_Float)ii=GenerateSITFP(ii);
+                else ii=GenerateFPTSI(ii);
+            }
         }
         auto inst=new CallInst(func,args,"at"+std::to_string(run_time));
         push_back(inst);
@@ -641,7 +649,7 @@ PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty){
 // }
 
 void Function::push_alloca(Variable* ptr){
-    auto obj=bbs.front()->push_alloca(ptr->get_name(),ptr->GetType());
+    auto obj=front()->push_alloca(ptr->get_name(),ptr->GetType());
     Singleton<Module>().Register(ptr->get_name(),obj);
 }
 
@@ -649,11 +657,11 @@ void Function::push_param(Variable* var){
     push_alloca(var);
     /// @brief 实参
     params.push_back(ParamPtr(new Value(var->GetType())));
-    bbs.front()->GenerateStoreInst(params.back().get(),Singleton<Module>().GetValueByName(var->get_name()));
+    front()->GenerateStoreInst(params.back().get(),Singleton<Module>().GetValueByName(var->get_name()));
 }
 
 void Function::add_block(BasicBlock* __block){
-    bbs.push_back(BasicBlockPtr(__block));
+    push_back(__block);
 }
 
 std::vector<std::unique_ptr<Value>>& Function::GetParams(){

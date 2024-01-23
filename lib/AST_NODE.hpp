@@ -128,18 +128,26 @@ class BaseExp:public HasOperand
                 switch (*i)
                 {
                 case AST_NOT:
-                    if(ptr->GetType()->GetTypeEnum()==IR_Value_INT)
-                        ptr=BasicBlock::GenerateBinaryInst(block,new ConstIRInt(0),BinaryInst::Op_E,ptr);
-                    else 
-                        ptr=BasicBlock::GenerateBinaryInst(block,new ConstIRFloat(0),BinaryInst::Op_E,ptr);
-                    break;
+                    switch(ptr->GetType()->GetTypeEnum())
+                    {
+                        case IR_Value_INT:
+                            if(dynamic_cast<BoolType*>(ptr->GetType()))
+                                ptr=BasicBlock::GenerateBinaryInst(block,ptr,BinaryInst::Op_E,ConstIRBoolean::GetNewConstant());
+                            else
+                                ptr=BasicBlock::GenerateBinaryInst(block,ptr,BinaryInst::Op_E,ConstIRInt::GetNewConstant());
+                            break;
+                        case IR_Value_Float:ptr=BasicBlock::GenerateBinaryInst(block,ConstIRFloat::GetNewConstant(),BinaryInst::Op_E,ptr);break;
+                        case IR_PTR:ptr=BasicBlock::GenerateBinaryInst(block,ConstPtr::GetNewConstant(ptr->GetType()),BinaryInst::Op_E,ptr);break;
+                        default:assert(0);
+                    }
                 case AST_ADD:
                     break;
                 case AST_SUB:
+                    if(dynamic_cast<BoolType*>(ptr->GetType()))break;
                     if(ptr->GetType()->GetTypeEnum()==IR_Value_INT)
-                        ptr=BasicBlock::GenerateBinaryInst(block,new ConstIRInt(0),BinaryInst::Op_Sub,ptr);
+                        ptr=BasicBlock::GenerateBinaryInst(block,ConstIRInt::GetNewConstant(),BinaryInst::Op_Sub,ptr);
                     else 
-                        ptr=BasicBlock::GenerateBinaryInst(block,new ConstIRFloat(0),BinaryInst::Op_Sub,ptr);
+                        ptr=BasicBlock::GenerateBinaryInst(block,ConstIRFloat::GetNewConstant(),BinaryInst::Op_Sub,ptr);
                     break;
                 default:
                     assert(0);
@@ -192,12 +200,12 @@ template<>
 inline Operand BaseExp<RelExp>::GetOperand(BasicBlock* block){
     auto i=ls.begin();
     auto oper=(*i)->GetOperand(block);
-    if(oplist.size()==0&&oper->GetType()==IntType::NewIntTypeGet()){
+    if(oplist.size()==0&&oper->GetType()!=BoolType::NewBoolTypeGet()){
         switch(oper->GetType()->GetTypeEnum())
         {
-            case IR_PTR:oper=block->GenerateBinaryInst(block,oper,BinaryInst::Op_NE,new ConstIRInt(0));break;
-            case IR_Value_INT:oper=block->GenerateBinaryInst(block,oper,BinaryInst::Op_NE,new ConstIRInt(0));break;
-            case IR_Value_Float:oper=block->GenerateBinaryInst(block,oper,BinaryInst::Op_NE,new ConstIRFloat(0));break;
+            case IR_PTR:oper=block->GenerateBinaryInst(block,oper,BinaryInst::Op_NE,ConstPtr::GetNewConstant(oper->GetType()));break;
+            case IR_Value_INT:oper=block->GenerateBinaryInst(block,oper,BinaryInst::Op_NE,ConstIRInt::GetNewConstant());break;
+            case IR_Value_Float:oper=block->GenerateBinaryInst(block,oper,BinaryInst::Op_NE,ConstIRFloat::GetNewConstant());break;
             default:assert(0);
         }
         return oper;
@@ -225,6 +233,19 @@ template<>
 inline void BaseExp<EqExp>::GetOperand(BasicBlock* block,BasicBlock* is_true,BasicBlock* is_false){
     for(auto &i:ls){
         auto tmp=i->GetOperand(block);
+        if(auto Const=dynamic_cast<ConstIRBoolean*>(tmp)){
+            if(Const->GetVal()==true){
+                if(i.get()!=ls.back().get())continue;
+                else{
+                    block->GenerateUnCondInst(is_true);
+                    return;
+                }
+            }
+            else{
+                block->GenerateUnCondInst(is_false);
+                return;
+            }
+        }
         if(i.get()!=ls.back().get()){
             auto nxt_building=block->GenerateNewBlock();
             block->GenerateCondInst(tmp,nxt_building,is_false);
@@ -530,8 +551,8 @@ class ConstValue:public HasOperand
     public:
     ConstValue(T _data):data(_data){}
     Operand GetOperand(BasicBlock* block){
-        if(std::is_same<T,int>::value)return new ConstIRInt(data);
-        else return new ConstIRFloat(data);
+        if(std::is_same<T,int>::value)return ConstIRInt::GetNewConstant(data);
+        else return ConstIRFloat::GetNewConstant(data);
     }
     void print(int x)final{
         AST_NODE::print(x);
