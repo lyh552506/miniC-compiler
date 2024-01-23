@@ -1,13 +1,13 @@
 #include "dominant.hpp"
 
 void dominance::Init() {
-  auto& bbs = thisFunc->GetBasicBlock();
+  auto &bbs = thisFunc->GetBasicBlock();
   for (auto &bb : bbs) {
-    // List<User> _User = bb->getInstList();
     User *Inst = bb->back(); //获取到最后一条指令
-    node[bb->num].thisBlock=bb.get();
+    node[bb->num].thisBlock = bb.get();
+
     if (CondInst *cond = dynamic_cast<CondInst *>(Inst)) {
-      auto& uselist = cond->Getuselist();
+      auto &uselist = cond->Getuselist();
       BasicBlock *des_true = dynamic_cast<BasicBlock *>(uselist[1]->GetValue());
       BasicBlock *des_false =
           dynamic_cast<BasicBlock *>(uselist[2]->GetValue());
@@ -19,7 +19,7 @@ void dominance::Init() {
       node[des_false->num].rev.push_front(bb->num);
 
     } else if (UnCondInst *uncond = dynamic_cast<UnCondInst *>(Inst)) {
-      auto& uselist = uncond->Getuselist();
+      auto &uselist = uncond->Getuselist();
       BasicBlock *des = dynamic_cast<BasicBlock *>(uselist[0]->GetValue());
 
       node[bb->num].des.push_front(des->num);
@@ -91,15 +91,38 @@ void dominance::dom_begin() {
   DFS(EntryBB->num);
   find_dom();   // 寻找支配节点
   build_tree(); // 构建支配树
-  // computeDF(1);
 }
 
 /// @brief 判断bb1是否dominate bb2
 bool dominance::dominates(BasicBlock *bb1, BasicBlock *bb2) {
-  Node& node_1=node[bb1->num];
-  int N=bb2->num;
-  for(auto t:node_1.idom_child)
-    if(t==N)
-     return true;
-  return false;
+  if (!IsDFSValid) {
+    DfsDominator(0);
+  }
+  Node &n1 = node[bb1->num];
+  Node &n2 = node[bb2->num];
+
+  return (n1.DfsIn <= n2.DfsIn) && (n1.DfsOut >= n2.DfsOut);
+}
+
+void dominance::DfsDominator(int root) {
+  int DfsNum = 0;
+  std::vector<std::pair<int, std::forward_list<int>::iterator>> worklists;
+  std::forward_list<int>::iterator it1 = node[root].idom_child.begin();
+  worklists.push_back(std::make_pair(root, it1));
+  node[root].DfsIn = DfsNum++;
+
+  while (!worklists.empty()) {
+    int index = worklists.back().first;
+    std::forward_list<int>::iterator it = worklists.back().second;
+    if (it == node[index].des.end()) { //孩子全部访问完毕，则添加dfsout
+      node[index].DfsOut = DfsNum++;
+      worklists.pop_back();
+    } else {
+      int nxt = *it;
+      ++worklists.back().second;
+      worklists.push_back(std::make_pair(nxt, node[nxt].idom_child.begin()));
+      node[nxt].DfsIn = DfsNum++;
+    }
+  }
+  IsDFSValid = true;
 }

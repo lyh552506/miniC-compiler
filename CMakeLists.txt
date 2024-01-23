@@ -8,6 +8,8 @@ project(SYSY-compiler VERSION 0.1.0 LANGUAGES C CXX)
 include(CTest)
 enable_testing()
 
+include_directories(${CMAKE_SOURCE_DIR}/util)
+
 add_executable(SYSY-compiler main.cpp)
 add_subdirectory(${PROJECT_SOURCE_DIR}/yacc)
 add_subdirectory(${PROJECT_SOURCE_DIR}/ir)

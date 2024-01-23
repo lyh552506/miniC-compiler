@@ -153,7 +153,6 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
-    int dfs;
     int num=0;
 };
 

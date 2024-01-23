@@ -9,8 +9,8 @@ bool promoteMemoryToRegister(Function &func, dominance &dom) {
   while (true) {
     Allocas.clear();
     auto& EntryBlock=BB.front();
-      for (auto Instruct : *(EntryBlock.get())) {
-        if (AllocaInst *allocaInst =dynamic_cast<AllocaInst *>(Instruct))
+      For_inst_In(EntryBlock.get()) {
+        if (AllocaInst *allocaInst =dynamic_cast<AllocaInst *>(inst))
           if (IsAllocaPromotable(allocaInst))
             Allocas.push_back(allocaInst);
     }
