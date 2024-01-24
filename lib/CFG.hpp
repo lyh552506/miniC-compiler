@@ -116,7 +116,7 @@ class GetElementPtrInst:public User
 
 class PhiInst : public User {
 public:
-  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User(ty) {}
+  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {}
 
   PhiInst(User *BeforeInst):oprandNum(0) {}
 
@@ -126,10 +126,10 @@ public:
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
 
 public:
-  std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
+  std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord;
   int oprandNum;
 };
-class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
+class BasicBlock:public Value,public mylist<BasicBlock,User>
 {
     Function& master;
     public:

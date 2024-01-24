@@ -87,6 +87,8 @@ class Value
     UserList& GetUserlist(){return userlist;};
 };
 using Operand=Value*;
+class Constant:public User
+{};
 class User:public Value,public list_node<BasicBlock,User>
 {
     using UsePtr=std::unique_ptr<Use>;

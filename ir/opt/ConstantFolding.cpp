@@ -1,6 +1,14 @@
 #include "ConstantFold.hpp"
 
-Value ConstantFolding::*ConstantFoldInstruction(User* inst);
+Value ConstantFolding::*ConstantFoldInstruction(User* inst, BasicBlock* block)
+{
+    // Handle PHI nodes quickly here...
+    if(auto _PhiNode = dynamic_cast<PhiInst*>(inst))
+    {
+        Constant *CommonValue = nullptr;
+        for(Value* income : _PhiNode->PhiRecord[block])
+    }
+}
 
 Value ConstantFolding::*ConstantFoldInstOperands(User* inst, std::vector<Value*> _Operands);
 

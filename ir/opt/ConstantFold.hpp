@@ -18,7 +18,7 @@ class ConstantFolding
 /// Note that this fails if not all of the operands are constant.  Otherwise,
 /// this function can only fail when attempting to fold instructions like loads
 /// and stores, which have no constant expression form.
-Value *ConstantFoldInstruction(User* inst);
+Value *ConstantFoldInstruction(User* inst, BasicBlock* block);
 /// ConstantFoldConstantExpression - Attempt to fold the constant expression.
 /// If successful, the constant result is result is returned, if not, null is
 /// returned.
@@ -34,7 +34,7 @@ Value *ConstantFoldInstOperands(User* inst, std::vector<Value*> _Operands);
 /// ConstantFoldCompareInstOperands - Attempt to constant fold a compare
 /// instruction (icmp/fcmp) with the specified operands.  If it fails, it
 /// returns a constant expression of the specified operands.
-Value *ConstantFoldCompareInstOperands(unsigned Pred, Value* LHS, Value* RHS);
+Value *ConstantFoldCompareInstOperands(BasicBlock* Pred, Value* LHS, Value* RHS);
 
 /// ConstantFoldLoadFromConstPtr - Return the value that a load from C would
 /// produce if it is constant and determinable.  If this is not determinable,
