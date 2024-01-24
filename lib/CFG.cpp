@@ -648,6 +648,13 @@ void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
     PhiRecord[oprandNum++]=std::make_pair(Income,BB);
 }
 
+std::vector<Value*>& PhiInst::GetAllPhiVal(){
+    for(const auto &[_1,value]:PhiRecord){
+        Incomings.push_back(value.second);
+    }
+    return Incomings;
+}
+
 void Function::push_alloca(Variable* ptr){
     auto obj=front()->push_alloca(ptr->get_name(),ptr->GetType());
     Singleton<Module>().Register(ptr->get_name(),obj);
