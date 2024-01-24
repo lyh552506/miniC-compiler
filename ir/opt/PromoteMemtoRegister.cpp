@@ -64,7 +64,7 @@ void PromoteMem2Reg::run() {
         dynamic_cast<HasSubType *>(m_Allocas[x]->GetType())->GetSubType());
 
   std::vector<RenamePass> WorkLists; //采用工作表法，传入EntryBlock
-  WorkLists.emplace_back(Func.front_block(), nullptr, AllocaDict);
+  WorkLists.emplace_back(*(Func.begin()), nullptr, AllocaDict);
   do {
     auto tmp = std::move(WorkLists.back());
     WorkLists.pop_back();
@@ -115,7 +115,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
     for (auto inst = BB->begin(); inst != BB->end(); ++inst) {
       User *user = *inst;
       if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
-        Value *Src = LI->GetLoadTarget();
+        Value *Src =GetOperand(LI,0);
         AllocaInst *AI = dynamic_cast<AllocaInst *>(Src); // src---->%a
         if (!AI)
           continue;
@@ -398,7 +398,7 @@ bool IsAllocaPromotable(AllocaInst *AI) {
 
 bool BlockInfo::IsAllocaRelated(User *Inst) {
   if (LoadInst *LI = dynamic_cast<LoadInst *>(Inst)) { // if read this alloca
-    AllocaInst *AI = dynamic_cast<AllocaInst *>(LI->GetLoadTarget());
+    AllocaInst *AI = dynamic_cast<AllocaInst *>(GetOperand(LI,0));
     if (AI != nullptr)
       return true;
   } else if (StoreInst *ST =
