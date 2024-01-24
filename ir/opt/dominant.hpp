@@ -1,5 +1,6 @@
 #pragma once
 #include "CFG.hpp"
+#include "my_stl.hpp"
 #include <algorithm>
 #include <forward_list>
 #include <iostream>
@@ -11,10 +12,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-// SDOM(MIN_SDOM(x))即代表获取离x最近的sdom结点
-#define SDOM(x) node[x].sdom        //获取x对应结点的sdom
-#define MIN_SDOM(x) dsu[x].min_sdom //获取结点最近的sdom的index
-#define IDOM(x) node[x].idom        //获取结点的idom
 class dominance;
 
 
@@ -60,6 +57,7 @@ private:
 
   Function *thisFunc;
   int block_num, count; // count是当前的dfs序号
+  bool IsDFSValid;
 
 public:
   Node &GetNode(int index) { return node[index]; }
@@ -91,13 +89,14 @@ private:
     return MIN_SDOM(x);
   }
 
-public:
   /// @brief 支配节点查找
   void find_dom();
 
   /// @brief 建立支配树
   void build_tree();
 
+  void DfsDominator(int root);
+public:
   /// @brief 判断bb1是否支配bb2
   bool dominates(BasicBlock *bb1, BasicBlock *bb2);
 
