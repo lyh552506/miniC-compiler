@@ -10,14 +10,14 @@
 
 /// @brief 遍历一个function,每个bb是一个智能指针BasicBlockPtr
 #define For_bb_In(function)\
-   assert(dynamic_cast<Function*>(function)&&"incoing must be a function type");\
+   assert(dynamic_cast<Function*>(function)&&"incoing must be a function* type");\
    auto& BB = function.GetBasicBlock();\
    for(auto& bb:BB)\
 
 
 /// @brief 遍历一个BB,每个inst是一个User*，
 #define For_inst_In(BB)\
-   assert(dynamic_cast<BasicBlock*>(BB)&&"incoing must be a BasicBlock type");\
+   assert(dynamic_cast<BasicBlock*>(BB)&&"incoing must be a BasicBlock* type");\
    for(auto inst:*BB)\
 
 
