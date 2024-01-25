@@ -263,7 +263,9 @@ inline void BaseExp<LAndExp>::GetOperand(BasicBlock* block,BasicBlock* is_true,B
         if(i.get()!=ls.back().get()){
             auto nxt_building=block->GenerateNewBlock();
             i->GetOperand(block,is_true,nxt_building);
-            block=nxt_building;
+            if(!nxt_building->GetUserlist().is_empty())
+                block=nxt_building;
+            else nxt_building->EraseFromParent();
         }
         else i->GetOperand(block,is_true,is_false);
     }

@@ -399,8 +399,8 @@ void FuncDef::codegen(){
     GetInstState state={f.front(),nullptr,nullptr};
     auto end_block=function_body->GetInst(state);
     if(!end_block->EndWithBranch()){
-        assert(f.GetType()->GetTypeEnum()==IR_Value_VOID);
-        end_block->GenerateRetInst();
+        if(f.GetType()->GetTypeEnum()==IR_Value_VOID)end_block->GenerateRetInst();
+        else end_block->GenerateRetInst(UndefValue::get(f.GetType()));
     }
     Singleton<Module>().layer_decrease();
 }
@@ -424,8 +424,10 @@ Operand LVal::GetPointer(BasicBlock* block){
         handle=block->GenerateGEPInst(ptr);
         dynamic_cast<GetElementPtrInst*>(handle)->add_use(ConstIRInt::GetNewConstant());
     }
-    else if(dynamic_cast<PointerType*>(ptr->GetType())->GetSubType()->GetTypeEnum()==IR_PTR)
+    else if(dynamic_cast<PointerType*>(ptr->GetType())->GetSubType()->GetTypeEnum()==IR_PTR){
+        if(array_descripters==nullptr)return ptr;
         handle=block->GenerateLoadInst(ptr);
+    }
     else{
         assert(tmp.empty());
         return ptr;
@@ -501,7 +503,11 @@ BasicBlock* WhileStmt::GetInst(GetInstState state){
     GetInstState loop_state={inner_loop,nxt_building,condition_part};
     inner_loop=stmt->GetInst(loop_state);
     if(!inner_loop->EndWithBranch())inner_loop->GenerateUnCondInst(condition_part);
-    return nxt_building;
+    if(nxt_building->GetUserlist().is_empty()){
+        nxt_building->EraseFromParent();
+        return state.current_building;
+    }
+    else return nxt_building;
 }
 void WhileStmt::print(int x){
     AST_NODE::print(x);
@@ -525,6 +531,16 @@ BasicBlock* IfStmt::GetInst(GetInstState state){
         nxt_building=state.current_building->GenerateNewBlock();
         condition->GetOperand(state.current_building,istrue,nxt_building);
     }
+
+    auto reset_unuse=[](BasicBlock*& tmp){
+        if(tmp==nullptr)return;
+        if(tmp->GetUserlist().is_empty()){
+            tmp->EraseFromParent();
+            tmp=nullptr;
+        }
+    };
+    reset_unuse(isfalse);
+    reset_unuse(nxt_building);
 
     auto make_uncond=[&](BasicBlock* tmp){
         if(!tmp->EndWithBranch()){
