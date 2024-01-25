@@ -18,28 +18,25 @@ class ConstantFolding
 /// Note that this fails if not all of the operands are constant.  Otherwise,
 /// this function can only fail when attempting to fold instructions like loads
 /// and stores, which have no constant expression form.
-Value *ConstantFoldInstruction(User* inst, BasicBlock* block);
+ConstantData* ConstantFoldInstruction(User* inst, BasicBlock* block);
 /// ConstantFoldConstantExpression - Attempt to fold the constant expression.
 /// If successful, the constant result is result is returned, if not, null is
 /// returned.
-// Operand *ConstantFoldConstantExpression(const const)
+ConstantData* ConstantFoldConstantExpression(ConstantExpr* _ConstantExpr);
 
 /// ConstantFoldInstOperands - Attempt to constant fold an instruction with the
 /// specified operands.  If successful, the constant result is returned, if not,
 /// null is returned.  Note that this function can fail when attempting to
 /// fold instructions like loads and stores, which have no constant expression
 /// form.
-Value *ConstantFoldInstOperands(User* inst, std::vector<Value*> _Operands);
+ConstantData *ConstantFoldInstOperands(User* inst, std::vector<ConstantData*> _Operands);
 
 /// ConstantFoldCompareInstOperands - Attempt to constant fold a compare
 /// instruction (icmp/fcmp) with the specified operands.  If it fails, it
 /// returns a constant expression of the specified operands.
-Value *ConstantFoldCompareInstOperands(BasicBlock* Pred, Value* LHS, Value* RHS);
+ConstantData *ConstantFoldCompareInstOperands(BasicBlock* Pred, Value* LHS, Value* RHS);
 
-/// ConstantFoldLoadFromConstPtr - Return the value that a load from C would
-/// produce if it is constant and determinable.  If this is not determinable,
-/// return null.
-Value *ConstantFoldLoadFromConstPtr(Value* _Const, Type* type);
+ConstantData *ConstantFoldLoadInst(const LoadInst* _LoadInst);
 
 /// canConstantFoldCallTo - Return true if its even possible to fold a call to
 /// the specified function.
@@ -47,6 +44,6 @@ bool canConstantFoldCallto(User* inst);
 
 /// ConstantFoldCall - Attempt to constant fold a call to the specified function
 /// with the specified arguments, returning null if unsuccessful.
-Value *ConstantFoldCall(Function* func, std::vector<Value*> Operands);
+ConstantData *ConstantFoldCall(Function* func, std::vector<ConstantData*> Operands);
 
 };

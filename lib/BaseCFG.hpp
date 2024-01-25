@@ -87,8 +87,8 @@ class Value
     UserList& GetUserlist(){return userlist;};
 };
 using Operand=Value*;
-class Constant:public User
-{};
+// class Constant:public User
+// {};
 class User:public Value,public list_node<BasicBlock,User>
 {
     using UsePtr=std::unique_ptr<Use>;
@@ -104,7 +104,10 @@ class User:public Value,public list_node<BasicBlock,User>
     void ClearRelation();//在EraseFromBasic()前调用
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
 };
+class ConstantExpr:public Value
+{
 
+};
 class ConstantData:public Value
 {
     public:
