@@ -240,8 +240,8 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
             args.push_back(src);
             args.push_back(ConstIRInt::GetNewConstant(tmp->get_size()));
             args.push_back(ConstIRBoolean::GetNewConstant(false));
-            /*call void @llvm.memcpy.p0i8.p0i8.i64(ptr <1>, ptr <2>, i64 <num_bytes>, i1 false)*/
-            state.current_building->GenerateCallInst("llvm.memcpy.p0i8.p0i8.i64",args,0);
+            /*call void @llvm.memcpy.p0.p0.i32(ptr <1>, ptr <2>, i64 <num_bytes>, i1 false)*/
+            state.current_building->GenerateCallInst("llvm.memcpy.p0.p0.i32",args,0);
         }
     }
     else

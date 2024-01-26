@@ -561,7 +561,7 @@ BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
         if(_id=="starttime")return VoidType::NewVoidTypeGet();
         if(_id=="stoptime")return VoidType::NewVoidTypeGet();
         if(_id=="putf")return VoidType::NewVoidTypeGet();
-        if(_id=="llvm.memcpy.p0i8.p0i8.i64")return VoidType::NewVoidTypeGet();
+        if(_id=="llvm.memcpy.p0.p0.i32")return VoidType::NewVoidTypeGet();
         assert(0);
     };
     if(mp.find(_id)==mp.end()){
@@ -620,7 +620,7 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         if(_id=="starttime")return true;
         if(_id=="stoptime")return true;
         if(_id=="putf")return true;
-        if(_id=="llvm.memcpy.p0i8.p0i8.i64")return true;
+        if(_id=="llvm.memcpy.p0.p0.i32")return true;
         return false;
     };
     
@@ -628,6 +628,24 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         if(id=="starttime"||id=="stoptime"){
             assert(args.size()==0);
             args.push_back(ConstIRInt::GetNewConstant(run_time));
+        }
+        /*
+        int as first arg
+        putint
+        putch
+        putarray
+        putfarray
+
+        float as first arg
+        putfloat
+        */
+        if(id=="putint"||id=="putch"||id=="putarray"||id=="putfarray"){
+            if(args[0]->GetTypeEnum()==IR_Value_Float)
+                args[0]=GenerateFPTSI(args[0]);
+        }
+        if(id=="putfloat"){
+            if(args[0]->GetTypeEnum()==IR_Value_INT)
+                args[0]=GenerateSITFP(args[0]);
         }
         auto tmp=new CallInst(BuildInFunction::GetBuildInFunction(id),args,"at"+std::to_string(run_time));
         push_back(tmp);

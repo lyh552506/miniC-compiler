@@ -323,6 +323,7 @@ declare i32 @putchar(i32) local_unnamed_addr #5
 
 declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1 immarg) #1
 
+declare void @llvm.memcpy.p0.p0.i32(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i32, i1 immarg)
 attributes #0 = { nounwind uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "frame-pointer"="none" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { argmemonly nounwind willreturn }
 attributes #2 = { nofree nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "frame-pointer"="none" "less-precise-fpmad"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
@@ -480,7 +481,7 @@ define i32 @main(){
 .174:
   store i32 1, i32* %i_0
   store i32 0, i32* %p_0
-  call void @llvm.memcpy.p0i8.p0i8.i64([10 x float]* %arr_0, [10 x float]* @__constant..184, i32 40, i1 false)
+  call void @llvm.memcpy.p0.p0.i32([10 x float]* %arr_0, [10 x float]* @__constant..184, i32 40, i1 false)
   %.189 = getelementptr inbounds [10 x float], [10 x float]* %arr_0, i32 0, i32 0
   %.191at82 = call i32 @getfarray(float* %.189)
   store i32 %.191at82, i32* %len_0
@@ -513,20 +514,21 @@ define i32 @main(){
   call void @putfloat(float %.223)
   call void @putch(i32 32)
   %.228 = load float, float* %area_trunc_0
-  call void @putint(float %.228)
+  %.229 = fptosi float %.228 to i32
+  call void @putint(i32 %.229)
   call void @putch(i32 10)
-  %.232 = load i32, i32* %i_0
-  %.235 = sitofp i32 %.232 to float
-  %.236 = fmul float %.235, 0x4024000000000000
-  %.237 = fptosi float %.236 to i32
-  store i32 %.237, i32* %i_0
-  %.239 = load i32, i32* %p_0
-  %.240 = add i32 %.239, 1
-  store i32 %.240, i32* %p_0
+  %.233 = load i32, i32* %i_0
+  %.236 = sitofp i32 %.233 to float
+  %.237 = fmul float %.236, 0x4024000000000000
+  %.238 = fptosi float %.237 to i32
+  store i32 %.238, i32* %i_0
+  %.240 = load i32, i32* %p_0
+  %.241 = add i32 %.240, 1
+  store i32 %.241, i32* %p_0
   br label %.193wc83 
 .195wn95:
-  %.243 = load i32, i32* %len_0
-  %.244 = getelementptr inbounds [10 x float], [10 x float]* %arr_0, i32 0, i32 0
-  call void @putfarray(i32 %.243, float* %.244)
+  %.244 = load i32, i32* %len_0
+  %.245 = getelementptr inbounds [10 x float], [10 x float]* %arr_0, i32 0, i32 0
+  call void @putfarray(i32 %.244, float* %.245)
   ret i32 0 
 }
