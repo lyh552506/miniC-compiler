@@ -185,7 +185,7 @@ void BaseDef::codegen(){
     {
         auto tmp=array_descripters->GetDeclDescipter();
         auto var=new Variable(tmp,ID);
-        var->attach(civ->GetOperand(tmp,nullptr));
+        if(civ!=nullptr)var->attach(civ->GetOperand(tmp,nullptr));
         Singleton<Module>().GenerateGlobalVariable(var);
     }
     else
@@ -230,13 +230,19 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
     {
         auto tmp=array_descripters->GetDeclDescipter();
         auto var=new Variable(tmp,ID);
+        state.current_building->GenerateAlloca(var);
         if(civ!=nullptr)
         {
-            std::cerr<<"MEMCPY NOT IMPL\n";
-            assert(false);
-            var->attach(civ->GetOperand(tmp,state.current_building));
+            Operand init=civ->GetOperand(tmp,state.current_building);
+            std::vector<Operand> args;
+            auto src=Singleton<Module>().GenerateMemcpyHandle(PointerType::NewPointerTypeGet(tmp),init);
+            args.push_back(Singleton<Module>().GetValueByName(ID));//des
+            args.push_back(src);
+            args.push_back(ConstIRInt::GetNewConstant(tmp->get_size()));
+            args.push_back(ConstIRBoolean::GetNewConstant(false));
+            /*call void @llvm.memcpy.p0i8.p0i8.i64(ptr <1>, ptr <2>, i64 <num_bytes>, i1 false)*/
+            state.current_building->GenerateCallInst("llvm.memcpy.p0i8.p0i8.i64",args,0);
         }
-        state.current_building->GenerateAlloca(var);
     }
     else
     {

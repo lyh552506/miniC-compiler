@@ -98,7 +98,6 @@ class User:public Value,public list_node<BasicBlock,User>
     User();
     User(Type* tp);
     virtual Operand GetDef();
-    void ir_mark();
     void ClearRelation();//在EraseFromBasic()前调用
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
 };

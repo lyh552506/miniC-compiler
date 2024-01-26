@@ -27,6 +27,20 @@ void Initializer::print(){
     std::cout<<"]";
 }
 
+MemcpyHandle::MemcpyHandle(Type* _tp,Operand _src):User(_tp){
+    add_use(_src);
+    name="__constant."+name;
+}
+
+void MemcpyHandle::print(){
+    Value::print();
+    std::cout<<" = constant ";
+    dynamic_cast<PointerType*>(tp)->GetSubType()->print();
+    std::cout<<" ";
+    dynamic_cast<Initializer*>(uselist[0]->GetValue())->print();
+    std::cout<<"\n";
+}
+
 AllocaInst::AllocaInst(std::string str,Type* _tp):User(PointerType::NewPointerTypeGet(_tp)){
     name=str;
     name+="_";
@@ -547,6 +561,7 @@ BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
         if(_id=="starttime")return VoidType::NewVoidTypeGet();
         if(_id=="stoptime")return VoidType::NewVoidTypeGet();
         if(_id=="putf")return VoidType::NewVoidTypeGet();
+        if(_id=="llvm.memcpy.p0i8.p0i8.i64")return VoidType::NewVoidTypeGet();
         assert(0);
     };
     if(mp.find(_id)==mp.end()){
@@ -605,6 +620,7 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         if(_id=="starttime")return true;
         if(_id=="stoptime")return true;
         if(_id=="putf")return true;
+        if(_id=="llvm.memcpy.p0i8.p0i8.i64")return true;
         return false;
     };
     
@@ -697,6 +713,7 @@ std::vector<std::unique_ptr<Value>>& Function::GetParams(){
 // }
 void Module::Test(){
     for(auto &i:globalvaribleptr)i->print();
+    for(auto &i:constants_handle)i->print();
     for(auto&i:ls)
         i->print();
 }
@@ -717,6 +734,11 @@ void Module::GenerateGlobalVariable(Variable* ptr){
 
 std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() {
     return ls;
+}
+
+Operand Module::GenerateMemcpyHandle(Type* _tp,Operand oper){
+    constants_handle.push_back(new MemcpyHandle(_tp,oper));
+    return constants_handle.back();
 }
 
 

@@ -40,6 +40,12 @@ public:
   void print();
 };
 
+class MemcpyHandle:public User{
+    public:
+    MemcpyHandle(Type*,Operand);
+    void print();
+};
+
 class AllocaInst:public User
 {
     public:
@@ -205,10 +211,12 @@ class Module:public SymbolTable
     using FunctionPtr=std::unique_ptr<Function>;
     std::vector<FunctionPtr> ls;
     std::vector<GlobalVariblePtr> globalvaribleptr;
+    std::vector<MemcpyHandle*> constants_handle;
     public:
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
+    Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
     void Test();
 };

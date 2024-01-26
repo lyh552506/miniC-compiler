@@ -52,6 +52,8 @@ void Value::print(){
         std::cout<<"@"<<tmp->GetName();
     else if(auto tmp=dynamic_cast<BuildInFunction*>(this))
         std::cout<<"@"<<tmp->GetName();
+    else if(auto tmp=dynamic_cast<MemcpyHandle*>(this))
+        std::cout<<"@"<<tmp->GetName();
     else if(GetName().substr(0,2)==".g")
         std::cout<<"@"<<GetName();
     else if(GetName()=="undef")
