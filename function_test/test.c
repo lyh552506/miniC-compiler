@@ -1,98 +1,145 @@
-// float global constants
-const float RADIUS = 5.5, PI = 03.141592653589793, EPS = 1e-6;
+const int TOKEN_NUM = 0, TOKEN_OTHER = 1;
+int last_char = 32, num, other;
+int cur_token;
 
-// hexadecimal float constant
-const float PI_HEX = 0x1.921fb6p+1, HEX2 = 0x.AP-3;
-
-// float constant evaluation
-const float FACT = -.33E+5, EVAL1 = PI * RADIUS * RADIUS, EVAL2 = 2 * PI_HEX * RADIUS, EVAL3 = PI * 2 * RADIUS;
-
-// float constant implicit conversion
-const float CONV1 = 233, CONV2 = 0xfff;
-const int MAX = 1e9, TWO = 2.9, THREE = 3.2, FIVE = TWO + THREE;
-
-// float -> float function
-float float_abs(float x) {
-  if (x < 0) return -x;
-  return x;
+int next_char() {
+  last_char = getch();
+  return last_char;
 }
 
-// int -> float function & float/int expression
-float circle_area(int radius) {
-  return (PI * radius * radius + (radius * radius) * PI) / 2;
-}
-
-// float -> float -> int function & float/int expression
-int float_eq(float a, float b) {
-  if (float_abs(a - b) < EPS) {
-    return 1 * 2. / 2;
-  } else {
+int is_space(int c) {
+  if (c == 32 || c == 10) {
+    return 1;
+  }
+  else {
     return 0;
   }
 }
 
-void error() {
-  putch(101);
-  putch(114);
-  putch(114);
-  putch(111);
-  putch(114);
-  putch(10);
-}
-
-void ok() {
-  putch(111);
-  putch(107);
-  putch(10);
-}
-
-void assert(int cond) {
-  if (!cond) {
-    error();
-  } else {
-    ok();
+int is_num(int c) {
+  if (c >= 48 && c <= 57) {
+    return 1;
+  }
+  else {
+    return 0;
   }
 }
 
-void assert_not(int cond) {
-  if (cond) {
-    error();
-  } else {
-    ok();
+int next_token() {
+  while (is_space(last_char)) next_char();
+  if (is_num(last_char)) {
+    num = last_char - 48;
+    while (is_num(next_char())) {
+      num = num * 10 + last_char - 48;
+    }
+    cur_token = TOKEN_NUM;
   }
+  else {
+    other = last_char;
+    next_char();
+    cur_token = TOKEN_OTHER;
+  }
+  return cur_token;
+}
+
+int panic() {
+  putch(112);
+  putch(97);
+  putch(110);
+  putch(105);
+  putch(99);
+  putch(33);
+  putch(10);
+  return -1;
+}
+
+int get_op_prec(int op) {
+  // +, -
+  if (op == 43 || op == 45) return 10;
+  // *, /, %
+  if (op == 42 || op == 47 || op == 37) return 20;
+  // other
+  return 0;
+}
+
+void stack_push(int s[], int v) {
+  s[0] = s[0] + 1;
+  s[s[0]] = v;
+}
+
+int stack_pop(int s[]) {
+  int last = s[s[0]];
+  s[0] = s[0] - 1;
+  return last;
+}
+
+int stack_peek(int s[]) {
+  return s[s[0]];
+}
+
+int stack_size(int s[]) {
+  return s[0];
+}
+
+int eval_op(int op, int lhs, int rhs) {
+  // +
+  if (op == 43) return lhs + rhs;
+  // -
+  if (op == 45) return lhs - rhs;
+  // *
+  if (op == 42) return lhs * rhs;
+  // /
+  if (op == 47) return lhs / rhs;
+  // %
+  if (op == 37) return lhs % rhs;
+  // other
+  return 0;
+}
+
+int eval() {
+  int oprs[256] = {}, ops[256] = {};
+  // get the first value
+  if (cur_token != TOKEN_NUM) return panic();
+  stack_push(oprs, num);
+  next_token();
+  // evaluate
+  while (cur_token == TOKEN_OTHER) {
+    // get operator
+    int op = other;
+    if (!get_op_prec(op)) break;
+    next_token();
+    // handle operator
+    while (stack_size(ops) && get_op_prec(stack_peek(ops)) >= get_op_prec(op)) {
+      // evaluate the current operation
+      int cur_op = stack_pop(ops);
+      int rhs = stack_pop(oprs), lhs = stack_pop(oprs);
+      stack_push(oprs, eval_op(cur_op, lhs, rhs));
+    }
+    stack_push(ops, op);
+    // get next expression
+    if (cur_token != TOKEN_NUM) return panic();
+    stack_push(oprs, num);
+    next_token();
+  }
+  // eat ';'
+  next_token();
+  // clear the operator stack
+  while (stack_size(ops)) {
+    int cur_op = stack_pop(ops);
+    int rhs = stack_pop(oprs), lhs = stack_pop(oprs);
+    stack_push(oprs, eval_op(cur_op, lhs, rhs));
+  }
+  return stack_peek(oprs);
 }
 
 int main() {
-  assert_not(float_eq(HEX2, FACT));
-  assert_not(float_eq(EVAL1, EVAL2));
-  assert(float_eq(EVAL2, EVAL3));
-  assert(float_eq(circle_area(RADIUS) /* f->i implicit conversion */,
-                  circle_area(FIVE)));
-  assert_not(float_eq(CONV1, CONV2) /* i->f implicit conversion */);
-
-  // float conditional expressions
-  if (1.5) ok();
-  if (!!3.3) ok();
-  if (.0 && 3) error();
-  if (0 || 0.3) ok();
-
-  // float array & I/O functions
-  int i = 1, p = 0;
-  float arr[10] = {1., 2};
-  int len = getfarray(arr);
-  while (i < MAX) {
-    float input = getfloat();
-    float area = PI * input * input, area_trunc = circle_area(input);
-    arr[p] = arr[p] + input;
-
-    putfloat(area);
-    putch(32);
-    putint(area_trunc); // f->i implicit conversion
+  int count = getint();
+  getch();
+  next_token();
+  while (count) {
+    putint(eval());
     putch(10);
-
-    i = i * - -1e1;
-    p = p + 1;
+    count = count - 1;
   }
-  putfarray(len, arr);
   return 0;
 }

@@ -12,6 +12,7 @@ class Initializer:public Value,public std::vector<Operand>
 {
     public:
     Initializer(Type*);
+    void Var2Store(BasicBlock*,const std::string&,std::vector<int>&);
     /// @brief 打印
     /// <Type> [<Content_0>,<Content1>,...]
     /// Content:= <Type> <Content>

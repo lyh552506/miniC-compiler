@@ -7,8 +7,36 @@
 
 Initializer::Initializer(Type* _tp):Value(_tp){}
 
+void Initializer::Var2Store(BasicBlock* bb,const std::string& name,std::vector<int>& gep_data){
+    for(int i=0;i<this->size();i++){
+        auto& handle=(*this)[i];
+        gep_data.push_back(i);
+        if(auto inits=dynamic_cast<Initializer*>(handle)){
+            inits->Var2Store(bb,name,gep_data);
+        }
+        else{
+            if(!handle->isConst()){
+                auto gep=dynamic_cast<GetElementPtrInst*>(bb->GenerateGEPInst(Singleton<Module>().GetValueByName(name)));
+                gep->add_use(ConstIRInt::GetNewConstant());
+                for(auto&j:gep_data)
+                    gep->add_use(ConstIRInt::GetNewConstant(j));
+                bb->GenerateStoreInst(handle,gep);
+                if(handle->GetType()->GetTypeEnum()==IR_Value_INT)
+                    handle=ConstIRInt::GetNewConstant();
+                else
+                    handle=ConstIRFloat::GetNewConstant();
+            }
+        }
+        gep_data.pop_back();
+    }
+}
+
 void Initializer::print(){
     // tp->print();
+    if(size()==0){
+        std::cout<<"zeroinitializer";
+        return;
+    }
     std::cout<<" [";
     int limi=dynamic_cast<ArrayType*>(tp)->GetNumEle();
     for(int i=0;i<limi;i++){
@@ -42,9 +70,9 @@ void MemcpyHandle::print(){
 }
 
 AllocaInst::AllocaInst(std::string str,Type* _tp):User(PointerType::NewPointerTypeGet(_tp)){
-    name=str;
-    name+="_";
-    name+=std::to_string(Singleton<Module>().IR_number(str));
+    // name=str;
+    // name+="_";
+    // name+=std::to_string(Singleton<Module>().IR_number(str));
 }
 
 void AllocaInst::print(){

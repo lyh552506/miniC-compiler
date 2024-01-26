@@ -175,7 +175,7 @@ Operand InitVal::GetOperand(Type* tp,BasicBlock* cur){
     else if(auto fuc=dynamic_cast<InitVals*>(val.get())){
         return fuc->GetOperand(tp,cur);
     }
-    else assert(0);
+    else return new Initializer(tp);
 }
 
 BaseDef::BaseDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):ID(_id),array_descripters(_ad),civ(_iv){}
@@ -234,6 +234,9 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
         if(civ!=nullptr)
         {
             Operand init=civ->GetOperand(tmp,state.current_building);
+            // if(init==nullptr)return state.current_building;
+            std::vector<int> temp;
+            dynamic_cast<Initializer*>(init)->Var2Store(state.current_building,ID,temp);
             std::vector<Operand> args;
             auto src=Singleton<Module>().GenerateMemcpyHandle(PointerType::NewPointerTypeGet(tmp),init);
             args.push_back(Singleton<Module>().GetValueByName(ID));//des
