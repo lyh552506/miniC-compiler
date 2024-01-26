@@ -1,4 +1,5 @@
 #include "AST_NODE.hpp"
+#include "TypeTrans.hpp"
 
 LocType::LocType():begin(0),end(0){
 }
@@ -114,7 +115,13 @@ Operand InitVals::GetOperand(Type* tp,BasicBlock* cur){
     };
     auto sub=dynamic_cast<ArrayType*>(tp)->GetSubType();
     for(auto &i:ls){
-        auto tmp=i->GetOperand(sub,cur);
+        auto type_expect=max_type(sub);
+        auto tmp=i->GetOperand(type_expect,cur);
+        if(tmp->GetType()!=type_expect){
+            if(Singleton<InnerDataType>()==IR_Value_INT)tmp=Inter(tmp,cur);
+            else if(Singleton<InnerDataType>()==IR_Value_Float)tmp=Floater(tmp,cur);
+            else assert(0);
+        }
         offs+=tmp->GetType()->get_size();
         ret->push_back(tmp);
         while(ret->back()->GetType()!=max_type(sub)){
@@ -129,6 +136,18 @@ Operand InitVals::GetOperand(Type* tp,BasicBlock* cur){
             ret->push_back(omit);
         }
     }
+    //fix: 解决一下没有初始化完的问题
+    while(ret->back()->GetType()!=sub){
+        auto upper=dynamic_cast<ArrayType*>(type_map[ret->back()->GetType()]);
+        int ele=upper->GetNumEle();
+        auto omit=new Initializer(upper);
+        for(int i=0;i<ele&&!ret->empty()&&ret->back()->GetType()==upper->GetSubType();i++)
+        {
+            omit->push_back(ret->back());
+            ret->pop_back();
+        }
+        ret->push_back(omit);
+    }
     return ret;
 }
 InitVal::InitVal(AST_NODE* _data){
@@ -141,36 +160,32 @@ void InitVal::print(int x){
     else
         std::cout<<'\n',val->print(x+1);
 }
+
+Operand InitVal::GetFirst(BasicBlock* cur){
+    if(auto fuc=dynamic_cast<AddExp*>(val.get()))
+        return fuc->GetOperand(cur);
+    else assert(0);
+}
 /// @param tp Must be an Array Type 
 /// @param cur if cur is not nullptr, memcpy will be generated
 /// @return return Initializer*
 Operand InitVal::GetOperand(Type* tp,BasicBlock* cur){
-    if(auto fuc=dynamic_cast<AddExp*>(val.get())){
-        // assert(tp->GetTypeEnum()!=IR_ARRAY);
+    if(auto fuc=dynamic_cast<AddExp*>(val.get()))
         return fuc->GetOperand(cur);
-    }
     else if(auto fuc=dynamic_cast<InitVals*>(val.get())){
         return fuc->GetOperand(tp,cur);
     }
     else assert(0);
 }
-Operand InitVal::GetFirst(BasicBlock* cur){
-    if(auto fuc=dynamic_cast<AddExp*>(val.get())){
-        return fuc->GetOperand(cur);
-    }
-    else assert(0);
-}
-
 
 BaseDef::BaseDef(std::string _id,Exps* _ad=nullptr,InitVal* _iv=nullptr):ID(_id),array_descripters(_ad),civ(_iv){}
 
 void BaseDef::codegen(){
     if(array_descripters!=nullptr)
     {
-        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
-        assert(civ==nullptr);
         auto tmp=array_descripters->GetDeclDescipter();
         auto var=new Variable(tmp,ID);
+        var->attach(civ->GetOperand(tmp,nullptr));
         Singleton<Module>().GenerateGlobalVariable(var);
     }
     else
@@ -187,6 +202,11 @@ void BaseDef::codegen(){
                 else assert(0);
             }
             else var=civ->GetFirst(nullptr);
+            if(Singleton<InnerDataType>()==IR_Value_INT)
+                var=Inter(var,nullptr);
+            else if(Singleton<InnerDataType>()==IR_Value_Float)
+                var=Floater(var,nullptr);
+            else assert(0);
             Singleton<Module>().Register(ID,var);
         }
         else
@@ -208,10 +228,14 @@ VarDef::VarDef(std::string _id,Exps* _ad,InitVal* _iv):BaseDef(_id,_ad,_iv){}
 BasicBlock* BaseDef::GetInst(GetInstState state){
     if(array_descripters!=nullptr)
     {
-        if(civ!=nullptr)std::cerr<<"InitVal not implemented!n";
-        assert(civ==nullptr);
         auto tmp=array_descripters->GetDeclDescipter();
         auto var=new Variable(tmp,ID);
+        if(civ!=nullptr)
+        {
+            std::cerr<<"MEMCPY NOT IMPL\n";
+            assert(false);
+            var->attach(civ->GetOperand(tmp,state.current_building));
+        }
         state.current_building->GenerateAlloca(var);
     }
     else
@@ -228,6 +252,10 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
                 else assert(0);
             }
             else var=civ->GetFirst(nullptr);
+            if(Singleton<InnerDataType>()==IR_Value_INT)
+                var=Inter(var,nullptr);
+            else if(Singleton<InnerDataType>()==IR_Value_Float)
+                var=Floater(var,nullptr);
             Singleton<Module>().Register(ID,var);
         }
         else{

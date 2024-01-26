@@ -8,19 +8,23 @@
 Initializer::Initializer(Type* _tp):Value(_tp){}
 
 void Initializer::print(){
-    tp->print();
+    // tp->print();
     std::cout<<" [";
     int limi=dynamic_cast<ArrayType*>(tp)->GetNumEle();
     for(int i=0;i<limi;i++){
         dynamic_cast<ArrayType*>(tp)->GetSubType()->print();
         if(i<this->size()){
             std::cout<<" ";
-            (*this)[i]->print();
+            if(auto inits=dynamic_cast<Initializer*>((*this)[i]))
+                inits->print();
+            else
+                (*this)[i]->print();
         }
         else
             std::cout<<" zeroinitializer";
         if(i!=limi-1)std::cout<<", ";
     }
+    std::cout<<"]";
 }
 
 AllocaInst::AllocaInst(std::string str,Type* _tp):User(PointerType::NewPointerTypeGet(_tp)){
@@ -338,7 +342,8 @@ void Variable::print(){
     GetType()->print();
     if(attached_initializer){
         std::cout<<" ";
-        attached_initializer->print();
+        if(auto array_init=dynamic_cast<Initializer*>(attached_initializer))array_init->print();
+        else attached_initializer->print();
     }
     else std::cout<<" zeroinitializer";
     std::cout<<'\n';

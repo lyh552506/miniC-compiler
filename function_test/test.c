@@ -1,164 +1,145 @@
-int w = 512;
-int h = 270;
-float imgIn[512][270];
-float imgOut[512][270];
-float my_y1[512][270];
-float my_y2[512][270];
-float alpha = 0.25;
+const int TOKEN_NUM = 0, TOKEN_OTHER = 1;
+int last_char = 32, num, other;
+int cur_token;
 
-float newExp(float x)
-{
-    x = 1.0 + x / 256;
-    x = x * x;
-    x = x * x;
-    x = x * x;
-    x = x * x;
-    x = x * x;
-    x = x * x;
-    x = x * x;
-    x = x * x;
-    return x;
+int next_char() {
+  last_char = getch();
+  return last_char;
 }
 
-float newPow(float num, int n)
-{
-    if (n < 0)
-        return 1.0 / newPow(num, -n);
-    else if (n == 0)
-        return 1.0;
-    else if (n > 0)
-        return num * newPow(num, n - 1);
-}
-
-void kernel_deriche(int w, int h, float alpha, float imgIn[][270],
-                    float imgOut[][270], float y1[][270], float y2[][270])
-{
-    int i, j;
-    float xm1, tm1, ym1, ym2;
-    float xp1, xp2;
-    float tp1, tp2;
-    float yp1, yp2;
-
-    float k;
-    float a1, a2, a3, a4, a5, a6, a7, a8;
-    float b1, b2, c1, c2;
-
-    k = (1.0 - newExp(-alpha)) * (1.0 - newExp(-alpha)) /
-        (1.0 + 2.0 * alpha * newExp(-alpha) - newExp(2.0 * alpha));
-    a1 = k;
-    a5 = k;
-    a6 = k * newExp(-alpha) * (alpha - 1.0);
-    a2 = a6;
-    a7 = k * newExp(-alpha) * (alpha + 1.0);
-    a3 = a7;
-    a8 = -k * newExp(-2.0 * alpha);
-    a4 = a8;
-    b1 = newPow(2.0, -alpha);
-    b2 = -newExp(-2.0 * alpha);
-    c1 = 1;
-    c2 = 1;
-    i = 0;
-    while (i < w)
-    {
-        ym1 = 0.0;
-        ym2 = 0.0;
-        xm1 = 0.0;
-        j = 0;
-        while (j < h)
-        {
-            y1[i][j] = a1 * imgIn[i][j] + a2 * xm1 + b1 * ym1 + b2 * ym2;
-            xm1 = imgIn[i][j];
-            ym2 = ym1;
-            ym1 = y1[i][j];
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    i = 0;
-    while (i < w)
-    {
-        yp1 = 0.0;
-        yp2 = 0.0;
-        xp1 = 0.0;
-        xp2 = 0.0;
-        j = h - 1;
-        while (j >= 0)
-        {
-            y2[i][j] = a3 * xp1 + a4 * xp2 + b1 * yp1 + b2 * yp2;
-            xp2 = xp1;
-            xp1 = imgIn[i][j];
-            yp2 = yp1;
-            yp1 = y2[i][j];
-            j = j - 1;
-        }
-        i = i + 1;
-    }
-    i = 0;
-    while (i < w) {
-    	j = 0;
-        while (j < h)
-        {
-            imgOut[i][j] = c1 * (y1[i][j] + y2[i][j]);
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-    j = 0;
-    while (j < h)
-    {
-        tm1 = 0.0;
-        ym1 = 0.0;
-        ym2 = 0.0;
-        i = 0;
-        while (i < w)
-        {
-            y1[i][j] = a5 * imgOut[i][j] + a6 * tm1 + b1 * ym1 + b2 * ym2;
-            tm1 = imgOut[i][j];
-            ym2 = ym1;
-            ym1 = y1[i][j];
-            i = i + 1;
-        }
-        j = j + 1;
-    }
-    j = 0;
-    while (j < h)
-    {
-        tp1 = 0.0;
-        tp2 = 0.0;
-        yp1 = 0.0;
-        yp2 = 0.0;
-        i = w - 1;
-        while (i >= 0)
-        {
-            y2[i][j] = a7 * tp1 + a8 * tp2 + b1 * yp1 + b2 * yp2;
-            tp2 = tp1;
-            tp1 = imgOut[i][j];
-            yp2 = yp1;
-            yp1 = y2[i][j];
-            i = i - 1;
-        }
-        j = j + 1;
-    }
-    i = 0;
-    while (i < w) {
-    	j = 0;
-        while (j < h) {
-            imgOut[i][j] = c2 * (y1[i][j] + y2[i][j]);
-            j = j + 1;
-        }
-        i = i + 1;
-    }
-}
-
-int main()
-{
-    getfarray(imgIn);
-    starttime();
-    kernel_deriche(w, h, alpha, imgIn, imgOut, my_y1, my_y2);
-    stoptime();
-    putfarray(w * h, imgOut);
+int is_space(int c) {
+  if (c == 32 || c == 10) {
+    return 1;
+  }
+  else {
     return 0;
+  }
 }
 
+int is_num(int c) {
+  if (c >= 48 && c <= 57) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
 
-// @arr = global [3 x [3 x [3 x i32]]] [[3 x [3 x i32]] [[3 x i32] [i32 6, i32 4, i32 0], [3 x i32] zeroinitializer, [3 x i32] zeroinitializer], [3 x [3 x i32]] [[3 x i32] [i32 1, i32 3, i32 7], [3 x i32] [i32 6, i32 4, i32 0], [3 x i32] [i32 3, i32 2, i32 0]], [3 x [3 x i32]] [[3 x i32] [i32 9, i32 8, i32 0], [3 x i32] zeroinitializer, [3 x i32] zeroinitializer]], align 16
+int next_token() {
+  while (is_space(last_char)) next_char();
+  if (is_num(last_char)) {
+    num = last_char - 48;
+    while (is_num(next_char())) {
+      num = num * 10 + last_char - 48;
+    }
+    cur_token = TOKEN_NUM;
+  }
+  else {
+    other = last_char;
+    next_char();
+    cur_token = TOKEN_OTHER;
+  }
+  return cur_token;
+}
+
+int panic() {
+  putch(112);
+  putch(97);
+  putch(110);
+  putch(105);
+  putch(99);
+  putch(33);
+  putch(10);
+  return -1;
+}
+
+int get_op_prec(int op) {
+  // +, -
+  if (op == 43 || op == 45) return 10;
+  // *, /, %
+  if (op == 42 || op == 47 || op == 37) return 20;
+  // other
+  return 0;
+}
+
+void stack_push(int s[], int v) {
+  s[0] = s[0] + 1;
+  s[s[0]] = v;
+}
+
+int stack_pop(int s[]) {
+  int last = s[s[0]];
+  s[0] = s[0] - 1;
+  return last;
+}
+
+int stack_peek(int s[]) {
+  return s[s[0]];
+}
+
+int stack_size(int s[]) {
+  return s[0];
+}
+
+int eval_op(int op, int lhs, int rhs) {
+  // +
+  if (op == 43) return lhs + rhs;
+  // -
+  if (op == 45) return lhs - rhs;
+  // *
+  if (op == 42) return lhs * rhs;
+  // /
+  if (op == 47) return lhs / rhs;
+  // %
+  if (op == 37) return lhs % rhs;
+  // other
+  return 0;
+}
+
+int eval() {
+  int oprs[256] = {}, ops[256] = {};
+  // get the first value
+  if (cur_token != TOKEN_NUM) return panic();
+  stack_push(oprs, num);
+  next_token();
+  // evaluate
+  while (cur_token == TOKEN_OTHER) {
+    // get operator
+    int op = other;
+    if (!get_op_prec(op)) break;
+    next_token();
+    // handle operator
+    while (stack_size(ops) && get_op_prec(stack_peek(ops)) >= get_op_prec(op)) {
+      // evaluate the current operation
+      int cur_op = stack_pop(ops);
+      int rhs = stack_pop(oprs), lhs = stack_pop(oprs);
+      stack_push(oprs, eval_op(cur_op, lhs, rhs));
+    }
+    stack_push(ops, op);
+    // get next expression
+    if (cur_token != TOKEN_NUM) return panic();
+    stack_push(oprs, num);
+    next_token();
+  }
+  // eat ';'
+  next_token();
+  // clear the operator stack
+  while (stack_size(ops)) {
+    int cur_op = stack_pop(ops);
+    int rhs = stack_pop(oprs), lhs = stack_pop(oprs);
+    stack_push(oprs, eval_op(cur_op, lhs, rhs));
+  }
+  return stack_peek(oprs);
+}
+
+int main() {
+  int count = getint();
+  getch();
+  next_token();
+  while (count) {
+    putint(eval());
+    putch(10);
+    count = count - 1;
+  }
+  return 0;
+}
