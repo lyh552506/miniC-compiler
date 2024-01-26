@@ -3,7 +3,25 @@
 #include <memory>
 #include <iostream>
 #include "MagicEnum.hpp"
-#include<map>
+#include <map>
+
+Initializer::Initializer(Type* _tp):Value(_tp){}
+
+void Initializer::print(){
+    tp->print();
+    std::cout<<" [";
+    int limi=dynamic_cast<ArrayType*>(tp)->GetNumEle();
+    for(int i=0;i<limi;i++){
+        dynamic_cast<ArrayType*>(tp)->GetSubType()->print();
+        if(i<this->size()){
+            std::cout<<" ";
+            (*this)[i]->print();
+        }
+        else
+            std::cout<<" zeroinitializer";
+        if(i!=limi-1)std::cout<<", ";
+    }
+}
 
 AllocaInst::AllocaInst(std::string str,Type* _tp):User(PointerType::NewPointerTypeGet(_tp)){
     name=str;

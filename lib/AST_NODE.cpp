@@ -97,6 +97,40 @@ void InitVals::print(int x){
     std::cout<<'\n';
     for(auto &i:ls)((AST_NODE*)i.get())->print(x+1);
 }
+Operand InitVals::GetOperand(Type* tp,BasicBlock* cur){
+    assert(tp->GetTypeEnum()==IR_ARRAY);
+    auto ret=new Initializer(tp);
+    size_t offs=0;
+    std::map<Type*,Type*> type_map;//找上级Type
+    [&type_map](ArrayType* tp){
+        while(tp!=nullptr){
+            type_map[tp->GetSubType()]=tp;
+            tp=dynamic_cast<ArrayType*>(tp->GetSubType());
+        }
+    }(dynamic_cast<ArrayType*>(tp));
+    auto max_type=[&](Type* tp){
+        while(offs%tp->get_size()!=0)tp=dynamic_cast<ArrayType*>(tp)->GetSubType();
+        return tp;
+    };
+    auto sub=dynamic_cast<ArrayType*>(tp)->GetSubType();
+    for(auto &i:ls){
+        auto tmp=i->GetOperand(sub,cur);
+        offs+=tmp->GetType()->get_size();
+        ret->push_back(tmp);
+        while(ret->back()->GetType()!=max_type(sub)){
+            auto upper=dynamic_cast<ArrayType*>(type_map[ret->back()->GetType()]);
+            int ele=upper->GetNumEle();
+            auto omit=new Initializer(upper);
+            for(int i=0;i<ele;i++)
+            {
+                omit->push_back(ret->back());
+                ret->pop_back();
+            }
+            ret->push_back(omit);
+        }
+    }
+    return ret;
+}
 InitVal::InitVal(AST_NODE* _data){
     val.reset(_data);
 }
@@ -106,6 +140,19 @@ void InitVal::print(int x){
         std::cout<<":empty{}\n";
     else
         std::cout<<'\n',val->print(x+1);
+}
+/// @param tp Must be an Array Type 
+/// @param cur if cur is not nullptr, memcpy will be generated
+/// @return return Initializer*
+Operand InitVal::GetOperand(Type* tp,BasicBlock* cur){
+    if(auto fuc=dynamic_cast<AddExp*>(val.get())){
+        // assert(tp->GetTypeEnum()!=IR_ARRAY);
+        return fuc->GetOperand(cur);
+    }
+    else if(auto fuc=dynamic_cast<InitVals*>(val.get())){
+        return fuc->GetOperand(tp,cur);
+    }
+    else assert(0);
 }
 Operand InitVal::GetFirst(BasicBlock* cur){
     if(auto fuc=dynamic_cast<AddExp*>(val.get())){

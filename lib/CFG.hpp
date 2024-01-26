@@ -4,6 +4,20 @@
 #include "BaseCFG.hpp"
 class BasicBlock;
 class Function;
+
+class InitVal;
+class InitVals;
+
+class Initializer:public Value,public std::vector<Operand>
+{
+    public:
+    Initializer(Type*);
+    /// @brief 打印
+    /// <Type> [<Content_0>,<Content1>,...]
+    /// Content:= <Type> <Content>
+    void print();
+};
+
 class Variable
 {
     Operand attached_initializer;

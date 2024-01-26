@@ -159,3 +159,6 @@ int main()
     putfarray(w * h, imgOut);
     return 0;
 }
+
+
+// @arr = global [3 x [3 x [3 x i32]]] [[3 x [3 x i32]] [[3 x i32] [i32 6, i32 4, i32 0], [3 x i32] zeroinitializer, [3 x i32] zeroinitializer], [3 x [3 x i32]] [[3 x i32] [i32 1, i32 3, i32 7], [3 x i32] [i32 6, i32 4, i32 0], [3 x i32] [i32 3, i32 2, i32 0]], [3 x [3 x i32]] [[3 x i32] [i32 9, i32 8, i32 0], [3 x i32] zeroinitializer, [3 x i32] zeroinitializer]], align 16

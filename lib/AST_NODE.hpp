@@ -306,6 +306,7 @@ class InitVals:public AST_NODE
     InitVals(InitVal* _data);
     void push_back(InitVal* _data);
     void print(int x);
+    Operand GetOperand(Type*,BasicBlock*);
 };
 
 class InitVal:public AST_NODE
@@ -317,6 +318,7 @@ class InitVal:public AST_NODE
     InitVal(AST_NODE* _data);
     void print(int x);
     Operand GetFirst(BasicBlock*);
+    Operand GetOperand(Type*,BasicBlock*);
 };
 
 class BaseDef:public Stmt
