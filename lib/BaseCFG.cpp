@@ -28,7 +28,7 @@ Type* Value::GetType(){
     return tp;
 }
 
-InnerDataType Value::GetTypeEnum(){return tp->GetTypeEnum();}
+InnerDataType Value::GetTypeEnum(){return GetType()->GetTypeEnum();}
 
 
 
@@ -51,6 +51,8 @@ void Value::print(){
     else if(auto tmp=dynamic_cast<Function*>(this))
         std::cout<<"@"<<tmp->GetName();
     else if(auto tmp=dynamic_cast<BuildInFunction*>(this))
+        std::cout<<"@"<<tmp->GetName();
+    else if(auto tmp=dynamic_cast<MemcpyHandle*>(this))
         std::cout<<"@"<<tmp->GetName();
     else if(GetName().substr(0,2)==".g")
         std::cout<<"@"<<GetName();

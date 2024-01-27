@@ -3,12 +3,76 @@
 #include <memory>
 #include <iostream>
 #include "MagicEnum.hpp"
-#include<map>
+#include <map>
+
+Initializer::Initializer(Type* _tp):Value(_tp){}
+
+void Initializer::Var2Store(BasicBlock* bb,const std::string& name,std::vector<int>& gep_data){
+    for(int i=0;i<this->size();i++){
+        auto& handle=(*this)[i];
+        gep_data.push_back(i);
+        if(auto inits=dynamic_cast<Initializer*>(handle)){
+            inits->Var2Store(bb,name,gep_data);
+        }
+        else{
+            if(!handle->isConst()){
+                auto gep=dynamic_cast<GetElementPtrInst*>(bb->GenerateGEPInst(Singleton<Module>().GetValueByName(name)));
+                gep->add_use(ConstIRInt::GetNewConstant());
+                for(auto&j:gep_data)
+                    gep->add_use(ConstIRInt::GetNewConstant(j));
+                bb->GenerateStoreInst(handle,gep);
+                if(handle->GetType()->GetTypeEnum()==IR_Value_INT)
+                    handle=ConstIRInt::GetNewConstant();
+                else
+                    handle=ConstIRFloat::GetNewConstant();
+            }
+        }
+        gep_data.pop_back();
+    }
+}
+
+void Initializer::print(){
+    // tp->print();
+    if(size()==0){
+        std::cout<<"zeroinitializer";
+        return;
+    }
+    std::cout<<" [";
+    int limi=dynamic_cast<ArrayType*>(tp)->GetNumEle();
+    for(int i=0;i<limi;i++){
+        dynamic_cast<ArrayType*>(tp)->GetSubType()->print();
+        if(i<this->size()){
+            std::cout<<" ";
+            if(auto inits=dynamic_cast<Initializer*>((*this)[i]))
+                inits->print();
+            else
+                (*this)[i]->print();
+        }
+        else
+            std::cout<<" zeroinitializer";
+        if(i!=limi-1)std::cout<<", ";
+    }
+    std::cout<<"]";
+}
+
+MemcpyHandle::MemcpyHandle(Type* _tp,Operand _src):User(_tp){
+    add_use(_src);
+    name="__constant."+name;
+}
+
+void MemcpyHandle::print(){
+    Value::print();
+    std::cout<<" = constant ";
+    dynamic_cast<PointerType*>(tp)->GetSubType()->print();
+    std::cout<<" ";
+    dynamic_cast<Initializer*>(uselist[0]->GetValue())->print();
+    std::cout<<"\n";
+}
 
 AllocaInst::AllocaInst(std::string str,Type* _tp):User(PointerType::NewPointerTypeGet(_tp)){
-    name=str;
-    name+="_";
-    name+=std::to_string(Singleton<Module>().IR_number(str));
+    // name=str;
+    // name+="_";
+    // name+=std::to_string(Singleton<Module>().IR_number(str));
 }
 
 void AllocaInst::print(){
@@ -49,10 +113,10 @@ LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType(
     add_use(__src);
 }
 
-// Value* LoadInst::GetLoadTarget(){
-//     auto& list=Getuselist();
-//     return list[0]->GetValue();
-// }
+Value* LoadInst::GetLoadTarget(){
+    auto& list=Getuselist();
+    return list[0]->GetValue();
+}
 
 void LoadInst::print(){
     Value::print();
@@ -320,7 +384,8 @@ void Variable::print(){
     GetType()->print();
     if(attached_initializer){
         std::cout<<" ";
-        attached_initializer->print();
+        if(auto array_init=dynamic_cast<Initializer*>(attached_initializer))array_init->print();
+        else attached_initializer->print();
     }
     else std::cout<<" zeroinitializer";
     std::cout<<'\n';
@@ -524,6 +589,7 @@ BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
         if(_id=="starttime")return VoidType::NewVoidTypeGet();
         if(_id=="stoptime")return VoidType::NewVoidTypeGet();
         if(_id=="putf")return VoidType::NewVoidTypeGet();
+        if(_id=="llvm.memcpy.p0.p0.i32")return VoidType::NewVoidTypeGet();
         assert(0);
     };
     if(mp.find(_id)==mp.end()){
@@ -582,6 +648,7 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         if(_id=="starttime")return true;
         if(_id=="stoptime")return true;
         if(_id=="putf")return true;
+        if(_id=="llvm.memcpy.p0.p0.i32")return true;
         return false;
     };
     
@@ -589,6 +656,24 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         if(id=="starttime"||id=="stoptime"){
             assert(args.size()==0);
             args.push_back(ConstIRInt::GetNewConstant(run_time));
+        }
+        /*
+        int as first arg
+        putint
+        putch
+        putarray
+        putfarray
+
+        float as first arg
+        putfloat
+        */
+        if(id=="putint"||id=="putch"||id=="putarray"||id=="putfarray"){
+            if(args[0]->GetTypeEnum()==IR_Value_Float)
+                args[0]=GenerateFPTSI(args[0]);
+        }
+        if(id=="putfloat"){
+            if(args[0]->GetTypeEnum()==IR_Value_INT)
+                args[0]=GenerateSITFP(args[0]);
         }
         auto tmp=new CallInst(BuildInFunction::GetBuildInFunction(id),args,"at"+std::to_string(run_time));
         push_back(tmp);
@@ -599,10 +684,18 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         assert(args.size()==params.size());
         auto i=args.begin();
         for(auto j=params.begin();j!=params.end();j++,i++){
-            auto& ii=*i;auto& jj=*j;
+            auto& ii=*i;auto jj=j->get();
             if(jj->GetType()!=ii->GetType())
             {
                 auto a=ii->GetType()->GetTypeEnum(),b=jj->GetType()->GetTypeEnum();
+                // if(a!=IR_Value_INT&&a!=IR_Value_Float)
+                // {
+                //     std::cerr<<"Error\n";
+                //     ii->GetType()->print();//float
+                //     jj->GetType()->print();//i32
+                //     std::cout.flush();
+                //     assert(0);
+                // }
                 assert(a==IR_Value_INT||a==IR_Value_Float);
                 assert(b==IR_Value_INT||b==IR_Value_Float);
                 if(b==IR_Value_Float)ii=GenerateSITFP(ii);
@@ -675,8 +768,13 @@ std::vector<std::unique_ptr<Value>>& Function::GetParams(){
     return params;
 }
 
+// void Module::visit(std::function<void(Function*)> call_back){
+//     for(auto&i:ls)
+//         call_back(i.get());
+// }
 void Module::Test(){
     for(auto &i:globalvaribleptr)i->print();
+    for(auto &i:constants_handle)i->print();
     for(auto&i:ls)
         i->print();
 }
@@ -697,6 +795,11 @@ void Module::GenerateGlobalVariable(Variable* ptr){
 
 std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() {
     return ls;
+}
+
+Operand Module::GenerateMemcpyHandle(Type* _tp,Operand oper){
+    constants_handle.push_back(new MemcpyHandle(_tp,oper));
+    return constants_handle.back();
 }
 
 

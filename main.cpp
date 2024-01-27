@@ -16,7 +16,6 @@ int main(int argc, char **argv) {
   copyFile("runtime.ll", output_path);
   freopen(output_path.c_str(), "a", stdout);
   yyin = fopen(argv[1], "r");
-
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();

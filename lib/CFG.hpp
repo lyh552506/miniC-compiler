@@ -4,9 +4,24 @@
 #include "BaseCFG.hpp"
 class BasicBlock;
 class Function;
+
+class InitVal;
+class InitVals;
+
+class Initializer:public Value,public std::vector<Operand>
+{
+    public:
+    Initializer(Type*);
+    void Var2Store(BasicBlock*,const std::string&,std::vector<int>&);
+    /// @brief 打印
+    /// <Type> [<Content_0>,<Content1>,...]
+    /// Content:= <Type> <Content>
+    void print();
+};
+
 class Variable
 {
-    Operand attached_initializer;
+    Operand attached_initializer=nullptr;
     std::string name;
     Type* tp;
     public:
@@ -24,6 +39,12 @@ class UndefValue:public User{
 public:
   static UndefValue* get(Type *Ty);
   void print();
+};
+
+class MemcpyHandle:public User{
+    public:
+    MemcpyHandle(Type*,Operand);
+    void print();
 };
 
 class AllocaInst:public User
@@ -110,7 +131,7 @@ class GetElementPtrInst:public User
 {
     public:
     GetElementPtrInst(Operand);
-    Type* GetType();
+    Type* GetType()final;
     void print()final;
 };
 
@@ -191,10 +212,12 @@ class Module:public SymbolTable
     using FunctionPtr=std::unique_ptr<Function>;
     std::vector<FunctionPtr> ls;
     std::vector<GlobalVariblePtr> globalvaribleptr;
+    std::vector<MemcpyHandle*> constants_handle;
     public:
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
+    Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
     void Test();
 };

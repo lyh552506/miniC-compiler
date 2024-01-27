@@ -263,7 +263,9 @@ inline void BaseExp<LAndExp>::GetOperand(BasicBlock* block,BasicBlock* is_true,B
         if(i.get()!=ls.back().get()){
             auto nxt_building=block->GenerateNewBlock();
             i->GetOperand(block,is_true,nxt_building);
-            block=nxt_building;
+            if(!nxt_building->GetUserlist().is_empty())
+                block=nxt_building;
+            else nxt_building->EraseFromParent();
         }
         else i->GetOperand(block,is_true,is_false);
     }
@@ -287,6 +289,7 @@ class Exps:public InnerBaseExps//数组声明修饰符/访问修饰符号
     public:
     Exps(AddExp* _data);
     Type* GetDeclDescipter();
+    Type* GetDeclDescipter(Type*);
     std::vector<Operand> GetVisitDescripter(BasicBlock*);
 };
 
@@ -304,6 +307,7 @@ class InitVals:public AST_NODE
     InitVals(InitVal* _data);
     void push_back(InitVal* _data);
     void print(int x);
+    Operand GetOperand(Type*,BasicBlock*);
 };
 
 class InitVal:public AST_NODE
@@ -315,6 +319,7 @@ class InitVal:public AST_NODE
     InitVal(AST_NODE* _data);
     void print(int x);
     Operand GetFirst(BasicBlock*);
+    Operand GetOperand(Type*,BasicBlock*);
 };
 
 class BaseDef:public Stmt

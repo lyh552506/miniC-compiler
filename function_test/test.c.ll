@@ -323,6 +323,7 @@ declare i32 @putchar(i32) local_unnamed_addr #5
 
 declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1 immarg) #1
 
+declare void @llvm.memcpy.p0.p0.i32(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i32, i1 immarg)
 attributes #0 = { nounwind uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "frame-pointer"="none" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { argmemonly nounwind willreturn }
 attributes #2 = { nofree nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "frame-pointer"="none" "less-precise-fpmad"="false" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
@@ -331,104 +332,8 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.g = global i32 0
-define i32 @func(i32 %.5){
-.3:
-  %n_0 = alloca i32
-  store i32 %.5, i32* %n_0
-  %.7 = load i32, i32* @.g.g
-  %.8 = load i32, i32* %n_0
-  %.9 = add i32 %.7, %.8
-  store i32 %.9, i32* @.g.g
-  %.11 = load i32, i32* @.g.g
-  call void @putint(i32 %.11)
-  %.14 = load i32, i32* @.g.g
-  ret i32 %.14 
-}
 define i32 @main(){
-.17:
-  %i_0 = alloca i32
-  %.20at11 = call i32 @getint()
-  store i32 %.20at11, i32* %i_0
-  %.25 = load i32, i32* %i_0
-  %.27 = icmp sgt i32 %.25, 10
-  br i1 %.27, label %.28, label %.24
-.22:
-  %.41at13 = call i32 @getint()
-  store i32 %.41at13, i32* %i_0
-  %.46 = load i32, i32* %i_0
-  %.48 = icmp sgt i32 %.46, 11
-  br i1 %.48, label %.49, label %.45
-.23:
-  store i32 1, i32* %i_0
-  br label %.22 
-.24:
-  store i32 0, i32* %i_0
-  br label %.22 
-.28:
-  %.30 = load i32, i32* %i_0
-  %.31at12 = call i32 @func(i32 %.30)
-  %.33 = icmp ne i32 %.31at12, 0
-  br i1 %.33, label %.23, label %.24
-.43:
-  %.62at15 = call i32 @getint()
-  store i32 %.62at15, i32* %i_0
-  %.68 = load i32, i32* %i_0
-  %.70 = icmp sle i32 %.68, 99
-  br i1 %.70, label %.65, label %.67
-.44:
-  store i32 1, i32* %i_0
-  br label %.43 
-.45:
-  store i32 0, i32* %i_0
-  br label %.43 
-.49:
-  %.51 = load i32, i32* %i_0
-  %.52at14 = call i32 @func(i32 %.51)
-  %.54 = icmp ne i32 %.52at14, 0
-  br i1 %.54, label %.44, label %.45
-.64:
-  %.83at17 = call i32 @getint()
-  store i32 %.83at17, i32* %i_0
-  %.89 = load i32, i32* %i_0
-  %.91 = icmp sle i32 %.89, 100
-  br i1 %.91, label %.86, label %.88
-.65:
-  store i32 1, i32* %i_0
-  br label %.64 
-.66:
-  store i32 0, i32* %i_0
-  br label %.64 
-.67:
-  %.72 = load i32, i32* %i_0
-  %.73at16 = call i32 @func(i32 %.72)
-  %.75 = icmp ne i32 %.73at16, 0
-  br i1 %.75, label %.65, label %.66
-.85:
-  %.108at19 = call i32 @func(i32 99)
-  %.110 = icmp eq i32 0, %.108at19
-  br i1 %.110, label %.111, label %.106
-.86:
-  store i32 1, i32* %i_0
-  br label %.85 
-.87:
-  store i32 0, i32* %i_0
-  br label %.85 
-.88:
-  %.93 = load i32, i32* %i_0
-  %.94at18 = call i32 @func(i32 %.93)
-  %.96 = icmp ne i32 %.94at18, 0
-  br i1 %.96, label %.86, label %.87
-.104:
+.1:
+  call void @putfloat(float 0x3fe0000000000000)
   ret i32 0 
-.105:
-  store i32 1, i32* %i_0
-  br label %.104 
-.106:
-  store i32 0, i32* %i_0
-  br label %.104 
-.111:
-  %.114at19 = call i32 @func(i32 100)
-  %.116 = icmp ne i32 %.114at19, 0
-  br i1 %.116, label %.105, label %.106
 }
