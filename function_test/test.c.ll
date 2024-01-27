@@ -332,45 +332,8 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@__constant..13 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 4], [2 x i32] zeroinitializer, [2 x i32]  [i32 7, i32 zeroinitializer]]
-@__constant..21 = constant [4 x [2 x i32]] zeroinitializer
-@__constant..32 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 4], [2 x i32]  [i32 5, i32 6], [2 x i32]  [i32 7, i32 8]]
-@__constant..43 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 zeroinitializer], [2 x i32]  [i32 5, i32 zeroinitializer], [2 x i32]  [i32 0, i32 8]]
-@__constant..65 = constant [4 x [2 x [1 x i32]]]  [[2 x [1 x i32]]  [[1 x i32]  [i32 0], [1 x i32]  [i32 0]], [2 x [1 x i32]]  [[1 x i32]  [i32 3], [1 x i32]  [i32 4]], [2 x [1 x i32]]  [[1 x i32]  [i32 5], [1 x i32]  [i32 6]], [2 x [1 x i32]]  [[1 x i32]  [i32 7], [1 x i32]  [i32 8]]]
 define i32 @main(){
 .1:
-  %.47 = alloca [4 x [2 x [1 x i32]]]
-  %.34 = alloca [4 x [2 x i32]]
-  %.23 = alloca [4 x [2 x i32]]
-  %.19 = alloca [4 x [2 x i32]]
-  %.4 = alloca [4 x [2 x i32]]
-  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.4, [4 x [2 x i32]]* @__constant..13, i32 32, i1 false)
-  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.19, [4 x [2 x i32]]* @__constant..21, i32 32, i1 false)
-  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.23, [4 x [2 x i32]]* @__constant..32, i32 32, i1 false)
-  %.40 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.4, i32 0, i32 3, i32 0
-  %.41 = load i32, i32* %.40
-  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.34, [4 x [2 x i32]]* @__constant..43, i32 32, i1 false)
-  %.45 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.34, i32 0, i32 3, i32 0
-  store i32 %.41, i32* %.45
-  %.50 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.34, i32 0, i32 2, i32 1
-  %.51 = load i32, i32* %.50
-  %.54 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.23, i32 0, i32 2, i32 1
-  %.55 = load i32, i32* %.54
-  call void @llvm.memcpy.p0.p0.i32([4 x [2 x [1 x i32]]]* %.47, [4 x [2 x [1 x i32]]]* @__constant..65, i32 32, i1 false)
-  %.67 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 0, i32 0
-  store i32 %.51, i32* %.67
-  %.69 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 1, i32 0
-  store i32 %.55, i32* %.69
-  %.71 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 3, i32 1, i32 0
-  %.72 = load i32, i32* %.71
-  %.73 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 0, i32 0
-  %.74 = load i32, i32* %.73
-  %.75 = add i32 %.72, %.74
-  %.76 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 1, i32 0
-  %.77 = load i32, i32* %.76
-  %.78 = add i32 %.75, %.77
-  %.79 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.34, i32 0, i32 3, i32 0
-  %.80 = load i32, i32* %.79
-  %.81 = add i32 %.78, %.80
-  ret i32 %.81 
+  call void @putfloat(float 0x3fe0000000000000)
+  ret i32 0 
 }

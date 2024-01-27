@@ -162,6 +162,7 @@ Operand InitVals::GetOperand(Type* tp,BasicBlock* cur){
             omit->push_back(ret->back());
             ret->pop_back();
         }
+        std::reverse(omit->begin(),omit->end());
         ret->push_back(omit);
     }
     return ret;
