@@ -74,6 +74,21 @@ Type* Exps::GetDeclDescipter(){
     return tmp;
 }
 
+Type* Exps::GetDeclDescipter(Type* tmp){
+    for(auto i=ls.rbegin();i!=ls.rend();i++)
+    {
+        auto con=(*i)->GetOperand(nullptr);
+        if(auto fuc=dynamic_cast<ConstIRInt*>(con)){
+            tmp=ArrayType::NewArrayTypeGet(fuc->GetVal(),tmp);
+        }
+        else if(auto fuc=dynamic_cast<ConstIRFloat*>(con)){
+            tmp=ArrayType::NewArrayTypeGet(fuc->GetVal(),tmp);
+        }
+        else assert(0);
+    }
+    return tmp;
+}
+
 std::vector<Operand> Exps::GetVisitDescripter(BasicBlock* cur){
     std::vector<Operand> tmp;
     for(auto&i:ls)tmp.push_back(i->GetOperand(cur));
@@ -133,6 +148,7 @@ Operand InitVals::GetOperand(Type* tp,BasicBlock* cur){
                 omit->push_back(ret->back());
                 ret->pop_back();
             }
+            std::reverse(omit->begin(),omit->end());
             ret->push_back(omit);
         }
     }
@@ -235,8 +251,6 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
         {
             Operand init=civ->GetOperand(tmp,state.current_building);
             // if(init==nullptr)return state.current_building;
-            std::vector<int> temp;
-            dynamic_cast<Initializer*>(init)->Var2Store(state.current_building,ID,temp);
             std::vector<Operand> args;
             auto src=Singleton<Module>().GenerateMemcpyHandle(PointerType::NewPointerTypeGet(tmp),init);
             args.push_back(Singleton<Module>().GetValueByName(ID));//des
@@ -245,6 +259,8 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
             args.push_back(ConstIRBoolean::GetNewConstant(false));
             /*call void @llvm.memcpy.p0.p0.i32(ptr <1>, ptr <2>, i64 <num_bytes>, i1 false)*/
             state.current_building->GenerateCallInst("llvm.memcpy.p0.p0.i32",args,0);
+            std::vector<int> temp;
+            dynamic_cast<Initializer*>(init)->Var2Store(state.current_building,ID,temp);
         }
     }
     else
@@ -375,13 +391,13 @@ void VarDecl::print(int x){
 
 FuncParam::FuncParam(AST_Type _tp,std::string _id,bool is_empty,Exps* ptr):tp(_tp),ID(_id),emptySquare(is_empty),array_subscripts(ptr){}
 void FuncParam::GetVariable(Function& tmp){
-    auto get_type=[](AST_Type _tp){
+    auto get_type=[](AST_Type _tp)->Type* {
         switch(_tp)
         {
             case AST_INT:
-                return InnerDataType::IR_Value_INT;
+                return IntType::NewIntTypeGet();
             case AST_FLOAT:
-                return InnerDataType::IR_Value_Float;
+                return FloatType::NewFloatTypeGet();
             default:
                 std::cerr<<"Wrong Type\n";
                 assert(0);
@@ -389,7 +405,7 @@ void FuncParam::GetVariable(Function& tmp){
     };
     if(array_subscripts!=nullptr)
     {
-        auto vec=array_subscripts->GetDeclDescipter();
+        auto vec=array_subscripts->GetDeclDescipter(get_type(tp));
         if(emptySquare)vec=PointerType::NewPointerTypeGet(vec);
         else
         {
@@ -400,7 +416,7 @@ void FuncParam::GetVariable(Function& tmp){
     }
     else
     {
-        if(emptySquare)tmp.push_param(new Variable(PointerType::NewPointerTypeGet(Type::NewTypeByEnum(get_type(tp))),ID));
+        if(emptySquare)tmp.push_param(new Variable(PointerType::NewPointerTypeGet(get_type(tp)),ID));
         else tmp.push_param(new Variable(get_type(tp),ID));
     }
 }
@@ -451,6 +467,7 @@ void BlockItems::print(int x){
 
 Block::Block(BlockItems* ptr):items(ptr){}
 BasicBlock* Block::GetInst(GetInstState state){
+    if(items==nullptr)return state.current_building;
     Singleton<Module>().layer_increase();
     auto tmp=items->GetInst(state);
     Singleton<Module>().layer_decrease();

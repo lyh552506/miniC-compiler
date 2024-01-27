@@ -684,10 +684,18 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         assert(args.size()==params.size());
         auto i=args.begin();
         for(auto j=params.begin();j!=params.end();j++,i++){
-            auto& ii=*i;auto& jj=*j;
+            auto& ii=*i;auto jj=j->get();
             if(jj->GetType()!=ii->GetType())
             {
                 auto a=ii->GetType()->GetTypeEnum(),b=jj->GetType()->GetTypeEnum();
+                // if(a!=IR_Value_INT&&a!=IR_Value_Float)
+                // {
+                //     std::cerr<<"Error\n";
+                //     ii->GetType()->print();//float
+                //     jj->GetType()->print();//i32
+                //     std::cout.flush();
+                //     assert(0);
+                // }
                 assert(a==IR_Value_INT||a==IR_Value_Float);
                 assert(b==IR_Value_INT||b==IR_Value_Float);
                 if(b==IR_Value_Float)ii=GenerateSITFP(ii);

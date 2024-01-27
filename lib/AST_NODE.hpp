@@ -289,6 +289,7 @@ class Exps:public InnerBaseExps//数组声明修饰符/访问修饰符号
     public:
     Exps(AddExp* _data);
     Type* GetDeclDescipter();
+    Type* GetDeclDescipter(Type*);
     std::vector<Operand> GetVisitDescripter(BasicBlock*);
 };
 

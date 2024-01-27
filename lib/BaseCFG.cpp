@@ -28,7 +28,7 @@ Type* Value::GetType(){
     return tp;
 }
 
-InnerDataType Value::GetTypeEnum(){return tp->GetTypeEnum();}
+InnerDataType Value::GetTypeEnum(){return GetType()->GetTypeEnum();}
 
 
 

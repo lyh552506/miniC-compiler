@@ -21,7 +21,7 @@ class Initializer:public Value,public std::vector<Operand>
 
 class Variable
 {
-    Operand attached_initializer;
+    Operand attached_initializer=nullptr;
     std::string name;
     Type* tp;
     public:
@@ -131,7 +131,7 @@ class GetElementPtrInst:public User
 {
     public:
     GetElementPtrInst(Operand);
-    Type* GetType();
+    Type* GetType()final;
     void print()final;
 };
 

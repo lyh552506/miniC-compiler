@@ -332,396 +332,45 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.last_char = global i32 32
-@.g.num = global i32 zeroinitializer
-@.g.other = global i32 zeroinitializer
-@.g.cur_token = global i32 zeroinitializer
-@__constant..277 = constant [256 x i32] zeroinitializer
-@__constant..285 = constant [256 x i32] zeroinitializer
-define i32 @next_char(){
-.8:
-  %.10at6 = call i32 @getch()
-  store i32 %.10at6, i32* @.g.last_char
-  %.12 = load i32, i32* @.g.last_char
-  ret i32 %.12 
-}
-define i32 @is_space(i32 %.17){
-.15:
-  %.16 = alloca i32
-  store i32 %.17, i32* %.16
-  %.22 = load i32, i32* %.16
-  %.23 = icmp eq i32 %.22, 32
-  br i1 %.23, label %.19, label %.21
-.19:
-  ret i32 1 
-.20:
-  ret i32 0 
-.21:
-  %.25 = load i32, i32* %.16
-  %.27 = icmp eq i32 %.25, 10
-  br i1 %.27, label %.19, label %.20
-}
-define i32 @is_num(i32 %.34){
-.32:
-  %.33 = alloca i32
-  store i32 %.34, i32* %.33
-  %.38 = load i32, i32* %.33
-  %.40 = icmp sge i32 %.38, 48
-  br i1 %.40, label %.41, label %.37
-.36:
-  ret i32 1 
-.37:
-  ret i32 0 
-.41:
-  %.43 = load i32, i32* %.33
-  %.45 = icmp sle i32 %.43, 57
-  br i1 %.45, label %.36, label %.37
-}
-define i32 @next_token(){
-.50:
-  br label %.51wc29 
-.51wc29:
-  %.55 = load i32, i32* @.g.last_char
-  %.56at29 = call i32 @is_space(i32 %.55)
-  %.57 = icmp ne i32 %.56at29, 0
-  br i1 %.57, label %.52wloop.29.29, label %.53wn29
-.52wloop.29.29:
-  %.59at29 = call i32 @next_char()
-  br label %.51wc29 
-.53wn29:
-  %.63 = load i32, i32* @.g.last_char
-  %.64at30 = call i32 @is_num(i32 %.63)
-  %.65 = icmp ne i32 %.64at30, 0
-  br i1 %.65, label %.61, label %.62
-.61:
-  %.67 = load i32, i32* @.g.last_char
-  %.68 = sub i32 %.67, 48
-  store i32 %.68, i32* @.g.num
-  br label %.70wc32 
-.62:
-  %.88 = load i32, i32* @.g.last_char
-  store i32 %.88, i32* @.g.other
-  %.90at39 = call i32 @next_char()
-  store i32 1, i32* @.g.cur_token
-  br label %.86 
-.70wc32:
-  %.74at32 = call i32 @next_char()
-  %.75at32 = call i32 @is_num(i32 %.74at32)
-  %.76 = icmp ne i32 %.75at32, 0
-  br i1 %.76, label %.71wloop.32.34, label %.72wn34
-.71wloop.32.34:
-  %.78 = load i32, i32* @.g.num
-  %.79 = mul i32 %.78, 10
-  %.80 = load i32, i32* @.g.last_char
-  %.81 = add i32 %.79, %.80
-  %.82 = sub i32 %.81, 48
-  store i32 %.82, i32* @.g.num
-  br label %.70wc32 
-.72wn34:
-  store i32 0, i32* @.g.cur_token
-  br label %.86 
-.86:
-  %.93 = load i32, i32* @.g.cur_token
-  ret i32 %.93 
-}
-define i32 @panic(){
-.96:
-  call void @putch(i32 112)
-  call void @putch(i32 97)
-  call void @putch(i32 110)
-  call void @putch(i32 105)
-  call void @putch(i32 99)
-  call void @putch(i32 33)
-  call void @putch(i32 10)
-  ret i32 -1 
-}
-define i32 @get_op_prec(i32 %.116){
-.114:
-  %.115 = alloca i32
-  store i32 %.116, i32* %.115
-  %.121 = load i32, i32* %.115
-  %.123 = icmp eq i32 %.121, 43
-  br i1 %.123, label %.118, label %.120
-.118:
-  ret i32 10 
-.119:
-  %.133 = load i32, i32* %.115
-  %.135 = icmp eq i32 %.133, 42
-  br i1 %.135, label %.130, label %.132
-.120:
-  %.125 = load i32, i32* %.115
-  %.127 = icmp eq i32 %.125, 45
-  br i1 %.127, label %.118, label %.119
-.130:
-  ret i32 20 
-.131:
-  ret i32 0 
-.132:
-  %.138 = load i32, i32* %.115
-  %.140 = icmp eq i32 %.138, 47
-  br i1 %.140, label %.130, label %.137
-.137:
-  %.142 = load i32, i32* %.115
-  %.144 = icmp eq i32 %.142, 37
-  br i1 %.144, label %.130, label %.131
-}
-define void @stack_push(i32* %.152, i32 %.155){
-.150:
-  %.154 = alloca i32
-  %.151 = alloca i32*
-  store i32* %.152, i32** %.151
-  store i32 %.155, i32* %.154
-  %.157 = load i32*, i32** %.151
-  %.158 = getelementptr inbounds i32, i32* %.157, i32 0
-  %.159 = load i32, i32* %.158
-  %.160 = add i32 %.159, 1
-  %.161 = load i32*, i32** %.151
-  %.162 = getelementptr inbounds i32, i32* %.161, i32 0
-  store i32 %.160, i32* %.162
-  %.164 = load i32, i32* %.154
-  %.165 = load i32*, i32** %.151
-  %.166 = getelementptr inbounds i32, i32* %.165, i32 0
-  %.167 = load i32, i32* %.166
-  %.168 = load i32*, i32** %.151
-  %.169 = getelementptr inbounds i32, i32* %.168, i32 %.167
-  store i32 %.164, i32* %.169
-  ret void
-}
-define i32 @stack_pop(i32* %.175){
-.173:
-  %.177 = alloca i32
-  %.174 = alloca i32*
-  store i32* %.175, i32** %.174
-  %.178 = load i32*, i32** %.174
-  %.179 = getelementptr inbounds i32, i32* %.178, i32 0
-  %.180 = load i32, i32* %.179
-  %.181 = load i32*, i32** %.174
-  %.182 = getelementptr inbounds i32, i32* %.181, i32 %.180
-  %.183 = load i32, i32* %.182
-  store i32 %.183, i32* %.177
-  %.185 = load i32*, i32** %.174
-  %.186 = getelementptr inbounds i32, i32* %.185, i32 0
-  %.187 = load i32, i32* %.186
-  %.188 = sub i32 %.187, 1
-  %.189 = load i32*, i32** %.174
-  %.190 = getelementptr inbounds i32, i32* %.189, i32 0
-  store i32 %.188, i32* %.190
-  %.192 = load i32, i32* %.177
-  ret i32 %.192 
-}
-define i32 @stack_peek(i32* %.197){
-.195:
-  %.196 = alloca i32*
-  store i32* %.197, i32** %.196
-  %.199 = load i32*, i32** %.196
-  %.200 = getelementptr inbounds i32, i32* %.199, i32 0
-  %.201 = load i32, i32* %.200
-  %.202 = load i32*, i32** %.196
-  %.203 = getelementptr inbounds i32, i32* %.202, i32 %.201
-  %.204 = load i32, i32* %.203
-  ret i32 %.204 
-}
-define i32 @stack_size(i32* %.209){
-.207:
-  %.208 = alloca i32*
-  store i32* %.209, i32** %.208
-  %.211 = load i32*, i32** %.208
-  %.212 = getelementptr inbounds i32, i32* %.211, i32 0
-  %.213 = load i32, i32* %.212
-  ret i32 %.213 
-}
-define i32 @eval_op(i32 %.218, i32 %.221, i32 %.224){
-.216:
-  %.223 = alloca i32
-  %.220 = alloca i32
-  %.217 = alloca i32
-  store i32 %.218, i32* %.217
-  store i32 %.221, i32* %.220
-  store i32 %.224, i32* %.223
-  %.228 = load i32, i32* %.217
-  %.229 = icmp eq i32 %.228, 43
-  br i1 %.229, label %.226, label %.227
-.226:
-  %.231 = load i32, i32* %.220
-  %.232 = load i32, i32* %.223
-  %.233 = add i32 %.231, %.232
-  ret i32 %.233 
-.227:
-  %.237 = load i32, i32* %.217
-  %.238 = icmp eq i32 %.237, 45
-  br i1 %.238, label %.235, label %.236
-.235:
-  %.240 = load i32, i32* %.220
-  %.241 = load i32, i32* %.223
-  %.242 = sub i32 %.240, %.241
-  ret i32 %.242 
-.236:
-  %.246 = load i32, i32* %.217
-  %.247 = icmp eq i32 %.246, 42
-  br i1 %.247, label %.244, label %.245
-.244:
-  %.249 = load i32, i32* %.220
-  %.250 = load i32, i32* %.223
-  %.251 = mul i32 %.249, %.250
-  ret i32 %.251 
-.245:
-  %.255 = load i32, i32* %.217
-  %.256 = icmp eq i32 %.255, 47
-  br i1 %.256, label %.253, label %.254
-.253:
-  %.258 = load i32, i32* %.220
-  %.259 = load i32, i32* %.223
-  %.260 = sdiv i32 %.258, %.259
-  ret i32 %.260 
-.254:
-  %.264 = load i32, i32* %.217
-  %.265 = icmp eq i32 %.264, 37
-  br i1 %.265, label %.262, label %.263
-.262:
-  %.267 = load i32, i32* %.220
-  %.268 = load i32, i32* %.223
-  %.269 = srem i32 %.267, %.268
-  ret i32 %.269 
-.263:
-  ret i32 0 
-}
-define i32 @eval(){
-.273:
-  %.383 = alloca i32
-  %.379 = alloca i32
-  %.375 = alloca i32
-  %.340 = alloca i32
-  %.336 = alloca i32
-  %.332 = alloca i32
-  %.305 = alloca i32
-  %.283 = alloca [256 x i32]
-  %.275 = alloca [256 x i32]
-  call void @llvm.memcpy.p0.p0.i32([256 x i32]* %.275, [256 x i32]* @__constant..277, i32 1024, i1 false)
-  call void @llvm.memcpy.p0.p0.i32([256 x i32]* %.283, [256 x i32]* @__constant..285, i32 1024, i1 false)
-  %.289 = load i32, i32* @.g.cur_token
-  %.290 = icmp ne i32 %.289, 0
-  br i1 %.290, label %.287, label %.288
-.287:
-  %.292at102 = call i32 @panic()
-  ret i32 %.292at102 
-.288:
-  %.294 = getelementptr inbounds [256 x i32], [256 x i32]* %.275, i32 0, i32 0
-  %.295 = load i32, i32* @.g.num
-  call void @stack_push(i32* %.294, i32 %.295)
-  %.297at104 = call i32 @next_token()
-  br label %.298wc106 
-.298wc106:
-  %.302 = load i32, i32* @.g.cur_token
-  %.303 = icmp eq i32 %.302, 1
-  br i1 %.303, label %.299wloop.106.123, label %.300wn123
-.299wloop.106.123:
-  %.306 = load i32, i32* @.g.other
-  store i32 %.306, i32* %.305
-  %.310 = load i32, i32* %.305
-  %.311at109 = call i32 @get_op_prec(i32 %.310)
-  %.312 = icmp eq i32 %.311at109, 0
-  br i1 %.312, label %.308, label %.309
-.300wn123:
-  %.366at125 = call i32 @next_token()
-  br label %.367wc127 
-.308:
-  br label %.300wn123 
-.309:
-  %.315at110 = call i32 @next_token()
-  br label %.316wc112 
-.316wc112:
-  %.320 = getelementptr inbounds [256 x i32], [256 x i32]* %.283, i32 0, i32 0
-  %.321at112 = call i32 @stack_size(i32* %.320)
-  %.322 = icmp ne i32 %.321at112, 0
-  br i1 %.322, label %.323, label %.318wn117
-.317wloop.112.117:
-  %.333 = getelementptr inbounds [256 x i32], [256 x i32]* %.283, i32 0, i32 0
-  %.334at114 = call i32 @stack_pop(i32* %.333)
-  store i32 %.334at114, i32* %.332
-  %.337 = getelementptr inbounds [256 x i32], [256 x i32]* %.275, i32 0, i32 0
-  %.338at115 = call i32 @stack_pop(i32* %.337)
-  store i32 %.338at115, i32* %.336
-  %.341 = getelementptr inbounds [256 x i32], [256 x i32]* %.275, i32 0, i32 0
-  %.342at115 = call i32 @stack_pop(i32* %.341)
-  store i32 %.342at115, i32* %.340
-  %.344 = getelementptr inbounds [256 x i32], [256 x i32]* %.275, i32 0, i32 0
-  %.345 = load i32, i32* %.332
-  %.346 = load i32, i32* %.340
-  %.347 = load i32, i32* %.336
-  %.348at116 = call i32 @eval_op(i32 %.345, i32 %.346, i32 %.347)
-  call void @stack_push(i32* %.344, i32 %.348at116)
-  br label %.316wc112 
-.318wn117:
-  %.351 = getelementptr inbounds [256 x i32], [256 x i32]* %.283, i32 0, i32 0
-  %.352 = load i32, i32* %.305
-  call void @stack_push(i32* %.351, i32 %.352)
-  %.356 = load i32, i32* @.g.cur_token
-  %.357 = icmp ne i32 %.356, 0
-  br i1 %.357, label %.354, label %.355
-.323:
-  %.325 = getelementptr inbounds [256 x i32], [256 x i32]* %.283, i32 0, i32 0
-  %.326at112 = call i32 @stack_peek(i32* %.325)
-  %.327at112 = call i32 @get_op_prec(i32 %.326at112)
-  %.328 = load i32, i32* %.305
-  %.329at112 = call i32 @get_op_prec(i32 %.328)
-  %.330 = icmp sge i32 %.327at112, %.329at112
-  br i1 %.330, label %.317wloop.112.117, label %.318wn117
-.354:
-  %.359at120 = call i32 @panic()
-  ret i32 %.359at120 
-.355:
-  %.361 = getelementptr inbounds [256 x i32], [256 x i32]* %.275, i32 0, i32 0
-  %.362 = load i32, i32* @.g.num
-  call void @stack_push(i32* %.361, i32 %.362)
-  %.364at122 = call i32 @next_token()
-  br label %.298wc106 
-.367wc127:
-  %.371 = getelementptr inbounds [256 x i32], [256 x i32]* %.283, i32 0, i32 0
-  %.372at127 = call i32 @stack_size(i32* %.371)
-  %.373 = icmp ne i32 %.372at127, 0
-  br i1 %.373, label %.368wloop.127.131, label %.369wn131
-.368wloop.127.131:
-  %.376 = getelementptr inbounds [256 x i32], [256 x i32]* %.283, i32 0, i32 0
-  %.377at128 = call i32 @stack_pop(i32* %.376)
-  store i32 %.377at128, i32* %.375
-  %.380 = getelementptr inbounds [256 x i32], [256 x i32]* %.275, i32 0, i32 0
-  %.381at129 = call i32 @stack_pop(i32* %.380)
-  store i32 %.381at129, i32* %.379
-  %.384 = getelementptr inbounds [256 x i32], [256 x i32]* %.275, i32 0, i32 0
-  %.385at129 = call i32 @stack_pop(i32* %.384)
-  store i32 %.385at129, i32* %.383
-  %.387 = getelementptr inbounds [256 x i32], [256 x i32]* %.275, i32 0, i32 0
-  %.388 = load i32, i32* %.375
-  %.389 = load i32, i32* %.383
-  %.390 = load i32, i32* %.379
-  %.391at130 = call i32 @eval_op(i32 %.388, i32 %.389, i32 %.390)
-  call void @stack_push(i32* %.387, i32 %.391at130)
-  br label %.367wc127 
-.369wn131:
-  %.394 = getelementptr inbounds [256 x i32], [256 x i32]* %.275, i32 0, i32 0
-  %.395at132 = call i32 @stack_peek(i32* %.394)
-  ret i32 %.395at132 
-}
+@__constant..13 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 4], [2 x i32] zeroinitializer, [2 x i32]  [i32 7, i32 zeroinitializer]]
+@__constant..21 = constant [4 x [2 x i32]] zeroinitializer
+@__constant..32 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 4], [2 x i32]  [i32 5, i32 6], [2 x i32]  [i32 7, i32 8]]
+@__constant..43 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 zeroinitializer], [2 x i32]  [i32 5, i32 zeroinitializer], [2 x i32]  [i32 0, i32 8]]
+@__constant..65 = constant [4 x [2 x [1 x i32]]]  [[2 x [1 x i32]]  [[1 x i32]  [i32 0], [1 x i32]  [i32 0]], [2 x [1 x i32]]  [[1 x i32]  [i32 3], [1 x i32]  [i32 4]], [2 x [1 x i32]]  [[1 x i32]  [i32 5], [1 x i32]  [i32 6]], [2 x [1 x i32]]  [[1 x i32]  [i32 7], [1 x i32]  [i32 8]]]
 define i32 @main(){
-.398:
-  %.399 = alloca i32
-  %.401at136 = call i32 @getint()
-  store i32 %.401at136, i32* %.399
-  %.403at137 = call i32 @getch()
-  %.404at138 = call i32 @next_token()
-  br label %.405wc139 
-.405wc139:
-  %.409 = load i32, i32* %.399
-  %.410 = icmp ne i32 %.409, 0
-  br i1 %.410, label %.406wloop.139.143, label %.407wn143
-.406wloop.139.143:
-  %.412at140 = call i32 @eval()
-  call void @putint(i32 %.412at140)
-  call void @putch(i32 10)
-  %.416 = load i32, i32* %.399
-  %.417 = sub i32 %.416, 1
-  store i32 %.417, i32* %.399
-  br label %.405wc139 
-.407wn143:
-  ret i32 0 
+.1:
+  %.47 = alloca [4 x [2 x [1 x i32]]]
+  %.34 = alloca [4 x [2 x i32]]
+  %.23 = alloca [4 x [2 x i32]]
+  %.19 = alloca [4 x [2 x i32]]
+  %.4 = alloca [4 x [2 x i32]]
+  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.4, [4 x [2 x i32]]* @__constant..13, i32 32, i1 false)
+  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.19, [4 x [2 x i32]]* @__constant..21, i32 32, i1 false)
+  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.23, [4 x [2 x i32]]* @__constant..32, i32 32, i1 false)
+  %.40 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.4, i32 0, i32 3, i32 0
+  %.41 = load i32, i32* %.40
+  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.34, [4 x [2 x i32]]* @__constant..43, i32 32, i1 false)
+  %.45 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.34, i32 0, i32 3, i32 0
+  store i32 %.41, i32* %.45
+  %.50 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.34, i32 0, i32 2, i32 1
+  %.51 = load i32, i32* %.50
+  %.54 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.23, i32 0, i32 2, i32 1
+  %.55 = load i32, i32* %.54
+  call void @llvm.memcpy.p0.p0.i32([4 x [2 x [1 x i32]]]* %.47, [4 x [2 x [1 x i32]]]* @__constant..65, i32 32, i1 false)
+  %.67 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 0, i32 0
+  store i32 %.51, i32* %.67
+  %.69 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 1, i32 0
+  store i32 %.55, i32* %.69
+  %.71 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 3, i32 1, i32 0
+  %.72 = load i32, i32* %.71
+  %.73 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 0, i32 0
+  %.74 = load i32, i32* %.73
+  %.75 = add i32 %.72, %.74
+  %.76 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 1, i32 0
+  %.77 = load i32, i32* %.76
+  %.78 = add i32 %.75, %.77
+  %.79 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.34, i32 0, i32 3, i32 0
+  %.80 = load i32, i32* %.79
+  %.81 = add i32 %.78, %.80
+  ret i32 %.81 
 }
