@@ -113,10 +113,10 @@ LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType(
     add_use(__src);
 }
 
-Value* LoadInst::GetLoadTarget(){
-    auto& list=Getuselist();
-    return list[0]->GetValue();
-}
+// Value* LoadInst::GetLoadTarget(){
+//     auto& list=Getuselist();
+//     return list[0]->GetValue();
+// }
 
 void LoadInst::print(){
     Value::print();

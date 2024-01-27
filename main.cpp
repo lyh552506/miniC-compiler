@@ -1,5 +1,5 @@
 #include "parser.hpp"
-#include "opt/dominant.hpp"
+// #include "opt/dominant.hpp"
 #include <fstream>
 extern FILE *yyin;
 

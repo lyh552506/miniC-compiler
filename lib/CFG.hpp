@@ -151,7 +151,7 @@ public:
   std::vector<Value*> Incomings;
   int oprandNum;
 };
-class BasicBlock:public Value,public mylist<BasicBlock,User>
+class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
 {
     Function& master;
     public:
