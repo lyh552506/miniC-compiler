@@ -485,6 +485,8 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
                 fuc=calc(A->GetVal(),op,B->GetVal());
             else if(auto B=dynamic_cast<ConstIRFloat*>(_B))
                 fuc=calc(A->GetVal(),op,B->GetVal());
+            else if(auto B=dynamic_cast<ConstIRBoolean*>(_B))
+                fuc=calc(A->GetVal(),op,B->GetVal());
             else assert(0);
         }
         else if(auto A=dynamic_cast<ConstIRFloat*>(_A))
@@ -493,12 +495,19 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
                 fuc=calc(A->GetVal(),op,B->GetVal());
             else if(auto B=dynamic_cast<ConstIRFloat*>(_B))
                 fuc=calc(A->GetVal(),op,B->GetVal());
+            else if(auto B=dynamic_cast<ConstIRBoolean*>(_B))
+                fuc=calc(A->GetVal(),op,B->GetVal());
             else assert(0);
         }
         else if(auto A=dynamic_cast<ConstIRBoolean*>(_A))
         {
-            auto B=dynamic_cast<ConstIRBoolean*>(_B);
-            fuc=calc(A->GetVal(),op,B->GetVal());
+            if(auto B=dynamic_cast<ConstIRInt*>(_B))
+                fuc=calc(A->GetVal(),op,B->GetVal());
+            else if(auto B=dynamic_cast<ConstIRFloat*>(_B))
+                fuc=calc(A->GetVal(),op,B->GetVal());
+            else if(auto B=dynamic_cast<ConstIRBoolean*>(_B))
+                fuc=calc(A->GetVal(),op,B->GetVal());
+            else assert(0);
         }
         else assert(0);
         if(check_binary_boolean(op))
