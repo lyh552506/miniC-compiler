@@ -417,6 +417,17 @@ void GetElementPtrInst::print(){
     std::cout<<'\n';
 }
 
+ZextInst::ZextInst(Operand ptr):User(IntType::NewIntTypeGet()){
+    add_use(ptr);
+}
+
+void ZextInst::print(){
+    Value::print();
+    std::cout<<" = zext i1 ";
+    uselist[0]->GetValue()->print();
+    std::cout<<" to i32";
+}
+
 BasicBlock::BasicBlock(Function& __master):Value(VoidType::NewVoidTypeGet()),master(__master){};
 Operand BasicBlock::GenerateLoadInst(Operand data){
     auto tmp=new LoadInst(data);
@@ -449,7 +460,19 @@ Operand BasicBlock::GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Opera
             tmp=new BinaryInst(_A,op,GenerateSITFP(_B));
         }
     }
-    else tmp=new BinaryInst(_A,op,_B);
+    else{
+        if(_A->GetTypeEnum()==IR_Value_INT){
+            bool isbooleanA=(_A->GetType()==IntType::NewIntTypeGet());
+            bool isbooleanB=(_B->GetType()==IntType::NewIntTypeGet());
+            if(isbooleanA^isbooleanB){
+                if(isbooleanA==false)
+                    _A=GenerateZextInst(_A);
+                else
+                    _B=GenerateZextInst(_B);
+            }
+        }
+        tmp=new BinaryInst(_A,op,_B);
+    }
     push_back(tmp);
     return Operand(tmp->GetDef());
 }
@@ -725,6 +748,11 @@ void BasicBlock::GenerateAlloca(Variable* var){
 }
 Operand BasicBlock::GenerateGEPInst(Operand ptr){
     auto tmp=new GetElementPtrInst(ptr);
+    push_back(tmp);
+    return tmp->GetDef();
+}
+Operand BasicBlock::GenerateZextInst(Operand ptr){
+    auto tmp=new ZextInst(ptr);
     push_back(tmp);
     return tmp->GetDef();
 }

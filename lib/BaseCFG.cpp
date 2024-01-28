@@ -93,7 +93,7 @@ void User::ClearRelation(){
     }
 }
 
-Value* User::GetDef(){return static_cast<Value*>(this);}
+Value* User::GetDef(){return dynamic_cast<Value*>(this);}
 
 ConstantData::ConstantData(Type* _tp):Value(_tp){}
 

@@ -143,7 +143,7 @@ class BaseExp:public HasOperand
                 case AST_ADD:
                     break;
                 case AST_SUB:
-                    if(dynamic_cast<BoolType*>(ptr->GetType()))break;
+                    // if(dynamic_cast<BoolType*>(ptr->GetType()))break;
                     if(ptr->GetType()->GetTypeEnum()==IR_Value_INT)
                         ptr=BasicBlock::GenerateBinaryInst(block,ConstIRInt::GetNewConstant(),BinaryInst::Op_Sub,ptr);
                     else 

@@ -134,6 +134,13 @@ class GetElementPtrInst:public User
     Type* GetType()final;
     void print()final;
 };
+//zext i1 to i32
+class ZextInst:public User
+{
+    public:
+    ZextInst(Operand);
+    void print()final;
+};
 
 class PhiInst : public User {
 public:
@@ -164,6 +171,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     static Operand GenerateBinaryInst(BasicBlock*,Operand,BinaryInst::Operation,Operand);
     Operand GenerateLoadInst(Operand);
     Operand GenerateGEPInst(Operand);
+    Operand GenerateZextInst(Operand);
     void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);
