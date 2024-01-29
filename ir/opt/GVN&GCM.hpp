@@ -20,4 +20,5 @@ public:
   void Schedule_Late(User *inst);
   bool IsPinned(User* inst);
   void caculateRPO(BasicBlock* bb);
+  int OptConstBinary(int op,Value*a,Value* b);
 };

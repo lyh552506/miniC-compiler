@@ -106,6 +106,7 @@ class BinaryInst:public User
     BinaryInst(Operand _A,Operation __op,Operand _B);
     void print()final;
     std::string GetOperation();
+    int getopration();
 };
 class GetElementPtrInst:public User
 {
