@@ -46,4 +46,13 @@ bool canConstantFoldCallto(User* inst);
 /// with the specified arguments, returning null if unsuccessful.
 ConstantData *ConstantFoldCall(Function* func, std::vector<ConstantData*> Operands);
 
+/// ConstantFoldBinaryOpOperands - Attempt to constant fold a binary operation with the
+/// specified operands. If it fails, it returns a constant expression of the specified
+/// operands.
+ConstantData *ConstantFoldBinaryOpOperands(unsigned Opcode, Value* LHS, Value* RHS);
+
+/// One of Op0/Op1 is a Constant expr;
+/// Attempt to symbolically evaluate the result of a binary operator merging
+/// these together
+ConstantData *SymbolicallyEvaluateBinop(unsigned Opcode, Value* Op0, Value* Op1);
 };

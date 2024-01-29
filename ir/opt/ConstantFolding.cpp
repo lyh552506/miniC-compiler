@@ -50,6 +50,25 @@ ConstantData* ConstantFolding::ConstantFoldInstruction(User* inst, BasicBlock* b
     return ConstantFoldInstOperands(inst, Operands);
 }
 
+ConstantData ConstantFolding::*SymbolicallyEvaluateBinop(unsigned Opcode, Value* Op0, Value* Op1)
+{
+    if(Opcode == BinaryInst::Op_And)
+    {
+        
+    }
+    if(Opcode == BinaryInst::Op_Sub)
+    {
+
+    }
+
+    return nullptr;
+}
+
+ConstantData ConstantFolding::*ConstantFoldBinaryOpOperands(unsigned Opcode, Value* LHS, Value* RHS)
+{
+    
+}
+
 ConstantData ConstantFolding::*ConstantFoldInstOperands(User* inst, std::vector<Value*> _Operands);
 
 ConstantData ConstantFolding::*ConstantFoldCompareInstOperands(User* Pred, Value* LHS, Value* RHS);
