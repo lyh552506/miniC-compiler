@@ -54,7 +54,7 @@ ConstantData ConstantFolding::*SymbolicallyEvaluateBinop(unsigned Opcode, Value*
 {
     if(Opcode == BinaryInst::Op_And)
     {
-        
+
     }
     if(Opcode == BinaryInst::Op_Sub)
     {
@@ -78,3 +78,32 @@ ConstantData ConstantFolding::*ConstantFoldLoadFromConstPtr(Value* _Const, Type*
 bool canConstantFoldCallto(User* inst);
 
 ConstantData ConstantFolding::*ConstantFoldCall(Function* func, std::vector<Value*> Operands);
+
+void ConstantFolding::Pass(Function* func)
+{
+    
+    /*
+    沿CFG对应的 dominant tree 从entry开始按BFS顺序遍历BasicBlock
+    foreach block in blocks do:
+        遍历每个inst
+        foreach instr in block do:
+            如果是常量赋值或者常量计算的结果
+            if isConstantAssignment(instr):
+                用常量值替换该变量的所有引用
+                propConstToRef(instr)
+            如果是常量值的分支条件
+            elif isBranchAndConstPredicate(instr):
+                替换为强制跳转，并标记另一个分支不可达
+                changeCondBranchToAbsBranchAndMark(instr)
+            如果是phi
+            elif isPhi(instr):
+                如果有一个基本块不可达，或者两个基本块的值相同
+                if isOneBlockUnreachable(instr) || IsSameValPre(instr):
+                    将可达块的值传播到对该指令的引用
+                    propPhiToRef(instr)
+    */
+   for(BasicBlock* block:*func)
+   {
+    
+   }
+}
