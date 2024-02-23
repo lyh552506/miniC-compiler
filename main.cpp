@@ -1,8 +1,7 @@
 #include "parser.hpp"
-//#include "AsmPrinter.hpp"
 #include "opt/dominant.hpp"
-// #include "AsmPrinter.hpp"
 #include <fstream>
+#include "opt/GVN&GCM.hpp"
 extern FILE *yyin;
 
 void copyFile(const std::string &sourcePath,
@@ -33,7 +32,9 @@ int main(int argc, char **argv) {
   int n = Li[0]->num;
   User *li = Li[0]->front();
   dominance dom(f, Li.size());
-
+  
+  // Gvn_Gcm test(&dom,f);
+  // test.init_pass();
   Singleton<Module>().Test();
   return 0;
 }

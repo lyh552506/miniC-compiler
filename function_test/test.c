@@ -13,7 +13,8 @@
 //     return 0;
 // }
 int main() {
-    int x, cond = 1;
+    int x;
+    int cond = 1+3.5;
     if (cond > 0)
         x = 1;
     else
