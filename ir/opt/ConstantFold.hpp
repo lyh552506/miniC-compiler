@@ -11,8 +11,10 @@
 //===----------------------------------------------------------------------===//
 #pragma once
 #include "CFG.hpp"
+#include "dominant.hpp"
 class ConstantFolding
 {
+    void bfsTraversal(Function* func, dominance* dom);
 /// ConstantFoldInstruction - Try to constant fold the specified instruction.
 /// If successful, the constant result is returned, if not, null is returned.
 /// Note that this fails if not all of the operands are constant.  Otherwise,
@@ -55,4 +57,15 @@ ConstantData *ConstantFoldBinaryOpOperands(unsigned Opcode, Value* LHS, Value* R
 /// Attempt to symbolically evaluate the result of a binary operator merging
 /// these together
 ConstantData *SymbolicallyEvaluateBinop(unsigned Opcode, Value* Op0, Value* Op1);
+
+bool isConstantAssignment(User* inst); //如果是常量赋值或者常量计算的结果
+void propConstToRef(User* inst); //用常量值替换该变量的所有引用
+bool isBranchAndConstPredicate(User* inst); //如果是常量值的分支条件
+void changeCondBranchToAbsBranchAndMark(User* inst); //替换为强制跳转，并标记另一个分支不可达
+bool isPhi(User* inst);
+bool isOneBlockUnreachable(User* inst); //有一个基本块不可达
+bool IsSameValPre(User* inst); //两个基本块的值相同
+void propPhiToRef(User* inst); //将可达块的值传播到对该指令的引用
+public:
+void Pass(Function* func, dominance* dom);
 };

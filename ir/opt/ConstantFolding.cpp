@@ -1,4 +1,5 @@
 #include "ConstantFold.hpp"
+#include <queue>
 ConstantData* ConstantFolding::ConstantFoldConstantExpression(ConstantExpr* _ConstantExpr){};
 ConstantData* ConstantFolding::ConstantFoldInstruction(User* inst, BasicBlock* block)
 {
@@ -79,10 +80,59 @@ bool canConstantFoldCallto(User* inst);
 
 ConstantData ConstantFolding::*ConstantFoldCall(Function* func, std::vector<Value*> Operands);
 
-void ConstantFolding::Pass(Function* func)
+void ConstantFolding::Pass(Function* func, dominance& dom)
 {
-    
-    /*
+    bfsTraversal(func, dom);
+}
+void ConstantFolding::bfsTraversal(Function* func, dominance& dom)
+{
+    std::queue<int> q;
+    std::vector<bool> visited(sizeof(dominance::Node), false);
+
+    //从根节点开始
+    int rootIndex = 1;
+    q.push(rootIndex);
+    visited[rootIndex] = true;
+
+    while(!q.empty())
+    {
+        int current = q.front();
+        q.pop();
+        dominance::Node* currentNode = &dom.node[current];
+
+        //TODO
+        RunOnBlock(currentNode->thisBlock);
+
+        for(int childIndex : currentNode->idom_child)
+        {
+            if(!visited[childIndex])
+            {
+                q.push(childIndex);
+                visited[childIndex] = true;
+            }
+        }
+    }
+}
+
+void ConstantFolding::RunOnBlock(BasicBlock* block)
+{
+    for(User* inst:*block)
+    {
+        if(isConstantAssignment(inst))
+            propConstToRef(inst);
+        else if(isBranchAndConstPredicate(inst))
+            changeCondBranchToAbsBranchAndMark(inst);
+        else if(isPhi(inst))
+            if(isOneBlockUnreachable(inst) || IsSameValPre(inst))
+                propPhiToRef(inst);
+    }
+}
+
+bool isConstantAssignment(User* inst)
+{
+
+}
+ /*
     沿CFG对应的 dominant tree 从entry开始按BFS顺序遍历BasicBlock
     foreach block in blocks do:
         遍历每个inst
@@ -102,8 +152,73 @@ void ConstantFolding::Pass(Function* func)
                     将可达块的值传播到对该指令的引用
                     propPhiToRef(instr)
     */
-   for(BasicBlock* block:*func)
-   {
-    
-   }
+
+Constant *llvm::ConstantFoldInstruction(Instruction *I, const DataLayout &DL,
+                                        const TargetLibraryInfo *TLI) {
+  // Handle PHI nodes quickly here...
+  if (auto *PN = dyn_cast<PHINode>(I)) {
+    Constant *CommonValue = nullptr;
+
+    for (Value *Incoming : PN->incoming_values()) {
+      // If the incoming value is undef then skip it.  Note that while we could
+      // skip the value if it is equal to the phi node itself we choose not to
+      // because that would break the rule that constant folding only applies if
+      // all operands are constants.
+      if (isa<UndefValue>(Incoming))
+        continue;
+      // If the incoming value is not a constant, then give up.
+      auto *C = dyn_cast<Constant>(Incoming);
+      if (!C)
+        return nullptr;
+      // Fold the PHI's operands.
+      if (auto *NewC = dyn_cast<ConstantExpr>(C))
+        C = ConstantFoldConstantExpression(NewC, DL, TLI);
+      // If the incoming value is a different constant to
+      // the one we saw previously, then give up.
+      if (CommonValue && C != CommonValue)
+        return nullptr;
+      CommonValue = C;
+    }
+
+
+    // If we reach here, all incoming values are the same constant or undef.
+    return CommonValue ? CommonValue : UndefValue::get(PN->getType());
+  }
+
+  // Scan the operand list, checking to see if they are all constants, if so,
+  // hand off to ConstantFoldInstOperandsImpl.
+  if (!all_of(I->operands(), [](Use &U) { return isa<Constant>(U); }))
+    return nullptr;
+
+  SmallVector<Constant *, 8> Ops;
+  for (const Use &OpU : I->operands()) {
+    auto *Op = cast<Constant>(&OpU);
+    // Fold the Instruction's operands.
+    if (auto *NewCE = dyn_cast<ConstantExpr>(Op))
+      Op = ConstantFoldConstantExpression(NewCE, DL, TLI);
+
+    Ops.push_back(Op);
+  }
+
+  if (const auto *CI = dyn_cast<CmpInst>(I))
+    return ConstantFoldCompareInstOperands(CI->getPredicate(), Ops[0], Ops[1],
+                                           DL, TLI);
+
+  if (const auto *LI = dyn_cast<LoadInst>(I))
+    return ConstantFoldLoadInst(LI, DL);
+
+  if (auto *IVI = dyn_cast<InsertValueInst>(I)) {
+    return ConstantExpr::getInsertValue(
+                                cast<Constant>(IVI->getAggregateOperand()),
+                                cast<Constant>(IVI->getInsertedValueOperand()),
+                                IVI->getIndices());
+  }
+
+  if (auto *EVI = dyn_cast<ExtractValueInst>(I)) {
+    return ConstantExpr::getExtractValue(
+                                    cast<Constant>(EVI->getAggregateOperand()),
+                                    EVI->getIndices());
+  }
+
+  return ConstantFoldInstOperands(I, Ops, DL, TLI);
 }

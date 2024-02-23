@@ -1,4 +1,4 @@
-#pragma once
+// #pragma once
 #include "CFG.hpp"
 #include "my_stl.hpp"
 #include <algorithm>
@@ -110,6 +110,5 @@ public:
     dom_begin(); //标志开始函数
     promoteMemoryToRegister(*thisFunc, *this);
   }
-
   void dom_begin();
 };
