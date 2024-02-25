@@ -1,66 +1,171 @@
 #include "ConstantFold.hpp"
 #include <queue>
-ConstantData* ConstantFolding::ConstantFoldConstantExpression(ConstantExpr* _ConstantExpr){};
-ConstantData* ConstantFolding::ConstantFoldInstruction(User* inst, BasicBlock* block)
+
+void ConstantFolding::RunOnBlock(BasicBlock* block)
+{
+    for(User* inst:*block)
+    {
+        if(isConstantAssignment(inst))
+            propConstToRef(inst);
+        else if(isBranchAndConstPredicate(inst))
+            changeCondBranchToAbsBranchAndMark(inst);
+        else if(isPhi(inst))
+            if(isOneBlockUnreachable(inst) || IsSameValPre(inst))
+                propPhiToRef(inst);
+    }
+}
+
+Value* ConstantFolding::ConstantFoldInstruction(User* inst, BasicBlock* block)
 {
     // Handle PHI nodes quickly here...
-    if(auto _PhiNode = dynamic_cast<PhiInst*>(inst))
-    {
-        ConstantData *CommonValue = nullptr;
-        for(Value* income : _PhiNode->GetAllPhiVal())
-        {
-            if(auto _UndefValue = dynamic_cast<UndefValue*>(income))
-                continue;
-            auto *_Constant = dynamic_cast<ConstantData*>(income);
-            if(!_Constant)
-                return nullptr;
-            if(auto *NewConstant = dynamic_cast<ConstantExpr*>(_Constant))
-                _Constant = ConstantFoldConstantExpression(NewConstant);
-            if(CommonValue && _Constant != CommonValue)
-                return nullptr;
-            CommonValue = _Constant;
-        }
-        return CommonValue ? CommonValue : UndefValue::get(_PhiNode->GetType());
-    }
-    bool all_Constant = true;
-    for(auto &_Operand : inst->Getuselist())
-    {
-        auto __Operand = _Operand.get();
-        if(!dynamic_cast<ConstantData*>(__Operand->GetValue()))
-        {
-            all_Constant = false;
-            break;
-        }
-    }
-    if(all_Constant)
-    {
-        //ConstantFoldInstOperandsImpl;
-    }
-    return nullptr;
-    
+    if(PhiInst* _PhiNode = dynamic_cast<PhiInst*>(inst))
+        return ConstantFoldPhiInst(_PhiNode);
+    if(LoadInst* _LoadInst = dynamic_cast<LoadInst*>(inst))
+        return ConstantFoldLoadInst(_LoadInst);
+    if(BinaryInst* _BinaryInst = dynamic_cast<BinaryInst*>(inst))
+        return ConstantFoldBinaryInst(_BinaryInst, block);
     std::vector<ConstantData*> Operands;
     for(auto &_Operand : inst->Getuselist())
     {
+        if(!dynamic_cast<ConstantData*>((_Operand.get()->GetValue()))->isConst())
+            return nullptr; //warning:todo
+
         auto *__Operand = dynamic_cast<ConstantData*>(_Operand->GetValue());
         if(auto *NewConstantExpr = dynamic_cast<ConstantExpr*>(__Operand))
             __Operand = ConstantFoldConstantExpression(NewConstantExpr);
         Operands.push_back(__Operand);
     }
-    if(const auto *_LoadInst = dynamic_cast<LoadInst*>(inst))
-        return ConstantFoldLoadInst(_LoadInst);
     return ConstantFoldInstOperands(inst, Operands);
 }
 
-ConstantData ConstantFolding::*SymbolicallyEvaluateBinop(unsigned Opcode, Value* Op0, Value* Op1)
+Value* ConstantFolding::ConstantFoldPhiInst(PhiInst* inst)
 {
+    Value* CommonValue = nullptr;
+    for(Value* income : inst->GetAllPhiVal())
+    {
+        if(auto _UndefValue = dynamic_cast<UndefValue*>(income))
+            continue;
+        auto *_Constant = dynamic_cast<ConstantData*>(income);
+        if(!_Constant)
+            return nullptr;
+        if(CommonValue && _Constant != CommonValue)
+            return nullptr;
+        CommonValue = _Constant;
+    }
+    return CommonValue ? CommonValue : UndefValue::get(inst->GetType());
+}
+
+// void ConstantFolding::ConstantFoldBinaryInst(User* inst, BasicBlock* block)
+// {
+//     if(auto binaryInst = dynamic_cast<BinaryInst*>(inst))
+//     {
+//         Value* lhs = binaryInst->GetOperand(0);
+//         Value* rhs = binaryInst->GetOperand(1);
+//         ConstantData* foldedResult = ConstantFoldBinaryOpOperands(binaryInst->GetOpcode(), lhs, rhs);
+//         if(foldedResult)
+//         {
+//             // Replace the binary instruction with the folded result
+//             block->ReplaceInstruction(inst, foldedResult);
+//         }
+//     }
+// }
+// ConstantData* ConstantFolding::ConstantFoldBinaryOpOperands(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
+// {
+//     if(auto *lhsConst = dynamic_cast<ConstantData*>(LHS))
+//     {
+//         if(auto *rhsConst = dynamic_cast<ConstantData*>(RHS))
+//         {
+//             return ConstantFoldBinaryOpOperands(Opcode, lhsConst, rhsConst);
+//         }
+//     }
+//     return nullptr;
+// }
+
+// ConstantData* ConstantFolding::ConstantFoldConstantExpression(ConstantExpr* _ConstantExpr)
+// {
+//     // 获取常量表达式的操作符和操作数
+//     Value* Opcode = _ConstantExpr->getOpcode();
+//     unsigned Opcode = _ConstantExpr->getOpcode();
+//     Constant* LHS = _ConstantExpr->getOperand(0);
+//     Constant* RHS = _ConstantExpr->getOperand(1);
+
+//     // 根据操作符执行相应的折叠操作
+//     switch (Opcode)
+//     {
+//         case Instruction::Add:
+//         {
+//             // 执行加法操作
+//             Constant* Result = ConstantExpr::getAdd(LHS, RHS);
+//             return new ConstantData(Result);
+//         }
+//         case Instruction::Sub:
+//         {
+//             // 执行减法操作
+//             Constant* Result = ConstantExpr::getSub(LHS, RHS);
+//             return new ConstantData(Result);
+//         }
+//         // 其他操作符的处理...
+
+//         default:
+//             // 无法折叠的操作符，返回空指针
+//             return nullptr;
+//     }
+// }
+// Constant *llvm::ConstantFoldConstantExpression(const ConstantExpr *CE,
+//                                                const DataLayout &DL,
+//                                                const TargetLibraryInfo *TLI) {
+//   SmallPtrSet<ConstantExpr *, 4> FoldedOps;
+//   return ConstantFoldConstantExpressionImpl(CE, DL, TLI, FoldedOps);
+// }
+
+Value* ConstantFolding::*SymbolicallyEvaluateBinop(BinaryInst::Operation Opcode, Value* Op0, Value* Op1)
+{
+    int Int_Val0 = dynamic_cast<ConstIRInt*>(Op0)->GetVal();
+    int Int_Val1 = dynamic_cast<ConstIRInt*>(Op1)->GetVal();
+    float float_Val0 = dynamic_cast<ConstIRFloat*>(Op0)->GetVal();
+    float float_Val1 = dynamic_cast<ConstIRFloat*>(Op1)->GetVal();
+    switch(Opcode)
+    {
+        case BinaryInst::Op_Add:
+        {
+            return ConstIRInt::GetNewConstant(Int_Val0 + Int_Val1);
+        }
+        case BinaryInst::Op_Sub:
+        {}
+        case BinaryInst::Op_Mul:
+        {}
+        case BinaryInst::Op_Div:
+        {}
+        case BinaryInst::Op_And:
+        {}
+        case BinaryInst::Op_Or:
+        {}
+        case BinaryInst::Op_Mod:
+        {}
+        case BinaryInst::Op_E:
+        {}
+        case BinaryInst::Op_NE:
+        {}
+        case BinaryInst::Op_GE:
+        {}
+        case BinaryInst::Op_L:
+        {}
+        case BinaryInst::Op_LE:
+        {}
+        case BinaryInst::Op_G:
+        {}
+
+    }
     if(Opcode == BinaryInst::Op_And)
     {
-
+        if(Op0->isConst() && Op1->isConst())
+            return new ConstantData(Op0 + Op1);
     }
     if(Opcode == BinaryInst::Op_Sub)
     {
 
     }
+    
 
     return nullptr;
 }
@@ -114,25 +219,11 @@ void ConstantFolding::bfsTraversal(Function* func, dominance& dom)
     }
 }
 
-void ConstantFolding::RunOnBlock(BasicBlock* block)
-{
-    for(User* inst:*block)
-    {
-        if(isConstantAssignment(inst))
-            propConstToRef(inst);
-        else if(isBranchAndConstPredicate(inst))
-            changeCondBranchToAbsBranchAndMark(inst);
-        else if(isPhi(inst))
-            if(isOneBlockUnreachable(inst) || IsSameValPre(inst))
-                propPhiToRef(inst);
-    }
-}
-
 bool isConstantAssignment(User* inst)
 {
 
 }
- /*
+/*
     沿CFG对应的 dominant tree 从entry开始按BFS顺序遍历BasicBlock
     foreach block in blocks do:
         遍历每个inst
@@ -153,72 +244,3 @@ bool isConstantAssignment(User* inst)
                     propPhiToRef(instr)
     */
 
-Constant *llvm::ConstantFoldInstruction(Instruction *I, const DataLayout &DL,
-                                        const TargetLibraryInfo *TLI) {
-  // Handle PHI nodes quickly here...
-  if (auto *PN = dyn_cast<PHINode>(I)) {
-    Constant *CommonValue = nullptr;
-
-    for (Value *Incoming : PN->incoming_values()) {
-      // If the incoming value is undef then skip it.  Note that while we could
-      // skip the value if it is equal to the phi node itself we choose not to
-      // because that would break the rule that constant folding only applies if
-      // all operands are constants.
-      if (isa<UndefValue>(Incoming))
-        continue;
-      // If the incoming value is not a constant, then give up.
-      auto *C = dyn_cast<Constant>(Incoming);
-      if (!C)
-        return nullptr;
-      // Fold the PHI's operands.
-      if (auto *NewC = dyn_cast<ConstantExpr>(C))
-        C = ConstantFoldConstantExpression(NewC, DL, TLI);
-      // If the incoming value is a different constant to
-      // the one we saw previously, then give up.
-      if (CommonValue && C != CommonValue)
-        return nullptr;
-      CommonValue = C;
-    }
-
-
-    // If we reach here, all incoming values are the same constant or undef.
-    return CommonValue ? CommonValue : UndefValue::get(PN->getType());
-  }
-
-  // Scan the operand list, checking to see if they are all constants, if so,
-  // hand off to ConstantFoldInstOperandsImpl.
-  if (!all_of(I->operands(), [](Use &U) { return isa<Constant>(U); }))
-    return nullptr;
-
-  SmallVector<Constant *, 8> Ops;
-  for (const Use &OpU : I->operands()) {
-    auto *Op = cast<Constant>(&OpU);
-    // Fold the Instruction's operands.
-    if (auto *NewCE = dyn_cast<ConstantExpr>(Op))
-      Op = ConstantFoldConstantExpression(NewCE, DL, TLI);
-
-    Ops.push_back(Op);
-  }
-
-  if (const auto *CI = dyn_cast<CmpInst>(I))
-    return ConstantFoldCompareInstOperands(CI->getPredicate(), Ops[0], Ops[1],
-                                           DL, TLI);
-
-  if (const auto *LI = dyn_cast<LoadInst>(I))
-    return ConstantFoldLoadInst(LI, DL);
-
-  if (auto *IVI = dyn_cast<InsertValueInst>(I)) {
-    return ConstantExpr::getInsertValue(
-                                cast<Constant>(IVI->getAggregateOperand()),
-                                cast<Constant>(IVI->getInsertedValueOperand()),
-                                IVI->getIndices());
-  }
-
-  if (auto *EVI = dyn_cast<ExtractValueInst>(I)) {
-    return ConstantExpr::getExtractValue(
-                                    cast<Constant>(EVI->getAggregateOperand()),
-                                    EVI->getIndices());
-  }
-
-  return ConstantFoldInstOperands(I, Ops, DL, TLI);
-}

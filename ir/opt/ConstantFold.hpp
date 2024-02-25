@@ -14,13 +14,17 @@
 #include "dominant.hpp"
 class ConstantFolding
 {
-    void bfsTraversal(Function* func, dominance* dom);
+using DNode=dominance::Node*;
+
 /// ConstantFoldInstruction - Try to constant fold the specified instruction.
 /// If successful, the constant result is returned, if not, null is returned.
 /// Note that this fails if not all of the operands are constant.  Otherwise,
 /// this function can only fail when attempting to fold instructions like loads
 /// and stores, which have no constant expression form.
-ConstantData* ConstantFoldInstruction(User* inst, BasicBlock* block);
+public:
+Value* ConstantFoldInstruction(User* inst, BasicBlock* block);
+
+Value* ConstantFoldPhiInst(PhiInst* inst);
 /// ConstantFoldConstantExpression - Attempt to fold the constant expression.
 /// If successful, the constant result is result is returned, if not, null is
 /// returned.
@@ -51,21 +55,29 @@ ConstantData *ConstantFoldCall(Function* func, std::vector<ConstantData*> Operan
 /// ConstantFoldBinaryOpOperands - Attempt to constant fold a binary operation with the
 /// specified operands. If it fails, it returns a constant expression of the specified
 /// operands.
-ConstantData *ConstantFoldBinaryOpOperands(unsigned Opcode, Value* LHS, Value* RHS);
+ConstantData *ConstantFoldBinaryOpOperands(BinaryInst::Operation Opcode, Value* LHS, Value* RHS);
 
 /// One of Op0/Op1 is a Constant expr;
 /// Attempt to symbolically evaluate the result of a binary operator merging
 /// these together
-ConstantData *SymbolicallyEvaluateBinop(unsigned Opcode, Value* Op0, Value* Op1);
+ConstantData *SymbolicallyEvaluateBinop(BinaryInst::Operation Opcode, Value* Op0, Value* Op1);
+
+// 沿dominant tree 从 entry 开始按BFS顺序遍历BasicBlock
+void bfsTraversal(Function* func, dominance& dom);
+
 
 bool isConstantAssignment(User* inst); //如果是常量赋值或者常量计算的结果
 void propConstToRef(User* inst); //用常量值替换该变量的所有引用
 bool isBranchAndConstPredicate(User* inst); //如果是常量值的分支条件
 void changeCondBranchToAbsBranchAndMark(User* inst); //替换为强制跳转，并标记另一个分支不可达
-bool isPhi(User* inst);
+bool isPhi(User* inst){return dynamic_cast<PhiInst*>(inst);};
 bool isOneBlockUnreachable(User* inst); //有一个基本块不可达
 bool IsSameValPre(User* inst); //两个基本块的值相同
 void propPhiToRef(User* inst); //将可达块的值传播到对该指令的引用
+void RunOnBlock(BasicBlock* block);
+// 处理BinaryInst
+ConstantData* ConstantFoldBinaryInst(User* inst, BasicBlock* block);
 public:
-void Pass(Function* func, dominance* dom);
+void Pass(Function* func, dominance& dom);
+
 };

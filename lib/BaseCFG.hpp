@@ -131,6 +131,7 @@ class ConstIRInt:public ConstantData
     public:
     static ConstIRInt* GetNewConstant(int=0);
     int GetVal();
+    double GetValAsDouble() const { return static_cast<double>(val);}
 };
 
 class ConstIRFloat:public ConstantData
@@ -140,6 +141,7 @@ class ConstIRFloat:public ConstantData
     public:
     static ConstIRFloat* GetNewConstant(float=0);
     float GetVal();
+    double GetValAsDouble() const { return static_cast<double>(val);}
 };
 
 class ConstPtr:public ConstantData
