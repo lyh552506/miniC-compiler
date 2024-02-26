@@ -22,4 +22,7 @@ public:
   bool IsPinned(User* inst);
   void caculateRPO(BasicBlock* bb);
   int OptConstBinary_INT(int op,Value*a,Value* b);
+  float OptConstBinary_Float(int op,Value*a,Value* b);
+  Value* Special_Opt(int op,Value*a,Value* b);
+  Value * Find_Equal(Value* inst);
 };

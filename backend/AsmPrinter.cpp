@@ -16,20 +16,19 @@ void PrintCode(Module* Unit) {
         }
         machinefunction->print_func_name();
         machinefunction->print_stack_frame();
-        machinefunction->print_stack_offset();
+        //machinefunction->print_stack_offset();
         for (auto& Block : Func->GetBasicBlock()) {
             //打印每个Block的标签
-            MachineBasicBlock* machineblock = (MachineBasicBlock*)(Block.get());
+            MachineBasicBlock* machineblock = new MachineBasicBlock(Block.get(), machinefunction);
             if (block_num != 0) {
                 machineblock->print_block_lable(func_num, block_num);
             }
             for (auto Inst : *Block) {
                 //生成机器指令 
-                MachineInst* machineinst = InstSelect(*Inst);
+                MachineInst* machineinst = InstSelect(machineblock, *Inst);
                 //打印每个Inst
-                //machineinst->print();
-
-                //特殊： Alloca 语句
+                machineinst->print();
+                //alloca指令此处未作处理
                 //特殊：ret 语句
             }
             //打印每个Block的跳转
@@ -52,7 +51,6 @@ void PrintCodeToTxt(Module* unit) {
         PrintCode(unit);
         // std::cout.rdbuf(coutBuffer);
         outputFile.close(); // 关闭文件
-        std::cout << "Output redirected to file." << std::endl;
     } else {
         std::cout << "Unable to open the file." << std::endl;
     }

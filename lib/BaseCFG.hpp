@@ -82,10 +82,13 @@ class Value
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
     void RAUW(Value* val); //ReplaceAllUseWith
+    void SetName(std::string newname);
     virtual std::string GetName();
     UserList& GetUserlist(){return userlist;};
 };
 using Operand=Value*;
+// class Constant:public User
+// {};
 class User:public Value,public list_node<BasicBlock,User>
 {
     using UsePtr=std::unique_ptr<Use>;
@@ -97,25 +100,51 @@ class User:public Value,public list_node<BasicBlock,User>
     User();
     User(Type* tp);
     virtual Operand GetDef();
-    void ir_mark();
     void ClearRelation();//在EraseFromBasic()前调用
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
 };
-class ConstIRInt:public Value
+class ConstantExpr:public Value
+{
+
+};
+class ConstantData:public Value
+{
+    public:
+    ConstantData()=delete;
+    ConstantData(Type* tp);
+    bool isConst()final{return true;}
+};
+
+class ConstIRBoolean:public ConstantData
+{
+    bool val;
+    ConstIRBoolean(bool);
+    public:
+    static ConstIRBoolean* GetNewConstant(bool=false);
+    bool GetVal();
+};
+
+class ConstIRInt:public ConstantData
 {
     int val;
-    public:
     ConstIRInt(int);
+    public:
+    static ConstIRInt* GetNewConstant(int=0);
     int GetVal();
-    bool isConst()final{return true;}
-    void ir_mark();
 };
-class ConstIRFloat:public Value
+
+class ConstIRFloat:public ConstantData
 {
     float val;
-    public:
     ConstIRFloat(float);
+    public:
+    static ConstIRFloat* GetNewConstant(float=0);
     float GetVal();
-    bool isConst()final{return true;}
-    void ir_mark();
+};
+
+class ConstPtr:public ConstantData
+{
+    ConstPtr(Type*);
+    public:
+    static ConstPtr* GetNewConstant(Type*);
 };

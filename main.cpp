@@ -1,7 +1,7 @@
 #include "parser.hpp"
 #include "opt/dominant.hpp"
 #include <fstream>
-#include "opt/GVN&GCM.hpp"
+//#include "opt/GVN&GCM.hpp"
 extern FILE *yyin;
 
 void copyFile(const std::string &sourcePath,
@@ -17,7 +17,6 @@ int main(int argc, char **argv) {
   copyFile("runtime.ll", output_path);
   freopen(output_path.c_str(), "a", stdout);
   yyin = fopen(argv[1], "r");
-
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
@@ -25,12 +24,13 @@ int main(int argc, char **argv) {
 
   auto f = Singleton<Module>().GetFuncTion()[0].get();
   auto &Li = Singleton<Module>().GetFuncTion()[0]->GetBasicBlock();
-
+  for (auto bb = f->begin(); bb != f->end(); ++bb)
+    f->push_bb(*bb);
   for (int i = 0; i < Li.size(); ++i)
-    Li[i].get()->num=i;
+    Li[i]->num=i;
 
-  int n = Li[0]->num;
-  User *li = Li[0]->front();
+  //int n = Li[0]->num;
+  //User *li = Li[0]->front();
   dominance dom(f, Li.size());
   
   // Gvn_Gcm test(&dom,f);

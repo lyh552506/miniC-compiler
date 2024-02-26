@@ -69,6 +69,8 @@ public:
   /// @param pos
   void DFS(int pos);
 
+  void caculateBBs();
+
 private:
   /// @brief 路径压缩，并更新最小sdom
   /// @param x
@@ -110,6 +112,5 @@ public:
     dom_begin(); //标志开始函数
     promoteMemoryToRegister(*thisFunc, *this);
   }
-
   void dom_begin();
 };

@@ -4,9 +4,24 @@
 #include "BaseCFG.hpp"
 class BasicBlock;
 class Function;
+
+class InitVal;
+class InitVals;
+
+class Initializer:public Value,public std::vector<Operand>
+{
+    public:
+    Initializer(Type*);
+    void Var2Store(BasicBlock*,const std::string&,std::vector<int>&);
+    /// @brief 打印
+    /// <Type> [<Content_0>,<Content1>,...]
+    /// Content:= <Type> <Content>
+    void print();
+};
+
 class Variable
 {
-    Operand attached_initializer;
+    Operand attached_initializer=nullptr;
     std::string name;
     Type* tp;
     public:
@@ -26,6 +41,12 @@ public:
   void print();
 };
 
+class MemcpyHandle:public User{
+    public:
+    MemcpyHandle(Type*,Operand);
+    void print();
+};
+
 class AllocaInst:public User
 {
     public:
@@ -40,14 +61,13 @@ class StoreInst:public User
     StoreInst(Operand,Operand);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class LoadInst:public User
 {
     public:
     LoadInst(Operand __src);
     void print()final;
-    Value* GetLoadTarget();
+    Value* GetSrc();
 };
 /// @brief float to int
 class FPTSI:public User
@@ -112,13 +132,20 @@ class GetElementPtrInst:public User
 {
     public:
     GetElementPtrInst(Operand);
-    Type* GetType();
+    Type* GetType()final;
+    void print()final;
+};
+//zext i1 to i32
+class ZextInst:public User
+{
+    public:
+    ZextInst(Operand);
     void print()final;
 };
 
 class PhiInst : public User {
 public:
-  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User(ty) {}
+  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {}
 
   PhiInst(User *BeforeInst):oprandNum(0) {}
 
@@ -132,7 +159,7 @@ public:
   std::vector<Value*> Incomings;
   int oprandNum;
 };
-class BasicBlock:public Value,public mylist<BasicBlock,User>
+class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
 {
     Function& master;
     public:
@@ -145,6 +172,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     static Operand GenerateBinaryInst(BasicBlock*,Operand,BinaryInst::Operation,Operand);
     Operand GenerateLoadInst(Operand);
     Operand GenerateGEPInst(Operand);
+    Operand GenerateZextInst(Operand);
     void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);
@@ -156,6 +184,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
     int num=0;
+    bool visited=false;
 };
 
 class ExternFunction:public Value
@@ -173,22 +202,22 @@ class BuildInFunction:public Value
     static BuildInFunction* GetBuildInFunction(std::string);
 };
 
-class Function:public Value
+class Function:public Value,public mylist<Function,BasicBlock>
 {
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
-    std::vector<BasicBlockPtr> bbs;
+    std::vector<BasicBlock*> bbs;
     void InsertAlloca(AllocaInst* ptr);
     public:
     Function(InnerDataType _tp,std::string _id);
-    BasicBlock* front_block();
-    virtual void print();
+    void print();
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
     std::vector<ParamPtr>& GetParams();
-    std::vector<BasicBlockPtr>& GetBasicBlock();
+    std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
+    void push_bb(BasicBlock* bb){bbs.push_back(bb);}
 };
 class Module:public SymbolTable
 {
@@ -196,10 +225,12 @@ class Module:public SymbolTable
     using FunctionPtr=std::unique_ptr<Function>;
     std::vector<FunctionPtr> ls;
     std::vector<GlobalVariblePtr> globalvaribleptr;
+    std::vector<MemcpyHandle*> constants_handle;
     public:
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
+    Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
     void Test();
 };

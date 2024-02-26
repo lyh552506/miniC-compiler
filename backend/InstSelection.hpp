@@ -9,14 +9,15 @@ bool is_float(Operand op);
 
 //void MatchAllocaInst(User& inst);
 //一条一条翻译
-// MachineStoreInst MatchStoreInst(User& inst);
-// MachineLoadInst MatchLoadInst(User& inst);
-// User* MatchFPTSI(User& inst);
-// User* MatchSITFP(User& inst);
-// User* MatchUnCondInst(User& inst);
-// User* MatchCondInst(User& inst);
-// User* MatchCallInst(User& inst);
-// User* MatchRetInst(User& inst);
-MachineInst* ConvertToMachineInst (std::variant<MachineBinaryInst*, MachineCmpInst*>& variant);
-std::variant<MachineBinaryInst*, MachineCmpInst*> MatchBinaryInst(BinaryInst* inst);
-MachineInst* InstSelect(User& inst);
+MachineInst* MatchStoreInst(MachineBasicBlock* parent, StoreInst* inst);
+MachineInst* MatchLoadInst(MachineBasicBlock* parent, LoadInst* inst);
+MachineInst* MatchFPTSI(MachineBasicBlock* parent, FPTSI* inst);
+MachineInst* MatchSITFP(MachineBasicBlock* parent, SITFP* inst);
+MachineInst* MatchUnCondInst(MachineBasicBlock* parent, UnCondInst* inst);
+//MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst);
+MachineInst* MatchCallInst(MachineBasicBlock* parent, CallInst* inst);
+MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst);
+// MachineInst* ConvertToMachineInst (std::variant<MachineBinaryInst*, MachineCmpInst*>& variant);
+MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst);
+
+MachineInst* InstSelect(MachineBasicBlock* parent, User& inst);

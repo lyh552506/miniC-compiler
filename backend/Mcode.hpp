@@ -2,57 +2,64 @@
 #include "../lib/BaseCFG.hpp"
 #include "../lib/CFG.hpp"
 #include <variant>
+class MachineFunction;
+class MachineBasicBlock;
+
 class MachineInst : public User {
     protected:
+    MachineBasicBlock* mbb;
     Operand rd;
     Operand rs1;
     Operand rs2;
     std::string opcode;
-    public: 
-    MachineInst(std::string opcode);
-    MachineInst(std::string opcode, Operand rd, Operand rs1);
-    MachineInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);
-    void print();
+    public:
+    MachineInst(MachineBasicBlock* mbb, std::string opcode);
+    MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd);
+    MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1);
+    MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1, Operand rs2);
+    MachineBasicBlock* get_machinebasicblock();
+    std::string GetOpcode();
+    virtual void print();
 };
-class MachineBinaryInst : public MachineInst {
-enum Binary_Inst {
-    //算数运算
-    add, //加法 add rd, rs1, rs2
-    addw,
-    addi, // addi rd, rs1, imm  
-    addiw,
-    sub, //减法 sub rd, rs1, rs2
-    subw,
-    mul, //乘法 mul rd, rs1, rs2
-    mulh,
-    mulw,
-    div, //除法 div rd, rs1, rs2
-    divw,
-    rem, //取余 rem rd, rs1, rs2
-    remw,
-    // sll, //逻辑左移 sll rd, rs1, rs2
-    // slli,
-    // slliw,
-    // sllw,
-    // srl, //逻辑右移 srl rd, rs1, rs2
-    // srlw,
-    // srli, //逻辑右移立即数 srli rd, rs1, imm
-    // srliw,
-    // sra, //算术右移 sra rd, rs1, rs2
-    // sraw, 
-    // srai, //算术右移立即数 srai rd, rs1, imm
-    // sraiw,
-    And, //按位与 and rd, rs1, rs2
-    andi,
-    Or, //按位或 or rd, rs1, rs2
-    ori,
-    // Xor, //按位异或 xor rd, rs1, rs2
-    // xori
-};
-public:
-    MachineBinaryInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);//imm
-    void print() {};
-};
+// class MachineBinaryInst : public MachineInst {
+// enum Binary_Inst {
+//     //算数运算
+//     add, //加法 add rd, rs1, rs2
+//     addw,
+//     addi, // addi rd, rs1, imm  
+//     addiw,
+//     sub, //减法 sub rd, rs1, rs2
+//     subw,
+//     mul, //乘法 mul rd, rs1, rs2
+//     mulh,
+//     mulw,
+//     div, //除法 div rd, rs1, rs2
+//     divw,
+//     rem, //取余 rem rd, rs1, rs2
+//     remw,
+//     // sll, //逻辑左移 sll rd, rs1, rs2
+//     // slli,
+//     // slliw,
+//     // sllw,
+//     // srl, //逻辑右移 srl rd, rs1, rs2
+//     // srlw,
+//     // srli, //逻辑右移立即数 srli rd, rs1, imm
+//     // srliw,
+//     // sra, //算术右移 sra rd, rs1, rs2
+//     // sraw, 
+//     // srai, //算术右移立即数 srai rd, rs1, imm
+//     // sraiw,
+//     And, //按位与 and rd, rs1, rs2
+//     andi,
+//     Or, //按位或 or rd, rs1, rs2
+//     ori,
+//     // Xor, //按位异或 xor rd, rs1, rs2
+//     // xori
+// };
+// public:
+//     // MachineBinaryInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);//imm
+//     void print() {};
+// };
 
 // class MachineLoadInst : public MachineInst {
 // private:
@@ -137,19 +144,19 @@ public:
 //     void printmachineinst(std::ofstream &outputFile) final;
 // };
 
-class MachineCmpInst : public MachineInst {
-private:
-enum Cmp_Inst {
-    slt, //有符号比较 slt rd, rs1, rs2
-    slti,//slti rd, rs1, imm
-    sltz,//sltz rd, rs1
-    snez,//sne rd, rs1
-};
-public:
-    MachineCmpInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);//imm
-    MachineCmpInst(std::string opcode, Operand rd, Operand rs1);
-    void print();
-};
+// class MachineCmpInst : public MachineInst {
+// private:
+// enum Cmp_Inst {
+//     slt, //有符号比较 slt rd, rs1, rs2
+//     slti,//slti rd, rs1, imm
+//     sltz,//sltz rd, rs1
+//     snez,//sne rd, rs1
+// };
+// public:
+//     // MachineCmpInst(std::string opcode, Operand rd, Operand rs1, Operand rs2);//imm
+//     // MachineCmpInst(std::string opcode, Operand rd, Operand rs1);
+//     // void print();
+// };
 
 // class PseudoInst : public MachineInst {
 // private:
@@ -168,8 +175,18 @@ public:
 //     void printmachineinst(std::ofstream &outputFile) final;
 // };
 
-class MachineBasicBlock :public BasicBlock {
+class MachineBasicBlock {
+    protected:
+    BasicBlock* block;
+    MachineFunction* mfuc;
+    std::string name;
     public:
+    MachineBasicBlock(BasicBlock* block, MachineFunction* parent);
+    void set_lable(int func_num, int block_num);
+    std::string get_name();
+    void set_name(std::string name);
+    BasicBlock* get_block();
+    MachineFunction* get_parent();
     void print_block_lable(int func_num, int block_num);
 };
 
@@ -179,10 +196,11 @@ class MachineFunction {
     size_t offset;
     int alloca_num;
     size_t stacksize;
-    std::map<size_t, std::string> offsetMap;
+    std::map<std::string, size_t> offsetMap;
+    //std::map<size_t, std::string> offsetMap;
     public:
     MachineFunction(Function* func);
-    void set_offset_map(size_t offset, std::string name);
+    void set_offset_map(std::string name, size_t offset);
     void set_alloca_and_num();
     void set_stacksize();
 
