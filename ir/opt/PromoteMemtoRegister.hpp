@@ -16,6 +16,10 @@ public:
 
   void AnalyzeAlloca(AllocaInst *AI);
   /// @brief 对所有变量进行初始化
+
+  AllocaInfo()
+      : DefineBlocks{}, UsingBlocks{}, OnlyBlock(nullptr),
+        IO_OnlySingleBlock(true), AllocaPtrValue(nullptr), OnlyStore(nullptr) {}
   void init() {
     DefineBlocks.clear();
     UsingBlocks.clear();
@@ -27,14 +31,16 @@ public:
 };
 
 struct BlockInfo {
-  std::vector<std::pair<User *, int>> IndexInfo;
+  std::map<User *, int> IndexInfo;
   /// @brief 获取index
   int GetInstIndex(User *Inst);
   /// @brief  判断是否是和alloca相关的读写操作
   bool IsAllocaRelated(User *Inst);
+  
+  /// @brief 对于已经删除的指令，同时去除他的index 
+  void DeleteIndex(User *Inst);
 
-  int valid;
-  BlockInfo() : valid{0} {}
+  BlockInfo()=default;
 };
 
 struct RenamePass {
@@ -58,7 +64,7 @@ class PromoteMem2Reg {
 public:
   PromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas,
                  Function &func)
-      : m_dom(dom), DeadAlloca(0), SingleStore(0), Func(func),
+      : m_dom(dom), Func(func),
         m_Allocas(Allocas.begin(),
                   Allocas.end()) //不能直接赋值，这样会转移所有权
   {}
@@ -89,31 +95,19 @@ public:
   /// @brief 进一步的设置phi的incoming值，以及重命名
   void Rename(BasicBlock *BB, BasicBlock *Pred,
               std::vector<Value *> &IncomingVal,
-              std::vector<RenamePass> WorkLists);
+              std::vector<RenamePass> &WorkLists);
 
   dominance &m_dom;
   std::vector<AllocaInst *> m_Allocas;       // index->AllocaInst的映射
   std::map<AllocaInst *, int> AllocaToIndex; // AllocaInst->index的映射
-  int DeadAlloca;                            // Number of dead alloca's removed
-  int SingleStore; // Number of alloca's promoted with a single store
   Function &Func;
   std::map<int, PhiInst *> PrePhiNode;  //由Block到PhiNode的映射
   std::map<PhiInst *, int> PhiToAlloca; // Phi函数对应的Alloca指令
-  std::set<BasicBlock*> RenameVisited;  //记录重命名时访问过的Block
+  std::set<BasicBlock *> RenameVisited; //记录重命名时访问过的Block
 };
 
 /// @brief 检验送入的alloca指令能否被promote
 bool IsAllocaPromotable(AllocaInst *AI);
-
-/// @brief 提供当前块bb和指令inst，返回当前指令所在bb的index
-int PromoteMem2Reg::CaculateIndex(BasicBlock *CurBlock, User *use) {
-  int index = 0;
-  std::vector<std::pair<User *, int>> InstNum;
-  for (auto Instructs : *CurBlock) {
-    User *user = Instructs;
-    // TODO
-  }
-}
 
 void RunPromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas,
                        Function &func);

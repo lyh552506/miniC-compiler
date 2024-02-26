@@ -1211,7 +1211,7 @@ namespace yy {
 
   case 10: // ConstDefs: ConstDefs Y_COMMA ConstDef
 #line 132 "parser.y"
-                                      {yystack_[2].value.as < ConstDefs* > ()->push_back(yystack_[0].value.as < ConstDef* > ());yylhs.value.as < ConstDefs* > ()->SET(yystack_[2].location);}
+                                      {yylhs.value.as < ConstDefs* > ()=yystack_[2].value.as < ConstDefs* > ();yystack_[2].value.as < ConstDefs* > ()->push_back(yystack_[0].value.as < ConstDef* > ());yylhs.value.as < ConstDefs* > ()->SET(yystack_[2].location);}
 #line 1216 "parser.cpp"
     break;
 
@@ -1559,7 +1559,7 @@ namespace yy {
 
   case 68: // UnaryExp: PrimaryExp
 #line 230 "parser.y"
-                     {yylhs.value.as < UnaryExp* > ()=new UnaryExp(yystack_[0].value.as < HasOperand* > ());yylhs.value.as < UnaryExp* > ()->SET(*(LocType*)(yystack_[0].value.as < HasOperand* > ()));}
+                     {yylhs.value.as < UnaryExp* > ()=new UnaryExp(yystack_[0].value.as < HasOperand* > ());yylhs.value.as < UnaryExp* > ()->SET(yystack_[0].location);}
 #line 1564 "parser.cpp"
     break;
 

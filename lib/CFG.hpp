@@ -4,9 +4,24 @@
 #include "BaseCFG.hpp"
 class BasicBlock;
 class Function;
+
+class InitVal;
+class InitVals;
+
+class Initializer:public Value,public std::vector<Operand>
+{
+    public:
+    Initializer(Type*);
+    void Var2Store(BasicBlock*,const std::string&,std::vector<int>&);
+    /// @brief 打印
+    /// <Type> [<Content_0>,<Content1>,...]
+    /// Content:= <Type> <Content>
+    void print();
+};
+
 class Variable
 {
-    Operand attached_initializer;
+    Operand attached_initializer=nullptr;
     std::string name;
     Type* tp;
     public:
@@ -20,10 +35,16 @@ class Variable
 };
 
 class UndefValue:public User{
-  UndefValue(Type* Ty){}
+  UndefValue(Type* Ty):User(Ty){name="undef";}
 public:
   static UndefValue* get(Type *Ty);
   void print();
+};
+
+class MemcpyHandle:public User{
+    public:
+    MemcpyHandle(Type*,Operand);
+    void print();
 };
 
 class AllocaInst:public User
@@ -31,8 +52,7 @@ class AllocaInst:public User
     public:
     AllocaInst(std::string,Type*);
     void print()final;
-    bool IsUsed();//TODO 返回当前alloca出来的对象后续有没有被使用过
-    // std::vector<User*> GetUsers(); //返回使用过alloca分配出的虚拟寄存器的指令
+    bool IsUsed();
 };
 
 class StoreInst:public User
@@ -41,7 +61,6 @@ class StoreInst:public User
     StoreInst(Operand,Operand);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class LoadInst:public User
 {
@@ -49,7 +68,6 @@ class LoadInst:public User
     LoadInst(Operand __src);
     void print()final;
     Value* GetSrc();
-    void ReplaceAllUsersWith(Value* val);
 };
 /// @brief float to int
 class FPTSI:public User
@@ -113,7 +131,14 @@ class GetElementPtrInst:public User
 {
     public:
     GetElementPtrInst(Operand);
-    Type* GetType();
+    Type* GetType()final;
+    void print()final;
+};
+//zext i1 to i32
+class ZextInst:public User
+{
+    public:
+    ZextInst(Operand);
     void print()final;
 };
 
@@ -127,12 +152,13 @@ public:
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB);
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
-
+  std::vector<Value*>& GetAllPhiVal();
 public:
-  std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord;
+  std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
+  std::vector<Value*> Incomings;
   int oprandNum;
 };
-class BasicBlock:public Value,public mylist<BasicBlock,User>
+class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
 {
     Function& master;
     public:
@@ -145,6 +171,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     static Operand GenerateBinaryInst(BasicBlock*,Operand,BinaryInst::Operation,Operand);
     Operand GenerateLoadInst(Operand);
     Operand GenerateGEPInst(Operand);
+    Operand GenerateZextInst(Operand);
     void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);
@@ -155,8 +182,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
-    int dfs;
-    int num;
+    int num=0;
 };
 
 class ExternFunction:public Value
@@ -174,22 +200,19 @@ class BuildInFunction:public Value
     static BuildInFunction* GetBuildInFunction(std::string);
 };
 
-class Function:public Value
+class Function:public Value,public mylist<Function,BasicBlock>
 {
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
-    std::vector<BasicBlockPtr> bbs;
     void InsertAlloca(AllocaInst* ptr);
     public:
     Function(InnerDataType _tp,std::string _id);
-    BasicBlock* front_block();
-    virtual void print();
+    void print();
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
     std::vector<ParamPtr>& GetParams();
-    std::vector<BasicBlockPtr>& GetBasicBlock();
 };
 class Module:public SymbolTable
 {
@@ -197,10 +220,12 @@ class Module:public SymbolTable
     using FunctionPtr=std::unique_ptr<Function>;
     std::vector<FunctionPtr> ls;
     std::vector<GlobalVariblePtr> globalvaribleptr;
+    std::vector<MemcpyHandle*> constants_handle;
     public:
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
+    Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
     void Test();
 };

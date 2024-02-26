@@ -1,5 +1,7 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
+#include <sstream>
+
 Use::Use(User* __fat,Value* __usee):fat(__fat),usee(__usee){
     usee->add_user(this);
 }
@@ -12,16 +14,21 @@ void UserList::push_front(Use* _data){
     _data->nxt=head;
     if(head!=nullptr)head->prev=&(_data->nxt);
     _data->prev=&head;
+    head=_data;
 }
 Value* Use::GetValue(){return usee;}
 
 User* Use::GetUser(){return fat;}
 
+User*& Use::SetUser(){return fat;}
+
+Value*& Use::SetValue(){return usee;}
+
 Type* Value::GetType(){
     return tp;
 }
 
-InnerDataType Value::GetTypeEnum(){return tp->GetTypeEnum();}
+InnerDataType Value::GetTypeEnum(){return GetType()->GetTypeEnum();}
 
 
 
@@ -39,40 +46,31 @@ std::string Value::GetName(){
 }
 
 void Value::print(){
-    if(auto tmp=dynamic_cast<Function*>(this))
+    if(isConst())
+        std::cout<<GetName();
+    else if(auto tmp=dynamic_cast<Function*>(this))
         std::cout<<"@"<<tmp->GetName();
     else if(auto tmp=dynamic_cast<BuildInFunction*>(this))
         std::cout<<"@"<<tmp->GetName();
-    else if(auto tmp=dynamic_cast<ConstIRInt*>(this))
-        std::cout<<tmp->GetVal();
-    else if(auto tmp=dynamic_cast<ConstIRFloat*>(this))
-        std::cout<<tmp->GetVal();
-    else if(GetName()[1]=='g')
+    else if(auto tmp=dynamic_cast<MemcpyHandle*>(this))
+        std::cout<<"@"<<tmp->GetName();
+    else if(GetName().substr(0,2)==".g")
         std::cout<<"@"<<GetName();
-    else
+    else if(GetName()=="undef")
+        std::cout<<GetName();
+    else 
         std::cout<<"%"<<GetName();
 }
 
 //replace all uses with transferred value
 void Value::RAUW(Value* val){
-    UserList list=this->userlist;
-    /*tranverse the userlist and replace value*/
-    for(auto use=list.begin();use!=list.end();++use){
-        User *user=(*use)->GetUser();
-
-        auto& uselist=user->Getuselist();
-        using UsePtr=decltype(uselist[0]);
-
-        auto it=std::find_if(uselist.begin(),uselist.end(),[this](UsePtr& tmp)->bool{
-            return tmp.get()->GetValue()==this;
-        });
-        //this 一定在他的User的uselist value中，不用判断是否来到end
-        //在User的uselist中删除掉it
-        uselist.erase(it);
-
-        Use *tmp=new Use(user,val);
-        val->add_user(tmp);
-        user->add_use(val);
+    UserList& list=this->userlist;
+    Use*& Head=list.Front();
+    while(Head){
+        Head->usee=val;
+        Use* tmp=Head->nxt;
+        val->userlist.push_front(Head);
+        Head=tmp;
     }
 }
 
@@ -86,24 +84,69 @@ User::User():Value(VoidType::NewVoidTypeGet()){
 User::User(Type* _tp):Value(_tp){
 }
 
-Value* User::GetDef(){return static_cast<Value*>(this);}
+void User::ClearRelation(){
+    assert(this->GetUserlist().is_empty()&&"the head must be nullptr!");
+    for(auto& use:uselist){
+        (*use->prev)=use->nxt;
+        if(use->nxt!=nullptr)
+          use->nxt->prev=use->prev;
+    }
+}
 
-ConstIRInt::ConstIRInt(int _val):Value(IntType::NewIntTypeGet()),val(_val){};
+Value* User::GetDef(){return dynamic_cast<Value*>(this);}
+
+ConstantData::ConstantData(Type* _tp):Value(_tp){}
+
+ConstIRBoolean::ConstIRBoolean(bool _val):ConstantData(BoolType::NewBoolTypeGet()),val(_val){
+    if(val)name="true";
+    else name="false";
+};
+
+ConstIRInt::ConstIRInt(int _val):ConstantData(IntType::NewIntTypeGet()),val(_val){name=std::to_string(val);};    
 
 int ConstIRInt::GetVal(){
     return val;
 }
 
-void ConstIRInt::ir_mark(){
-    return;
-}
-
-ConstIRFloat::ConstIRFloat(float _val):Value(FloatType::NewFloatTypeGet()),val(_val){};
+ConstIRFloat::ConstIRFloat(float _val):ConstantData(FloatType::NewFloatTypeGet()),val(_val){
+    double tmp=val;
+    std::stringstream ss;
+    ss<<"0x"<<std::hex<<*(reinterpret_cast<long long*>(&tmp));
+    name=ss.str();
+};
 
 float ConstIRFloat::GetVal(){
     return val;
 }
 
-void ConstIRFloat::ir_mark(){
-    return;
+ConstIRBoolean* ConstIRBoolean::GetNewConstant(bool _val){
+    static ConstIRBoolean* true_const=new ConstIRBoolean(true);
+    static ConstIRBoolean* false_const=new ConstIRBoolean(false);
+    if(_val)return true_const;
+    else return false_const;
+}
+
+bool ConstIRBoolean::GetVal(){
+    return val;
+}
+
+ConstIRInt* ConstIRInt::GetNewConstant(int _val){
+    static std::map<int,ConstIRInt*> int_const_map;
+    if(int_const_map.find(_val)==int_const_map.end())
+        int_const_map[_val]=new ConstIRInt(_val);
+    return int_const_map[_val];
+}
+
+ConstIRFloat* ConstIRFloat::GetNewConstant(float _val){
+    static std::map<float,ConstIRFloat*> float_const_map;
+    if(float_const_map.find(_val)==float_const_map.end())
+        float_const_map[_val]=new ConstIRFloat(_val);
+    return float_const_map[_val];
+}
+
+ConstPtr::ConstPtr(Type* _tp):ConstantData(_tp){}
+
+ConstPtr* ConstPtr::GetNewConstant(Type* _tp){
+    static ConstPtr* const_ptr=new ConstPtr(_tp);
+    return const_ptr;
 }

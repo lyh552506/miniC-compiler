@@ -1,31 +1,13 @@
 #include "dominant.hpp"
-//一个basicblock的所以前驱即找他的userlist
-//所有后继找这个basicblock块的最后一个跳转语句
-
-void dominance::computeDF(int x) {
-  for (auto de : node[x].des) { // 找到结点x的所有后继结点，计算DF_local
-    if (node[de].idom != x) { // de是x的一个后继并且x不是de的严格支配节点
-      df[x].df.push_front(de);
-    }
-  }
-  // 计算DP_up
-  for (auto child : node[x].idom_child) {
-    computeDF(child);
-    for (auto frontier : df[child].df) {
-      if (node[frontier].idom != x || x == frontier) {
-        df[x].df.push_front(frontier);
-      }
-    }
-  }
-}
 
 void dominance::Init() {
-  auto bbs = thisFunc.GetBasicBlock();
+  auto &bbs = thisFunc->GetBasicBlock();
   for (auto &bb : bbs) {
-    // List<User> _User = bb->getInstList();
     User *Inst = bb->back(); //获取到最后一条指令
+    node[bb->num].thisBlock = bb.get();
+
     if (CondInst *cond = dynamic_cast<CondInst *>(Inst)) {
-      auto uselist = cond->Getuselist();
+      auto &uselist = cond->Getuselist();
       BasicBlock *des_true = dynamic_cast<BasicBlock *>(uselist[1]->GetValue());
       BasicBlock *des_false =
           dynamic_cast<BasicBlock *>(uselist[2]->GetValue());
@@ -37,20 +19,13 @@ void dominance::Init() {
       node[des_false->num].rev.push_front(bb->num);
 
     } else if (UnCondInst *uncond = dynamic_cast<UnCondInst *>(Inst)) {
-      auto uselist = uncond->Getuselist();
+      auto &uselist = uncond->Getuselist();
       BasicBlock *des = dynamic_cast<BasicBlock *>(uselist[0]->GetValue());
 
       node[bb->num].des.push_front(des->num);
       node[des->num].rev.push_front(bb->num);
     }
   }
-
-  // for (int i = 0; i < m; i++) { // u-->v
-  //   int u, v;
-  //   scanf("%d%d", &u, &v); // TODO 需要适配后续CFG流图
-  //   node[u].des.push_front(v);
-  //   node[v].rev.push_front(u);
-  // }
 }
 
 void dominance::DFS(int pos) {
@@ -64,28 +39,6 @@ void dominance::DFS(int pos) {
       node[p].father = pos;
     }
   }
-}
-
-void dominance::DfsDominator(int root) {
-  int DfsNum = 0;
-  std::vector<std::pair<int, std::forward_list<int>::iterator>> worklists;
-  std::forward_list<int>::iterator it1 = node[root].idom_child.begin();
-  worklists.push_back(std::make_pair(root, it1));
-  node[root].DfsIn = DfsNum++;
-  while (!worklists.empty()) {
-    int index = worklists.back().first;
-    std::forward_list<int>::iterator it = worklists.back().second;
-    if (it == node[index].des.end()) { //孩子全部访问完毕，则添加dfsout
-      node[index].DfsOut = DfsNum++;
-      worklists.pop_back();
-    } else {
-      int nxt = *it;
-      ++worklists.back().second;
-      worklists.push_back(std::make_pair(nxt, node[nxt].idom_child.begin()));
-      node[nxt].DfsIn = DfsNum++;
-    }
-  }
-  IsDFSValid = true;
 }
 
 void dominance::find_dom() {
@@ -124,9 +77,9 @@ void dominance::find_dom() {
 }
 
 void dominance::build_tree() {
-  for (int i = 2; i <= block_num; i++) {
+  for (int i = 1; i < block_num; i++) {
     int idom = IDOM(i);
-    if (idom > 0) {
+    if (idom >= 0) {
       node[idom].idom_child.push_front(i);
     }
   }
@@ -134,26 +87,42 @@ void dominance::build_tree() {
 
 /// @brief 准备计算支配树
 void dominance::dom_begin() {
-  Init(); // 记录有向边的关系
-  BasicBlock *EntryBB = thisFunc.front_block();
+  BasicBlock *EntryBB = thisFunc->front_block();
   DFS(EntryBB->num);
   find_dom();   // 寻找支配节点
   build_tree(); // 构建支配树
-  // computeDF(1);
 }
 
+/// @brief 判断bb1是否dominate bb2
 bool dominance::dominates(BasicBlock *bb1, BasicBlock *bb2) {
   if (!IsDFSValid) {
-    DfsDominator(1);
+    DfsDominator(0);
   }
-  int node_bb1 = vertex[bb1->dfs];
-  int node_bb2 = vertex[bb2->dfs];
+  Node &n1 = node[bb1->num];
+  Node &n2 = node[bb2->num];
 
-  return (node[node_bb1].DfsIn <= node[node_bb2].DfsIn) &&
-         (node[node_bb1].DfsOut >= node[node_bb2].DfsOut);
+  return (n1.DfsIn <= n2.DfsIn) && (n1.DfsOut >= n2.DfsOut);
 }
 
-BasicBlock *dominance::DfsToBB(int d) {
-  int index = vertex[d];
-  return node[index].thisBlock;
+void dominance::DfsDominator(int root) {
+  int DfsNum = 0;
+  std::vector<std::pair<int, std::forward_list<int>::iterator>> worklists;
+  std::forward_list<int>::iterator it1 = node[root].idom_child.begin();
+  worklists.push_back(std::make_pair(root, it1));
+  node[root].DfsIn = DfsNum++;
+
+  while (!worklists.empty()) {
+    int index = worklists.back().first;
+    std::forward_list<int>::iterator it = worklists.back().second;
+    if (it == node[index].des.end()) { //孩子全部访问完毕，则添加dfsout
+      node[index].DfsOut = DfsNum++;
+      worklists.pop_back();
+    } else {
+      int nxt = *it;
+      ++worklists.back().second;
+      worklists.push_back(std::make_pair(nxt, node[nxt].idom_child.begin()));
+      node[nxt].DfsIn = DfsNum++;
+    }
+  }
+  IsDFSValid = true;
 }

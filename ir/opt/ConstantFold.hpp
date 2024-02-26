@@ -11,35 +11,38 @@
 //===----------------------------------------------------------------------===//
 #pragma once
 #include "CFG.hpp"
+#include "dominant.hpp"
 class ConstantFolding
 {
+using DNode=dominance::Node*;
+
 /// ConstantFoldInstruction - Try to constant fold the specified instruction.
 /// If successful, the constant result is returned, if not, null is returned.
 /// Note that this fails if not all of the operands are constant.  Otherwise,
 /// this function can only fail when attempting to fold instructions like loads
 /// and stores, which have no constant expression form.
-Value *ConstantFoldInstruction(User* inst);
+public:
+Value* ConstantFoldInstruction(User* inst, BasicBlock* block);
+
+Value* ConstantFoldPhiInst(PhiInst* inst);
 /// ConstantFoldConstantExpression - Attempt to fold the constant expression.
 /// If successful, the constant result is result is returned, if not, null is
 /// returned.
-// Operand *ConstantFoldConstantExpression(const const)
+ConstantData* ConstantFoldConstantExpression(ConstantExpr* _ConstantExpr);
 
 /// ConstantFoldInstOperands - Attempt to constant fold an instruction with the
 /// specified operands.  If successful, the constant result is returned, if not,
 /// null is returned.  Note that this function can fail when attempting to
 /// fold instructions like loads and stores, which have no constant expression
 /// form.
-Value *ConstantFoldInstOperands(User* inst, std::vector<Value*> _Operands);
+ConstantData *ConstantFoldInstOperands(User* inst, std::vector<ConstantData*> _Operands);
 
 /// ConstantFoldCompareInstOperands - Attempt to constant fold a compare
 /// instruction (icmp/fcmp) with the specified operands.  If it fails, it
 /// returns a constant expression of the specified operands.
-Value *ConstantFoldCompareInstOperands(unsigned Pred, Value* LHS, Value* RHS);
+ConstantData *ConstantFoldCompareInstOperands(BasicBlock* Pred, Value* LHS, Value* RHS);
 
-/// ConstantFoldLoadFromConstPtr - Return the value that a load from C would
-/// produce if it is constant and determinable.  If this is not determinable,
-/// return null.
-Value *ConstantFoldLoadFromConstPtr(Value* _Const, Type* type);
+ConstantData *ConstantFoldLoadInst(const LoadInst* _LoadInst);
 
 /// canConstantFoldCallTo - Return true if its even possible to fold a call to
 /// the specified function.
@@ -47,6 +50,34 @@ bool canConstantFoldCallto(User* inst);
 
 /// ConstantFoldCall - Attempt to constant fold a call to the specified function
 /// with the specified arguments, returning null if unsuccessful.
-Value *ConstantFoldCall(Function* func, std::vector<Value*> Operands);
+ConstantData *ConstantFoldCall(Function* func, std::vector<ConstantData*> Operands);
+
+/// ConstantFoldBinaryOpOperands - Attempt to constant fold a binary operation with the
+/// specified operands. If it fails, it returns a constant expression of the specified
+/// operands.
+ConstantData *ConstantFoldBinaryOpOperands(BinaryInst::Operation Opcode, Value* LHS, Value* RHS);
+
+/// One of Op0/Op1 is a Constant expr;
+/// Attempt to symbolically evaluate the result of a binary operator merging
+/// these together
+ConstantData *SymbolicallyEvaluateBinop(BinaryInst::Operation Opcode, Value* Op0, Value* Op1);
+
+// 沿dominant tree 从 entry 开始按BFS顺序遍历BasicBlock
+void bfsTraversal(Function* func, dominance& dom);
+
+
+bool isConstantAssignment(User* inst); //如果是常量赋值或者常量计算的结果
+void propConstToRef(User* inst); //用常量值替换该变量的所有引用
+bool isBranchAndConstPredicate(User* inst); //如果是常量值的分支条件
+void changeCondBranchToAbsBranchAndMark(User* inst); //替换为强制跳转，并标记另一个分支不可达
+bool isPhi(User* inst){return dynamic_cast<PhiInst*>(inst);};
+bool isOneBlockUnreachable(User* inst); //有一个基本块不可达
+bool IsSameValPre(User* inst); //两个基本块的值相同
+void propPhiToRef(User* inst); //将可达块的值传播到对该指令的引用
+void RunOnBlock(BasicBlock* block);
+// 处理BinaryInst
+ConstantData* ConstantFoldBinaryInst(User* inst, BasicBlock* block);
+public:
+void Pass(Function* func, dominance& dom);
 
 };
