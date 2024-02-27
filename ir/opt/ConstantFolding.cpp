@@ -23,7 +23,7 @@ Value* ConstantFolding::ConstantFoldInstruction(User* inst, BasicBlock* block)
     if(LoadInst* _LoadInst = dynamic_cast<LoadInst*>(inst))
         return ConstantFoldLoadInst(_LoadInst);
     if(BinaryInst* _BinaryInst = dynamic_cast<BinaryInst*>(inst))
-        return ConstantFoldBinaryInst(_BinaryInst, block);
+        return ConstantFoldBinaryInst(_BinaryInst);
     std::vector<ConstantData*> Operands;
     for(auto &_Operand : inst->Getuselist())
     {
@@ -45,139 +45,106 @@ Value* ConstantFolding::ConstantFoldPhiInst(PhiInst* inst)
     {
         if(auto _UndefValue = dynamic_cast<UndefValue*>(income))
             continue;
-        auto *_Constant = dynamic_cast<ConstantData*>(income);
-        if(!_Constant)
+        if(!dynamic_cast<ConstantData*>(income))
             return nullptr;
-        if(CommonValue && _Constant != CommonValue)
+        if(CommonValue && income != CommonValue)
             return nullptr;
-        CommonValue = _Constant;
+        CommonValue = income;
     }
     return CommonValue ? CommonValue : UndefValue::get(inst->GetType());
 }
 
-// void ConstantFolding::ConstantFoldBinaryInst(User* inst, BasicBlock* block)
-// {
-//     if(auto binaryInst = dynamic_cast<BinaryInst*>(inst))
-//     {
-//         Value* lhs = binaryInst->GetOperand(0);
-//         Value* rhs = binaryInst->GetOperand(1);
-//         ConstantData* foldedResult = ConstantFoldBinaryOpOperands(binaryInst->GetOpcode(), lhs, rhs);
-//         if(foldedResult)
-//         {
-//             // Replace the binary instruction with the folded result
-//             block->ReplaceInstruction(inst, foldedResult);
-//         }
-//     }
-// }
-// ConstantData* ConstantFolding::ConstantFoldBinaryOpOperands(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
-// {
-//     if(auto *lhsConst = dynamic_cast<ConstantData*>(LHS))
-//     {
-//         if(auto *rhsConst = dynamic_cast<ConstantData*>(RHS))
-//         {
-//             return ConstantFoldBinaryOpOperands(Opcode, lhsConst, rhsConst);
-//         }
-//     }
-//     return nullptr;
-// }
-
-// ConstantData* ConstantFolding::ConstantFoldConstantExpression(ConstantExpr* _ConstantExpr)
-// {
-//     // 获取常量表达式的操作符和操作数
-//     Value* Opcode = _ConstantExpr->getOpcode();
-//     unsigned Opcode = _ConstantExpr->getOpcode();
-//     Constant* LHS = _ConstantExpr->getOperand(0);
-//     Constant* RHS = _ConstantExpr->getOperand(1);
-
-//     // 根据操作符执行相应的折叠操作
-//     switch (Opcode)
-//     {
-//         case Instruction::Add:
-//         {
-//             // 执行加法操作
-//             Constant* Result = ConstantExpr::getAdd(LHS, RHS);
-//             return new ConstantData(Result);
-//         }
-//         case Instruction::Sub:
-//         {
-//             // 执行减法操作
-//             Constant* Result = ConstantExpr::getSub(LHS, RHS);
-//             return new ConstantData(Result);
-//         }
-//         // 其他操作符的处理...
-
-//         default:
-//             // 无法折叠的操作符，返回空指针
-//             return nullptr;
-//     }
-// }
-// Constant *llvm::ConstantFoldConstantExpression(const ConstantExpr *CE,
-//                                                const DataLayout &DL,
-//                                                const TargetLibraryInfo *TLI) {
-//   SmallPtrSet<ConstantExpr *, 4> FoldedOps;
-//   return ConstantFoldConstantExpressionImpl(CE, DL, TLI, FoldedOps);
-// }
-
-Value* ConstantFolding::*SymbolicallyEvaluateBinop(BinaryInst::Operation Opcode, Value* Op0, Value* Op1)
+Value* ConstantFolding::ConstantFoldBinaryInst(BinaryInst* inst)
 {
-    int Int_Val0 = dynamic_cast<ConstIRInt*>(Op0)->GetVal();
-    int Int_Val1 = dynamic_cast<ConstIRInt*>(Op1)->GetVal();
-    float float_Val0 = dynamic_cast<ConstIRFloat*>(Op0)->GetVal();
-    float float_Val1 = dynamic_cast<ConstIRFloat*>(Op1)->GetVal();
+    Value* LHS = inst->Getuselist()[0]->GetValue();
+    Value* RHS = inst->Getuselist()[1]->GetValue();
+    assert(LHS->isConst() && RHS->isConst());
+    if(auto iNt = dynamic_cast<ConstIRInt*>(LHS))
+        ConstantFoldBinaryInt(inst, LHS, RHS);
+    if(auto fLoat = dynamic_cast<ConstIRFloat*>(RHS))
+        ConstantFoldBinaryFloat(inst, LHS, RHS);
+    
+} 
+Value* ConstantFolding::ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Value* RHS)
+{
+    int LVal = dynamic_cast<ConstIRInt*>(LHS)->GetVal();
+    int RVal = dynamic_cast<ConstIRInt*>(RHS)->GetVal();
+    BinaryInst::Operation Opcode = inst->GetOpcode(inst);
+    int Result;
     switch(Opcode)
     {
         case BinaryInst::Op_Add:
-        {
-            return ConstIRInt::GetNewConstant(Int_Val0 + Int_Val1);
-        }
+            Result = LVal + RVal;
         case BinaryInst::Op_Sub:
-        {}
+            Result = LVal - RVal;
         case BinaryInst::Op_Mul:
-        {}
+            Result = LVal * RVal;
         case BinaryInst::Op_Div:
-        {}
+            Result = LVal / RVal;
         case BinaryInst::Op_And:
-        {}
+            Result = (LVal && RVal);
         case BinaryInst::Op_Or:
-        {}
+            Result = (LVal || RVal);
         case BinaryInst::Op_Mod:
-        {}
+            Result = (LVal % RVal);
         case BinaryInst::Op_E:
-        {}
+            Result = (LVal == RVal);
         case BinaryInst::Op_NE:
-        {}
+            Result = (LVal != RVal);
         case BinaryInst::Op_GE:
-        {}
+            Result = (LVal >= RVal);
         case BinaryInst::Op_L:
-        {}
+            Result = (LVal < RVal);
         case BinaryInst::Op_LE:
-        {}
+            Result = (LVal <= RVal);
         case BinaryInst::Op_G:
-        {}
-
+            Result = (LVal > RVal);
+        default:
+            assert(0);
     }
-    if(Opcode == BinaryInst::Op_And)
-    {
-        if(Op0->isConst() && Op1->isConst())
-            return new ConstantData(Op0 + Op1);
-    }
-    if(Opcode == BinaryInst::Op_Sub)
-    {
-
-    }
-    
-
-    return nullptr;
+    return dynamic_cast<Value*>(ConstIRInt::GetNewConstant(Result));
 }
 
-ConstantData ConstantFolding::*ConstantFoldBinaryOpOperands(unsigned Opcode, Value* LHS, Value* RHS)
+Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Value* RHS)
 {
-    
+    float LVal = dynamic_cast<ConstIRInt*>(LHS)->GetVal();
+    float RVal = dynamic_cast<ConstIRInt*>(RHS)->GetVal();
+    BinaryInst::Operation Opcode = inst->GetOpcode(inst);
+    float Result;
+    switch(Opcode)
+    {
+        case BinaryInst::Op_Add:
+            Result = LVal + RVal;
+        case BinaryInst::Op_Sub:
+            Result = LVal - RVal;
+        case BinaryInst::Op_Mul:
+            Result = LVal * RVal;
+        case BinaryInst::Op_Div:
+            Result = LVal / RVal;
+        case BinaryInst::Op_And:
+            Result = (LVal && RVal);
+        case BinaryInst::Op_Or:
+            Result = (LVal || RVal);
+        case BinaryInst::Op_E:
+            Result = (LVal == RVal);
+        case BinaryInst::Op_NE:
+            Result = (LVal != RVal);
+        case BinaryInst::Op_GE:
+            Result = (LVal >= RVal);
+        case BinaryInst::Op_L:
+            Result = (LVal < RVal);
+        case BinaryInst::Op_LE:
+            Result = (LVal <= RVal);
+        case BinaryInst::Op_G:
+            Result = (LVal > RVal);
+        default:
+            assert(0);
+    }
+    return dynamic_cast<Value*>(ConstIRFloat::GetNewConstant(Result));
 }
+
 
 ConstantData ConstantFolding::*ConstantFoldInstOperands(User* inst, std::vector<Value*> _Operands);
-
-ConstantData ConstantFolding::*ConstantFoldCompareInstOperands(User* Pred, Value* LHS, Value* RHS);
 
 ConstantData ConstantFolding::*ConstantFoldLoadFromConstPtr(Value* _Const, Type* type);
 

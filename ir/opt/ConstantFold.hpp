@@ -25,10 +25,10 @@ public:
 Value* ConstantFoldInstruction(User* inst, BasicBlock* block);
 
 Value* ConstantFoldPhiInst(PhiInst* inst);
-/// ConstantFoldConstantExpression - Attempt to fold the constant expression.
-/// If successful, the constant result is result is returned, if not, null is
-/// returned.
-ConstantData* ConstantFoldConstantExpression(ConstantExpr* _ConstantExpr);
+Value* ConstantFoldBinaryInst(BinaryInst* inst);
+Value* ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Value* RHS);
+Value* ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Value* RHS);
+
 
 /// ConstantFoldInstOperands - Attempt to constant fold an instruction with the
 /// specified operands.  If successful, the constant result is returned, if not,
@@ -76,7 +76,7 @@ bool IsSameValPre(User* inst); //两个基本块的值相同
 void propPhiToRef(User* inst); //将可达块的值传播到对该指令的引用
 void RunOnBlock(BasicBlock* block);
 // 处理BinaryInst
-ConstantData* ConstantFoldBinaryInst(User* inst, BasicBlock* block);
+ConstantData* ConstantFoldBinaryInst(User* inst);
 public:
 void Pass(Function* func, dominance& dom);
 
