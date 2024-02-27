@@ -1,11 +1,10 @@
 #include "CFG.hpp"
 #include "dominant.hpp"
+using DNode=dominance::Node*;
 class ConstantFolding
 {
-using DNode=dominance::Node*;
-
-
 public:
+Value* ConstantFoldInst(User* inst);
 // Handle PhiInst
 Value* ConstantFoldPhiInst(PhiInst* inst);
 // Handle BinaryInst

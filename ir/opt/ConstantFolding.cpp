@@ -1,7 +1,12 @@
 #include "ConstantFold.hpp"
-#include <queue>
 
-
+Value* ConstantFolding::ConstantFoldInst(User* inst)
+{
+    if(auto PHiInst = dynamic_cast<PhiInst*>(inst))
+        return ConstantFoldPhiInst(PHiInst);
+    if(auto BInaryInst = dynamic_cast<BinaryInst*>(inst))
+        return ConstantFoldBinaryInst(BInaryInst);
+}
 Value* ConstantFolding::ConstantFoldPhiInst(PhiInst* inst)
 {
     Value* CommonValue = nullptr;

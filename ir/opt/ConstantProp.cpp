@@ -1,41 +1,82 @@
 #include "ConstantProp.hpp"
 #include <set>
-
-class ConstantProp : public ConstantFolding
+#include <queue>
+void ConstantProp::RunOnFunc(Function* func)
 {
-
-
-bool ConstantProp::RunOnBlock(BasicBlock &block) 
-{
-  // Initialize the worklist to all of the instructions ready to process...
-    std::set<User*> WorkList;
-    for(User* inst:block)
-        WorkList.insert(inst);
-    while(!WorkList.empty())
+    for(BasicBlock* block:*func)
+        RunOnBlock(block);
+    for(BasicBlock* block:*func)
     {
-        User* inst = *WorkList.begin();
-        WorkList.erase(WorkList.begin()); // Get an element from the worklist
-        if(inst->Getuselist().empty())
+        
+        if(block->EndWithBranch())
         {
-            if(Value *C = ConstantFoldInstruction(inst, &block))
+            if(auto COndInst = dynamic_cast<CondInst*>(block->back()))
             {
-            // Add all of the users of this instruction to the worklist, they might
-            // be constant propagatable now...
-            for(Use* U:inst->GetUserlist())
-                WorkList.insert(U->GetUser());
-            // Replace all of the uses of a variable with uses of the constant.
-            inst->RAUW(C);
-            // Remove the dead instruction.
-            WorkList.erase(inst);
-            if(isInstructionTriviallyDead(inst))
-                inst->EraseFromParent();
-            // We made a change to the function.
-            changed = true;
+                BasicBlock* TrueBlock = dynamic_cast<BasicBlock*>(COndInst->Getuselist()[1].get()->GetValue());
+                BasicBlock* FalseBlock = dynamic_cast<BasicBlock*>(COndInst->Getuselist()[2].get()->GetValue());
+                if(Value* Cond = COndInst->Getuselist()[0].get()->GetValue())
+                {
+                    if(dynamic_cast<ConstIRInt*>(Cond)->GetVal() == 0)
+                    {
+                        COndInst->EraseFromParent();
+                        COndInst->ClearRelation();
+                        //ToDo: remove this block from its succblock's preblock
+                        for(BasicBlock* Succ_Block:(COndInst->Succ_Block))
+                        {
+                            Succ_Block->Del_Pre();
+                            if(Succ_Block != FalseBlock)
+                            {
+                                for(User* inst:*Succ_Block)
+                                {
+                                    if(auto PHiInst = dynamic_cast<PhiInst*>(inst))
+                                    {
+                                        for(int i = 0; i < PHiInst->PhiRecord.size(); i++)
+                                        {
+                                            auto test = PHiInst->PhiRecord[i].second();
+                                        }
+                                    }
+                                }
+                            }
+                        
+                        }
+                    }
+                }
+            }   
         }
-        return changed;
-    }
     }
 }
+// bool ConstantProp::RunOnBlock(BasicBlock &block) 
+// {
+//   // Initialize the worklist to all of the instructions ready to process...
+//     std::set<User*> WorkList;
+//     for(User* inst:block)
+//         WorkList.insert(inst);
+//     while(!WorkList.empty())
+//     {
+//         User* inst = *WorkList.begin();
+//         WorkList.erase(WorkList.begin()); // Get an element from the worklist
+//         if(!inst->Getuselist().empty())
+//         {
+//             ConstantFolding* ConstantFold;
+//             if(Value *C = ConstantFold->ConstantFoldInst(inst))
+//             {
+//             // Add all of the users of this instruction to the worklist, they might
+//             // be constant propagatable now...
+//             for(Use* U:inst->GetUserlist())
+//                 WorkList.insert(U->GetUser());
+//             // Replace all of the uses of a variable with uses of the constant.
+//             inst->RAUW(C);
+//             // Remove the dead instruction.
+//             WorkList.erase(inst);
+//             if(isInstructionTriviallyDead(inst))
+//                 inst->EraseFromParent();
+//             // We made a change to the function.
+//             changed = true;
+//         }
+//         return changed;
+//     }
+//     }
+// }
 
 void ConstantProp::Pass(Function* func, dominance& dom)
 {
@@ -73,7 +114,10 @@ void ConstantProp::bfsTraversal(Function* func, dominance& dom)
 
 bool isConstantAssignment(User* inst)
 {
-
+    // Check if the instruction is a constant assignment
+    // Return true if it is, otherwise return false
+    // TODO: Implement the logic to determine if the instruction is a constant assignment
+    return false;
 }
 /*
     沿CFG对应的 dominant tree 从entry开始按BFS顺序遍历BasicBlock

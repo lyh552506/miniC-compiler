@@ -47,9 +47,9 @@ public:
     std::forward_list<int> df;
     DF() = default;
   };
-
-private:
   std::vector<Node> node;
+private:
+
   std::vector<int> vertex;       // 记录dfs对应的结点
   std::vector<int> bucket[200];  // bucket[u]代表sdom为u的点集
   std::vector<DSU> dsu;          //辅助数据结构实现路径压缩
