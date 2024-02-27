@@ -128,3 +128,7 @@ void dominance::DfsDominator(int root) {
   }
   IsDFSValid = true;
 }
+
+BasicBlock* dominance::find_lca(BasicBlock* bb1,BasicBlock* bb2){
+  
+}
