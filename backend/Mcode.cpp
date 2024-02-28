@@ -106,7 +106,9 @@ void MachineFunction::set_lable_map(std::string name, std::string lable) {
 void MachineFunction::set_alloca_and_num() {
     alloca_num = 0;
     offset = 16;
-    for (auto& Block : this->func->GetBasicBlock()) {
+    
+    for (auto it = this->func->begin(); it != this->func->end(); ++it) {
+        BasicBlock* Block = *it;
         for (auto Inst : *Block) {
             if (auto Tempinst = dynamic_cast<AllocaInst*>(Inst)) {
                 if(Tempinst->GetType()->GetTypeEnum() == InnerDataType::IR_Value_VOID) {

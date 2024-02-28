@@ -334,92 +334,92 @@ attributes #6 = { nounwind }
 attributes #7 = { cold }
 define i32 @whileIf(){
 .1:
-  %b_0 = alloca i32
-  %a_0 = alloca i32
-  store i32 0, i32* %a_0
-  store i32 0, i32* %b_0
-  %.8 = load i32, i32* %a_0
-  %.9 = load i32, i32* %b_0
-  %.10 = add i32 %.8, %.9
-  br label %.11wc7 
-.11wc7:
-  %.15 = load i32, i32* %a_0
-  %.17 = icmp slt i32 %.15, 100
-  br i1 %.17, label %.12wloop.7.15, label %.13wn15
-.12wloop.7.15:
-  %.22 = load i32, i32* %a_0
-  %.24 = icmp eq i32 %.22, 5
-  br i1 %.24, label %.20, label %.21
-.13wn15:
-  %.39 = load i32, i32* %b_0
-  ret i32 %.39 
+  %.5 = alloca i32
+  %.2 = alloca i32
+  store i32 0, i32* %.2
+  store i32 0, i32* %.5
+  %.7 = load i32, i32* %.2
+  %.8 = load i32, i32* %.5
+  %.9 = add i32 %.7, %.8
+  br label %.10wc7 
+.10wc7:
+  %.14 = load i32, i32* %.2
+  %.16 = icmp slt i32 %.14, 100
+  br i1 %.16, label %.11wloop.7.15, label %.12wn15
+.11wloop.7.15:
+  %.20 = load i32, i32* %.2
+  %.22 = icmp eq i32 %.20, 5
+  br i1 %.22, label %.18, label %.19
+.12wn15:
+  %.38 = load i32, i32* %.5
+  ret i32 %.38 
+.18:
+  store i32 25, i32* %.5
+  br label %.26 
 .19:
-  %.34 = load i32, i32* %a_0
-  %.36 = add i32 %.34, 1
-  store i32 %.36, i32* %a_0
-  br label %.11wc7 
-.20:
-  store i32 25, i32* %b_0
-  br label %.19 
-.21:
-  %.29 = load i32, i32* %a_0
-  %.31 = mul i32 %.29, 2
-  store i32 %.31, i32* %b_0
-  br label %.19 
+  %.28 = load i32, i32* %.2
+  %.30 = mul i32 %.28, 2
+  store i32 %.30, i32* %.5
+  br label %.26 
+.26:
+  %.33 = load i32, i32* %.2
+  %.35 = add i32 %.33, 1
+  store i32 %.35, i32* %.2
+  br label %.10wc7 
 }
 define i32 @main(){
-.42:
-  %.43at20 = call i32 @whileIf()
-  ret i32 %.43at20 
+.41:
+  %.42at20 = call i32 @whileIf()
+  ret i32 %.42at20 
 }
 whileIf:
     addi sp, sp, -32
     sd ra, 24(sp)
     sd s0, 16(sp)
     addi s0, sp, 32
-    sw .3, -24(s0)
-    sw .6, -20(s0)
-    lw .8, -24(s0)
-    lw .9, -20(s0)
-    addw .10, .8, .9
+    sw 0, -24(s0)
+    sw 0, -20(s0)
+    lw .7, -24(s0)
+    lw .8, -20(s0)
+    addw .9, .7, .8
     j .LBB0_1
 .LBB0_1:
-    lw .15, -24(s0)
+    lw .14, -24(s0)
 Error: No Such Binaryinst!
 Error: No Such Instruction.
 Error: No Such Instruction.
 .LBB0_2:
-    lw .22, -24(s0)
+    lw .20, -24(s0)
 Error: No Such Binaryinst!
 Error: No Such Instruction.
 Error: No Such Instruction.
 .LBB0_3:
-    lw .39, -20(s0)
-    lw a0, .39
+    lw .38, -20(s0)
+    lw a0, .38
     ld ra, 24(sp)
     ld s0, 16(sp)
     addi sp, sp, 32
     ret
 .LBB0_4:
-    lw .34, -24(s0)
-    addw .36, .34, .35
-    sw .36, -24(s0)
-    j .LBB0_1
+    sw 25, -20(s0)
+    j .LBB0_6
 .LBB0_5:
-    sw .26, -20(s0)
-    j .LBB0_4
+    lw .28, -24(s0)
+    mulw .30, .28, 2
+    sw .30, -20(s0)
+    j .LBB0_6
 .LBB0_6:
-    lw .29, -24(s0)
-    mulw .31, .29, .30
-    sw .31, -20(s0)
-    j .LBB0_4
+    lw .33, -24(s0)
+    addw .35, .33, 1
+    sw .35, -24(s0)
+    j .LBB0_1
 main:
     addi sp, sp, -32
     sd ra, 24(sp)
     sd s0, 16(sp)
     addi s0, sp, 32
     call whileIf
-    lw a0, .43at20
+    lw a0, .42at20
     ld ra, 24(sp)
     ld s0, 16(sp)
     addi sp, sp, 32

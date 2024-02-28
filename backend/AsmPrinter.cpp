@@ -20,8 +20,10 @@ void PrintCode(Module* Unit) {
         
         /*MachineBasicBlock*/
         std::vector<MachineBasicBlock*> Mvector;
-        for (auto& Block : Func->GetBasicBlock()) {
-            MachineBasicBlock* machineblock = new MachineBasicBlock(Block.get(), machinefunction);
+
+        for (auto it = Func->begin(); it != Func->end(); ++it) {
+            BasicBlock* Block = *it;
+            MachineBasicBlock* machineblock = new MachineBasicBlock(Block, machinefunction);
             machineblock->set_lable(func_num, block_num);
             machinefunction->set_lable_map(Block->GetName(), machineblock->get_name());
             Mvector.push_back(machineblock);

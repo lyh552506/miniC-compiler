@@ -1,5 +1,6 @@
 #include "parser.hpp"
 // #include "opt/dominant.hpp"
+#include "AsmPrinter.hpp"
 #include <fstream>
 extern FILE *yyin;
 
