@@ -225,5 +225,5 @@ class MachineUnit {
     MachineUnit(Module* unit);
     void addMachineFunction(MachineFunction* mfuncs);
     std::vector<MachineFunction*> getMachineFunctions();
-    void print();
+    //void print();
 };

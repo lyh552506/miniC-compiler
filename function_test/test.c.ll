@@ -385,13 +385,11 @@ whileIf:
     j .LBB0_1
 .LBB0_1:
     lw .14, -24(s0)
-Error: No Such Binaryinst!
-Error: No Such Instruction.
+    icmpl .16, .14, 100
 Error: No Such Instruction.
 .LBB0_2:
     lw .20, -24(s0)
-Error: No Such Binaryinst!
-Error: No Such Instruction.
+    icmpe .22, .20, 5
 Error: No Such Instruction.
 .LBB0_3:
     lw .38, -20(s0)

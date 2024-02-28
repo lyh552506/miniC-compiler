@@ -181,12 +181,12 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
             for (char& c : op) {
                 c = std::tolower(c);
             }
-            opcode = "icmp" + op;
+            opcode = "icmp_" + op;
             if( op == "Op_E") {
-                op = op + "q";
+                opcode = opcode + "q";
             }
             else if (op == "Op_G" || op == "Op_L") {
-                op = op +"t";
+                opcode = opcode +"t";
             }
             else {}
         //}
