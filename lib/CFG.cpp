@@ -280,7 +280,7 @@ std::string BinaryInst:: GetOperation() {
     return opcode;
 }
 
-BinaryInst::Operation BinaryInst::getopration(){
+int BinaryInst::getopration(){
     return op;
 }
 
