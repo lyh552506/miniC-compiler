@@ -7,20 +7,22 @@ void RegAlloca(Function* function) {
 //打印机器指令
 void PrintCode(Module* Unit) {
     int func_num = 0;
+    MachineUnit* machineunit = new MachineUnit(Unit);
+
     /*MachineFunction*/
     for (auto& Func : Unit->GetFuncTion()) {
         int block_num = 0;
         //打印每个Func，及栈帧
-        MachineFunction* machinefunction = new MachineFunction(Func.get());
+        MachineFunction* machinefunction = new MachineFunction(Func.get(), machineunit);
         if (machinefunction == nullptr) {
             std::cout << "machinefunction is nullptr" << std::endl;
         }
+        machineunit->addMachineFunction(machinefunction);
         machinefunction->print_func_name();
         machinefunction->print_stack_frame();
         
         /*MachineBasicBlock*/
         std::vector<MachineBasicBlock*> Mvector;
-
         for (auto it = Func->begin(); it != Func->end(); ++it) {
             BasicBlock* Block = *it;
             MachineBasicBlock* machineblock = new MachineBasicBlock(Block, machinefunction);
@@ -42,6 +44,7 @@ void PrintCode(Module* Unit) {
                 //打印每个Inst
                 machineinst->print();
             }
+            /*MachineBlock End*/
             block_num++;
         }
         /*MachineFunction End*/

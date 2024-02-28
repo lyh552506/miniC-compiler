@@ -386,11 +386,11 @@ whileIf:
 .LBB0_1:
     lw .14, -24(s0)
     icmp_lt .16, .14, 100
-    branch .16, .11wloop.7.15, .12wn15
+    branch .16, .LBB0_2, .LBB0_3
 .LBB0_2:
     lw .20, -24(s0)
     icmp_eq .22, .20, 5
-    branch .22, .18, .19
+    branch .22, .LBB0_4, .LBB0_5
 .LBB0_3:
     lw .38, -20(s0)
     lw a0, .38

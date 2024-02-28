@@ -30,7 +30,7 @@ MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
     }
     else if (auto Tempinst = dynamic_cast<UnCondInst*>(&inst)) {
         machineinst = MatchUnCondInst(parent, Tempinst);
-    }  
+    }
     else if (auto Tempinst = dynamic_cast<CondInst*>(&inst)) {
         machineinst = MatchCondInst(parent, Tempinst);
     }

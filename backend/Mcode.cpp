@@ -38,11 +38,12 @@ void MachineInst::print() {
         std::string lable = mbb->get_parent()->get_lable(rd->GetName());
         std::cout << lable << std::endl;
     }
-    // else if (opcode == "branch") {
-    //     std::cout << "    " << opcode << " ";
-    //     std::string lable = mbb->get_parent()->get_lable(rd->GetName());
-    //     std::cout << lable << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl;
-    // }
+    else if (opcode == "branch") {
+        std::cout << "    " << opcode << " ";
+        std::string lable1 = mbb->get_parent()->get_lable(rs1->GetName());
+        std::string lable2 = mbb->get_parent()->get_lable(rs2->GetName());
+        std::cout << rd->GetName() << ", " << lable1 << ", " << lable2 << std::endl;
+    }
     else if (opcode == "call" ) {
         std::cout << "    " << opcode << " ";
         std::cout << rd->GetName() << std::endl;
@@ -101,7 +102,8 @@ void MachineBasicBlock::print_block_lable() {
 }
 
 /*MachineFunction*/
-MachineFunction::MachineFunction(Function* func) : func(func), offset(0), alloca_num(0), stacksize(0) {}
+MachineFunction::MachineFunction(Function* func, MachineUnit* unit) 
+    : func(func),  unit(unit), offset(0), alloca_num(0), stacksize(0) {}
 void MachineFunction::set_offset_map(std::string name, size_t offset) {
     offsetMap.insert(std::pair<std::string, size_t>(name, offset));
 }

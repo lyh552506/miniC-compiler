@@ -2,9 +2,9 @@
 #include "../lib/BaseCFG.hpp"
 #include "../lib/CFG.hpp"
 #include <variant>
+class MachineUnit;
 class MachineFunction;
 class MachineBasicBlock;
-
 class MachineInst : public User {
     protected:
     MachineBasicBlock* mbb;
@@ -193,6 +193,7 @@ class MachineBasicBlock {
 class MachineFunction {
     protected:
     Function* func;
+    MachineUnit* unit;
     size_t offset;
     int alloca_num;
     size_t stacksize;
@@ -200,7 +201,7 @@ class MachineFunction {
     std::map<std::string, std::string> lableMap;
     //std::map<size_t, std::string> offsetMap;
     public:
-    MachineFunction(Function* func);
+    MachineFunction(Function* func, MachineUnit* unit);
     void set_offset_map(std::string name, size_t offset);
     void set_lable_map(std::string name, std::string lable);
     void set_alloca_and_num();
