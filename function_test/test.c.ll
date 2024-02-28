@@ -351,44 +351,7 @@ define i32 @func(i32 %.12, i32 %.15, i32 %.18){
   store i32 %.15, i32* %.14
   store i32 %.18, i32* %.17
   store i32 1, i32* %.20
-  %.24at36 = call i32 @func2(i32 2)
-  store i32 %.24at36, i32* %.23
+  %.24at8 = call i32 @func2(i32 2)
+  store i32 %.24at8, i32* %.23
   %.28 = load i32, i32* %.17
-  %.29 = icmp sgt i32 %.28, 1
-  br i1 %.29, label %.26, label %.27
-.26:
-  %.31 = load i32, i32* %.11
-  %.32 = load i32, i32* %.14
-  %.33 = add i32 %.31, %.32
-  store i32 %.33, i32* %.20
-  br label %.35 
-.27:
-  %.37 = load i32, i32* %.11
-  %.38 = load i32, i32* %.14
-  %.39 = sub i32 %.37, %.38
-  store i32 %.39, i32* %.20
-  br label %.35 
-.35:
-  %.42 = load i32, i32* %.20
-  ret i32 %.42 
-}
-define i32 @func2(i32 %.3){
-.1:
-  %.7 = add i32 %.3, 2
-  ret i32 %.7 
-}
-define i32 @func(i32 %.12, i32 %.15, i32 %.18){
-.10:
-  %.24at36 = call i32 @func2(i32 2)
-  %.29 = icmp sgt i32 %.18, 1
-  br i1 %.29, label %.26, label %.27
-.26:
-  %.33 = add i32 %.12, %.15
-  br label %.35 
-.27:
-  %.39 = sub i32 %.12, %.15
-  br label %.35 
-.35:
-  %.44 = Phi i32 [%.39, %.27], [%.33, %.26]
-  ret i32 %.44 
-}
+  %.29 = ic

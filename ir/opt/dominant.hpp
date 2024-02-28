@@ -1,4 +1,4 @@
-// #pragma once
+#pragma once
 #include "CFG.hpp"
 #include "my_stl.hpp"
 #include <algorithm>

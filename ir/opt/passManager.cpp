@@ -11,10 +11,10 @@ void PassManager::Init_Pass() {
       Li[i]->num = i;
     if (InitpassRecorder[0]) {
       //dominance dom(f, Li.size());
-      std::unique_ptr<dominance>dom(new dominance(f, Li.size()));
-      //有了mem2reg才有后续的优化
+      //std::unique_ptr<dominance>dom(new dominance(f, Li.size()));      //有了mem2reg才有后续的优化
+      dominance dom(f,Li.size());
       if(InitpassRecorder[1])
-      Gvn_Gcm(dom.get(),f).init_pass();
+      Gvn_Gcm(&dom,f).init_pass();
     }
   }
 }

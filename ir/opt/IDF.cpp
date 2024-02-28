@@ -7,7 +7,7 @@ void IDF::SetLiveInBlock(std::set<BasicBlock *> &LiveInBlock) {
   uselivein = true;
 }
 
-void IDF::SetBBs(std::vector<std::unique_ptr<BasicBlock>> &bbs) {
+void IDF::SetBBs(std::vector<BasicBlock*>& bbs) {
   this->bbs = &bbs;
 }
 
@@ -48,7 +48,7 @@ void IDF::caculateIDF(std::vector<BasicBlock *> &IDFBlocks) {
       BasicBlock *bb = root->thisBlock; //获取对应与CFG上的结点
 
       for (auto succIndex : m_dom.node[bb->num].des) {
-        BasicBlock *succ = (*bbs)[succIndex].get();
+        BasicBlock *succ = (*bbs)[succIndex];
         DTNode succNode = &m_dom.node[succIndex]; //方便找到J-Edge
 
         DTNode temp = &m_dom.node[succNode->idom];

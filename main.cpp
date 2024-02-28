@@ -1,5 +1,6 @@
+#include "opt/dominant.hpp"
+#include "opt/passManager.hpp"
 #include "parser.hpp"
-// #include "opt/dominant.hpp"
 #include <fstream>
 #include <getopt.h>
 extern FILE *yyin;
@@ -28,6 +29,21 @@ int main(int argc, char **argv) {
   parse();
   Singleton<CompUnit *>()->codegen();
   Singleton<Module>().Test();
-  
+  std::unique_ptr<PassManager> passmanager(new PassManager);
+  int optionIndex, option;
+  while ((option = getopt_long(argc, argv, "", long_options, &optionIndex))!=-1) {
+    switch (option) {
+    case 0:
+      passmanager->IncludePass(0);
+      break;
+    case 1:
+      passmanager->IncludePass(1);
+      break;
+    default:
+      break;
+    }
+  }
+  passmanager->Init_Pass();
+  Singleton<Module>().Test();
   return 0;
 }

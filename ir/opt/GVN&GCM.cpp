@@ -1,7 +1,7 @@
 #include "GVN&GCM.hpp"
 
 void Gvn_Gcm::init_pass() {
-  BasicBlock *Entry = m_func->front_block();
+  BasicBlock *Entry = *(m_func->begin());
   caculateRPO(Entry);
   std::reverse(RPO.begin(), RPO.end());
   /*start to Gvn*/

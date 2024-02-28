@@ -167,8 +167,8 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
   auto &vect = Func.GetBasicBlock();
   auto it = std::find_if(vect.begin(), vect.end(),
-                         [bb](std::unique_ptr<BasicBlock> &base) -> bool {
-                           return base.get() == bb;
+                         [bb](BasicBlock* base) -> bool {
+                           return base == bb;
                          }); // get index
 
   int index = std::distance(vect.begin(), it); //获取下标

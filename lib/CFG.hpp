@@ -207,6 +207,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
+    std::vector<BasicBlock*> bbs;
     void InsertAlloca(AllocaInst* ptr);
     public:
     Function(InnerDataType _tp,std::string _id);
@@ -214,7 +215,9 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
+    void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
+    std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
 };
 class Module:public SymbolTable
 {

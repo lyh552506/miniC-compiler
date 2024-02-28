@@ -22,7 +22,7 @@
 
 /// @brief 获取指令的操作数
 template<typename T>
-User* GetOperand(T inst,int i){
+Value* GetOperand(T inst,int i){
    User* user=dynamic_cast<User*>(inst);
    assert(user);
    return user->Getuselist()[i]->GetValue();

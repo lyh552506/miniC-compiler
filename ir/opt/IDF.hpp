@@ -16,7 +16,7 @@ private:
    std::set<BasicBlock *>* DefineBlock;
    std::set<BasicBlock *>* LiveInBlocks;
    std::map<DTNode,unsigned> Level;//记录支配树上的结点的层级
-   std::vector<std::unique_ptr<BasicBlock>>* bbs;
+   std::vector<BasicBlock*>* bbs;
 public:
    IDF(dominance& dom):m_dom(dom),uselivein{false}
    {}
@@ -25,7 +25,7 @@ public:
 
    void SetLiveInBlock(std::set<BasicBlock *> &LiveInBlock);
 
-   void SetBBs(std::vector<std::unique_ptr<BasicBlock>>& bbs);
+   void SetBBs(std::vector<BasicBlock*>& bbs);
 
    void caculateDTlevel(DTNode node,int depth);
 
