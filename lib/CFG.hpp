@@ -185,6 +185,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
     int num=0;
+    bool visited=false;
 };
 
 class ExternFunction:public Value
@@ -218,6 +219,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
+    void push_bb(BasicBlock* bb){bbs.push_back(bb);}
 };
 class Module:public SymbolTable
 {

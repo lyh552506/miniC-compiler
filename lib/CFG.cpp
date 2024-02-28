@@ -89,7 +89,6 @@ bool AllocaInst::IsUsed(){
     return true;
 }
 
-std::map<Type*,UndefValue*> Undefs;
 
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
@@ -849,6 +848,7 @@ Operand Module::GenerateMemcpyHandle(Type* _tp,Operand oper){
 
 
 UndefValue* UndefValue::get(Type *Ty){
+    static std::map<Type*,UndefValue*> Undefs;
     UndefValue *& UV=Undefs[Ty];
     if(!UV)
       UV=new UndefValue(Ty);

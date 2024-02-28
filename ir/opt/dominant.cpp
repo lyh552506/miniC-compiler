@@ -2,8 +2,10 @@
 
 void dominance::Init() {
   auto &bbs = thisFunc->GetBasicBlock();
-  for (auto &bb : bbs) {
-    User *Inst = *(bb->end()); //获取到最后一条指令
+  for (int i = 0; i < bbs.size(); ++i)
+    bbs[i]->num=i;
+  for (auto bb : bbs) {
+    User *Inst = bb->back(); //获取到最后一条指令
     node[bb->num].thisBlock = bb;
 
     if (CondInst *cond = dynamic_cast<CondInst *>(Inst)) {

@@ -69,6 +69,8 @@ public:
   /// @param pos
   void DFS(int pos);
 
+  void caculateBBs();
+
 private:
   /// @brief 路径压缩，并更新最小sdom
   /// @param x

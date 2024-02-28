@@ -27,6 +27,3 @@ Value* GetOperand(T inst,int i){
    assert(user);
    return user->Getuselist()[i]->GetValue();
 }
-
-
-   

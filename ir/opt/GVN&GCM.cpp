@@ -12,6 +12,7 @@ void Gvn_Gcm::init_pass() {
 void Gvn_Gcm::GVN() {
   for (BasicBlock *BB : RPO) {
     For_inst_In(BB) {
+      //如果是二元操作指令，检查是否可以进行折叠
       if (BinaryInst *Bin = dynamic_cast<BinaryInst *>(inst)) {
         auto &uselist = Bin->Getuselist();
         Value *LVal = uselist[0]->usee;

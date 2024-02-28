@@ -7,7 +7,7 @@ void IDF::SetLiveInBlock(std::set<BasicBlock *> &LiveInBlock) {
   uselivein = true;
 }
 
-void IDF::SetBBs(std::vector<BasicBlock*>& bbs) {
+void IDF::SetBBs(std::vector<BasicBlock*> &bbs) {
   this->bbs = &bbs;
 }
 

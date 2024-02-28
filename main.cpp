@@ -1,3 +1,4 @@
+#include "opt/GVN&GCM.hpp"
 #include "opt/dominant.hpp"
 #include "opt/passManager.hpp"
 #include "parser.hpp"
@@ -29,21 +30,35 @@ int main(int argc, char **argv) {
   parse();
   Singleton<CompUnit *>()->codegen();
   Singleton<Module>().Test();
-  std::unique_ptr<PassManager> passmanager(new PassManager);
+  std::unique_ptr<PassManager>pass_manager(new PassManager);
+  
   int optionIndex, option;
-  while ((option = getopt_long(argc, argv, "", long_options, &optionIndex))!=-1) {
+
+  while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) != -1) {
     switch (option) {
     case 0:
-      passmanager->IncludePass(0);
+      pass_manager->IncludePass(0);
       break;
     case 1:
-      passmanager->IncludePass(1);
+      pass_manager->IncludePass(1);
       break;
-    default:
+    case 2:
+      std::cerr << "help" << std::endl;
       break;
     }
   }
-  passmanager->Init_Pass();
+  pass_manager->Init_Pass();
+  // auto f = Singleton<Module>().GetFuncTion()[0].get();
+  // auto &Li = Singleton<Module>().GetFuncTion()[0]->GetBasicBlock();
+  // for (auto bb = f->begin(); bb != f->end(); ++bb)
+  //   f->push_bb(*bb);
+  // for (int i = 0; i < Li.size(); ++i)
+  //   Li[i]->num = i;
+
+  // dominance dom(f, Li.size());
+
+  // Gvn_Gcm test(&dom, f);
+  // test.init_pass();
   Singleton<Module>().Test();
   return 0;
 }
