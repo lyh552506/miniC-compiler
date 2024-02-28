@@ -174,6 +174,7 @@ Operand UnCondInst::GetDef(){return nullptr;}
 
 UnCondInst::UnCondInst(BasicBlock* __des){
     add_use(__des);
+    Succ_Block.push_back(__des);
 }
 
 void UnCondInst::print(){
@@ -189,7 +190,9 @@ void UnCondInst::print(){
 CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse){
     add_use(__cond);
     add_use(__istrue);
+    Succ_Block.push_back(__istrue);
     add_use(__isfalse);
+    Succ_Block.push_back(__isfalse);
 }
 
 void CondInst::print(){
@@ -564,7 +567,21 @@ BasicBlock* BasicBlock::GenerateNewBlock(){
     master.add_block(tmp);
     return tmp;
 }
-
+std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
+{   
+    std::vector<BasicBlock*> Succ_Block;
+    User* inst = this->back();
+    if(auto UNCondInst = dynamic_cast<UnCondInst*>(inst))
+        Succ_Block.push_back(dynamic_cast<BasicBlock*>(UNCondInst->Getuselist()[0]->GetValue()));
+    else if(auto COndInst = dynamic_cast<CondInst*>(inst))
+    {
+        Succ_Block.push_back(dynamic_cast<BasicBlock*>(COndInst->Getuselist()[1]->GetValue()));
+        Succ_Block.push_back(dynamic_cast<BasicBlock*>(COndInst->Getuselist()[2]->GetValue()));
+    }
+    else
+        std::cerr << "There is no Succ Block" << std::endl;
+    return Succ_Block;
+}
 BasicBlock* BasicBlock::GenerateNewBlock(std::string name){
     BasicBlock* tmp=new BasicBlock(master);
     tmp->name+=name;
@@ -783,6 +800,13 @@ std::vector<Value*>& PhiInst::GetAllPhiVal(){
         Incomings.push_back(value.second);
     }
     return Incomings;
+}
+
+void PhiInst::Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord)
+{   if(_PhiRecord.find(CurrentNum) != _PhiRecord.end())
+        _PhiRecord.erase(CurrentNum);
+    else
+        std::cerr << "No such PhiRecord" << std::endl;
 }
 
 void Function::push_alloca(Variable* ptr){
