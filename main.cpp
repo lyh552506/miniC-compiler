@@ -1,6 +1,7 @@
 #include "parser.hpp"
 // #include "opt/dominant.hpp"
 #include <fstream>
+//#include "opt/GVN&GCM.hpp"
 extern FILE *yyin;
 
 void copyFile(const std::string &sourcePath,

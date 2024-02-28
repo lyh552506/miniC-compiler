@@ -92,6 +92,9 @@ private:
   /// @brief 支配节点查找
   void find_dom();
 
+  /// @brief 寻找两个block的lca
+  BasicBlock* find_lca(BasicBlock* bb1,BasicBlock* bb2);
+
   /// @brief 建立支配树
   void build_tree();
 
