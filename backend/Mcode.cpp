@@ -176,3 +176,13 @@ void MachineFunction::print_func_end() {
     std::cout << "    addi sp, sp, " << this->get_stacksize() << std::endl;
     std::cout << "    ret" << std::endl;
 }
+
+//MachineUnit
+MachineUnit::MachineUnit(Module* unit) : unit(unit) {}
+void MachineUnit::addMachineFunction(MachineFunction* mfuncs) {
+    this->mfuncs.push_back(mfuncs);
+}
+std::vector<MachineFunction*> MachineUnit::getMachineFunctions() {
+    return this->mfuncs;
+}
+

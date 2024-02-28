@@ -216,3 +216,14 @@ class MachineFunction {
     void print_stack_offset();
     void print_func_end();
 };
+
+class MachineUnit {
+    protected:
+    Module* unit;
+    std::vector<MachineFunction*> mfuncs;
+    public:
+    MachineUnit(Module* unit);
+    void addMachineFunction(MachineFunction* mfuncs);
+    std::vector<MachineFunction*> getMachineFunctions();
+    void print();
+};
