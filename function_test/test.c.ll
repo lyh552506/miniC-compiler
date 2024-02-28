@@ -385,12 +385,12 @@ whileIf:
     j .LBB0_1
 .LBB0_1:
     lw .14, -24(s0)
-    icmpl .16, .14, 100
-Error: No Such Instruction.
+    icmp_lt .16, .14, 100
+    branch .16, .11wloop.7.15, .12wn15
 .LBB0_2:
     lw .20, -24(s0)
-    icmpe .22, .20, 5
-Error: No Such Instruction.
+    icmp_eq .22, .20, 5
+    branch .22, .18, .19
 .LBB0_3:
     lw .38, -20(s0)
     lw a0, .38

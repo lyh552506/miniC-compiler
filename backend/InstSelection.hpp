@@ -14,10 +14,9 @@ MachineInst* MatchLoadInst(MachineBasicBlock* parent, LoadInst* inst);
 MachineInst* MatchFPTSI(MachineBasicBlock* parent, FPTSI* inst);
 MachineInst* MatchSITFP(MachineBasicBlock* parent, SITFP* inst);
 MachineInst* MatchUnCondInst(MachineBasicBlock* parent, UnCondInst* inst);
-//MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst);
+MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst);
 MachineInst* MatchCallInst(MachineBasicBlock* parent, CallInst* inst);
 MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst);
-// MachineInst* ConvertToMachineInst (std::variant<MachineBinaryInst*, MachineCmpInst*>& variant);
 MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst);
 
 MachineInst* InstSelect(MachineBasicBlock* parent, User& inst);

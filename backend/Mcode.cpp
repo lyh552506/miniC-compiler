@@ -38,6 +38,11 @@ void MachineInst::print() {
         std::string lable = mbb->get_parent()->get_lable(rd->GetName());
         std::cout << lable << std::endl;
     }
+    // else if (opcode == "branch") {
+    //     std::cout << "    " << opcode << " ";
+    //     std::string lable = mbb->get_parent()->get_lable(rd->GetName());
+    //     std::cout << lable << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl;
+    // }
     else if (opcode == "call" ) {
         std::cout << "    " << opcode << " ";
         std::cout << rd->GetName() << std::endl;

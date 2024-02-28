@@ -31,9 +31,9 @@ MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
     else if (auto Tempinst = dynamic_cast<UnCondInst*>(&inst)) {
         machineinst = MatchUnCondInst(parent, Tempinst);
     }  
-    // else if (auto Tempinst = dynamic_cast<CondInst*>(&inst)) {
-    //     machineinst = MatchCondInst(Tempinst);
-    // }
+    else if (auto Tempinst = dynamic_cast<CondInst*>(&inst)) {
+        machineinst = MatchCondInst(parent, Tempinst);
+    }
     else if (auto Tempinst = dynamic_cast<CallInst*>(&inst)) {
         machineinst = MatchCallInst(parent, Tempinst);
     }
@@ -87,9 +87,14 @@ MachineInst* MatchUnCondInst(MachineBasicBlock* parent, UnCondInst* inst) {
     MachineInst* machineinst = new MachineInst(parent, op, rd);
     return machineinst;
 }
-// MachineInst* MatchCondInst(CondInst* inst) {
-
-// }
+MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst) {
+    std::string op = "branch";
+    Operand rd =  inst->Getuselist()[0]->GetValue();
+    Operand rs1 = inst->Getuselist()[1]->GetValue();
+    Operand rs2 = inst->Getuselist()[2]->GetValue();
+    MachineInst* machineinst = new MachineInst(parent, op, rd, rs1, rs2);
+    return machineinst;
+}
 
 MachineInst* MatchCallInst(MachineBasicBlock* parent, CallInst* inst) {
     Operand rd = inst->Getuselist()[0]->GetValue();
@@ -104,18 +109,6 @@ MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst) {
     return machineinst;
 }
 
-// MachineInst* ConvertToMachineInst (std::variant<MachineBinaryInst*, MachineCmpInst*>& variant) {
-//     return std::visit([](auto&& arg) -> MachineInst* {
-//         using T = std::decay_t<decltype(arg)>;
-//         if constexpr (std::is_same_v<T, MachineBinaryInst*>) {
-//             return static_cast<MachineInst*>(arg);
-//         } else if constexpr (std::is_same_v<T, MachineCmpInst*>) {
-//             return static_cast<MachineInst*>(arg);
-//         } else {
-//             return nullptr;
-//         }
-//     }, variant);    
-// }
 MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
     MachineInst* machineinst = nullptr;
     std::string op = inst->GetOperation();
@@ -170,23 +163,24 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
             opcode = "or";
         else opcode = "white";
     }  
-    else if (op == "Op_E" || op == "Op_NE" || op == "op_G" || op == "op_GE" || op == "Op_L" || op == "Op_LE") {
+    else if (op == "Op_E" || op == "Op_NE" || op == "Op_G" || op == "Op_GE" || op == "Op_L" || op == "Op_LE") {
+        //TODO: other situatino
         //if (rs1->isConst() || rs2->isConst()) {
             Operand rs = rs1->isConst() ? rs1 : rs2;
             if (rs1 == rs) {
                 rs1 = rs2;
                 rs2 = rs;
             }
-            op = op.substr(3);
-            for (char& c : op) {
+            opcode = op.substr(3);
+            for (char& c : opcode) {
                 c = std::tolower(c);
             }
-            opcode = "icmp_" + op;
+            opcode = "icmp_" + opcode;
             if( op == "Op_E") {
                 opcode = opcode + "q";
             }
             else if (op == "Op_G" || op == "Op_L") {
-                opcode = opcode +"t";
+                opcode = opcode + "t";
             }
             else {}
         //}
