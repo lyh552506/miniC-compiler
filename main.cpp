@@ -1,8 +1,12 @@
-#include "parser.hpp"
+#include "opt/GVN&GCM.hpp"
 #include "opt/dominant.hpp"
+#include "opt/passManager.hpp"
+#include "parser.hpp"
 #include <fstream>
-//#include "opt/GVN&GCM.hpp"
+#include <getopt.h>
 extern FILE *yyin;
+extern int optind, opterr, optopt;
+extern char *optargi;
 
 void copyFile(const std::string &sourcePath,
               const std::string &destinationPath) {
@@ -10,6 +14,11 @@ void copyFile(const std::string &sourcePath,
   std::ofstream destination(destinationPath, std::ios::binary);
   destination << source.rdbuf();
 }
+
+static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
+                                       {"gvn", no_argument, 0, 1},
+                                       {"help", no_argument, 0, 2},
+                                       {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
@@ -21,19 +30,34 @@ int main(int argc, char **argv) {
   parse();
   Singleton<CompUnit *>()->codegen();
   Singleton<Module>().Test();
-
-  auto f = Singleton<Module>().GetFuncTion()[0].get();
-  auto &Li = Singleton<Module>().GetFuncTion()[0]->GetBasicBlock();
-  for (auto bb = f->begin(); bb != f->end(); ++bb)
-    f->push_bb(*bb);
-  for (int i = 0; i < Li.size(); ++i)
-    Li[i]->num=i;
-
-  //int n = Li[0]->num;
-  //User *li = Li[0]->front();
-  dominance dom(f, Li.size());
+  std::unique_ptr<PassManager>pass_manager(new PassManager);
   
-  // Gvn_Gcm test(&dom,f);
+  int optionIndex, option;
+
+  while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) != -1) {
+    switch (option) {
+    case 0:
+      pass_manager->IncludePass(0);
+      break;
+    case 1:
+      pass_manager->IncludePass(1);
+      break;
+    case 2:
+      std::cerr << "help" << std::endl;
+      break;
+    }
+  }
+  pass_manager->Init_Pass();
+  // auto f = Singleton<Module>().GetFuncTion()[0].get();
+  // auto &Li = Singleton<Module>().GetFuncTion()[0]->GetBasicBlock();
+  // for (auto bb = f->begin(); bb != f->end(); ++bb)
+  //   f->push_bb(*bb);
+  // for (int i = 0; i < Li.size(); ++i)
+  //   Li[i]->num = i;
+
+  // dominance dom(f, Li.size());
+
+  // Gvn_Gcm test(&dom, f);
   // test.init_pass();
   Singleton<Module>().Test();
   return 0;
