@@ -332,223 +332,63 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.a = global i32 zeroinitializer
-@.g.b = global i32 zeroinitializer
-@.g.d = global i32 zeroinitializer
-define i32 @set_a(i32 %.6){
-.4:
-  %.5 = alloca i32
-  store i32 %.6, i32* %.5
-  %.8 = load i32, i32* %.5
-  store i32 %.8, i32* @.g.a
-  %.10 = load i32, i32* @.g.a
-  ret i32 %.10 
+define i32 @func2(i32 %.3){
+.1:
+  %.2 = alloca i32
+  store i32 %.3, i32* %.2
+  %.5 = load i32, i32* %.2
+  %.7 = add i32 %.5, 2
+  ret i32 %.7 
 }
-define i32 @set_b(i32 %.15){
-.13:
-  %.14 = alloca i32
-  store i32 %.15, i32* %.14
-  %.17 = load i32, i32* %.14
-  store i32 %.17, i32* @.g.b
-  %.19 = load i32, i32* @.g.b
-  ret i32 %.19 
-}
-define i32 @set_d(i32 %.24){
-.22:
+define i32 @func(i32 %.12, i32 %.15, i32 %.18){
+.10:
   %.23 = alloca i32
-  store i32 %.24, i32* %.23
-  %.26 = load i32, i32* %.23
-  store i32 %.26, i32* @.g.d
-  %.28 = load i32, i32* @.g.d
-  ret i32 %.28 
+  %.20 = alloca i32
+  %.17 = alloca i32
+  %.14 = alloca i32
+  %.11 = alloca i32
+  store i32 %.12, i32* %.11
+  store i32 %.15, i32* %.14
+  store i32 %.18, i32* %.17
+  store i32 1, i32* %.20
+  %.24at36 = call i32 @func2(i32 2)
+  store i32 %.24at36, i32* %.23
+  %.28 = load i32, i32* %.17
+  %.29 = icmp sgt i32 %.28, 1
+  br i1 %.29, label %.26, label %.27
+.26:
+  %.31 = load i32, i32* %.11
+  %.32 = load i32, i32* %.14
+  %.33 = add i32 %.31, %.32
+  store i32 %.33, i32* %.20
+  br label %.35 
+.27:
+  %.37 = load i32, i32* %.11
+  %.38 = load i32, i32* %.14
+  %.39 = sub i32 %.37, %.38
+  store i32 %.39, i32* %.20
+  br label %.35 
+.35:
+  %.42 = load i32, i32* %.20
+  ret i32 %.42 
 }
-define i32 @main(){
-.31:
-  %.159 = alloca i32
-  %.157 = alloca i32
-  %.155 = alloca i32
-  %.153 = alloca i32
-  %.151 = alloca i32
-  store i32 2, i32* @.g.a
-  store i32 3, i32* @.g.b
-  %.39at10 = call i32 @set_a(i32 0)
-  %.40 = icmp ne i32 %.39at10, 0
-  br i1 %.40, label %.41, label %.37
-.36:
-  br label %.37 
-.37:
-  %.48 = load i32, i32* @.g.a
-  call void @putint(i32 %.48)
-  call void @putch(i32 32)
-  %.54 = load i32, i32* @.g.b
-  call void @putint(i32 %.54)
-  call void @putch(i32 32)
-  store i32 2, i32* @.g.a
-  store i32 3, i32* @.g.b
-  %.61at15 = call i32 @set_a(i32 0)
-  %.62 = icmp ne i32 %.61at15, 0
-  br i1 %.62, label %.63, label %.60
-.41:
-  %.44at10 = call i32 @set_b(i32 1)
-  %.45 = icmp ne i32 %.44at10, 0
-  br i1 %.45, label %.36, label %.37
-.59:
-  br label %.60 
-.60:
-  %.69 = load i32, i32* @.g.a
-  call void @putint(i32 %.69)
-  call void @putch(i32 32)
-  %.72 = load i32, i32* @.g.b
-  call void @putint(i32 %.72)
-  call void @putch(i32 10)
-  store i32 2, i32* @.g.d
-  %.81at21 = call i32 @set_d(i32 3)
-  %.82 = icmp ne i32 %.81at21, 0
-  br i1 %.82, label %.77, label %.78
-.63:
-  %.65at15 = call i32 @set_b(i32 1)
-  %.66 = icmp ne i32 %.65at15, 0
-  br i1 %.66, label %.59, label %.60
-.77:
-  br label %.78 
-.78:
-  %.85 = load i32, i32* @.g.d
-  call void @putint(i32 %.85)
-  call void @putch(i32 32)
-  br label %.88 
-  %.93at23 = call i32 @set_d(i32 4)
-  %.94 = icmp ne i32 %.93at23, 0
-  br i1 %.94, label %.88, label %.89
-.88:
-  br label %.89 
-.89:
-  %.97 = load i32, i32* @.g.d
-  call void @putint(i32 %.97)
-  call void @putch(i32 10)
-  br label %.100 
-.100:
-  call void @putch(i32 65)
-  br label %.106 
-.106:
-  br label %.109 
-.108:
-  call void @putch(i32 66)
-  br label %.109 
-.109:
-  br label %.120 
-.119:
-  call void @putch(i32 67)
-  br label %.120 
-.120:
-  br label %.126 
-.126:
-  call void @putch(i32 68)
-  br label %.131 
-.131:
-  br label %.134 
-.133:
-  call void @putch(i32 69)
-  br label %.134 
-.134:
-  br label %.141 
-.141:
-  call void @putch(i32 70)
-  br label %.148 
-.148:
-  call void @putch(i32 10)
-  store i32 0, i32* %.151
-  store i32 1, i32* %.153
-  store i32 2, i32* %.155
-  store i32 3, i32* %.157
-  store i32 4, i32* %.159
-  br label %.161wc35 
-.161wc35:
-  %.165 = load i32, i32* %.151
-  %.166 = icmp ne i32 %.165, 0
-  br i1 %.166, label %.167, label %.163wn35
-.162wloop.35.35:
-  call void @putch(i32 32)
-  br label %.161wc35 
-.163wn35:
-  %.177 = load i32, i32* %.151
-  %.178 = icmp ne i32 %.177, 0
-  br i1 %.178, label %.174, label %.176
-.167:
-  %.169 = load i32, i32* %.153
-  %.170 = icmp ne i32 %.169, 0
-  br i1 %.170, label %.162wloop.35.35, label %.163wn35
-.174:
-  call void @putch(i32 67)
-  br label %.175 
-.175:
-  %.188 = load i32, i32* %.151
-  %.189 = load i32, i32* %.153
-  %.190 = icmp sge i32 %.188, %.189
-  br i1 %.190, label %.185, label %.187
-.176:
-  %.180 = load i32, i32* %.153
-  %.181 = icmp ne i32 %.180, 0
-  br i1 %.181, label %.174, label %.175
-.185:
-  call void @putch(i32 72)
-  br label %.186 
-.186:
-  %.201 = load i32, i32* %.155
-  %.202 = load i32, i32* %.153
-  %.203 = icmp sge i32 %.201, %.202
-  br i1 %.203, label %.204, label %.200
-.187:
-  %.192 = load i32, i32* %.153
-  %.193 = load i32, i32* %.151
-  %.194 = icmp sle i32 %.192, %.193
-  br i1 %.194, label %.185, label %.186
-.199:
-  call void @putch(i32 73)
-  br label %.200 
-.200:
-  %.216 = load i32, i32* %.151
-  %.217 = load i32, i32* %.153
-  %.218 = icmp eq i32 %.217, 0
-  %.219 = zext i1 %.218 to i32  %.220 = icmp eq i32 %.216, %.219
-  br i1 %.220, label %.221, label %.215
-.204:
-  %.206 = load i32, i32* %.159
-  %.207 = load i32, i32* %.157
-  %.208 = icmp ne i32 %.206, %.207
-  br i1 %.208, label %.199, label %.200
-.213:
-  call void @putch(i32 74)
-  br label %.214 
-.214:
-  %.237 = load i32, i32* %.151
-  %.238 = load i32, i32* %.153
-  %.239 = icmp eq i32 %.238, 0
-  %.240 = zext i1 %.239 to i32  %.241 = icmp eq i32 %.237, %.240
-  br i1 %.241, label %.234, label %.236
-.215:
-  %.227 = load i32, i32* %.159
-  %.228 = load i32, i32* %.159
-  %.229 = icmp sge i32 %.227, %.228
-  br i1 %.229, label %.213, label %.214
-.221:
-  %.223 = load i32, i32* %.157
-  %.224 = load i32, i32* %.157
-  %.225 = icmp slt i32 %.223, %.224
-  br i1 %.225, label %.213, label %.215
-.234:
-  call void @putch(i32 75)
-  br label %.235 
-.235:
-  call void @putch(i32 10)
-  ret i32 0 
-.236:
-  %.243 = load i32, i32* %.157
-  %.244 = load i32, i32* %.157
-  %.245 = icmp slt i32 %.243, %.244
-  br i1 %.245, label %.246, label %.235
-.246:
-  %.248 = load i32, i32* %.159
-  %.249 = load i32, i32* %.159
-  %.250 = icmp sge i32 %.248, %.249
-  br i1 %.250, label %.234, label %.235
+define i32 @func2(i32 %.3){
+.1:
+  %.7 = add i32 %.3, 2
+  ret i32 %.7 
+}
+define i32 @func(i32 %.12, i32 %.15, i32 %.18){
+.10:
+  %.24at36 = call i32 @func2(i32 2)
+  %.29 = icmp sgt i32 %.18, 1
+  br i1 %.29, label %.26, label %.27
+.26:
+  %.33 = add i32 %.12, %.15
+  br label %.35 
+.27:
+  %.39 = sub i32 %.12, %.15
+  br label %.35 
+.35:
+  %.44 = Phi i32 [%.39, %.27], [%.33, %.26]
+  ret i32 %.44 
 }

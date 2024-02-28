@@ -784,7 +784,7 @@ void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
 
 std::vector<Value*>& PhiInst::GetAllPhiVal(){
     for(const auto &[_1,value]:PhiRecord){
-        Incomings.push_back(value.second);
+        Incomings.push_back(value.first);
     }
     return Incomings;
 }

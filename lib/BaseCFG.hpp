@@ -85,6 +85,7 @@ class Value
     void SetName(std::string newname);
     virtual std::string GetName();
     UserList& GetUserlist(){return userlist;};
+    bool isGlobVal(){return false;};
 };
 using Operand=Value*;
 // class Constant:public User
