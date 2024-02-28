@@ -170,52 +170,27 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
             opcode = "or";
         else opcode = "white";
     }  
-    //To Do 
-    // else if (op == "Op_E") {
-    //     if (is_int(rs1) && is_int(rs2)) {
-    //         //MachineInst* inst = new MachineInst("?", rd, rs1, rs2);
-    //         //return inst;
-    //     }
-    //     else if (0) {
-    //         //To Do
-    //         //imm
-    //     }
-    // }
-    // else if (op == "Op_NE") {
-    //     if (is_int(rs1) && is_int(rs2)) {
-
-    //     }
-    //     else if (0) {
-    //     }
-    // }
-    // else if (op == "Op_GE") {
-    //     if (is_int(rs1) && is_int(rs2)) {
-
-    //     }
-    //     else if (0) {
-    //     }
-    // }
-    // else if (op == "Op_L") {
-    //     if (is_int(rs1) && is_int(rs2)) {
-
-    //     }
-    //     else if (0) {
-    //     }
-    // }
-    // else if (op == "Op_LE") {
-    //     if (is_int(rs1) && is_int(rs2)) {
-
-    //     }
-    //     else if (0) {
-    //     }
-    // }
-    // else if (op == "Op_G") {
-    //     if (is_int(rs1) && is_int(rs2)) {
-
-    //     }
-    //     else if (0) {
-    //     }
-    // }
+    else if (op == "Op_E" || op == "Op_NE" || op == "op_G" || op == "op_GE" || op == "Op_L" || op == "Op_LE") {
+        //if (rs1->isConst() || rs2->isConst()) {
+            Operand rs = rs1->isConst() ? rs1 : rs2;
+            if (rs1 == rs) {
+                rs1 = rs2;
+                rs2 = rs;
+            }
+            op = op.substr(3);
+            for (char& c : op) {
+                c = std::tolower(c);
+            }
+            opcode = "icmp" + op;
+            if( op == "Op_E") {
+                op = op + "q";
+            }
+            else if (op == "Op_G" || op == "Op_L") {
+                op = op +"t";
+            }
+            else {}
+        //}
+    }
     else {
         std::cout << "Error: No Such Binaryinst!" << std::endl;
         machineinst = new MachineInst(parent, "white");
