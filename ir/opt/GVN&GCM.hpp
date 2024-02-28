@@ -1,3 +1,4 @@
+#pragma once
 #include "dominant.hpp"
 
 class Gvn_Gcm {
@@ -20,5 +21,5 @@ public:
   void Schedule_Late(User *inst);
   bool IsPinned(User* inst);
   void caculateRPO(BasicBlock* bb);
-  int OptConstBinary(int op,Value*a,Value* b);
+  int OptConstBinary_INT(int op,Value*a,Value* b);
 };
