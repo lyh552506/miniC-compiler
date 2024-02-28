@@ -127,7 +127,7 @@ class BinaryInst:public User
     void print()final;
     BinaryInst::Operation GetOpcode(BinaryInst* inst){return this->op;};
     std::string GetOperation();
-    int getopration();
+    Operation getopration();
 };
 class GetElementPtrInst:public User
 {
