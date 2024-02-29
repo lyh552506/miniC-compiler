@@ -15,6 +15,16 @@ void PassManager::Init_Pass() {
       //有了mem2reg才有后续的优化
       if(InitpassRecorder[1])
       Gvn_Gcm(dom.get(),f).init_pass();
+      if(InitpassRecorder[2])
+      {
+        LivenessAnalysis* LA;
+        LA->pass(f);
+      }
+      if(InitpassRecorder[3])
+      {
+        ConstantProp* CP;
+        CP->Pass(f, dom.get());
+      }
     }
   }
 }
