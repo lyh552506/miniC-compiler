@@ -66,9 +66,9 @@ void LivenessAnalysis::iterate(Function *func)
 
 void LivenessAnalysis::RunOnFunction(Function *func)
 {
-  for(mylist<Function, BasicBlock>::iterator __block = (*func).rbegin(); __block != (*func).rend(); ++__block)
+  for(auto BB = (*func).rbegin(); BB != (*func).rend(); ++BB)
   {
-    BasicBlock*_Block = *__block;
+    BasicBlock*_Block = *BB;
     std::set<Value*> old_BlockLivein = BlockLivein[_Block];
     std::set<Value*>old_BlockLiveout = BlockLiveout[_Block];
     GetBlockLiveout(_Block);

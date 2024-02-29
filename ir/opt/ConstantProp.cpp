@@ -119,9 +119,9 @@ void ConstantProp::RunOnBlock(BasicBlock* block)
 //     }
 // }
 
-void ConstantProp::Pass(Function* func, dominance& dom)
+void ConstantProp::Pass(Function* func, dominance* dom)
 {
-    bfsTraversal(func, dom);
+    bfsTraversal(func, *dom);
 }
 void ConstantProp::bfsTraversal(Function* func, dominance& dom)
 {
@@ -181,16 +181,16 @@ bool isConstantAssignment(User* inst)
                     propPhiToRef(instr)
     */
 
-void ConstantProp::RunOnBlock(BasicBlock* block)
-{
-    for(User* inst:*block)
-    {
-        if(isConstantAssignment(inst))
-            propConstToRef(inst);
-        else if(isBranchAndConstPredicate(inst))
-            changeCondBranchToAbsBranchAndMark(inst);
-        else if(isPhi(inst))
-            if(isOneBlockUnreachable(inst) || IsSameValPre(inst))
-                propPhiToRef(inst);
-    }
-}
+// void ConstantProp::RunOnBlock(BasicBlock* block)
+// {
+//     for(User* inst:*block)
+//     {
+//         if(isConstantAssignment(inst))
+//             propConstToRef(inst);
+//         else if(isBranchAndConstPredicate(inst))
+//             changeCondBranchToAbsBranchAndMark(inst);
+//         else if(isPhi(inst))
+//             if(isOneBlockUnreachable(inst) || IsSameValPre(inst))
+//                 propPhiToRef(inst);
+//     }
+// }

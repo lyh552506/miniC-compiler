@@ -574,6 +574,7 @@ std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
     else
         std::cerr << "There is no Succ Block." << std::endl;
 }
+
 BasicBlock* BasicBlock::GenerateNewBlock(std::string name){
     BasicBlock* tmp=new BasicBlock(master);
     tmp->name+=name;
@@ -820,8 +821,8 @@ void Function::push_param(Variable* var){
     front()->GenerateStoreInst(params.back().get(),Singleton<Module>().GetValueByName(var->get_name()));
 }
 
-void Function::add_block(BasicBlock* __block){
-    push_back(__block);
+void Function::add_block(BasicBlock* bb){
+    push_back(bb);
 }
 
 std::vector<std::unique_ptr<Value>>& Function::GetParams(){
