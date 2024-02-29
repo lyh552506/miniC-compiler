@@ -17,13 +17,8 @@ void PassManager::Init_Pass() {
       Gvn_Gcm(dom.get(),f).init_pass();
       if(InitpassRecorder[2])
       {
-        LivenessAnalysis* LA;
+        std::unique_ptr<LivenessAnalysis>LA(new LivenessAnalysis);
         LA->pass(f);
-      }
-      if(InitpassRecorder[3])
-      {
-        ConstantProp* CP;
-        CP->Pass(f, dom.get());
       }
     }
   }

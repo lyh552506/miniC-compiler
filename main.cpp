@@ -18,8 +18,7 @@ void copyFile(const std::string &sourcePath,
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"gvn", no_argument, 0, 1},
                                        {"livenessanalysis", no_argument, 0, 2},
-                                       {"constantprop", no_argument, 0, 3},
-                                       {"help", no_argument, 0, 4},
+                                       {"help", no_argument, 0, 3},
                                        {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
@@ -45,6 +44,9 @@ int main(int argc, char **argv) {
       pass_manager->IncludePass(1);
       break;
     case 2:
+      pass_manager->IncludePass(2);
+      break;
+    case 3:
       std::cerr << "help" << std::endl;
       break;
     }

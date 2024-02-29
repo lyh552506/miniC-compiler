@@ -4,9 +4,9 @@
 
 void LivenessAnalysis::GetBlockLivein(BasicBlock* block)
 {
-  for(mylist<BasicBlock, User>::iterator inst = block->rbegin();inst != block->rend(); --inst)
+  for(auto inst = block->rbegin();inst != block->rend(); --inst)
   {
-    for(std::unique_ptr<Use>&usePtr:(*inst)->Getuselist())
+    for(auto &usePtr:(*inst)->Getuselist())
     {
       Value* useValue = usePtr->GetValue();
       BlockLivein[block].insert(useValue); 
@@ -47,6 +47,7 @@ void LivenessAnalysis::pass(Function *func)
   iterate(func); 
   while(isChanged)
     iterate(func);
+  // PrintInfo(func);
 }
 
 void LivenessAnalysis::iterate(Function *func)
@@ -78,4 +79,19 @@ void LivenessAnalysis::RunOnFunction(Function *func)
     else
       UnChanged[_Block] = false;
 }
+}
+void LivenessAnalysis::PrintInfo(Function* func)
+{
+  for(BasicBlock* _block:*func)
+  {
+    std::cout << "Block: " << std::endl;
+    std::cout << "Livein: ";
+    for(Value* _value:BlockLivein[_block])
+      std::cout << _value->GetName() << " ";
+    std::cout << std::endl;
+    std::cout << "Liveout: ";
+    for(Value* _value:BlockLiveout[_block])
+      std::cout << _value->GetName() << " ";
+    std::cout << std::endl;
+  }
 }

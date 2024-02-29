@@ -8,7 +8,7 @@
 
 class PassManager{
 public:
-   PassManager():InitpassRecorder(4){}
+   PassManager():InitpassRecorder(5){}
 
    void IncludePass(int pass);
 
