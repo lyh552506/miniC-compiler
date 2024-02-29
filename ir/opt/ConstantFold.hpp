@@ -19,4 +19,13 @@ Value* ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Value* RHS);
 Value* ConstantFoldLoadInst(LoadInst* inst);
 // Handle StoreInst
 Value* ConstantFoldStoreInst(StoreInst* inst);
+// Handle SITFP
+Value* ConstantFoldSITFPInst(SITFP* inst);
+// Handle FPTSI
+Value* ConstantFoldFPTSIInst(FPTSI* inst);
+// Handle GetElementPtrInst
+Value* ConstantFoldGetElementPtrInst(GetElementPtrInst* inst);
+// Handle CallInst
+Value* ConstantFoldCallInst(CallInst* inst);
+
 };

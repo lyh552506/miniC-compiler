@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/build/SYSY-compiler",
             "cwd": "${workspaceFolder}",
             "targetArchitecture": "x64",
-            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--gvn","--livenessanalysis"],
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--gvn","--livenessanalysis","--constantprop"],
             "stopAtEntry": false,
             "setupCommands": [
               {
@@ -40,15 +40,15 @@
             "program": "${workspaceFolder}/build/SYSY-compiler",
             "cwd": "${workspaceFolder}",
             "targetArchitecture": "x64",
-            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--gvn","--livenessanalysis"],
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--gvn","--livenessanalysis","constantprop"],
             "stopAtEntry": false,
-            "setupCommands": [
-              {
-                  "description": "为 lldb 启用整齐打印",
-                  "text": "-enable-pretty-printing",
-                  "ignoreFailures": true
-              }
-          ],
+            // "setupCommands": [
+            //   {
+            //       "description": "为 lldb 启用整齐打印",
+            //       "text": "-enable-pretty-printing",
+            //       "ignoreFailures": true
+            //   }
+          // ],
             // "environment": [
             //   {
             //     "name": "LSAN_OPTIONS",

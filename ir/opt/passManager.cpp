@@ -20,6 +20,11 @@ void PassManager::Init_Pass() {
         std::unique_ptr<LivenessAnalysis>LA(new LivenessAnalysis);
         LA->pass(f);
       }
+      if(InitpassRecorder[3])
+      {
+        std::unique_ptr<ConstantProp>CP(new ConstantProp);
+        CP->Pass(f, dom.get());
+      }
     }
   }
 }

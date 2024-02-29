@@ -29,10 +29,9 @@ Value* ConstantFolding::ConstantFoldBinaryInst(BinaryInst* inst)
 {
     Value* LHS = inst->Getuselist()[0]->GetValue();
     Value* RHS = inst->Getuselist()[1]->GetValue();
-    assert(LHS->isConst() && RHS->isConst());
     if(auto iNt = dynamic_cast<ConstIRInt*>(LHS))
         ConstantFoldBinaryInt(inst, LHS, RHS);
-    if(auto fLoat = dynamic_cast<ConstIRFloat*>(RHS))
+    if(auto fLoat = dynamic_cast<ConstIRFloat*>(LHS))
         ConstantFoldBinaryFloat(inst, LHS, RHS);
     
 } 
@@ -114,7 +113,21 @@ Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Va
     return ConstIRFloat::GetNewConstant(Result);
 }
 
+Value* ConstantFolding::ConstantFoldSITFPInst(SITFP* inst)
+{
+    Value* Operand = inst->Getuselist()[0]->GetValue();
+    if(auto iNt = dynamic_cast<ConstIRInt*>(Operand))
+        return ConstIRFloat::GetNewConstant((float)(iNt->GetVal()));
+}
+
+Value* ConstantFolding::ConstantFoldFPTSIInst(FPTSI* inst)
+{
+    Value* Operand = inst->Getuselist()[0]->GetValue();
+    if(auto fLoat = dynamic_cast<ConstIRFloat*>(Operand))
+        return ConstIRInt::GetNewConstant((int)(fLoat->GetVal()));
+}
 Value* ConstantFolding::ConstantFoldLoadInst(LoadInst* inst)
 {
+    Use Operand = *inst->Getuselist()[0];
     
 }

@@ -23,4 +23,6 @@ private:
 
 public:
     void Pass(Function* func, dominance* dom);
+
+    ConstantProp() = default;
 };

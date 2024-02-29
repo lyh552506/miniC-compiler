@@ -9,7 +9,8 @@ void LivenessAnalysis::GetBlockLivein(BasicBlock* block)
     for(auto &usePtr:(*inst)->Getuselist())
     {
       Value* useValue = usePtr->GetValue();
-      BlockLivein[block].insert(useValue); 
+      if(!useValue->isConst())
+        BlockLivein[block].insert(useValue); 
     }
     Value* DefValue = (*inst)->GetDef();
     BlockLivein[block].erase(DefValue);
@@ -84,7 +85,7 @@ void LivenessAnalysis::PrintInfo(Function* func)
 {
   for(BasicBlock* _block:*func)
   {
-    std::cout << "Block: " << std::endl;
+    std::cout << "Block: "<< _block->GetName() << std::endl;
     std::cout << "Livein: ";
     for(Value* _value:BlockLivein[_block])
       std::cout << _value->GetName() << " ";

@@ -16,7 +16,9 @@ void ConstantProp::RunOnFunc(Function* func)
                 BasicBlock* FalseBlock = dynamic_cast<BasicBlock*>(COndInst->Getuselist()[2].get()->GetValue());
                 if(Value* Cond = COndInst->Getuselist()[0].get()->GetValue())
                 {
-                    if(dynamic_cast<ConstIRInt*>(Cond)->GetVal() == 0)
+                    if(!dynamic_cast<ConstIRBoolean*>(Cond))
+                        continue;
+                    if((dynamic_cast<ConstIRBoolean*>(Cond))->GetVal() == 0)
                     {
                         COndInst->EraseFromParent();
                         COndInst->ClearRelation();
@@ -82,10 +84,16 @@ void ConstantProp::RunOnBlock(BasicBlock* block)
     for(User* inst : *block)
     {
         Value* C = ConstantFold->ConstantFoldInst(inst);
-        inst->RAUW(C);
-        Wait_Del.push_back(inst);
+        if(C)
+        {
+            inst->RAUW(C);
+            Wait_Del.push_back(inst);
+        }
+
     }
 }
+// }            inst->ClearRelation();
+            // inst->EraseFromParent();
 // bool ConstantProp::RunOnBlock(BasicBlock &block) 
 // {
 //   // Initialize the worklist to all of the instructions ready to process...
@@ -121,7 +129,8 @@ void ConstantProp::RunOnBlock(BasicBlock* block)
 
 void ConstantProp::Pass(Function* func, dominance* dom)
 {
-    bfsTraversal(func, *dom);
+    // bfsTraversal(func, *dom);
+    RunOnFunc(func);
 }
 void ConstantProp::bfsTraversal(Function* func, dominance& dom)
 {
