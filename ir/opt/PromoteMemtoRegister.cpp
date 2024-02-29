@@ -113,7 +113,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
     for (auto inst = BB->begin(); inst != BB->end(); ++inst) {
       User *user = *inst;
       if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
-        Value *Src =GetOperand(LI,0);
+        Value *Src = GetOperand(LI, 0);
         AllocaInst *AI = dynamic_cast<AllocaInst *>(Src); // src---->%a
         if (!AI)
           continue;
@@ -164,10 +164,10 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 
 bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
   auto &vect = Func.GetBasicBlock();
-  auto it = std::find_if(vect.begin(), vect.end(),
-                         [bb](BasicBlock *base) -> bool {
-                           return base == bb;
-                         }); // get index
+  auto it =
+      std::find_if(vect.begin(), vect.end(), [bb](BasicBlock *base) -> bool {
+        return base == bb;
+      }); // get index
 
   int index = std::distance(vect.begin(), it); //获取下标
   PhiInst *&Phi = PrePhiNode[index];
@@ -224,9 +224,9 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
     }
   }
 
-  for(Use* use:AI->GetUserlist()){
-    assert(dynamic_cast<StoreInst*>(use->fat)&&"must be a StoreInst");
-    StoreInst* st=dynamic_cast<StoreInst*>(use->fat);
+  for (Use *use : AI->GetUserlist()) {
+    assert(dynamic_cast<StoreInst *>(use->fat) && "must be a StoreInst");
+    StoreInst *st = dynamic_cast<StoreInst *>(use->fat);
     st->ClearRelation();
     st->EraseFromParent();
     BBInfo.DeleteIndex(st);
@@ -387,6 +387,10 @@ bool IsAllocaPromotable(AllocaInst *AI) {
     } else if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
       if (SI->Getuselist()[0]->GetValue() == AI)
         return false;
+    } else if (GetElementPtrInst *gep =
+                   dynamic_cast<GetElementPtrInst *>(user)) {
+      return false;
+
     } else {
       return false;
     }
@@ -396,7 +400,7 @@ bool IsAllocaPromotable(AllocaInst *AI) {
 
 bool BlockInfo::IsAllocaRelated(User *Inst) {
   if (LoadInst *LI = dynamic_cast<LoadInst *>(Inst)) { // if read this alloca
-    AllocaInst *AI = dynamic_cast<AllocaInst *>(GetOperand(LI,0));
+    AllocaInst *AI = dynamic_cast<AllocaInst *>(GetOperand(LI, 0));
     if (AI != nullptr)
       return true;
   } else if (StoreInst *ST =

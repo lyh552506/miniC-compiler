@@ -69,26 +69,42 @@ void Gvn_Gcm::GVN() {
           fptsi->EraseFromParent();
         }
       } else if (PhiInst *phi = dynamic_cast<PhiInst *>(inst)) {
-        bool same = true;
+        HasUndefVal=false;
+        Value* sameval=nullptr;
         auto phival = phi->GetAllPhiVal();
-        Value *income = Find_Equal(phival[0]);
-        for (int i = 1; i < phival.size(); i++)
-          same = (income == Find_Equal(phival[i]));
-        if (same) { //即phi的所有income值全部等价，此时可以取消掉phi
-          phi->RAUW(income);
-          // phi->ClearRelation();
-          phi->EraseFromParent();
+        //Value *income = Find_Equal(phival[0]);
+        for (int i = 0; i < phival.size(); i++){
+          Value* income=phival[i];
+          if(income==phi) continue;
+          if(dynamic_cast<UndefValue*>(income))
+          {
+            HasUndefVal=true;
+            continue;
+          }
+          if(income&&income!=sameval)
+            break;
+          sameval=income;
         }
+        //if()
+        //   same = (income == Find_Equal(phival[i]));
+        // if (same) { //即phi的所有income值全部等价，此时可以取消掉phi
+        //   phi->RAUW(income);
+        //   // phi->ClearRelation();
+        //   phi->EraseFromParent();
+        // }
       } else if (GetElementPtrInst *gep =
                      dynamic_cast<GetElementPtrInst *>(inst)) {
-        inst->GetTypeEnum();
-        auto x0 = gep->Getuselist()[0]->GetValue();
-        auto x1 = gep->Getuselist()[1]->GetValue();
-        auto x2 = gep->Getuselist()[2]->GetValue();
+        auto rpl=Find_Equal(dynamic_cast<Value*>(gep));
+        if(rpl==gep)
+          continue;
+        gep->RAUW(rpl);
+        gep->ClearRelation();
+        gep->EraseFromParent();
       } else if (CallInst *call = dynamic_cast<CallInst *>(inst)) {
         Function *func =
             dynamic_cast<Function *>(call->Getuselist()[0]->GetValue());
-        assert(func);
+        // assert(func);
+        if(func==nullptr) continue;
         if (HaveSideEffect(func))
           continue;
         //没有副作用
@@ -328,6 +344,8 @@ Value *Gvn_Gcm::Find_Equal(Value *inst) {
     ValueNumer[size].second = Find_Equal(tmp);
   if (auto tmp = dynamic_cast<CallInst *>(inst))
     ValueNumer[size].second = Find_Equal(tmp);
+  if(auto tmp =dynamic_cast<GetElementPtrInst*>(inst))
+    ValueNumer[size].second = Find_Equal(tmp);
   return ValueNumer[size].second;
 }
 
@@ -378,9 +396,27 @@ Value *Gvn_Gcm::Find_Equal(CallInst *inst) {
         return inst;
       for (int i = 1; i < inst->Getuselist().size(); i++)
         same = same && (call->Getuselist()[i]->GetValue() ==
-                        inst->Getuselist()[0]->GetValue());
+                        inst->Getuselist()[i]->GetValue());
       if(same)
         return call;
+    }
+  }
+  return inst;
+}
+
+Value *Gvn_Gcm::Find_Equal(GetElementPtrInst *inst){
+  for (int i = 0; i < ValueNumer.size(); i++){
+    auto [v1, v2] = ValueNumer[i];
+    auto gep=dynamic_cast<GetElementPtrInst*>(v1);
+    if(gep&&gep!=inst){
+      bool same=inst->Getuselist().size()==gep->Getuselist().size();
+      if(!same)
+        return inst;
+      for (int i = 1; i < inst->Getuselist().size(); i++)
+        same = same && (gep->Getuselist()[i]->GetValue() ==
+                        inst->Getuselist()[i]->GetValue());
+      if(same)
+        return gep;
     }
   }
   return inst;
