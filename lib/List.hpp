@@ -44,6 +44,10 @@ class list_node
         if(this->next!=nullptr)this->next->prev=this->prev;
     }
     virtual derived_mylist* GetParent(){return this->fat;};
+    derived_mylist* Del_Pre(){};
+    derived_mylist* Del_Succ(){};
+    derived_mylist* Link_Pre(derived_list_node* ptr){};
+    derived_mylist* Link_Succ(derived_list_node* ptr){};
 };
 
 template<typename derived_mylist,typename derived_list_node>
@@ -102,10 +106,6 @@ class mylist
             this->head=data;
         }
     }
-    derived_list_node* Del_Pre(){};
-    derived_list_node* Del_Succ(){};
-    derived_list_node* Link_Pre(derived_list_node* ptr){};
-    derived_list_node* Link_Succ(derived_list_node* ptr){};
     derived_list_node* front(){return this->head;}
     derived_list_node* back(){return this->tail;}
 };

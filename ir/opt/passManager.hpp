@@ -1,5 +1,5 @@
 #include"dominant.hpp"
-#include"ConstantFold.hpp"
+#include"ConstantProp.hpp"
 #include"GVN&GCM.hpp"
 #include"IDF.hpp"
 #include"LivenessAnalysis.hpp"

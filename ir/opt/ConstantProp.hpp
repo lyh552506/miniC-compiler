@@ -13,8 +13,8 @@ class ConstantProp
     bool isOneBlockUnreachable(User* inst); //有一个基本块不可达
     bool IsSameValPre(User* inst); //两个基本块的值相同
     void propPhiToRef(User* inst); //将可达块的值传播到对该指令的引用
+    void RunOnFunc(Function* func);
     void RunOnBlock(BasicBlock* block);
-    bool RunOnBlock(BasicBlock &block);
 
     void propConstToRef(User* inst); //用常量值替换该变量的所有引用
 
@@ -22,5 +22,5 @@ private:
     bool changed = false;
 
 public:
-    void Pass(Function* func, dominance& dom);
+    void Pass(Function* func, dominance* dom);
 };

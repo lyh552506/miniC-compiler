@@ -173,7 +173,6 @@ Operand UnCondInst::GetDef(){return nullptr;}
 
 UnCondInst::UnCondInst(BasicBlock* __des){
     add_use(__des);
-    Succ_Block.push_back(__des);
 }
 
 void UnCondInst::print(){
@@ -189,9 +188,7 @@ void UnCondInst::print(){
 CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse){
     add_use(__cond);
     add_use(__istrue);
-    Succ_Block.push_back(__istrue);
     add_use(__isfalse);
-    Succ_Block.push_back(__isfalse);
 }
 
 void CondInst::print(){
@@ -572,18 +569,10 @@ BasicBlock* BasicBlock::GenerateNewBlock(){
 }
 std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
 {   
-    std::vector<BasicBlock*> Succ_Block;
-    User* inst = this->back();
-    if(auto UNCondInst = dynamic_cast<UnCondInst*>(inst))
-        Succ_Block.push_back(dynamic_cast<BasicBlock*>(UNCondInst->Getuselist()[0]->GetValue()));
-    else if(auto COndInst = dynamic_cast<CondInst*>(inst))
-    {
-        Succ_Block.push_back(dynamic_cast<BasicBlock*>(COndInst->Getuselist()[1]->GetValue()));
-        Succ_Block.push_back(dynamic_cast<BasicBlock*>(COndInst->Getuselist()[2]->GetValue()));
-    }
+    if(!Succ_Block.empty())
+        return this->Succ_Block;
     else
-        std::cerr << "There is no Succ Block" << std::endl;
-    return Succ_Block;
+        std::cerr << "There is no Succ Block." << std::endl;
 }
 BasicBlock* BasicBlock::GenerateNewBlock(std::string name){
     BasicBlock* tmp=new BasicBlock(master);
@@ -669,10 +658,13 @@ bool BasicBlock::EndWithBranch(){
 void BasicBlock::GenerateCondInst(Operand condi,BasicBlock* is_true,BasicBlock* is_false){
     auto inst=new CondInst(condi,is_true,is_false);
     push_back(inst);
+    Succ_Block.push_back(is_true);
+    Succ_Block.push_back(is_false);
 }
 void BasicBlock::GenerateUnCondInst(BasicBlock* des){
     auto inst=new UnCondInst(des);
     push_back(inst);
+    Succ_Block.push_back(des);
 }
 void BasicBlock::GenerateRetInst(Operand ret_val){
     if(master.GetTypeEnum()!=ret_val->GetTypeEnum()){
