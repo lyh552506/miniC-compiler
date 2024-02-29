@@ -1,3 +1,4 @@
+#pragma once
 #include"dominant.hpp"
 #include"ConstantFold.hpp"
 #include"GVN&GCM.hpp"
@@ -13,6 +14,8 @@ public:
    void IncludePass(int pass);
 
    void Init_Pass();
+
+   void print_result();
 private:
    std::vector<int> InitpassRecorder;
 };

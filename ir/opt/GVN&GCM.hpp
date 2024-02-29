@@ -27,5 +27,6 @@ public:
   Value *Special_Opt(BinaryInst::Operation op, Value *a, Value *b);
   Value *Find_Equal(Value *inst);
   Value *Find_Equal(BinaryInst *inst);
+  Value *Find_Equal(CallInst *inst);
   bool HaveSideEffect(Function* func);
 };

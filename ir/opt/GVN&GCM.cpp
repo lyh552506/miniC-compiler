@@ -86,7 +86,18 @@ void Gvn_Gcm::GVN() {
         auto x1 = gep->Getuselist()[1]->GetValue();
         auto x2 = gep->Getuselist()[2]->GetValue();
       } else if (CallInst *call = dynamic_cast<CallInst *>(inst)) {
-
+        Function *func =
+            dynamic_cast<Function *>(call->Getuselist()[0]->GetValue());
+        assert(func);
+        if (HaveSideEffect(func))
+          continue;
+        //没有副作用
+        auto rpl = Find_Equal(dynamic_cast<Value *>(call));
+        if (rpl == call)
+          continue;
+        call->RAUW(rpl);
+        call->ClearRelation();
+        call->EraseFromParent();
       }
     }
   }
@@ -315,6 +326,8 @@ Value *Gvn_Gcm::Find_Equal(Value *inst) {
   ValueNumer.emplace_back(inst, inst);
   if (auto tmp = dynamic_cast<BinaryInst *>(inst))
     ValueNumer[size].second = Find_Equal(tmp);
+  if (auto tmp = dynamic_cast<CallInst *>(inst))
+    ValueNumer[size].second = Find_Equal(tmp);
   return ValueNumer[size].second;
 }
 
@@ -350,6 +363,29 @@ Value *Gvn_Gcm::Find_Equal(BinaryInst *inst) {
   return inst;
 }
 
+//已经确保了传入进来的callinst一定没有副作用
+Value *Gvn_Gcm::Find_Equal(CallInst *inst) {
+  for (int i = 0; i < ValueNumer.size(); i++) {
+    auto [v1, v2] = ValueNumer[i];
+    auto call = dynamic_cast<CallInst *>(v1);
+    if (call && call != inst) {
+      //跳转函数地址
+      bool same = (call->Getuselist()[0]->GetValue() ==
+                   inst->Getuselist()[0]->GetValue());
+      //函数参数个数
+      same = same && (inst->Getuselist().size() == call->Getuselist().size());
+      if (!same)
+        return inst;
+      for (int i = 1; i < inst->Getuselist().size(); i++)
+        same = same && (call->Getuselist()[i]->GetValue() ==
+                        inst->Getuselist()[0]->GetValue());
+      if(same)
+        return call;
+    }
+  }
+  return inst;
+}
+
 void Gvn_Gcm::caculateRPO(BasicBlock *bb) {
   if (visited.insert(bb).second) {
     auto &node = m_dom->GetNode(bb->num);
@@ -376,11 +412,12 @@ bool Gvn_Gcm::HaveSideEffect(Function *func) {
         return true;
       //遍历每条指令的use关系，如果存在global value，此时含有副作用
       auto &vec = inst->Getuselist();
-      //for (auto &_val : vec)
-        // if (_val->GetValue()->isGlobVal())
-        //   return true;
+      for (auto &_val : vec)
+        if (_val->GetValue()->isGlobVal()) // TODO isGlobVal() to be added
+          return true;
     }
   }
+  return false;
 }
 
 void Gvn_Gcm::GCM() {}

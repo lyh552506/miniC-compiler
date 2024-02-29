@@ -59,6 +59,5 @@ int main(int argc, char **argv) {
 
   // Gvn_Gcm test(&dom, f);
   // test.init_pass();
-  Singleton<Module>().Test();
   return 0;
 }
