@@ -782,12 +782,14 @@ PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty){
 }
 
 void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
+    add_use(Income);
     PhiRecord[oprandNum++]=std::make_pair(Income,BB);
 }
 
 std::vector<Value*>& PhiInst::GetAllPhiVal(){
     for(const auto &[_1,value]:PhiRecord){
         Incomings.push_back(value.first);
+        Blocks.push_back(value.second);
     }
     return Incomings;
 }

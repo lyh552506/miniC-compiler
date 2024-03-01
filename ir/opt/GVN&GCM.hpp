@@ -10,8 +10,7 @@ private:
   Function *m_func;
   std::vector<BasicBlock *> RPO;
   std::unordered_set<BasicBlock *> visited;
-  bool HasUndefVal=false;
-
+  bool HasUndefVal = false;
 public:
   Gvn_Gcm(dominance *dom, Function *func)
       : m_dom(dom), Hash_Tab{}, PinnedInst{}, m_func(func) {}
@@ -27,8 +26,9 @@ public:
   float OptConstBinary_Float(BinaryInst::Operation op, Value *a, Value *b);
   Value *Special_Opt(BinaryInst::Operation op, Value *a, Value *b);
   Value *Find_Equal(Value *inst);
-  Value *Find_Equal(BinaryInst *inst);
-  Value *Find_Equal(CallInst *inst);
-  Value *Find_Equal(GetElementPtrInst *inst);
-  bool HaveSideEffect(Function* func);
+  Value *SimplifyBinaryInst(BinaryInst *inst);
+  Value *SimplifyCall(CallInst *inst);
+  Value *SimplifyGEPInst(GetElementPtrInst *inst);
+  Value *SimplifyPhiInst(PhiInst *inst);
+  bool HaveSideEffect(Function *func);
 };
