@@ -83,7 +83,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
                             std::vector<RenamePass> &WorkLists) {
   while (1) {
     //当前块存在Phi指令
-    if (PhiInst *Phi = dynamic_cast<PhiInst *>(BB->front())) {
+    if (PhiInst *Phi = dynamic_cast<PhiInst *>(*(BB->begin()))) {
       if (PhiToAlloca.count(Phi)) {
 
         for (auto Inst = BB->begin(); Inst != BB->end();) {
@@ -93,7 +93,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
           IncomingVal[Allocanum] = Phi;
 
           ++Inst;
-          PhiInst *Phi = dynamic_cast<PhiInst *>(*Inst);
+          Phi = dynamic_cast<PhiInst *>(*Inst);
           if (!Phi)
             break;
         }
@@ -149,15 +149,18 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
     auto cur = m_dom.GetNode(BB->num);
     if (cur.des.empty())
       return;
+    //避免重复的visit前驱
+    std::set<BasicBlock*> visited;
 
     auto It = cur.des.begin();
-
     Pred = BB;
     BB = m_dom.GetNode(*It++).thisBlock;
+    visited.insert(BB);
 
     while (It != cur.des.end()) {
       BasicBlock *tmp = m_dom.GetNode(*It++).thisBlock;
-      WorkLists.emplace_back(tmp, Pred, IncomingVal);
+      if(visited.insert(tmp).second)//tmp还未被插入
+        WorkLists.emplace_back(tmp, Pred, IncomingVal);
     }
   }
 }
@@ -165,12 +168,12 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
   auto &vect = Func.GetBasicBlock();
   auto it =
-      std::find_if(vect.begin(), vect.end(), [bb](BasicBlock *base) -> bool {
+      std::find_if(vect.begin(), vect.end(), [bb](BasicBlock *base) {
         return base == bb;
       }); // get index
 
   int index = std::distance(vect.begin(), it); //获取下标
-  PhiInst *&Phi = PrePhiNode[index];
+  PhiInst *&Phi = PrePhiNode[std::make_pair(index,AllocaNum)];
   if (Phi)
     return false;
   AllocaInst *target = m_Allocas[AllocaNum];
@@ -217,7 +220,7 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
           return false; /// @note why is this
       } else
         LI->RAUW(std::prev(it)->second->Getuselist()[0]->GetValue());
-
+        
       LI->ClearRelation();
       LI->EraseFromParent();
       BBInfo.DeleteIndex(LI);
@@ -344,7 +347,7 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
       }
 
       if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
-        if (LI->GetDef() == AI)
+        if (LI->Getuselist()[0]->GetValue() == AI)
           break;
       }
     }

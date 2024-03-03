@@ -155,6 +155,7 @@ public:
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
   std::vector<Value*>& GetAllPhiVal();
+  bool modifyIncome(Value* origin);
 public:
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;

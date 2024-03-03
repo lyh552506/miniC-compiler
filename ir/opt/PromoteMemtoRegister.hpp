@@ -101,7 +101,7 @@ public:
   std::vector<AllocaInst *> m_Allocas;       // index->AllocaInst的映射
   std::map<AllocaInst *, int> AllocaToIndex; // AllocaInst->index的映射
   Function &Func;
-  std::map<int, PhiInst *> PrePhiNode;  //由Block到PhiNode的映射
+  std::map<std::pair<int,int>, PhiInst *> PrePhiNode;  //由[Block,AllocaNum]到PhiNode的映射
   std::map<PhiInst *, int> PhiToAlloca; // Phi函数对应的Alloca指令
   std::set<BasicBlock *> RenameVisited; //记录重命名时访问过的Block
 };

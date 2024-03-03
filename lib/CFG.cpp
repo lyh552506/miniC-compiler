@@ -786,6 +786,19 @@ void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
     PhiRecord[oprandNum++]=std::make_pair(Income,BB);
 }
 
+// bool PhiInst::modifyIncome(Value* origin){
+//     auto iter=std::find_if(PhiRecord.begin(),PhiRecord.end(),
+//     [origin](std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
+//         return ele.second.first==origin;
+//     });
+//     if(iter==PhiRecord.end())
+//       return false;
+//     int num=iter->first;
+//     PhiRecord.erase(iter);
+//     PhiRecord[num]=std::make_pair(origin,nullptr);///@warning 需要修改
+//     return true;
+// }
+
 std::vector<Value*>& PhiInst::GetAllPhiVal(){
     for(const auto &[_1,value]:PhiRecord){
         Incomings.push_back(value.first);
