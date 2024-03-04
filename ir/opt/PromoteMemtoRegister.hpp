@@ -45,7 +45,7 @@ struct BlockInfo {
 
 struct RenamePass {
   RenamePass(BasicBlock *CurrentBB, BasicBlock *Pred,
-             std::vector<Value *> &IncomingVal)
+             std::vector<Value *> IncomingVal)
       : CurBlock(CurrentBB), Pred(Pred), IncomingVal(IncomingVal) {}
 
   RenamePass(RenamePass &&other)
@@ -57,7 +57,7 @@ struct RenamePass {
 
   BasicBlock *CurBlock;
   BasicBlock *Pred;
-  std::vector<Value *> &IncomingVal;
+  std::vector<Value *> IncomingVal;
 };
 
 class PromoteMem2Reg {

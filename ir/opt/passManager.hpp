@@ -1,7 +1,7 @@
 #pragma once
 #include"dominant.hpp"
 #include"ConstantFold.hpp"
-#include"GVN&GCM.hpp"
+#include"GVN.hpp"
 #include"IDF.hpp"
 #include"LivenessAnalysis.hpp"
 #include"PromoteMemtoRegister.hpp"

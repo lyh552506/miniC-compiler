@@ -1,4 +1,4 @@
-#include "GVN&GCM.hpp"
+#include "GVN.hpp"
 
 void Gvn_Gcm::init_pass() {
   BasicBlock *Entry = *(m_func->begin());

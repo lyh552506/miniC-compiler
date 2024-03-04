@@ -1,4 +1,4 @@
-#include "opt/GVN&GCM.hpp"
+#include "opt/GVN.hpp"
 #include "opt/dominant.hpp"
 #include "opt/passManager.hpp"
 #include "parser.hpp"
