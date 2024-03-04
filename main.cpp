@@ -16,7 +16,7 @@ void copyFile(const std::string &sourcePath,
 }
 
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
-                                       {"gvn", no_argument, 0, 1},
+                                       {"pre", no_argument, 0, 1},
                                        {"help", no_argument, 0, 2},
                                        {0, 0, 0, 0}};
 

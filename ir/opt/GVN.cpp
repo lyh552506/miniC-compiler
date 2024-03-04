@@ -1,6 +1,6 @@
 #include "GVN.hpp"
 
-void Gvn_Gcm::init_pass() {
+void gvn::init_pass() {
   BasicBlock *Entry = *(m_func->begin());
   caculateRPO(Entry);
   std::reverse(RPO.begin(), RPO.end());
@@ -9,7 +9,7 @@ void Gvn_Gcm::init_pass() {
 }
 
 /*hashing the instructions and do some basic optimizations*/
-void Gvn_Gcm::GVN() {
+void gvn::GVN() {
   for (BasicBlock *BB : RPO) {
     For_inst_In(BB) {
       //如果是二元操作指令，检查是否可以进行折叠
@@ -112,7 +112,7 @@ void Gvn_Gcm::GVN() {
 /*
 确保传入的value都是const类型，然后进行常数折叠
 */
-int Gvn_Gcm::OptConstBinary_INT(BinaryInst::Operation op, Value *a, Value *b) {
+int gvn::OptConstBinary_INT(BinaryInst::Operation op, Value *a, Value *b) {
   assert(a->isConst() && b->isConst());
   if (auto L = dynamic_cast<ConstIRInt *>(a)) {
     int LVal = dynamic_cast<ConstIRInt *>(a)->GetVal();
@@ -150,7 +150,7 @@ int Gvn_Gcm::OptConstBinary_INT(BinaryInst::Operation op, Value *a, Value *b) {
   }
 }
 
-float Gvn_Gcm::OptConstBinary_Float(BinaryInst::Operation op, Value *a,
+float gvn::OptConstBinary_Float(BinaryInst::Operation op, Value *a,
                                     Value *b) {
   if (auto L = dynamic_cast<ConstIRFloat *>(a)) {
     float LVal = dynamic_cast<ConstIRFloat *>(a)->GetVal();
@@ -187,7 +187,7 @@ float Gvn_Gcm::OptConstBinary_Float(BinaryInst::Operation op, Value *a,
 }
 
 /// @brief 检查binaryinst的特殊优化(目前只考虑int)
-Value *Gvn_Gcm::Special_Opt(BinaryInst::Operation op, Value *a, Value *b) {
+Value *gvn::Special_Opt(BinaryInst::Operation op, Value *a, Value *b) {
   auto Lval_int = dynamic_cast<ConstIRInt *>(a);
   auto Rval_int = dynamic_cast<ConstIRInt *>(b);
   auto Lval_float = dynamic_cast<ConstIRFloat *>(a);
@@ -318,7 +318,7 @@ Value *Gvn_Gcm::Special_Opt(BinaryInst::Operation op, Value *a, Value *b) {
   return nullptr;
 }
 
-Value *Gvn_Gcm::Find_Equal(Value *inst) {
+Value *gvn::Find_Equal(Value *inst) {
   //首先直接查找指针看是否有直接等价的
   auto it = std::find_if(ValueNumer.begin(), ValueNumer.end(),
                          [inst](std::pair<Value *, Value *> k) -> bool {
@@ -339,7 +339,7 @@ Value *Gvn_Gcm::Find_Equal(Value *inst) {
   return ValueNumer[size].second;
 }
 
-Value *Gvn_Gcm::SimplifyBinaryInst(BinaryInst *inst) {
+Value *gvn::SimplifyBinaryInst(BinaryInst *inst) {
   auto op1 = inst->getopration();
   Value *l = inst->Getuselist()[0]->GetValue(),
         *r = inst->Getuselist()[1]->GetValue();
@@ -372,7 +372,7 @@ Value *Gvn_Gcm::SimplifyBinaryInst(BinaryInst *inst) {
 }
 
 //已经确保了传入进来的callinst一定没有副作用
-Value *Gvn_Gcm::SimplifyCall(CallInst *inst) {
+Value *gvn::SimplifyCall(CallInst *inst) {
   for (int i = 0; i < ValueNumer.size(); i++) {
     auto [v1, v2] = ValueNumer[i];
     auto call = dynamic_cast<CallInst *>(v1);
@@ -394,7 +394,7 @@ Value *Gvn_Gcm::SimplifyCall(CallInst *inst) {
   return inst;
 }
 
-Value *Gvn_Gcm::SimplifyGEPInst(GetElementPtrInst *inst) {
+Value *gvn::SimplifyGEPInst(GetElementPtrInst *inst) {
   for (int i = 0; i < ValueNumer.size(); i++) {
     auto [v1, v2] = ValueNumer[i];
     auto gep = dynamic_cast<GetElementPtrInst *>(v1);
@@ -412,7 +412,7 @@ Value *Gvn_Gcm::SimplifyGEPInst(GetElementPtrInst *inst) {
   return inst;
 }
 
-Value *Gvn_Gcm::SimplifyPhiInst(PhiInst *inst) {
+Value *gvn::SimplifyPhiInst(PhiInst *inst) {
   HasUndefVal = false;
   Value *sameval = nullptr;
   BasicBlock *base = nullptr;
@@ -446,7 +446,7 @@ Value *Gvn_Gcm::SimplifyPhiInst(PhiInst *inst) {
   return sameval;
 }
 
-void Gvn_Gcm::caculateRPO(BasicBlock *bb) {
+void gvn::caculateRPO(BasicBlock *bb) {
   if (visited.insert(bb).second) {
     auto &node = m_dom->GetNode(bb->num);
     for (auto child : node.des) {
@@ -457,7 +457,7 @@ void Gvn_Gcm::caculateRPO(BasicBlock *bb) {
 }
 
 //判断callinst的函数是否含有副作用，没有副作用可以进行优化
-bool Gvn_Gcm::HaveSideEffect(Function *func) {
+bool gvn::HaveSideEffect(Function *func) {
   auto &params = func->GetParams();
   for (auto &param : params) {
     if (param->GetTypeEnum() == InnerDataType::IR_PTR)
@@ -480,13 +480,13 @@ bool Gvn_Gcm::HaveSideEffect(Function *func) {
   return false;
 }
 
-void Gvn_Gcm::GCM() {}
+void gvn::GCM() {}
 
-void Gvn_Gcm::Schedule_Early(User *inst) {}
+void gvn::Schedule_Early(User *inst) {}
 
-void Gvn_Gcm::Schedule_Late(User *inst) {}
+void gvn::Schedule_Late(User *inst) {}
 
-bool Gvn_Gcm::IsPinned(User *inst) {
+bool gvn::IsPinned(User *inst) {
   if (dynamic_cast<PhiInst *>(inst) || dynamic_cast<CondInst *>(inst) ||
       dynamic_cast<UnCondInst *>(inst) || dynamic_cast<RetInst *>(inst))
     return true;

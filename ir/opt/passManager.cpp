@@ -13,7 +13,7 @@ void PassManager::Init_Pass() {
       std::unique_ptr<dominance> dom(new dominance(f, Li.size()));
       //有了mem2reg才有后续的优化
       if (InitpassRecorder[1])
-        Gvn_Gcm(dom.get(), f).init_pass();
+        PRE(dom.get(), f).init_pass();
       
     }
   }
@@ -28,7 +28,7 @@ void PassManager::print_result() {
     Singleton<Module>().Test();
   } 
   if(InitpassRecorder[1]){
-    std::cout << "--------gvn_gcm--------" << std::endl;
+    std::cout << "--------pre--------" << std::endl;
     Singleton<Module>().Test();
   } 
 }

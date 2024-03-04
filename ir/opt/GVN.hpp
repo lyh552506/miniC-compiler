@@ -1,7 +1,7 @@
 #pragma once
 #include "dominant.hpp"
 
-class Gvn_Gcm {
+class gvn {
 private:
   dominance *m_dom;
   std::unordered_map<Value *, size_t> Hash_Tab; //指令对应的hashNumber
@@ -12,7 +12,7 @@ private:
   std::unordered_set<BasicBlock *> visited;
   bool HasUndefVal = false;
 public:
-  Gvn_Gcm(dominance *dom, Function *func)
+  gvn(dominance *dom, Function *func)
       : m_dom(dom), Hash_Tab{}, PinnedInst{}, m_func(func) {}
 
   void GCM();

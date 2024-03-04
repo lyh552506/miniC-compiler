@@ -1,6 +1,7 @@
 #pragma once
 #include "IDF.hpp"
 #include "dominant.hpp"
+#include "../../yacc/parser.hpp"
 
 //记录alloca
 class AllocaInfo {
