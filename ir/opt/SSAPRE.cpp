@@ -3,6 +3,7 @@
 void PRE::init_pass() {
   //首先进行gvn，标注等价的表达式
   gvn_walk();
+  phi_insertion();
 }
 
 void PRE::gvn_walk() {
@@ -77,4 +78,8 @@ Value *PRE::Find_Equal(BinaryInst *inst) {
   //没有找到相同的表达式，则把他加入到E_occurance
   E_occurance[exp_nums++].push_back(inst);
   return inst;
+}
+
+void PRE::phi_insertion(){
+
 }

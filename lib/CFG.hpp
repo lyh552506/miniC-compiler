@@ -156,6 +156,7 @@ public:
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
   std::vector<Value*>& GetAllPhiVal();
   bool modifyIncome(Value* origin);
+  bool modifyBlock(Value* val,BasicBlock* NewBlock);
 public:
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
@@ -221,6 +222,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
+    void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);//TODO
 };
 class Module:public SymbolTable
 {

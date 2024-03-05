@@ -30,4 +30,5 @@ private:
   std::vector<std::pair<Value *, Value *>> ValueNumber;
   std::unordered_set<BasicBlock *> visited; // RPO下的辅助数据结构
   int exp_nums = 0;                         //记录一共有多少表达式
+  
 };
