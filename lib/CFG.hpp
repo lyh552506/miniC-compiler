@@ -134,6 +134,8 @@ class GetElementPtrInst:public User
     GetElementPtrInst(Operand);
     Type* GetType()final;
     void print()final;
+    bool isPtrValConst();
+    Value* GetPtrVal();
 };
 //zext i1 to i32
 class ZextInst:public User

@@ -11,18 +11,16 @@ Value* ConstantFolding::ConstantFoldInst(User* inst)
         return ConstantFoldSITFPInst(_SITFP);
     if(auto _FPTSI = dynamic_cast<FPTSI*>(inst))
         return ConstantFoldFPTSIInst(_FPTSI);
-    // if(auto LOadInst = dynamic_cast<LoadInst*>(inst))
-    //     return ConstantFoldLoadInst(LOadInst);
-    // if(auto STore = dynamic_cast<StoreInst*>(inst))
-    //     return ConstantFoldStoreInst(STore);
-    // if(auto _CallInst = dynamic_cast<CallInst*>(inst))
-    //     return ConstantFoldCallInst(_CallInst);
-    // if(auto ALLoca = dynamic_cast<AllocaInst*>(inst))
-    //     return ConstantFoldAllocaInst(ALLoca);
-    // if(auto GEtElementPtrInst = dynamic_cast<GetElementPtrInst*>(inst))
-    //     return ConstantFoldGetElementPtrInst(GEtElementPtrInst);
-    // if(auto ZExtInst = dynamic_cast<ZextInst*>(inst))
-    //     return ConstantFoldZExtInst(ZExtInst);
+    if(auto LOadInst = dynamic_cast<LoadInst*>(inst))
+        return ConstantFoldLoadInst(LOadInst);
+    if(auto STore = dynamic_cast<StoreInst*>(inst))
+        return ConstantFoldStoreInst(STore);
+    if(auto _CallInst = dynamic_cast<CallInst*>(inst))
+        ConstantFoldCallInst(_CallInst);
+    if(auto GEtElementPtrInst = dynamic_cast<GetElementPtrInst*>(inst))
+        return ConstantFoldGetElementPtrInst(GEtElementPtrInst);
+    if(auto ZExtInst = dynamic_cast<ZextInst*>(inst))
+        return ConstantFoldZextInst(ZExtInst);
     return nullptr;
 }
 
@@ -111,8 +109,6 @@ Value* ConstantFolding::ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Valu
         case BinaryInst::Op_G:
             Result = (LVal > RVal);
             break;
-        // default:
-        //     assert(0);
     }
     return ConstIRInt::GetNewConstant(Result);
 }
@@ -161,8 +157,6 @@ Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Va
         case BinaryInst::Op_G:
             Result = (LVal > RVal);
             break;
-        // default:
-        //     assert(nullptr);
     }
     return ConstIRFloat::GetNewConstant(Result);
 }
@@ -191,16 +185,62 @@ Value* ConstantFolding::ConstantFoldFPTSIInst(FPTSI* inst)
 
 Value* ConstantFolding::ConstantFoldLoadInst(LoadInst* inst)
 {
-    Use Operand = *inst->Getuselist()[0];
+    Value* Operand = inst->Getuselist()[0]->usee;
+    if(auto UNdefValue = dynamic_cast<UndefValue*>(Operand))
+        return UndefValue::get(Operand->GetType());
+    else if(auto iNt = dynamic_cast<ConstIRInt*>(Operand))
+        return ConstIRInt::GetNewConstant(iNt->GetVal());
+    else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Operand))
+        return ConstIRFloat::GetNewConstant(fLoat->GetVal());
+    else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Operand))
+        return ConstIRBoolean::GetNewConstant(BOol->GetVal());
+    else
+        return nullptr;
+}
+
+Value* ConstantFolding::ConstantFoldStoreInst(StoreInst* inst)
+{
+    Value* Operand = inst->Getuselist()[0]->usee;
+    if(auto UNdefValue = dynamic_cast<UndefValue*>(Operand))
+        return UndefValue::get(Operand->GetType());
+    else if(auto iNt = dynamic_cast<ConstIRInt*>(Operand))
+        return ConstIRInt::GetNewConstant(iNt->GetVal());
+    else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Operand))
+        return ConstIRFloat::GetNewConstant(fLoat->GetVal());
+    else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Operand))
+        return ConstIRBoolean::GetNewConstant(BOol->GetVal());
+    else
+        return nullptr;
+}
+Value* ConstantFolding::ConstantFoldGetElementPtrInst(GetElementPtrInst* inst)
+{
+    Value* Val = inst->GetPtrVal();
+    if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
+        return UndefValue::get(UNdefValue->GetType());
+    else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
+        return ConstIRInt::GetNewConstant(iNt->GetVal());
+    else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Val))
+        return ConstIRFloat::GetNewConstant(fLoat->GetVal());
+    else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
+        return ConstIRBoolean::GetNewConstant(BOol->GetVal());
     return nullptr;
 }
 
-// Value* ConstantFolding::ConstantFoldGetElementPtrInst(GetElementPtrInst* inst)
-// {
-//     Use Operand = *inst->Getuselist()[0];
-//     // if(auto iNt = dynamic_cast<ConstIRInt*>(Operand))
-//     {
-//         int Offset = iNt->GetVal();
-//         // return inst->GetBasePtr()->GetElementPtr(Offset);
-//     }
-// }
+void ConstantFolding::ConstantFoldCallInst(CallInst* inst)
+{
+    if(inst->GetUserlist().is_empty())
+    {
+        inst->ClearRelation();
+        inst->EraseFromParent();
+    }
+}
+
+Value* ConstantFolding::ConstantFoldZextInst(ZextInst* inst)
+{
+    Value* Val = inst->Getuselist()[0]->GetValue();
+    if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
+        return UndefValue::get(UNdefValue->GetType());
+    else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
+        return ConstIRInt::GetNewConstant(iNt->GetVal());
+    return nullptr;
+}

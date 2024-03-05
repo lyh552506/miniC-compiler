@@ -6,16 +6,17 @@ class ConstantFolding
 {
 public:
 Value* ConstantFoldInst(User* inst);
+
+ConstantFolding() = default;
+
+private:
 // Handle PhiInst
 Value* ConstantFoldPhiInst(PhiInst* inst);
 // Handle BinaryInst
 Value* ConstantFoldBinaryInst(BinaryInst* inst);
-// ConstantFolding() = default;
-
-private:
-// For ConsantFoldBinaryInst 1
+// For ConsantFoldBinaryInst 
 Value* ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Value* RHS);
-// For ConsantFoldBinaryInst 1
+// For ConsantFoldBinaryInst 
 Value* ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Value* RHS);
 // Handle LoadInst
 Value* ConstantFoldLoadInst(LoadInst* inst);
@@ -28,10 +29,9 @@ Value* ConstantFoldFPTSIInst(FPTSI* inst);
 // Handle GetElementPtrInst
 Value* ConstantFoldGetElementPtrInst(GetElementPtrInst* inst);
 // Handle ZextInst
-Value* ConstantFoldZExtInst(ZextInst* inst);
+Value* ConstantFoldZextInst(ZextInst* inst);
 // Handle CallInst
-Value* ConstantFoldCallInst(CallInst* inst);
+void ConstantFoldCallInst(CallInst* inst);
 // Handle AllocaInst
 Value* ConstantFoldAllocaInst(AllocaInst* inst);
-
 };
