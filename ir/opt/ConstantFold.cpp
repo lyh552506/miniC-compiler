@@ -226,13 +226,50 @@ Value* ConstantFolding::ConstantFoldGetElementPtrInst(GetElementPtrInst* inst)
     return nullptr;
 }
 
-void ConstantFolding::ConstantFoldCallInst(CallInst* inst)
+bool ConstantFolding::CallHasSideEffects(Function* func)
 {
+    auto &Params = func->GetParams();
+    for(auto &_param : Params)
+    {
+        if(_param->GetTypeEnum() == InnerDataType::IR_PTR)
+            return true;
+    }
+    for(BasicBlock* block : *func)
+    {
+        for(User* inst : *block)
+        {
+            if(dynamic_cast<CallInst*>(inst))
+                return true;
+            auto &vac = inst->Getuselist();
+            for(auto &_val : vac)
+            {
+                if(_val->GetValue()->isGlobVal())
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+Value* ConstantFolding::ConstantFoldCallInst(CallInst* inst)
+{
+    Function* func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
+    if(CallHasSideEffects(func))
+        return nullptr;
     if(inst->GetUserlist().is_empty())
     {
         inst->ClearRelation();
         inst->EraseFromParent();
     }
+    Value* Val = func->RVACC();
+    if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
+        return UndefValue::get(UNdefValue->GetType());
+    else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
+        return ConstIRInt::GetNewConstant(iNt->GetVal());
+    else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Val))
+        return ConstIRFloat::GetNewConstant(fLoat->GetVal());
+    else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
+        return ConstIRBoolean::GetNewConstant(BOol->GetVal());
+    return nullptr;
 }
 
 Value* ConstantFolding::ConstantFoldZextInst(ZextInst* inst)
