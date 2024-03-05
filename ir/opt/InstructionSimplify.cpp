@@ -21,6 +21,8 @@ Value* SimplifyBinOp(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
         case BinaryInst::Op_L:
         case BinaryInst::Op_LE:
             return SimplifyIcmpInst(Opcode, LHS, RHS);
+        default:
+            return nullptr;
     }
 }
 
@@ -35,6 +37,7 @@ Value* SimplifyAddInst(Value* LHS, Value* RHS)
         return RHS;
     if(RHS->isConstZero() && !LHS->isConstZero())
         return LHS;
+    return nullptr;
 }
 
 Value* SimplifySubInst(Value* LHS, Value* RHS)
@@ -49,6 +52,7 @@ Value* SimplifySubInst(Value* LHS, Value* RHS)
     // X - X -> 0
     if(LHS == RHS)
         return ConstIRInt::GetNewConstant(0);
+    return nullptr;
 }
 
 Value* SimplifyMulInst(Value* LHS, Value* RHS)
@@ -66,6 +70,7 @@ Value* SimplifyMulInst(Value* LHS, Value* RHS)
         return RHS;
     if(RHS->isConstOne())
         return LHS;
+    return nullptr;
 }
 
 Value* SimplifyDivInst(Value* LHS, Value* RHS)
@@ -94,6 +99,7 @@ Value* SimplifyDivInst(Value* LHS, Value* RHS)
     // X / X -> 1
     if(LHS == RHS)
         return ConstIRInt::GetNewConstant(1);
+    return nullptr;
 }
 
 Value* SimplifyModInst(Value* LHS, Value* RHS)
@@ -116,6 +122,7 @@ Value* SimplifyModInst(Value* LHS, Value* RHS)
     // X % X -> 0
     if(RHS == LHS)
         return ConstIRInt::GetNewConstant(0);
+    return nullptr;
 }
 
 Value* SimplifyIcmpInst(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
@@ -155,4 +162,5 @@ Value* SimplifyIcmpInst(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
         if((dynamic_cast<ConstIRBoolean*>(RHS))->GetVal())
             return LHS;
     }
+    return nullptr;
 }

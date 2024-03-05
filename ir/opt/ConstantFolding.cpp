@@ -74,30 +74,43 @@ Value* ConstantFolding::ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Valu
     {
         case BinaryInst::Op_Add:
             Result = LVal + RVal;
+            break;
         case BinaryInst::Op_Sub:
             Result = LVal - RVal;
+            break;
         case BinaryInst::Op_Mul:
             Result = LVal * RVal;
+            break;
         case BinaryInst::Op_Div:
             Result = LVal / RVal;
+            break;
         case BinaryInst::Op_And:
             Result = (LVal && RVal);
+            break;
         case BinaryInst::Op_Or:
             Result = (LVal || RVal);
+            break;
         case BinaryInst::Op_Mod:
             Result = (LVal % RVal);
+            break;
         case BinaryInst::Op_E:
             Result = (LVal == RVal);
+            break;
         case BinaryInst::Op_NE:
             Result = (LVal != RVal);
+            break;
         case BinaryInst::Op_GE:
             Result = (LVal >= RVal);
+            break;
         case BinaryInst::Op_L:
             Result = (LVal < RVal);
+            break;
         case BinaryInst::Op_LE:
             Result = (LVal <= RVal);
+            break;
         case BinaryInst::Op_G:
             Result = (LVal > RVal);
+            break;
         // default:
         //     assert(0);
     }
@@ -114,28 +127,40 @@ Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Va
     {
         case BinaryInst::Op_Add:
             Result = LVal + RVal;
+            break;
         case BinaryInst::Op_Sub:
             Result = LVal - RVal;
+            break;
         case BinaryInst::Op_Mul:
             Result = LVal * RVal;
+            break;
         case BinaryInst::Op_Div:
             Result = LVal / RVal;
+            break;
         case BinaryInst::Op_And:
             Result = (LVal && RVal);
+            break;
         case BinaryInst::Op_Or:
             Result = (LVal || RVal);
+            break;
         case BinaryInst::Op_E:
             Result = (LVal == RVal);
+            break;
         case BinaryInst::Op_NE:
             Result = (LVal != RVal);
+            break;
         case BinaryInst::Op_GE:
             Result = (LVal >= RVal);
+            break;
         case BinaryInst::Op_L:
             Result = (LVal < RVal);
+            break;
         case BinaryInst::Op_LE:
             Result = (LVal <= RVal);
+            break;
         case BinaryInst::Op_G:
             Result = (LVal > RVal);
+            break;
         // default:
         //     assert(nullptr);
     }
