@@ -22,8 +22,7 @@ void PassManager::Init_Pass() {
       }
       if(InitpassRecorder[3])
       {
-        std::unique_ptr<ConstantProp>CP(new ConstantProp);
-        CP->Pass(f, dom.get());
+        ConstantProp(dom.get(), f).Pass();
       }
     }
   }

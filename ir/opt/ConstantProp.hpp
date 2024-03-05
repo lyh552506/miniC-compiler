@@ -1,7 +1,8 @@
 #include "ConstantFold.hpp"
 
 class ConstantProp
-{
+{  
+    void CalDomBlocks(BasicBlock* block);
     // 沿dominant tree 从 entry 开始按BFS顺序遍历BasicBlock
     void bfsTraversal(Function* func, dominance& dom);
 
@@ -15,14 +16,18 @@ class ConstantProp
     void propPhiToRef(User* inst); //将可达块的值传播到对该指令的引用
     void RunOnFunc(Function* func);
     void RunOnBlock(BasicBlock* block);
-
     void propConstToRef(User* inst); //用常量值替换该变量的所有引用
 
 private:
+    ConstantFolding* ConstFold;
     bool changed = false;
+    Function* _func;
+    std::vector<BasicBlock*> DomBlocks;
+    std::unordered_set<BasicBlock *> visited;
+    dominance* _dom;
 
 public:
-    void Pass(Function* func, dominance* dom);
+    void Pass();
 
-    ConstantProp() = default;
+    ConstantProp(dominance *dom, Function* func) : _dom(dom), _func(func) {}
 };

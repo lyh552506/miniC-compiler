@@ -1,97 +1,130 @@
 #include "ConstantProp.hpp"
 #include <set>
 #include <queue>
-void ConstantProp::RunOnFunc(Function* func)
+
+void ConstantProp::CalDomBlocks(BasicBlock* block)
 {
-    for(BasicBlock* block:*func)
-        RunOnBlock(block);
-    for(BasicBlock* block:*func)
+    if(visited.insert(block).second)
     {
-        
-        if(block->EndWithBranch())
-        {
-            if(auto COndInst = dynamic_cast<CondInst*>(block->back()))
-            {
-                BasicBlock* TrueBlock = dynamic_cast<BasicBlock*>(COndInst->Getuselist()[1].get()->GetValue());
-                BasicBlock* FalseBlock = dynamic_cast<BasicBlock*>(COndInst->Getuselist()[2].get()->GetValue());
-                if(Value* Cond = COndInst->Getuselist()[0].get()->GetValue())
-                {
-                    if(!dynamic_cast<ConstIRBoolean*>(Cond))
-                        continue;
-                    if((dynamic_cast<ConstIRBoolean*>(Cond))->GetVal() == 0)
-                    {
-                        COndInst->EraseFromParent();
-                        COndInst->ClearRelation();
-                        //ToDo: remove this block from its succblock's preblock
-                        for(BasicBlock* Succ_Block:block->GetSuccBlock())
-                        {
-                            Succ_Block->Del_Pre();
-                            if(Succ_Block != FalseBlock)
-                            {
-                                for(User* inst:*Succ_Block)
-                                {
-                                    if(auto PHiInst = dynamic_cast<PhiInst*>(inst))
-                                    {
-                                        for(int i = 0; i < PHiInst->PhiRecord.size(); i++)
-                                        {
-                                            if(PHiInst->PhiRecord[i].second == block)
-                                                PHiInst->Del_Incomes(i, PHiInst->PhiRecord);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        block->Link_Succ(FalseBlock);
-                        block->GetSuccBlock().clear();
-                        block->AddSuccBlock(FalseBlock);
-                    }
-                    else
-                    {
-                        COndInst->EraseFromParent();
-                        COndInst->ClearRelation();
-                        for(BasicBlock* Succ_Block:block->GetSuccBlock())
-                        {
-                            Succ_Block->Del_Pre();
-                            if(Succ_Block != TrueBlock)
-                            {
-                                for(User* inst:*Succ_Block)
-                                {
-                                    if(auto PHiInst = dynamic_cast<PhiInst*>(inst))
-                                    {
-                                        for(int i = 0; i < PHiInst->PhiRecord.size(); i++)
-                                        {
-                                            if(PHiInst->PhiRecord[i].second == block)
-                                                PHiInst->Del_Incomes(i, PHiInst->PhiRecord);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        block->Link_Succ(TrueBlock);
-                        block->GetSuccBlock().clear();
-                        block->AddSuccBlock(TrueBlock);
-                    }
-                }
-            }   
-        }
+        auto& node = _dom->GetNode(block->num);
+        for(int child : node.des)
+            CalDomBlocks(_dom->GetNode(child).thisBlock);
+        DomBlocks.push_back(block);
     }
+}
+
+void ConstantProp::Pass()
+{
+    CalDomBlocks(*_func->begin());
+    for(BasicBlock* block : DomBlocks)
+        RunOnBlock(block);
 }
 
 void ConstantProp::RunOnBlock(BasicBlock* block)
 {
-    ConstantFolding* ConstantFold;
-    std::vector<User*> Wait_Del;
-    for(User* inst : *block)
+    For_inst_In(block)
     {
-        Value* C = ConstantFold->ConstantFoldInst(inst);
+        if(auto test =dynamic_cast<BinaryInst*>(inst))
+            auto op = test->getopration();
+        Value* C = ConstFold->ConstantFoldInst(inst);
         if(C)
         {
-            inst->RAUW(C);
-            Wait_Del.push_back(inst);
+        inst->RAUW(C);
+        inst->ClearRelation();
+        inst->EraseFromParent();
         }
-
     }
 }
+// void ConstantProp::RunOnFunc(Function* func)
+// {
+//     CalDomBlocks(*func->begin());
+//     for(BasicBlock* block : DomBlocks)
+//         RunOnBlock(block);
+    // for(BasicBlock* block:*func)
+    // {
+        
+    //     if(block->EndWithBranch())
+    //     {
+    //         if(auto COndInst = dynamic_cast<CondInst*>(block->back()))
+    //         {
+    //             BasicBlock* TrueBlock = dynamic_cast<BasicBlock*>(COndInst->Getuselist()[1].get()->GetValue());
+    //             BasicBlock* FalseBlock = dynamic_cast<BasicBlock*>(COndInst->Getuselist()[2].get()->GetValue());
+    //             if(Value* Cond = COndInst->Getuselist()[0].get()->GetValue())
+    //             {
+    //                 if(!dynamic_cast<ConstIRBoolean*>(Cond))
+    //                     continue;
+    //                 if((dynamic_cast<ConstIRBoolean*>(Cond))->GetVal() == 0)
+    //                 {
+    //                     COndInst->EraseFromParent();
+    //                     COndInst->ClearRelation();
+    //                     //ToDo: remove this block from its succblock's preblock
+    //                     for(BasicBlock* Succ_Block:block->GetSuccBlock())
+    //                     {
+    //                         Succ_Block->Del_Pre();
+    //                         if(Succ_Block != FalseBlock)
+    //                         {
+    //                             for(User* inst:*Succ_Block)
+    //                             {
+    //                                 if(auto PHiInst = dynamic_cast<PhiInst*>(inst))
+    //                                 {
+    //                                     for(int i = 0; i < PHiInst->PhiRecord.size(); i++)
+    //                                     {
+    //                                         if(PHiInst->PhiRecord[i].second == block)
+    //                                             PHiInst->Del_Incomes(i, PHiInst->PhiRecord);
+    //                                     }
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                     block->Link_Succ(FalseBlock);
+    //                     block->GetSuccBlock().clear();
+    //                     block->AddSuccBlock(FalseBlock);
+    //                 }
+    //                 else
+    //                 {
+    //                     COndInst->EraseFromParent();
+    //                     COndInst->ClearRelation();
+    //                     for(BasicBlock* Succ_Block:block->GetSuccBlock())
+    //                     {
+    //                         Succ_Block->Del_Pre();
+    //                         if(Succ_Block != TrueBlock)
+    //                         {
+    //                             for(User* inst:*Succ_Block)
+    //                             {
+    //                                 if(auto PHiInst = dynamic_cast<PhiInst*>(inst))
+    //                                 {
+    //                                     for(int i = 0; i < PHiInst->PhiRecord.size(); i++)
+    //                                     {
+    //                                         if(PHiInst->PhiRecord[i].second == block)
+    //                                             PHiInst->Del_Incomes(i, PHiInst->PhiRecord);
+    //                                     }
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                     block->Link_Succ(TrueBlock);
+    //                     block->GetSuccBlock().clear();
+    //                     block->AddSuccBlock(TrueBlock);
+    //                 }
+    //             }
+    //         }   
+    //     }
+    // }
+// }
+
+
+
+    // for(User* inst : *block)
+    // {
+    //     Value* C = ConstFold->ConstantFoldInst(inst);
+    //     if(C)
+    //     {
+    //         inst->RAUW(C);
+    //         Wait_Del.push_back(inst);
+    //     }
+
+    // }
+
 // }            inst->ClearRelation();
             // inst->EraseFromParent();
 // bool ConstantProp::RunOnBlock(BasicBlock &block) 
@@ -127,48 +160,43 @@ void ConstantProp::RunOnBlock(BasicBlock* block)
 //     }
 // }
 
-void ConstantProp::Pass(Function* func, dominance* dom)
-{
-    // bfsTraversal(func, *dom);
-    RunOnFunc(func);
-}
-void ConstantProp::bfsTraversal(Function* func, dominance& dom)
-{
-    std::queue<int> q;
-    std::vector<bool> visited(sizeof(dominance::Node), false);
+// void ConstantProp::bfsTraversal(Function* func, dominance& dom)
+// {
+//     std::queue<int> q;
+//     std::vector<bool> visited(sizeof(dominance::Node), false);
 
-    //从根节点开始
-    int rootIndex = 1;
-    q.push(rootIndex);
-    visited[rootIndex] = true;
+//     //从根节点开始
+//     int rootIndex = 1;
+//     q.push(rootIndex);
+//     visited[rootIndex] = true;
 
-    while(!q.empty())
-    {
-        int current = q.front();
-        q.pop();
-        dominance::Node* currentNode = &dom.node[current];
+//     while(!q.empty())
+//     {
+//         int current = q.front();
+//         q.pop();
+//         dominance::Node* currentNode = &dom.node[current];
 
-        //TODO
-        RunOnBlock(currentNode->thisBlock);
+//         //TODO
+//         RunOnBlock(currentNode->thisBlock);
 
-        for(int childIndex : currentNode->idom_child)
-        {
-            if(!visited[childIndex])
-            {
-                q.push(childIndex);
-                visited[childIndex] = true;
-            }
-        }
-    }
-}
+//         for(int childIndex : currentNode->idom_child)
+//         {
+//             if(!visited[childIndex])
+//             {
+//                 q.push(childIndex);
+//                 visited[childIndex] = true;
+//             }
+//         }
+//     }
+// }
 
-bool isConstantAssignment(User* inst)
-{
-    // Check if the instruction is a constant assignment
-    // Return true if it is, otherwise return false
-    // TODO: Implement the logic to determine if the instruction is a constant assignment
-    return false;
-}
+// bool isConstantAssignment(User* inst)
+// {
+//     // Check if the instruction is a constant assignment
+//     // Return true if it is, otherwise return false
+//     // TODO: Implement the logic to determine if the instruction is a constant assignment
+//     return false;
+// }
 /*
     沿CFG对应的 dominant tree 从entry开始按BFS顺序遍历BasicBlock
     foreach block in blocks do:
@@ -191,6 +219,8 @@ bool isConstantAssignment(User* inst)
     */
 
 // void ConstantProp::RunOnBlock(BasicBlock* block)
+
+
 // {
 //     for(User* inst:*block)
 //     {

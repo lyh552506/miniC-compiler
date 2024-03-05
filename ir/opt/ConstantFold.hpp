@@ -1,3 +1,4 @@
+#pragma once
 #include "CFG.hpp"
 #include "dominant.hpp"
 using DNode=dominance::Node*;
@@ -9,11 +10,12 @@ Value* ConstantFoldInst(User* inst);
 Value* ConstantFoldPhiInst(PhiInst* inst);
 // Handle BinaryInst
 Value* ConstantFoldBinaryInst(BinaryInst* inst);
+// ConstantFolding() = default;
 
 private:
-// For ConsantFoldBinaryInst
+// For ConsantFoldBinaryInst 1
 Value* ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Value* RHS);
-// For ConsantFoldBinaryInst
+// For ConsantFoldBinaryInst 1
 Value* ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Value* RHS);
 // Handle LoadInst
 Value* ConstantFoldLoadInst(LoadInst* inst);
@@ -25,7 +27,11 @@ Value* ConstantFoldSITFPInst(SITFP* inst);
 Value* ConstantFoldFPTSIInst(FPTSI* inst);
 // Handle GetElementPtrInst
 Value* ConstantFoldGetElementPtrInst(GetElementPtrInst* inst);
+// Handle ZextInst
+Value* ConstantFoldZExtInst(ZextInst* inst);
 // Handle CallInst
 Value* ConstantFoldCallInst(CallInst* inst);
+// Handle AllocaInst
+Value* ConstantFoldAllocaInst(AllocaInst* inst);
 
 };

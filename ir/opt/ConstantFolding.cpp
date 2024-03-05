@@ -1,4 +1,5 @@
 #include "ConstantFold.hpp"
+#include "InstructionSimplify.hpp"
 
 Value* ConstantFolding::ConstantFoldInst(User* inst)
 {
@@ -6,9 +7,25 @@ Value* ConstantFolding::ConstantFoldInst(User* inst)
         return ConstantFoldPhiInst(PHiInst);
     if(auto BInaryInst = dynamic_cast<BinaryInst*>(inst))
         return ConstantFoldBinaryInst(BInaryInst);
-    if(auto LOadInst = dynamic_cast<LoadInst*>(inst))
-        return ConstantFoldLoadInst(LOadInst);
+    if(auto _SITFP = dynamic_cast<SITFP*>(inst))
+        return ConstantFoldSITFPInst(_SITFP);
+    if(auto _FPTSI = dynamic_cast<FPTSI*>(inst))
+        return ConstantFoldFPTSIInst(_FPTSI);
+    // if(auto LOadInst = dynamic_cast<LoadInst*>(inst))
+    //     return ConstantFoldLoadInst(LOadInst);
+    // if(auto STore = dynamic_cast<StoreInst*>(inst))
+    //     return ConstantFoldStoreInst(STore);
+    // if(auto _CallInst = dynamic_cast<CallInst*>(inst))
+    //     return ConstantFoldCallInst(_CallInst);
+    // if(auto ALLoca = dynamic_cast<AllocaInst*>(inst))
+    //     return ConstantFoldAllocaInst(ALLoca);
+    // if(auto GEtElementPtrInst = dynamic_cast<GetElementPtrInst*>(inst))
+    //     return ConstantFoldGetElementPtrInst(GEtElementPtrInst);
+    // if(auto ZExtInst = dynamic_cast<ZextInst*>(inst))
+    //     return ConstantFoldZExtInst(ZExtInst);
+    return nullptr;
 }
+
 Value* ConstantFolding::ConstantFoldPhiInst(PhiInst* inst)
 {
     Value* CommonValue = nullptr;
@@ -27,19 +44,31 @@ Value* ConstantFolding::ConstantFoldPhiInst(PhiInst* inst)
 
 Value* ConstantFolding::ConstantFoldBinaryInst(BinaryInst* inst)
 {
-    Value* LHS = inst->Getuselist()[0]->GetValue();
-    Value* RHS = inst->Getuselist()[1]->GetValue();
-    if(auto iNt = dynamic_cast<ConstIRInt*>(LHS))
-        ConstantFoldBinaryInt(inst, LHS, RHS);
-    if(auto fLoat = dynamic_cast<ConstIRFloat*>(LHS))
-        ConstantFoldBinaryFloat(inst, LHS, RHS);
+    Value* LHS = inst->Getuselist()[0]->usee;
+    Value* RHS = inst->Getuselist()[1]->usee;
+    InnerDataType type = inst->GetTypeEnum();
     
+    if(LHS->isConst() && RHS->isConst())
+    {
+        Value* Simplify = SimplifyBinOp(inst->getopration(), LHS, RHS);
+        if(Simplify)
+            return Simplify;
+        if(type == InnerDataType::IR_Value_INT)
+            return ConstantFoldBinaryInt(inst, LHS, RHS);
+        if(type == InnerDataType::IR_Value_Float)
+            return ConstantFoldBinaryFloat(inst, LHS, RHS);
+    }
+    Value* Simplify = SimplifyBinOp(inst->getopration(), LHS, RHS);
+    if(Simplify)
+        return Simplify;
+    return nullptr;
 } 
+
 Value* ConstantFolding::ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Value* RHS)
 {
     int LVal = dynamic_cast<ConstIRInt*>(LHS)->GetVal();
     int RVal = dynamic_cast<ConstIRInt*>(RHS)->GetVal();
-    BinaryInst::Operation Opcode = inst->GetOpcode(inst);
+    BinaryInst::Operation Opcode = inst->getopration();
     int Result;
     switch(Opcode)
     {
@@ -69,17 +98,17 @@ Value* ConstantFolding::ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Valu
             Result = (LVal <= RVal);
         case BinaryInst::Op_G:
             Result = (LVal > RVal);
-        default:
-            assert(0);
+        // default:
+        //     assert(0);
     }
     return ConstIRInt::GetNewConstant(Result);
 }
 
 Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Value* RHS)
 {
-    float LVal = dynamic_cast<ConstIRInt*>(LHS)->GetVal();
-    float RVal = dynamic_cast<ConstIRInt*>(RHS)->GetVal();
-    BinaryInst::Operation Opcode = inst->GetOpcode(inst);
+    float LVal = dynamic_cast<ConstIRFloat*>(LHS)->GetVal();
+    float RVal = dynamic_cast<ConstIRFloat*>(RHS)->GetVal();
+    BinaryInst::Operation Opcode = inst->getopration();
     float Result;
     switch(Opcode)
     {
@@ -107,8 +136,8 @@ Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Va
             Result = (LVal <= RVal);
         case BinaryInst::Op_G:
             Result = (LVal > RVal);
-        default:
-            assert(0);
+        // default:
+        //     assert(nullptr);
     }
     return ConstIRFloat::GetNewConstant(Result);
 }
@@ -116,18 +145,37 @@ Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Va
 Value* ConstantFolding::ConstantFoldSITFPInst(SITFP* inst)
 {
     Value* Operand = inst->Getuselist()[0]->GetValue();
-    if(auto iNt = dynamic_cast<ConstIRInt*>(Operand))
+    if(auto UNdefValue = dynamic_cast<UndefValue*>(Operand))
+        return UndefValue::get(Operand->GetType());
+    else if(auto iNt = dynamic_cast<ConstIRInt*>(Operand))
         return ConstIRFloat::GetNewConstant((float)(iNt->GetVal()));
+    else
+        return nullptr;
 }
 
 Value* ConstantFolding::ConstantFoldFPTSIInst(FPTSI* inst)
 {
     Value* Operand = inst->Getuselist()[0]->GetValue();
-    if(auto fLoat = dynamic_cast<ConstIRFloat*>(Operand))
+    if(auto UNdefValue = dynamic_cast<UndefValue*>(Operand))
+        return UndefValue::get(Operand->GetType());
+    else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Operand))
         return ConstIRInt::GetNewConstant((int)(fLoat->GetVal()));
+    else
+        return nullptr;
 }
+
 Value* ConstantFolding::ConstantFoldLoadInst(LoadInst* inst)
 {
     Use Operand = *inst->Getuselist()[0];
-    
+    return nullptr;
 }
+
+// Value* ConstantFolding::ConstantFoldGetElementPtrInst(GetElementPtrInst* inst)
+// {
+//     Use Operand = *inst->Getuselist()[0];
+//     // if(auto iNt = dynamic_cast<ConstIRInt*>(Operand))
+//     {
+//         int Offset = iNt->GetVal();
+//         // return inst->GetBasePtr()->GetElementPtr(Offset);
+//     }
+// }
