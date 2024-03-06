@@ -5,6 +5,7 @@ class ConstantProp
     void CalDomBlocks(BasicBlock* block);
     void RunOnFunc(Function* func);
     void RunOnBlock(BasicBlock* block);
+
 private:
     ConstantFolding* ConstFold;
     bool changed = false;

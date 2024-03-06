@@ -36,6 +36,10 @@ Value* RVACC(Function* func);
 bool CallHasSideEffects(Function* func);
 // Handle CallInst
 Value* ConstantFoldCallInst(CallInst* inst);
+// Determine whether CallInst has SideEffects
+bool CallHasSideEffects(Function* func);
+// isReturnValueAlwaysCommonConst,if true,return value;
+Value* RVACC(Function* func); 
 // Handle AllocaInst
 Value* ConstantFoldAllocaInst(AllocaInst* inst);
 };
