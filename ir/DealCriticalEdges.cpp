@@ -42,10 +42,18 @@ void ElimitCriticalEdge::AddNullBlock(User *inst, int succ) {
 
   //还需要修改phi函数的incoming
   for (auto iter = DstBB->begin();
-       iter != DstBB->end(), dynamic_cast<PhiInst *>(*iter) != nullptr;
+       iter != DstBB->end() && dynamic_cast<PhiInst *>(*iter) != nullptr;
        ++iter) {
     auto phi = dynamic_cast<PhiInst *>(*iter);
-
-    
+    auto it1 = std::find_if(
+        phi->PhiRecord.begin(), phi->PhiRecord.end(),
+        [CurrBB](std::pair<int, std::pair<Value *, BasicBlock *>> &ele) {
+          return ele.second.second == CurrBB;
+        });
+    if (it1 == phi->PhiRecord.end())
+      continue;
+    //将value对应的块信息更改
+    it1->second.second = criticalbb;
+    phi->Blocks[it1->first]=criticalbb;
   }
 }
