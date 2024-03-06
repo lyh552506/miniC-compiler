@@ -30,6 +30,8 @@ Value* ConstantFoldFPTSIInst(FPTSI* inst);
 Value* ConstantFoldGetElementPtrInst(GetElementPtrInst* inst);
 // Handle ZextInst
 Value* ConstantFoldZextInst(ZextInst* inst);
+// isReturnValueAlwaysCommonConst,if true,return value;
+Value* RVACC(Function* func); 
 // Determine whether CallInst has side effects
 bool CallHasSideEffects(Function* func);
 // Handle CallInst
