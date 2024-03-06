@@ -12,8 +12,15 @@
             "program": "${workspaceFolder}/build/SYSY-compiler",
             "cwd": "${workspaceFolder}",
             "targetArchitecture": "x64",
-            "args": ["${workspaceFolder}/function_test/test.c"],
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--gvn","--livenessanalysis"],
             "stopAtEntry": false,
+            "setupCommands": [
+              {
+                  "description": "为 gdb 启用整齐打印",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+              }
+          ],
             // "environment": [
             //   {
             //     "name": "LSAN_OPTIONS",
@@ -24,6 +31,33 @@
               "MIMode": "gdb",
               "miDebuggerPath": "/usr/bin/gdb"
             }
-          }        
+          },
+          {
+            "name": "C++ Launch(MacOS)",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "CMake: build",
+            "program": "${workspaceFolder}/build/SYSY-compiler",
+            "cwd": "${workspaceFolder}",
+            "targetArchitecture": "x64",
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constantprop"],
+            "stopAtEntry": false,
+            // "setupCommands": [
+            //   {
+            //       "description": "为 lldb 启用整齐打印",
+            //       "text": "-enable-pretty-printing",
+            //       "ignoreFailures": true
+            //   }
+          // ],
+            // "environment": [
+            //   {
+            //     "name": "LSAN_OPTIONS",
+            //     "value": "verbosity=1:log_threads=1"
+            //   }
+            // ],
+              "MIMode": "lldb",
+              // "miDebuggerPath": "/usr/bin/lldb"
+            
+          }          
     ]
 }

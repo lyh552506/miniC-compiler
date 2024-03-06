@@ -7,6 +7,8 @@
 #include "MagicEnum.hpp"
 #include "CFG.hpp"
 
+// extern int yylineno;
+
 enum AST_Type
 {
     AST_INT,AST_FLOAT,AST_VOID,AST_ADD,AST_SUB,AST_MUL,AST_MODULO,AST_DIV,AST_GREAT,AST_GREATEQ,AST_LESS,AST_LESSEQ,AST_EQ,AST_ASSIGN,AST_NOTEQ,AST_NOT,AST_AND,AST_OR,
@@ -40,6 +42,17 @@ class FunctionCall;
 template<typename T>class ConstValue;
 class BaseDef;
 
+class LocType
+{
+    public:
+    int begin;
+    int end;
+    void SET(const LocType&);
+    LocType();
+    LocType(int);
+    LocType& operator=(const LocType&)=default;
+};
+
 struct GetInstState
 {
     BasicBlock* current_building;
@@ -48,7 +61,7 @@ struct GetInstState
 };
 
 /// @brief 最基础的AST_NODE，所有基础特性都应该放里面
-class AST_NODE 
+class AST_NODE:public LocType
 {
     /// @todo 可以加个enum type 表示这个是什么type，但是貌似 C++ 现在支持动态判定类型,指typeid
     public:
@@ -99,6 +112,10 @@ class BaseExp:public HasOperand
         }
         for(auto&i:ls)i->print(x+!oplist.empty());
     }
+    void GetOperand(BasicBlock* block,BasicBlock* is_true,BasicBlock* is_false){
+        std::cerr<<"Only prepare for short circuit\n";
+        assert(0);
+    }
     Operand GetOperand(BasicBlock* block) final{
         /// UnaryExp 是一元操作符，单独取出来研究
         if constexpr(std::is_same_v<T,HasOperand>){
@@ -111,12 +128,26 @@ class BaseExp:public HasOperand
                 switch (*i)
                 {
                 case AST_NOT:
-                    ptr=BasicBlock::GenerateBinaryInst(block,Operand(0),BinaryInst::Op_Sub,ptr);
-                    break;
+                    switch(ptr->GetType()->GetTypeEnum())
+                    {
+                        case IR_Value_INT:
+                            if(dynamic_cast<BoolType*>(ptr->GetType()))
+                                ptr=BasicBlock::GenerateBinaryInst(block,ptr,BinaryInst::Op_E,ConstIRBoolean::GetNewConstant());
+                            else
+                                ptr=BasicBlock::GenerateBinaryInst(block,ptr,BinaryInst::Op_E,ConstIRInt::GetNewConstant());
+                            break;
+                        case IR_Value_Float:ptr=BasicBlock::GenerateBinaryInst(block,ConstIRFloat::GetNewConstant(),BinaryInst::Op_E,ptr);break;
+                        case IR_PTR:ptr=BasicBlock::GenerateBinaryInst(block,ConstPtr::GetNewConstant(ptr->GetType()),BinaryInst::Op_E,ptr);break;
+                        default:assert(0);
+                    }
                 case AST_ADD:
                     break;
                 case AST_SUB:
-                    ptr=BasicBlock::GenerateBinaryInst(block,Operand(0),BinaryInst::Op_Sub,ptr);
+                    // if(dynamic_cast<BoolType*>(ptr->GetType()))break;
+                    if(ptr->GetType()->GetTypeEnum()==IR_Value_INT)
+                        ptr=BasicBlock::GenerateBinaryInst(block,ConstIRInt::GetNewConstant(),BinaryInst::Op_Sub,ptr);
+                    else 
+                        ptr=BasicBlock::GenerateBinaryInst(block,ConstIRFloat::GetNewConstant(),BinaryInst::Op_Sub,ptr);
                     break;
                 default:
                     assert(0);
@@ -164,8 +195,82 @@ using UnaryExp=BaseExp<HasOperand>;//+-+-+!- primary
 using MulExp=BaseExp<UnaryExp>;//*
 using AddExp=BaseExp<MulExp>;//+ -
 using RelExp=BaseExp<AddExp>;//> < >= <=
+
+template<>
+inline Operand BaseExp<RelExp>::GetOperand(BasicBlock* block){
+    auto i=ls.begin();
+    auto oper=(*i)->GetOperand(block);
+    if(oplist.size()==0&&oper->GetType()!=BoolType::NewBoolTypeGet()){
+        switch(oper->GetType()->GetTypeEnum())
+        {
+            case IR_PTR:oper=block->GenerateBinaryInst(block,oper,BinaryInst::Op_NE,ConstPtr::GetNewConstant(oper->GetType()));break;
+            case IR_Value_INT:oper=block->GenerateBinaryInst(block,oper,BinaryInst::Op_NE,ConstIRInt::GetNewConstant());break;
+            case IR_Value_Float:oper=block->GenerateBinaryInst(block,oper,BinaryInst::Op_NE,ConstIRFloat::GetNewConstant());break;
+            default:assert(0);
+        }
+        return oper;
+    }
+    for(auto &j:oplist){
+        i++;
+        auto another=(*i)->GetOperand(block);
+        BinaryInst::Operation opcode;
+        switch (j)
+        {
+        case AST_EQ:opcode=BinaryInst::Op_E;break;
+        case AST_NOTEQ:opcode=BinaryInst::Op_NE;break;
+        default:
+            std::cerr<<"Wrong Opcode for EqExp\n";
+            assert(0);
+        }
+        oper=BasicBlock::GenerateBinaryInst(block,oper,opcode,another);
+    }
+    return oper;
+}
+
 using EqExp=BaseExp<RelExp>;//==
+
+template<>
+inline void BaseExp<EqExp>::GetOperand(BasicBlock* block,BasicBlock* is_true,BasicBlock* is_false){
+    for(auto &i:ls){
+        auto tmp=i->GetOperand(block);
+        if(auto Const=dynamic_cast<ConstIRBoolean*>(tmp)){
+            if(Const->GetVal()==true){
+                if(i.get()!=ls.back().get())continue;
+                else{
+                    block->GenerateUnCondInst(is_true);
+                    return;
+                }
+            }
+            else{
+                block->GenerateUnCondInst(is_false);
+                return;
+            }
+        }
+        if(i.get()!=ls.back().get()){
+            auto nxt_building=block->GenerateNewBlock();
+            block->GenerateCondInst(tmp,nxt_building,is_false);
+            block=nxt_building;
+        }
+        else block->GenerateCondInst(tmp,is_true,is_false);
+    }
+}
+
 using LAndExp=BaseExp<EqExp>;//&&
+
+template<>
+inline void BaseExp<LAndExp>::GetOperand(BasicBlock* block,BasicBlock* is_true,BasicBlock* is_false){
+    for(auto &i:ls){
+        if(i.get()!=ls.back().get()){
+            auto nxt_building=block->GenerateNewBlock();
+            i->GetOperand(block,is_true,nxt_building);
+            if(!nxt_building->GetUserlist().is_empty())
+                block=nxt_building;
+            else nxt_building->EraseFromParent();
+        }
+        else i->GetOperand(block,is_true,is_false);
+    }
+}
+
 using LOrExp=BaseExp<LAndExp>;//||
 
 class InnerBaseExps:public AST_NODE
@@ -184,6 +289,7 @@ class Exps:public InnerBaseExps//数组声明修饰符/访问修饰符号
     public:
     Exps(AddExp* _data);
     Type* GetDeclDescipter();
+    Type* GetDeclDescipter(Type*);
     std::vector<Operand> GetVisitDescripter(BasicBlock*);
 };
 
@@ -201,6 +307,7 @@ class InitVals:public AST_NODE
     InitVals(InitVal* _data);
     void push_back(InitVal* _data);
     void print(int x);
+    Operand GetOperand(Type*,BasicBlock*);
 };
 
 class InitVal:public AST_NODE
@@ -212,6 +319,7 @@ class InitVal:public AST_NODE
     InitVal(AST_NODE* _data);
     void print(int x);
     Operand GetFirst(BasicBlock*);
+    Operand GetOperand(Type*,BasicBlock*);
 };
 
 class BaseDef:public Stmt
@@ -360,6 +468,7 @@ class LVal:public HasOperand
     std::unique_ptr<Exps> array_descripters;
     public:
     LVal(std::string _id,Exps* ptr=nullptr);
+    Operand GetPointer(BasicBlock* block);
     Operand GetOperand(BasicBlock* block);
     std::string GetName();
     void print(int x);
@@ -447,8 +556,8 @@ class ConstValue:public HasOperand
     public:
     ConstValue(T _data):data(_data){}
     Operand GetOperand(BasicBlock* block){
-        if(std::is_same<T,int>::value)return new ConstIRInt(data);
-        else return new ConstIRFloat(data);
+        if(std::is_same<T,int>::value)return ConstIRInt::GetNewConstant(data);
+        else return ConstIRFloat::GetNewConstant(data);
     }
     void print(int x)final{
         AST_NODE::print(x);

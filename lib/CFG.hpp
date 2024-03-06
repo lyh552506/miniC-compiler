@@ -2,65 +2,72 @@
 #include "SymbolTable.hpp"
 #include "Singleton.hpp"
 #include "BaseCFG.hpp"
-/// @brief 真正意义上变量，在内存里反应为alloca指令，寄存器应该只要Value级就够了
 class BasicBlock;
 class Function;
+
+class InitVal;
+class InitVals;
+
+class Initializer:public Value,public std::vector<Operand>
+{
+    public:
+    Initializer(Type*);
+    void Var2Store(BasicBlock*,const std::string&,std::vector<int>&);
+    /// @brief 打印
+    /// <Type> [<Content_0>,<Content1>,...]
+    /// Content:= <Type> <Content>
+    void print();
+};
+
 class Variable
 {
+    Operand attached_initializer=nullptr;
     std::string name;
     Type* tp;
     public:
     Variable(std::string);
     Variable(Type*,std::string);
     Variable(InnerDataType,std::string);
+    void attach(Operand);
     std::string get_name();
     Type* GetType();
+    void print();
 };
-/// @brief AllocaInst接受一个Value*(Variable)，产生一个PTR，指向Value*的Type类型
 
 class UndefValue:public User{
-  UndefValue(Type* Ty){}
+  UndefValue(Type* Ty):User(Ty){name="undef";}
 public:
   static UndefValue* get(Type *Ty);
+  void print();
 };
-/// @brief BasicBlock会作为CFG中的最小节点出现，要有一个访问所有出边的方法
+
+class MemcpyHandle:public User{
+    public:
+    MemcpyHandle(Type*,Operand);
+    void print();
+};
 
 class AllocaInst:public User
 {
     public:
-    /// @brief Alloca语句要Type的结构,所以是Value*
-    AllocaInst(Type*);
+    AllocaInst(std::string,Type*);
     void print()final;
-    AllocaInst(std::shared_ptr<Type>);
-    bool IsUsed();//TODO 返回当前alloca出来的对象后续有没有被使用过
-    void DeletFromList();//删除当前指令
-    std::vector<User*> GetUsers(); //返回使用过alloca分配出的虚拟寄存器的指令
-    BasicBlock* GetParent();//返回当前指令所在的bb
+    bool IsUsed();
 };
-/// @brief src->des
-/// @note inst use %src %des
-/// @param src Operand
-/// @param des Value* 必须是个指针类型
+
 class StoreInst:public User
 {
     public:
     StoreInst(Operand,Operand);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
-    Value* GetOperand(int index);//返回storeinst的第index个操作数，   
-    BasicBlock* GetParent();//返回当前指令所在的bb
 };
 class LoadInst:public User
 {
     public:
     LoadInst(Operand __src);
     void print()final;
-    /// @brief 一般都是只有src,def是load产生的
-    /// @param __src 
-    BasicBlock* GetParent();//返回当前指令所在的bb
     Value* GetSrc();
-    void ReplaceAllUsersWith(Value* val);
 };
 /// @brief float to int
 class FPTSI:public User
@@ -82,7 +89,6 @@ class UnCondInst:public User
     UnCondInst(BasicBlock*);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class CondInst:public User
 {
@@ -90,16 +96,13 @@ class CondInst:public User
     CondInst(Operand,BasicBlock*,BasicBlock*);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
 class CallInst:public User
 {
     public:
-    CallInst(Function*,std::vector<Operand>&);
+    CallInst(Value*,std::vector<Operand>&,std::string);
     void print()final;
-    void ir_mark();
 };
-/// @brief Ret, maybe has return value
 class RetInst:public User
 {
     public:
@@ -107,13 +110,7 @@ class RetInst:public User
     RetInst(Operand);
     Operand GetDef()final;
     void print()final;
-    void ir_mark();
 };
-/// @brief BinaryInst use A B,def C
-/// @param A operand
-/// @param op define inside class
-/// @param B operand
-/// @param C operand
 class BinaryInst:public User
 {
     public:
@@ -128,89 +125,119 @@ class BinaryInst:public User
     public:
     BinaryInst(Operand _A,Operation __op,Operand _B);
     void print()final;
+    std::string GetOperation();
+    Operation getopration();
 };
 class GetElementPtrInst:public User
 {
     public:
     GetElementPtrInst(Operand);
-    Type* GetType();
+    Type* GetType()final;
+    void print()final;
+    bool isPtrValConst();
+    Value* GetPtrVal();
+};
+//zext i1 to i32
+class ZextInst:public User
+{
+    public:
+    ZextInst(Operand);
     void print()final;
 };
-class BasicBlock:public Value
+
+class PhiInst : public User {
+public:
+  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {}
+
+  PhiInst(User *BeforeInst):oprandNum(0) {}
+
+  void print() final;
+  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB);
+  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
+  void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
+  std::vector<Value*>& GetAllPhiVal();
+public:
+  std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
+  std::vector<Value*> Incomings;
+  void Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord);
+  int oprandNum;
+};
+class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
 {
-    List<User> insts;
     Function& master;
     public:
     BasicBlock(Function& __master);
     void print();
-    void push_front(User* ptr);
-    void push_back(User* ptr);
-    Operand push_alloca(Type*);
+    Operand push_alloca(std::string,Type*);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
     static Operand GenerateBinaryInst(BasicBlock*,Operand,BinaryInst::Operation,Operand);
     Operand GenerateLoadInst(Operand);
     Operand GenerateGEPInst(Operand);
+    Operand GenerateZextInst(Operand);
     void GenerateCondInst(Operand,BasicBlock*,BasicBlock*);
     void GenerateUnCondInst(BasicBlock*);
     void GenerateRetInst(Operand);
     void GenerateRetInst();
-    Operand GenerateCallInst(std::string,std::vector<Operand> args);
+    Operand GenerateCallInst(std::string,std::vector<Operand>,int);
     void GenerateStoreInst(Operand,Operand);
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
-    //todo
-    List<User>& getInstList();
+    BasicBlock* GenerateNewBlock(std::string);
+    std::vector<BasicBlock*> Succ_Block;
+    std::vector<BasicBlock*> GetSuccBlock();
+    void AddSuccBlock(BasicBlock* block){this->Succ_Block.push_back(block);}
     bool EndWithBranch();
-    void ir_mark();
-    List<User>& GetInsts();
-    int dfs;
+    int num=0;
+    bool visited=false;
 };
-/// @brief 以function为最大单元生成CFG
-//其实function本质是就是CFG了
-class Function:public Value
+
+class ExternFunction:public Value
 {
-    std::string name;
+    public:
+    ExternFunction(std::string);
+    void print();
+    std::string GetName();
+};
+
+class BuildInFunction:public Value
+{
+    BuildInFunction(Type*,std::string);
+    public:
+    static BuildInFunction* GetBuildInFunction(std::string);
+};
+
+class Function:public Value,public mylist<Function,BasicBlock>
+{
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
-    std::vector<BasicBlockPtr> bbs;
+    std::vector<BasicBlock*> bbs;
     void InsertAlloca(AllocaInst* ptr);
     public:
     Function(InnerDataType _tp,std::string _id);
-    BasicBlock* front_block();
-    
-    //todo
-    // std::string getFuncName();
-    std::vector<ParamPtr>& getParams();
-    std::vector<BasicBlockPtr>& getBlockList();
-    // std::vector<VarPtr>& getAllocaVariables();
-    
     void print();
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
-    BasicBlock* front();
-    std::string GetName();
+    void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
-    std::vector<BasicBlockPtr> GetBasicBlock();
+    std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
+    Value* RVACC(); // isReturnValueAlwaysCommonConst,if true,return value;
 };
-/// @brief 编译单元
 class Module:public SymbolTable
 {
     using GlobalVariblePtr=std::unique_ptr<Variable>;
     using FunctionPtr=std::unique_ptr<Function>;
     std::vector<FunctionPtr> ls;
     std::vector<GlobalVariblePtr> globalvaribleptr;
+    std::vector<MemcpyHandle*> constants_handle;
     public:
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
-    
-    //todo
-    std::vector <FunctionPtr> &getFuncList();
-    
+    Operand GenerateMemcpyHandle(Type*,Operand);
+    std::vector<FunctionPtr>& GetFuncTion();
     void Test();
-    std::vector<FunctionPtr> GetFuncTion();
 };

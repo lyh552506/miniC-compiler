@@ -163,8 +163,27 @@ extern FILE *yyin, *yyout;
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
     
-    #define YY_LESS_LINENO(n)
-    #define YY_LINENO_REWIND_TO(ptr)
+    /* Note: We specifically omit the test for yy_rule_can_match_eol because it requires
+     *       access to the local variable yy_act. Since yyless() is a macro, it would break
+     *       existing scanners that call yyless() from OUTSIDE yylex.
+     *       One obvious solution it to make yy_act a global. I tried that, and saw
+     *       a 5% performance hit in a non-yylineno scanner, because yy_act is
+     *       normally declared as a register variable-- so it is not worth it.
+     */
+    #define  YY_LESS_LINENO(n) \
+            do { \
+                int yyl;\
+                for ( yyl = n; yyl < yyleng; ++yyl )\
+                    if ( yytext[yyl] == '\n' )\
+                        --yylineno;\
+            }while(0)
+    #define YY_LINENO_REWIND_TO(dst) \
+            do {\
+                const char *p;\
+                for ( p = yy_cp-1; p >= (dst); --p)\
+                    if ( *p == '\n' )\
+                        --yylineno;\
+            }while(0)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -367,11 +386,11 @@ static const flex_int16_t yy_accept[107] =
        32,   18,   16,   38,   17,   43,   20,   14,   15,   37,
        23,   26,   21,   11,   33,   34,   11,   11,   11,   11,
        11,   11,   11,   11,   35,   43,   36,   42,   42,   27,
-       29,   12,   40,   39,    0,   14,    0,    0,   13,   15,
+       29,   12,   40,   39,   12,   14,    0,    0,   13,   15,
        24,   25,   22,   11,   11,   11,   11,   11,    7,   11,
        11,   11,   11,   30,   41,    0,   39,    0,   12,    0,
        13,   11,   11,   11,   11,    1,   11,   11,   11,    0,
-       12,    0,    0,   11,   11,   11,    8,   11,   11,    3,
+       12,   12,    0,   11,   11,   11,    8,   11,   11,    3,
        11,    0,    0,   12,    5,    4,   11,    2,   11,    6,
 
         0,   11,    9,   11,   10,    0
@@ -512,6 +531,13 @@ static const flex_int16_t yy_chk[241] =
       106,  106,  106,  106,  106,  106,  106,  106,  106,  106
     } ;
 
+/* Table of booleans, true if rule could match eol. */
+static const flex_int32_t yy_rule_can_match_eol[45] =
+    {   0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 1, 1, 0,     };
+
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
 
@@ -527,13 +553,13 @@ int yy_flex_debug = 0;
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
 #line 1 "lex.l"
-#line 4 "lex.l"
+#line 5 "lex.l"
 #define YY_DECL yy::parser::symbol_type yylex(void)
 #include "parser.hpp"
 #include <iostream>
-#line 535 "scanner.cpp"
+#line 561 "scanner.cpp"
 
-#line 537 "scanner.cpp"
+#line 563 "scanner.cpp"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -751,9 +777,9 @@ YY_DECL
 		}
 
 	{
-#line 77 "lex.l"
+#line 80 "lex.l"
 
-#line 757 "scanner.cpp"
+#line 783 "scanner.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -799,6 +825,16 @@ yy_find_action:
 
 		YY_DO_BEFORE_ACTION;
 
+		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
+			{
+			int yyl;
+			for ( yyl = 0; yyl < yyleng; ++yyl )
+				if ( yytext[yyl] == '\n' )
+					
+    yylineno++;
+;
+			}
+
 do_action:	/* This label is used only to access EOF actions. */
 
 		switch ( yy_act )
@@ -812,232 +848,232 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 78 "lex.l"
-{return yy::parser::make_Y_INT();}
+#line 81 "lex.l"
+{return yy::parser::make_Y_INT(LocType(yylineno));}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 79 "lex.l"
-{return yy::parser::make_Y_FLOAT();}
+#line 82 "lex.l"
+{return yy::parser::make_Y_FLOAT(LocType(yylineno));}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 80 "lex.l"
-{return yy::parser::make_Y_VOID();}
+#line 83 "lex.l"
+{return yy::parser::make_Y_VOID(LocType(yylineno));}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 81 "lex.l"
-{return yy::parser::make_Y_CONST();}
+#line 84 "lex.l"
+{return yy::parser::make_Y_CONST(LocType(yylineno));}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 82 "./lex.l"
-{return yy::parser::make_Y_BREAK();}
+#line 85 "lex.l"
+{return yy::parser::make_Y_BREAK(LocType(yylineno));}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 83 "./lex.l"
-{return yy::parser::make_Y_WHILE();}
+#line 86 "lex.l"
+{return yy::parser::make_Y_WHILE(LocType(yylineno));}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 84 "./lex.l"
-{return yy::parser::make_Y_IF();}
+#line 87 "lex.l"
+{return yy::parser::make_Y_IF(LocType(yylineno));}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 85 "./lex.l"
-{return yy::parser::make_Y_ELSE();}
+#line 88 "lex.l"
+{return yy::parser::make_Y_ELSE(LocType(yylineno));}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 86 "./lex.l"
-{return yy::parser::make_Y_RETURN();}
+#line 89 "lex.l"
+{return yy::parser::make_Y_RETURN(LocType(yylineno));}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 87 "./lex.l"
-{return yy::parser::make_Y_CONTINUE();}
+#line 90 "lex.l"
+{return yy::parser::make_Y_CONTINUE(LocType(yylineno));}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 89 "./lex.l"
-{return yy::parser::make_Y_ID(yytext);} 
+#line 92 "lex.l"
+{return yy::parser::make_Y_ID(yytext,LocType(yylineno));} 
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 91 "./lex.l"
-{return yy::parser::make_num_FLOAT(std::stof(yytext));}
+#line 94 "lex.l"
+{return yy::parser::make_num_FLOAT(std::stof(yytext),LocType(yylineno));}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 92 "./lex.l"
-{return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16));}
+#line 95 "lex.l"
+{return yy::parser::make_num_INT(std::stoi(yytext,nullptr,16),LocType(yylineno));}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 93 "./lex.l"
-{return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8));}
+#line 96 "lex.l"
+{return yy::parser::make_num_INT(std::stoi(yytext,nullptr,8),LocType(yylineno));}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 94 "./lex.l"
-{return yy::parser::make_num_INT(std::stoi(yytext));}
+#line 97 "lex.l"
+{return yy::parser::make_num_INT(std::stoi(yytext),LocType(yylineno));}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 96 "./lex.l"
-{return yy::parser::make_Y_ADD();}
+#line 99 "lex.l"
+{return yy::parser::make_Y_ADD(LocType(yylineno));}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 97 "./lex.l"
-{return yy::parser::make_Y_SUB();}
+#line 100 "lex.l"
+{return yy::parser::make_Y_SUB(LocType(yylineno));}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 98 "./lex.l"
-{return yy::parser::make_Y_MUL();}
+#line 101 "lex.l"
+{return yy::parser::make_Y_MUL(LocType(yylineno));}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 99 "./lex.l"
-{return yy::parser::make_Y_MODULO();}
+#line 102 "lex.l"
+{return yy::parser::make_Y_MODULO(LocType(yylineno));}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 100 "./lex.l"
-{return yy::parser::make_Y_DIV();}
+#line 103 "lex.l"
+{return yy::parser::make_Y_DIV(LocType(yylineno));}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 101 "./lex.l"
-{return yy::parser::make_Y_GREAT();}
+#line 104 "lex.l"
+{return yy::parser::make_Y_GREAT(LocType(yylineno));}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 102 "./lex.l"
-{return yy::parser::make_Y_GREATEQ();}
+#line 105 "lex.l"
+{return yy::parser::make_Y_GREATEQ(LocType(yylineno));}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 103 "./lex.l"
-{return yy::parser::make_Y_LESS();}
+#line 106 "lex.l"
+{return yy::parser::make_Y_LESS(LocType(yylineno));}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 104 "./lex.l"
-{return yy::parser::make_Y_LESSEQ();}
+#line 107 "lex.l"
+{return yy::parser::make_Y_LESSEQ(LocType(yylineno));}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 105 "./lex.l"
-{return yy::parser::make_Y_EQ();}
+#line 108 "lex.l"
+{return yy::parser::make_Y_EQ(LocType(yylineno));}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 106 "./lex.l"
-{return yy::parser::make_Y_ASSIGN();}
+#line 109 "lex.l"
+{return yy::parser::make_Y_ASSIGN(LocType(yylineno));}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 107 "./lex.l"
-{return yy::parser::make_Y_NOTEQ();}
+#line 110 "lex.l"
+{return yy::parser::make_Y_NOTEQ(LocType(yylineno));}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 108 "./lex.l"
-{return yy::parser::make_Y_NOT();}
+#line 111 "lex.l"
+{return yy::parser::make_Y_NOT(LocType(yylineno));}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 109 "./lex.l"
-{return yy::parser::make_Y_AND();}
+#line 112 "lex.l"
+{return yy::parser::make_Y_AND(LocType(yylineno));}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 110 "./lex.l"
-{return yy::parser::make_Y_OR();}
+#line 113 "lex.l"
+{return yy::parser::make_Y_OR(LocType(yylineno));}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 111 "./lex.l"
-{return yy::parser::make_Y_LPAR();}
+#line 114 "lex.l"
+{return yy::parser::make_Y_LPAR(LocType(yylineno));}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 112 "./lex.l"
-{return yy::parser::make_Y_RPAR();}
+#line 115 "lex.l"
+{return yy::parser::make_Y_RPAR(LocType(yylineno));}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 113 "./lex.l"
-{return yy::parser::make_Y_LSQUARE();}
+#line 116 "lex.l"
+{return yy::parser::make_Y_LSQUARE(LocType(yylineno));}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 114 "./lex.l"
-{return yy::parser::make_Y_RSQUARE();}
+#line 117 "lex.l"
+{return yy::parser::make_Y_RSQUARE(LocType(yylineno));}
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 115 "./lex.l"
-{return yy::parser::make_Y_LBRACKET();}
+#line 118 "lex.l"
+{return yy::parser::make_Y_LBRACKET(LocType(yylineno));}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 116 "./lex.l"
-{return yy::parser::make_Y_RBRACKET();}
+#line 119 "lex.l"
+{return yy::parser::make_Y_RBRACKET(LocType(yylineno));}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 117 "./lex.l"
-{return yy::parser::make_Y_SEMICOLON();}
+#line 120 "lex.l"
+{return yy::parser::make_Y_SEMICOLON(LocType(yylineno));}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 118 "./lex.l"
-{return yy::parser::make_Y_COMMA();}
+#line 121 "lex.l"
+{return yy::parser::make_Y_COMMA(LocType(yylineno));}
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
-#line 120 "lex.l"
-{return yy::parser::make_YYEOF();}
+#line 123 "lex.l"
+{return yy::parser::make_YYEOF(LocType(yylineno));}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 122 "lex.l"
+#line 125 "lex.l"
 {}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 123 "lex.l"
+#line 126 "lex.l"
 {BEGIN COMMENT;}
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 124 "lex.l"
+#line 127 "lex.l"
 {BEGIN INITIAL;}
 	YY_BREAK
 case 42:
 /* rule 42 can match eol */
 YY_RULE_SETUP
-#line 125 "lex.l"
+#line 128 "lex.l"
 {}
 	YY_BREAK
 case 43:
 /* rule 43 can match eol */
 YY_RULE_SETUP
-#line 126 "lex.l"
+#line 129 "lex.l"
 {}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 127 "lex.l"
+#line 130 "lex.l"
 ECHO;
 	YY_BREAK
-#line 1041 "scanner.cpp"
+#line 1077 "scanner.cpp"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1403,6 +1439,10 @@ static int yy_get_next_buffer (void)
 
 	*--yy_cp = (char) c;
 
+    if ( c == '\n' ){
+        --yylineno;
+    }
+
 	(yytext_ptr) = yy_bp;
 	(yy_hold_char) = *yy_cp;
 	(yy_c_buf_p) = yy_cp;
@@ -1479,6 +1519,11 @@ static int yy_get_next_buffer (void)
 	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
 	*(yy_c_buf_p) = '\0';	/* preserve yytext */
 	(yy_hold_char) = *++(yy_c_buf_p);
+
+	if ( c == '\n' )
+		
+    yylineno++;
+;
 
 	return c;
 }
@@ -1946,6 +1991,9 @@ static int yy_init_globals (void)
      * This function is called from yylex_destroy(), so don't allocate here.
      */
 
+    /* We do not touch yylineno unless the option is enabled. */
+    yylineno =  1;
+    
     (yy_buffer_stack) = NULL;
     (yy_buffer_stack_top) = 0;
     (yy_buffer_stack_max) = 0;
@@ -2040,7 +2088,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 127 "lex.l"
+#line 130 "lex.l"
 
 
 int yywrap(){
