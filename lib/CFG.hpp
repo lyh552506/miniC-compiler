@@ -224,7 +224,6 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
-    Value* RVACC(); // isReturnValueAlwaysCommonConst,if true,return value;
 };
 class Module:public SymbolTable
 {

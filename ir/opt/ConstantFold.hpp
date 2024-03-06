@@ -31,7 +31,11 @@ Value* ConstantFoldGetElementPtrInst(GetElementPtrInst* inst);
 // Handle ZextInst
 Value* ConstantFoldZextInst(ZextInst* inst);
 // Handle CallInst
-void ConstantFoldCallInst(CallInst* inst);
+Value* ConstantFoldCallInst(CallInst* inst);
+// Determine whether CallInst has SideEffects
+bool CallHasSideEffects(Function* func);
+// isReturnValueAlwaysCommonConst,if true,return value;
+Value* RVACC(Function* func); 
 // Handle AllocaInst
 Value* ConstantFoldAllocaInst(AllocaInst* inst);
 };
