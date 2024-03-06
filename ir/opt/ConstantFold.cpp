@@ -260,7 +260,7 @@ Value* ConstantFolding::ConstantFoldCallInst(CallInst* inst)
         inst->ClearRelation();
         inst->EraseFromParent();
     }
-    Value* Val = func->RVACC();
+    Value* Val = RVACC(func);
     if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
         return UndefValue::get(UNdefValue->GetType());
     else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
@@ -280,4 +280,36 @@ Value* ConstantFolding::ConstantFoldZextInst(ZextInst* inst)
     else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
         return ConstIRInt::GetNewConstant(iNt->GetVal());
     return nullptr;
+}
+
+Value* ConstantFolding::RVACC(Function* func)
+{
+    for(BasicBlock* block : *func)
+        for(User* inst : *block)
+        {
+            if(auto PHiInst = dynamic_cast<PhiInst*>(inst))
+            {
+                Value* CommonValue = nullptr;
+                for(Value* income : PHiInst->GetAllPhiVal())
+                {
+                    if(auto _UndefValue = dynamic_cast<UndefValue*>(income))
+                        return nullptr;
+                    if(CommonValue && income != CommonValue)
+                        return nullptr;
+                    CommonValue = income;
+                }
+                if(CommonValue)
+                    inst->RAUW(CommonValue);
+                else
+                    return nullptr;
+            }
+            if(auto REtInst = dynamic_cast<RetInst*>(inst))
+            {
+                Value* REtVal = inst->Getuselist()[0]->usee;
+                if(dynamic_cast<ConstantData*>(REtVal) || dynamic_cast<UndefValue*>(REtVal))
+                    return REtVal;
+                else
+                    return nullptr;
+            }
+        }
 }
