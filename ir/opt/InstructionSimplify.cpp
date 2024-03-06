@@ -127,40 +127,19 @@ Value* SimplifyModInst(Value* LHS, Value* RHS)
 
 Value* SimplifyIcmpInst(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
 {
+    // X == X -> true
     if(LHS == RHS && Opcode == BinaryInst::Op_E)
         return ConstIRBoolean::GetNewConstant(true);
+    // X <= X -> false
+    // X >= X -> false
+    // X < X -> false
+    // X > X -> false
     if(LHS == RHS && (Opcode ==BinaryInst::Op_L || Opcode == BinaryInst::Op_LE \
     || Opcode == BinaryInst::Op_G || Opcode == BinaryInst::Op_GE || BinaryInst::Op_NE))
         return ConstIRBoolean::GetNewConstant(false);
+    // UndefValue op UndefValue -> false
     if(dynamic_cast<UndefValue*>(LHS) || dynamic_cast<UndefValue*>(RHS))
         return ConstIRBoolean::GetNewConstant(false);
-    if(Opcode == BinaryInst::Op_E)
-    {
-        if((dynamic_cast<ConstIRBoolean*>(LHS))->GetVal())
-            return RHS;
-        if((dynamic_cast<ConstIRBoolean*>(RHS))->GetVal())
-            return LHS;
-    }
-    if(Opcode == BinaryInst::Op_NE)
-    {
-        if(!(dynamic_cast<ConstIRBoolean*>(LHS))->GetVal())
-            return RHS;
-        if(!(dynamic_cast<ConstIRBoolean*>(RHS))->GetVal())
-            return LHS;
-    }
-    if(Opcode == BinaryInst::Op_G)
-    {
-        if(!(dynamic_cast<ConstIRBoolean*>(LHS))->GetVal())
-            return RHS;
-        if(!(dynamic_cast<ConstIRBoolean*>(RHS))->GetVal())
-            return LHS;
-    }
-    if(Opcode == BinaryInst::Op_GE)
-    {
-        if((dynamic_cast<ConstIRBoolean*>(LHS))->GetVal())
-            return RHS;
-        if((dynamic_cast<ConstIRBoolean*>(RHS))->GetVal())
-            return LHS;
-    }
+    
     return nullptr;
 }

@@ -17,8 +17,8 @@ Value* ConstantFolding::ConstantFoldInst(User* inst)
         return ConstantFoldStoreInst(STore);
     if(auto _CallInst = dynamic_cast<CallInst*>(inst))
         ConstantFoldCallInst(_CallInst);
-    if(auto GEtElementPtrInst = dynamic_cast<GetElementPtrInst*>(inst))
-        return ConstantFoldGetElementPtrInst(GEtElementPtrInst);
+    // if(auto GEtElementPtrInst = dynamic_cast<GetElementPtrInst*>(inst))
+    //     return ConstantFoldGetElementPtrInst(GEtElementPtrInst);
     if(auto ZExtInst = dynamic_cast<ZextInst*>(inst))
         return ConstantFoldZextInst(ZExtInst);
     return nullptr;
@@ -212,19 +212,19 @@ Value* ConstantFolding::ConstantFoldStoreInst(StoreInst* inst)
     else
         return nullptr;
 }
-Value* ConstantFolding::ConstantFoldGetElementPtrInst(GetElementPtrInst* inst)
-{
-    Value* Val = inst->GetPtrVal();
-    if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
-        return UndefValue::get(UNdefValue->GetType());
-    else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
-        return ConstIRInt::GetNewConstant(iNt->GetVal());
-    else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Val))
-        return ConstIRFloat::GetNewConstant(fLoat->GetVal());
-    else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
-        return ConstIRBoolean::GetNewConstant(BOol->GetVal());
-    return nullptr;
-}
+// Value* ConstantFolding::ConstantFoldGetElementPtrInst(GetElementPtrInst* inst)
+// {
+//     Value* Val = inst->GetPtrVal();
+//     if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
+//         return UndefValue::get(UNdefValue->GetType());
+//     else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
+//         return ConstIRInt::GetNewConstant(iNt->GetVal());
+//     else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Val))
+//         return ConstIRFloat::GetNewConstant(fLoat->GetVal());
+//     else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
+//         return ConstIRBoolean::GetNewConstant(BOol->GetVal());
+//     return nullptr;
+// }
 
 bool ConstantFolding::CallHasSideEffects(Function* func)
 {
@@ -254,6 +254,7 @@ bool ConstantFolding::CallHasSideEffects(Function* func)
 Value* ConstantFolding::ConstantFoldCallInst(CallInst* inst)
 {
     Function* func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
+    auto test = func->GetParams()[0].get();
     if(CallHasSideEffects(func))
         return nullptr;
     if(inst->GetUserlist().is_empty())
@@ -262,21 +263,19 @@ Value* ConstantFolding::ConstantFoldCallInst(CallInst* inst)
         inst->EraseFromParent();
     }
     Value* Val = RVACC(func);
-    if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
-        return UndefValue::get(UNdefValue->GetType());
-    else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
-        return ConstIRInt::GetNewConstant(iNt->GetVal());
-    else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Val))
-        return ConstIRFloat::GetNewConstant(fLoat->GetVal());
-    else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
-        return ConstIRBoolean::GetNewConstant(BOol->GetVal());
+    if(Val)
+        return Val;
     return nullptr;
 }
 Value* ConstantFolding::RVACC(Function* func)
 {
+
     for(BasicBlock* block : *func)
         for(User* inst : *block)
         {
+            Value* C = ConstantFoldInst(inst);
+            if(C)
+            inst->RAUW(C);
             if(auto PHiInst = dynamic_cast<PhiInst*>(inst))
             {
                 Value* CommonValue = nullptr;
@@ -296,8 +295,17 @@ Value* ConstantFolding::RVACC(Function* func)
             if(auto REtInst = dynamic_cast<RetInst*>(inst))
             {
                 Value* REtVal = inst->Getuselist()[0]->usee;
-                if(dynamic_cast<ConstantData*>(REtVal) || dynamic_cast<UndefValue*>(REtVal))
-                    return REtVal;
+                if(REtVal->isConst())
+                {
+                    if(auto INt = dynamic_cast<ConstIRInt*>(REtVal))
+                        return ConstIRInt::GetNewConstant(INt->GetVal());
+                    if(auto FLoat = dynamic_cast<ConstIRFloat*>(REtVal))
+                        return ConstIRFloat::GetNewConstant(FLoat->GetVal());
+                    if(auto BOol = dynamic_cast<ConstIRBoolean*>(REtVal))
+                        return ConstIRBoolean::GetNewConstant(BOol->GetVal());
+                }
+                else if(dynamic_cast<UndefValue*>(REtVal))
+                    return UndefValue::get(REtVal->GetType());
                 else
                     return nullptr;
             }
