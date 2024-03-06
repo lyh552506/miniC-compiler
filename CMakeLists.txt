@@ -5,8 +5,6 @@ message(${CMAKE_CXX_FLAGS})
 
 project(SYSY-compiler VERSION 0.1.0 LANGUAGES C CXX)
 
-
-
 include(CTest)
 enable_testing()
 
