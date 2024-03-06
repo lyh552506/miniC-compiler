@@ -1,34 +1,81 @@
+/*--------------------------------------------------------------------------------------------------
+                                         GVN-PRE
+the details can be found in "Value-Based Partial Redundancy Elimination" written
+by Thomas VanDrunen and Antony L. Hosking
+----------------------------------------------------------------------------------------------------*/
 #pragma once
 #include "GVN.hpp"
 #include "IDF.hpp"
 #include "dominant.hpp"
 
+struct Expression {
+  enum ExpOpration {
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    MOD,
+    EQ,
+    NEQ,
+    GEP,
+    AND,
+    OR,
+    GE,
+    LE,
+    G,
+    L
+  };
+
+  std::vector<Value *> args;
+  Type *type;
+  //都是以valueNumer来表示
+  int firVal;
+  int SecVal;
+  int ThirdVal;
+  ExpOpration op;
+};
+
+struct ValueTable {
+  std::map<Value *, int> ValueNumber;  // value* to hash number
+  std::map<Expression, int> ExpNumber; // expression to hash number
+  int valuekinds = 0;
+
+  int LookupOrAdd();
+};
+
+struct ValueNumberedSet {
+  std::map<int, int> Record;
+  std::set<Value *> contents;
+};
+
+
+
 class PRE {
 public:
-  void phi_insertion();
-
   void init_pass();
-
-  void set_var_phis();
-
-  /// @brief 全局gvn，找到等价的occurance
-  void gvn_walk();
-
-  void caculateRPO(BasicBlock *bb);
-  /// @brief 直接根据vn表查找是否有等价
-  Value* Find_Equal(Value *val);
-  /// @brief 寻找特别的等价
-  Value* Find_Equal(BinaryInst *bin);
-
-  PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {}
+  /// @brief
+  void BuildSets();
+  /// @brief
+  void Insert();
+  /// @brief
+  void Eliminate();
+  /// @brief  
+  void DfsDT(int pos);
+  PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {
+    BasicBlock* Entry=m_func->front();
+    auto entrynode=&(m_dom->GetNode(Entry->num));
+    m_func->init_visited_block();
+    DfsDT(0);
+  }
+  
 
 private:
   dominance *m_dom;
   Function *m_func;
-  std::vector<BasicBlock *> RPO;
-  std::map<int,std::vector<Value *>> E_occurance;
-  std::vector<std::pair<Value *, Value *>> ValueNumber;
-  std::unordered_set<BasicBlock *> visited; // RPO下的辅助数据结构
-  int exp_nums = 0;                         //记录一共有多少表达式
-  
+  ValueTable *VN;
+  std::map<BasicBlock*,ValueNumberedSet> AvailOut;
+  std::map<BasicBlock*,ValueNumberedSet> AnticipatedIn;
+  std::map<BasicBlock*,ValueNumberedSet> GeneratedPhis;
+  std::vector<BasicBlock*> Dfs;
 };
+

@@ -818,6 +818,11 @@ void Function::push_alloca(Variable* ptr){
     Singleton<Module>().Register(ptr->get_name(),obj);
 }
 
+void Function::init_visited_block(){
+    for(auto bb:bbs)
+      bb->visited=false;
+}
+
 void Function::push_param(Variable* var){
     push_alloca(var);
     /// @brief 实参

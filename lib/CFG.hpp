@@ -187,6 +187,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
+    void init_visited();
     int num=0;
     bool visited=false;
 };
@@ -223,6 +224,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
     void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);//TODO
+    void init_visited_block();
 };
 class Module:public SymbolTable
 {
