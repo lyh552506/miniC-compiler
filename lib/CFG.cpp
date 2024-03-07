@@ -792,12 +792,33 @@ PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty){
 }
 
 void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
+    add_use(Income);
     PhiRecord[oprandNum++]=std::make_pair(Income,BB);
 }
+
+// bool PhiInst::modifyBlock(Value* val,BasicBlock* NewBlock){
+//     auto iter=std::find_if(PhiRecord.begin(),PhiRecord.end(),
+//     [val](std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
+//         return ele.second.first==val;
+//     });
+// }
+// bool PhiInst::modifyIncome(Value* origin){
+//     auto iter=std::find_if(PhiRecord.begin(),PhiRecord.end(),
+//     [origin](std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
+//         return ele.second.first==origin;
+//     });
+//     if(iter==PhiRecord.end())
+//       return false;
+//     int num=iter->first;
+//     PhiRecord.erase(iter);
+//     PhiRecord[num]=std::make_pair(origin,nullptr);///@warning 需要修改
+//     return true;
+// }
 
 std::vector<Value*>& PhiInst::GetAllPhiVal(){
     for(const auto &[_1,value]:PhiRecord){
         Incomings.push_back(value.first);
+        Blocks.push_back(value.second);
     }
     return Incomings;
 }
@@ -812,6 +833,11 @@ void PhiInst::Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicB
 void Function::push_alloca(Variable* ptr){
     auto obj=front()->push_alloca(ptr->get_name(),ptr->GetType());
     Singleton<Module>().Register(ptr->get_name(),obj);
+}
+
+void Function::init_visited_block(){
+    for(auto bb:bbs)
+      bb->visited=false;
 }
 
 void Function::push_param(Variable* var){

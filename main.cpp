@@ -1,4 +1,4 @@
-#include "opt/GVN&GCM.hpp"
+#include "opt/GVN.hpp"
 #include "opt/dominant.hpp"
 #include "opt/passManager.hpp"
 #include "parser.hpp"
@@ -67,6 +67,5 @@ int main(int argc, char **argv) {
 
   // Gvn_Gcm test(&dom, f);
   // test.init_pass();
-  Singleton<Module>().Test();
   return 0;
 }

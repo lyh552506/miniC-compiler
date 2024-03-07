@@ -6,13 +6,16 @@
 #include"PromoteMemtoRegister.hpp"
 
 
-class PassManager{
+class PassManager {
 public:
    PassManager():InitpassRecorder(6){}
 
-   void IncludePass(int pass);
+  void IncludePass(int pass);
 
-   void Init_Pass();
+  void Init_Pass();
+
+  void print_result();
+
 private:
-   std::vector<int> InitpassRecorder;
+  std::vector<int> InitpassRecorder;
 };

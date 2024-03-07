@@ -89,6 +89,7 @@ class Value
     bool isUndefVal();
     bool isConstZero();
     bool isConstOne();
+    int BelongsToExp;
 };
 using Operand=Value*;
 // class Constant:public User
