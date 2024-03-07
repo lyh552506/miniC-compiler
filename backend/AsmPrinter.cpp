@@ -52,19 +52,25 @@ MachineUnit*  GenerateHir(Module* Unit) {
         }
         /*MachineFunction End*/
         func_num++;
-    return machineunit;
     }
+    return machineunit; 
 }
 
 void ChangeConditionInsts(MachineUnit* unit) {
     for (auto& machinefunction : unit->getMachineFunctions()) {
         for (auto& machineblock : machinefunction->getMachineBasicBlocks()) {
-            for (auto& machineinst : machineblock->getMachineInsts()) {
-                //
-                std::string opcode = machineinst->GetOpcode().substr(0,4); 
+            std::vector<MachineInst*> minsts  = machineblock->getMachineInsts();
+            for (std::vector<MachineInst*>::iterator it = minsts.begin(); it != minsts.end(); ++it) {
+                MachineInst* machineinst = *it;
+                MachineInst* nextinst = *(it+1);
+                std::string opcode = machineinst->GetOpcode().substr(0,4);
+                std::string nextopcode = nextinst->GetOpcode();
                 if( opcode == "icmp" ) {
                     printf("Find icmp!\n");
-                    
+                    if (nextopcode == "branch") {
+                        printf("Find branch!\n");
+                    }
+                    else {}
                 }
                 else {}
             }

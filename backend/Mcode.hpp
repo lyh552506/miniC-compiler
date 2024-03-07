@@ -18,7 +18,6 @@ class MachineInst : public User {
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode, Operand rd);
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1);
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1, Operand rs2);
-    void addIR();
     User* getIR();
     MachineBasicBlock* get_machinebasicblock();
     std::string GetOpcode();

@@ -185,14 +185,6 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     int num=0;
 };
 
-class ExternFunction:public Value
-{
-    public:
-    ExternFunction(std::string);
-    void print();
-    std::string GetName();
-};
-
 class BuildInFunction:public Value
 {
     BuildInFunction(Type*,std::string);

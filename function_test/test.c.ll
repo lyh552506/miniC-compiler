@@ -332,92 +332,23 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @whileIf(){
-.1:
-  %.5 = alloca i32
-  %.2 = alloca i32
-  store i32 0, i32* %.2
-  store i32 0, i32* %.5
-  %.7 = load i32, i32* %.2
-  %.8 = load i32, i32* %.5
-  %.9 = add i32 %.7, %.8
-  br label %.10wc7 
-.10wc7:
-  %.14 = load i32, i32* %.2
-  %.16 = icmp slt i32 %.14, 100
-  br i1 %.16, label %.11wloop.7.15, label %.12wn15
-.11wloop.7.15:
-  %.20 = load i32, i32* %.2
-  %.22 = icmp eq i32 %.20, 5
-  br i1 %.22, label %.18, label %.19
-.12wn15:
-  %.38 = load i32, i32* %.5
-  ret i32 %.38 
-.18:
-  store i32 25, i32* %.5
-  br label %.26 
-.19:
-  %.28 = load i32, i32* %.2
-  %.30 = mul i32 %.28, 2
-  store i32 %.30, i32* %.5
-  br label %.26 
-.26:
-  %.33 = load i32, i32* %.2
-  %.35 = add i32 %.33, 1
-  store i32 %.35, i32* %.2
-  br label %.10wc7 
-}
+@.g.a = global i32 zeroinitializer
+@.g.b = global i32 zeroinitializer
 define i32 @main(){
-.41:
-  %.42at20 = call i32 @whileIf()
-  ret i32 %.42at20 
+.3:
+  %.6 = alloca i32
+  store i32 10, i32* @.g.a
+  store i32 10, i32* %.6
+  ret i32 0 
 }
-whileIf:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    addi s0, sp, 32
-    sw 0, -24(s0)
-    sw 0, -20(s0)
-    lw .7, -24(s0)
-    lw .8, -20(s0)
-    addw .9, .7, .8
-    j .LBB0_1
-.LBB0_1:
-    lw .14, -24(s0)
-    icmp_lt .16, .14, 100
-    branch .16, .LBB0_2, .LBB0_3
-.LBB0_2:
-    lw .20, -24(s0)
-    icmp_eq .22, .20, 5
-    branch .22, .LBB0_4, .LBB0_5
-.LBB0_3:
-    lw .38, -20(s0)
-    lw a0, .38
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    addi sp, sp, 32
-    ret
-.LBB0_4:
-    sw 25, -20(s0)
-    j .LBB0_6
-.LBB0_5:
-    lw .28, -24(s0)
-    mulw .30, .28, 2
-    sw .30, -20(s0)
-    j .LBB0_6
-.LBB0_6:
-    lw .33, -24(s0)
-    addw .35, .33, 1
-    sw .35, -24(s0)
-    j .LBB0_1
 main:
     addi sp, sp, -32
     sd ra, 24(sp)
     sd s0, 16(sp)
     addi s0, sp, 32
-    call whileIf
-    lw a0, .42at20
+    sw 10, -93824993006944(s0)
+    sw 10, -20(s0)
+    lw a0, 0
     ld ra, 24(sp)
     ld s0, 16(sp)
     addi sp, sp, 32

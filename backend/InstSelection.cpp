@@ -164,13 +164,8 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
         else opcode = "white";
     }  
     else if (op == "Op_E" || op == "Op_NE" || op == "Op_G" || op == "Op_GE" || op == "Op_L" || op == "Op_LE") {
-        //TODO: other situatino
-        //if (rs1->isConst() || rs2->isConst()) {
             Operand rs = rs1->isConst() ? rs1 : rs2;
-            if (rs1 == rs) {
-                rs1 = rs2;
-                rs2 = rs;
-            }
+
             opcode = op.substr(3);
             for (char& c : opcode) {
                 c = std::tolower(c);
@@ -183,7 +178,12 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
                 opcode = opcode + "t";
             }
             else {}
-        //}
+
+            if (rs1 == rs) {
+                rs1 = rs2;
+                rs2 = rs;
+            }
+            else {}
     }
     else {
         std::cout << "Error: No Such Binaryinst!" << std::endl;

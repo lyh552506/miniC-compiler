@@ -1,21 +1,8 @@
-int whileIf(){
-  int a;
-  a = 0;
-  int b;
-  b = 0;
-  a + b;
-  while (a < 100) {
-    if (a == 5) {
-      b = 25;
-    }
-    else {
-      b = a * 2;
-    }
-    a = a + 1;
-  }
-  return (b);
-}
-
+int a;
+int b;
 int main(){
-  return (whileIf());
+	a=10;
+	int c;
+	c=10;
+	return 0;
 }
