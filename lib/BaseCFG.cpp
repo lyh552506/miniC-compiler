@@ -89,6 +89,15 @@ void User::ClearRelation() {
   }
 }
 
+bool User::IsTerminateInst(){
+  auto cond=dynamic_cast<CondInst*>(this);
+  auto uncond=dynamic_cast<UnCondInst*>(this);
+  auto ret=dynamic_cast<RetInst*>(this);
+  if(cond||uncond||ret)
+    return true;
+  return false;
+}
+
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 
 ConstantData::ConstantData(Type *_tp) : Value(_tp) {}
