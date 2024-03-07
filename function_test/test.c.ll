@@ -332,132 +332,69 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @func2(i32 %.3){
+define i32 @FullRedundancy2(){
 .1:
+  %.29 = alloca i32
+  %.6 = alloca i32
+  %.3 = alloca i32
   %.2 = alloca i32
-  store i32 %.3, i32* %.2
-  %.5 = load i32, i32* %.2
-  %.7 = add i32 %.5, 2
-  ret i32 %.7 
-}
-define i32 @func(i32 %.12, i32 %.15, i32 %.18){
+  store i32 3, i32* %.3
+  store i32 5, i32* %.6
+  %.11 = load i32, i32* %.3
+  %.13 = icmp sge i32 %.11, 0
+  br i1 %.13, label %.9, label %.10
+.9:
+  %.15 = load i32, i32* %.3
+  %.16 = load i32, i32* %.6
+  %.17 = add i32 %.15, %.16
+  store i32 %.17, i32* %.2
+  br label %.19 
 .10:
-  %.26 = alloca i32
-  %.23 = alloca i32
-  %.20 = alloca i32
-  %.17 = alloca i32
-  %.14 = alloca i32
-  %.11 = alloca i32
-  store i32 %.12, i32* %.11
-  store i32 %.15, i32* %.14
-  store i32 %.18, i32* %.17
-  store i32 1, i32* %.20
-  %.24at36 = call i32 @func2(i32 2)
-  store i32 %.24at36, i32* %.23
-  %.27at37 = call i32 @func2(i32 2)
-  store i32 %.27at37, i32* %.26
-  %.29 = load i32, i32* %.11
-  %.30 = load i32, i32* %.26
-  %.31 = add i32 %.29, %.30
-  store i32 %.31, i32* %.20
-  %.33 = load i32, i32* %.11
-  %.34 = load i32, i32* %.23
-  %.35 = add i32 %.33, %.34
-  store i32 %.35, i32* %.14
-  %.37 = load i32, i32* %.20
-  ret i32 %.37 
+  %.21 = load i32, i32* %.3
+  %.22 = sub i32 0, %.21
+  store i32 %.22, i32* %.3
+  %.24 = load i32, i32* %.3
+  %.25 = load i32, i32* %.6
+  %.26 = add i32 %.24, %.25
+  store i32 %.26, i32* %.2
+  br label %.19 
+.19:
+  %.30 = load i32, i32* %.3
+  %.31 = load i32, i32* %.6
+  %.32 = add i32 %.30, %.31
+  store i32 %.32, i32* %.29
+  %.34 = load i32, i32* %.2
+  %.35 = load i32, i32* %.29
+  %.36 = add i32 %.34, %.35
+  ret i32 %.36 
 }
 --------mem2reg--------
-define i32 @func2(i32 %.3){
+define i32 @FullRedundancy2(){
 .1:
-  %.7 = add i32 %.3, 2
-  ret i32 %.7 
-}
-define i32 @func(i32 %.12, i32 %.15, i32 %.18){
+  br i32 1, label %.9, label %.10
+.9:
+  br label %.19 
 .10:
-  %.26 = alloca i32
-  %.23 = alloca i32
-  %.20 = alloca i32
-  %.17 = alloca i32
-  %.14 = alloca i32
-  %.11 = alloca i32
-  store i32 %.12, i32* %.11
-  store i32 %.15, i32* %.14
-  store i32 %.18, i32* %.17
-  store i32 1, i32* %.20
-  %.24at36 = call i32 @func2(i32 2)
-  store i32 %.24at36, i32* %.23
-  %.27at37 = call i32 @func2(i32 2)
-  store i32 %.27at37, i32* %.26
-  %.29 = load i32, i32* %.11
-  %.30 = load i32, i32* %.26
-  %.31 = add i32 %.29, %.30
-  store i32 %.31, i32* %.20
-  %.33 = load i32, i32* %.11
-  %.34 = load i32, i32* %.23
-  %.35 = add i32 %.33, %.34
-  store i32 %.35, i32* %.14
-  %.37 = load i32, i32* %.20
-  ret i32 %.37 
+  br label %.19 
+.19:
+  %.39 = Phi i32 [%.22, %.10], [3, %.9]
+  %.38 = Phi i32 [%.26, %.10], [%.17, %.9]
+  %.32 = add i32 %.39, 5
+  %.36 = add i32 %.38, %.32
+  ret i32 %.36 
 }
---------gvn_gcm--------
-define i32 @func2(i32 %.3){
+--------constantprop--------
+define i32 @FullRedundancy2(){
 .1:
-  %.7 = add i32 %.3, 2
-  ret i32 %.7 
-}
-define i32 @func(i32 %.12, i32 %.15, i32 %.18){
+  br i32 1, label %.9, label %.10
+.9:
+  br label %.19 
 .10:
-  %.26 = alloca i32
-  %.23 = alloca i32
-  %.20 = alloca i32
-  %.17 = alloca i32
-  %.14 = alloca i32
-  %.11 = alloca i32
-  store i32 %.12, i32* %.11
-  store i32 %.15, i32* %.14
-  store i32 %.18, i32* %.17
-  store i32 1, i32* %.20
-  %.24at36 = call i32 @func2(i32 2)
-  store i32 %.24at36, i32* %.23
-  %.27at37 = call i32 @func2(i32 2)
-  store i32 %.27at37, i32* %.26
-  %.29 = load i32, i32* %.11
-  %.30 = load i32, i32* %.26
-  %.31 = add i32 %.29, %.30
-  store i32 %.31, i32* %.20
-  %.33 = load i32, i32* %.11
-  %.34 = load i32, i32* %.23
-  %.35 = add i32 %.33, %.34
-  store i32 %.35, i32* %.14
-  %.37 = load i32, i32* %.20
-  ret i32 %.37 
-}
---------mem2reg--------
-define i32 @func2(i32 %.3){
-.1:
-  %.7 = add i32 %.3, 2
-  ret i32 %.7 
-}
-define i32 @func(i32 %.12, i32 %.15, i32 %.18){
-.10:
-  %.24at36 = call i32 @func2(i32 2)
-  %.27at37 = call i32 @func2(i32 2)
-  %.31 = add i32 %.12, %.27at37
-  %.35 = add i32 %.12, %.24at36
-  ret i32 %.31 
-}
---------gvn_gcm--------
-define i32 @func2(i32 %.3){
-.1:
-  %.7 = add i32 %.3, 2
-  ret i32 %.7 
-}
-define i32 @func(i32 %.12, i32 %.15, i32 %.18){
-.10:
-  %.24at36 = call i32 @func2(i32 2)
-  %.27at37 = call i32 @func2(i32 2)
-  %.31 = add i32 %.12, %.27at37
-  %.35 = add i32 %.12, %.24at36
-  ret i32 %.31 
+  br label %.19 
+.19:
+  %.39 = Phi i32 [%.22, %.10], [3, %.9]
+  %.38 = Phi i32 [%.26, %.10], [%.17, %.9]
+  %.32 = add i32 %.39, 5
+  %.36 = add i32 %.38, %.32
+  ret i32 %.36 
 }

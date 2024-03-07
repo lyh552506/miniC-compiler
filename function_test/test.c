@@ -26,18 +26,30 @@
 //         x = -1;
 //     return x;
 // }
-int func2(int x){
-  return x+2;
+// int func2(int x){
+//   return x+2;
+// }
+
+// int func(int b,int c,int x) {
+//     int a;
+//     a=1;
+//     int z=func2(2);
+//     int y=func2(2);
+//     a=b+y;
+//     c=b+z;
+//     return a;
+// }
+
+
+int FullRedundancy2 () {
+     int v1,a=3,b=5;
+     if (a >= 0) {
+          v1 = a + b; // BB1
+     } else {
+          a = -a; // BB2
+          v1 = a + b;
+     }
+     
+     int v2 = a + b; // BB3
+     return v1 + v2;
 }
-
-int func(int b,int c,int x) {
-    int a;
-    a=1;
-    int z=func2(2);
-    int y=func2(2);
-    a=b+y;
-    c=b+z;
-    return a;
-}
-
-
