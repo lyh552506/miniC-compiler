@@ -238,5 +238,6 @@ class Module:public SymbolTable
     void GenerateGlobalVariable(Variable* ptr);
     Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
+    Function* getMainFunc();
     void Test();
 };

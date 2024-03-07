@@ -854,6 +854,16 @@ void Module::GenerateGlobalVariable(Variable* ptr){
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }
 
+Function* Module::getMainFunc()
+{
+    for(auto &f : this->GetFuncTion())
+    {
+        Function* func = f.get();
+        if(func->GetName() == "main")
+            return func;
+    }
+}
+
 std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() {
     return ls;
 }

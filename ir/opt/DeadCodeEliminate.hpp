@@ -6,7 +6,6 @@ public:
   void Pass(Module *module);
 
 private:
-  bool isSideEffect(User* inst);
   bool isSideEffectAndCall(User* inst);
   bool isLocalStore(StoreInst* store);
   bool isDeadInstruction(User* inst);
@@ -14,11 +13,11 @@ private:
   bool isStrictEqualStoreLoadPtr(StoreInst* store, LoadInst* load);
   bool isEqualStorePtr(StoreInst* store_a, StoreInst* store_b);
 
-
+  void detectNotSideEffectFunc(Module *m);
   void deleteDeadFunc(Module *m);
-  void deleteDeadInst(BasicBlock* block, User* inst);
-  void deleteDeadStore(BasicBlock* block, User* inst);
-  void deleteDeadRet(BasicBlock*, User* inst);
+  void deleteDeadInst(Function* func);
+  void deleteDeadStore(Function* func);
+  void deleteDeadRet(Function* func);
 
 
 private:
