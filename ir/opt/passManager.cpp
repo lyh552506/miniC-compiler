@@ -12,8 +12,8 @@ void PassManager::Init_Pass() {
     if (InitpassRecorder[0]) {
       std::unique_ptr<dominance> dom(new dominance(f, Li.size()));
       //有了mem2reg才有后续的优化
-      if(InitpassRecorder[1])
-      Gvn_Gcm(dom.get(),f).init_pass();
+      // if(InitpassRecorder[1])
+      // Gvn(dom.get(),f).init_pass();
       if(InitpassRecorder[2])
       {
         std::unique_ptr<LivenessAnalysis>LA(new LivenessAnalysis);

@@ -17,8 +17,8 @@ Value* ConstantFolding::ConstantFoldInst(User* inst)
         return ConstantFoldStoreInst(STore);
     if(auto _CallInst = dynamic_cast<CallInst*>(inst))
         return ConstantFoldCallInst(_CallInst);
-    if(auto GEtElementPtrInst = dynamic_cast<GetElementPtrInst*>(inst))
-        return ConstantFoldGetElementPtrInst(GEtElementPtrInst);
+    // if(auto GEtElementPtrInst = dynamic_cast<GetElementPtrInst*>(inst))
+    //     return ConstantFoldGetElementPtrInst(GEtElementPtrInst);
     if(auto ZExtInst = dynamic_cast<ZextInst*>(inst))
         return ConstantFoldZextInst(ZExtInst);
     return nullptr;
@@ -212,19 +212,19 @@ Value* ConstantFolding::ConstantFoldStoreInst(StoreInst* inst)
     else
         return nullptr;
 }
-Value* ConstantFolding::ConstantFoldGetElementPtrInst(GetElementPtrInst* inst)
-{
-    Value* Val = inst->GetPtrVal();
-    if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
-        return UndefValue::get(UNdefValue->GetType());
-    else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
-        return ConstIRInt::GetNewConstant(iNt->GetVal());
-    else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Val))
-        return ConstIRFloat::GetNewConstant(fLoat->GetVal());
-    else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
-        return ConstIRBoolean::GetNewConstant(BOol->GetVal());
-    return nullptr;
-}
+// Value* ConstantFolding::ConstantFoldGetElementPtrInst(GetElementPtrInst* inst)
+// {
+//     Value* Val = inst->GetPtrVal();
+//     if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
+//         return UndefValue::get(UNdefValue->GetType());
+//     else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
+//         return ConstIRInt::GetNewConstant(iNt->GetVal());
+//     else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Val))
+//         return ConstIRFloat::GetNewConstant(fLoat->GetVal());
+//     else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
+//         return ConstIRBoolean::GetNewConstant(BOol->GetVal());
+//     return nullptr;
+// }
 
 bool ConstantFolding::CallHasSideEffects(Function* func)
 {
