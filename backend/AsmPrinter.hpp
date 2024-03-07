@@ -5,5 +5,7 @@
 #include "InstSelection.hpp"
 
 void RegAlloca(Function* function);
-void PrintCode(Module* unit);
+MachineUnit* GenerateHir(Module* unit);
+void ChangeConditionInsts(MachineUnit* unit);
+//void PrintCode(Module* unit);
 void PrintCodeToTxt(Module* unit);

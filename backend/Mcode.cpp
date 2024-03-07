@@ -1,10 +1,15 @@
 #include "Mcode.hpp"
 
 /*MachinInst*/
-MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode) : mbb(mbb), opcode(opcode) {}
-MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd) : mbb(mbb), opcode(opcode), rd(rd) {}
-MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1) : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1) {}
-MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1, Operand rs2) : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {}
+MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode) 
+    : IR(IR), mbb(mbb), opcode(opcode) {}
+MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd) 
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd) {}
+MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1) 
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1) {}
+MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1, Operand rs2) 
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {}
+User* MachineInst::getIR() {return this->IR;}
 MachineBasicBlock* MachineInst::get_machinebasicblock() {return this->mbb;}
 std::string MachineInst::GetOpcode() {return opcode;}
 void MachineInst::print() {
@@ -61,32 +66,6 @@ void MachineInst::print() {
     }
 }
 
-
-/*MachineBinaryInst*/
-// MachineBinaryInst::MachineBinaryInst(std::string opcode, Operand rd, Operand rs1, Operand rs2)
-//     : opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
-//         // add_use(rd);
-//         // add_use(rs1);
-//         // add_use(rs2);
-//     }
-// void MachineBinaryInst::print() {
-//     std::cout << opcode << " ";
-//     std::cout << rd->GetName() << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl;
-// }
-
-/*MachineCmpInst*/
-// MachineCmpInst::MachineCmpInst(std::string opcode, Operand rd, Operand rs1, Operand rs2)
-//     : opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
-//         // add_use(rd);
-//         // add_use(rs1);
-//         // add_use(rs2);
-//     }
-// MachineCmpInst::MachineCmpInst(std::string opcode, Operand rd, Operand rs1)
-//     : opcode(opcode), rd(rd), rs1(rs1) {
-//         // add_use(rd);
-//         // add_use(rs1);
-//     }
-
 /*MachineBasicBlock*/
 MachineBasicBlock::MachineBasicBlock(BasicBlock* block, MachineFunction* parent)
     : block(block), mfuc(parent) {}
@@ -95,6 +74,12 @@ void MachineBasicBlock::set_lable(int func_num, int block_num) {
 }
 std::string MachineBasicBlock::get_name() {return this->name;}
 void MachineBasicBlock::set_name(std::string name) {this->name = name;}
+void MachineBasicBlock::addMachineInst(MachineInst* minst) {
+    this->minsts.push_back(minst);
+}
+std::vector<MachineInst*> MachineBasicBlock::getMachineInsts() {
+    return this->minsts;
+}
 BasicBlock* MachineBasicBlock::get_block() {return this->block;}
 MachineFunction* MachineBasicBlock::get_parent() {return this->mfuc;}
 void MachineBasicBlock::print_block_lable() {
@@ -102,8 +87,8 @@ void MachineBasicBlock::print_block_lable() {
 }
 
 /*MachineFunction*/
-MachineFunction::MachineFunction(Function* func, MachineUnit* unit) 
-    : func(func),  unit(unit), offset(0), alloca_num(0), stacksize(0) {}
+MachineFunction::MachineFunction(Function* func, MachineUnit* Munit) 
+    : func(func),  Munit(Munit), offset(0), alloca_num(0), stacksize(0), mblocks(mblocks) {}
 void MachineFunction::set_offset_map(std::string name, size_t offset) {
     offsetMap.insert(std::pair<std::string, size_t>(name, offset));
 }
@@ -131,6 +116,13 @@ void MachineFunction::set_alloca_and_num() {
 void MachineFunction::set_stacksize() {
     size_t temp = offset % 16;
     stacksize += offset +(16 - temp);
+}
+MachineUnit* MachineFunction::get_machineunit() {return this->Munit;}
+void MachineFunction::addMachineBasicBlock(MachineBasicBlock* mblock) {
+    this->mblocks.push_back(mblock);
+}
+std::vector<MachineBasicBlock*> MachineFunction::getMachineBasicBlocks() {
+    return this->mblocks;
 }
 size_t MachineFunction::get_offset(std::string name) {
     return offsetMap.find(name)->second;

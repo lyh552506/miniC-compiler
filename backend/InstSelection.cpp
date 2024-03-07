@@ -14,7 +14,7 @@ bool is_float(Operand op) {
 MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
     MachineInst* machineinst = nullptr;
      if (auto Tempinst = dynamic_cast<AllocaInst*>(&inst)) {
-        machineinst = new MachineInst(parent, "alloca");
+        machineinst = new MachineInst(&inst, parent, "alloca");
     }
     else if (auto Tempinst = dynamic_cast<StoreInst*>(&inst)) {
         machineinst = MatchStoreInst(parent,Tempinst);
@@ -48,7 +48,7 @@ MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
     }
     else {
         //std::cout << "Error: No Such Instruction." << std::endl;
-        machineinst = new MachineInst(parent, "white");
+        machineinst = new MachineInst(&inst, parent, "white");
     }
     return machineinst;
 } 
@@ -57,34 +57,34 @@ MachineInst* MatchStoreInst(MachineBasicBlock* parent, StoreInst* inst) {
     std::string op = "sw";
     Operand rd = (inst->Getuselist())[0]->GetValue();
     Operand rs1 = (inst->Getuselist())[1]->GetValue();
-    MachineInst* machineinst = new MachineInst(parent, op, rd, rs1);
+    MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
     return machineinst;
 }
 MachineInst* MatchLoadInst(MachineBasicBlock* parent, LoadInst* inst) {
     std::string op = "lw";
     Operand rd = inst->GetDef();        
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
-    MachineInst* machineinst = new MachineInst(parent, op, rd, rs1);
+    MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
     return machineinst;
 }
 MachineInst* MatchFPTSI(MachineBasicBlock* parent,FPTSI* inst) {
     std::string op = "fcvt.s.w";
     Operand rd = inst->GetDef();
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
-    MachineInst* machineinst = new MachineInst(parent, op, rd, rs1);
+    MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
     return machineinst;
 }
 MachineInst* MatchSITFP(MachineBasicBlock* parent,SITFP* inst) {
     std::string op = "fcvt.w.s";
     Operand rd = inst->GetDef();
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
-    MachineInst* machineinst = new MachineInst(parent, op, rd, rs1);
+    MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
     return machineinst;
 }
 MachineInst* MatchUnCondInst(MachineBasicBlock* parent, UnCondInst* inst) {
     std::string op = "j";
     Operand rd = inst->Getuselist()[0]->GetValue();
-    MachineInst* machineinst = new MachineInst(parent, op, rd);
+    MachineInst* machineinst = new MachineInst(inst, parent, op, rd);
     return machineinst;
 }
 MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst) {
@@ -92,20 +92,20 @@ MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst) {
     Operand rd =  inst->Getuselist()[0]->GetValue();
     Operand rs1 = inst->Getuselist()[1]->GetValue();
     Operand rs2 = inst->Getuselist()[2]->GetValue();
-    MachineInst* machineinst = new MachineInst(parent, op, rd, rs1, rs2);
+    MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1, rs2);
     return machineinst;
 }
 
 MachineInst* MatchCallInst(MachineBasicBlock* parent, CallInst* inst) {
     Operand rd = inst->Getuselist()[0]->GetValue();
-    MachineInst* machineinst = new MachineInst(parent, "call", rd);
+    MachineInst* machineinst = new MachineInst(inst, parent, "call", rd);
     return machineinst;
 }
 
 MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst) {
     Operand rd = inst->Getuselist()[0]->GetValue();
     //std::cout << "    lw a0, " << rd->GetName() << std::endl; 
-    MachineInst* machineinst = new MachineInst(parent, "ret", rd);
+    MachineInst* machineinst = new MachineInst(inst, parent, "ret", rd);
     return machineinst;
 }
 
@@ -187,10 +187,10 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
     }
     else {
         std::cout << "Error: No Such Binaryinst!" << std::endl;
-        machineinst = new MachineInst(parent, "white");
+        machineinst = new MachineInst(inst, parent, "white");
         return machineinst; 
     }
-    machineinst = new MachineInst(parent, opcode, rd, rs1, rs2);
+    machineinst = new MachineInst(inst, parent, opcode, rd, rs1, rs2);
     return machineinst;
 }
 
