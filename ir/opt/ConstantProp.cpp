@@ -1,41 +1,35 @@
-#include "ConstantFold.hpp"
+#include "ConstantProp.hpp"
 #include <set>
+#include <queue>
 
-class ConstantProp : public ConstantFolding
+void ConstantProp::CalDomBlocks(BasicBlock* block)
 {
-    bool RunOnBlock(BasicBlock &block);
-    private:
-    bool changed = false;
-};
-
-bool ConstantProp::RunOnBlock(BasicBlock &block) 
-{
-  // Initialize the worklist to all of the instructions ready to process...
-    std::set<User*> WorkList;
-    for(User* inst:block)
-        WorkList.insert(inst);
-    while(!WorkList.empty())
+    if(visited.insert(block).second)
     {
-        User* inst = *WorkList.begin();
-        WorkList.erase(WorkList.begin()); // Get an element from the worklist
-        if(inst->Getuselist().empty())
-        {
-            if(Value *C = ConstantFoldInstruction(inst, &block))
-            {
-            // Add all of the users of this instruction to the worklist, they might
-            // be constant propagatable now...
-            for(Use* U:inst->GetUserlist())
-                WorkList.insert(U->GetUser());
-            // Replace all of the uses of a variable with uses of the constant.
-            inst->RAUW(C);
-            // Remove the dead instruction.
-            WorkList.erase(inst);
-            if(isInstructionTriviallyDead(inst))
-                inst->EraseFromParent();
-            // We made a change to the function.
-            changed = true;
-        }
-        return changed;
+        auto& node = _dom->GetNode(block->num);
+        for(int child : node.des)
+            CalDomBlocks(_dom->GetNode(child).thisBlock);
+        DomBlocks.push_back(block);
     }
+}
+
+void ConstantProp::Pass()
+{
+    CalDomBlocks(*_func->begin());
+    for(BasicBlock* block : DomBlocks)
+        RunOnBlock(block);
+}
+
+void ConstantProp::RunOnBlock(BasicBlock* block)
+{
+    For_inst_In(block)
+    {
+        Value* C = ConstFold->ConstantFoldInst(inst);
+        if(C)
+        {
+        inst->RAUW(C);
+        inst->ClearRelation();
+        inst->EraseFromParent();
+        }
     }
 }

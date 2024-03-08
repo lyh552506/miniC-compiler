@@ -74,6 +74,32 @@ void Value::RAUW(Value* val){
     }
 }
 
+bool Value::isUndefVal()
+{
+    if(dynamic_cast<UndefValue*>(this))
+        return true;
+    else
+        return false;
+}
+
+bool Value::isConstZero()
+{
+    if(auto num = dynamic_cast<ConstIRInt*>(this))
+        return num->GetVal() == 0;
+    else if(auto num = dynamic_cast<ConstIRFloat*>(this))
+        return num->GetVal() == 0;
+    else
+        return false;
+}
+
+bool Value::isConstOne()
+{
+    if(auto num = dynamic_cast<ConstIRInt*>(this))
+        return num->GetVal() == 1;
+    else 
+        return false;
+}
+
 void User::add_use(Value* __data){
     uselist.push_back(std::make_unique<Use>(this,__data));
 }

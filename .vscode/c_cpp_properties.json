@@ -8,6 +8,15 @@
             "defines": [],
             "cStandard": "c17",
             "cppStandard": "c++17"
+        },
+        {
+            "name": "MacOS",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "cStandard": "c17",
+            "cppStandard": "c++17"   
         }
     ],
     "version": 4

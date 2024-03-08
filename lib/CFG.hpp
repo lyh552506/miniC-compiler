@@ -126,6 +126,7 @@ class BinaryInst:public User
     BinaryInst(Operand _A,Operation __op,Operand _B);
     void print()final;
     std::string GetOperation();
+    Operation getopration();
 };
 class GetElementPtrInst:public User
 {
@@ -133,6 +134,8 @@ class GetElementPtrInst:public User
     GetElementPtrInst(Operand);
     Type* GetType()final;
     void print()final;
+    bool isPtrValConst();
+    Value* GetPtrVal();
 };
 //zext i1 to i32
 class ZextInst:public User
@@ -156,6 +159,7 @@ public:
 public:
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
+  void Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord);
   int oprandNum;
 };
 class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
@@ -181,8 +185,12 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
+    std::vector<BasicBlock*> Succ_Block;
+    std::vector<BasicBlock*> GetSuccBlock();
+    void AddSuccBlock(BasicBlock* block){this->Succ_Block.push_back(block);}
     bool EndWithBranch();
     int num=0;
+    bool visited=false;
 };
 
 class BuildInFunction:public Value
@@ -197,6 +205,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
+    std::vector<BasicBlock*> bbs;
     void InsertAlloca(AllocaInst* ptr);
     public:
     Function(InnerDataType _tp,std::string _id);
@@ -204,7 +213,9 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
+    void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
+    std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
 };
 class Module:public SymbolTable
 {

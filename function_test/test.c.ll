@@ -332,24 +332,70 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.a = global i32 zeroinitializer
-@.g.b = global i32 zeroinitializer
-define i32 @main(){
-.3:
-  %.6 = alloca i32
-  store i32 10, i32* @.g.a
-  store i32 10, i32* %.6
-  ret i32 0 
+define i32 @func2(i32 %.3){
+.1:
+  %.2 = alloca i32
+  store i32 %.3, i32* %.2
+  %.5 = load i32, i32* %.2
+  %.7 = add i32 %.5, 2
+  ret i32 %.7 
 }
-main:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    addi s0, sp, 32
-    sw 10, -93824993006944(s0)
-    sw 10, -20(s0)
-    lw a0, 0
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    addi sp, sp, 32
-    ret
+define i32 @func(i32 %.12, i32 %.15, i32 %.18){
+.10:
+  %.23 = alloca i32
+  %.20 = alloca i32
+  %.17 = alloca i32
+  %.14 = alloca i32
+  %.11 = alloca i32
+  store i32 %.12, i32* %.11
+  store i32 %.15, i32* %.14
+  store i32 %.18, i32* %.17
+  store i32 1, i32* %.20
+<<<<<<< HEAD
+  %.24at8 = call i32 @func2(i32 2)
+  store i32 %.24at8, i32* %.23
+  %.28 = load i32, i32* %.17
+  %.29 = ic
+=======
+  %.24at36 = call i32 @func2(i32 2)
+  store i32 %.24at36, i32* %.23
+  %.28 = load i32, i32* %.17
+  %.29 = icmp sgt i32 %.28, 1
+  br i1 %.29, label %.26, label %.27
+.26:
+  %.31 = load i32, i32* %.11
+  %.32 = load i32, i32* %.14
+  %.33 = add i32 %.31, %.32
+  store i32 %.33, i32* %.20
+  br label %.35 
+.27:
+  %.37 = load i32, i32* %.11
+  %.38 = load i32, i32* %.14
+  %.39 = sub i32 %.37, %.38
+  store i32 %.39, i32* %.20
+  br label %.35 
+.35:
+  %.42 = load i32, i32* %.20
+  ret i32 %.42 
+}
+define i32 @func2(i32 %.3){
+.1:
+  %.7 = add i32 %.3, 2
+  ret i32 %.7 
+}
+define i32 @func(i32 %.12, i32 %.15, i32 %.18){
+.10:
+  %.24at36 = call i32 @func2(i32 2)
+  %.29 = icmp sgt i32 %.18, 1
+  br i1 %.29, label %.26, label %.27
+.26:
+  %.33 = add i32 %.12, %.15
+  br label %.35 
+.27:
+  %.39 = sub i32 %.12, %.15
+  br label %.35 
+.35:
+  %.44 = Phi i32 [%.39, %.27], [%.33, %.26]
+  ret i32 %.44 
+}
+>>>>>>> 0512ea5c39c221cdeefabb7c382ad0233ba11634

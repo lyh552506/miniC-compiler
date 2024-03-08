@@ -2,9 +2,11 @@
 
 void dominance::Init() {
   auto &bbs = thisFunc->GetBasicBlock();
-  for (auto &bb : bbs) {
+  for (int i = 0; i < bbs.size(); ++i)
+    bbs[i]->num=i;
+  for (auto bb : bbs) {
     User *Inst = bb->back(); //获取到最后一条指令
-    node[bb->num].thisBlock = bb.get();
+    node[bb->num].thisBlock = bb;
 
     if (CondInst *cond = dynamic_cast<CondInst *>(Inst)) {
       auto &uselist = cond->Getuselist();
@@ -87,7 +89,7 @@ void dominance::build_tree() {
 
 /// @brief 准备计算支配树
 void dominance::dom_begin() {
-  BasicBlock *EntryBB = thisFunc->front_block();
+  BasicBlock *EntryBB = *(thisFunc->begin());
   DFS(EntryBB->num);
   find_dom();   // 寻找支配节点
   build_tree(); // 构建支配树
@@ -125,4 +127,8 @@ void dominance::DfsDominator(int root) {
     }
   }
   IsDFSValid = true;
+}
+
+BasicBlock* dominance::find_lca(BasicBlock* bb1,BasicBlock* bb2){
+  
 }

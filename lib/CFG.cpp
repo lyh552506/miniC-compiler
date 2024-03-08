@@ -89,7 +89,6 @@ bool AllocaInst::IsUsed(){
     return true;
 }
 
-std::map<Type*,UndefValue*> Undefs;
 
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
@@ -278,6 +277,10 @@ BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(check_binary_b
 std::string BinaryInst:: GetOperation() {
     std::string opcode = magic_enum::enum_name(op).data();
     return opcode;
+}
+
+BinaryInst::Operation BinaryInst::getopration(){
+    return op;
 }
 
 void BinaryInst::print(){
@@ -564,6 +567,13 @@ BasicBlock* BasicBlock::GenerateNewBlock(){
     master.add_block(tmp);
     return tmp;
 }
+std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
+{   
+    if(!Succ_Block.empty())
+        return this->Succ_Block;
+    else
+        std::cerr << "There is no Succ Block." << std::endl;
+}
 
 BasicBlock* BasicBlock::GenerateNewBlock(std::string name){
     BasicBlock* tmp=new BasicBlock(master);
@@ -594,6 +604,10 @@ void Function::print(){
     for(auto i:(*this))
         i->print();
     std::cout<<"}\n";
+}
+
+void Function::push_bb(BasicBlock* bb){
+    bbs.push_back(bb);
 }
 
 void Function::InsertAlloca(AllocaInst* ptr){
@@ -645,10 +659,13 @@ bool BasicBlock::EndWithBranch(){
 void BasicBlock::GenerateCondInst(Operand condi,BasicBlock* is_true,BasicBlock* is_false){
     auto inst=new CondInst(condi,is_true,is_false);
     push_back(inst);
+    Succ_Block.push_back(is_true);
+    Succ_Block.push_back(is_false);
 }
 void BasicBlock::GenerateUnCondInst(BasicBlock* des){
     auto inst=new UnCondInst(des);
     push_back(inst);
+    Succ_Block.push_back(des);
 }
 void BasicBlock::GenerateRetInst(Operand ret_val){
     if(master.GetTypeEnum()!=ret_val->GetTypeEnum()){
@@ -780,9 +797,16 @@ void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
 
 std::vector<Value*>& PhiInst::GetAllPhiVal(){
     for(const auto &[_1,value]:PhiRecord){
-        Incomings.push_back(value.second);
+        Incomings.push_back(value.first);
     }
     return Incomings;
+}
+
+void PhiInst::Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord)
+{   if(_PhiRecord.find(CurrentNum) != _PhiRecord.end())
+        _PhiRecord.erase(CurrentNum);
+    else
+        std::cerr << "No such PhiRecord" << std::endl;
 }
 
 void Function::push_alloca(Variable* ptr){
@@ -797,8 +821,8 @@ void Function::push_param(Variable* var){
     front()->GenerateStoreInst(params.back().get(),Singleton<Module>().GetValueByName(var->get_name()));
 }
 
-void Function::add_block(BasicBlock* __block){
-    push_back(__block);
+void Function::add_block(BasicBlock* bb){
+    push_back(bb);
 }
 
 std::vector<std::unique_ptr<Value>>& Function::GetParams(){
@@ -841,6 +865,7 @@ Operand Module::GenerateMemcpyHandle(Type* _tp,Operand oper){
 
 
 UndefValue* UndefValue::get(Type *Ty){
+    static std::map<Type*,UndefValue*> Undefs;
     UndefValue *& UV=Undefs[Ty];
     if(!UV)
       UV=new UndefValue(Ty);

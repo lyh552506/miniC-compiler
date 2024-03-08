@@ -85,6 +85,10 @@ class Value
     void SetName(std::string newname);
     virtual std::string GetName();
     UserList& GetUserlist(){return userlist;};
+    bool isGlobVal(){return false;};
+    bool isUndefVal();
+    bool isConstZero();
+    bool isConstOne();
 };
 using Operand=Value*;
 // class Constant:public User
@@ -103,10 +107,7 @@ class User:public Value,public list_node<BasicBlock,User>
     void ClearRelation();//在EraseFromBasic()前调用
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
 };
-class ConstantExpr:public Value
-{
 
-};
 class ConstantData:public Value
 {
     public:
@@ -131,7 +132,6 @@ class ConstIRInt:public ConstantData
     public:
     static ConstIRInt* GetNewConstant(int=0);
     int GetVal();
-    double GetValAsDouble() const { return static_cast<double>(val);}
 };
 
 class ConstIRFloat:public ConstantData

@@ -1,4 +1,4 @@
-// #pragma once
+#pragma once
 #include "CFG.hpp"
 #include "my_stl.hpp"
 #include <algorithm>
@@ -47,9 +47,9 @@ public:
     std::forward_list<int> df;
     DF() = default;
   };
-
-private:
   std::vector<Node> node;
+private:
+
   std::vector<int> vertex;       // 记录dfs对应的结点
   std::vector<int> bucket[200];  // bucket[u]代表sdom为u的点集
   std::vector<DSU> dsu;          //辅助数据结构实现路径压缩
@@ -68,6 +68,8 @@ public:
   /// @brief 获取每个节点的DFS序，同时初始化sdom为自己
   /// @param pos
   void DFS(int pos);
+
+  void caculateBBs();
 
 private:
   /// @brief 路径压缩，并更新最小sdom
@@ -91,6 +93,9 @@ private:
 
   /// @brief 支配节点查找
   void find_dom();
+
+  /// @brief 寻找两个block的lca
+  BasicBlock* find_lca(BasicBlock* bb1,BasicBlock* bb2);
 
   /// @brief 建立支配树
   void build_tree();
