@@ -67,50 +67,24 @@ Value* ConstantFolding::ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Valu
     int LVal = dynamic_cast<ConstIRInt*>(LHS)->GetVal();
     int RVal = dynamic_cast<ConstIRInt*>(RHS)->GetVal();
     BinaryInst::Operation Opcode = inst->getopration();
-    int Result;
     switch(Opcode)
     {
         case BinaryInst::Op_Add:
-            Result = LVal + RVal;
-            break;
         case BinaryInst::Op_Sub:
-            Result = LVal - RVal;
-            break;
         case BinaryInst::Op_Mul:
-            Result = LVal * RVal;
-            break;
         case BinaryInst::Op_Div:
-            Result = LVal / RVal;
-            break;
-        case BinaryInst::Op_And:
-            Result = (LVal && RVal);
-            break;
-        case BinaryInst::Op_Or:
-            Result = (LVal || RVal);
-            break;
         case BinaryInst::Op_Mod:
-            Result = (LVal % RVal);
-            break;
+            return ConstFoldInt(Opcode, LVal, RVal);
         case BinaryInst::Op_E:
-            Result = (LVal == RVal);
-            break;
-        case BinaryInst::Op_NE:
-            Result = (LVal != RVal);
-            break;
-        case BinaryInst::Op_GE:
-            Result = (LVal >= RVal);
-            break;
-        case BinaryInst::Op_L:
-            Result = (LVal < RVal);
-            break;
-        case BinaryInst::Op_LE:
-            Result = (LVal <= RVal);
-            break;
         case BinaryInst::Op_G:
-            Result = (LVal > RVal);
-            break;
+        case BinaryInst::Op_GE:
+        case BinaryInst::Op_L:
+        case BinaryInst::Op_LE:
+        case BinaryInst::Op_And:
+        case BinaryInst::Op_Or:
+            return ConstFoldIntCmp(Opcode, LVal, RVal);
     }
-    return ConstIRInt::GetNewConstant(Result);
+    return nullptr;
 }
 
 Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Value* RHS)
@@ -118,47 +92,23 @@ Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Va
     float LVal = dynamic_cast<ConstIRFloat*>(LHS)->GetVal();
     float RVal = dynamic_cast<ConstIRFloat*>(RHS)->GetVal();
     BinaryInst::Operation Opcode = inst->getopration();
-    float Result;
     switch(Opcode)
     {
         case BinaryInst::Op_Add:
-            Result = LVal + RVal;
-            break;
         case BinaryInst::Op_Sub:
-            Result = LVal - RVal;
-            break;
         case BinaryInst::Op_Mul:
-            Result = LVal * RVal;
-            break;
         case BinaryInst::Op_Div:
-            Result = LVal / RVal;
-            break;
-        case BinaryInst::Op_And:
-            Result = (LVal && RVal);
-            break;
-        case BinaryInst::Op_Or:
-            Result = (LVal || RVal);
-            break;
+            return ConstFoldFloat(Opcode, LVal, RVal);
         case BinaryInst::Op_E:
-            Result = (LVal == RVal);
-            break;
-        case BinaryInst::Op_NE:
-            Result = (LVal != RVal);
-            break;
-        case BinaryInst::Op_GE:
-            Result = (LVal >= RVal);
-            break;
-        case BinaryInst::Op_L:
-            Result = (LVal < RVal);
-            break;
-        case BinaryInst::Op_LE:
-            Result = (LVal <= RVal);
-            break;
         case BinaryInst::Op_G:
-            Result = (LVal > RVal);
-            break;
+        case BinaryInst::Op_GE:
+        case BinaryInst::Op_L:
+        case BinaryInst::Op_LE:
+        case BinaryInst::Op_And:
+        case BinaryInst::Op_Or:
+            return ConstFoldFloatCmp(Opcode, LVal, RVal);
     }
-    return ConstIRFloat::GetNewConstant(Result);
+    return nullptr;
 }
 
 Value* ConstantFolding::ConstantFoldSITFPInst(SITFP* inst)
@@ -315,4 +265,100 @@ Value* ConstantFolding::ConstantFoldZextInst(ZextInst* inst)
     else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
         return ConstIRInt::GetNewConstant(iNt->GetVal());
     return nullptr;
+}
+Value* ConstantFolding::ConstFoldInt(BinaryInst::Operation Opcode, int LVal, int RVal)
+{
+    int Result;
+    switch(Opcode)
+    {
+    case BinaryInst::Op_Add:
+        Result = LVal + RVal;
+        break;
+    case BinaryInst::Op_Sub:
+        Result = LVal - RVal;
+        break;
+    case BinaryInst::Op_Mul:
+        Result = LVal * RVal;
+        break;
+    case BinaryInst::Op_Div:
+        Result = LVal / RVal;
+        break;
+    case BinaryInst::Op_Mod:
+        Result = (LVal % RVal);
+        break;
+    }
+    return ConstIRInt::GetNewConstant(Result);
+}
+
+Value* ConstantFolding::ConstFoldFloat(BinaryInst::Operation Opcode, float LVal, float RVal)
+{
+    float Result;
+    switch(Opcode)
+    {
+    case BinaryInst::Op_Add:
+        Result = LVal + RVal;
+        break;
+    case BinaryInst::Op_Sub:
+        Result = LVal - RVal;
+        break;
+    case BinaryInst::Op_Mul:
+        Result = LVal * RVal;
+        break;
+    case BinaryInst::Op_Div:
+        Result = LVal / RVal;
+        break;
+    }
+    return ConstIRFloat::GetNewConstant(Result);
+}
+Value* ConstantFolding::ConstFoldIntCmp(BinaryInst::Operation Opcode, int LVal, int RVal)
+{
+    bool Result;
+    switch(Opcode)
+    {
+        case BinaryInst::Op_E:
+            Result = (LVal == RVal);
+            break;
+        case BinaryInst::Op_NE:
+            Result = (LVal != RVal);
+            break;
+        case BinaryInst::Op_GE:
+            Result = (LVal >= RVal);
+            break;
+        case BinaryInst::Op_L:
+            Result = (LVal < RVal);
+            break;
+        case BinaryInst::Op_LE:
+            Result = (LVal <= RVal);
+            break;
+        case BinaryInst::Op_G:
+            Result = (LVal > RVal);
+            break;
+    }
+    return ConstIRBoolean::GetNewConstant(Result); 
+}
+Value* ConstantFolding::ConstFoldFloatCmp(BinaryInst::Operation Opcode, float LVal, float RVal)
+{
+    bool Result;
+    switch(Opcode)
+    {
+        case BinaryInst::Op_E:
+            Result = (LVal == RVal);
+            break;
+        case BinaryInst::Op_NE:
+            Result = (LVal != RVal);
+            break;
+        case BinaryInst::Op_GE:
+            Result = (LVal >= RVal);
+            break;
+        case BinaryInst::Op_L:
+            Result = (LVal < RVal);
+            break;
+        case BinaryInst::Op_LE:
+            Result = (LVal <= RVal);
+            break;
+        case BinaryInst::Op_G:
+            Result = (LVal > RVal);
+            break;
+    }
+    return ConstIRBoolean::GetNewConstant(Result); 
 }
