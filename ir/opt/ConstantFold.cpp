@@ -17,8 +17,6 @@ Value* ConstantFolding::ConstantFoldInst(User* inst)
         return ConstantFoldStoreInst(STore);
     if(auto _CallInst = dynamic_cast<CallInst*>(inst))
         return ConstantFoldCallInst(_CallInst);
-    // if(auto GEtElementPtrInst = dynamic_cast<GetElementPtrInst*>(inst))
-    //     return ConstantFoldGetElementPtrInst(GEtElementPtrInst);
     if(auto ZExtInst = dynamic_cast<ZextInst*>(inst))
         return ConstantFoldZextInst(ZExtInst);
     return nullptr;
@@ -151,30 +149,57 @@ Value* ConstantFolding::ConstantFoldLoadInst(LoadInst* inst)
 Value* ConstantFolding::ConstantFoldStoreInst(StoreInst* inst)
 {
     Value* Operand = inst->Getuselist()[0]->usee;
+    Value* Operand2 = inst->Getuselist()[1]->usee;
     if(auto UNdefValue = dynamic_cast<UndefValue*>(Operand))
-        return UndefValue::get(Operand->GetType());
+    {
+        Operand2->RAUW(UndefValue::get(Operand->GetType()));
+        inst->ClearRelation();
+        inst->EraseFromParent();
+        return nullptr;
+    }
     else if(auto iNt = dynamic_cast<ConstIRInt*>(Operand))
-        return ConstIRInt::GetNewConstant(iNt->GetVal());
+    {
+        Operand2->RAUW(ConstIRInt::GetNewConstant(iNt->GetVal()));
+        inst->ClearRelation();
+        inst->EraseFromParent();
+    }
     else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Operand))
-        return ConstIRFloat::GetNewConstant(fLoat->GetVal());
+    {
+        Operand2->RAUW(ConstIRFloat::GetNewConstant(fLoat->GetVal()));
+        inst->ClearRelation();
+        inst->EraseFromParent();
+    }
     else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Operand))
-        return ConstIRBoolean::GetNewConstant(BOol->GetVal());
+    {
+        Operand2->RAUW(ConstIRBoolean::GetNewConstant(BOol->GetVal()));
+        inst->ClearRelation();
+        inst->EraseFromParent();
+    }
     else
         return nullptr;
 }
-// Value* ConstantFolding::ConstantFoldGetElementPtrInst(GetElementPtrInst* inst)
-// {
-//     Value* Val = inst->GetPtrVal();
-//     if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
-//         return UndefValue::get(UNdefValue->GetType());
-//     else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
-//         return ConstIRInt::GetNewConstant(iNt->GetVal());
-//     else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Val))
-//         return ConstIRFloat::GetNewConstant(fLoat->GetVal());
-//     else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
-//         return ConstIRBoolean::GetNewConstant(BOol->GetVal());
-//     return nullptr;
-// }
+Value* ConstantFolding::ConstantFoldGetElementPtrInst(GetElementPtrInst* inst)
+{
+    Value* C = Find_Equal_Ptr(inst);
+    if(C)
+        return C;
+    else
+    {
+        Set_Equal_Ptr(inst);
+        inst->EraseFromParent();
+        return nullptr;
+    }
+    // Value* Val = inst->GetPtrVal();
+    // if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
+    //     return UndefValue::get(UNdefValue->GetType());
+    // else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
+    //     return ConstIRInt::GetNewConstant(iNt->GetVal());
+    // else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Val))
+    //     return ConstIRFloat::GetNewConstant(fLoat->GetVal());
+    // else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
+    //     return ConstIRBoolean::GetNewConstant(BOol->GetVal());
+    // return nullptr;
+}
 
 bool ConstantFolding::CallHasSideEffects(Function* func)
 {
@@ -266,6 +291,52 @@ Value* ConstantFolding::ConstantFoldZextInst(ZextInst* inst)
         return ConstIRInt::GetNewConstant(iNt->GetVal());
     return nullptr;
 }
+// Value* ConstantFolding::GetDefVal(GetElementPtrInst* inst)
+// {
+//     if(ArrayConstDef.find(inst->Getuselist()[0]->GetValue()) != ArrayConstDef.end())
+        
+// }
+Value* ConstantFolding::Find_Equal_Ptr(GetElementPtrInst* inst)
+{
+    std::vector<std::string> index;
+    for(int i = 0; i< inst->Getuselist().size(); i++)
+    {
+        Value* op = inst->Getuselist()[i]->GetValue();
+        index.push_back(op->GetName());
+    }
+    std::string idx_key;
+    for(auto idx : index)
+    {
+        idx_key += idx;
+        idx_key += "#";
+    }
+    if(GepMap.find(idx_key) != GepMap.end())
+        return  GepMap.find(idx_key)->second;
+    else
+        return nullptr;
+}
+
+void ConstantFolding::Set_Equal_Ptr(GetElementPtrInst *inst)
+{
+    std::vector<std::string> index;
+    for (int i = 0; i < inst->Getuselist().size(); i++) 
+    {
+        auto op = inst->Getuselist()[i]->GetValue();
+        index.push_back(op->GetName());
+    }
+
+    std::string idx_key;
+    for (auto idx : index) 
+    {
+        idx_key += idx;
+        idx_key += "#";
+    }
+    if(GepMap.find(idx_key) != GepMap.end())
+        GepMap.find(idx_key)->second = inst;
+    else
+        GepMap.insert({idx_key, inst});
+}
+
 Value* ConstantFolding::ConstFoldInt(BinaryInst::Operation Opcode, int LVal, int RVal)
 {
     int Result;

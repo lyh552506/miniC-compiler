@@ -1,15 +1,21 @@
 #pragma once
 #include "CFG.hpp"
 #include "dominant.hpp"
+#include <unordered_map>
 using DNode=dominance::Node*;
 class ConstantFolding
 {
 public:
 Value* ConstantFoldInst(User* inst);
-
-ConstantFolding() = default;
-
+ConstantFolding() : GepMap{} {}
+// Handle GetElementPtrInst
+Value* ConstantFoldGetElementPtrInst(GetElementPtrInst* inst);
 private:
+std::map<std::string, User*> GepMap;
+void GepRepalce(GetElementPtrInst* inst);
+Value* Find_Equal_Ptr(GetElementPtrInst* inst);
+Value* GetDefVal(GetElementPtrInst* inst);
+void Set_Equal_Ptr(GetElementPtrInst *inst);
 // Handle PhiInst
 Value* ConstantFoldPhiInst(PhiInst* inst);
 // Handle BinaryInst
@@ -30,8 +36,7 @@ Value* ConstantFoldStoreInst(StoreInst* inst);
 Value* ConstantFoldSITFPInst(SITFP* inst);
 // Handle FPTSI
 Value* ConstantFoldFPTSIInst(FPTSI* inst);
-// Handle GetElementPtrInst
-Value* ConstantFoldGetElementPtrInst(GetElementPtrInst* inst);
+
 // Handle ZextInst
 Value* ConstantFoldZextInst(ZextInst* inst);
 // isReturnValueAlwaysCommonConst,if true,return value;

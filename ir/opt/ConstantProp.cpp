@@ -48,12 +48,35 @@ void ConstantProp::RunOnBlock(BasicBlock* block)
 {
     For_inst_In(block)
     {
+        if(auto GEtElementPtrInst = dynamic_cast<GetElementPtrInst*>(inst))
+        {
+            Value* C = ConstFold->ConstantFoldGetElementPtrInst(GEtElementPtrInst);
+            if(C)
+                {
+                    inst->RAUW(C);
+                    inst->ClearRelation();
+                    inst->EraseFromParent();
+                }
+            continue;
+        }
+        if(dynamic_cast<StoreInst*>(inst))
+            continue;
         Value* C = ConstFold->ConstantFoldInst(inst);
         if(C)
         {
-        inst->RAUW(C);
-        inst->ClearRelation();
-        inst->EraseFromParent();
+            inst->RAUW(C);
+            inst->ClearRelation();
+            inst->EraseFromParent();
+        }
+    }
+    For_inst_In(block)
+    {
+    Value* C = ConstFold->ConstantFoldInst(inst);
+        if(C)
+        {
+            inst->RAUW(C);
+            inst->ClearRelation();
+            inst->EraseFromParent();
         }
     }
 }
