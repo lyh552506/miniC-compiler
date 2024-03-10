@@ -133,6 +133,7 @@ class GetElementPtrInst:public User
 {
     public:
     GetElementPtrInst(Operand);
+    GetElementPtrInst(Operand ptr,std::vector<Value*>&args);
     Type* GetType()final;
     void print()final;
 };
@@ -155,6 +156,7 @@ public:
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
   std::vector<Value*>& GetAllPhiVal();
+  Value* ReturnValIn(BasicBlock* bb);
   bool modifyIncome(Value* origin);
   bool modifyBlock(Value* val,BasicBlock* NewBlock);
 public:

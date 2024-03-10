@@ -44,12 +44,13 @@ struct ValueTable {
   int valuekinds = 0;
 
   int LookupOrAdd(Value *val);
+  void erase(Value *val) { ValueNumber.erase(val); }
 
   Expression *CreatExp(BinaryInst *bin);
   Expression *CreatExp(GetElementPtrInst *gep);
   Expression *CreatExp(CondInst *cond);
   Expression *CreatExp(UnCondInst *uncond);
-  // Expression* CreatExp();
+  ValueTable();
 };
 
 struct ValueNumberedSet {
@@ -57,11 +58,20 @@ struct ValueNumberedSet {
   std::set<Value *> contents;
 
   void insert_val(Value *val) { contents.insert(val); }
-  void set(int hash) {
+  void erase_val(Value *val) { contents.erase(val); }
+  void set_hash(int hash) {
     if (Record.size() < hash)
       Record.resize(hash + 5);
     Record[hash] = 1;
   }
+  void clear_hash(int hash) {
+    if (Record.size() < hash)
+      assert(0 && "hash can't bigger than Record size!");
+    if (Record[hash] == 0)
+      return;
+    Record[hash] = 0;
+  }
+  /// @brief return true if is inserted
   bool IsAlreadyInsert(int hash) {
     if (Record.size() < hash)
       return false;
@@ -80,15 +90,25 @@ public:
   void Eliminate();
   /// @brief
   void DfsDT(int pos);
+  void PostOrderCFG(BasicBlock *root);
 
-  void CaculateAvailOut(User *inst, ValueNumberedSet &avail,
-                        ValueNumberedSet &genexp, ValueNumberedSet &gentemp,
-                        ValueNumberedSet &genphis);
+  void CalculateAvailOut(User *inst, ValueNumberedSet &avail,
+                         ValueNumberedSet &genexp, ValueNumberedSet &gentemp,
+                         ValueNumberedSet &genphis);
+  void CalculateAnticIn(BasicBlock *bb, ValueNumberedSet &AnticOut,
+                        std::set<BasicBlock *> &visited);
+  void CalculateAnticOut(BasicBlock *bb, ValueNumberedSet &AnticOut,
+                         std::set<BasicBlock *> &visited);
+  Value *phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val);
+
   PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {
     BasicBlock *Entry = m_func->front();
     auto entrynode = &(m_dom->GetNode(Entry->num));
     m_func->init_visited_block();
     DfsDT(0);
+    m_func->init_visited_block();
+    PostOrderCFG(m_func->front());
+    init_pass();
   }
 
 private:
@@ -99,6 +119,7 @@ private:
   std::map<BasicBlock *, ValueNumberedSet> AnticipatedIn;
   std::map<BasicBlock *, ValueNumberedSet> GeneratedPhis;
   std::vector<BasicBlock *> Dfs;
-  std::map<BasicBlock *, ValueNumberedSet> GeneratedExps;
+  std::vector<BasicBlock *> PostOrder;
+  std::vector<Value *> gen_exp;
   std::map<BasicBlock *, ValueNumberedSet> GeneratedTemp;
 };
