@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   // output_path = argv[1];
   // output_path += ".a";
   // freopen(output_path.c_str(),"a",stdout);
-  PrintCodeToTxt(&Singleton<Module>());
+
   // freopen("/dev/tty", "a", stdout);  std::unique_ptr<PassManager>pass_manager(new PassManager);
   
   // int optionIndex, option;
@@ -74,5 +74,6 @@ int main(int argc, char **argv) {
   // Gvn_Gcm test(&dom, f);
   // test.init_pass();
   Singleton<Module>().Test();
+  PrintCodeToTxt(&Singleton<Module>());
   return 0;
 }

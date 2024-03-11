@@ -89,7 +89,8 @@ void PrintCodeToTxt(Module* unit) {
         // std::cout.rdbuf(outputFile.rdbuf());
         //PrintCode(unit);
         MachineUnit* Munit = GenerateHir(unit);
-        ChangeConditionInsts(Munit);
+        //ChangeConditionInsts(Munit);
+        ChangeBranch(Munit);
         // std::cout.rdbuf(coutBuffer);
         outputFile.close(); // 关闭文件
     } else {

@@ -3,6 +3,7 @@
 #include<iostream>
 #include "Mcode.hpp"
 #include "InstSelection.hpp"
+#include "pass.hpp"
 
 void RegAlloca(Function* function);
 MachineUnit* GenerateHir(Module* unit);
