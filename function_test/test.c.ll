@@ -125,5 +125,4 @@ func:
     addi sp, sp, 48
     ret
 Here is a br instruction
-%.30 = icmp sgt i32 %.29, 1
-%.29
+%.29 1
