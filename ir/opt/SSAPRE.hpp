@@ -8,6 +8,8 @@ by Thomas VanDrunen and Antony L. Hosking
 #include "IDF.hpp"
 #include "dominant.hpp"
 
+enum RetStats { Delay, Changed, Unchanged };
+
 struct Expression {
   enum ExpOpration {
     Op_Add,
@@ -35,22 +37,42 @@ struct Expression {
   ExpOpration op;
 
   Expression() = default;
+
+  //因为后续使用find寻找相同的exp，这里需要增加一个判断两个exp是否相同
+  bool operator==( Expression &other) {
+    if (firVal != other.firVal)
+      return false;
+    if (SecVal != other.SecVal)
+      return false;
+    if (ThirdVal != other.ThirdVal)
+      return false;
+    if (type != other.type)
+      return false;
+    if (op != other.op)
+      return false;
+    if (args.size() != other.args.size())
+      return false;
+    for (int i = 0; i < args.size(); i++)
+      if (args[i] != other.args[i])
+        return false;
+    return true;
+  }
   // Expression();
 };
 
 struct ValueTable {
-  std::map<Value *, int> ValueNumber;    // value* to kind number
-  std::map<Expression *, int> ExpNumber; // expression to kind number
+  std::map<Value *, int> ValueNumber; // value* to kind number
+  std::vector<std::pair<Expression, int>>
+      ExpNumber; // expression to kind number
   int valuekinds = 0;
 
   int LookupOrAdd(Value *val);
   void erase(Value *val) { ValueNumber.erase(val); }
 
-  Expression *CreatExp(BinaryInst *bin);
-  Expression *CreatExp(GetElementPtrInst *gep);
-  Expression *CreatExp(CondInst *cond);
-  Expression *CreatExp(UnCondInst *uncond);
-  ValueTable();
+  Expression CreatExp(BinaryInst *bin);
+  Expression CreatExp(GetElementPtrInst *gep);
+
+  ValueTable() : ValueNumber{} {}
 };
 
 struct ValueNumberedSet {
@@ -70,6 +92,11 @@ struct ValueNumberedSet {
     if (Record[hash] == 0)
       return;
     Record[hash] = 0;
+  }
+
+  void init() {
+    Record.clear();
+    contents.clear();
   }
   /// @brief return true if is inserted
   bool IsAlreadyInsert(int hash) {
@@ -91,18 +118,22 @@ public:
   /// @brief
   void DfsDT(int pos);
   void PostOrderCFG(BasicBlock *root);
+  void TopuSet(ValueNumberedSet& set);
 
   void CalculateAvailOut(User *inst, ValueNumberedSet &avail,
                          ValueNumberedSet &genexp, ValueNumberedSet &gentemp,
                          ValueNumberedSet &genphis);
-  void CalculateAnticIn(BasicBlock *bb, ValueNumberedSet &AnticOut,
-                        std::set<BasicBlock *> &visited);
-  void CalculateAnticOut(BasicBlock *bb, ValueNumberedSet &AnticOut,
-                         std::set<BasicBlock *> &visited);
+  RetStats CalculateAnticIn(BasicBlock *bb, ValueNumberedSet &AnticOut,
+                            std::set<BasicBlock *> &visited,
+                            ValueNumberedSet &genexp);
+  RetStats CalculateAnticOut(BasicBlock *bb, ValueNumberedSet &AnticOut,
+                             std::set<BasicBlock *> &visited);
   Value *phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val);
+  void clean(ValueNumberedSet &val);
 
   PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {
     BasicBlock *Entry = m_func->front();
+    VN = new ValueTable();
     auto entrynode = &(m_dom->GetNode(Entry->num));
     m_func->init_visited_block();
     DfsDT(0);
@@ -120,6 +151,7 @@ private:
   std::map<BasicBlock *, ValueNumberedSet> GeneratedPhis;
   std::vector<BasicBlock *> Dfs;
   std::vector<BasicBlock *> PostOrder;
+  std::vector<BasicBlock *> TopuOrder;
   std::vector<Value *> gen_exp;
   std::map<BasicBlock *, ValueNumberedSet> GeneratedTemp;
 };

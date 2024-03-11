@@ -60,35 +60,51 @@ void PRE::BuildSets() {
     changed = false;
     ValueNumberedSet AnticOut;
     //此处采用后续遍历CFG
-    std::stack<BasicBlock *> PostOrder;
-    BasicBlock *r = nullptr, *node = m_func->front();
-    while (!PostOrder.empty() || node != nullptr) {
-      if (node != nullptr) {
-        PostOrder.push(node);
-        node = GetChild(node, 1);
-      } else {
-        node = PostOrder.top();
-        if (GetChild(node, 0) != nullptr && GetChild(node, 0) != r) {
-          node = GetChild(node, 0);
-          PostOrder.push(node);
-          node = GetChild(node, 1);
-        } else {
-          node = PostOrder.top();
-          PostOrder.pop();
-          CalculateAnticIn(node, AnticOut, visited);
-          r = node;
-          node = nullptr;
-        }
-      }
+    for (BasicBlock *post : PostOrder) {
+      CalculateAnticIn(post, AnticOut, visited, GeneratedExps[post]);
     }
   }
 }
 
 // ANTIC IN[b] = clean(canone(ANTIC OUT[b] ∪ EXP GEN[b]−TMP GEN(b)))
-void PRE::CalculateAnticIn(BasicBlock *bb, ValueNumberedSet &AnticOut,
-                           std::set<BasicBlock *> &visited) {
+RetStats PRE::CalculateAnticIn(BasicBlock *bb, ValueNumberedSet &AnticOut,
+                               std::set<BasicBlock *> &visited,
+                               ValueNumberedSet &genexp) {
   //要计算Antic_In set首先需要求出Antic_Out
-  CalculateAnticOut(bb, AnticOut, visited);
+  auto gen_tmp = GeneratedTemp[bb];
+  auto anticin = AnticipatedIn[bb];
+  int o_size = anticin.contents.size(); //记录下原来的size大小，看后续是否有变化
+  anticin.init();
+
+  RetStats stat = CalculateAnticOut(bb, AnticOut, visited);
+  if (stat == Delay)
+    return stat;
+  // ANTIC OUT[b] ,其中已经保证了Anticout的元素都是leader
+  for (auto it = AnticOut.contents.begin(); it != AnticOut.contents.end();
+       ++it) {
+    anticin.insert_val(*it);
+    anticin.set_hash(VN->LookupOrAdd(*it));
+  }
+  // ∪ EXP GEN[b]
+  for (auto it = genexp.contents.begin(); it != genexp.contents.end(); it++) {
+    if (!anticin.IsAlreadyInsert(VN->LookupOrAdd(*it))) {
+      anticin.insert_val(*it);
+      anticin.set_hash(VN->LookupOrAdd(*it));
+    }
+  }
+  // −TMP GEN(b)
+  for (auto it = gen_tmp.contents.begin(); it != gen_tmp.contents.end(); it++) {
+    if (anticin.IsAlreadyInsert(VN->LookupOrAdd(*it))) {
+      anticin.erase_val(*it);
+      anticin.clear_hash(VN->LookupOrAdd(*it));
+    }
+  }
+
+  // clean();
+  if (anticin.contents.size() == o_size)
+    return Unchanged;
+  else
+    return Changed;
 }
 
 /*
@@ -97,16 +113,16 @@ void PRE::CalculateAnticIn(BasicBlock *bb, ValueNumberedSet &AnticOut,
 
   ANTIC_OUT[b]=phi_translate(A[succ(b)], b,succ(b)), if |succ(b)|=1
 */
-void PRE::CalculateAnticOut(BasicBlock *bb, ValueNumberedSet &AnticOut,
-                            std::set<BasicBlock *> &visited) {
+RetStats PRE::CalculateAnticOut(BasicBlock *bb, ValueNumberedSet &AnticOut,
+                                std::set<BasicBlock *> &visited) {
   int SuccNum = std::distance(m_dom->GetNode(bb->num).des.begin(),
                               m_dom->GetNode(bb->num).des.end());
   if (SuccNum == 1) {
     BasicBlock *succ =
         m_dom->GetNode(*(m_dom->GetNode(bb->num).des.begin())).thisBlock;
-    // TODO如果后继还没有被visit，那么信息可能不齐全
+    // TODO如果后继还没有被visit，那么信息可能不齐全,此时delay
     if (succ != bb && visited.count(succ) == 0)
-      return;
+      return Delay;
     else {
       for (auto x = AnticipatedIn[succ].contents.begin();
            x != AnticipatedIn[succ].contents.end(); x++) {
@@ -142,6 +158,7 @@ void PRE::CalculateAnticOut(BasicBlock *bb, ValueNumberedSet &AnticOut,
       AnticOut.clear_hash(VN->LookupOrAdd(e));
     }
   }
+  return Changed;
 }
 
 //论文中的canno单个实现过于复杂，我们通过保持相关VNset不变量的方式
@@ -231,25 +248,30 @@ int ValueTable::LookupOrAdd(Value *val) {
 
   //在VN中没有找到目标value，依次枚举Value*，创建Exp
   if (auto bin = dynamic_cast<BinaryInst *>(val)) {
-    Expression *e = CreatExp(bin);
-    auto it = ExpNumber.find(e);
+    Expression e = CreatExp(bin);
+    // auto it = ExpNumber.find(e);
+    auto it = std::find_if(
+        ExpNumber.begin(), ExpNumber.end(),
+        [&e](std::pair<Expression, int> &ele) { return ele.first == e; });
     if (it != ExpNumber.end()) {
       ValueNumber.insert(std::make_pair(val, it->second));
       return it->second;
     } else {
       ValueNumber.insert(std::make_pair(val, valuekinds));
-      ExpNumber.insert(std::make_pair(e, valuekinds));
+      ExpNumber.push_back(std::make_pair(e, valuekinds));
       return valuekinds++;
     }
   } else if (auto gep = dynamic_cast<GetElementPtrInst *>(val)) {
-    Expression *e = CreatExp(gep);
-    auto it = ExpNumber.find(e);
+    Expression e = CreatExp(gep);
+    auto it = std::find_if(
+        ExpNumber.begin(), ExpNumber.end(),
+        [&e](std::pair<Expression, int> &ele) { return ele.first == e; });
     if (it != ExpNumber.end()) {
       ValueNumber.insert(std::make_pair(val, it->second));
       return it->second;
     } else {
       ValueNumber.insert(std::make_pair(val, valuekinds));
-      ExpNumber.insert(std::make_pair(e, valuekinds));
+      ExpNumber.push_back(std::make_pair(e, valuekinds));
       return valuekinds++;
     }
   } else { //不是任何语句
@@ -259,26 +281,26 @@ int ValueTable::LookupOrAdd(Value *val) {
 }
 
 //包含了binary和cmp
-Expression *ValueTable::CreatExp(BinaryInst *bin) {
-  Expression *e = new Expression();
-  e->firVal = LookupOrAdd(bin->Getuselist()[0]->GetValue());
-  e->SecVal = LookupOrAdd(bin->Getuselist()[1]->GetValue());
-  e->ThirdVal = 0;
-  e->type = bin->GetType();
-  e->op = static_cast<Expression::ExpOpration>(
+Expression ValueTable::CreatExp(BinaryInst *bin) {
+  Expression e;
+  e.firVal = LookupOrAdd(bin->Getuselist()[0]->GetValue());
+  e.SecVal = LookupOrAdd(bin->Getuselist()[1]->GetValue());
+  e.ThirdVal = 0;
+  e.type = bin->GetType();
+  e.op = static_cast<Expression::ExpOpration>(
       static_cast<int>(bin->GetOpcode(bin)));
   return e;
 }
 
-Expression *ValueTable::CreatExp(GetElementPtrInst *gep) {
-  Expression *e = new Expression();
-  e->firVal = LookupOrAdd(gep->Getuselist()[0]->GetValue());
-  e->SecVal = 0;
-  e->ThirdVal = 0;
-  e->op = Expression::Gep;
-  e->type = gep->GetType();
+Expression ValueTable::CreatExp(GetElementPtrInst *gep) {
+  Expression e;
+  e.firVal = LookupOrAdd(gep->Getuselist()[0]->GetValue());
+  e.SecVal = 0;
+  e.ThirdVal = 0;
+  e.op = Expression::Gep;
+  e.type = gep->GetType();
   for (int i = 1; i < gep->Getuselist().size(); i++)
-    e->args.emplace_back(gep->Getuselist()[i]->GetValue());
+    e.args.emplace_back(gep->Getuselist()[i]->GetValue());
   return e;
 }
 
@@ -351,6 +373,31 @@ Value *PRE::phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val) {
              x != AvailOut[pred].contents.end(); x++)
           if (hash = VN->LookupOrAdd(*x))
             return *x;
+      }
+    }
+  }
+
+  return val;
+}
+
+void PRE::clean(ValueNumberedSet &val) {}
+
+void PRE::TopuSet(ValueNumberedSet &set) {
+  std::set<Value *> visited;
+  std::vector<Value *> topuSt;
+  for (auto it = set.contents.begin(); it != set.contents.end(); it++) {
+    if (!visited.count(*it)) //此处不能直接插入
+      topuSt.push_back(*it);
+    while (!topuSt.empty()) {
+      Value *val = topuSt.back();
+      if (auto bin = dynamic_cast<BinaryInst *>(val)) {
+        Value* op1=bin->Getuselist()[0]->GetValue();
+        Value* op1=bin->Getuselist()[1]->GetValue();
+        //TODO
+      } else if (auto gep = dynamic_cast<GetElementPtrInst *>(val)) {
+      
+      } else{
+
       }
     }
   }

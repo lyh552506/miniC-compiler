@@ -86,7 +86,6 @@ class Value
     virtual std::string GetName();
     UserList& GetUserlist(){return userlist;};
     bool isGlobVal(){return false;};
-    int BelongsToExp;
 };
 using Operand=Value*;
 // class Constant:public User
