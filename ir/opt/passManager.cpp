@@ -11,14 +11,11 @@ void PassManager::Init_Pass() {
       Li[i]->num = i;
     if (InitpassRecorder[0]) {
       std::unique_ptr<dominance> dom(new dominance(f, Li.size()));
-      std::cout << "--------mem2reg--------" << std::endl;
-      Singleton<Module>().Test();
       //有了mem2reg才有后续的优化
       if (InitpassRecorder[1])
         PRE(dom.get(), f).init_pass();
       if(InitpassRecorder[2])
-        ConstantProp(dom.get(), f).Pass();
-      // Singleton<Module>().Test();
+        ConstantProp(f).Pass();
     }
   }
   print_result();
@@ -27,9 +24,10 @@ void PassManager::Init_Pass() {
 void PassManager::IncludePass(int pass) { InitpassRecorder[pass] = 1; }
 
 void PassManager::print_result() {
-  // if (InitpassRecorder[0]) {
-
-  // } 
+  if (InitpassRecorder[0]) {
+    std::cout << "--------mem2reg--------" << std::endl;
+    Singleton<Module>().Test();
+  } 
   if(InitpassRecorder[1]){
     std::cout << "--------pre--------" << std::endl;
     Singleton<Module>().Test();
