@@ -1,35 +1,29 @@
 #include "ConstantProp.hpp"
 #include <set>
-#include <queue>
-
-void ConstantProp::CalDomBlocks(BasicBlock* block)
-{
-    if(visited.insert(block).second)
-    {
-        auto& node = _dom->GetNode(block->num);
-        for(int child : node.des)
-            CalDomBlocks(_dom->GetNode(child).thisBlock);
-        DomBlocks.push_back(block);
-    }
-}
 
 void ConstantProp::Pass()
 {
-    CalDomBlocks(*_func->begin());
-    for(BasicBlock* block : DomBlocks)
+    for(BasicBlock* block : *_func)
         RunOnBlock(block);
 }
-
 void ConstantProp::RunOnBlock(BasicBlock* block)
 {
-    For_inst_In(block)
+    std::vector<User*> wait_del;
+    for(User* inst : *block)
     {
         Value* C = ConstFold->ConstantFoldInst(inst);
-        if(C)
+        if(C && !dynamic_cast<UndefValue*>(C))
         {
-        inst->RAUW(C);
+            inst->RAUW(C);
+            if(!dynamic_cast<CallInst*>(inst))
+                wait_del.push_back(inst);
+        }
+        else if(dynamic_cast<UndefValue*>(C))
+            inst->RAUW(C);
+    }
+    for(auto inst : wait_del)
+    {
         inst->ClearRelation();
         inst->EraseFromParent();
-        }
     }
 }

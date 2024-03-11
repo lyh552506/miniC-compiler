@@ -332,70 +332,44 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @func2(i32 %.3){
+define i32 @FullRedundancy2(){
 .1:
-  %.2 = alloca i32
-  store i32 %.3, i32* %.2
-  %.5 = load i32, i32* %.2
-  %.7 = add i32 %.5, 2
-  ret i32 %.7 
+  %.10 = alloca i32
+  %.5 = alloca i32
+  %.4 = alloca i32
+  %.3 = alloca [20 x i32]
+  store i32 5, i32* %.4
+  store i32 6, i32* %.5
+  %.11 = load i32, i32* %.4
+  %.12 = load i32, i32* %.5
+  %.13 = add i32 %.11, %.12
+  store i32 %.13, i32* %.10
+  %.16 = load i32, i32* %.10
+  %.17 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.16
+  store i32 1, i32* %.17
+  %.20 = load i32, i32* %.10
+  %.21 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.20
+  %.22 = load i32, i32* %.21
+  ret i32 %.22 
 }
-define i32 @func(i32 %.12, i32 %.15, i32 %.18){
-.10:
-  %.23 = alloca i32
-  %.20 = alloca i32
-  %.17 = alloca i32
-  %.14 = alloca i32
-  %.11 = alloca i32
-  store i32 %.12, i32* %.11
-  store i32 %.15, i32* %.14
-  store i32 %.18, i32* %.17
-  store i32 1, i32* %.20
-<<<<<<< HEAD
-  %.24at8 = call i32 @func2(i32 2)
-  store i32 %.24at8, i32* %.23
-  %.28 = load i32, i32* %.17
-  %.29 = ic
-=======
-  %.24at36 = call i32 @func2(i32 2)
-  store i32 %.24at36, i32* %.23
-  %.28 = load i32, i32* %.17
-  %.29 = icmp sgt i32 %.28, 1
-  br i1 %.29, label %.26, label %.27
-.26:
-  %.31 = load i32, i32* %.11
-  %.32 = load i32, i32* %.14
-  %.33 = add i32 %.31, %.32
-  store i32 %.33, i32* %.20
-  br label %.35 
-.27:
-  %.37 = load i32, i32* %.11
-  %.38 = load i32, i32* %.14
-  %.39 = sub i32 %.37, %.38
-  store i32 %.39, i32* %.20
-  br label %.35 
-.35:
-  %.42 = load i32, i32* %.20
-  ret i32 %.42 
-}
-define i32 @func2(i32 %.3){
+--------mem2reg--------
+define i32 @FullRedundancy2(){
 .1:
-  %.7 = add i32 %.3, 2
-  ret i32 %.7 
+  %.3 = alloca [20 x i32]
+  %.13 = add i32 5, 6
+  %.17 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.13
+  store i32 1, i32* %.17
+  %.21 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.13
+  %.22 = load i32, i32* %.21
+  ret i32 %.22 
 }
-define i32 @func(i32 %.12, i32 %.15, i32 %.18){
-.10:
-  %.24at36 = call i32 @func2(i32 2)
-  %.29 = icmp sgt i32 %.18, 1
-  br i1 %.29, label %.26, label %.27
-.26:
-  %.33 = add i32 %.12, %.15
-  br label %.35 
-.27:
-  %.39 = sub i32 %.12, %.15
-  br label %.35 
-.35:
-  %.44 = Phi i32 [%.39, %.27], [%.33, %.26]
-  ret i32 %.44 
+--------constantprop--------
+define i32 @FullRedundancy2(){
+.1:
+  %.3 = alloca [20 x i32]
+  %.17 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 11
+  store i32 1, i32* %.17
+  %.21 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 11
+  %.22 = load i32, i32* %.21
+  ret i32 %.22 
 }
->>>>>>> 0512ea5c39c221cdeefabb7c382ad0233ba11634

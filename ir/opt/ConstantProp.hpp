@@ -2,20 +2,17 @@
 
 class ConstantProp
 {  
-    void CalDomBlocks(BasicBlock* block);
     void RunOnFunc(Function* func);
     void RunOnBlock(BasicBlock* block);
+    ConstantData* SetDefVal(ConstantData* v1, Value* v2);
+    ConstantData* GetDefVal(Value* val);
 
 private:
     ConstantFolding* ConstFold;
-    bool changed = false;
     Function* _func;
-    std::vector<BasicBlock*> DomBlocks;
-    std::unordered_set<BasicBlock *> visited;
-    dominance* _dom;
-
 public:
     void Pass();
+    void Test(BasicBlock* block);
 
-    ConstantProp(dominance *dom, Function* func) : _dom(dom), _func(func) {}
+    ConstantProp(Function* func) : _func(func) {}
 };

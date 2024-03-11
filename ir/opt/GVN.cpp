@@ -1,6 +1,6 @@
-#include "GVN&GCM.hpp"
+#include "GVN.hpp"
 
-void Gvn_Gcm::init_pass() {
+void gvn::init_pass() {
   BasicBlock *Entry = *(m_func->begin());
   caculateRPO(Entry);
   std::reverse(RPO.begin(), RPO.end());
@@ -9,7 +9,7 @@ void Gvn_Gcm::init_pass() {
 }
 
 /*hashing the instructions and do some basic optimizations*/
-void Gvn_Gcm::GVN() {
+void gvn::GVN() {
   for (BasicBlock *BB : RPO) {
     For_inst_In(BB) {
       //如果是二元操作指令，检查是否可以进行折叠
@@ -17,6 +17,8 @@ void Gvn_Gcm::GVN() {
         auto &uselist = Bin->Getuselist();
         Value *LVal = uselist[0]->usee;
         Value *RVal = uselist[1]->usee;
+        auto tmp1 = dynamic_cast<UndefValue *>(LVal),
+             tmp2 = dynamic_cast<UndefValue *>(RVal);
         auto type = Bin->GetTypeEnum();
         /*both Lval/Rval are const*/
         if (LVal->isConst() && RVal->isConst()) {
@@ -36,6 +38,10 @@ void Gvn_Gcm::GVN() {
         } else {
           if (auto val = Special_Opt(Bin->getopration(), LVal, RVal)) {
             Bin->RAUW(val);
+            Bin->ClearRelation();
+            Bin->EraseFromParent();
+          } else if (tmp1 || tmp2) {
+            Bin->RAUW(UndefValue::get(LVal->GetType()));
             Bin->ClearRelation();
             Bin->EraseFromParent();
           } else {
@@ -69,24 +75,35 @@ void Gvn_Gcm::GVN() {
           fptsi->EraseFromParent();
         }
       } else if (PhiInst *phi = dynamic_cast<PhiInst *>(inst)) {
-        bool same = true;
-        auto phival = phi->GetAllPhiVal();
-        Value *income = Find_Equal(phival[0]);
-        for (int i = 1; i < phival.size(); i++)
-          same = (income == Find_Equal(phival[i]));
-        if (same) { //即phi的所有income值全部等价，此时可以取消掉phi
-          phi->RAUW(income);
-          // phi->ClearRelation();
+        auto rpl = SimplifyPhiInst(phi);
+        if (rpl != nullptr && phi->Getuselist().empty()) {
+          phi->RAUW(rpl);
+          phi->ClearRelation();
           phi->EraseFromParent();
         }
       } else if (GetElementPtrInst *gep =
                      dynamic_cast<GetElementPtrInst *>(inst)) {
-        inst->GetTypeEnum();
-        auto x0 = gep->Getuselist()[0]->GetValue();
-        auto x1 = gep->Getuselist()[1]->GetValue();
-        auto x2 = gep->Getuselist()[2]->GetValue();
+        auto rpl = Find_Equal(dynamic_cast<Value *>(gep));
+        if (rpl == gep)
+          continue;
+        gep->RAUW(rpl);
+        gep->ClearRelation();
+        gep->EraseFromParent();
       } else if (CallInst *call = dynamic_cast<CallInst *>(inst)) {
-
+        Function *func =
+            dynamic_cast<Function *>(call->Getuselist()[0]->GetValue());
+        // assert(func);
+        if (func == nullptr)
+          continue;
+        if (HaveSideEffect(func))
+          continue;
+        //没有副作用
+        auto rpl = Find_Equal(dynamic_cast<Value *>(call));
+        if (rpl == call)
+          continue;
+        call->RAUW(rpl);
+        call->ClearRelation();
+        call->EraseFromParent();
       }
     }
   }
@@ -95,7 +112,7 @@ void Gvn_Gcm::GVN() {
 /*
 确保传入的value都是const类型，然后进行常数折叠
 */
-int Gvn_Gcm::OptConstBinary_INT(BinaryInst::Operation op, Value *a, Value *b) {
+int gvn::OptConstBinary_INT(BinaryInst::Operation op, Value *a, Value *b) {
   assert(a->isConst() && b->isConst());
   if (auto L = dynamic_cast<ConstIRInt *>(a)) {
     int LVal = dynamic_cast<ConstIRInt *>(a)->GetVal();
@@ -133,7 +150,7 @@ int Gvn_Gcm::OptConstBinary_INT(BinaryInst::Operation op, Value *a, Value *b) {
   }
 }
 
-float Gvn_Gcm::OptConstBinary_Float(BinaryInst::Operation op, Value *a,
+float gvn::OptConstBinary_Float(BinaryInst::Operation op, Value *a,
                                     Value *b) {
   if (auto L = dynamic_cast<ConstIRFloat *>(a)) {
     float LVal = dynamic_cast<ConstIRFloat *>(a)->GetVal();
@@ -170,7 +187,7 @@ float Gvn_Gcm::OptConstBinary_Float(BinaryInst::Operation op, Value *a,
 }
 
 /// @brief 检查binaryinst的特殊优化(目前只考虑int)
-Value *Gvn_Gcm::Special_Opt(BinaryInst::Operation op, Value *a, Value *b) {
+Value *gvn::Special_Opt(BinaryInst::Operation op, Value *a, Value *b) {
   auto Lval_int = dynamic_cast<ConstIRInt *>(a);
   auto Rval_int = dynamic_cast<ConstIRInt *>(b);
   auto Lval_float = dynamic_cast<ConstIRFloat *>(a);
@@ -301,7 +318,7 @@ Value *Gvn_Gcm::Special_Opt(BinaryInst::Operation op, Value *a, Value *b) {
   return nullptr;
 }
 
-Value *Gvn_Gcm::Find_Equal(Value *inst) {
+Value *gvn::Find_Equal(Value *inst) {
   //首先直接查找指针看是否有直接等价的
   auto it = std::find_if(ValueNumer.begin(), ValueNumer.end(),
                          [inst](std::pair<Value *, Value *> k) -> bool {
@@ -314,11 +331,15 @@ Value *Gvn_Gcm::Find_Equal(Value *inst) {
   int size = ValueNumer.size();
   ValueNumer.emplace_back(inst, inst);
   if (auto tmp = dynamic_cast<BinaryInst *>(inst))
-    ValueNumer[size].second = Find_Equal(tmp);
+    ValueNumer[size].second = SimplifyBinaryInst(tmp);
+  if (auto tmp = dynamic_cast<CallInst *>(inst))
+    ValueNumer[size].second = SimplifyCall(tmp);
+  if (auto tmp = dynamic_cast<GetElementPtrInst *>(inst))
+    ValueNumer[size].second = SimplifyGEPInst(tmp);
   return ValueNumer[size].second;
 }
 
-Value *Gvn_Gcm::Find_Equal(BinaryInst *inst) {
+Value *gvn::SimplifyBinaryInst(BinaryInst *inst) {
   auto op1 = inst->getopration();
   Value *l = inst->Getuselist()[0]->GetValue(),
         *r = inst->Getuselist()[1]->GetValue();
@@ -350,7 +371,82 @@ Value *Gvn_Gcm::Find_Equal(BinaryInst *inst) {
   return inst;
 }
 
-void Gvn_Gcm::caculateRPO(BasicBlock *bb) {
+//已经确保了传入进来的callinst一定没有副作用
+Value *gvn::SimplifyCall(CallInst *inst) {
+  for (int i = 0; i < ValueNumer.size(); i++) {
+    auto [v1, v2] = ValueNumer[i];
+    auto call = dynamic_cast<CallInst *>(v1);
+    if (call && call != inst) {
+      //跳转函数地址
+      bool same = (call->Getuselist()[0]->GetValue() ==
+                   inst->Getuselist()[0]->GetValue());
+      //函数参数个数
+      same = same && (inst->Getuselist().size() == call->Getuselist().size());
+      if (!same)
+        return inst;
+      for (int i = 1; i < inst->Getuselist().size(); i++)
+        same = same && (call->Getuselist()[i]->GetValue() ==
+                        inst->Getuselist()[i]->GetValue());
+      if (same)
+        return call;
+    }
+  }
+  return inst;
+}
+
+Value *gvn::SimplifyGEPInst(GetElementPtrInst *inst) {
+  for (int i = 0; i < ValueNumer.size(); i++) {
+    auto [v1, v2] = ValueNumer[i];
+    auto gep = dynamic_cast<GetElementPtrInst *>(v1);
+    if (gep && gep != inst) {
+      bool same = inst->Getuselist().size() == gep->Getuselist().size();
+      if (!same)
+        return inst;
+      for (int i = 1; i < inst->Getuselist().size(); i++)
+        same = same && (gep->Getuselist()[i]->GetValue() ==
+                        inst->Getuselist()[i]->GetValue());
+      if (same)
+        return gep;
+    }
+  }
+  return inst;
+}
+
+Value *gvn::SimplifyPhiInst(PhiInst *inst) {
+  HasUndefVal = false;
+  Value *sameval = nullptr;
+  BasicBlock *base = nullptr;
+  auto phival = inst->GetAllPhiVal();
+  for (int i = 0; i < phival.size(); i++) {
+    Value *income = phival[i];
+    base = inst->Blocks[i];
+    // incoming值是phi本身，可以跳过
+    if (income == inst)
+      continue;
+    if (dynamic_cast<UndefValue *>(income)) {
+      HasUndefVal = true;
+      continue;
+    }
+    if (sameval && income != sameval)
+      return nullptr; //不能优化
+    sameval = income;
+  }
+  //如果phi的所有incoming除了自己全是undef，那么化简为undef
+  if (!sameval)
+    return UndefValue::get(inst->GetType());
+  //对形如phi(X,X,undef)的phiinst，
+  if (HasUndefVal) {
+    // args and const always dominate inst
+    if (auto tmp = dynamic_cast<User *>(sameval))
+      return m_dom->dominates(base, inst->GetParent()) ? sameval : nullptr;
+    else
+      return sameval;
+  }
+  //剩下的情况就是phi(X,X)
+  return sameval;
+}
+
+void gvn::caculateRPO(BasicBlock *bb) {
   if (visited.insert(bb).second) {
     auto &node = m_dom->GetNode(bb->num);
     for (auto child : node.des) {
@@ -361,7 +457,7 @@ void Gvn_Gcm::caculateRPO(BasicBlock *bb) {
 }
 
 //判断callinst的函数是否含有副作用，没有副作用可以进行优化
-bool Gvn_Gcm::HaveSideEffect(Function *func) {
+bool gvn::HaveSideEffect(Function *func) {
   auto &params = func->GetParams();
   for (auto &param : params) {
     if (param->GetTypeEnum() == InnerDataType::IR_PTR)
@@ -376,20 +472,21 @@ bool Gvn_Gcm::HaveSideEffect(Function *func) {
         return true;
       //遍历每条指令的use关系，如果存在global value，此时含有副作用
       auto &vec = inst->Getuselist();
-      //for (auto &_val : vec)
-        // if (_val->GetValue()->isGlobVal())
-        //   return true;
+      for (auto &_val : vec)
+        if (_val->GetValue()->isGlobVal()) // TODO isGlobVal() to be added
+          return true;
     }
   }
+  return false;
 }
 
-void Gvn_Gcm::GCM() {}
+void gvn::GCM() {}
 
-void Gvn_Gcm::Schedule_Early(User *inst) {}
+void gvn::Schedule_Early(User *inst) {}
 
-void Gvn_Gcm::Schedule_Late(User *inst) {}
+void gvn::Schedule_Late(User *inst) {}
 
-bool Gvn_Gcm::IsPinned(User *inst) {
+bool gvn::IsPinned(User *inst) {
   if (dynamic_cast<PhiInst *>(inst) || dynamic_cast<CondInst *>(inst) ||
       dynamic_cast<UnCondInst *>(inst) || dynamic_cast<RetInst *>(inst))
     return true;

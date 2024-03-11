@@ -27,3 +27,14 @@ Value* GetOperand(T inst,int i){
    assert(user);
    return user->Getuselist()[i]->GetValue();
 }
+
+///TODO @brief 获取后继结点个数
+#define GetSuccNum(BB)\
+   dynamic_cast<BasicBlock*>(BB)->back()->Getuselist().size();\
+
+///TODO @brief 获取前驱节点的个数
+#define GetPredNum(BB)\
+   1\
+
+
+

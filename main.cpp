@@ -1,4 +1,4 @@
-#include "opt/GVN&GCM.hpp"
+#include "opt/GVN.hpp"
 #include "opt/dominant.hpp"
 #include "opt/passManager.hpp"
 #include "parser.hpp"
@@ -16,9 +16,9 @@ void copyFile(const std::string &sourcePath,
 }
 
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
-                                       {"gvn", no_argument, 0, 1},
-                                       {"livenessanalysis", no_argument, 0, 2},
-                                       {"constantprop", no_argument, 0, 3},
+                                       {"pre", no_argument, 0, 1},
+                                       {"constantprop", no_argument, 0, 2},
+                                       {"livenessanalysis", no_argument, 0, 3},
                                        {"help", no_argument, 0, 4},
                                        {0, 0, 0, 0}};
 
@@ -67,6 +67,5 @@ int main(int argc, char **argv) {
 
   // Gvn_Gcm test(&dom, f);
   // test.init_pass();
-  Singleton<Module>().Test();
   return 0;
 }
