@@ -107,6 +107,7 @@ class User:public Value,public list_node<BasicBlock,User>
     virtual Operand GetDef();
     void ClearRelation();//在EraseFromBasic()前调用
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
+    bool CanDel = false;
 };
 
 class ConstantData:public Value

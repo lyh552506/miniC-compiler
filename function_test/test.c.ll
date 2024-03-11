@@ -334,67 +334,42 @@ attributes #6 = { nounwind }
 attributes #7 = { cold }
 define i32 @FullRedundancy2(){
 .1:
-  %.29 = alloca i32
-  %.6 = alloca i32
-  %.3 = alloca i32
-  %.2 = alloca i32
-  store i32 3, i32* %.3
-  store i32 5, i32* %.6
-  %.11 = load i32, i32* %.3
-  %.13 = icmp sge i32 %.11, 0
-  br i1 %.13, label %.9, label %.10
-.9:
-  %.15 = load i32, i32* %.3
-  %.16 = load i32, i32* %.6
-  %.17 = add i32 %.15, %.16
-  store i32 %.17, i32* %.2
-  br label %.19 
-.10:
-  %.21 = load i32, i32* %.3
-  %.22 = sub i32 0, %.21
-  store i32 %.22, i32* %.3
-  %.24 = load i32, i32* %.3
-  %.25 = load i32, i32* %.6
-  %.26 = add i32 %.24, %.25
-  store i32 %.26, i32* %.2
-  br label %.19 
-.19:
-  %.30 = load i32, i32* %.3
-  %.31 = load i32, i32* %.6
-  %.32 = add i32 %.30, %.31
-  store i32 %.32, i32* %.29
-  %.34 = load i32, i32* %.2
-  %.35 = load i32, i32* %.29
-  %.36 = add i32 %.34, %.35
-  ret i32 %.36 
+  %.10 = alloca i32
+  %.5 = alloca i32
+  %.4 = alloca i32
+  %.3 = alloca [20 x i32]
+  store i32 5, i32* %.4
+  store i32 6, i32* %.5
+  %.11 = load i32, i32* %.4
+  %.12 = load i32, i32* %.5
+  %.13 = add i32 %.11, %.12
+  store i32 %.13, i32* %.10
+  %.16 = load i32, i32* %.10
+  %.17 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.16
+  store i32 1, i32* %.17
+  %.20 = load i32, i32* %.10
+  %.21 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.20
+  %.22 = load i32, i32* %.21
+  ret i32 %.22 
 }
 --------mem2reg--------
 define i32 @FullRedundancy2(){
 .1:
-  br i32 1, label %.9, label %.10
-.9:
-  br label %.19 
-.10:
-  br label %.19 
-.19:
-  %.39 = Phi i32 [%.22, %.10], [3, %.9]
-  %.38 = Phi i32 [%.26, %.10], [%.17, %.9]
-  %.32 = add i32 %.39, 5
-  %.36 = add i32 %.38, %.32
-  ret i32 %.36 
+  %.3 = alloca [20 x i32]
+  %.13 = add i32 5, 6
+  %.17 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.13
+  store i32 1, i32* %.17
+  %.21 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.13
+  %.22 = load i32, i32* %.21
+  ret i32 %.22 
 }
 --------constantprop--------
 define i32 @FullRedundancy2(){
 .1:
-  br i32 1, label %.9, label %.10
-.9:
-  br label %.19 
-.10:
-  br label %.19 
-.19:
-  %.39 = Phi i32 [%.22, %.10], [3, %.9]
-  %.38 = Phi i32 [%.26, %.10], [%.17, %.9]
-  %.32 = add i32 %.39, 5
-  %.36 = add i32 %.38, %.32
-  ret i32 %.36 
+  %.3 = alloca [20 x i32]
+  %.17 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 11
+  store i32 1, i32* %.17
+  %.21 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 11
+  %.22 = load i32, i32* %.21
+  ret i32 %.22 
 }

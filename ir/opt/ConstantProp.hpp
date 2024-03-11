@@ -5,8 +5,23 @@ class ConstantProp
     void CalDomBlocks(BasicBlock* block);
     void RunOnFunc(Function* func);
     void RunOnBlock(BasicBlock* block);
-    std::vector<BasicBlock*> BFSTraversal(int rootIndex, dominance* dom);
+    ConstantData* SetDefVal(ConstantData* v1, Value* v2);
+    ConstantData* GetDefVal(Value* val);
+
 private:
+    struct BlockInfo
+    {
+        std::map<User*, int> IndexInfo;
+        int GetinstIndex(User* inst);
+        void DelIndex(User* inst);
+        std::string CalGepKey(GetElementPtrInst* inst);
+        BlockInfo() = default;
+    };
+    // std::map<std::pair<int, std::string>, std::pair<StoreInst*, Value*>> valMap;
+    std::map<int, std::pair<std::string, Value*>> ValMap;
+    ConstantData* GetConstVal(Value* val);
+    std::map<Value*, ConstantData*> Global_Def;
+    std::map<Value*, std::map<std::string, ConstantData*>> ArrayDefVal;
     std::vector<BasicBlock*> bfsOrder;
     ConstantFolding* ConstFold;
     bool changed = false;
@@ -16,6 +31,7 @@ private:
     dominance* _dom;
 
 public:
+    void HandleMemInst(BlockInfo& BlockInfo, AllocaInst* AI);
     void Pass();
     void Test(BasicBlock* block);
 
