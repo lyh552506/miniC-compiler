@@ -6,6 +6,7 @@ public:
   void Pass(Module *module);
 
 private:
+  bool isInstructionTriviallyDead(User *inst);
   bool isSideEffectAndCall(User* inst);
   bool isLocalStore(StoreInst* store);
   bool isDeadInstruction(User* inst);

@@ -108,6 +108,7 @@ class User:public Value,public list_node<BasicBlock,User>
     void ClearRelation();//在EraseFromBasic()前调用
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
     bool CanDel = false;
+    bool IsTerminateInst();
 };
 
 class ConstantData:public Value
