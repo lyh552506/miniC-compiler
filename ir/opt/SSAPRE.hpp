@@ -119,6 +119,9 @@ public:
   void DfsDT(int pos);
   void PostOrderCFG(BasicBlock *root);
   void TopuSet(ValueNumberedSet& set);
+  BasicBlock *GetChild(BasicBlock *BB, int flag);
+  /// @brief 传入一个BasicBlock，统计他的所有前驱 
+  void CalculatePredBB(BasicBlock* bb);
 
   void CalculateAvailOut(User *inst, ValueNumberedSet &avail,
                          ValueNumberedSet &genexp, ValueNumberedSet &gentemp,
@@ -152,6 +155,7 @@ private:
   std::vector<BasicBlock *> Dfs;
   std::vector<BasicBlock *> PostOrder;
   std::vector<BasicBlock *> TopuOrder;
-  std::vector<Value *> gen_exp;
+  std::vector<BasicBlock *> Preds;
+  std::vector<Value *> gen_exp;//原来的block中没有，属于是自己创建的exp
   std::map<BasicBlock *, ValueNumberedSet> GeneratedTemp;
 };

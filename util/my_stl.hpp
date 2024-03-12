@@ -33,4 +33,6 @@ template <typename T> Value *GetOperand(T inst, int i) {
 /// TODO @brief 获取前驱节点的个数
 #define GetPredNum(BB) 1
 
-
+// void topu(){
+  
+// }

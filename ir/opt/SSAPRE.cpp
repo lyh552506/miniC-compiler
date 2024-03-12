@@ -2,7 +2,7 @@
 
 /// @brief flag=1 -->GetLeftChild
 ///        flag=0 -->GetRightChild
-BasicBlock *GetChild(BasicBlock *BB, int flag) {
+BasicBlock *PRE::GetChild(BasicBlock *BB, int flag) {
   if (flag == 1) {
     if (auto tmp = dynamic_cast<UnCondInst *>(BB->back()))
       return dynamic_cast<BasicBlock *>(tmp->Getuselist()[0]->GetValue());
@@ -16,6 +16,16 @@ BasicBlock *GetChild(BasicBlock *BB, int flag) {
     else
       return nullptr;
   }
+}
+
+void PRE::CalculatePredBB(BasicBlock *bb) {
+  for (auto node : m_dom->GetNode(bb->num).rev)
+    if (m_dom->GetNode(node).thisBlock->visited == false) {
+      m_dom->GetNode(node).thisBlock->visited=true;
+      Preds.push_back(m_dom->GetNode(node).thisBlock);
+      CalculatePredBB(m_dom->GetNode(node).thisBlock);
+    }
+  
 }
 
 void PRE::init_pass() {
@@ -51,17 +61,38 @@ void PRE::BuildSets() {
   }
   // Second Part
   bool changed = true;
-  std::vector<BasicBlock *> bbs;
+  //记录需要计算AnticIn的block集合
+  std::set<BasicBlock *> CalculateAntic;
   std::set<BasicBlock *> visited;
   for (auto I = m_func->begin(); I != m_func->end(); ++I)
-    bbs.push_back(*I);
-
+    CalculateAntic.insert(*I);
+  //迭代数据流
   while (changed) {
     changed = false;
     ValueNumberedSet AnticOut;
-    //此处采用后续遍历CFG
+    //此处采用后续遍历CFG,因为没有采用后支配树的遍历，所以添加Delay标志
     for (BasicBlock *post : PostOrder) {
-      CalculateAnticIn(post, AnticOut, visited, GeneratedExps[post]);
+      auto it = CalculateAntic.find(post);
+      if (it == CalculateAntic.end())
+        continue;
+      RetStats stat =
+          CalculateAnticIn(post, AnticOut, visited, GeneratedExps[post]);
+      //如果为delay代表当前需要延迟求这个block，循环需要继续进行
+      if (stat == Delay) {
+        changed = true;
+        continue;
+      } else if (stat == Changed) { //对于change的block，因为数据流有更新，
+        changed = true; //所以需要重新将他的前驱块加入进来
+        visited.insert(post);
+        m_func->init_visited_block();
+        Preds.clear();
+        CalculatePredBB(post);
+        for (BasicBlock *bb : Preds)
+          CalculateAntic.insert(bb);
+      } else { // stat == unchanged
+        visited.insert(post);
+        CalculateAntic.erase(it);
+      }
     }
   }
 }
@@ -71,8 +102,8 @@ RetStats PRE::CalculateAnticIn(BasicBlock *bb, ValueNumberedSet &AnticOut,
                                std::set<BasicBlock *> &visited,
                                ValueNumberedSet &genexp) {
   //要计算Antic_In set首先需要求出Antic_Out
-  auto gen_tmp = GeneratedTemp[bb];
-  auto anticin = AnticipatedIn[bb];
+  auto& gen_tmp = GeneratedTemp[bb];
+  auto& anticin = AnticipatedIn[bb];
   int o_size = anticin.contents.size(); //记录下原来的size大小，看后续是否有变化
   anticin.init();
 
@@ -100,7 +131,7 @@ RetStats PRE::CalculateAnticIn(BasicBlock *bb, ValueNumberedSet &AnticOut,
     }
   }
 
-  // clean();
+  clean(anticin);
   if (anticin.contents.size() == o_size)
     return Unchanged;
   else
@@ -120,7 +151,7 @@ RetStats PRE::CalculateAnticOut(BasicBlock *bb, ValueNumberedSet &AnticOut,
   if (SuccNum == 1) {
     BasicBlock *succ =
         m_dom->GetNode(*(m_dom->GetNode(bb->num).des.begin())).thisBlock;
-    // TODO如果后继还没有被visit，那么信息可能不齐全,此时delay
+    // 如果后继还没有被visit，那么信息可能不齐全,此时delay
     if (succ != bb && visited.count(succ) == 0)
       return Delay;
     else {
@@ -146,10 +177,10 @@ RetStats PRE::CalculateAnticOut(BasicBlock *bb, ValueNumberedSet &AnticOut,
     }
 
     std::vector<Value *> Erase;
-    for (auto tmp = AnticipatedIn[succ1].contents.begin();
-         tmp != AnticipatedIn[succ1].contents.end(); ++tmp) {
+    for (auto tmp = AnticOut.contents.begin();
+         tmp != AnticOut.contents.end(); ++tmp) {
       // ∀ b∈succ(b),∃ e∈ANTIC_IN[b]|lookup(e)=lookup(e)}
-      if (!AnticOut.IsAlreadyInsert(VN->LookupOrAdd(*tmp)))
+      if (!AnticipatedIn[succ1].IsAlreadyInsert(VN->LookupOrAdd(*tmp)))
         Erase.push_back(*tmp);
     }
 
@@ -380,24 +411,27 @@ Value *PRE::phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val) {
   return val;
 }
 
-void PRE::clean(ValueNumberedSet &val) {}
+void PRE::clean(ValueNumberedSet &val) {
+  
+}
 
 void PRE::TopuSet(ValueNumberedSet &set) {
   std::set<Value *> visited;
   std::vector<Value *> topuSt;
   for (auto it = set.contents.begin(); it != set.contents.end(); it++) {
-    if (!visited.count(*it)) //此处不能直接插入
+    if (!visited.count(
+            *it)) //此处不能直接插入，还需要看他的操作数是否是inst，递归调用
       topuSt.push_back(*it);
     while (!topuSt.empty()) {
       Value *val = topuSt.back();
-      if (auto bin = dynamic_cast<BinaryInst *>(val)) {
-        Value* op1=bin->Getuselist()[0]->GetValue();
-        Value* op1=bin->Getuselist()[1]->GetValue();
-        //TODO
-      } else if (auto gep = dynamic_cast<GetElementPtrInst *>(val)) {
-      
-      } else{
 
+      if (auto bin = dynamic_cast<BinaryInst *>(val)) {
+        Value *op1 = bin->Getuselist()[0]->GetValue();
+        Value *op2 = bin->Getuselist()[1]->GetValue();
+
+      } else if (auto gep = dynamic_cast<GetElementPtrInst *>(val)) {
+
+      } else {
       }
     }
   }
