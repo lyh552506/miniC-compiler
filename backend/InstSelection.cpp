@@ -50,8 +50,8 @@ void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, U
         parent->addMachineInst(inst);
 
         if (opcode.find(tail) != std::string::npos) {
-            Operand* rs2 ; //issue：常数 1
-            XorInst* xorInst = new XorInst(inst->GetRs1(), "xori", *rs2);
+            Operand rs2 = ConstIRInt::GetNewConstant(1); //issue：常数 1
+            XorInst* xorInst = new XorInst(inst->GetRs1(), "xori", rs2);
             //issue
             //RSUW();
             //LIST_INSERT_AFTER(xorInst, parent, it);
