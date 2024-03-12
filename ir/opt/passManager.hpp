@@ -1,18 +1,23 @@
-#include"dominant.hpp"
-#include"ConstantProp.hpp"
-#include"GVN&GCM.hpp"
-#include"IDF.hpp"
-#include"LivenessAnalysis.hpp"
-#include"PromoteMemtoRegister.hpp"
+#pragma once
+#include "ConstantFold.hpp"
+#include "ConstantProp.hpp"
+#include "GVN.hpp"
+#include "IDF.hpp"
+#include "LivenessAnalysis.hpp"
+#include "PromoteMemtoRegister.hpp"
+#include "SSAPRE.hpp"
+#include "dominant.hpp"
 
-
-class PassManager{
+class PassManager {
 public:
-   PassManager():InitpassRecorder(6){}
+  PassManager() : InitpassRecorder(4) {}
 
-   void IncludePass(int pass);
+  void IncludePass(int pass);
 
-   void Init_Pass();
+  void Init_Pass();
+
+  void print_result();
+
 private:
-   std::vector<int> InitpassRecorder;
+  std::vector<int> InitpassRecorder;
 };

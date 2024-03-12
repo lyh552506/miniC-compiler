@@ -30,3 +30,14 @@ Value* GetOperand(T inst,int i){
 
 #define LIST_INSERT_AFTER(newly_inst, bb,it)
 #define LIST_INSERT_BEFORE(newly_inst, bb,it)
+
+///TODO @brief 获取后继结点个数
+#define GetSuccNum(BB)\
+   dynamic_cast<BasicBlock*>(BB)->back()->Getuselist().size();\
+
+///TODO @brief 获取前驱节点的个数
+#define GetPredNum(BB)\
+   1\
+
+
+

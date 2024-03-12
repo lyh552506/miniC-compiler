@@ -1,13 +1,12 @@
 #pragma once
 #include "CFG.hpp"
 #include "dominant.hpp"
+#include <unordered_map>
 using DNode=dominance::Node*;
 class ConstantFolding
 {
 public:
 Value* ConstantFoldInst(User* inst);
-
-ConstantFolding() = default;
 
 private:
 // Handle PhiInst
@@ -18,24 +17,15 @@ Value* ConstantFoldBinaryInst(BinaryInst* inst);
 Value* ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Value* RHS);
 // For ConsantFoldBinaryInst 
 Value* ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Value* RHS);
-// Handle LoadInst
-Value* ConstantFoldLoadInst(LoadInst* inst);
-// Handle StoreInst
-Value* ConstantFoldStoreInst(StoreInst* inst);
+Value* ConstFoldInt(BinaryInst::Operation Opcode, int LVal, int RVal);
+Value* ConstFoldFloat(BinaryInst::Operation Opcode, float LVal, float RVal);
+Value* ConstFoldIntCmp(BinaryInst::Operation Opcode, int LVal, int RVal);
+Value* ConstFoldFloatCmp(BinaryInst::Operation Opcode, float LVal, float RVal);
 // Handle SITFP
 Value* ConstantFoldSITFPInst(SITFP* inst);
 // Handle FPTSI
 Value* ConstantFoldFPTSIInst(FPTSI* inst);
-// Handle GetElementPtrInst
-Value* ConstantFoldGetElementPtrInst(GetElementPtrInst* inst);
 // Handle ZextInst
 Value* ConstantFoldZextInst(ZextInst* inst);
-// Handle CallInst
-Value* ConstantFoldCallInst(CallInst* inst);
-// Determine whether CallInst has SideEffects
-bool CallHasSideEffects(Function* func);
-// isReturnValueAlwaysCommonConst,if true,return value;
-Value* RVACC(Function* func); 
-// Handle AllocaInst
-Value* ConstantFoldAllocaInst(AllocaInst* inst);
+
 };

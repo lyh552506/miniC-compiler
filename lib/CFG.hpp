@@ -134,7 +134,6 @@ class GetElementPtrInst:public User
     GetElementPtrInst(Operand);
     Type* GetType()final;
     void print()final;
-    bool isPtrValConst();
     Value* GetPtrVal();
 };
 //zext i1 to i32
@@ -156,10 +155,13 @@ public:
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
   std::vector<Value*>& GetAllPhiVal();
+  bool modifyIncome(Value* origin);
+  bool modifyBlock(Value* val,BasicBlock* NewBlock);
 public:
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
   void Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord);
+  std::vector<BasicBlock*> Blocks;
   int oprandNum;
 };
 class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
@@ -189,6 +191,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     std::vector<BasicBlock*> GetSuccBlock();
     void AddSuccBlock(BasicBlock* block){this->Succ_Block.push_back(block);}
     bool EndWithBranch();
+    void init_visited();
     int num=0;
     bool visited=false;
 };
@@ -216,6 +219,8 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
+    void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);//TODO
+    void init_visited_block();
 };
 class Module:public SymbolTable
 {
@@ -230,5 +235,6 @@ class Module:public SymbolTable
     void GenerateGlobalVariable(Variable* ptr);
     Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
+    Function* getMainFunc();
     void Test();
 };

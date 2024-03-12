@@ -1,0 +1,4 @@
+file(GLOB UTIL_SRC "*.cpp")
+add_library(util ${UTIL_SRC})
+target_link_libraries(util Lib)
+target_include_directories(util PUBLIC ${PROJECT_SOURCE_DIR}/lib)
