@@ -12,6 +12,10 @@ MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Op
 User* MachineInst::getIR() {return this->IR;}
 MachineBasicBlock* MachineInst::get_machinebasicblock() {return this->mbb;}
 std::string MachineInst::GetOpcode() {return opcode;}
+void MachineInst::SetOpcode(std::string opcode) {this->opcode = opcode;}
+Operand MachineInst::GetRd() {return rd;}
+Operand MachineInst::GetRs1() {return rs1;}
+Operand MachineInst::GetRs2() {return rs2;}
 void MachineInst::print() {
     if (opcode == "alloca") {
         return;   

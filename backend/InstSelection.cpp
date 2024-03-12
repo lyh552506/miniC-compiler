@@ -10,6 +10,53 @@ bool is_float(Operand op) {
         return true;
     else return false;
 }
+bool need_load(User* inst) { // icmp
+    Operand rd = inst->GetDef();
+    Operand rs1 = (inst->Getuselist())[0]->GetValue();
+    Operand rs2 = (inst->Getuselist())[1]->GetValue();
+    if (rs1->isConst() && rs2->isConst()) {
+        return false;
+    }
+    else if (rs1->isConst() && rs2->isConst() == false) {
+        return true;
+    }
+    else if (rs1->isConst() == false && rs2->isConst()) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, User>::iterator it) {
+    std::string op = inst->getIR()->GetName();
+    std::string opcode = inst->GetOpcode();
+    if (op.find("Op") != std::string::npos) {
+        std::string head = "i_";
+        std::string mid1 = "slt";
+        std::string mid2 = "xor_";
+        std::string tail = "_xori";
+        if (opcode.find(head) != std::string::npos) {
+            //LiInst* li = new LiInst(inst->GetRs2());
+            //RSUW()
+            //LIST_INSERT_AFTER(li, parent, it);
+        }
+
+        if (opcode.find(mid1) != std::string::npos) {
+            inst->SetOpcode("slt");
+        }
+        else if (opcode.find(mid2) != std::string::npos) {
+            inst->SetOpcode("xor");
+        }
+        parent->addMachineInst(inst);
+
+        if (opcode.find(tail) != std::string::npos) {
+
+        }
+    }
+    else parent->addMachineInst(inst);
+
+}
+
 //指令选择
 MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
     MachineInst* machineinst = nullptr;
@@ -95,20 +142,17 @@ MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst) {
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1, rs2);
     return machineinst;
 }
-
 MachineInst* MatchCallInst(MachineBasicBlock* parent, CallInst* inst) {
     Operand rd = inst->Getuselist()[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, "call", rd);
     return machineinst;
 }
-
 MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst) {
     Operand rd = inst->Getuselist()[0]->GetValue();
     //std::cout << "    lw a0, " << rd->GetName() << std::endl; 
     MachineInst* machineinst = new MachineInst(inst, parent, "ret", rd);
     return machineinst;
 }
-
 MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
     MachineInst* machineinst = nullptr;
     std::string op = inst->GetOperation();
@@ -164,26 +208,33 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
         else opcode = "white";
     }  
     else if (op == "Op_E" || op == "Op_NE" || op == "Op_G" || op == "Op_GE" || op == "Op_L" || op == "Op_LE") {
+        // need li inst
+        if ( need_load(inst) ) {
             Operand rs = rs1->isConst() ? rs1 : rs2;
-
-            opcode = op.substr(3);
-            for (char& c : opcode) {
-                c = std::tolower(c);
-            }
-            opcode = "icmp_" + opcode;
-            if( op == "Op_E") {
-                opcode = opcode + "q";
-            }
-            else if (op == "Op_G" || op == "Op_L") {
-                opcode = opcode + "t";
-            }
-            else {}
-
             if (rs1 == rs) {
                 rs1 = rs2;
                 rs2 = rs;
             }
-            else {}
+            opcode = "i_"; // head "i_"
+        }        
+        // without li inst
+        if (op == "Op_E") {
+            opcode += "xor_eq"; // middle "xor_"
+        }
+        else if (op == "Op_NE") {
+            opcode += "xor_ne";
+        }
+        else if (op == "Op_GE" || op == "Op_LE") {
+            opcode += "slt_xori"; // tail "_xori"
+        }
+        else if (op == "Op_G") {
+            // slt rd, rs2, rs1
+            machineinst = new MachineInst(inst, parent, opcode, rd, rs2, rs1);
+            return machineinst;
+        }
+        else {
+            opcode += "slt" ; // middle "slt"
+        }
     }
     else {
         std::cout << "Error: No Such Binaryinst!" << std::endl;

@@ -27,3 +27,6 @@ Value* GetOperand(T inst,int i){
    assert(user);
    return user->Getuselist()[i]->GetValue();
 }
+
+#define LIST_INSERT_AFTER(newly_inst, bb,it)
+#define LIST_INSERT_BEFORE(newly_inst, bb,it)

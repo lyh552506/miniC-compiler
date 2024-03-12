@@ -1,6 +1,7 @@
 #pragma once
 #include "../lib/BaseCFG.hpp"
 #include "../lib/CFG.hpp"
+#include "gir.hpp"
 #include <variant>
 class MachineUnit;
 class MachineFunction;
@@ -21,7 +22,11 @@ class MachineInst : public User {
     User* getIR();
     MachineBasicBlock* get_machinebasicblock();
     std::string GetOpcode();
-    virtual void print();
+    void SetOpcode(std::string opcode);
+    Operand GetRd();
+    Operand GetRs1();
+    Operand GetRs2();
+    void print();
 };
 
 class MachineBasicBlock {

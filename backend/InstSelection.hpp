@@ -6,9 +6,11 @@
 
 bool is_int(Operand op);
 bool is_float(Operand op);
+bool need_load(User* inst);
+void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, User>::iterator it);
 
-//void MatchAllocaInst(User& inst);
-//一条一条翻译
+
+//指令选择 宏扩展
 MachineInst* MatchStoreInst(MachineBasicBlock* parent, StoreInst* inst);
 MachineInst* MatchLoadInst(MachineBasicBlock* parent, LoadInst* inst);
 MachineInst* MatchFPTSI(MachineBasicBlock* parent, FPTSI* inst);
@@ -20,3 +22,4 @@ MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst);
 MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst);
 
 MachineInst* InstSelect(MachineBasicBlock* parent, User& inst);
+
