@@ -889,6 +889,17 @@ Function* Module::getMainFunc()
             return func;
     }
 }
+void Module::EraseFunction(Function* func)
+{
+    for(auto iter = ls.begin(); iter != ls.end(); iter++)
+    {
+        if(iter->get() == func)
+        {
+            ls.erase(iter);
+            break;
+        }
+    }
+}
 
 std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() {
     return ls;

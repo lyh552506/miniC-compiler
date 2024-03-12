@@ -19,7 +19,7 @@ private:
   void deleteDeadInst(Function* func);
   void deleteDeadStore(Function* func);
   void deleteDeadRet(Function* func);
-
+  bool hasSideEffect(CallInst* inst);
 
 private:
   int inst_counter = 0;
