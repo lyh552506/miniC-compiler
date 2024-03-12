@@ -47,7 +47,7 @@ void MachineInst::print() {
         std::string lable = mbb->get_parent()->get_lable(rd->GetName());
         std::cout << lable << std::endl;
     }
-    else if (opcode == "branch") {
+    else if (opcode == "beqz") {
         std::cout << "    " << opcode << " ";
         std::string lable1 = mbb->get_parent()->get_lable(rs1->GetName());
         std::string lable2 = mbb->get_parent()->get_lable(rs2->GetName());

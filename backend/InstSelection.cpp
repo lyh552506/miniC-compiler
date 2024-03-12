@@ -28,17 +28,17 @@ bool need_load(User* inst) { // icmp
     }
 }
 void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, User>::iterator it) {
-    std::string op = inst->getIR()->GetName();
     std::string opcode = inst->GetOpcode();
-    if (op.find("Op") != std::string::npos) {
+    if (opcode.find("icmp_") != std::string::npos) {
         std::string head = "i_";
         std::string mid1 = "slt";
         std::string mid2 = "xor_";
         std::string tail = "_xori";
         if (opcode.find(head) != std::string::npos) {
-            //LiInst* li = new LiInst(inst->GetRs2());
-            //RSUW()
-            //LIST_INSERT_AFTER(li, parent, it);
+            LiInst* liInst = new LiInst(inst->GetRs2());
+            //issue
+            //RSUW();
+            //LIST_INSERT_BEFORE(li, parent, it);
         }
 
         if (opcode.find(mid1) != std::string::npos) {
@@ -50,11 +50,23 @@ void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, U
         parent->addMachineInst(inst);
 
         if (opcode.find(tail) != std::string::npos) {
-
+            Operand* rs2 ; //issue：常数 1
+            XorInst* xorInst = new XorInst(inst->GetRs1(), "xori", *rs2);
+            //issue
+            //RSUW();
+            //LIST_INSERT_AFTER(xorInst, parent, it);
         }
     }
+    else if (opcode.find("beqz") != std::string::npos) {
+        parent->addMachineInst(inst);
+        UnCondInst* uncondInst = new UnCondInst(dynamic_cast<BasicBlock*>((inst->getIR()->Getuselist())[1]->GetValue()));
+        //issue
+        //LIST_INSERT_AFTER(uncondInst, parent, it);
+        //++it;
+        MachineInst* jInst = MatchUnCondInst(parent, uncondInst);
+        parent->addMachineInst(jInst);
+    }
     else parent->addMachineInst(inst);
-
 }
 
 //指令选择
@@ -99,7 +111,6 @@ MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
     }
     return machineinst;
 } 
-
 MachineInst* MatchStoreInst(MachineBasicBlock* parent, StoreInst* inst) {
     std::string op = "sw";
     Operand rd = (inst->Getuselist())[0]->GetValue();
@@ -135,10 +146,11 @@ MachineInst* MatchUnCondInst(MachineBasicBlock* parent, UnCondInst* inst) {
     return machineinst;
 }
 MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst) {
-    std::string op = "branch";
+    std::string op = "beqz";
     Operand rd =  inst->Getuselist()[0]->GetValue();
     Operand rs1 = inst->Getuselist()[1]->GetValue();
     Operand rs2 = inst->Getuselist()[2]->GetValue();
+    
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1, rs2);
     return machineinst;
 }
@@ -209,13 +221,14 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
     }  
     else if (op == "Op_E" || op == "Op_NE" || op == "Op_G" || op == "Op_GE" || op == "Op_L" || op == "Op_LE") {
         // need li inst
+        opcode = "icmp_"; // head "icmp_"
         if ( need_load(inst) ) {
             Operand rs = rs1->isConst() ? rs1 : rs2;
             if (rs1 == rs) {
                 rs1 = rs2;
                 rs2 = rs;
             }
-            opcode = "i_"; // head "i_"
+            opcode += "i_"; // head "i_"
         }        
         // without li inst
         if (op == "Op_E") {
