@@ -40,7 +40,7 @@
             "program": "${workspaceFolder}/build/SYSY-compiler",
             "cwd": "${workspaceFolder}",
             "targetArchitecture": "x64",
-            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constantprop"],
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constantprop","--adce"],
             "stopAtEntry": false,
             // "setupCommands": [
             //   {

@@ -109,6 +109,7 @@ class User:public Value,public list_node<BasicBlock,User>
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
     bool CanDel = false;
     bool IsTerminateInst();
+    bool HasSideEffect();
 };
 
 class ConstantData:public Value

@@ -109,6 +109,69 @@ void User::ClearRelation() {
       use->nxt->prev = use->prev;
   }
 }
+bool User::IsTerminateInst()
+{
+  if(dynamic_cast<UnCondInst*>(this))
+    return true;
+  else if(dynamic_cast<CondInst*>(this))
+    return true;
+  else if(dynamic_cast<RetInst*>(this))
+    return true;
+  else if(this->HasSideEffect())
+    return true;
+  else
+    return false;
+}
+
+bool User::HasSideEffect()
+{
+  if(dynamic_cast<StoreInst*>(this))
+  {
+    Value* op = this->Getuselist()[1]->usee;
+    if(op->isGlobVal())
+      return true;
+    if(op->GetTypeEnum() == InnerDataType::IR_PTR)
+      return true;
+  }
+  if(dynamic_cast<CallInst*>(this))
+  {
+    Function* func = dynamic_cast<Function*>(this->Getuselist()[0]->GetValue());
+    auto& params = func->GetParams();
+    for(auto& param : params)
+    {
+      if(param->GetTypeEnum() == InnerDataType::IR_PTR)
+        return true;
+    }
+    for(auto it = func->begin(); it != func->end(); ++it)
+    {
+      BasicBlock* block = *it;
+      for(auto iter = block->begin(); iter != block->end(); ++iter)
+      {
+        if(dynamic_cast<CallInst*>(*iter))
+          return true;
+        else
+        {
+          if((*iter)->HasSideEffect())
+            return true;
+          else
+            return false;
+        }
+      }
+    }
+  }
+  if(dynamic_cast<GetElementPtrInst*>(this))
+  {
+    auto &users = this->GetUserlist();
+    for(auto user_ : users)
+    {
+      User* user = user_->GetUser();
+      if(user->HasSideEffect())
+        return true;
+      else
+        return false;
+    }
+  }
+}
 
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 

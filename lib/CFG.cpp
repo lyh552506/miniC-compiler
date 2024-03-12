@@ -882,12 +882,11 @@ void Module::GenerateGlobalVariable(Variable* ptr){
 
 Function* Module::getMainFunc()
 {
-    for(auto &f : this->GetFuncTion())
-    {
-        Function* func = f.get();
-        if(func->GetName() == "main")
-            return func;
-    }
+    Function* func = this->ls.back().get();
+    if(func)
+        return func;
+    else
+        return nullptr;
 }
 void Module::EraseFunction(Function* func)
 {

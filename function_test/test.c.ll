@@ -332,44 +332,37 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @FullRedundancy2(){
+define i32 @at(i32* %.3){
 .1:
-  %.10 = alloca i32
-  %.5 = alloca i32
-  %.4 = alloca i32
-  %.3 = alloca [20 x i32]
-  store i32 5, i32* %.4
-  store i32 6, i32* %.5
-  %.11 = load i32, i32* %.4
-  %.12 = load i32, i32* %.5
-  %.13 = add i32 %.11, %.12
-  store i32 %.13, i32* %.10
-  %.16 = load i32, i32* %.10
-  %.17 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.16
-  store i32 1, i32* %.17
-  %.20 = load i32, i32* %.10
-  %.21 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.20
-  %.22 = load i32, i32* %.21
-  ret i32 %.22 
+  %.2 = alloca i32*
+  store i32* %.3, i32** %.2
+  %.7 = load i32*, i32** %.2
+  %.8 = getelementptr inbounds i32, i32* %.7, i32 1
+  store i32 3, i32* %.8
+  %.12 = load i32*, i32** %.2
+  %.13 = getelementptr inbounds i32, i32* %.12, i32 2
+  store i32 4, i32* %.13
+  ret i32 1 
+}
+define i32 @FullRedundancy2(){
+.17:
+  %.26 = alloca i32
+  %.21 = alloca i32
+  %.20 = alloca i32
+  %.19 = alloca [20 x i32]
+  store i32 5, i32* %.20
+  store i32 6, i32* %.21
+  %.27 = load i32, i32* %.20
+  %.28 = load i32, i32* %.21
+  %.29 = add i32 %.27, %.28
+  store i32 %.29, i32* %.26
+  %.31 = load i32, i32* %.26
+  %.32 = getelementptr inbounds [20 x i32], [20 x i32]* %.19, i32 0, i32 %.31
+  store i32 1, i32* %.32
+  %.35 = getelementptr inbounds [20 x i32], [20 x i32]* %.19, i32 0, i32 0
+  %.36at163 = call i32 @at(i32* %.35)
+  %.37 = getelementptr inbounds [20 x i32], [20 x i32]* %.19, i32 0, i32 1
+  %.38 = load i32, i32* %.37
+  ret i32 %.38 
 }
 --------mem2reg--------
-define i32 @FullRedundancy2(){
-.1:
-  %.3 = alloca [20 x i32]
-  %.13 = add i32 5, 6
-  %.17 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.13
-  store i32 1, i32* %.17
-  %.21 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 %.13
-  %.22 = load i32, i32* %.21
-  ret i32 %.22 
-}
---------constantprop--------
-define i32 @FullRedundancy2(){
-.1:
-  %.3 = alloca [20 x i32]
-  %.17 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 11
-  store i32 1, i32* %.17
-  %.21 = getelementptr inbounds [20 x i32], [20 x i32]* %.3, i32 0, i32 11
-  %.22 = load i32, i32* %.21
-  ret i32 %.22 
-}

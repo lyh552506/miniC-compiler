@@ -18,6 +18,20 @@ void PassManager::Init_Pass() {
         PRE(dom.get(), f).init_pass();
       if(InitpassRecorder[2])
         ConstantProp(f).Pass();
+      // if(InitpassRecorder[3])
+      // {
+      //   DeadCodeEliminate(Singleton<Module>(), f).Pass();
+      // }
+      if(InitpassRecorder[4])
+      {
+        ADCE(f).Pass();
+      }
+      // if(InitpassRecorder[5])
+      // {
+      //   std::unique_ptr<LivenessAnalysis> liveness(new LivenessAnalysis);
+      //   liveness.get()->pass(f);
+      // }
+
     }
   }
   print_result();
@@ -38,4 +52,19 @@ void PassManager::print_result() {
     std::cout << "--------constantprop--------" << std::endl;
     Singleton<Module>().Test();
   }
+  if(InitpassRecorder[3])
+  {
+    std::cout << "--------DCE--------" << std::endl;
+    Singleton<Module>().Test();
+  }
+  if(InitpassRecorder[4])
+  {
+    std::cout << "--------ADCE--------" << std::endl;
+    Singleton<Module>().Test();
+  }
+  // if(InitpassRecorder[5])
+  // {
+  //   std::cout << "--------LivenessAnalysis--------" << std::endl;
+  //   Singleton<Module>().Test();
+  // }
 }
