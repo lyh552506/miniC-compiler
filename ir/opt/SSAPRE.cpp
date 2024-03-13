@@ -21,18 +21,16 @@ BasicBlock *PRE::GetChild(BasicBlock *BB, int flag) {
 void PRE::CalculatePredBB(BasicBlock *bb) {
   for (auto node : m_dom->GetNode(bb->num).rev)
     if (m_dom->GetNode(node).thisBlock->visited == false) {
-      m_dom->GetNode(node).thisBlock->visited=true;
+      m_dom->GetNode(node).thisBlock->visited = true;
       Preds.push_back(m_dom->GetNode(node).thisBlock);
       CalculatePredBB(m_dom->GetNode(node).thisBlock);
     }
-  
 }
 
 void PRE::init_pass() {
   BuildSets();
 
-  //
-  // Insert();
+  Insert();
 
   // Eliminate();
 }
@@ -97,13 +95,53 @@ void PRE::BuildSets() {
   }
 }
 
+//论文第二部：insert
+void PRE::Insert() {
+  bool changed = true;
+  while (changed) {
+    changed = false;
+
+    BasicBlock *DTroot = Dfs[0];
+    int PredNum = std::distance(m_dom->GetNode(DTroot->num).rev.begin(),
+                                m_dom->GetNode(DTroot->num).rev.end());
+    // Insertions happen only at merge points,即需要当前块有多个前驱
+    if (PredNum > 1) {
+      //此处选择AnticIn集合而不是AvailIn集合进行处理的原因：
+      // AnticIn集合表示程序点p出发的所有路径最终都会计算表达式`b+c`的值
+      //             A
+      //           /   \
+      //          B     C
+      //           \   /
+      //             D
+      //此时处理D的AnticIn集合，并选择能提升(hoist)到他的所有前驱的exp
+      BuidTopuSet(AnticipatedIn[DTroot]);
+      IdentyPartilRedundancy(DTroot);
+    }
+  }
+}
+
+void PRE::IdentyPartilRedundancy(BasicBlock *cur) {
+  for (auto val : TopuOrder) {
+    // For a non-simple expression, we consider the equivalent expressions in
+    // the predecessors    
+    if(dynamic_cast<GetElementPtrInst*>(val)||dynamic_cast<BinaryInst*>(val)){
+      //遍历所有的前驱
+      for(auto p:m_dom->GetNode(cur->num).rev){
+        BasicBlock* pred=m_dom->GetNode(p).thisBlock;
+        Value* newval=phi_translate(pred,cur,val);
+        Value* v=Find_Leader(AvailOut[pred],newval);
+      }
+    }
+  }
+}
+
 // ANTIC IN[b] = clean(canone(ANTIC OUT[b] ∪ EXP GEN[b]−TMP GEN(b)))
 RetStats PRE::CalculateAnticIn(BasicBlock *bb, ValueNumberedSet &AnticOut,
                                std::set<BasicBlock *> &visited,
                                ValueNumberedSet &genexp) {
   //要计算Antic_In set首先需要求出Antic_Out
-  auto& gen_tmp = GeneratedTemp[bb];
-  auto& anticin = AnticipatedIn[bb];
+  auto &gen_tmp = GeneratedTemp[bb];
+  auto &anticin = AnticipatedIn[bb];
   int o_size = anticin.contents.size(); //记录下原来的size大小，看后续是否有变化
   anticin.init();
 
@@ -177,8 +215,8 @@ RetStats PRE::CalculateAnticOut(BasicBlock *bb, ValueNumberedSet &AnticOut,
     }
 
     std::vector<Value *> Erase;
-    for (auto tmp = AnticOut.contents.begin();
-         tmp != AnticOut.contents.end(); ++tmp) {
+    for (auto tmp = AnticOut.contents.begin(); tmp != AnticOut.contents.end();
+         ++tmp) {
       // ∀ b∈succ(b),∃ e∈ANTIC_IN[b]|lookup(e)=lookup(e)}
       if (!AnticipatedIn[succ1].IsAlreadyInsert(VN->LookupOrAdd(*tmp)))
         Erase.push_back(*tmp);
@@ -363,6 +401,7 @@ Value *PRE::phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val) {
       BinaryInst *newbin = new BinaryInst(op_1, bin->GetOpcode(bin), op_2);
 
       int hash = VN->LookupOrAdd(newbin);
+      // TODO 为什么这里是AvailOut?
       if (!AvailOut[pred].IsAlreadyInsert(hash)) {
         gen_exp.push_back(newbin);
         return newbin;
@@ -412,15 +451,19 @@ Value *PRE::phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val) {
 }
 
 void PRE::clean(ValueNumberedSet &val) {
-  
+  // BuidTopuSet(val);
+  // for (auto inst : TopuOrder) {
+
+  // }
 }
 
-void PRE::TopuSet(ValueNumberedSet &set) {
+void PRE::BuidTopuSet(ValueNumberedSet &set) {
+  TopuOrder.clear();
   std::set<Value *> visited;
   std::vector<Value *> topuSt;
   for (auto it = set.contents.begin(); it != set.contents.end(); it++) {
-    if (!visited.count(
-            *it)) //此处不能直接插入，还需要看他的操作数是否是inst，递归调用
+    //此处不能直接插入，还需要看他的操作数是否是inst，递归调用
+    if (!visited.count(*it))
       topuSt.push_back(*it);
     while (!topuSt.empty()) {
       Value *val = topuSt.back();
@@ -428,11 +471,57 @@ void PRE::TopuSet(ValueNumberedSet &set) {
       if (auto bin = dynamic_cast<BinaryInst *>(val)) {
         Value *op1 = bin->Getuselist()[0]->GetValue();
         Value *op2 = bin->Getuselist()[1]->GetValue();
-
+        op1 = Find_Leader(set, op1);
+        op2 = Find_Leader(set, op2);
+        if (op1 != nullptr && dynamic_cast<User *>(op1) &&
+            visited.count(op1) == 0)
+          topuSt.push_back(op1);
+        else if (op2 != nullptr && dynamic_cast<User *>(op2) &&
+                 visited.count(op2) == 0)
+          topuSt.push_back(op2);
+        else { //来到边缘点，加入到topu排序栈
+          TopuOrder.push_back(bin);
+          visited.insert(bin);
+          topuSt.pop_back();
+        }
       } else if (auto gep = dynamic_cast<GetElementPtrInst *>(val)) {
-
+        Value *ptr = gep->Getuselist()[0]->GetValue();
+        ptr = Find_Leader(set, ptr);
+        if (ptr != nullptr && dynamic_cast<User *>(ptr) &&
+            visited.count(ptr) == 0)
+          topuSt.push_back(ptr);
+        else {
+          bool chan = false;
+          for (int i = 1; i < gep->Getuselist().size(); i++) {
+            Value *arg = gep->Getuselist()[i]->GetValue();
+            arg = Find_Leader(set, arg);
+            if (arg != nullptr && dynamic_cast<User *>(arg) &&
+                visited.count(arg) == 0) {
+              chan = true;
+              topuSt.push_back(arg);
+            }
+          }
+          if (!chan) {
+            TopuOrder.push_back(gep);
+            visited.insert(gep);
+            topuSt.pop_back();
+          }
+        }
       } else {
+        TopuOrder.push_back(val);
+        visited.insert(val);
+        topuSt.pop_back();
       }
     }
+  }
+}
+
+Value *PRE::Find_Leader(ValueNumberedSet &set, Value *val) {
+  if (!set.IsAlreadyInsert(VN->LookupOrAdd(val)))
+    return nullptr;
+  int hash = VN->LookupOrAdd(val);
+  for (auto tmp = set.contents.begin(); tmp != set.contents.end(); tmp++) {
+    if (hash = VN->LookupOrAdd(*tmp))
+      return *tmp;
   }
 }

@@ -118,10 +118,11 @@ public:
   /// @brief
   void DfsDT(int pos);
   void PostOrderCFG(BasicBlock *root);
-  void TopuSet(ValueNumberedSet& set);
+  void BuidTopuSet(ValueNumberedSet& set);
   BasicBlock *GetChild(BasicBlock *BB, int flag);
   /// @brief 传入一个BasicBlock，统计他的所有前驱 
   void CalculatePredBB(BasicBlock* bb);
+  void IdentyPartilRedundancy(BasicBlock* cur);
 
   void CalculateAvailOut(User *inst, ValueNumberedSet &avail,
                          ValueNumberedSet &genexp, ValueNumberedSet &gentemp,
@@ -133,6 +134,8 @@ public:
                              std::set<BasicBlock *> &visited);
   Value *phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val);
   void clean(ValueNumberedSet &val);
+  //在一个set中找到val的leader
+  Value* Find_Leader(ValueNumberedSet& set,Value* val);
 
   PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {
     BasicBlock *Entry = m_func->front();
@@ -152,9 +155,9 @@ private:
   std::map<BasicBlock *, ValueNumberedSet> AvailOut;
   std::map<BasicBlock *, ValueNumberedSet> AnticipatedIn;
   std::map<BasicBlock *, ValueNumberedSet> GeneratedPhis;
-  std::vector<BasicBlock *> Dfs;
+  std::vector<BasicBlock *> Dfs;//记录深度遍历支配树信息
   std::vector<BasicBlock *> PostOrder;
-  std::vector<BasicBlock *> TopuOrder;
+  std::vector<Value *> TopuOrder;
   std::vector<BasicBlock *> Preds;
   std::vector<Value *> gen_exp;//原来的block中没有，属于是自己创建的exp
   std::map<BasicBlock *, ValueNumberedSet> GeneratedTemp;
