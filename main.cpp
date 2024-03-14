@@ -20,8 +20,10 @@ void copyFile(const std::string &sourcePath,
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"pre", no_argument, 0, 1},
                                        {"constantprop", no_argument, 0, 2},
-                                       {"livenessanalysis", no_argument, 0, 3},
-                                       {"help", no_argument, 0, 4},
+                                       {"dce", no_argument, 0, 3},
+                                       {"adce", no_argument, 0, 4}, 
+                                       {"livenessanalysis", no_argument, 0, 5},
+                                       {"help", no_argument, 0, 6},
                                        {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
@@ -42,26 +44,32 @@ int main(int argc, char **argv) {
   
   // int optionIndex, option;
 
-  // while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) != -1) {
-  //   switch (option) {
-  //   case 0:
-  //     pass_manager->IncludePass(0);
-  //     break;
-  //   case 1:
-  //     pass_manager->IncludePass(1);
-  //     break;
-  //   case 2:
-  //     pass_manager->IncludePass(2);
-  //     break;
-  //   case 3:
-  //     pass_manager->IncludePass(3);
-  //     break;
-  //   case 4:
-  //     std::cerr << "help" << std::endl;
-  //     break;
-  //   }
-  // }
-  // pass_manager->Init_Pass();
+  while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) != -1) {
+    switch (option) {
+    case 0:
+      pass_manager->IncludePass(0);
+      break;
+    case 1:
+      pass_manager->IncludePass(1);
+      break;
+    case 2:
+      pass_manager->IncludePass(2);
+      break;
+    case 3:
+      pass_manager->IncludePass(3);
+      break;
+    case 4: 
+      pass_manager->IncludePass(4);
+      break;
+    case 5:
+      pass_manager->IncludePass(5);
+      break;
+    case 6:
+      std::cerr << "help" << std::endl;
+      break;
+    }
+  }
+  pass_manager->Init_Pass();
   // auto f = Singleton<Module>().GetFuncTion()[0].get();
   // auto &Li = Singleton<Module>().GetFuncTion()[0]->GetBasicBlock();
   // for (auto bb = f->begin(); bb != f->end(); ++bb)

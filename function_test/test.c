@@ -26,7 +26,35 @@ int ifElse() {
   return (a);
 }
 
+// int FullRedundancy2 () {
+//      int x[20],a,b;
+//      a=5;
+//      b=6;
+//      int t=a+b;
+//      x[t]=1;
+//      return x[t];
+// }
 
-int main() {
-  return (ifElse());
+// int FullRedundancy2 () {
+//      int x[20],a,b;
+//      a=5;
+//      b=6;
+//      int t=a+b;
+//      x[t]=1;
+//      return x[t];
+// }
+int at(int b[])
+{
+    b[1] = 3;
+    b[2] = 4;
+    return 1;
+}
+int FullRedundancy2 () {
+     int x[20],a,b;
+     a=5;
+     b=6; 
+     int t=a+b;
+     x[t]=1;
+     at(x);
+     return x[1];
 }

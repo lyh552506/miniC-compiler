@@ -237,4 +237,6 @@ class Module:public SymbolTable
     std::vector<FunctionPtr>& GetFuncTion();
     Function* getMainFunc();
     void Test();
+    void EraseFunction(Function* func);
+    bool isMIRSSALevel();
 };

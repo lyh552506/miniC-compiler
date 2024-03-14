@@ -5,6 +5,7 @@ void ConstantProp::Pass()
 {
     for(BasicBlock* block : *_func)
         RunOnBlock(block);
+    int num = _func->GetBasicBlock().size();
 }
 void ConstantProp::RunOnBlock(BasicBlock* block)
 {
