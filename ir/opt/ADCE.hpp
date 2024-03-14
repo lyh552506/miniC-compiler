@@ -1,12 +1,14 @@
 #include "CFG.hpp"
-
+#include <set>
 class ADCE
 {
 public:
     void Pass();
-    ADCE(Function* func) : _func(func) {}
 private:
     Function* _func;
+    std::vector<Function*> flist;
     void AgressiveDCE(Function* func);
-    bool IsInstHandleConst(User* inst);
+    void SetInstAliveRelation(User* inst);
+public:
+    ADCE(std::vector<Function*> flist_) : flist(flist_) {}
 };
