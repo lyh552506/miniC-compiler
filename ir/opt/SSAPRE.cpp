@@ -100,39 +100,166 @@ void PRE::Insert() {
   bool changed = true;
   while (changed) {
     changed = false;
-
-    BasicBlock *DTroot = Dfs[0];
-    int PredNum = std::distance(m_dom->GetNode(DTroot->num).rev.begin(),
-                                m_dom->GetNode(DTroot->num).rev.end());
-    // Insertions happen only at merge points,即需要当前块有多个前驱
-    if (PredNum > 1) {
-      //此处选择AnticIn集合而不是AvailIn集合进行处理的原因：
-      // AnticIn集合表示程序点p出发的所有路径最终都会计算表达式`b+c`的值
-      //             A
-      //           /   \
-      //          B     C
-      //           \   /
-      //             D
-      //此时处理D的AnticIn集合，并选择能提升(hoist)到他的所有前驱的exp
-      BuidTopuSet(AnticipatedIn[DTroot]);
-      IdentyPartilRedundancy(DTroot);
+    for (auto bb : Dfs) {
+      std::map<BasicBlock *, ValueNumberedSet> insert_set;
+      if (m_dom->GetNode(bb->num).idom != bb->num) {
+        BasicBlock *idom =
+            m_dom->GetNode(m_dom->GetNode(bb->num).idom).thisBlock;
+        ValueNumberedSet &set = insert_set[idom];
+        for (auto tmp = set.contents.begin(); tmp != set.contents.end();
+             tmp++) {
+          if (!insert_set[bb].IsAlreadyInsert(VN->LookupOrAdd(*tmp))) {
+            Value *lead = Find_Leader(insert_set[bb], *tmp);
+            if (lead != nullptr) {
+              insert_set[bb].insert_val(*tmp);
+              insert_set[bb].set_hash(VN->LookupOrAdd(*tmp));
+            }
+          }
+          if(!AvailOut[bb].IsAlreadyInsert(VN->LookupOrAdd(*tmp))){
+            Value *lead = Find_Leader(AvailOut[bb], *tmp);
+            if (lead != nullptr) {
+              AvailOut[bb].insert_val(*tmp);
+              AvailOut[bb].set_hash(VN->LookupOrAdd(*tmp));
+            }
+          }
+        }
+      }
+      int PredNum = std::distance(m_dom->GetNode(bb->num).rev.begin(),
+                                  m_dom->GetNode(bb->num).rev.end());
+      // Insertions happen only at merge points,即需要当前块有多个前驱
+      if (PredNum > 1) {
+        //此处选择AnticIn集合而不是AvailIn集合进行处理的原因：
+        // AnticIn集合表示程序点p出发的所有路径最终都会计算表达式`b+c`的值
+        //             A
+        //           /   \
+        //          B     C
+        //           \   /
+        //             D
+        //此时处理D的AnticIn集合，并选择能提升(hoist)到他的所有前驱的exp
+        BuidTopuSet(AnticipatedIn[bb]);
+        RetStats stat = IdentyPartilRedundancy(bb, insert_set);
+        if (stat == Changed)
+          changed = true;
+      }
     }
   }
 }
 
-void PRE::IdentyPartilRedundancy(BasicBlock *cur) {
+RetStats PRE::IdentyPartilRedundancy(
+    BasicBlock *cur, std::map<BasicBlock *, ValueNumberedSet> &insert_set) {
   for (auto val : TopuOrder) {
     // For a non-simple expression, we consider the equivalent expressions in
-    // the predecessors    
-    if(dynamic_cast<GetElementPtrInst*>(val)||dynamic_cast<BinaryInst*>(val)){
+    // the predecessors
+    if (dynamic_cast<GetElementPtrInst *>(val) ||
+        dynamic_cast<BinaryInst *>(val)) {
       //遍历所有的前驱
-      for(auto p:m_dom->GetNode(cur->num).rev){
-        BasicBlock* pred=m_dom->GetNode(p).thisBlock;
-        Value* newval=phi_translate(pred,cur,val);
-        Value* v=Find_Leader(AvailOut[pred],newval);
+      bool AllPathSame = true;
+      bool SomePathSame = false;
+      std::map<BasicBlock *, Value *> predAvail;
+      for (auto p : m_dom->GetNode(cur->num).rev) {
+        BasicBlock *pred = m_dom->GetNode(p).thisBlock;
+        Value *newval = phi_translate(pred, cur, val);
+        Value *v = Find_Leader(AvailOut[pred], newval);
+        //如果在其中一个前驱没有该表达式，则在此处不是available
+        //代表后续我们需要在这个块添加一条指令，在当前块添加phi
+        if (v == nullptr) {
+          AllPathSame = false;
+          predAvail.insert(std::make_pair(pred, newval));
+        } else {
+          SomePathSame = true;
+          predAvail.insert(std::make_pair(pred, v));
+        }
+      }
+      //存在至少一条路径可用并且不是所有路径可用时，识别为部分冗余
+      if (!AllPathSame && SomePathSame) {
+        FixPartialRedundancy(cur, predAvail, insert_set);
+        return Changed;
       }
     }
   }
+  return Unchanged;
+}
+
+/// @brief 将识别出的部分冗余改写
+void PRE::FixPartialRedundancy(
+    BasicBlock *cur, std::map<BasicBlock *, Value *> &predAvail,
+    std::map<BasicBlock *, ValueNumberedSet> &insert_set) {
+  Type *ty = nullptr;
+  for (auto p : m_dom->GetNode(cur->num).rev) {
+    BasicBlock *pred = m_dom->GetNode(p).thisBlock;
+    Value *v = predAvail[pred];
+    if (!AvailOut[pred].IsAlreadyInsert(VN->LookupOrAdd(v))) {
+      //因为后续需要创建一条新的指令，此时需要查看inst的各个操作数是否出现过
+      User *inst = dynamic_cast<User *>(v);
+      Value *op_1 = nullptr, *op_2 = nullptr;
+
+      if (dynamic_cast<BinaryInst *>(GetOperand(inst, 0)) ||
+          dynamic_cast<GetElementPtrInst *>(GetOperand(inst, 0)))
+        op_1 = Find_Leader(AvailOut[pred], GetOperand(inst, 0));
+      else
+        op_1 = GetOperand(inst, 0);
+
+      if (dynamic_cast<BinaryInst *>(inst))
+        if (dynamic_cast<BinaryInst *>(GetOperand(inst, 1)) ||
+            dynamic_cast<GetElementPtrInst *>(GetOperand(inst, 1)))
+          op_2 = Find_Leader(AvailOut[pred], GetOperand(inst, 1));
+        else
+          op_2 = GetOperand(inst, 1);
+      std::vector<Value *> args;
+      if (dynamic_cast<GetElementPtrInst *>(inst))
+        for (int i = 1; i < inst->Getuselist().size(); i++) {
+          Value *arg = GetOperand(inst, i);
+          if (dynamic_cast<BinaryInst *>(arg) ||
+              dynamic_cast<GetElementPtrInst *>(arg))
+            args.push_back(Find_Leader(AvailOut[pred], arg));
+          else
+            args.push_back(arg);
+        }
+      Value *newval = nullptr;
+      if (auto bin = dynamic_cast<BinaryInst *>(inst))
+        newval = new BinaryInst(op_1, bin->getopration(), op_2);
+      else if (auto gep = dynamic_cast<GetElementPtrInst *>(inst))
+        newval = new GetElementPtrInst(op_1, args);
+      else
+        assert(0);
+      VN->Add(newval);
+      if (ty == nullptr)
+        ty = dynamic_cast<HasSubType *>(newval->GetType())->GetSubType();
+      // replace val in leader set
+      ValueNumberedSet &newi = insert_set[pred];
+      ValueNumberedSet &oldi = AvailOut[pred];
+
+      if (!newi.contents.count(newval)) {
+        Value *lead = Find_Leader(newi, newval);
+        if (lead != nullptr)
+          newi.erase_val(lead);
+        newi.insert_val(newval);
+        newi.set_hash(VN->LookupOrAdd(newval));
+      }
+
+      if (!oldi.contents.count(newval)) {
+        Value *lead = Find_Leader(oldi, newval);
+        if (lead != nullptr)
+          oldi.erase_val(lead);
+        oldi.insert_val(newval);
+        oldi.set_hash(VN->LookupOrAdd(newval));
+      }
+      predAvail[pred] = newval;
+    }
+  }
+  //在此处创建phiNode
+  PhiInst *phi = PhiInst::NewPhiNode(cur->front(), cur, ty);
+  for (auto p : m_dom->GetNode(cur->num).rev) {
+    BasicBlock *pred = m_dom->GetNode(p).thisBlock;
+    phi->updateIncoming(predAvail[pred], pred);
+  }
+  VN->Add(phi);
+  AvailOut[cur].insert_val(phi);
+  AvailOut[cur].set_hash(VN->LookupOrAdd(phi));
+  GeneratedPhis[cur].insert_val(phi);
+  GeneratedPhis[cur].set_hash(VN->LookupOrAdd(phi));
+  insert_set[cur].insert_val(phi);
+  insert_set[cur].set_hash(VN->LookupOrAdd(phi));
 }
 
 // ANTIC IN[b] = clean(canone(ANTIC OUT[b] ∪ EXP GEN[b]−TMP GEN(b)))
