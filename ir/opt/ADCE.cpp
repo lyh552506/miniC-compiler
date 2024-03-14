@@ -3,7 +3,11 @@
 
 void ADCE::Pass()
 {
-        AgressiveDCE(_func);
+    for(auto func : flist)
+    {
+        AgressiveDCE(func);
+    }
+
 }
 
 void ADCE::AgressiveDCE(Function* func)
