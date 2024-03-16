@@ -32,7 +32,7 @@ void PRE::init_pass() {
 
   Insert();
 
-  // Eliminate();
+  Eliminate();
 }
 
 //论文的第一步：构建AnticOut/AnticIn/AvailIn/AvailOut
@@ -115,7 +115,7 @@ void PRE::Insert() {
               insert_set[bb].set_hash(VN->LookupOrAdd(*tmp));
             }
           }
-          if(!AvailOut[bb].IsAlreadyInsert(VN->LookupOrAdd(*tmp))){
+          if (!AvailOut[bb].IsAlreadyInsert(VN->LookupOrAdd(*tmp))) {
             Value *lead = Find_Leader(AvailOut[bb], *tmp);
             if (lead != nullptr) {
               AvailOut[bb].insert_val(*tmp);
@@ -141,6 +141,32 @@ void PRE::Insert() {
         if (stat == Changed)
           changed = true;
       }
+    }
+  }
+}
+
+//论文第三步，插入phi函数后进行eliminate
+void PRE::Eliminate() {
+  // first --> second
+  std::vector<std::pair<Value *, Value *>> rel;
+  for (auto bb : Dfs)
+    for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
+      User *inst = *iter;
+      if (dynamic_cast<BinaryInst *>(inst) ||
+          dynamic_cast<GetElementPtrInst *>(inst)) {
+        // 如果存在当前bb的Availout有Leader但是当前值不在的枪口
+        if (AvailOut[bb].IsAlreadyInsert(VN->LookupOrAdd(inst)) &&
+            !AvailOut[bb].contents.count(inst)) {
+          auto lead = Find_Leader(AvailOut[bb], inst);
+          rel.push_back(std::make_pair(lead, inst));
+        }
+      }
+    }
+  for (auto tmp : rel) {
+    tmp.second->RAUW(tmp.first);
+    if (auto u = dynamic_cast<User *>(tmp.second)) {
+      u->ClearRelation();
+      u->EraseFromParent();
     }
   }
 }
@@ -224,7 +250,8 @@ void PRE::FixPartialRedundancy(
         assert(0);
       VN->Add(newval);
       if (ty == nullptr)
-        ty = dynamic_cast<HasSubType *>(newval->GetType())->GetSubType();
+        // ty = dynamic_cast<HasSubType *>(newval->GetType())->GetSubType();
+        ty = dynamic_cast<Type *>(newval->GetType());
       // replace val in leader set
       ValueNumberedSet &newi = insert_set[pred];
       ValueNumberedSet &oldi = AvailOut[pred];
@@ -647,8 +674,7 @@ Value *PRE::Find_Leader(ValueNumberedSet &set, Value *val) {
   if (!set.IsAlreadyInsert(VN->LookupOrAdd(val)))
     return nullptr;
   int hash = VN->LookupOrAdd(val);
-  for (auto tmp = set.contents.begin(); tmp != set.contents.end(); tmp++) {
-    if (hash = VN->LookupOrAdd(*tmp))
+  for (auto tmp = set.contents.begin(); tmp != set.contents.end(); tmp++)
+    if (hash == VN->LookupOrAdd(*tmp))
       return *tmp;
-  }
 }
