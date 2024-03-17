@@ -132,6 +132,7 @@ class GetElementPtrInst:public User
 {
     public:
     GetElementPtrInst(Operand);
+    GetElementPtrInst(Operand,std::vector<Operand>&);
     Type* GetType()final;
     void print()final;
     Value* GetPtrVal();
