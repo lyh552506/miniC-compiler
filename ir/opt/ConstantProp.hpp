@@ -1,4 +1,4 @@
-// #include "ConstantFold.hpp"
+#include "ConstantFold.hpp"
 
 class ConstantProp
 {  

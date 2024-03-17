@@ -40,9 +40,10 @@ int main(int argc, char **argv) {
   // output_path += ".a";
   // freopen(output_path.c_str(),"a",stdout);
 
-  // freopen("/dev/tty", "a", stdout);  std::unique_ptr<PassManager>pass_manager(new PassManager);
+  // freopen("/dev/tty", "a", stdout);  
+  std::unique_ptr<PassManager>pass_manager(new PassManager);
   
-  // int optionIndex, option;
+  int optionIndex, option;
 
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) != -1) {
     switch (option) {

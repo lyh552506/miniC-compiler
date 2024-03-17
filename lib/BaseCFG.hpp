@@ -112,7 +112,6 @@ class User:public Value,public list_node<BasicBlock,User>
     bool IsTerminateInst();
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
     bool Alive = false;
-    bool IsTerminateInst();
     bool HasSideEffect();
 };
 

@@ -120,8 +120,6 @@ bool User::IsTerminateInst()
     return true;
   else if(dynamic_cast<RetInst*>(this))
     return true;
-  else if(this->HasSideEffect())
-    return true;
   else
     return false;
 }

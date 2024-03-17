@@ -397,12 +397,6 @@ void Variable::print(){
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr){
     add_use(base_ptr);
 }
-//不知道有没有bug。。
-GetElementPtrInst::GetElementPtrInst(Operand ptr,std::vector<Value*>&args){
-    add_use(ptr);
-    for(auto arg:args)
-      add_use(arg);
-}
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& args){
     add_use(base_ptr);
