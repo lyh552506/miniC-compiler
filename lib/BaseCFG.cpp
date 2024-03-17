@@ -180,6 +180,15 @@ bool User::HasSideEffect()
 
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 
+// change uselist[num] to val while manage use-def relation
+void User::RSUW(int num,Operand val){
+  auto& uselist=Getuselist();
+  assert(0<=num&&num<uselist.size()&&"Invalid Location!");
+  uselist[num]->usee=val;
+  uselist[num]->RemoveFromUserList(this);
+  val->add_user(uselist[num].get());
+}
+
 ConstantData::ConstantData(Type *_tp) : Value(_tp) {}
 
 ConstIRBoolean::ConstIRBoolean(bool _val)

@@ -14,5 +14,3 @@ class XorInst : public User
     XorInst(Operand _A, std::string opcode, Operand _B);
     void print()final;
 };
-
-void RSUW (Operand A, User* B, int num);

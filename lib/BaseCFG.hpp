@@ -113,6 +113,7 @@ class User:public Value,public list_node<BasicBlock,User>
     bool Alive = false;
     bool IsTerminateInst();
     bool HasSideEffect();
+    void RSUW(int,Operand);
 };
 
 class ConstantData:public Value
