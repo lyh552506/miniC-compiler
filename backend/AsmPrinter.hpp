@@ -5,5 +5,6 @@
 #include "InstSelection.hpp"
 
 void RegAlloca(Function* function);
-void PrintCode(Module* unit);
+MachineUnit* GenerateMir(Module* unit);
+void AsmPrinter(MachineUnit* unit);
 void PrintCodeToTxt(Module* unit);

@@ -28,6 +28,9 @@ Value* GetOperand(T inst,int i){
    return user->Getuselist()[i]->GetValue();
 }
 
+#define LIST_INSERT_AFTER(newly_inst, bb,it)
+#define LIST_INSERT_BEFORE(newly_inst, bb,it)
+
 ///TODO @brief 获取后继结点个数
 #define GetSuccNum(BB)\
    dynamic_cast<BasicBlock*>(BB)->back()->Getuselist().size();\

@@ -1,12 +1,21 @@
 #include "Mcode.hpp"
 
 /*MachinInst*/
-MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode) : mbb(mbb), opcode(opcode) {}
-MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd) : mbb(mbb), opcode(opcode), rd(rd) {}
-MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1) : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1) {}
-MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1, Operand rs2) : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {}
+MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode) 
+    : IR(IR), mbb(mbb), opcode(opcode) {}
+MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd) 
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd) {}
+MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1) 
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1) {}
+MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1, Operand rs2) 
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {}
+User* MachineInst::getIR() {return this->IR;}
 MachineBasicBlock* MachineInst::get_machinebasicblock() {return this->mbb;}
 std::string MachineInst::GetOpcode() {return opcode;}
+void MachineInst::SetOpcode(std::string opcode) {this->opcode = opcode;}
+Operand MachineInst::GetRd() {return rd;}
+Operand MachineInst::GetRs1() {return rs1;}
+Operand MachineInst::GetRs2() {return rs2;}
 void MachineInst::print() {
     if (opcode == "alloca") {
         return;   
@@ -35,17 +44,22 @@ void MachineInst::print() {
     }
     else if (opcode == "j") {
         std::cout << "    " << opcode << " ";
-        std::cout << rd->GetName() << std::endl;
-        std::string temp = this->get_machinebasicblock()->get_block()->GetName();
-        this->get_machinebasicblock()->get_block()->SetName(this->get_machinebasicblock()->get_name());
-        this->get_machinebasicblock()->set_name(temp);
+        std::string lable = mbb->get_parent()->get_lable(rd->GetName());
+        std::cout << lable << std::endl;
+    }
+    else if (opcode == "beqz") {
+        std::cout << "    " << opcode << " ";
+        std::string lable1 = mbb->get_parent()->get_lable(rs1->GetName());
+        std::string lable2 = mbb->get_parent()->get_lable(rs2->GetName());
+        std::cout << rd->GetName() << ", " << lable1 << ", " << lable2 << std::endl;
     }
     else if (opcode == "call" ) {
         std::cout << "    " << opcode << " ";
         std::cout << rd->GetName() << std::endl;
     }
     else if (opcode == "ret") {
-        return;
+        std::cout << "    lw a0, " << rd->GetName() << std::endl; 
+        this->get_machinebasicblock()->get_parent()->print_func_end();
     }
     else if (opcode == "white")
         std::cout << "Error: No Such Instruction." << std::endl;
@@ -56,32 +70,6 @@ void MachineInst::print() {
     }
 }
 
-
-/*MachineBinaryInst*/
-// MachineBinaryInst::MachineBinaryInst(std::string opcode, Operand rd, Operand rs1, Operand rs2)
-//     : opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
-//         // add_use(rd);
-//         // add_use(rs1);
-//         // add_use(rs2);
-//     }
-// void MachineBinaryInst::print() {
-//     std::cout << opcode << " ";
-//     std::cout << rd->GetName() << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl;
-// }
-
-/*MachineCmpInst*/
-// MachineCmpInst::MachineCmpInst(std::string opcode, Operand rd, Operand rs1, Operand rs2)
-//     : opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
-//         // add_use(rd);
-//         // add_use(rs1);
-//         // add_use(rs2);
-//     }
-// MachineCmpInst::MachineCmpInst(std::string opcode, Operand rd, Operand rs1)
-//     : opcode(opcode), rd(rd), rs1(rs1) {
-//         // add_use(rd);
-//         // add_use(rs1);
-//     }
-
 /*MachineBasicBlock*/
 MachineBasicBlock::MachineBasicBlock(BasicBlock* block, MachineFunction* parent)
     : block(block), mfuc(parent) {}
@@ -90,22 +78,33 @@ void MachineBasicBlock::set_lable(int func_num, int block_num) {
 }
 std::string MachineBasicBlock::get_name() {return this->name;}
 void MachineBasicBlock::set_name(std::string name) {this->name = name;}
+void MachineBasicBlock::addMachineInst(MachineInst* minst) {
+    this->minsts.push_back(minst);
+}
+std::vector<MachineInst*> MachineBasicBlock::getMachineInsts() {
+    return this->minsts;
+}
 BasicBlock* MachineBasicBlock::get_block() {return this->block;}
 MachineFunction* MachineBasicBlock::get_parent() {return this->mfuc;}
-void MachineBasicBlock::print_block_lable(int func_num, int block_num) {
-    set_lable(func_num, block_num);
+void MachineBasicBlock::print_block_lable() {
     std::cout << name << ":" << std::endl;
 }
 
 /*MachineFunction*/
-MachineFunction::MachineFunction(Function* func) : func(func), offset(0), alloca_num(0), stacksize(0) {}
+MachineFunction::MachineFunction(Function* func, MachineUnit* Munit) 
+    : func(func),  Munit(Munit), offset(0), alloca_num(0), stacksize(0), mblocks(mblocks) {}
 void MachineFunction::set_offset_map(std::string name, size_t offset) {
     offsetMap.insert(std::pair<std::string, size_t>(name, offset));
+}
+void MachineFunction::set_lable_map(std::string name, std::string lable) {
+    lableMap.insert(std::pair<std::string, std::string>(name, lable));
 }
 void MachineFunction::set_alloca_and_num() {
     alloca_num = 0;
     offset = 16;
-    for (auto& Block : this->func->GetBasicBlock()) {
+    
+    for (auto it = this->func->begin(); it != this->func->end(); ++it) {
+        BasicBlock* Block = *it;
         for (auto Inst : *Block) {
             if (auto Tempinst = dynamic_cast<AllocaInst*>(Inst)) {
                 if(Tempinst->GetType()->GetTypeEnum() == InnerDataType::IR_Value_VOID) {
@@ -122,8 +121,18 @@ void MachineFunction::set_stacksize() {
     size_t temp = offset % 16;
     stacksize += offset +(16 - temp);
 }
+MachineUnit* MachineFunction::get_machineunit() {return this->Munit;}
+void MachineFunction::addMachineBasicBlock(MachineBasicBlock* mblock) {
+    this->mblocks.push_back(mblock);
+}
+std::vector<MachineBasicBlock*> MachineFunction::getMachineBasicBlocks() {
+    return this->mblocks;
+}
 size_t MachineFunction::get_offset(std::string name) {
     return offsetMap.find(name)->second;
+}
+std::string MachineFunction::get_lable(std::string name) {
+    return lableMap.find(name)->second;
 }
 int MachineFunction::get_allocanum() {return this->alloca_num;}
 int MachineFunction::get_stacksize() {return this->stacksize;}
@@ -170,3 +179,13 @@ void MachineFunction::print_func_end() {
     std::cout << "    addi sp, sp, " << this->get_stacksize() << std::endl;
     std::cout << "    ret" << std::endl;
 }
+
+//MachineUnit
+MachineUnit::MachineUnit(Module* unit) : unit(unit) {}
+void MachineUnit::addMachineFunction(MachineFunction* mfuncs) {
+    this->mfuncs.push_back(mfuncs);
+}
+std::vector<MachineFunction*> MachineUnit::getMachineFunctions() {
+    return this->mfuncs;
+}
+

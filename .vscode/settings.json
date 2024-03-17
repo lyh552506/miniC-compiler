@@ -107,7 +107,8 @@
         "__verbose_abort": "cpp",
         "ios": "cpp",
         "locale": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "stdarg.h": "c"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true

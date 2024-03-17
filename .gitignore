@@ -1,4 +1,14 @@
 bison_learn
 build
 testcases
+test_cases
+test_cases_output
 .vscode/settings.json
+RISCInst
+bison_learn
+build
+testcases
+test_cases
+test_cases_output
+.vscode/settings.json
+RISCInst

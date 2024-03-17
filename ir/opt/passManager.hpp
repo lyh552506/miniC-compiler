@@ -22,4 +22,5 @@ public:
 
 private:
   std::vector<int> InitpassRecorder;
+  std::vector<Function*> FList;
 };
