@@ -36,8 +36,4 @@ Value* GetOperand(T inst,int i){
    dynamic_cast<BasicBlock*>(BB)->back()->Getuselist().size();\
 
 ///TODO @brief 获取前驱节点的个数
-#define GetPredNum(BB)\
-   1\
-
-
-
+#define GetPredNum(BB) BB->GetUserListSize()
