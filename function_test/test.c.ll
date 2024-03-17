@@ -332,10 +332,8 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12, i32 %.15, i32 %.18){
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
 .1:
-  %.17 = alloca i32
-  %.14 = alloca i32
   %.11 = alloca i32
   %.8 = alloca i32
   %.5 = alloca i32
@@ -344,57 +342,53 @@ define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12, i32 %.15, i32 %.18){
   store i32 %.6, i32* %.5
   store i32 %.9, i32* %.8
   store i32 %.12, i32* %.11
-  store i32 %.15, i32* %.14
-  store i32 %.18, i32* %.17
-  %.20 = load i32, i32* %.2
-  %.21 = load i32, i32* %.5
-  %.22 = add i32 %.20, %.21
-  store i32 %.22, i32* %.8
-  %.24 = load i32, i32* %.8
-  store i32 %.24, i32* %.14
-  %.26 = load i32, i32* %.2
-  %.27 = load i32, i32* %.14
+  br label %.14wc107 
+.14wc107:
+  %.18 = load i32, i32* %.2
+  %.20 = icmp slt i32 %.18, 5
+  br i1 %.20, label %.15wloop.107.110, label %.16wn110
+.15wloop.107.110:
+  %.22 = load i32, i32* %.2
+  %.24 = add i32 %.22, 1
+  store i32 %.24, i32* %.2
+  %.26 = load i32, i32* %.8
+  %.27 = load i32, i32* %.11
   %.28 = add i32 %.26, %.27
-  store i32 %.28, i32* %.11
-  %.32 = load i32, i32* %.11
-  %.34 = icmp sgt i32 %.32, 0
-  br i1 %.34, label %.30, label %.31
-.30:
-  store i32 5, i32* %.2
-  br label %.31 
-.31:
-  %.39 = load i32, i32* %.2
-  %.40 = load i32, i32* %.5
-  %.41 = add i32 %.39, %.40
-  store i32 %.41, i32* %.17
-  %.43 = load i32, i32* %.8
-  ret i32 %.43 
+  store i32 %.28, i32* %.5
+  br label %.14wc107 
+.16wn110:
+  %.31 = load i32, i32* %.5
+  ret i32 %.31 
 }
 --------mem2reg--------
-define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12, i32 %.15, i32 %.18){
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
 .1:
-  %.22 = add i32 %.3, %.6
-  %.28 = add i32 %.3, %.22
-  %.34 = icmp sgt i32 %.28, 0
-  br i1 %.34, label %.30, label %.31
-.30:
-  br label %.31 
-.31:
-  %.45 = Phi i32 [%.3, %.1], [5, %.30]
-  %.41 = add i32 %.45, %.6
-  ret i32 %.22 
+  br label %.14wc107 
+.14wc107:
+  %.34 = Phi i32 [%.6, %.1], [%.28, %.15wloop.107.110]
+  %.33 = Phi i32 [%.3, %.1], [%.24, %.15wloop.107.110]
+  %.20 = icmp slt i32 %.33, 5
+  br i1 %.20, label %.15wloop.107.110, label %.16wn110
+.15wloop.107.110:
+  %.24 = add i32 %.33, 1
+  %.28 = add i32 %.9, %.12
+  br label %.14wc107 
+.16wn110:
+  ret i32 %.34 
 }
 --------pre--------
-define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12, i32 %.15, i32 %.18){
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
 .1:
-  %.22 = add i32 %.3, %.6
-  %.28 = add i32 %.3, %.22
-  %.34 = icmp sgt i32 %.28, 0
-  br i1 %.34, label %.30, label %.31
-.30:
-  br label %.31 
-.31:
-  %.45 = Phi i32 [%.3, %.1], [5, %.30]
-  %.41 = add i32 %.45, %.6
-  ret i32 %.22 
+  br label %.14wc107 
+.14wc107:
+  %.34 = Phi i32 [%.6, %.1], [%.28, %.15wloop.107.110]
+  %.33 = Phi i32 [%.3, %.1], [%.24, %.15wloop.107.110]
+  %.20 = icmp slt i32 %.33, 5
+  br i1 %.20, label %.15wloop.107.110, label %.16wn110
+.15wloop.107.110:
+  %.24 = add i32 %.33, 1
+  %.28 = add i32 %.9, %.12
+  br label %.14wc107 
+.16wn110:
+  ret i32 %.34 
 }

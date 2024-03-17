@@ -86,12 +86,12 @@ struct ValueNumberedSet {
   void insert_val(Value *val) { contents.insert(val); }
   void erase_val(Value *val) { contents.erase(val); }
   void set_hash(int hash) {
-    if (Record.size() < hash)
+    if (Record.size() < hash+1)
       Record.resize(hash + 5);
     Record[hash] = 1;
   }
   void clear_hash(int hash) {
-    if (Record.size() < hash)
+    if (Record.size() < hash+1)
       assert(0 && "hash can't bigger than Record size!");
     if (Record[hash] == 0)
       return;
@@ -104,7 +104,7 @@ struct ValueNumberedSet {
   }
   /// @brief return true if is inserted
   bool IsAlreadyInsert(int hash) {
-    if (Record.size() < hash)
+    if (Record.size() < hash+1)
       return false;
     return Record[hash] == 0 ? false : true;
   }

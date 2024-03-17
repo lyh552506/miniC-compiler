@@ -102,13 +102,11 @@
 //     }
 //     return x;
 // }
-int main(int b,int c,int d,int x,int e,int a){
-    d=b+c;
-    e=d;
-    x=b+e;
-    if(x>0){
-        b=5;
+int main(int a,int b,int c,int d){
+    // c=a+b;
+    while(a<5){
+        a=a+1;
+        b=c+d;
     }
-    a=b+c;
-    return d;
+    return b;
 }

@@ -154,7 +154,7 @@ void PRE::Eliminate() {
       User *inst = *iter;
       if (dynamic_cast<BinaryInst *>(inst) ||
           dynamic_cast<GetElementPtrInst *>(inst)) {
-        // 如果存在当前bb的Availout有Leader但是当前值不在的枪口
+        // 如果存在当前bb的Availout有Leader但是当前值不在的
         if (AvailOut[bb].IsAlreadyInsert(VN->LookupOrAdd(inst)) &&
             !AvailOut[bb].contents.count(inst)) {
           auto lead = Find_Leader(AvailOut[bb], inst);
@@ -248,6 +248,8 @@ void PRE::FixPartialRedundancy(
         newval = new GetElementPtrInst(op_1, args);
       else
         assert(0);
+
+      // TODO 插入指令
       VN->Add(newval);
       if (ty == nullptr)
         // ty = dynamic_cast<HasSubType *>(newval->GetType())->GetSubType();
