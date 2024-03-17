@@ -37,6 +37,7 @@ class Use
 class UserList
 {
     Use* head=nullptr;
+    int size=0;
     public:
     UserList()=default;
     void push_front(Use* _data);
@@ -63,6 +64,7 @@ class UserList
     iterator end(){return iterator(nullptr);}
     bool is_empty(){return head==nullptr;}
     Use*& Front(){return head;}
+    int& GetSize(){return size;}
 };
 class Value
 {
@@ -89,6 +91,7 @@ class Value
     bool isUndefVal();
     bool isConstZero();
     bool isConstOne();
+    int GetUserListSize(){return GetUserlist().GetSize();}
     int BelongsToExp;
 };
 using Operand=Value*;

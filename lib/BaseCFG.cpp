@@ -7,10 +7,14 @@ Use::Use(User *__fat, Value *__usee) : fat(__fat), usee(__usee) {
 }
 void Use::RemoveFromUserList(User *is_valid) {
   assert(is_valid == fat);
+  GetValue()->GetUserlist().GetSize()--;
   (*prev) = nxt;
-  nxt->prev = prev;
+  if(nxt!=nullptr)nxt->prev = prev;
 }
 void UserList::push_front(Use *_data) {
+  // manage the size of the userlist
+  size++;
+  
   _data->nxt = head;
   if (head != nullptr)
     head->prev = &(_data->nxt);
@@ -58,6 +62,8 @@ void Value::print() {
 //replace all uses with transferred value
 void Value::RAUW(Value* val){
     UserList& list=this->userlist;
+    // manage user size in value
+    list.GetSize()=0;
     Use*& Head=list.Front();
     while(Head){
         Head->usee=val;
@@ -103,11 +109,8 @@ User::User(Type *_tp) : Value(_tp) {}
 
 void User::ClearRelation() {
   assert(this->GetUserlist().is_empty() && "the head must be nullptr!");
-  for (auto &use : uselist) {
-    (*use->prev) = use->nxt;
-    if (use->nxt != nullptr)
-      use->nxt->prev = use->prev;
-  }
+  for (auto &use : uselist)
+    use->RemoveFromUserList(use->GetUser());
 }
 bool User::IsTerminateInst()
 {
