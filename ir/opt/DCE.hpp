@@ -2,12 +2,12 @@
 #include <unordered_set>
 class DeadCodeEliminate{
 public:
-  DeadCodeEliminate(Module& module, Function* func) : m(module), _func(func) {}
+  DeadCodeEliminate(std::vector<Function*> FList, Module& module) : Flist(FList), m(module) {}
   void Pass();
 
 private:
-  Function* _func;
   Module& m;
+  std::vector<Function*> Flist;
   bool isInstructionTriviallyDead(User *inst);
   bool isSideEffect(User* inst);
   bool isLocalStore(StoreInst* store);
@@ -15,6 +15,7 @@ private:
   bool isEqualStoreLoadPtr(StoreInst* store, LoadInst* load);
   bool isStrictEqualStoreLoadPtr(StoreInst* store, LoadInst* load);
   bool isEqualStorePtr(StoreInst* store_a, StoreInst* store_b);
+  Value* GetAddress(Value* val);
 
   void markUse(User* inst, std::unordered_set<User*>& worklist);
   void detectNotSideEffectFunc(Function* func);
@@ -23,6 +24,7 @@ private:
   void deleteDeadStore(Function* func);
   void deleteDeadRet(Function* func);
   bool FunchasSideEffect(Function* func);
+  std::string CalPtrIndex(GetElementPtrInst* inst);
 private:
   int inst_counter = 0;
   int store_counter = 0;

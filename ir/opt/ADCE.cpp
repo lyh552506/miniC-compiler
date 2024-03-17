@@ -1,6 +1,5 @@
 #include "ADCE.hpp"
 
-
 void ADCE::Pass()
 {
     for(auto func : flist)

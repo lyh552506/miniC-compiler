@@ -136,6 +136,7 @@ bool User::HasSideEffect()
   if(dynamic_cast<CallInst*>(this))
   {
     Function* func = dynamic_cast<Function*>(this->Getuselist()[0]->GetValue());
+    if(func){
     auto& params = func->GetParams();
     for(auto& param : params)
     {
@@ -157,7 +158,7 @@ bool User::HasSideEffect()
             return false;
         }
       }
-    }
+    }}
   }
   if(dynamic_cast<GetElementPtrInst*>(this))
   {
