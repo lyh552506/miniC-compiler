@@ -398,6 +398,12 @@ GetElementPtrInst::GetElementPtrInst(Operand base_ptr){
     add_use(base_ptr);
 }
 
+GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& args){
+    add_use(base_ptr);
+    for(auto&&i:args)
+        add_use(i);
+}
+
 Type* GetElementPtrInst::GetType(){
     int limi=uselist.size()-1;
     tp=uselist[0]->GetValue()->GetType();
@@ -483,6 +489,13 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
 {
     if(_A->isConst()&&_B->isConst())
     {
+        if(op==BinaryInst::Op_Div&&_B->isConstZero()){
+            assert(_A->GetType()!=BoolType::NewBoolTypeGet()&&_B->GetType()!=BoolType::NewBoolTypeGet()&&"InvalidType");
+            if(_A->GetType()==IntType::NewIntTypeGet()&&_B->GetType()==IntType::NewIntTypeGet())
+                return UndefValue::get(IntType::NewIntTypeGet());
+            else
+                return UndefValue::get(FloatType::NewFloatTypeGet());
+        }
         auto calc=[](auto a,BinaryInst::Operation op,auto b)->std::variant<float,int>{
             switch (op)
             {
