@@ -513,7 +513,7 @@ Expression ValueTable::CreatExp(BinaryInst *bin) {
   e.ThirdVal = 0;
   e.type = bin->GetType();
   e.op = static_cast<Expression::ExpOpration>(
-      static_cast<int>(bin->GetOpcode(bin)));
+      static_cast<int>(bin->getopration()));
   return e;
 }
 
@@ -554,7 +554,7 @@ Value *PRE::phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val) {
     //如果操作数中出现phi函数，会将phi转换为对应的数据流，此时我们检查是否有转换
     if (op_1 != bin->Getuselist()[0]->GetValue() ||
         op_2 != bin->Getuselist()[1]->GetValue()) {
-      BinaryInst *newbin = new BinaryInst(op_1, bin->GetOpcode(bin), op_2);
+      BinaryInst *newbin = new BinaryInst(op_1, bin->getopration(), op_2);
 
       int hash = VN->LookupOrAdd(newbin);
       // TODO 为什么这里是AvailOut?

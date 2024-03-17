@@ -45,19 +45,19 @@
 //     }
 //     return b;
 // }
-// int func(int b,int c) {
-//     int a,x=5;
-//     a=b+c;
-//     while(x<10){
-//         x=1+x;
-//         a=c+x;
-//         if(x>7)
-//           a=4;
-//         else if(x<4)
-//           a=3;
-//     };
-//     return a;
-// }
+int func(int b,int c) {
+    int a,x=5;
+    a=b+c;
+    while(x<10){
+        x=1+x;
+        a=c+x;
+        if(x>7)
+          a=4;
+        else if(x<4)
+          a=3;
+    };
+    return a;
+}
 // int FullRedundancy2 () {
 //      int v1,a=3,b=5;
 //      if (a >= 0) {
@@ -102,11 +102,11 @@
 //     }
 //     return x;
 // }
-int main(int a,int b,int c,int d){
-    // c=a+b;
-    while(a<5){
-        a=a+1;
-        b=c+d;
-    }
-    return b;
-}
+// int main(int a,int b,int c,int d){
+//     // c=a+b;
+//     while(a<5){
+//         a=a+1;
+//         b=c+d;
+//     }
+//     return b;
+// }

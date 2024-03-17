@@ -1,5 +1,6 @@
 #include "passManager.hpp"
 #include "../../yacc/parser.hpp"
+//#include "DCE.hpp"
 
 void PassManager::Init_Pass() {
   for (int i = 0; i < Singleton<Module>().GetFuncTion().size(); i++) {
@@ -19,7 +20,7 @@ void PassManager::Init_Pass() {
       if(InitpassRecorder[2])
         ConstantProp(f).Pass();
       if(InitpassRecorder[3])
-        DeadCodeEliminate(Singleton<Module>(), f).Pass();
+        //DeadCodeEliminate(Singleton<Module>(), f).Pass();
       if(InitpassRecorder[5])
       {
         std::unique_ptr<LivenessAnalysis> liveness(new LivenessAnalysis);

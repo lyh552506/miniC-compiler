@@ -25,7 +25,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/yacc)
 add_subdirectory(${PROJECT_SOURCE_DIR}/ir)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/backend)
-target_link_libraries(SYSY-compiler Yacc Lib Backend)
+target_link_libraries(SYSY-compiler Yacc Lib Backend opt)
 
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/yacc)
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/lib)
