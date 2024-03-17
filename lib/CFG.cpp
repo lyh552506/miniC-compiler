@@ -398,6 +398,12 @@ GetElementPtrInst::GetElementPtrInst(Operand base_ptr){
     add_use(base_ptr);
 }
 
+GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& args){
+    add_use(base_ptr);
+    for(auto&&i:args)
+        add_use(i);
+}
+
 Type* GetElementPtrInst::GetType(){
     int limi=uselist.size()-1;
     tp=uselist[0]->GetValue()->GetType();
