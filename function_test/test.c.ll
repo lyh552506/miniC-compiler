@@ -332,125 +332,69 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @func(i32 %.3, i32 %.6){
+define i32 @FullRedundancy2(){
 .1:
-  %.9 = alloca i32
-  %.8 = alloca i32
-  %.5 = alloca i32
+  %.29 = alloca i32
+  %.6 = alloca i32
+  %.3 = alloca i32
   %.2 = alloca i32
-  store i32 %.3, i32* %.2
-  store i32 %.6, i32* %.5
-  store i32 5, i32* %.9
-  %.12 = load i32, i32* %.2
-  %.13 = load i32, i32* %.5
-  %.14 = add i32 %.12, %.13
-  store i32 %.14, i32* %.8
-  br label %.16wc51 
-.16wc51:
-  %.20 = load i32, i32* %.9
-  %.22 = icmp slt i32 %.20, 10
-  br i1 %.22, label %.17wloop.51.58, label %.18wn58
-.17wloop.51.58:
-  %.25 = load i32, i32* %.9
-  %.26 = add i32 1, %.25
-  store i32 %.26, i32* %.9
-  %.28 = load i32, i32* %.5
-  %.29 = load i32, i32* %.9
-  %.30 = add i32 %.28, %.29
-  store i32 %.30, i32* %.8
-  %.34 = load i32, i32* %.9
-  %.36 = icmp sgt i32 %.34, 7
-  br i1 %.36, label %.32, label %.33
-.18wn58:
-  %.52 = load i32, i32* %.8
-  ret i32 %.52 
-.32:
-  store i32 4, i32* %.8
-  br label %.40 
-.33:
-  %.44 = load i32, i32* %.9
-  %.45 = icmp slt i32 %.44, 4
-  br i1 %.45, label %.42, label %.43
-.40:
-  br label %.16wc51 
-.42:
-  store i32 3, i32* %.8
-  br label %.43 
-.43:
-  br label %.40 
+  store i32 3, i32* %.3
+  store i32 5, i32* %.6
+  %.11 = load i32, i32* %.3
+  %.13 = icmp sge i32 %.11, 0
+  br i1 %.13, label %.9, label %.10
+.9:
+  %.15 = load i32, i32* %.3
+  %.16 = load i32, i32* %.6
+  %.17 = add i32 %.15, %.16
+  store i32 %.17, i32* %.2
+  br label %.19 
+.10:
+  %.21 = load i32, i32* %.3
+  %.22 = sub i32 0, %.21
+  store i32 %.22, i32* %.3
+  %.24 = load i32, i32* %.3
+  %.25 = load i32, i32* %.6
+  %.26 = add i32 %.24, %.25
+  store i32 %.26, i32* %.2
+  br label %.19 
+.19:
+  %.30 = load i32, i32* %.3
+  %.31 = load i32, i32* %.6
+  %.32 = add i32 %.30, %.31
+  store i32 %.32, i32* %.29
+  %.34 = load i32, i32* %.2
+  %.35 = load i32, i32* %.29
+  %.36 = add i32 %.34, %.35
+  ret i32 %.36 
 }
 --------mem2reg--------
-define i32 @func(i32 %.3, i32 %.6){
+define i32 @FullRedundancy2(){
 .1:
-  %.14 = add i32 %.3, %.6
-  br label %.16wc51 
-.16wc51:
-  %.57 = Phi i32 [%.14, %.1], [%.56, %.40]
-  %.54 = Phi i32 [5, %.1], [%.26, %.40]
-  %.22 = icmp slt i32 %.54, 10
-  br i1 %.22, label %.17wloop.51.58, label %.18wn58
-.17wloop.51.58:
-  %.26 = add i32 1, %.54
-  %.30 = add i32 %.6, %.26
-  %.36 = icmp sgt i32 %.26, 7
-  br i1 %.36, label %.32, label %.33
-.18wn58:
-  ret i32 %.57 
-.32:
-  br label %.40 
-.33:
-  %.45 = icmp slt i32 %.26, 4
-  br i1 %.45, label %.42, label %.43
-.40:
-  %.56 = Phi i32 [%.55, %.43], [4, %.32]
-  br label %.16wc51 
-.42:
-  br label %.43 
-.43:
-  %.55 = Phi i32 [%.30, %.33], [3, %.42]
-  br label %.40 
+  br i1 true, label %.9, label %.10
+.9:
+  br label %.19 
+.10:
+  br label %.19 
+.19:
+  %.39 = Phi i32 [%.22, %.10], [3, %.9]
+  %.38 = Phi i32 [%.26, %.10], [%.17, %.9]
+  %.32 = add i32 %.39, 5
+  %.36 = add i32 %.38, %.32
+  ret i32 %.36 
 }
---------pre--------
-define i32 @func(i32 %.3, i32 %.6){
+--------constantprop--------
+define i32 @FullRedundancy2(){
 .1:
-  %.14 = add i32 %.3, %.6
-  br label %.16wc51 
-.16wc51:
-  %.57 = Phi i32 [%.14, %.1], [%.56, %.40]
-  %.54 = Phi i32 [5, %.1], [%.26, %.40]
-  %.22 = icmp slt i32 %.54, 10
-  br i1 %.22, label %.17wloop.51.58, label %.18wn58
-.17wloop.51.58:
-  %.26 = add i32 1, %.54
-  %.30 = add i32 %.6, %.26
-  %.36 = icmp sgt i32 %.26, 7
-  br i1 %.36, label %.32, label %.33
-.18wn58:
-  ret i32 %.57 
-.32:
-  br label %.40 
-.33:
-  %.45 = icmp slt i32 %.26, 4
-  br i1 %.45, label %.42, label %.43
-.40:
-  %.56 = Phi i32 [%.55, %.43], [4, %.32]
-  br label %.16wc51 
-.42:
-  br label %.43 
-.43:
-  %.55 = Phi i32 [%.30, %.33], [3, %.42]
-  br label %.40 
+  br i1 true, label %.9, label %.10
+.9:
+  br label %.19 
+.10:
+  br label %.19 
+.19:
+  %.39 = Phi i32 [%.22, %.10], [3, %.9]
+  %.38 = Phi i32 [%.26, %.10], [%.17, %.9]
+  %.32 = add i32 %.39, 5
+  %.36 = add i32 %.38, %.32
+  ret i32 %.36 
 }
-define i32 @func(i32 %.3, i32 %.6){
-.1:
-  %.14 = add i32 %.3, %.6
-  br label %.16wc51 
-.16wc51:
-  %.57 = Phi i32 [%.14, %.1], [%.56, %.40]
-  %.54 = Phi i32 [5, %.1], [%.26, %.40]
-  %.22 = icmp slt i32 %.54, 10
-  br i1 %.22, label %.17wloop.51.58, label %.18wn58
-.17wloop.51.58:
-  %.26 = add i32 1, %.54
-  %.30 = add i32 %.6, %.26
-  %.36 = icmp sgt i32 %.

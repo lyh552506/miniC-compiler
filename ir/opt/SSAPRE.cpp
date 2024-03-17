@@ -241,7 +241,7 @@ void PRE::FixPartialRedundancy(
           else
             args.push_back(arg);
         }
-      Value *newval = nullptr;
+      User *newval = nullptr;
       if (auto bin = dynamic_cast<BinaryInst *>(inst))
         newval = new BinaryInst(op_1, bin->getopration(), op_2);
       else if (auto gep = dynamic_cast<GetElementPtrInst *>(inst))
@@ -250,6 +250,7 @@ void PRE::FixPartialRedundancy(
         assert(0);
 
       // TODO 插入指令
+      pred->begin().insert_after(newval);
       VN->Add(newval);
       if (ty == nullptr)
         // ty = dynamic_cast<HasSubType *>(newval->GetType())->GetSubType();

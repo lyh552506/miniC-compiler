@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 
   // Gvn_Gcm test(&dom, f);
   // test.init_pass();
-  Singleton<Module>().Test();
-  PrintCodeToTxt(&Singleton<Module>());
+  // Singleton<Module>().Test();
+  // PrintCodeToTxt(&Singleton<Module>());
   return 0;
 }

@@ -45,31 +45,31 @@
 //     }
 //     return b;
 // }
-int func(int b,int c) {
-    int a,x=5;
-    a=b+c;
-    while(x<10){
-        x=1+x;
-        a=c+x;
-        if(x>7)
-          a=4;
-        else if(x<4)
-          a=3;
-    };
-    return a;
-}
-// int FullRedundancy2 () {
-//      int v1,a=3,b=5;
-//      if (a >= 0) {
-//           v1 = a + b; // BB1
-//      } else {
-//           a = -a; // BB2
-//           v1 = a + b;
-//      }
-     
-//      int v2 = a + b; // BB3
-//      return v1 + v2;
+// int func(int b,int c) {
+//     int a,x=5;
+//     a=b+c;
+//     while(x<10){
+//         x=1+x;
+//         a=c+x;
+//         if(x>7)
+//           a=4;
+//         else if(x<4)
+//           a=3;
+//     };
+//     return a;
 // }
+int FullRedundancy2 () {
+     int v1,a=3,b=5;
+     if (a >= 0) {
+          v1 = a + b; // BB1
+     } else {
+          a = -a; // BB2
+          v1 = a + b;
+     }
+     
+     int v2 = a + b; // BB3
+     return v1 + v2;
+}
 // int at(int b[])
 // {
 //     b[1] = 3;

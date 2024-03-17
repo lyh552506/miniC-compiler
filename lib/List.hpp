@@ -73,8 +73,8 @@ class mylist
         derived_list_node* operator*(){return ptr;}
         iterator insert_before(derived_list_node* data){
             assert(ptr!=nullptr&&data!=nullptr&&"Invalid Iterator");
-            if(ptr==head)
-                push_front(data);
+            if(ptr==this->head)
+                this->push_front(data);
             else{
                 data->SetParent(ptr->fat);
                 data->prev=ptr->prev;
@@ -85,8 +85,8 @@ class mylist
         }
         iterator insert_after(derived_list_node* data){
             assert(ptr!=nullptr&&data!=nullptr&&"Invalid Iterator");
-            if(ptr==tail)
-                push_back(data);
+            if(ptr==this->tail)
+                this->push_back(data);
             else{
                 data->SetParent(ptr->fat);
                 data->next=ptr->next;
