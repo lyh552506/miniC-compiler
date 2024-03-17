@@ -332,69 +332,63 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @FullRedundancy2(){
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
 .1:
-  %.29 = alloca i32
-  %.6 = alloca i32
-  %.3 = alloca i32
+  %.11 = alloca i32
+  %.8 = alloca i32
+  %.5 = alloca i32
   %.2 = alloca i32
-  store i32 3, i32* %.3
-  store i32 5, i32* %.6
-  %.11 = load i32, i32* %.3
-  %.13 = icmp sge i32 %.11, 0
-  br i1 %.13, label %.9, label %.10
-.9:
-  %.15 = load i32, i32* %.3
-  %.16 = load i32, i32* %.6
-  %.17 = add i32 %.15, %.16
-  store i32 %.17, i32* %.2
-  br label %.19 
-.10:
-  %.21 = load i32, i32* %.3
-  %.22 = sub i32 0, %.21
-  store i32 %.22, i32* %.3
-  %.24 = load i32, i32* %.3
-  %.25 = load i32, i32* %.6
-  %.26 = add i32 %.24, %.25
-  store i32 %.26, i32* %.2
-  br label %.19 
-.19:
-  %.30 = load i32, i32* %.3
-  %.31 = load i32, i32* %.6
-  %.32 = add i32 %.30, %.31
-  store i32 %.32, i32* %.29
-  %.34 = load i32, i32* %.2
-  %.35 = load i32, i32* %.29
-  %.36 = add i32 %.34, %.35
-  ret i32 %.36 
+  store i32 %.3, i32* %.2
+  store i32 %.6, i32* %.5
+  store i32 %.9, i32* %.8
+  store i32 %.12, i32* %.11
+  br label %.14wc113 
+.14wc113:
+  %.18 = load i32, i32* %.2
+  %.20 = icmp slt i32 %.18, 10
+  br i1 %.20, label %.15wloop.113.116, label %.16wn116
+.15wloop.113.116:
+  %.22 = load i32, i32* %.11
+  %.23 = load i32, i32* %.5
+  %.24 = add i32 %.22, %.23
+  store i32 %.24, i32* %.8
+  %.26 = load i32, i32* %.2
+  %.28 = add i32 %.26, 1
+  store i32 %.28, i32* %.2
+  br label %.14wc113 
+.16wn116:
+  %.31 = load i32, i32* %.8
+  ret i32 %.31 
 }
 --------mem2reg--------
-define i32 @FullRedundancy2(){
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
 .1:
-  br i1 true, label %.9, label %.10
-.9:
-  br label %.19 
-.10:
-  br label %.19 
-.19:
-  %.39 = Phi i32 [%.22, %.10], [3, %.9]
-  %.38 = Phi i32 [%.26, %.10], [%.17, %.9]
-  %.32 = add i32 %.39, 5
-  %.36 = add i32 %.38, %.32
-  ret i32 %.36 
+  br label %.14wc113 
+.14wc113:
+  %.34 = Phi i32 [%.9, %.1], [%.24, %.15wloop.113.116]
+  %.33 = Phi i32 [%.3, %.1], [%.28, %.15wloop.113.116]
+  %.20 = icmp slt i32 %.33, 10
+  br i1 %.20, label %.15wloop.113.116, label %.16wn116
+.15wloop.113.116:
+  %.24 = add i32 %.12, %.6
+  %.28 = add i32 %.33, 1
+  br label %.14wc113 
+.16wn116:
+  ret i32 %.34 
 }
---------constantprop--------
-define i32 @FullRedundancy2(){
+--------pre--------
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
 .1:
-  br i1 true, label %.9, label %.10
-.9:
-  br label %.19 
-.10:
-  br label %.19 
-.19:
-  %.39 = Phi i32 [%.22, %.10], [3, %.9]
-  %.38 = Phi i32 [%.26, %.10], [%.17, %.9]
-  %.32 = add i32 %.39, 5
-  %.36 = add i32 %.38, %.32
-  ret i32 %.36 
+  br label %.14wc113 
+.14wc113:
+  %.34 = Phi i32 [%.9, %.1], [%.24, %.15wloop.113.116]
+  %.33 = Phi i32 [%.3, %.1], [%.28, %.15wloop.113.116]
+  %.20 = icmp slt i32 %.33, 10
+  br i1 %.20, label %.15wloop.113.116, label %.16wn116
+.15wloop.113.116:
+  %.24 = add i32 %.12, %.6
+  %.28 = add i32 %.33, 1
+  br label %.14wc113 
+.16wn116:
+  ret i32 %.34 
 }

@@ -58,18 +58,18 @@
 //     };
 //     return a;
 // }
-int FullRedundancy2 () {
-     int v1,a=3,b=5;
-     if (a >= 0) {
-          v1 = a + b; // BB1
-     } else {
-          a = -a; // BB2
-          v1 = a + b;
-     }
+// int FullRedundancy2 () {
+//      int v1,a=3,b=5;
+//      if (a >= 0) {
+//           v1 = a + b; // BB1
+//      } else {
+//           a = -a; // BB2
+//           v1 = a + b;
+//      }
      
-     int v2 = a + b; // BB3
-     return v1 + v2;
-}
+//      int v2 = a + b; // BB3
+//      return v1 + v2;
+// }
 // int at(int b[])
 // {
 //     b[1] = 3;
@@ -102,11 +102,18 @@ int FullRedundancy2 () {
 //     }
 //     return x;
 // }
-// int main(int a,int b,int c,int d){
-//     // c=a+b;
-//     while(a<5){
-//         a=a+1;
-//         b=c+d;
+int main(int a,int b,int c,int d){
+//     if(a>10){
+//      c=a+b;
+//     }else{
+//      d=5;
 //     }
-//     return b;
-// }
+//     c=a+b;
+//     return c;
+       while(a<10){
+          c=d+b;
+          a=a+1;
+       }
+       return c;
+}
+

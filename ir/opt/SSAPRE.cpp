@@ -169,6 +169,7 @@ void PRE::Eliminate() {
       u->EraseFromParent();
     }
   }
+
 }
 
 RetStats PRE::IdentyPartilRedundancy(
@@ -211,6 +212,7 @@ void PRE::FixPartialRedundancy(
     BasicBlock *cur, std::map<BasicBlock *, Value *> &predAvail,
     std::map<BasicBlock *, ValueNumberedSet> &insert_set) {
   Type *ty = nullptr;
+  User *ready2Relp = nullptr;
   for (auto p : m_dom->GetNode(cur->num).rev) {
     BasicBlock *pred = m_dom->GetNode(p).thisBlock;
     Value *v = predAvail[pred];
@@ -218,7 +220,7 @@ void PRE::FixPartialRedundancy(
       //因为后续需要创建一条新的指令，此时需要查看inst的各个操作数是否出现过
       User *inst = dynamic_cast<User *>(v);
       Value *op_1 = nullptr, *op_2 = nullptr;
-
+      ready2Relp = inst;
       if (dynamic_cast<BinaryInst *>(GetOperand(inst, 0)) ||
           dynamic_cast<GetElementPtrInst *>(GetOperand(inst, 0)))
         op_1 = Find_Leader(AvailOut[pred], GetOperand(inst, 0));
@@ -249,11 +251,15 @@ void PRE::FixPartialRedundancy(
       else
         assert(0);
 
-      // TODO 插入指令
-      pred->begin().insert_after(newval);
+      auto tmp = pred->begin();
+      for (auto iter = pred->begin();; ++iter) {
+        if (iter == pred->end())
+          break;
+        tmp = iter;
+      }
+      tmp.insert_before(newval);
       VN->Add(newval);
       if (ty == nullptr)
-        // ty = dynamic_cast<HasSubType *>(newval->GetType())->GetSubType();
         ty = dynamic_cast<Type *>(newval->GetType());
       // replace val in leader set
       ValueNumberedSet &newi = insert_set[pred];
@@ -282,6 +288,11 @@ void PRE::FixPartialRedundancy(
   for (auto p : m_dom->GetNode(cur->num).rev) {
     BasicBlock *pred = m_dom->GetNode(p).thisBlock;
     phi->updateIncoming(predAvail[pred], pred);
+  }
+  if (ready2Relp != nullptr) {
+    ready2Relp->RAUW(phi);
+    ready2Relp->ClearRelation();
+    ready2Relp->EraseFromParent();
   }
   VN->Add(phi);
   AvailOut[cur].insert_val(phi);
