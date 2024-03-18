@@ -155,6 +155,8 @@ public:
     m_func->init_visited_block();
     PostOrderCFG(m_func->front());
     init_pass();
+    std::cout << "--------pre--------" << std::endl;
+    Singleton<Module>().Test();
   }
 
 private:

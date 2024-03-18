@@ -18,7 +18,7 @@ void copyFile(const std::string &sourcePath,
 
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"pre", no_argument, 0, 1},
-                                       {"constantprop", no_argument, 0, 2},
+                                       {"constprop", no_argument, 0, 2},
                                        {"dce", no_argument, 0, 3},
                                        {"adce", no_argument, 0, 4}, 
                                        {"livenessanalysis", no_argument, 0, 5},
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 
   // freopen("/dev/tty", "a", stdout);  
   std::unique_ptr<PassManager>pass_manager(new PassManager);
-  
+
   int optionIndex, option;
 
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) != -1) {
