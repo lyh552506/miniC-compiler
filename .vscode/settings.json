@@ -108,8 +108,9 @@
         "ios": "cpp",
         "locale": "cpp",
         "queue": "cpp",
-        "stdarg.h": "c"
-    },
+        "stdarg.h": "c",
+        "__nullptr": "cpp"
+},
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true
 }

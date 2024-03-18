@@ -808,6 +808,16 @@ void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
     add_use(Income);
     PhiRecord[oprandNum++]=std::make_pair(Income,BB);
 }
+/// @brief 找到当前phi函数bb块所对应的数据流
+Value* PhiInst::ReturnValIn(BasicBlock* bb){
+    auto it=std::find_if(PhiRecord.begin(),PhiRecord.end(),
+    [bb](std::pair<const int,std::pair<Value*,BasicBlock*>>& ele){
+        return ele.second.second==bb;
+    });
+    if(it==PhiRecord.end())
+      return nullptr;
+    return it->second.first;
+}
 
 // bool PhiInst::modifyBlock(Value* val,BasicBlock* NewBlock){
 //     auto iter=std::find_if(PhiRecord.begin(),PhiRecord.end(),

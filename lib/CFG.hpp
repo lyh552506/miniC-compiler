@@ -156,6 +156,7 @@ public:
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
   std::vector<Value*>& GetAllPhiVal();
+  Value* ReturnValIn(BasicBlock* bb);
   bool modifyIncome(Value* origin);
   bool modifyBlock(Value* val,BasicBlock* NewBlock);
 public:
@@ -192,7 +193,6 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     std::vector<BasicBlock*> GetSuccBlock();
     void AddSuccBlock(BasicBlock* block){this->Succ_Block.push_back(block);}
     bool EndWithBranch();
-    void init_visited();
     int num=0;
     bool visited=false;
 };

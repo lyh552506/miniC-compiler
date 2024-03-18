@@ -2,7 +2,6 @@
 #include "opt/dominant.hpp"
 #include "opt/passManager.hpp"
 #include "parser.hpp"
-// #include "opt/dominant.hpp"
 #include "AsmPrinter.hpp"
 #include <fstream>
 #include <getopt.h>
@@ -40,9 +39,10 @@ int main(int argc, char **argv) {
   // output_path += ".a";
   // freopen(output_path.c_str(),"a",stdout);
 
-  // freopen("/dev/tty", "a", stdout);  std::unique_ptr<PassManager>pass_manager(new PassManager);
+  // freopen("/dev/tty", "a", stdout);  
+  std::unique_ptr<PassManager>pass_manager(new PassManager);
   
-  // int optionIndex, option;
+  int optionIndex, option;
 
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) != -1) {
     switch (option) {
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 
   // Gvn_Gcm test(&dom, f);
   // test.init_pass();
-  Singleton<Module>().Test();
-  PrintCodeToTxt(&Singleton<Module>());
+  // Singleton<Module>().Test();
+  // PrintCodeToTxt(&Singleton<Module>());
   return 0;
 }

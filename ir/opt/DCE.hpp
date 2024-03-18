@@ -30,5 +30,5 @@ private:
   int store_counter = 0;
   int func_counter = 0;
 
-  std::unordered_set<Function *> notSideEffectFunc;
-};
+//   std::unordered_set<Function *> notSideEffectFunc;
+// };
