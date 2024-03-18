@@ -115,6 +115,8 @@ public:
     }
     dom_begin(); //标志开始函数
     promoteMemoryToRegister(*thisFunc, *this);
+    std::cout << "--------mem2reg--------" << std::endl;
+    Singleton<Module>().Test();
   }
   void dom_begin();
 };

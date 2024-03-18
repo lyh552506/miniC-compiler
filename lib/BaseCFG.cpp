@@ -66,6 +66,8 @@ void Value::RAUW(Value* val){
     list.GetSize()=0;
     Use*& Head=list.Front();
     while(Head){
+        if(auto phi=dynamic_cast<PhiInst*>(Head->fat))
+          phi->Phiprop(Head->usee,val);
         Head->usee=val;
         Use* tmp=Head->nxt;
         val->userlist.push_front(Head);
@@ -79,6 +81,13 @@ bool Value::isUndefVal()
         return true;
     else
         return false;
+}
+
+bool Value::isGlobVal(){
+  if(dynamic_cast<User*>(this))
+    return false;
+  if(dynamic_cast<ConstantData*>(this))
+    return false;
 }
 
 bool Value::isConstZero()

@@ -157,14 +157,14 @@ public:
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
   std::vector<Value*>& GetAllPhiVal();
   Value* ReturnValIn(BasicBlock* bb);
-  bool modifyIncome(Value* origin);
-  bool modifyBlock(Value* val,BasicBlock* NewBlock);
+  void Phiprop(Value* origin,Value* newval);
 public:
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
   void Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord);
   std::vector<BasicBlock*> Blocks;
   int oprandNum;
+  bool IsGetIncomings=false;
 };
 class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
 {

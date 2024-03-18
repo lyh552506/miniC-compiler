@@ -87,7 +87,7 @@ class Value
     void SetName(std::string newname);
     virtual std::string GetName();
     UserList& GetUserlist(){return userlist;};
-    bool isGlobVal(){return false;};
+    bool isGlobVal();
     bool isUndefVal();
     bool isConstZero();
     bool isConstOne();

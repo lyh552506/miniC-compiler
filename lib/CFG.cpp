@@ -819,31 +819,28 @@ Value* PhiInst::ReturnValIn(BasicBlock* bb){
     return it->second.first;
 }
 
-// bool PhiInst::modifyBlock(Value* val,BasicBlock* NewBlock){
-//     auto iter=std::find_if(PhiRecord.begin(),PhiRecord.end(),
-//     [val](std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
-//         return ele.second.first==val;
-//     });
-// }
-// bool PhiInst::modifyIncome(Value* origin){
-//     auto iter=std::find_if(PhiRecord.begin(),PhiRecord.end(),
-//     [origin](std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
-//         return ele.second.first==origin;
-//     });
-//     if(iter==PhiRecord.end())
-//       return false;
-//     int num=iter->first;
-//     PhiRecord.erase(iter);
-//     PhiRecord[num]=std::make_pair(origin,nullptr);///@warning 需要修改
-//     return true;
-// }
-
 std::vector<Value*>& PhiInst::GetAllPhiVal(){
     for(const auto &[_1,value]:PhiRecord){
         Incomings.push_back(value.first);
         Blocks.push_back(value.second);
     }
+    IsGetIncomings=true;
     return Incomings;
+}
+
+//将原来的origin值替换为newval
+void PhiInst::Phiprop(Value* origin,Value* newval){
+    auto iter=std::find_if(PhiRecord.begin(),PhiRecord.end(),
+    [=](const std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
+        return ele.second.first==origin;
+    });
+    if(iter==PhiRecord.end())
+      assert(0);
+    BasicBlock* block=iter->second.second;
+    int Num=iter->first;
+    PhiRecord[Num]=std::make_pair(newval,block);
+    if(IsGetIncomings==true)
+      Incomings[Num]=newval;
 }
 
 void PhiInst::Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord)
