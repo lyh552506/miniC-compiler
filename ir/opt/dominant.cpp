@@ -1,9 +1,7 @@
 #include "dominant.hpp"
 
-void dominance::Init() {
+void dominance::init() {
   auto &bbs = thisFunc->GetBasicBlock();
-  for (int i = 0; i < bbs.size(); ++i)
-    bbs[i]->num=i;
   for (auto bb : bbs) {
     User *Inst = bb->back(); //获取到最后一条指令
     node[bb->num].thisBlock = bb;
@@ -14,6 +12,8 @@ void dominance::Init() {
       BasicBlock *des_false =
           dynamic_cast<BasicBlock *>(uselist[2]->GetValue());
 
+      Dest[bb->num].push_back(des_true->num);
+      Dest[bb->num].push_back(des_false->num);
       node[bb->num].des.push_front(des_true->num);
       node[bb->num].des.push_front(des_false->num);
 
@@ -24,10 +24,21 @@ void dominance::Init() {
       auto &uselist = uncond->Getuselist();
       BasicBlock *des = dynamic_cast<BasicBlock *>(uselist[0]->GetValue());
 
+      Dest[bb->num].push_back(des->num);
       node[bb->num].des.push_front(des->num);
       node[des->num].rev.push_front(bb->num);
     }
   }
+}
+
+void dominance::RunOnFunction() {
+  init();
+  for (int i = 1; i <= block_num; i++) {
+    dsu[i].ancestor = i;
+    dsu[i].min_sdom = i;
+  }
+  dom_begin(); //标志开始函数
+  promoteMemoryToRegister(*thisFunc, *this);
 }
 
 void dominance::DFS(int pos) {
@@ -129,6 +140,4 @@ void dominance::DfsDominator(int root) {
   IsDFSValid = true;
 }
 
-BasicBlock* dominance::find_lca(BasicBlock* bb1,BasicBlock* bb2){
-  
-}
+BasicBlock *dominance::find_lca(BasicBlock *bb1, BasicBlock *bb2) {}
