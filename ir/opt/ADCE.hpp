@@ -1,3 +1,4 @@
+#pragma once
 #include "CFG.hpp"
 #include <set>
 class ADCE

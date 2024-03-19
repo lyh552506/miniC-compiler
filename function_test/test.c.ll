@@ -332,113 +332,88 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @add(i32 %.3, i32 %.6){
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
 .1:
+  %.11 = alloca i32
+  %.8 = alloca i32
   %.5 = alloca i32
   %.2 = alloca i32
   store i32 %.3, i32* %.2
   store i32 %.6, i32* %.5
-  %.8 = load i32, i32* %.2
-  %.9 = load i32, i32* %.5
-  %.10 = add i32 %.8, %.9
-  ret i32 %.10 
+  store i32 %.9, i32* %.8
+  store i32 %.12, i32* %.11
+  %.16 = load i32, i32* %.2
+  %.18 = icmp sgt i32 %.16, 10
+  br i1 %.18, label %.14, label %.15
+.14:
+  %.20 = load i32, i32* %.2
+  %.21 = load i32, i32* %.5
+  %.22 = add i32 %.20, %.21
+  store i32 %.22, i32* %.8
+  br label %.15 
+.15:
+  %.25 = load i32, i32* %.2
+  %.26 = load i32, i32* %.5
+  %.27 = add i32 %.25, %.26
+  store i32 %.27, i32* %.8
+  %.29 = load i32, i32* %.8
+  ret i32 %.29 
 }
-define i32 @main(){
-.13:
-  %.15 = alloca i32
-  %.14 = alloca i32
-  store i32 1, i32* %.14
-  store i32 2, i32* %.15
-  %.22 = load i32, i32* %.14
-  %.24 = icmp eq i32 %.22, 0
-  br i1 %.24, label %.20, label %.21
-.20:
-  %.26 = load i32, i32* %.14
-  %.27 = load i32, i32* %.15
-  %.28at9 = call i32 @add(i32 %.26, i32 %.27)
-  store i32 %.28at9, i32* %.14
-  br label %.21 
-.21:
-  %.31 = load i32, i32* %.14
-  ret i32 %.31 
-}
-define i32 @add(i32 %.3, i32 %.6){
+Num Of Loops:0
+-----------ElimitCriticalEdge------------
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
 .1:
+  %.11 = alloca i32
+  %.8 = alloca i32
   %.5 = alloca i32
   %.2 = alloca i32
   store i32 %.3, i32* %.2
   store i32 %.6, i32* %.5
-  %.8 = load i32, i32* %.2
-  %.9 = load i32, i32* %.5
-  %.10 = add i32 %.8, %.9
-  ret i32 %.10 
+  store i32 %.9, i32* %.8
+  store i32 %.12, i32* %.11
+  %.16 = load i32, i32* %.2
+  %.18 = icmp sgt i32 %.16, 10
+  br i1 %.18, label %.14, label %.31
+.14:
+  %.20 = load i32, i32* %.2
+  %.21 = load i32, i32* %.5
+  %.22 = add i32 %.20, %.21
+  store i32 %.22, i32* %.8
+  br label %.15 
+.15:
+  %.25 = load i32, i32* %.2
+  %.26 = load i32, i32* %.5
+  %.27 = add i32 %.25, %.26
+  store i32 %.27, i32* %.8
+  %.29 = load i32, i32* %.8
+  ret i32 %.29 
+.31:
+  br label %.15 
 }
-define i32 @main(){
-.13:
-  %.15 = alloca i32
-  %.14 = alloca i32
-  store i32 1, i32* %.14
-  store i32 2, i32* %.15
-  %.22 = load i32, i32* %.14
-  %.24 = icmp eq i32 %.22, 0
-  br i1 %.24, label %.20, label %.21
-.20:
-  %.26 = load i32, i32* %.14
-  %.27 = load i32, i32* %.15
-  %.28at9 = call i32 @add(i32 %.26, i32 %.27)
-  store i32 %.28at9, i32* %.14
-  br label %.21 
-.21:
-  %.31 = load i32, i32* %.14
-  ret i32 %.31 
+--------mem2reg--------
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
+.1:
+  %.18 = icmp sgt i32 %.3, 10
+  br i1 %.18, label %.14, label %.31
+.14:
+  %.22 = add i32 %.3, %.6
+  br label %.15 
+.15:
+  %.27 = add i32 %.3, %.6
+  ret i32 %.27 
+.31:
+  br label %.15 
 }
-add:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    addi s0, sp, 32
-.LBB0_0:
-    sw .3, -24(s0)
-    sw .6, -20(s0)
-    lw .8, -24(s0)
-    lw .9, -20(s0)
-    addw .10, .8, .9
-    lw a0, .10
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    addi sp, sp, 32
-    ret
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    addi sp, sp, 32
-    ret
-main:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    addi s0, sp, 32
-.LBB1_0:
-    sw 1, -24(s0)
-    sw 2, -20(s0)
-    lw .22, -24(s0)
-    li .47, 0
-    xor .24, .22, 0
-    beqz .24, .LBB1_2
-    j .LBB1_1
-.LBB1_1:
-    lw .26, -24(s0)
-    lw .27, -20(s0)
-    call add
-    sw .28at9, -24(s0)
-    j .LBB1_2
-.LBB1_2:
-    lw .31, -24(s0)
-    lw a0, .31
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    addi sp, sp, 32
-    ret
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    addi sp, sp, 32
-    ret
+--------pre--------
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
+.1:
+  %.18 = icmp sgt i32 %.3, 10
+  br i1 %.18, label %.14, label %.31
+.14:
+  %.22 = add i32 %.3, %.6
+  br label %.15 
+.15:
+  ret i32 %.22 
+.31:
+  br label %.15 
+}

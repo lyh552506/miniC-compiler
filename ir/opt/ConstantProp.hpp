@@ -1,3 +1,4 @@
+#pragma once
 #include "ConstantFold.hpp"
 
 class ConstantProp

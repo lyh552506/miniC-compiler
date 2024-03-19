@@ -815,6 +815,15 @@ Operand BasicBlock::push_alloca(std::string name,Type* _tp){
     return tmp->GetDef();
 }
 
+int BasicBlock::GetSuccNum(){
+  if(dynamic_cast<CondInst*>(this->back()))
+    return 2;
+  else if(dynamic_cast<UnCondInst*>(this->back()))
+    return 1;
+  else 
+    return 0;
+}
+
 PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB){
     PhiInst *tmp = new PhiInst{BeforeInst};
     currentBB->push_front(tmp);

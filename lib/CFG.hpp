@@ -172,6 +172,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     public:
     BasicBlock(Function& __master);
     void print();
+    int GetSuccNum();
     Operand push_alloca(std::string,Type*);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);

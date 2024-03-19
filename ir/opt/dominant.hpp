@@ -13,9 +13,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-class dominance;
 
-bool promoteMemoryToRegister(Function &func, dominance &dom);
 
 class dominance : public PassManagerBase {
   friend class IDF;
@@ -114,3 +112,4 @@ public:
         Dest(blockNum + 1) {}
   void dom_begin();
 };
+bool promoteMemoryToRegister(Function &func, dominance &dom);
