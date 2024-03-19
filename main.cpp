@@ -67,18 +67,6 @@ int main(int argc, char **argv) {
     }
   }
   pass_manager->InitPass();
-  // auto f = Singleton<Module>().GetFuncTion()[0].get();
-  // auto &Li = Singleton<Module>().GetFuncTion()[0]->GetBasicBlock();
-  // for (auto bb = f->begin(); bb != f->end(); ++bb)
-  //   f->push_bb(*bb);
-  // for (int i = 0; i < Li.size(); ++i)
-  //   Li[i]->num = i;
-
-  // dominance dom(f, Li.size());
-
-  // Gvn_Gcm test(&dom, f);
-  // test.init_pass();
-  // Singleton<Module>().Test();
-  // PrintCodeToTxt(&Singleton<Module>());
+  PrintCodeToTxt(&Singleton<Module>());
   return 0;
 }
