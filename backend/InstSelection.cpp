@@ -55,10 +55,10 @@ void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, U
         }
 
         if (opcode.find(mid1) != std::string::npos) {
-            //inst->SetOpcode("slt");
+            inst->SetOpcode("slt");
         }
         else if (opcode.find(mid2) != std::string::npos) {
-            //inst->SetOpcode("xor");
+            inst->SetOpcode("xor");
         }
         parent->addMachineInst(inst);
 
