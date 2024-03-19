@@ -11,6 +11,7 @@
 #include "passManagerBase.hpp"
 #include "../../yacc/parser.hpp"
 #include "LoopInfo.hpp"
+#include "../Analysis/DealCriticalEdges.hpp"
 class PassManager:public PassManagerBase {
 public:
   PassManager()=default;
@@ -32,5 +33,5 @@ private:
   std::unique_ptr<PRE> m_pre;
   std::unique_ptr<ConstantProp> m_constprop;
   std::unique_ptr<LivenessAnalysis> m_liveness;
-
+  std::unique_ptr<ElimitCriticalEdge> m_eliedg;
 };

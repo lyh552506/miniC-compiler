@@ -103,17 +103,11 @@
 //     return x;
 // }
 int main(int a,int b,int c,int d){
-//     if(a>10){
-//      c=a+b;
-//     }else{
-//      d=5;
-//     }
-//     c=a+b;
-//     return c;
-       while(a<10){
-          c=d+b;
-          a=a+1;
-       }
-       return c;
+    if(a>10){
+     c=a+b;
+    }
+    c=a+b;
+    return c;
+  
 }
 

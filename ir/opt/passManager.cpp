@@ -15,10 +15,16 @@ void PassManager::InitPass() {
     m_loopAnlay = std::make_unique<LoopInfo>(f, m_dom.get());
     m_liveness = std::make_unique<LivenessAnalysis>();
     m_constprop = std::make_unique<ConstantProp>(f);
+    m_eliedg=std::make_unique<ElimitCriticalEdge>(f);
     RunOnFunction();
   }
 }
 void PassManager::RunOnFunction() {
+  if (Analysis == true) {
+    Anlaysis();
+    m_loopAnlay->PrintPass();
+    m_eliedg->PrintPass();
+  }
   if (InitpassRecorder[0]) {
     m_dom->RunOnFunction();
     m_dom->PrintPass();
@@ -30,15 +36,13 @@ void PassManager::RunOnFunction() {
   // if(InitpassRecorder[2])
   // if(InitpassRecorder[3])
   // if(InitpassRecorder[4])
-  if (Analysis == true) {
-    Anlaysis();
-    m_loopAnlay->PrintPass();
-  }
+  
 }
 
 void PassManager::IncludePass(int pass) { InitpassRecorder[pass] = 1; }
 
 void PassManager::Anlaysis() {
   //m_liveness
+  m_eliedg->RunOnFunction();
   m_loopAnlay->RunOnFunction();
 }

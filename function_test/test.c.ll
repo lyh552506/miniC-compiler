@@ -342,53 +342,78 @@ define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
   store i32 %.6, i32* %.5
   store i32 %.9, i32* %.8
   store i32 %.12, i32* %.11
-  br label %.14wc113 
-.14wc113:
-  %.18 = load i32, i32* %.2
-  %.20 = icmp slt i32 %.18, 10
-  br i1 %.20, label %.15wloop.113.116, label %.16wn116
-.15wloop.113.116:
-  %.22 = load i32, i32* %.11
-  %.23 = load i32, i32* %.5
-  %.24 = add i32 %.22, %.23
-  store i32 %.24, i32* %.8
-  %.26 = load i32, i32* %.2
-  %.28 = add i32 %.26, 1
-  store i32 %.28, i32* %.2
-  br label %.14wc113 
-.16wn116:
-  %.31 = load i32, i32* %.8
-  ret i32 %.31 
+  %.16 = load i32, i32* %.2
+  %.18 = icmp sgt i32 %.16, 10
+  br i1 %.18, label %.14, label %.15
+.14:
+  %.20 = load i32, i32* %.2
+  %.21 = load i32, i32* %.5
+  %.22 = add i32 %.20, %.21
+  store i32 %.22, i32* %.8
+  br label %.15 
+.15:
+  %.25 = load i32, i32* %.2
+  %.26 = load i32, i32* %.5
+  %.27 = add i32 %.25, %.26
+  store i32 %.27, i32* %.8
+  %.29 = load i32, i32* %.8
+  ret i32 %.29 
+}
+Num Of Loops:0
+-----------ElimitCriticalEdge------------
+define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
+.1:
+  %.11 = alloca i32
+  %.8 = alloca i32
+  %.5 = alloca i32
+  %.2 = alloca i32
+  store i32 %.3, i32* %.2
+  store i32 %.6, i32* %.5
+  store i32 %.9, i32* %.8
+  store i32 %.12, i32* %.11
+  %.16 = load i32, i32* %.2
+  %.18 = icmp sgt i32 %.16, 10
+  br i1 %.18, label %.14, label %.31
+.14:
+  %.20 = load i32, i32* %.2
+  %.21 = load i32, i32* %.5
+  %.22 = add i32 %.20, %.21
+  store i32 %.22, i32* %.8
+  br label %.15 
+.15:
+  %.25 = load i32, i32* %.2
+  %.26 = load i32, i32* %.5
+  %.27 = add i32 %.25, %.26
+  store i32 %.27, i32* %.8
+  %.29 = load i32, i32* %.8
+  ret i32 %.29 
+.31:
+  br label %.15 
 }
 --------mem2reg--------
 define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
 .1:
-  br label %.14wc113 
-.14wc113:
-  %.34 = Phi i32 [%.9, %.1], [%.24, %.15wloop.113.116]
-  %.33 = Phi i32 [%.3, %.1], [%.28, %.15wloop.113.116]
-  %.20 = icmp slt i32 %.33, 10
-  br i1 %.20, label %.15wloop.113.116, label %.16wn116
-.15wloop.113.116:
-  %.24 = add i32 %.12, %.6
-  %.28 = add i32 %.33, 1
-  br label %.14wc113 
-.16wn116:
-  ret i32 %.34 
+  %.18 = icmp sgt i32 %.3, 10
+  br i1 %.18, label %.14, label %.31
+.14:
+  %.22 = add i32 %.3, %.6
+  br label %.15 
+.15:
+  %.27 = add i32 %.3, %.6
+  ret i32 %.27 
+.31:
+  br label %.15 
 }
 --------pre--------
 define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
 .1:
-  br label %.14wc113 
-.14wc113:
-  %.34 = Phi i32 [%.9, %.1], [%.24, %.15wloop.113.116]
-  %.33 = Phi i32 [%.3, %.1], [%.28, %.15wloop.113.116]
-  %.20 = icmp slt i32 %.33, 10
-  br i1 %.20, label %.15wloop.113.116, label %.16wn116
-.15wloop.113.116:
-  %.24 = add i32 %.12, %.6
-  %.28 = add i32 %.33, 1
-  br label %.14wc113 
-.16wn116:
-  ret i32 %.34 
+  %.18 = icmp sgt i32 %.3, 10
+  br i1 %.18, label %.14, label %.31
+.14:
+  %.22 = add i32 %.3, %.6
+  br label %.15 
+.15:
+  ret i32 %.22 
+.31:
+  br label %.15 
 }
