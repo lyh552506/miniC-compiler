@@ -220,7 +220,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
-    void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);//TODO
+    void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);
     void init_visited_block();
 };
 class Module:public SymbolTable
