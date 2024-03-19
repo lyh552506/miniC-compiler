@@ -113,6 +113,7 @@ class User:public Value,public list_node<BasicBlock,User>
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
     bool Alive = false;
     bool HasSideEffect();
+    void RSUW(int,Operand);
 };
 
 class ConstantData:public Value
