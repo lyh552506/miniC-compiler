@@ -37,6 +37,7 @@ class Use
 class UserList
 {
     Use* head=nullptr;
+    int size=0;
     public:
     UserList()=default;
     void push_front(Use* _data);
@@ -63,6 +64,7 @@ class UserList
     iterator end(){return iterator(nullptr);}
     bool is_empty(){return head==nullptr;}
     Use*& Front(){return head;}
+    int& GetSize(){return size;}
 };
 class Value
 {
@@ -85,10 +87,11 @@ class Value
     void SetName(std::string newname);
     virtual std::string GetName();
     UserList& GetUserlist(){return userlist;};
-    bool isGlobVal(){return false;};
+    bool isGlobVal();
     bool isUndefVal();
     bool isConstZero();
     bool isConstOne();
+    int GetUserListSize(){return GetUserlist().GetSize();}
     int BelongsToExp;
 };
 using Operand=Value*;
@@ -106,8 +109,11 @@ class User:public Value,public list_node<BasicBlock,User>
     User(Type* tp);
     virtual Operand GetDef();
     void ClearRelation();//在EraseFromBasic()前调用
+    bool IsTerminateInst();
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
-    bool CanDel = false;
+    bool Alive = false;
+    bool HasSideEffect();
+    void RSUW(int,Operand);
 };
 
 class ConstantData:public Value

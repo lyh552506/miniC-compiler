@@ -7,6 +7,8 @@
 #include "PromoteMemtoRegister.hpp"
 #include "SSAPRE.hpp"
 #include "dominant.hpp"
+#include "DCE.hpp"
+#include "ADCE.hpp"
 
 class PassManager {
 public:
@@ -20,4 +22,5 @@ public:
 
 private:
   std::vector<int> InitpassRecorder;
+  std::vector<Function*> FList;
 };

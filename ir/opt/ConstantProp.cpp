@@ -5,6 +5,8 @@ void ConstantProp::Pass()
 {
     for(BasicBlock* block : *_func)
         RunOnBlock(block);
+    std::cout << "--------constantprop--------" << std::endl;
+    Singleton<Module>().Test();
 }
 void ConstantProp::RunOnBlock(BasicBlock* block)
 {

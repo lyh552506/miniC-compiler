@@ -398,6 +398,12 @@ GetElementPtrInst::GetElementPtrInst(Operand base_ptr){
     add_use(base_ptr);
 }
 
+GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& args){
+    add_use(base_ptr);
+    for(auto&&i:args)
+        add_use(i);
+}
+
 Type* GetElementPtrInst::GetType(){
     int limi=uselist.size()-1;
     tp=uselist[0]->GetValue()->GetType();
@@ -483,6 +489,13 @@ Operand BasicBlock::GenerateBinaryInst(BasicBlock* bb,Operand _A,BinaryInst::Ope
 {
     if(_A->isConst()&&_B->isConst())
     {
+        if(op==BinaryInst::Op_Div&&_B->isConstZero()){
+            assert(_A->GetType()!=BoolType::NewBoolTypeGet()&&_B->GetType()!=BoolType::NewBoolTypeGet()&&"InvalidType");
+            if(_A->GetType()==IntType::NewIntTypeGet()&&_B->GetType()==IntType::NewIntTypeGet())
+                return UndefValue::get(IntType::NewIntTypeGet());
+            else
+                return UndefValue::get(FloatType::NewFloatTypeGet());
+        }
         auto calc=[](auto a,BinaryInst::Operation op,auto b)->std::variant<float,int>{
             switch (op)
             {
@@ -795,32 +808,39 @@ void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
     add_use(Income);
     PhiRecord[oprandNum++]=std::make_pair(Income,BB);
 }
-
-// bool PhiInst::modifyBlock(Value* val,BasicBlock* NewBlock){
-//     auto iter=std::find_if(PhiRecord.begin(),PhiRecord.end(),
-//     [val](std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
-//         return ele.second.first==val;
-//     });
-// }
-// bool PhiInst::modifyIncome(Value* origin){
-//     auto iter=std::find_if(PhiRecord.begin(),PhiRecord.end(),
-//     [origin](std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
-//         return ele.second.first==origin;
-//     });
-//     if(iter==PhiRecord.end())
-//       return false;
-//     int num=iter->first;
-//     PhiRecord.erase(iter);
-//     PhiRecord[num]=std::make_pair(origin,nullptr);///@warning 需要修改
-//     return true;
-// }
+/// @brief 找到当前phi函数bb块所对应的数据流
+Value* PhiInst::ReturnValIn(BasicBlock* bb){
+    auto it=std::find_if(PhiRecord.begin(),PhiRecord.end(),
+    [bb](std::pair<const int,std::pair<Value*,BasicBlock*>>& ele){
+        return ele.second.second==bb;
+    });
+    if(it==PhiRecord.end())
+      return nullptr;
+    return it->second.first;
+}
 
 std::vector<Value*>& PhiInst::GetAllPhiVal(){
     for(const auto &[_1,value]:PhiRecord){
         Incomings.push_back(value.first);
         Blocks.push_back(value.second);
     }
+    IsGetIncomings=true;
     return Incomings;
+}
+
+//将原来的origin值替换为newval
+void PhiInst::Phiprop(Value* origin,Value* newval){
+    auto iter=std::find_if(PhiRecord.begin(),PhiRecord.end(),
+    [=](const std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
+        return ele.second.first==origin;
+    });
+    if(iter==PhiRecord.end())
+      assert(0);
+    BasicBlock* block=iter->second.second;
+    int Num=iter->first;
+    PhiRecord[Num]=std::make_pair(newval,block);
+    if(IsGetIncomings==true)
+      Incomings[Num]=newval;
 }
 
 void PhiInst::Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord)
@@ -882,11 +902,21 @@ void Module::GenerateGlobalVariable(Variable* ptr){
 
 Function* Module::getMainFunc()
 {
-    for(auto &f : this->GetFuncTion())
+    Function* func = this->ls.back().get();
+    if(func)
+        return func;
+    else
+        return nullptr;
+}
+void Module::EraseFunction(Function* func)
+{
+    for(auto iter = ls.begin(); iter != ls.end(); iter++)
     {
-        Function* func = f.get();
-        if(func->GetName() == "main")
-            return func;
+        if(iter->get() == func)
+        {
+            ls.erase(iter);
+            break;
+        }
     }
 }
 

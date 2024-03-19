@@ -18,5 +18,3 @@ class XorInst : public User
     void SetOpcode(std::string opcode);
     void print()final {};
 };
-
-void RSUW (User* inst1, int num1, User* inst2, int num2);

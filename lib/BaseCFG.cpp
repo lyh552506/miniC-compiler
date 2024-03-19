@@ -7,10 +7,14 @@ Use::Use(User *__fat, Value *__usee) : fat(__fat), usee(__usee) {
 }
 void Use::RemoveFromUserList(User *is_valid) {
   assert(is_valid == fat);
+  GetValue()->GetUserlist().GetSize()--;
   (*prev) = nxt;
-  nxt->prev = prev;
+  if(nxt!=nullptr)nxt->prev = prev;
 }
 void UserList::push_front(Use *_data) {
+  // manage the size of the userlist
+  size++;
+  
   _data->nxt = head;
   if (head != nullptr)
     head->prev = &(_data->nxt);
@@ -58,8 +62,12 @@ void Value::print() {
 //replace all uses with transferred value
 void Value::RAUW(Value* val){
     UserList& list=this->userlist;
+    // manage user size in value
+    list.GetSize()=0;
     Use*& Head=list.Front();
     while(Head){
+        if(auto phi=dynamic_cast<PhiInst*>(Head->fat))
+          phi->Phiprop(Head->usee,val);
         Head->usee=val;
         Use* tmp=Head->nxt;
         val->userlist.push_front(Head);
@@ -73,6 +81,13 @@ bool Value::isUndefVal()
         return true;
     else
         return false;
+}
+
+bool Value::isGlobVal(){
+  if(dynamic_cast<User*>(this))
+    return false;
+  if(dynamic_cast<ConstantData*>(this))
+    return false;
 }
 
 bool Value::isConstZero()
@@ -103,14 +118,83 @@ User::User(Type *_tp) : Value(_tp) {}
 
 void User::ClearRelation() {
   assert(this->GetUserlist().is_empty() && "the head must be nullptr!");
-  for (auto &use : uselist) {
-    (*use->prev) = use->nxt;
-    if (use->nxt != nullptr)
-      use->nxt->prev = use->prev;
+  for (auto &use : uselist)
+    use->RemoveFromUserList(use->GetUser());
+}
+bool User::IsTerminateInst()
+{
+  if(dynamic_cast<UnCondInst*>(this))
+    return true;
+  else if(dynamic_cast<CondInst*>(this))
+    return true;
+  else if(dynamic_cast<RetInst*>(this))
+    return true;
+  else
+    return false;
+}
+
+bool User::HasSideEffect()
+{
+  if(dynamic_cast<StoreInst*>(this))
+  {
+    Value* op = this->Getuselist()[1]->usee;
+    if(op->isGlobVal())
+      return true;
+    if(op->GetTypeEnum() == InnerDataType::IR_PTR)
+      return true;
   }
+  if(dynamic_cast<CallInst*>(this))
+  {
+    Function* func = dynamic_cast<Function*>(this->Getuselist()[0]->GetValue());
+    auto& params = func->GetParams();
+    for(auto& param : params)
+    {
+      if(param->GetTypeEnum() == InnerDataType::IR_PTR)
+        return true;
+    }
+    for(auto it = func->begin(); it != func->end(); ++it)
+    {
+      BasicBlock* block = *it;
+      for(auto iter = block->begin(); iter != block->end(); ++iter)
+      {
+        if(dynamic_cast<CallInst*>(*iter))
+          return true;
+        else
+        {
+          if((*iter)->HasSideEffect())
+            return true;
+          else
+            return false;
+        }
+      }
+    }
+  }
+  if(dynamic_cast<GetElementPtrInst*>(this))
+  {
+    auto &users = this->GetUserlist();
+    for(auto user_ : users)
+    {
+      User* user = user_->GetUser();
+      if(user->HasSideEffect())
+        return true;
+      else
+        return false;
+    }
+  }
+  if(this->GetUserlist().is_empty())
+    return false;
 }
 
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
+
+// change uselist[num] to val while manage use-def relation
+void User::RSUW(int num,Operand val){
+  auto& uselist=Getuselist();
+  assert(0<=num&&num<uselist.size()&&"Invalid Location!");
+  uselist[num]->usee=val;
+  uselist[num]->RemoveFromUserList(this);
+  val->add_user(uselist[num].get());
+}
 
 ConstantData::ConstantData(Type *_tp) : Value(_tp) {}
 
