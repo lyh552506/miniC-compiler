@@ -1,8 +1,7 @@
-#include "opt/GVN.hpp"
+#include "AsmPrinter.hpp"
 #include "opt/dominant.hpp"
 #include "opt/passManager.hpp"
 #include "parser.hpp"
-#include "AsmPrinter.hpp"
 #include <fstream>
 #include <getopt.h>
 extern FILE *yyin;
@@ -16,14 +15,11 @@ void copyFile(const std::string &sourcePath,
   destination << source.rdbuf();
 }
 
-static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
-                                       {"pre", no_argument, 0, 1},
-                                       {"constprop", no_argument, 0, 2},
-                                       {"dce", no_argument, 0, 3},
-                                       {"adce", no_argument, 0, 4}, 
-                                       {"livenessanalysis", no_argument, 0, 5},
-                                       {"help", no_argument, 0, 6},
-                                       {0, 0, 0, 0}};
+static struct option long_options[] = {
+    {"mem2reg", no_argument, 0, 0},   {"pre", no_argument, 0, 1},
+    {"constprop", no_argument, 0, 2}, {"dce", no_argument, 0, 3},
+    {"adce", no_argument, 0, 4},      {"analysis", no_argument, 0, 5},
+    {"help", no_argument, 0, 6},      {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
@@ -39,12 +35,13 @@ int main(int argc, char **argv) {
   // output_path += ".a";
   // freopen(output_path.c_str(),"a",stdout);
 
-  // freopen("/dev/tty", "a", stdout);  
-  std::unique_ptr<PassManager>pass_manager(new PassManager);
+  // freopen("/dev/tty", "a", stdout);
+  std::unique_ptr<PassManager> pass_manager(new PassManager);
 
   int optionIndex, option;
-
-  while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) != -1) {
+  //目前处于调试阶段，最终会换成-O1 -O2 -O3
+  while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
+         -1) {
     switch (option) {
     case 0:
       pass_manager->IncludePass(0);
@@ -58,18 +55,18 @@ int main(int argc, char **argv) {
     case 3:
       pass_manager->IncludePass(3);
       break;
-    case 4: 
+    case 4:
       pass_manager->IncludePass(4);
       break;
     case 5:
-      pass_manager->IncludePass(5);
+      pass_manager->setAnalsis(true);
       break;
     case 6:
       std::cerr << "help" << std::endl;
       break;
     }
   }
-  pass_manager->Init_Pass();
+  pass_manager->InitPass();
   // auto f = Singleton<Module>().GetFuncTion()[0].get();
   // auto &Li = Singleton<Module>().GetFuncTion()[0]->GetBasicBlock();
   // for (auto bb = f->begin(); bb != f->end(); ++bb)

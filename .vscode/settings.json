@@ -109,8 +109,9 @@
         "locale": "cpp",
         "queue": "cpp",
         "stdarg.h": "c",
-        "__nullptr": "cpp"
-},
+        "__nullptr": "cpp",
+        "__functional_base": "cpp"
+    },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true
 }

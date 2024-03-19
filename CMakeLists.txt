@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10.0)
 set(CMAKE_CXX_STANDARD 17) 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdebug-prefix-map=${CMAKE_BINARY_DIR}=${CMAKE_SOURCE_DIR}") #fix gdb can't find source path
 message(${CMAKE_CXX_FLAGS})
-
+set(CMAKE_BUILD_TYPE "Debug")
 # 设置编译器警告选项
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_COMPILER_IS_GNUCXX)
     # 对于Clang和GCC编译器
