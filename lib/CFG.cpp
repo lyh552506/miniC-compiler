@@ -900,16 +900,17 @@ void Module::GenerateGlobalVariable(Variable* ptr){
     globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }
 
-Function* Module::getMainFunc()
-{
-    Function* func = this->ls.back().get();
-    if(func)
-        return func;
-    else
-        return nullptr;
-}
 void Module::EraseFunction(Function* func)
 {
+    for(BasicBlock* block : *func)
+    {
+        for(auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_)
+        {   
+            User* inst = *inst_;
+            inst->ClearRelation();
+            inst->EraseFromParent();
+        }
+    }
     for(auto iter = ls.begin(); iter != ls.end(); iter++)
     {
         if(iter->get() == func)

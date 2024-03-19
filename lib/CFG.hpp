@@ -236,8 +236,8 @@ class Module:public SymbolTable
     void GenerateGlobalVariable(Variable* ptr);
     Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
-    Function* getMainFunc();
     void Test();
     void EraseFunction(Function* func);
     bool isMIRSSALevel();
+    // std::vector<GlobalVariblePtr> GetGlobalptrs(){return this->globalvaribleptr;};
 };

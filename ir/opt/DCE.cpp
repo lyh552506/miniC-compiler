@@ -2,17 +2,32 @@
 
 void DeadCodeEliminate::Pass()
 {
-    for(Function* _func : Flist)
+    if(Flist.size() > 1)
     {
-        deleteDeadFunc(_func);
-        detectNotSideEffectFunc(_func);
-        // if(_func != m.GetFuncTion().back().get())
-        deleteDeadRet(_func);   
-        deleteDeadInst(_func);
-        deleteDeadStore(_func);
-        deleteDeadInst(_func);
+        for(Function* _func : Flist)
+        {
+            detectSideEffectFunc(_func); 
+        }
+        deleteDeadFunc();
+        for(Function* _func : Flist)
+        {
+            deleteDeadRet(_func);   
+            deleteDeadInst(_func);
+            deleteDeadStore(_func);
+            deleteDeadInst(_func);
+        }
+    }
+    else
+    {
+        for(Function* _func : Flist)
+        {
+            deleteDeadInst(_func);
+            deleteDeadStore(_func);
+            deleteDeadInst(_func);
+        }
     }
 
+    std::cout << "--------DCE--------" << std::endl;
 }
 
 
@@ -32,18 +47,24 @@ void DeadCodeEliminate::Pass()
 //       ++iter;
 //   }
 // }
-void DeadCodeEliminate::deleteDeadFunc(Function* func)
+void DeadCodeEliminate::deleteDeadFunc()
 {
-    func_counter = 0;
-    if(func->GetBasicBlock().empty())
+    if(!DelFunc.empty())
     {
-        if(func != m.getMainFunc())
+        for(Function* func : DelFunc)
         {
-            func_counter++;
             m.EraseFunction(func);
-        }       
+            for(auto it = Flist.begin(); it != Flist.end();)
+            {
+                if(*it == func)
+                    it = Flist.erase(it);
+                else
+                    ++it;
+            }
+        }
     }
-    return;
+    else
+        return;
 }
 // bool DeadCodeEliminate::isInstructionTriviallyDead(User* inst)
 // {
@@ -52,16 +73,14 @@ void DeadCodeEliminate::deleteDeadFunc(Function* func)
 //     // if(isSideEffectAndCall(inst)) return false;
 // }
 
-void DeadCodeEliminate::detectNotSideEffectFunc(Function* func)
+void DeadCodeEliminate::detectSideEffectFunc(Function* func)
 {
-
-    if(func->GetBasicBlock().empty() || func == m.getMainFunc())
+    if(func->GetBasicBlock().empty())
+        DelFunc.push_back(func);
+    if(!FunchasSideEffect(func))
+        DelFunc.push_back(func);
+    else
         return;
-    bool sideEffect = false;
-    if(FunchasSideEffect(func))
-        sideEffect=true;
-    if(sideEffect == false)
-        notSideEffectFunc.insert(func);
 }
 
 bool DeadCodeEliminate::FunchasSideEffect(Function *func) {
@@ -77,14 +96,14 @@ bool DeadCodeEliminate::FunchasSideEffect(Function *func) {
     for (auto iter = bb->begin(); iter != bb->end(); ++iter) 
     {
         User *inst = *iter;
-        if(auto STore = dynamic_cast<StoreInst*>(inst))
+        if(StoreInst* STore = dynamic_cast<StoreInst*>(inst))
         {
             if(isLocalStore(STore))
                 continue;
             return true;
         }
         //如果在函数内又有call，此时含有副作用
-        if(auto tmp = dynamic_cast<CallInst *>(inst))
+        if(CallInst* tmp = dynamic_cast<CallInst *>(inst))
             return true;
         //遍历每条指令的use关系，如果存在global value，此时含有副作用
         auto &vec = inst->Getuselist();
@@ -95,23 +114,23 @@ bool DeadCodeEliminate::FunchasSideEffect(Function *func) {
         }
     }
     }
+    if(!func->GetUserlist().is_empty())
+        return true;
     return false;
 }
 
 void DeadCodeEliminate::deleteDeadInst(Function* func)
 {
-    std::unordered_set<User*> worklist;
     for(BasicBlock* block : *func)
     {
         for(User* inst : *block)
         {
-            if(inst->HasSideEffect())
+            if(inst->HasSideEffect() || inst->IsTerminateInst())
                 markUse(inst, worklist);
         }
     }
     for(BasicBlock* block : *func)
     {
-        std::unordered_set<User*> removelist;
         for(User* inst : *block)
         {
             if(worklist.find(inst) == worklist.end())
@@ -130,6 +149,7 @@ void DeadCodeEliminate::deleteDeadInst(Function* func)
             inst->EraseFromParent();
             removelist.erase(inst);
         }
+        removelist.clear();
     }
 }
 
@@ -177,7 +197,7 @@ void DeadCodeEliminate::deleteDeadRet(Function* func)
     for(Use* user_ : func->GetUserlist())
     {
         Value* user = user_->GetValue();
-        if(user->GetUserlist().is_empty())
+        if(!user->GetUserlist().is_empty())
             flag = false;
     }
     if(flag)

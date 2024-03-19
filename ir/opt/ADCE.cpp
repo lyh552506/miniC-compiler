@@ -6,7 +6,8 @@ void ADCE::Pass()
     {
         AgressiveDCE(func);
     }
-
+    std::cout << "--------ADCE--------" << std::endl;
+    Singleton<Module>().Test();
 }
 
 void ADCE::AgressiveDCE(Function* func)

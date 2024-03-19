@@ -12,7 +12,7 @@
 
 class PassManager {
 public:
-  PassManager() : InitpassRecorder(4) {}
+  PassManager() : InitpassRecorder(50) {}
 
   void IncludePass(int pass);
 

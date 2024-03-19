@@ -19,14 +19,19 @@ void PassManager::Init_Pass() {
       }
       if(InitpassRecorder[2])
         ConstantProp(f).Pass();
-      if(InitpassRecorder[3])
-        //DeadCodeEliminate(Singleton<Module>(), f).Pass();
       if(InitpassRecorder[5])
       {
         std::unique_ptr<LivenessAnalysis> liveness(new LivenessAnalysis);
         liveness.get()->pass(f);
       }
   }
+  if(InitpassRecorder[3])
+  {
+    DeadCodeEliminate(FList, Singleton<Module>()).Pass();
+    Singleton<Module>().Test();
+  }
+    
+  // Singleton<Module>().Test();
   if(InitpassRecorder[4])
   {
     ADCE(FList).Pass();

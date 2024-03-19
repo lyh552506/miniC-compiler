@@ -332,63 +332,33 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
+define i32 @deadAssign(){
 .1:
-  %.11 = alloca i32
-  %.8 = alloca i32
-  %.5 = alloca i32
+  %.4 = alloca i32
+  %.3 = alloca i32
   %.2 = alloca i32
-  store i32 %.3, i32* %.2
-  store i32 %.6, i32* %.5
-  store i32 %.9, i32* %.8
-  store i32 %.12, i32* %.11
-  br label %.14wc113 
-.14wc113:
-  %.18 = load i32, i32* %.2
-  %.20 = icmp slt i32 %.18, 10
-  br i1 %.20, label %.15wloop.113.116, label %.16wn116
-.15wloop.113.116:
-  %.22 = load i32, i32* %.11
-  %.23 = load i32, i32* %.5
-  %.24 = add i32 %.22, %.23
-  store i32 %.24, i32* %.8
-  %.26 = load i32, i32* %.2
-  %.28 = add i32 %.26, 1
-  store i32 %.28, i32* %.2
-  br label %.14wc113 
-.16wn116:
-  %.31 = load i32, i32* %.8
-  ret i32 %.31 
+  store i32 0, i32* %.2
+  store i32 1, i32* %.2
+  %.9 = load i32, i32* %.2
+  %.11 = mul i32 %.9, 2
+  store i32 %.11, i32* %.3
+  store i32 3, i32* %.4
+  %.15 = load i32, i32* %.4
+  ret i32 %.15 
 }
 --------mem2reg--------
-define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
+define i32 @deadAssign(){
 .1:
-  br label %.14wc113 
-.14wc113:
-  %.34 = Phi i32 [%.9, %.1], [%.24, %.15wloop.113.116]
-  %.33 = Phi i32 [%.3, %.1], [%.28, %.15wloop.113.116]
-  %.20 = icmp slt i32 %.33, 10
-  br i1 %.20, label %.15wloop.113.116, label %.16wn116
-.15wloop.113.116:
-  %.24 = add i32 %.12, %.6
-  %.28 = add i32 %.33, 1
-  br label %.14wc113 
-.16wn116:
-  ret i32 %.34 
+  %.11 = mul i32 1, 2
+  ret i32 3 
 }
---------pre--------
-define i32 @main(i32 %.3, i32 %.6, i32 %.9, i32 %.12){
+--------constprop--------
+define i32 @deadAssign(){
 .1:
-  br label %.14wc113 
-.14wc113:
-  %.34 = Phi i32 [%.9, %.1], [%.24, %.15wloop.113.116]
-  %.33 = Phi i32 [%.3, %.1], [%.28, %.15wloop.113.116]
-  %.20 = icmp slt i32 %.33, 10
-  br i1 %.20, label %.15wloop.113.116, label %.16wn116
-.15wloop.113.116:
-  %.24 = add i32 %.12, %.6
-  %.28 = add i32 %.33, 1
-  br label %.14wc113 
-.16wn116:
-  ret i32 %.34 
+  ret i32 3 
+}
+--------DCE--------
+define i32 @deadAssign(){
+.1:
+  ret i32 3 
 }

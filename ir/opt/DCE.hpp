@@ -2,7 +2,7 @@
 #include <unordered_set>
 class DeadCodeEliminate{
 public:
-  DeadCodeEliminate(std::vector<Function*> FList, Module& module) : Flist(FList), m(module) {}
+  DeadCodeEliminate(std::vector<Function*> FList, Module& module) : Flist(FList), m(module), worklist{}, DelFunc{}, removelist{} {}
   void Pass();
 
 private:
@@ -18,8 +18,8 @@ private:
   Value* GetAddress(Value* val);
 
   void markUse(User* inst, std::unordered_set<User*>& worklist);
-  void detectNotSideEffectFunc(Function* func);
-  void deleteDeadFunc(Function* func);
+  void detectSideEffectFunc(Function* func);
+  void deleteDeadFunc();
   void deleteDeadInst(Function* func);
   void deleteDeadStore(Function* func);
   void deleteDeadRet(Function* func);
@@ -29,6 +29,8 @@ private:
   int inst_counter = 0;
   int store_counter = 0;
   int func_counter = 0;
-
-//   std::unordered_set<Function *> notSideEffectFunc;
-// };
+  std::unordered_set<User*> removelist;
+  std::unordered_set<User*> worklist;
+  std::unordered_set<Function *> notSideEffectFunc;
+  std::vector<Function*> DelFunc;
+};

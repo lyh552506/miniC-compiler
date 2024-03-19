@@ -182,8 +182,9 @@ bool User::HasSideEffect()
         return false;
     }
   }
-  if(this->GetUserlist().is_empty())
-    return false;
+  if(!this->GetUserlist().is_empty())
+    return true;
+  return false;
 }
 
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
