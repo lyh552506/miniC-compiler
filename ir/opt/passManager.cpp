@@ -15,6 +15,7 @@ void PassManager::InitPass() {
     m_liveness = std::make_unique<LivenessAnalysis>(f);
     m_constprop = std::make_unique<ConstantProp>(f);
     m_adce = std::make_unique<ADCE>(f);
+    m_dce = std::make_unique<DCE>(f);
     m_eliedg=std::make_unique<ElimitCriticalEdge>(f);
     RunOnFunction();
   }
@@ -44,7 +45,11 @@ void PassManager::RunOnFunction() {
     m_adce->RunOnFunction();
     m_adce->PrintPass();
   }
-  // if(InitpassRecorder[4])
+  if(InitpassRecorder[4])
+  {
+    m_dce->RunOnFunction();
+    m_dce->PrintPass();
+  }
   
 }
 
