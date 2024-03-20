@@ -332,33 +332,145 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @deadAssign(){
+define i32 @func(i32 %.3, i32 %.6){
 .1:
-  %.4 = alloca i32
-  %.3 = alloca i32
+  %.9 = alloca i32
+  %.8 = alloca i32
+  %.5 = alloca i32
   %.2 = alloca i32
-  store i32 0, i32* %.2
-  store i32 1, i32* %.2
-  %.9 = load i32, i32* %.2
-  %.11 = mul i32 %.9, 2
-  store i32 %.11, i32* %.3
-  store i32 3, i32* %.4
-  %.15 = load i32, i32* %.4
-  ret i32 %.15 
+  store i32 %.3, i32* %.2
+  store i32 %.6, i32* %.5
+  store i32 5, i32* %.9
+  %.12 = load i32, i32* %.2
+  %.13 = load i32, i32* %.5
+  %.14 = add i32 %.12, %.13
+  store i32 %.14, i32* %.8
+  br label %.16wc51 
+.16wc51:
+  %.20 = load i32, i32* %.9
+  %.22 = icmp slt i32 %.20, 10
+  br i1 %.22, label %.17wloop.51.59, label %.18wn59
+.17wloop.51.59:
+  %.25 = load i32, i32* %.9
+  %.26 = add i32 1, %.25
+  store i32 %.26, i32* %.9
+  %.28 = load i32, i32* %.5
+  %.29 = load i32, i32* %.9
+  %.30 = add i32 %.28, %.29
+  store i32 %.30, i32* %.8
+  %.34 = load i32, i32* %.9
+  %.36 = icmp sgt i32 %.34, 7
+  br i1 %.36, label %.32, label %.33
+.18wn59:
+  %.63 = load i32, i32* %.8
+  ret i32 %.63 
+.32:
+  br label %.38wc55 
+.33:
+  %.54 = load i32, i32* %.9
+  %.56 = icmp slt i32 %.54, 4
+  br i1 %.56, label %.52, label %.53
+.38wc55:
+  %.42 = load i32, i32* %.9
+  %.44 = icmp slt i32 %.42, 9
+  br i1 %.44, label %.39wloop.55.55, label %.40wn55
+.39wloop.55.55:
+  %.46 = load i32, i32* %.2
+  %.47 = add i32 %.46, 1
+  store i32 %.47, i32* %.2
+  br label %.38wc55 
+.40wn55:
+  br label %.50 
+.50:
+  br label %.16wc51 
+.52:
+  store i32 3, i32* %.8
+  br label %.53 
+.53:
+  br label %.50 
 }
 --------mem2reg--------
-define i32 @deadAssign(){
+define i32 @func(i32 %.3, i32 %.6){
 .1:
-  %.11 = mul i32 1, 2
-  ret i32 3 
+  %.14 = add i32 %.3, %.6
+  br label %.16wc51 
+.16wc51:
+  %.73 = Phi i32 [%.3, %.1], [%.72, %.50]
+  %.70 = Phi i32 [%.14, %.1], [%.69, %.50]
+  %.67 = Phi i32 [5, %.1], [%.26, %.50]
+  %.22 = icmp slt i32 %.67, 10
+  br i1 %.22, label %.17wloop.51.59, label %.18wn59
+.17wloop.51.59:
+  %.26 = add i32 1, %.67
+  %.30 = add i32 %.6, %.26
+  %.36 = icmp sgt i32 %.26, 7
+  br i1 %.36, label %.32, label %.33
+.18wn59:
+  ret i32 %.70 
+.32:
+  br label %.38wc55 
+.33:
+  %.56 = icmp slt i32 %.26, 4
+  br i1 %.56, label %.52, label %.65
+.38wc55:
+  %.71 = Phi i32 [%.73, %.32], [%.47, %.39wloop.55.55]
+  %.44 = icmp slt i32 %.26, 9
+  br i1 %.44, label %.39wloop.55.55, label %.40wn55
+.39wloop.55.55:
+  %.47 = add i32 %.71, 1
+  br label %.38wc55 
+.40wn55:
+  br label %.50 
+.50:
+  %.72 = Phi i32 [%.73, %.53], [%.71, %.40wn55]
+  %.69 = Phi i32 [%.68, %.53], [%.30, %.40wn55]
+  br label %.16wc51 
+.52:
+  br label %.53 
+.53:
+  %.68 = Phi i32 [%.30, %.65], [3, %.52]
+  br label %.50 
+.65:
+  br label %.53 
 }
---------constprop--------
-define i32 @deadAssign(){
+--------pre--------
+define i32 @func(i32 %.3, i32 %.6){
 .1:
-  ret i32 3 
-}
---------DCE--------
-define i32 @deadAssign(){
-.1:
-  ret i32 3 
-}
+  %.14 = add i32 %.3, %.6
+  br label %.16wc51 
+.16wc51:
+  %.73 = Phi i32 [%.3, %.1], [%.72, %.50]
+  %.70 = Phi i32 [%.14, %.1], [%.69, %.50]
+  %.67 = Phi i32 [5, %.1], [%.26, %.50]
+  %.22 = icmp slt i32 %.67, 10
+  br i1 %.22, label %.17wloop.51.59, label %.18wn59
+.17wloop.51.59:
+  %.26 = add i32 1, %.67
+  %.30 = add i32 %.6, %.26
+  %.36 = icmp sgt i32 %.26, 7
+  br i1 %.36, label %.32, label %.33
+.18wn59:
+  ret i32 %.70 
+.32:
+  %.81 = icmp slt i32 %.26, 9
+  br label %.38wc55 
+.33:
+  %.56 = icmp slt i32 %.26, 4
+  br i1 %.56, label %.52, label %.65
+.38wc55:
+  %.82 = Phi i1 [%.82, %.39wloop.55.55], [%.81, %.32]
+  %.71 = Phi i32 [%.73, %.32], [%.47, %.39wloop.55.55]
+  br i1 %.82, label %.39wloop.55.55, label %.40wn55
+.39wloop.55.55:
+  %.47 = add i32 %.71, 1
+  br label %.38wc55 
+.40wn55:
+  br label %.50 
+.50:
+  %.72 = Phi i32 [%.73, %.53], [%.71, %.40wn55]
+  %.69 = Phi i32 [%.68, %.53], [%.30, %.40wn55]
+  br label %.16wc51 
+.52:
+  br label %.53 
+.53:
+  %.68 = Phi i32 [%.30, %

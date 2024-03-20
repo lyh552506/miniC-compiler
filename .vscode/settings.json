@@ -110,7 +110,8 @@
         "queue": "cpp",
         "stdarg.h": "c",
         "__nullptr": "cpp",
-        "__functional_base": "cpp"
+        "__functional_base": "cpp",
+        "filesystem": "cpp"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true
