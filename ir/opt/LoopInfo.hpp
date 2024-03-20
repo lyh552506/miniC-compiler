@@ -1,6 +1,6 @@
 #pragma once
 #include "dominant.hpp"
-#include "passManagerBase.hpp"
+#include "PassManagerBase.hpp"
 class LoopInfo : public PassManagerBase {
 public:
   LoopInfo(Function *func, dominance *dom)

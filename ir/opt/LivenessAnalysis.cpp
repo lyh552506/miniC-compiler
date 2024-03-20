@@ -36,24 +36,23 @@ void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
   }
 }
 
-void LivenessAnalysis::pass(Function *func)
+void LivenessAnalysis::RunOnFunction()
 {
-  for(BasicBlock* _block:*func)
+  for(BasicBlock* _block:*F)
   {
     BlockLivein[_block].clear();
     BlockLiveout[_block].clear();
     GetBlockLivein(_block);
     GetBlockLiveout(_block);
   }
-  iterate(func); 
+  iterate(F); 
   while(isChanged)
-    iterate(func);
-  // PrintInfo(func);
+    iterate(F);
 }
 
 void LivenessAnalysis::iterate(Function *func)
 {
-  RunOnFunction(func);  
+  RunOnFunc(func);  
   bool isChanged = false;
   for(BasicBlock *_block:(*func))
   {
@@ -65,7 +64,7 @@ void LivenessAnalysis::iterate(Function *func)
   }
 }
 
-void LivenessAnalysis::RunOnFunction(Function *func)
+void LivenessAnalysis::RunOnFunc(Function *func)
 {
   for(auto BB = (*func).rbegin(); BB != (*func).rend(); ++BB)
   {
@@ -81,18 +80,20 @@ void LivenessAnalysis::RunOnFunction(Function *func)
       UnChanged[_Block] = false;
 }
 }
-void LivenessAnalysis::PrintInfo(Function* func)
+
+void LivenessAnalysis::PrintPass()
 {
-  for(BasicBlock* _block:*func)
+  std::cout << "--------LivenessAnalysis--------" << std::endl;
+  for(BasicBlock* _block:*F)
   {
-    std::cout << "Block: "<< _block->GetName() << std::endl;
-    std::cout << "Livein: ";
+    std::cout << "--------Block:"<< _block->GetName() << "--------" << std::endl;
+    std::cout << "        Livein" << std::endl;
     for(Value* _value:BlockLivein[_block])
-      std::cout << _value->GetName() << " ";
+      std::cout << "%" << _value->GetName() << " ";
     std::cout << std::endl;
-    std::cout << "Liveout: ";
+    std::cout << "        Liveout" << std::endl;
     for(Value* _value:BlockLiveout[_block])
-      std::cout << _value->GetName() << " ";
+      std::cout << "%" << _value->GetName() << " ";
     std::cout << std::endl;
   }
 }

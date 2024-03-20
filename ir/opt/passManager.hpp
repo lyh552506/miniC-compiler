@@ -8,7 +8,7 @@
 #include "dominant.hpp"
 #include "DCE.hpp"
 #include "ADCE.hpp"
-#include "passManagerBase.hpp"
+#include "PassManagerBase.hpp"
 #include "../../yacc/parser.hpp"
 #include "LoopInfo.hpp"
 #include "../Analysis/DealCriticalEdges.hpp"
@@ -27,11 +27,11 @@ public:
 private:
   bool Analysis=false; 
   std::vector<int> InitpassRecorder{50};
-  std::vector<Function*> FList;
   std::unique_ptr<LoopInfo> m_loopAnlay;
   std::unique_ptr<dominance> m_dom;
   std::unique_ptr<PRE> m_pre;
   std::unique_ptr<ConstantProp> m_constprop;
+  std::unique_ptr<ADCE> m_adce;
   std::unique_ptr<LivenessAnalysis> m_liveness;
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
 };

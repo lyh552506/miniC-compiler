@@ -1,18 +1,14 @@
 #include "ADCE.hpp"
 
-void ADCE::Pass()
+void ADCE::PrintPass()
 {
-    for(auto func : flist)
-    {
-        AgressiveDCE(func);
-    }
     std::cout << "--------ADCE--------" << std::endl;
     Singleton<Module>().Test();
 }
 
-void ADCE::AgressiveDCE(Function* func)
+void ADCE::RunOnFunction()
 {
-    for(BasicBlock* block : *func)
+    for(BasicBlock* block : *_func)
     {
         for(auto inst_ = block->rbegin();inst_ != block->rend(); --inst_)
         {
@@ -30,7 +26,7 @@ void ADCE::AgressiveDCE(Function* func)
         }
     }
 
-    for(BasicBlock* block : *func)
+    for(BasicBlock* block : *_func)
     {
         for(auto inst_ = block->rbegin();inst_ != block->rend(); --inst_)
         {

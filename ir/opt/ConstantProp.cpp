@@ -1,10 +1,13 @@
 #include "ConstantProp.hpp"
 #include <set>
 
-void ConstantProp::Pass()
+void ConstantProp::RunOnFunction()
 {
     for(BasicBlock* block : *_func)
         RunOnBlock(block);
+}
+void ConstantProp::PrintPass()
+{
     std::cout << "--------constprop--------" << std::endl;
     Singleton<Module>().Test();
 }
