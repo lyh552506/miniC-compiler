@@ -18,7 +18,7 @@ void copyFile(const std::string &sourcePath,
 static struct option long_options[] = {
     {"mem2reg", no_argument, 0, 0},   {"pre", no_argument, 0, 1},
     {"constprop", no_argument, 0, 2}, {"dce", no_argument, 0, 3},
-    {"adce", no_argument, 0, 4},      {"analysis", no_argument, 0, 5},
+    {"adce", no_argument, 0, 4},     {"loopinfo",no_argument,0,5},
     {"help", no_argument, 0, 6},      {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
       pass_manager->IncludePass(4);
       break;
     case 5:
-      pass_manager->setAnalsis(true);
+      pass_manager->IncludePass(5);
       break;
     case 6:
       std::cerr << "help" << std::endl;
@@ -67,18 +67,6 @@ int main(int argc, char **argv) {
     }
   }
   pass_manager->InitPass();
-  // auto f = Singleton<Module>().GetFuncTion()[0].get();
-  // auto &Li = Singleton<Module>().GetFuncTion()[0]->GetBasicBlock();
-  // for (auto bb = f->begin(); bb != f->end(); ++bb)
-  //   f->push_bb(*bb);
-  // for (int i = 0; i < Li.size(); ++i)
-  //   Li[i]->num = i;
-
-  // dominance dom(f, Li.size());
-
-  // Gvn_Gcm test(&dom, f);
-  // test.init_pass();
-  // Singleton<Module>().Test();
   // PrintCodeToTxt(&Singleton<Module>());
   return 0;
 }

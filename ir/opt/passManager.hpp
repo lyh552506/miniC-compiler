@@ -14,8 +14,10 @@
 #include "../Analysis/DealCriticalEdges.hpp"
 class PassManager:public PassManagerBase {
 public:
-  PassManager()=default;
-
+  PassManager():InitpassRecorder(50){
+    FList=new std::vector<Function*>();
+  }
+  void PreWork(int i);
   void IncludePass(int pass);
   void InitPass();
   void RunOnFunction();
@@ -26,9 +28,11 @@ public:
   }
 private:
   bool Analysis=false; 
-  std::vector<int> InitpassRecorder{50};
-  std::vector<Function*> FList;
-  std::unique_ptr<LoopInfo> m_loopAnlay;
+  std::vector<int> InitpassRecorder;
+  std::vector<Function*>* FList;
+  std::vector<BasicBlock *>* BList;
+  Function* m_func;
+  std::unique_ptr<LoopAnalysis> m_loopAnlay;
   std::unique_ptr<dominance> m_dom;
   std::unique_ptr<PRE> m_pre;
   std::unique_ptr<ConstantProp> m_constprop;

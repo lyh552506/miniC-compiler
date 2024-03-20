@@ -88,6 +88,7 @@ bool Value::isGlobVal(){
     return false;
   if(dynamic_cast<ConstantData*>(this))
     return false;
+  return true;
 }
 
 bool Value::isConstZero()
