@@ -182,8 +182,8 @@ bool User::HasSideEffect()
         return false;
     }
   }
-  if(!this->GetUserlist().is_empty())
-    return true;
+  if(this->GetUserlist().is_empty())
+    return false;
   return false;
 }
 
