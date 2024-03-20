@@ -23,6 +23,21 @@ void DCE::RunOnFunction()
         WorkList.pop_back();
         DCEInst(inst, WorkList);
     }
+    if(DelF)
+    {
+        Function* func = dynamic_cast<Function*>(CAll->Getuselist()[0]->usee);
+        for(auto iter = func->rbegin(); iter != func->rend(); --iter)
+        {
+            for(auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1)
+            {
+                if(!dynamic_cast<RetInst*>(*iter1))
+                {
+                    (*iter1)->ClearRelation();
+                    (*iter1)->EraseFromParent();
+                }
+            }
+        }
+    }
     return;
 }
 
@@ -57,10 +72,8 @@ bool DCE::isDeadInst(User* inst)
                 return true;
             Value* RetVal = RVACC(dynamic_cast<Function*>(CAll->Getuselist()[0]->usee));
             if(dynamic_cast<UndefValue*>(RetVal))
-            {
-                CAll->RAUW(RetVal);
-                return true;
-            }
+                DelF = true;
+            return false;
         }
     }
     if(inst->IsTerminateInst())
