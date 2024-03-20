@@ -169,7 +169,17 @@ void PRE::Eliminate() {
       u->EraseFromParent();
     }
   }
+}
 
+void PRE::RunOnFunction() {
+  BasicBlock *Entry = m_func->front();
+  VN = new ValueTable();
+  auto entrynode = &(m_dom->GetNode(Entry->num));
+  m_func->init_visited_block();
+  DfsDT(0);
+  m_func->init_visited_block();
+  PostOrderCFG(m_func->front());
+  init_pass();
 }
 
 RetStats PRE::IdentyPartilRedundancy(

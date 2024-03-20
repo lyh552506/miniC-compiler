@@ -49,9 +49,10 @@ void MachineInst::print() {
     }
     else if (opcode == "beqz") {
         std::cout << "    " << opcode << " ";
-        std::string lable1 = mbb->get_parent()->get_lable(rs1->GetName());
+        //std::string lable1 = mbb->get_parent()->get_lable(rs1->GetName());
         std::string lable2 = mbb->get_parent()->get_lable(rs2->GetName());
-        std::cout << rd->GetName() << ", " << lable1 << ", " << lable2 << std::endl;
+        //std::cout << rd->GetName() << ", " << lable1 << ", " << lable2 << std::endl;
+        std::cout << rd->GetName() << ", " << lable2 << std::endl;
     }
     else if (opcode == "call" ) {
         std::cout << "    " << opcode << " ";
@@ -60,6 +61,12 @@ void MachineInst::print() {
     else if (opcode == "ret") {
         std::cout << "    lw a0, " << rd->GetName() << std::endl; 
         this->get_machinebasicblock()->get_parent()->print_func_end();
+    }
+    else if (opcode == "li") {
+        std::cout << "    li " << rd->GetName() << ", " << rs1->GetName() << std::endl;
+    }
+    else if (opcode == "xori") {
+        std::cout << "    xori " << rd->GetName() << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl; 
     }
     else if (opcode == "white")
         std::cout << "Error: No Such Instruction." << std::endl;

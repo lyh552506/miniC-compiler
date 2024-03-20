@@ -1,22 +1,19 @@
-#include "CFG.hpp"
-#include "my_stl.hpp"
-#include "parser.hpp"
+#include"DealCriticalEdges.hpp"
 
-class ElimitCriticalEdge {
-public:
-  void DealCriticalEdges();
-  void AddNullBlock(User *inst, int succ);
-  ElimitCriticalEdge(Function &func) : m_func(func) {}
+void ElimitCriticalEdge::RunOnFunction(){
+  DealCriticalEdges();
+}
 
-private:
-  Function &m_func;
-};
+void ElimitCriticalEdge::PrintPass(){
+  std::cout<<"-----------ElimitCriticalEdge------------\n";
+  Singleton<Module>().Test();
+}
 
 void ElimitCriticalEdge::DealCriticalEdges() {
-  for (auto it = m_func.begin(); it != m_func.end(); ++it) {
+  for (auto it = m_func->begin(); it != m_func->end(); ++it) {
     BasicBlock *bb = *it;
     //获取到后继节点个数
-    int SuccessorNum = GetSuccNum(bb);
+    int SuccessorNum = bb->GetSuccNum();
     if (SuccessorNum > 1)
       for (int i = 0; i < SuccessorNum; i++)
         AddNullBlock(bb->back(), i);
@@ -36,9 +33,10 @@ void ElimitCriticalEdge::AddNullBlock(User *inst, int succ) {
     return;
 
   BasicBlock *CurrBB = inst->GetParent();
-  BasicBlock *criticalbb = new BasicBlock(m_func);
+  BasicBlock *criticalbb = new BasicBlock(*m_func);
+  m_func->push_back(criticalbb);
   //在关键边中插入block
-  m_func.InsertBlock(CurrBB, DstBB, criticalbb);
+  m_func->InsertBlock(CurrBB, DstBB, criticalbb);
 
   //还需要修改phi函数的incoming
   for (auto iter = DstBB->begin();
@@ -47,7 +45,7 @@ void ElimitCriticalEdge::AddNullBlock(User *inst, int succ) {
     auto phi = dynamic_cast<PhiInst *>(*iter);
     auto it1 = std::find_if(
         phi->PhiRecord.begin(), phi->PhiRecord.end(),
-        [CurrBB](std::pair<int, std::pair<Value *, BasicBlock *>> &ele) {
+        [CurrBB](const std::pair<int, std::pair<Value *, BasicBlock *>> &ele) {
           return ele.second.second == CurrBB;
         });
     if (it1 == phi->PhiRecord.end())

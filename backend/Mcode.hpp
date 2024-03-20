@@ -2,6 +2,7 @@
 #include "../lib/BaseCFG.hpp"
 #include "../lib/CFG.hpp"
 #include "gir.hpp"
+#include "my_stl.hpp"
 #include <variant>
 class MachineUnit;
 class MachineFunction;

@@ -1,3 +1,4 @@
+#pragma once
 #include "CFG.hpp"
 #include "ConstantProp.hpp"
 

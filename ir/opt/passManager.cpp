@@ -1,8 +1,6 @@
 #include "passManager.hpp"
-#include "../../yacc/parser.hpp"
-//#include "DCE.hpp"
 
-void PassManager::Init_Pass() {
+void PassManager::InitPass() {
   for (int i = 0; i < Singleton<Module>().GetFuncTion().size(); i++) {
     auto f = Singleton<Module>().GetFuncTion()[i].get();
     FList.push_back(f);
@@ -11,32 +9,40 @@ void PassManager::Init_Pass() {
       f->push_bb(*bb);
     for (int i = 0; i < Li.size(); ++i)
       Li[i]->num = i;
-    if (InitpassRecorder[0]) {
-      std::unique_ptr<dominance> dom(new dominance(f, Li.size()));
-      //有了mem2reg才有后续的优化
-      if (InitpassRecorder[1])
-        PRE(dom.get(), f);
-      }
-      if(InitpassRecorder[2])
-        ConstantProp(f).Pass();
-      if(InitpassRecorder[5])
-      {
-        std::unique_ptr<LivenessAnalysis> liveness(new LivenessAnalysis);
-        liveness.get()->pass(f);
-      }
+
+    m_dom = std::make_unique<dominance>(f, Li.size());
+    m_pre = std::make_unique<PRE>(m_dom.get(), f);
+    m_loopAnlay = std::make_unique<LoopInfo>(f, m_dom.get());
+    m_liveness = std::make_unique<LivenessAnalysis>();
+    m_constprop = std::make_unique<ConstantProp>(f);
+    m_eliedg=std::make_unique<ElimitCriticalEdge>(f);
+    RunOnFunction();
   }
-  if(InitpassRecorder[3])
-  {
-    DeadCodeEliminate(FList, Singleton<Module>()).Pass();
-    Singleton<Module>().Test();
+}
+void PassManager::RunOnFunction() {
+  if (Analysis == true) {
+    Anlaysis();
+    m_loopAnlay->PrintPass();
+    m_eliedg->PrintPass();
   }
-    
-  // Singleton<Module>().Test();
-  if(InitpassRecorder[4])
-  {
-    ADCE(FList).Pass();
+  if (InitpassRecorder[0]) {
+    m_dom->RunOnFunction();
+    m_dom->PrintPass();
   }
+  if (InitpassRecorder[1]) {
+    m_pre->RunOnFunction();
+    m_pre->PrintPass();
+  }
+  // if(InitpassRecorder[2])
+  // if(InitpassRecorder[3])
+  // if(InitpassRecorder[4])
+  
 }
 
 void PassManager::IncludePass(int pass) { InitpassRecorder[pass] = 1; }
 
+void PassManager::Anlaysis() {
+  //m_liveness
+  m_eliedg->RunOnFunction();
+  m_loopAnlay->RunOnFunction();
+}

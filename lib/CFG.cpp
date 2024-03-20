@@ -627,6 +627,29 @@ void Function::InsertAlloca(AllocaInst* ptr){
     front()->push_back(ptr);
 }
 
+void Function::InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert){
+    if(auto condition=pred->back()){
+        if(auto cond=dynamic_cast<CondInst*>(condition)){
+            for(int i=1;i<=2;i++){
+                if(cond->Getuselist()[i]->GetValue()==succ){
+                    cond->RSUW(i,insert);
+                    insert->GenerateUnCondInst(succ);
+                    break;
+                }
+            }
+            assert("Not connected on CFG");
+            return;
+        }
+        else if(auto uncond=dynamic_cast<UnCondInst*>(condition)){
+            assert(cond->Getuselist()[0]->GetValue()==succ&&"Not connected on CFG");            
+            uncond->RSUW(0,insert);
+            insert->GenerateUnCondInst(succ);
+            return;
+        }
+    }
+    assert("Null BasicBlock Or Invalid Branch Inst");
+}
+
 BuildInFunction::BuildInFunction(Type* tp,std::string _id):Value(tp){
     name=_id;
     if(name=="starttime"||name=="stoptime")name="_sysy_"+name;
@@ -790,6 +813,15 @@ Operand BasicBlock::push_alloca(std::string name,Type* _tp){
     auto tmp=new AllocaInst(name,_tp);
     push_front(tmp);
     return tmp->GetDef();
+}
+
+int BasicBlock::GetSuccNum(){
+  if(dynamic_cast<CondInst*>(this->back()))
+    return 2;
+  else if(dynamic_cast<UnCondInst*>(this->back()))
+    return 1;
+  else 
+    return 0;
 }
 
 PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB){

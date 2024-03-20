@@ -5,14 +5,16 @@ class LiInst : public User
 {
     public:
     LiInst(Operand _A);
-    void print()final;
+    void print()final {};
 };
 
 class XorInst : public User
 {
+    private:
+    std::string opcode;
     public:
     XorInst(Operand _A, std::string opcode, Operand _B);
-    void print()final;
+    std::string GetOpcode();
+    void SetOpcode(std::string opcode);
+    void print()final {};
 };
-
-void RSUW (Operand A, User* B, int num);

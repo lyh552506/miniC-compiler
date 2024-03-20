@@ -4,9 +4,9 @@ the details can be found in "Value-Based Partial Redundancy Elimination" written
 by Thomas VanDrunen and Antony L. Hosking
 ----------------------------------------------------------------------------------------------------*/
 #pragma once
-#include "GVN.hpp"
 #include "IDF.hpp"
 #include "dominant.hpp"
+#include "PassManagerBase.hpp"
 
 enum RetStats { Delay, Changed, Unchanged };
 
@@ -110,8 +110,13 @@ struct ValueNumberedSet {
   }
 };
 
-class PRE {
+class PRE :public PassManagerBase{
 public:
+  void RunOnFunction();
+  void PrintPass(){
+    std::cout << "--------pre--------" << std::endl;
+    Singleton<Module>().Test();
+  }
   void init_pass();
   /// @brief
   void BuildSets();
@@ -146,18 +151,7 @@ public:
   //在一个set中找到val的leader
   Value *Find_Leader(ValueNumberedSet &set, Value *val);
 
-  PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {
-    BasicBlock *Entry = m_func->front();
-    VN = new ValueTable();
-    auto entrynode = &(m_dom->GetNode(Entry->num));
-    m_func->init_visited_block();
-    DfsDT(0);
-    m_func->init_visited_block();
-    PostOrderCFG(m_func->front());
-    init_pass();
-    std::cout << "--------pre--------" << std::endl;
-    Singleton<Module>().Test();
-  }
+  PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {}
 
 private:
   dominance *m_dom;
