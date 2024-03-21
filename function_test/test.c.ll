@@ -332,63 +332,6 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @func(i32 %.3, i32 %.6){
-.1:
-  %.9 = alloca i32
-  %.8 = alloca i32
-  %.5 = alloca i32
-  %.2 = alloca i32
-  store i32 %.3, i32* %.2
-  store i32 %.6, i32* %.5
-  store i32 5, i32* %.9
-  %.12 = load i32, i32* %.2
-  %.13 = load i32, i32* %.5
-  %.14 = add i32 %.12, %.13
-  store i32 %.14, i32* %.8
-  br label %.16wc51 
-.16wc51:
-  %.20 = load i32, i32* %.9
-  %.22 = icmp slt i32 %.20, 10
-  br i1 %.22, label %.17wloop.51.59, label %.18wn59
-.17wloop.51.59:
-  %.25 = load i32, i32* %.9
-  %.26 = add i32 1, %.25
-  store i32 %.26, i32* %.9
-  %.28 = load i32, i32* %.5
-  %.29 = load i32, i32* %.9
-  %.30 = add i32 %.28, %.29
-  store i32 %.30, i32* %.8
-  %.34 = load i32, i32* %.9
-  %.36 = icmp sgt i32 %.34, 7
-  br i1 %.36, label %.32, label %.33
-.18wn59:
-  %.63 = load i32, i32* %.8
-  ret i32 %.63 
-.32:
-  br label %.38wc55 
-.33:
-  %.54 = load i32, i32* %.9
-  %.56 = icmp slt i32 %.54, 4
-  br i1 %.56, label %.52, label %.53
-.38wc55:
-  %.42 = load i32, i32* %.9
-  %.44 = icmp slt i32 %.42, 9
-  br i1 %.44, label %.39wloop.55.55, label %.40wn55
-.39wloop.55.55:
-  %.46 = load i32, i32* %.2
-  %.47 = add i32 %.46, 1
-  store i32 %.47, i32* %.2
-  br label %.38wc55 
-.40wn55:
-  br label %.50 
-.50:
-  br label %.16wc51 
-.52:
-  store i32 3, i32* %.8
-  br label %.53 
-.53:
-  br label %.50 
-}
 --------mem2reg--------
 define i32 @func(i32 %.3, i32 %.6){
 .1:
@@ -473,4 +416,17 @@ define i32 @func(i32 %.3, i32 %.6){
 .52:
   br label %.53 
 .53:
-  %.68 = Phi i32 [%.30, %
+  %.68 = Phi i32 [%.30, %.65], [3, %.52]
+  br label %.50 
+.65:
+  br label %.53 
+}
+---------------------Loop Analysis-----------------------
+Num Of Loops:2
+Loop Depth:2
+Loop Head:.38wc55
+Loop Body:.39wloop.55.55 
+Loop Depth:1
+Loop Head:.16wc51
+Loop Body:.50 .40wn55 .38wc55 .39wloop.55.55 .32 .17wloop.51.59 .53 .52 .33 .65 
+
