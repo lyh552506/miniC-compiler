@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
-  Singleton<Module>().Test();
+  //Singleton<Module>().Test();
   // output_path = argv[1];
   // output_path += ".a";
   // freopen(output_path.c_str(),"a",stdout);
@@ -67,6 +67,6 @@ int main(int argc, char **argv) {
     }
   }
   pass_manager->InitPass();
-  PrintCodeToTxt(&Singleton<Module>());
+  //PrintCodeToTxt(&Singleton<Module>());
   return 0;
 }

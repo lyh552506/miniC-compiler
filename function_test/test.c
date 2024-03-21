@@ -59,6 +59,24 @@ int func(int b,int c) {
     };
     return a;
 }
+// void reverse(int n) {
+//     int next;
+//     if (n <= 1) {
+//         next=getint();
+//         putint(next);
+//     }
+//     else {
+//         next=getint();
+//         reverse(n-1);
+//         putint(next);
+//     }
+// }
+
+// int main() {
+//     int i=200;
+//     reverse(i);
+//     return 0;
+// }
 // int FullRedundancy2 () {
 //      int v1,a=3,b=5;
 //      if (a >= 0) {
@@ -125,11 +143,3 @@ int func(int b,int c) {
   
 // }
 
-int deadAssign() {
-    int a, b, c;
-    a = 0; // dead assignment
-    a = 1;
-    b = a * 2; // dead assignment
-    c = 3;
-    return c;
-}
