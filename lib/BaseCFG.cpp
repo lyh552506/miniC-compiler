@@ -146,6 +146,8 @@ bool User::HasSideEffect()
   }
   if(dynamic_cast<CallInst*>(this))
   {
+    // if(this->GetTypeEnum() == IR_Value_VOID && !this->HasSideEffect())
+    //   return false;
     Function* func = dynamic_cast<Function*>(this->Getuselist()[0]->GetValue());
     if(func){
     auto& params = func->GetParams();
@@ -165,8 +167,6 @@ bool User::HasSideEffect()
         {
           if((*iter)->HasSideEffect())
             return true;
-          else
-            return false;
         }
       }
     }}

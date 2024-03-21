@@ -22,14 +22,15 @@ Value* ConstantFolding::ConstantFoldPhiInst(PhiInst* inst)
     for(Value* income : inst->GetAllPhiVal())
     {
         if(auto _UndefValue = dynamic_cast<UndefValue*>(income))
-            continue;
+            return nullptr;
         if(!dynamic_cast<ConstantData*>(income))
             return nullptr;
         if(CommonValue && income != CommonValue)
             return nullptr;
         CommonValue = income;
     }
-    return CommonValue ? CommonValue : UndefValue::get(inst->GetType());
+    if(CommonValue)
+        return CommonValue;
 }
 
 Value* ConstantFolding::ConstantFoldBinaryInst(BinaryInst* inst)
@@ -55,12 +56,7 @@ Value* ConstantFolding::ConstantFoldBinaryInst(BinaryInst* inst)
     }
     Value* Simplify = SimplifyBinOp(inst->getopration(), LHS, RHS);
     if(Simplify)
-    {
-        if(dynamic_cast<UndefValue*>(Simplify))
-            return nullptr;
-        else
-            return Simplify;
-    }
+        return Simplify;
     return nullptr;
 } 
 
@@ -116,8 +112,9 @@ Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Va
 Value* ConstantFolding::ConstantFoldSITFPInst(SITFP* inst)
 {
     Value* Operand = inst->Getuselist()[0]->GetValue();
+    Type* type;
     if(auto UNdefValue = dynamic_cast<UndefValue*>(Operand))
-        return nullptr;
+        return UndefValue::get(type->NewTypeByEnum(InnerDataType::IR_Value_Float));
     else if(auto iNt = dynamic_cast<ConstIRInt*>(Operand))
         return ConstIRFloat::GetNewConstant((float)(iNt->GetVal()));
     else
@@ -127,8 +124,9 @@ Value* ConstantFolding::ConstantFoldSITFPInst(SITFP* inst)
 Value* ConstantFolding::ConstantFoldFPTSIInst(FPTSI* inst)
 {
     Value* Operand = inst->Getuselist()[0]->GetValue();
+    Type* type;
     if(auto UNdefValue = dynamic_cast<UndefValue*>(Operand))
-        return nullptr;
+        return UndefValue::get(type->NewTypeByEnum(InnerDataType::IR_Value_INT));
     else if(auto fLoat = dynamic_cast<ConstIRFloat*>(Operand))
         return ConstIRInt::GetNewConstant((int)(fLoat->GetVal()));
     else

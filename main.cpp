@@ -67,6 +67,6 @@ int main(int argc, char **argv) {
     }
   }
   pass_manager->InitPass();
-  PrintCodeToTxt(&Singleton<Module>());
+  // PrintCodeToTxt(&Singleton<Module>());
   return 0;
 }

@@ -8,13 +8,34 @@ void DCE::PrintPass()
 
 void DCE::RunOnFunction()
 {
+    bool flag = FuncHasSideEffect(func);
+    if(dynamic_cast<UndefValue*>(RVACC(func)) && !flag)
+    {
+        for(auto iter = func->rbegin(); iter != func->rend(); --iter)
+        {
+            bool NDelBlock = false;
+            for(auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1)
+            {
+                if(!dynamic_cast<RetInst*>(*iter1))
+                {
+                    (*iter1)->ClearRelation();
+                    (*iter1)->EraseFromParent();
+                }
+                else
+                    NDelBlock = true;
+            }
+            if(!NDelBlock)
+                (*iter)->EraseFromParent();
+        }
+        return;
+    }
     std::vector<User*> WorkList;
     for(BasicBlock* block : *func)
     {
         for(auto inst = block->rbegin();inst != block->rend(); --inst)
         {
-            if(std::find(WorkList.begin(), WorkList.end(), *inst) == WorkList.end())
-                DCEInst(*inst, WorkList);
+            if(std::find(WorkList.begin(), WorkList.end(), (*inst)) == WorkList.end())
+                DCEInst((*inst), WorkList);
         }
     }
     while(!WorkList.empty())
@@ -23,25 +44,9 @@ void DCE::RunOnFunction()
         WorkList.pop_back();
         DCEInst(inst, WorkList);
     }
-    if(DelF)
-    {
-        Function* func = dynamic_cast<Function*>(CAll->Getuselist()[0]->usee);
-        for(auto iter = func->rbegin(); iter != func->rend(); --iter)
-        {
-            for(auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1)
-            {
-                if(!dynamic_cast<RetInst*>(*iter1))
-                {
-                    (*iter1)->ClearRelation();
-                    (*iter1)->EraseFromParent();
-                }
-            }
-        }
-    }
-    return;
 }
 
-void DCE::DCEInst(User* inst, std::vector<User*> Worklist)
+void DCE::DCEInst(User* inst, std::vector<User*> &Worklist)
 {
     if(isDeadInst(inst))
     {
@@ -50,7 +55,8 @@ void DCE::DCEInst(User* inst, std::vector<User*> Worklist)
             Value* op = use_->usee;
             if(User* inst_ = dynamic_cast<User*>(op))
             {
-                Worklist.push_back(inst_);
+                if(isDeadInst(inst_))
+                    Worklist.push_back(inst_);
             }
         }
         inst->ClearRelation();
@@ -64,20 +70,6 @@ bool DCE::isDeadInst(User* inst)
         return false;
     if(!inst->HasSideEffect())
         return true; 
-    if(auto CAll = dynamic_cast<CallInst*>(inst))
-    {
-        if(!CAll->HasSideEffect())
-        {
-            if(CAll->GetTypeEnum() == IR_Value_VOID)
-                return true;
-            Value* RetVal = RVACC(dynamic_cast<Function*>(CAll->Getuselist()[0]->usee));
-            if(dynamic_cast<UndefValue*>(RetVal))
-                DelF = true;
-            return false;
-        }
-    }
-    if(inst->IsTerminateInst())
-        return false;
     return false;
 }
 
@@ -104,21 +96,54 @@ Value* DCE::RVACC(Function* func)
             }
             if(auto REtInst = dynamic_cast<RetInst*>(inst))
             {
-                Value* REtVal = inst->Getuselist()[0]->usee;
-                if(REtVal->isConst())
-                {
-                    if(auto INt = dynamic_cast<ConstIRInt*>(REtVal))
-                        return ConstIRInt::GetNewConstant(INt->GetVal());
-                    if(auto FLoat = dynamic_cast<ConstIRFloat*>(REtVal))
-                        return ConstIRFloat::GetNewConstant(FLoat->GetVal());
-                    if(auto BOol = dynamic_cast<ConstIRBoolean*>(REtVal))
-                        return ConstIRBoolean::GetNewConstant(BOol->GetVal());
-                }
-                else if(dynamic_cast<UndefValue*>(REtVal))
-                    return UndefValue::get(REtVal->GetType());
-                else
+                if(inst->GetTypeEnum() == IR_Value_VOID)
                     return nullptr;
+                else
+                {
+                    Value* REtVal = inst->Getuselist()[0]->usee;
+                    if(REtVal->isConst())
+                    {
+                        if(auto INt = dynamic_cast<ConstIRInt*>(REtVal))
+                            return ConstIRInt::GetNewConstant(INt->GetVal());
+                        if(auto FLoat = dynamic_cast<ConstIRFloat*>(REtVal))
+                            return ConstIRFloat::GetNewConstant(FLoat->GetVal());
+                        if(auto BOol = dynamic_cast<ConstIRBoolean*>(REtVal))
+                            return ConstIRBoolean::GetNewConstant(BOol->GetVal());
+                    }
+                    else if(dynamic_cast<UndefValue*>(REtVal))
+                        return UndefValue::get(REtVal->GetType());
+                    else
+                        return nullptr;
+                }
             }
         }
     return nullptr;
+}
+
+bool DCE::FuncHasSideEffect(Function* func)
+{
+    auto &Params = func->GetParams();
+    for(auto &_param : Params)
+    {
+        if(_param->GetTypeEnum() == InnerDataType::IR_PTR)
+            return true;
+    }
+    for(BasicBlock* block : *func)
+    {
+        for(User* inst : *block)
+        {
+            if(dynamic_cast<CallInst*>(inst))
+                return true;
+            if(!dynamic_cast<UnCondInst*>(inst) && !dynamic_cast<CondInst*>(inst))
+            {
+                auto &vac = inst->Getuselist();
+                for(auto &_val : vac)
+                {
+                    if(_val->GetValue()->isGlobVal())
+                        return true;
+                }
+            }
+        }
+    }
+    return false;
 }
