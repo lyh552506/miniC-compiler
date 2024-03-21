@@ -35,8 +35,11 @@ void ElimitCriticalEdge::AddNullBlock(User *inst, int succ) {
   BasicBlock *CurrBB = inst->GetParent();
   BasicBlock *criticalbb = new BasicBlock(*m_func);
   m_func->push_back(criticalbb);
+  
   //在关键边中插入block
   m_func->InsertBlock(CurrBB, DstBB, criticalbb);
+  criticalbb->num=m_func->GetBasicBlock().size();
+  m_func->GetBasicBlock().push_back(criticalbb);
 
   //还需要修改phi函数的incoming
   for (auto iter = DstBB->begin();
