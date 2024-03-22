@@ -242,3 +242,24 @@ class Module:public SymbolTable
     bool isMIRSSALevel();
     // std::vector<GlobalVariblePtr> GetGlobalptrs(){return this->globalvaribleptr;};
 };
+
+class CallGraph:public Module
+{
+public: 
+    CallGraph()=default;
+};
+
+class CallGraphNode
+{
+    Function* F;
+    /// @brief A pair of callinst and call graph node
+    typedef std::pair<CallInst*, CallGraphNode*> CallRecord;
+    
+    /// @brief Record Vector to store CalledFunctions
+    typedef std::vector<CallRecord> CalledFunctions;
+public:
+    CallGraphNode(Function* F) : F(F) {}
+
+    Function* getFunc() const { return F; }
+    
+};

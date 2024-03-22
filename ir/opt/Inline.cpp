@@ -8,5 +8,8 @@ void Inline::PrintPass()
 
 void Inline::RunOnFunction()
 {
-    
+
 }
+/*
+CallInst use: vector{Func, arges} for(int i = 1 ; i < vector.size() ; i++)
+*/
