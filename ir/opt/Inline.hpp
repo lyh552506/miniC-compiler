@@ -1,6 +1,8 @@
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
 #include "dominant.hpp"
+#define INT_MAX   __INT_MAX__
+#define INT_MIN (-__INT_MAX__ -1)
 class Inline : public dominance
 {
 public:
@@ -71,6 +73,12 @@ public:
     /// @brief Get the Internal Node who is calling the external function.
     CallGraphNode* getCallsExternalNode() const { return CallsExternalNode.get(); }
 
+    /// @brief Update CallGraph Info
+
+    Function* EraseFromModule(CallGraphNode* node);
+
+    /// @brief Simlar to operator[], but this will insert a callgraphNode
+    CallGraphNode* GetOrInsertFunc(Function* func);
 };
 
 class CallGraphNode
@@ -109,4 +117,53 @@ class CallGraphNode
         void AddCallFunc(CallInst* inst);
 
         void DelCallEdge(iterator iter);
+};
+
+class CallGraphSCC
+{
+    const CallGraph& Callgraph;
+
+    void *Context;
+    std::vector<CallGraphNode*> Nodes;
+
+public:
+    CallGraphSCC(CallGraph& cg, void *context) : Callgraph(cg), Context(context) {}
+
+
+    bool isSingular() const { return Nodes.size() == 1; }
+    unsigned size() const { return Nodes.size(); }
+
+    /// @brief ReplaceNdoe - this informs the SCC and the pass mamager that the \
+    specified Old node has been deleted, and New is to be used in its place.
+    void ReplaceNode(CallGraphNode* Old, CallGraphNode* New); ///todo update
+
+    typedef std::vector<CallGraphNode*>::const_iterator iterator;
+    iterator begin() { return Nodes.begin(); }
+    iterator end() { return Nodes.end(); }
+
+    const CallGraph& getCallGraph() const{ return Callgraph; }
+};
+
+namespace InlineConstants
+{
+    // Various magic constants used to adjust heuristics.
+    const int InstrCost = 5;
+    const int CallCost = 25;
+    const int IndirectCallCost = 100;
+    const int LastCallToStaticBonus = -15000;
+    const int ColdccPenalty = 2000;
+    const int NoreturnCost = 10000;
+    /// Do not inline functions which allocate this many bytes on the stack
+    /// when the caller is recursive.
+    const int TotalAllocaSizeRecursiveCaller = 1024;
+}
+
+class InlineCost
+{
+    enum SentineValues
+    {
+        AlwaysInlineCost = INT_MIN,
+        NeverInlineCost = INT_MAX
+    };
+    
 };
