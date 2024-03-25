@@ -27,6 +27,9 @@ class MachineInst : public User {
     Operand GetRd();
     Operand GetRs1();
     Operand GetRs2();
+    void SetRd(Operand rd);
+    void SetRs1(Operand rs1);
+    void SetRs2(Operand rs2);
     void print();
 };
 
