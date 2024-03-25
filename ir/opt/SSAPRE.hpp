@@ -7,6 +7,7 @@ by Thomas VanDrunen and Antony L. Hosking
 #include "IDF.hpp"
 #include "dominant.hpp"
 #include "PassManagerBase.hpp"
+#include "DealCriticalEdges.hpp"
 
 enum RetStats { Delay, Changed, Unchanged };
 

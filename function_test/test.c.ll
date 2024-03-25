@@ -396,4 +396,85 @@ define i32 @func(i32* %.3, i32* %.6){
   %.53 = Phi i32 [%.54, %.14wloop.64.70], [%.46, %.22wloop.65.69]
   %.51 = Phi i32 [%.52, %.14wloop.64.70], [%.43, %.22wloop.65.69]
   %.26 = icmp slt i32 %.51, 5
-  br i1 %.26, label %.22wloop.65.69, lab
+  br i1 %.26, label %.22wloop.65.69, label %.23wn69
+.22wloop.65.69:
+  %.30 = getelementptr inbounds i32, i32* %.3, i32 %.53
+  %.31 = load i32, i32* %.30
+  %.34 = getelementptr inbounds i32, i32* %.6, i32 %.53
+  %.35 = load i32, i32* %.34
+  %.36 = add i32 %.31, %.35
+  %.39 = getelementptr inbounds i32, i32* %.3, i32 %.51
+  store i32 %.36, i32* %.39
+  %.43 = add i32 %.51, 1
+  %.46 = add i32 %.53, 1
+  br label %.21wc65 
+.23wn69:
+  br label %.13wc64 
+}
+--------pre--------
+define i32 @func(i32* %.3, i32* %.6){
+.1:
+  br label %.13wc64 
+.13wc64:
+  %.54 = Phi i32 [0, %.1], [%.53, %.23wn69]
+  %.52 = Phi i32 [0, %.1], [%.51, %.23wn69]
+  %.19 = icmp slt i32 %.54, 5
+  br i1 %.19, label %.14wloop.64.70, label %.15wn70
+.14wloop.64.70:
+  br label %.21wc65 
+.15wn70:
+  ret i32 1 
+.21wc65:
+  %.79 = Phi i1 [%.78, %.22wloop.65.69], [%.19, %.14wloop.64.70]
+  %.53 = Phi i32 [%.54, %.14wloop.64.70], [%.46, %.22wloop.65.69]
+  %.51 = Phi i32 [%.52, %.14wloop.64.70], [%.43, %.22wloop.65.69]
+  %.26 = icmp slt i32 %.51, 5
+  br i1 %.26, label %.22wloop.65.69, label %.23wn69
+.22wloop.65.69:
+  %.30 = getelementptr inbounds i32, i32* %.3, i32 %.53
+  %.31 = load i32, i32* %.30
+  %.34 = getelementptr inbounds i32, i32* %.6, i32 %.53
+  %.35 = load i32, i32* %.34
+  %.36 = add i32 %.31, %.35
+  %.39 = getelementptr inbounds i32, i32* %.3, i32 %.51
+  store i32 %.36, i32* %.39
+  %.43 = add i32 %.51, 1
+  %.46 = add i32 %.53, 1
+  br label %.21wc65 
+.23wn69:
+  br label %.13wc64 
+}
+--------constprop--------
+define i32 @func(i32* %.3, i32* %.6){
+.1:
+  br label %.13wc64 
+.13wc64:
+  %.54 = Phi i32 [0, %.1], [%.53, %.23wn69]
+  %.52 = Phi i32 [0, %.1], [%.51, %.23wn69]
+  %.19 = icmp slt i32 %.54, 5
+  br i1 %.19, label %.14wloop.64.70, label %.15wn70
+.14wloop.64.70:
+  br label %.21wc65 
+.15wn70:
+  ret i32 1 
+.21wc65:
+  %.79 = Phi i1 [%.78, %.22wloop.65.69], [%.19, %.14wloop.64.70]
+  %.53 = Phi i32 [%.54, %.14wloop.64.70], [%.46, %.22wloop.65.69]
+  %.51 = Phi i32 [%.52, %.14wloop.64.70], [%.43, %.22wloop.65.69]
+  %.26 = icmp slt i32 %.51, 5
+  br i1 %.26, label %.22wloop.65.69, label %.23wn69
+.22wloop.65.69:
+  %.30 = getelementptr inbounds i32, i32* %.3, i32 %.53
+  %.31 = load i32, i32* %.30
+  %.34 = getelementptr inbounds i32, i32* %.6, i32 %.53
+  %.35 = load i32, i32* %.34
+  %.36 = add i32 %.31, %.35
+  %.39 = getelementptr inbounds i32, i32* %.3, i32 %.51
+  store i32 %.36, i32* %.39
+  %.43 = add i32 %.51, 1
+  %.46 = add i32 %.53, 1
+  br label %.21wc65 
+.23wn69:
+  br label %.13wc64 
+}
+---------------------Loop Analysis
