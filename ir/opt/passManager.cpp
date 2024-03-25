@@ -10,6 +10,7 @@ void PassManager::InitPass() {
     m_loopAnlay = std::make_unique<LoopAnalysis>(m_func, m_dom.get());
     m_adce = std::make_unique<ADCE>(m_func);
     m_dce = std::make_unique<DCE>(m_func);
+    m_eliedg=std::make_unique<ElimitCriticalEdge>(m_func);
     m_pre = std::make_unique<PRE>(m_dom.get(), m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
     RunOnFunction();
@@ -27,6 +28,7 @@ void PassManager::PreWork(int i) {
 }
 
 void PassManager::RunOnFunction() {
+  m_eliedg->RunOnFunction();
   if (InitpassRecorder[0]) {
     m_dom->RunOnFunction();
     m_dom->PrintPass();

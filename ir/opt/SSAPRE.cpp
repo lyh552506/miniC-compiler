@@ -299,11 +299,11 @@ void PRE::FixPartialRedundancy(
     BasicBlock *pred = m_dom->GetNode(p).thisBlock;
     phi->updateIncoming(predAvail[pred], pred);
   }
-  if (ready2Relp != nullptr) {
-    ready2Relp->RAUW(phi);
-    ready2Relp->ClearRelation();
-    ready2Relp->EraseFromParent();
-  }
+  // if (ready2Relp != nullptr) {
+  //   ready2Relp->RAUW(phi);
+  //   ready2Relp->ClearRelation();
+  //   ready2Relp->EraseFromParent();
+  // }
   VN->Add(phi);
   AvailOut[cur].insert_val(phi);
   AvailOut[cur].set_hash(VN->LookupOrAdd(phi));
