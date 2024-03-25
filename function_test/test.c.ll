@@ -379,102 +379,130 @@ define i32 @func(i32* %.3, i32* %.6){
 .23wn69:
   br label %.13wc64 
 }
+define i32 @func(i32* %.54, i32* %.57){
+.52:
+  %.61 = alloca i32
+  %.59 = alloca i32
+  %.56 = alloca i32*
+  %.53 = alloca i32*
+  store i32* %.54, i32** %.53
+  store i32* %.57, i32** %.56
+  store i32 0, i32* %.59
+  store i32 0, i32* %.61
+  br label %.63wc159 
+.63wc159:
+  %.67 = load i32, i32* %.59
+  %.68 = icmp slt i32 %.67, 5
+  br i1 %.68, label %.64wloop.159.165, label %.65wn165
+.64wloop.159.165:
+  br label %.70wc160 
+.65wn165:
+  ret i32 1 
+.70wc160:
+  %.74 = load i32, i32* %.61
+  %.75 = icmp slt i32 %.74, 5
+  br i1 %.75, label %.71wloop.160.164, label %.72wn164
+.71wloop.160.164:
+  %.77 = load i32, i32* %.59
+  %.78 = load i32*, i32** %.53
+  %.79 = getelementptr inbounds i32, i32* %.78, i32 %.77
+  %.80 = load i32, i32* %.79
+  %.81 = load i32, i32* %.59
+  %.82 = load i32*, i32** %.56
+  %.83 = getelementptr inbounds i32, i32* %.82, i32 %.81
+  %.84 = load i32, i32* %.83
+  %.85 = add i32 %.80, %.84
+  %.86 = load i32, i32* %.61
+  %.87 = load i32*, i32** %.53
+  %.88 = getelementptr inbounds i32, i32* %.87, i32 %.86
+  store i32 %.85, i32* %.88
+  %.90 = load i32, i32* %.61
+  %.91 = add i32 %.90, 1
+  store i32 %.91, i32* %.61
+  %.93 = load i32, i32* %.59
+  %.94 = add i32 %.93, 1
+  store i32 %.94, i32* %.59
+  br label %.70wc160 
+.72wn164:
+  br label %.63wc159 
+}
 --------mem2reg--------
 define i32 @func(i32* %.3, i32* %.6){
 .1:
   br label %.13wc64 
 .13wc64:
-  %.54 = Phi i32 [0, %.1], [%.53, %.23wn69]
-  %.52 = Phi i32 [0, %.1], [%.51, %.23wn69]
-  %.19 = icmp slt i32 %.54, 5
+  %.102 = Phi i32 [0, %.1], [%.101, %.23wn69]
+  %.100 = Phi i32 [0, %.1], [%.99, %.23wn69]
+  %.19 = icmp slt i32 %.102, 5
   br i1 %.19, label %.14wloop.64.70, label %.15wn70
 .14wloop.64.70:
   br label %.21wc65 
 .15wn70:
   ret i32 1 
 .21wc65:
-  %.53 = Phi i32 [%.54, %.14wloop.64.70], [%.46, %.22wloop.65.69]
-  %.51 = Phi i32 [%.52, %.14wloop.64.70], [%.43, %.22wloop.65.69]
-  %.26 = icmp slt i32 %.51, 5
+  %.101 = Phi i32 [%.102, %.14wloop.64.70], [%.46, %.22wloop.65.69]
+  %.99 = Phi i32 [%.100, %.14wloop.64.70], [%.43, %.22wloop.65.69]
+  %.26 = icmp slt i32 %.99, 5
   br i1 %.26, label %.22wloop.65.69, label %.23wn69
 .22wloop.65.69:
-  %.30 = getelementptr inbounds i32, i32* %.3, i32 %.53
+  %.30 = getelementptr inbounds i32, i32* %.3, i32 %.101
   %.31 = load i32, i32* %.30
-  %.34 = getelementptr inbounds i32, i32* %.6, i32 %.53
+  %.34 = getelementptr inbounds i32, i32* %.6, i32 %.101
   %.35 = load i32, i32* %.34
   %.36 = add i32 %.31, %.35
-  %.39 = getelementptr inbounds i32, i32* %.3, i32 %.51
+  %.39 = getelementptr inbounds i32, i32* %.3, i32 %.99
   store i32 %.36, i32* %.39
-  %.43 = add i32 %.51, 1
-  %.46 = add i32 %.53, 1
+  %.43 = add i32 %.99, 1
+  %.46 = add i32 %.101, 1
   br label %.21wc65 
 .23wn69:
   br label %.13wc64 
+}
+define i32 @func(i32* %.54, i32* %.57){
+.52:
+  %.61 = alloca i32
+  %.59 = alloca i32
+  %.56 = alloca i32*
+  %.53 = alloca i32*
+  store i32* %.54, i32** %.53
+  store i32* %.57, i32** %.56
+  store i32 0, i32* %.59
+  store i32 0, i32* %.61
+  br label %.63wc159 
+.63wc159:
+  %.67 = load i32, i32* %.59
+  %.68 = icmp slt i32 %.67, 5
+  br i1 %.68, label %.64wloop.159.165, label %.65wn165
+.64wloop.159.165:
+  br label %.70wc160 
+.65wn165:
+  ret i32 1 
+.70wc160:
+  %.74 = load i32, i32* %.61
+  %.75 = icmp slt i32 %.74, 5
+  br i1 %.75, label %.71wloop.160.164, label %.72wn164
+.71wloop.160.164:
+  %.77 = load i32, i32* %.59
+  %.78 = load i32*, i32** %.53
+  %.79 = getelementptr inbounds i32, i32* %.78, i32 %.77
+  %.80 = load i32, i32* %.79
+  %.81 = load i32, i32* %.59
+  %.82 = load i32*, i32** %.56
+  %.83 = getelementptr inbounds i32, i32* %.82, i32 %.81
+  %.84 = load i32, i32* %.83
+  %.85 = add i32 %.80, %.84
+  %.86 = load i32, i32* %.61
+  %.87 = load i32*, i32** %.53
+  %.88 = getelementptr inbounds i32, i32* %.87, i32 %.86
+  store i32 %.85, i32* %.88
+  %.90 = load i32, i32* %.61
+  %.91 = add i32 %.90, 1
+  store i32 %.91, i32* %.61
+  %.93 = load i32, i32* %.59
+  %.94 = add i32 %.93, 1
+  store i32 %.94, i32* %.59
+  br label %.70wc160 
+.72wn164:
+  br label %.63wc159 
 }
 --------pre--------
-define i32 @func(i32* %.3, i32* %.6){
-.1:
-  br label %.13wc64 
-.13wc64:
-  %.54 = Phi i32 [0, %.1], [%.53, %.23wn69]
-  %.52 = Phi i32 [0, %.1], [%.51, %.23wn69]
-  %.19 = icmp slt i32 %.54, 5
-  br i1 %.19, label %.14wloop.64.70, label %.15wn70
-.14wloop.64.70:
-  br label %.21wc65 
-.15wn70:
-  ret i32 1 
-.21wc65:
-  %.79 = Phi i1 [%.78, %.22wloop.65.69], [%.19, %.14wloop.64.70]
-  %.53 = Phi i32 [%.54, %.14wloop.64.70], [%.46, %.22wloop.65.69]
-  %.51 = Phi i32 [%.52, %.14wloop.64.70], [%.43, %.22wloop.65.69]
-  %.26 = icmp slt i32 %.51, 5
-  br i1 %.26, label %.22wloop.65.69, label %.23wn69
-.22wloop.65.69:
-  %.30 = getelementptr inbounds i32, i32* %.3, i32 %.53
-  %.31 = load i32, i32* %.30
-  %.34 = getelementptr inbounds i32, i32* %.6, i32 %.53
-  %.35 = load i32, i32* %.34
-  %.36 = add i32 %.31, %.35
-  %.39 = getelementptr inbounds i32, i32* %.3, i32 %.51
-  store i32 %.36, i32* %.39
-  %.43 = add i32 %.51, 1
-  %.46 = add i32 %.53, 1
-  br label %.21wc65 
-.23wn69:
-  br label %.13wc64 
-}
---------constprop--------
-define i32 @func(i32* %.3, i32* %.6){
-.1:
-  br label %.13wc64 
-.13wc64:
-  %.54 = Phi i32 [0, %.1], [%.53, %.23wn69]
-  %.52 = Phi i32 [0, %.1], [%.51, %.23wn69]
-  %.19 = icmp slt i32 %.54, 5
-  br i1 %.19, label %.14wloop.64.70, label %.15wn70
-.14wloop.64.70:
-  br label %.21wc65 
-.15wn70:
-  ret i32 1 
-.21wc65:
-  %.79 = Phi i1 [%.78, %.22wloop.65.69], [%.19, %.14wloop.64.70]
-  %.53 = Phi i32 [%.54, %.14wloop.64.70], [%.46, %.22wloop.65.69]
-  %.51 = Phi i32 [%.52, %.14wloop.64.70], [%.43, %.22wloop.65.69]
-  %.26 = icmp slt i32 %.51, 5
-  br i1 %.26, label %.22wloop.65.69, label %.23wn69
-.22wloop.65.69:
-  %.30 = getelementptr inbounds i32, i32* %.3, i32 %.53
-  %.31 = load i32, i32* %.30
-  %.34 = getelementptr inbounds i32, i32* %.6, i32 %.53
-  %.35 = load i32, i32* %.34
-  %.36 = add i32 %.31, %.35
-  %.39 = getelementptr inbounds i32, i32* %.3, i32 %.51
-  store i32 %.36, i32* %.39
-  %.43 = add i32 %.51, 1
-  %.46 = add i32 %.53, 1
-  br label %.21wc65 
-.23wn69:
-  br label %.13wc64 
-}
----------------------Loop Analysis

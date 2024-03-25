@@ -19,12 +19,63 @@ private:
 
 class CallGraph:public Module
 {
+    Module& M;
 public: 
-    CallGraph()=default;
+    // CallGraph()=default;
+    typedef std::map<Function*, std::unique_ptr<CallGraphNode>> FunctionMapTy;
+    
+    FunctionMapTy FunctionMap;
+
+    /// @brief Root is the root of the graph, or the external node if a 'main' \
+    function couldn't be found.
+    CallGraphNode* Root;
+
+    /// @brief This node has edges to all external functions and those internal \
+    functions that have their address taken.
+    CallGraphNode* ExternalCallingNode;
+    
+    /// @brief This node has edges to it from all functions making indirecrt \
+    calls or calling an external function.
+    std::unique_ptr<CallGraphNode> CallsExternalNode;
+
+    /// @brief Replace the function represented by this node by another
+    
+    /// This does not rescan the body of the function, so it is suitable
+    /// when splicing the body of one function to another while also 
+    /// updating all callers from the old function to the new.
+
+    void spliceFunction(Function* From, Function* To);
+
+    /// @brief Add a function to the call graph, and link the node 
+    /// to all of the function it calls.
+
+    void addToCallGraph(Function* F);
+
+public:
+    CallGraph(Module& M);
+    CallGraph(CallGraph&& Arg);
+    ~CallGraph();
+
+    Module& GetModule() const { return M; }
+    typedef FunctionMapTy::iterator iterator;
+    typedef FunctionMapTy::const_iterator const_iterator;
+    iterator begin() { return FunctionMap.begin(); }
+    iterator end() { return FunctionMap.end(); }
+    std::reverse_iterator<iterator> rbegin() { return FunctionMap.rbegin(); }
+    std::reverse_iterator<iterator> rend() { return FunctionMap.rend(); }
+    
+    CallGraphNode* operator[](Function* func);
+
+    /// @brief Get the External Node who is calling the internal function.
+    CallGraphNode* getExternalCallingNode() const { return ExternalCallingNode;}
+    /// @brief Get the Internal Node who is calling the external function.
+    CallGraphNode* getCallsExternalNode() const { return CallsExternalNode.get(); }
+
 };
 
 class CallGraphNode
 {
+    friend class CallGraph;
     Function* F;
     /// @brief A pair of callinst and call graph node
     typedef std::pair<CallInst*, CallGraphNode*> CallRecord;
@@ -50,9 +101,12 @@ class CallGraphNode
 
         CallGraphNode* operator[](unsigned i) const;
 
+        /// @brief Update callgraph
         void removeAllCalledFunctions();
 
         void MoveCallFuncFrom(CallGraphNode *Node);
 
-        void AddCallFunc();
+        void AddCallFunc(CallInst* inst);
+
+        void DelCallEdge(iterator iter);
 };

@@ -21,14 +21,24 @@ void CallGraphNode::MoveCallFuncFrom(CallGraphNode *Node)
     std::swap(CalledFunctions, Node->CalledFunctions);
 }
 
-void CallGraphNode::AddCallFunc()
+void CallGraphNode::AddCallFunc(CallInst* inst)
 {
-    
+    CalledFunctions.emplace_back( \
+        std::make_pair(inst, CallGraphNode \
+        (dynamic_cast<Function*>(inst->Getuselist()[0]->usee))));
 }
 
+void CallGraphNode::DelCallEdge(iterator iter)
+{
 
+}
 
-
+CallGraphNode* CallGraph::operator[](Function* func)
+{
+    const_iterator iter = FunctionMap.find(func);
+    assert(iter != FunctionMap.end() && "Function not in CallGraph!");
+    return iter->second.get();
+}
 
 
 void Inline::PrintPass()
