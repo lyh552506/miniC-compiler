@@ -21,19 +21,11 @@ public:
   void IncludePass(int pass);
   void InitPass();
   void RunOnFunction();
-  void Anlaysis();
+  //void Anlaysis();
   void PrintPass(){};
   void setAnalsis(bool choi) { Analysis = choi; }
   ~PassManager() {
     delete FList;
-    m_loopAnlay.reset();
-    m_dom.reset();
-    m_pre.reset();
-    m_constprop.reset();
-    // m_adce.reset();
-    // m_dce.reset();
-    m_liveness.reset();
-    m_eliedg.reset();
   }
 
 private:
@@ -46,8 +38,8 @@ private:
   std::unique_ptr<dominance> m_dom;
   std::unique_ptr<PRE> m_pre;
   std::unique_ptr<ConstantProp> m_constprop;
-  // std::unique_ptr<ADCE> m_adce;
-  // std::unique_ptr<DCE> m_dce;
+  std::unique_ptr<ADCE> m_adce;
+  std::unique_ptr<DCE> m_dce;
   std::unique_ptr<LivenessAnalysis> m_liveness;
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
 };

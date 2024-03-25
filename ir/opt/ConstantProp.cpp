@@ -24,7 +24,13 @@ void ConstantProp::RunOnBlock(BasicBlock* block)
                 wait_del.push_back(inst);
         }
         else if(dynamic_cast<UndefValue*>(C))
-            inst->RAUW(C);
+        {
+            if(!inst->GetUserlist().is_empty())
+            {
+                inst->RAUW(C);
+                wait_del.push_back(inst);
+            }
+        }
     }
     for(auto inst : wait_del)
     {

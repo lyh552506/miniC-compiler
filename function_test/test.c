@@ -59,17 +59,24 @@
 //     };
 //     return a;
 // }
-int func(int dst[],int src[]){
-  int i=0,j=0;
-  while(i<5){
-    while(j<5){
-      dst[j]=dst[i]+src[i];
-      j=j+1;
-      i=i+1;
-    }
+int func(int a,int b){
+  int x=0;
+  while(x<5){
+    a=b+1;
+    x=x+1;
   }
-  return 1;
 }
+// int func(int dst[],int src[]){
+//   int i=0,j=0;
+//   while(i<5){
+//     while(j<5){
+//       dst[j]=dst[i]+src[i];
+//       j=j+1;
+//       i=i+1;
+//     }
+//   }
+//   return 1;
+// }
 // void reverse(int n) {
 //     int next;
 //     if (n <= 1) {

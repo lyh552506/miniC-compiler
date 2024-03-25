@@ -58,7 +58,6 @@ struct Expression {
         return false;
     return true;
   }
-  // Expression();
 };
 
 struct ValueTable {
@@ -153,7 +152,20 @@ public:
   Value *Find_Leader(ValueNumberedSet &set, Value *val);
 
   PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {}
-
+  ~PRE(){
+    delete VN;
+    AvailOut.clear();
+    //AnticipatedIn.clear();
+    for(auto iter=AnticipatedIn.begin();iter!=AnticipatedIn.end();++iter)
+     {iter->second.init();
+      AnticipatedIn.erase(iter);
+     }
+     AnticipatedIn.clear();
+    GeneratedPhis.clear();
+    Dfs.clear();
+    PostOrder.clear();
+    GeneratedTemp.clear();
+  }
 private:
   dominance *m_dom;
   Function *m_func;
