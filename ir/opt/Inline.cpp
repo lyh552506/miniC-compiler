@@ -1,5 +1,36 @@
 #include "Inline.hpp"
 
+CallGraphNode* CallGraphNode::operator[](unsigned i) const
+{   
+    assert(i < CalledFunctions.size() && "Invalid index");
+    return CalledFunctions[i].second; 
+}
+
+void CallGraphNode::removeAllCalledFunctions()
+{
+    while(!CalledFunctions.empty())
+    {
+        // TODO 计数器
+        CalledFunctions.pop_back();
+    }
+}
+
+void CallGraphNode::MoveCallFuncFrom(CallGraphNode *Node)
+{
+    assert(CalledFunctions.empty() && "Cannot Move");
+    std::swap(CalledFunctions, Node->CalledFunctions);
+}
+
+void CallGraphNode::AddCallFunc()
+{
+    
+}
+
+
+
+
+
+
 void Inline::PrintPass()
 {
     std::cout << "--------Inline--------" << std::endl;
