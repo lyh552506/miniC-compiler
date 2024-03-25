@@ -5,7 +5,7 @@ class LiInst : public User
 {
     public:
     LiInst(Operand _A);
-    void print()final {};
+    void print()final {std::cout << "Li" << std::endl;}
 };
 
 class XorInst : public User
@@ -16,5 +16,5 @@ class XorInst : public User
     XorInst(Operand _A, std::string opcode, Operand _B);
     std::string GetOpcode();
     void SetOpcode(std::string opcode);
-    void print()final {};
+    void print()final {std::cout << "Xor" << std::endl;}
 };

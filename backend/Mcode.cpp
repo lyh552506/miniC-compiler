@@ -16,6 +16,10 @@ void MachineInst::SetOpcode(std::string opcode) {this->opcode = opcode;}
 Operand MachineInst::GetRd() {return rd;}
 Operand MachineInst::GetRs1() {return rs1;}
 Operand MachineInst::GetRs2() {return rs2;}
+void MachineInst::SetRd(Operand rd) {this->rd = rd;}
+void MachineInst::SetRs1(Operand rs1) {this->rs1 = rs1;}
+void MachineInst::SetRs2(Operand rs2) {this->rs2 = rs2;}
+
 void MachineInst::print() {
     if (opcode == "alloca") {
         return;   
@@ -49,9 +53,7 @@ void MachineInst::print() {
     }
     else if (opcode == "beqz") {
         std::cout << "    " << opcode << " ";
-        //std::string lable1 = mbb->get_parent()->get_lable(rs1->GetName());
         std::string lable2 = mbb->get_parent()->get_lable(rs2->GetName());
-        //std::cout << rd->GetName() << ", " << lable1 << ", " << lable2 << std::endl;
         std::cout << rd->GetName() << ", " << lable2 << std::endl;
     }
     else if (opcode == "call" ) {

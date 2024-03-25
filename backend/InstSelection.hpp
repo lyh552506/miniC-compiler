@@ -7,7 +7,7 @@
 bool is_int(Operand op);
 bool is_float(Operand op);
 bool need_load(User* inst);
-void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, User>::iterator it);
+void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, User>::iterator& it);
 
 
 //指令选择 宏扩展
