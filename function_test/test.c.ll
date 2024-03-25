@@ -332,78 +332,68 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @func(i32 %.3, i32 %.6){
+define i32 @func(i32* %.3, i32* %.6){
 .1:
+  %.11 = alloca i32
   %.8 = alloca i32
-  %.5 = alloca i32
-  %.2 = alloca i32
-  store i32 %.3, i32* %.2
-  store i32 %.6, i32* %.5
+  %.5 = alloca i32*
+  %.2 = alloca i32*
+  store i32* %.3, i32** %.2
+  store i32* %.6, i32** %.5
   store i32 0, i32* %.8
-  br label %.11wc64 
-.11wc64:
-  %.15 = load i32, i32* %.8
-  %.17 = icmp slt i32 %.15, 5
-  br i1 %.17, label %.12wloop.64.67, label %.13wn67
-.12wloop.64.67:
-  %.19 = load i32, i32* %.5
-  %.21 = add i32 %.19, 1
-  store i32 %.21, i32* %.2
-  %.23 = load i32, i32* %.8
-  %.24 = add i32 %.23, 1
-  store i32 %.24, i32* %.8
-  br label %.11wc64 
-.13wn67:
-  ret i32 undef 
+  store i32 0, i32* %.11
+  br label %.13wc71 
+.13wc71:
+  %.17 = load i32, i32* %.8
+  %.19 = icmp slt i32 %.17, 5
+  br i1 %.19, label %.14wloop.71.77, label %.15wn77
+.14wloop.71.77:
+  br label %.21wc72 
+.15wn77:
+  ret i32 1 
+.21wc72:
+  %.25 = load i32, i32* %.11
+  %.26 = icmp slt i32 %.25, 5
+  br i1 %.26, label %.22wloop.72.76, label %.23wn76
+.22wloop.72.76:
+  %.28 = load i32, i32* %.8
+  %.29 = load i32*, i32** %.2
+  %.30 = getelementptr inbounds i32, i32* %.29, i32 %.28
+  %.31 = load i32, i32* %.30
+  %.32 = load i32, i32* %.8
+  %.33 = load i32*, i32** %.5
+  %.34 = getelementptr inbounds i32, i32* %.33, i32 %.32
+  %.35 = load i32, i32* %.34
+  %.36 = add i32 %.31, %.35
+  %.37 = load i32, i32* %.11
+  %.38 = load i32*, i32** %.2
+  %.39 = getelementptr inbounds i32, i32* %.38, i32 %.37
+  store i32 %.36, i32* %.39
+  %.41 = load i32, i32* %.11
+  %.43 = add i32 %.41, 1
+  store i32 %.43, i32* %.11
+  %.45 = load i32, i32* %.8
+  %.46 = add i32 %.45, 1
+  store i32 %.46, i32* %.8
+  br label %.21wc72 
+.23wn76:
+  br label %.13wc71 
 }
 --------mem2reg--------
-define i32 @func(i32 %.3, i32 %.6){
+define i32 @func(i32* %.3, i32* %.6){
 .1:
-  br label %.11wc64 
-.11wc64:
-  %.29 = Phi i32 [0, %.1], [%.24, %.12wloop.64.67]
-  %.17 = icmp slt i32 %.29, 5
-  br i1 %.17, label %.12wloop.64.67, label %.13wn67
-.12wloop.64.67:
-  %.21 = add i32 %.6, 1
-  %.24 = add i32 %.29, 1
-  br label %.11wc64 
-.13wn67:
-  ret i32 undef 
-}
---------pre--------
-define i32 @func(i32 %.3, i32 %.6){
-.1:
-  br label %.11wc64 
-.11wc64:
-  %.29 = Phi i32 [0, %.1], [%.24, %.12wloop.64.67]
-  %.17 = icmp slt i32 %.29, 5
-  br i1 %.17, label %.12wloop.64.67, label %.13wn67
-.12wloop.64.67:
-  %.21 = add i32 %.6, 1
-  %.24 = add i32 %.29, 1
-  br label %.11wc64 
-.13wn67:
-  ret i32 undef 
-}
---------constprop--------
-define i32 @func(i32 %.3, i32 %.6){
-.1:
-  br label %.11wc64 
-.11wc64:
-  %.29 = Phi i32 [0, %.1], [%.24, %.12wloop.64.67]
-  %.17 = icmp slt i32 %.29, 5
-  br i1 %.17, label %.12wloop.64.67, label %.13wn67
-.12wloop.64.67:
-  %.21 = add i32 %.6, 1
-  %.24 = add i32 %.29, 1
-  br label %.11wc64 
-.13wn67:
-  ret i32 undef 
-}
----------------------Loop Analysis-----------------------
-Num Of Loops:1
-Loop Depth:1
-Loop Head:.11wc64
-Loop Body:.12wloop.64.67 
-
+  br label %.13wc71 
+.13wc71:
+  %.54 = Phi i32 [0, %.1], [%.53, %.23wn76]
+  %.52 = Phi i32 [0, %.1], [%.51, %.23wn76]
+  %.19 = icmp slt i32 %.54, 5
+  br i1 %.19, label %.14wloop.71.77, label %.15wn77
+.14wloop.71.77:
+  br label %.21wc72 
+.15wn77:
+  ret i32 1 
+.21wc72:
+  %.53 = Phi i32 [%.54, %.14wloop.71.77], [%.46, %.22wloop.72.76]
+  %.51 = Phi i32 [%.52, %.14wloop.71.77], [%.43, %.22wloop.72.76]
+  %.26 = icmp slt i32 %.51, 5
+  br i1 %.26, label %.22wloop.72.76, lab

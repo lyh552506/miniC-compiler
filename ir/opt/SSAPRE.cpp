@@ -588,7 +588,7 @@ Value *PRE::phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val) {
         delete newbin;
         for (auto x = AvailOut[pred].contents.begin();
              x != AvailOut[pred].contents.end(); x++)
-          if (hash = VN->LookupOrAdd(*x))
+          if (hash == VN->LookupOrAdd(*x))
             return *x;
       }
     }

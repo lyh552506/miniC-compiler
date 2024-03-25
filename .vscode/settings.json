@@ -111,7 +111,8 @@
         "stdarg.h": "c",
         "__nullptr": "cpp",
         "__functional_base": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "version": "cpp"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true

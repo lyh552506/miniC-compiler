@@ -127,6 +127,7 @@ class BinaryInst:public User
     void print()final;
     std::string GetOperation();
     Operation getopration();
+    static BinaryInst* CreateInst(Operand _A,Operation __op,Operand _B,User* place=nullptr);
 };
 class GetElementPtrInst:public User
 {

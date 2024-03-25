@@ -283,6 +283,18 @@ BinaryInst::Operation BinaryInst::getopration(){
     return op;
 }
 
+BinaryInst* BinaryInst::CreateInst(Operand _A,Operation __op,Operand _B,User* place){
+    
+    BinaryInst* bin=new BinaryInst(_A,__op,_B);
+    if(place!=nullptr){
+    BasicBlock* instbb=place->GetParent();
+      for(auto iter=instbb->begin();iter!=instbb->end();++iter)
+        if(*iter==place)
+          iter.insert_before(bin);
+    }
+    return bin;
+}
+
 void BinaryInst::print(){
     Value::print();
     std::cout<<" = ";
