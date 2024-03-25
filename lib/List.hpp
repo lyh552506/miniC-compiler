@@ -80,6 +80,7 @@ class mylist
                 data->prev=ptr->prev;
                 data->next=ptr;
                 ptr->prev=data;
+                data->prev->next=data;
             }
             return iterator(data);
         }
@@ -92,6 +93,7 @@ class mylist
                 data->next=ptr->next;
                 data->prev=ptr;
                 ptr->next=data;
+                data->next->prev=data;
             }
             return iterator(data);
         }
