@@ -380,3 +380,35 @@ define i32 @func(i32* %.3, i32* %.6){
   br label %.13wc170 
 }
 --------mem2reg--------
+define i32 @func(i32* %.3, i32* %.6){
+.1:
+  br label %.13wc170 
+.13wc170:
+  %.54 = Phi i32 [0, %.1], [%.53, %.23wn175]
+  %.52 = Phi i32 [0, %.1], [%.51, %.23wn175]
+  %.19 = icmp slt i32 %.54, 5
+  br i1 %.19, label %.14wloop.170.176, label %.15wn176
+.14wloop.170.176:
+  br label %.21wc171 
+.15wn176:
+  ret i32 1 
+.21wc171:
+  %.53 = Phi i32 [%.54, %.14wloop.170.176], [%.46, %.22wloop.171.175]
+  %.51 = Phi i32 [%.52, %.14wloop.170.176], [%.43, %.22wloop.171.175]
+  %.26 = icmp slt i32 %.51, 5
+  br i1 %.26, label %.22wloop.171.175, label %.23wn175
+.22wloop.171.175:
+  %.30 = getelementptr inbounds i32, i32* %.3, i32 %.53
+  %.31 = load i32, i32* %.30
+  %.34 = getelementptr inbounds i32, i32* %.6, i32 %.53
+  %.35 = load i32, i32* %.34
+  %.36 = add i32 %.31, %.35
+  %.39 = getelementptr inbounds i32, i32* %.3, i32 %.51
+  store i32 %.36, i32* %.39
+  %.43 = add i32 %.51, 1
+  %.46 = add i32 %.53, 1
+  br label %.21wc171 
+.23wn175:
+  br label %.13wc170 
+}
+--------pre--------

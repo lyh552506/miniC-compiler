@@ -144,26 +144,42 @@ public:
     const CallGraph& getCallGraph() const{ return Callgraph; }
 };
 
-namespace InlineConstants
-{
-    // Various magic constants used to adjust heuristics.
-    const int InstrCost = 5;
-    const int CallCost = 25;
-    const int IndirectCallCost = 100;
-    const int LastCallToStaticBonus = -15000;
-    const int ColdccPenalty = 2000;
-    const int NoreturnCost = 10000;
-    /// Do not inline functions which allocate this many bytes on the stack
-    /// when the caller is recursive.
-    const int TotalAllocaSizeRecursiveCaller = 1024;
-}
 
 class InlineCost
 {
+protected:
+    enum InlineConstants
+    {
+        // Various magic constants used to adjust heuristics.
+        InstrCost = 5,
+        CallCost = 25,
+        IndirectCallCost = 100,
+        LastCallToStaticBonus = -15000,
+        ColdccPenalty = 2000,
+        NoreturnCost = 10000,
+        /// Do not inline functions which allocate this many bytes on the stack
+        /// when the caller is recursive.
+        TotalAllocaSizeRecursiveCaller = 1024
+    };
+
     enum SentineValues
     {
         AlwaysInlineCost = INT_MIN,
         NeverInlineCost = INT_MAX
     };
-    
+    /// @brief The estimated cost of inlining this callsite.
+    const int Cost;
+    /// @brief The adjustment made to the inlining cost based on the context.
+    const int AdjustCost;
+public:
+    InlineCost(int cost, int adjust) : Cost(cost), AdjustCost(adjust) {}
+    InlineCost get(int cost, int adjust) { return InlineCost(cost, adjust); }
+    InlineCost GetAlways(){ return InlineCost(AlwaysInlineCost, 0); }
+    InlineCost GetNever() { return InlineCost(NeverInlineCost, 0); }
+
+    bool isAlways() const { return Cost == AlwaysInlineCost; }
+    bool isNever() const { return Cost == NeverInlineCost; }
+    bool isVariable() const { return !isAlways() && !isNever(); }
+private:
+    InlineCost getCost(Function* func);
 };
