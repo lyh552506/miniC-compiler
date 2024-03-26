@@ -576,10 +576,11 @@ Value *PRE::phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val) {
     //如果操作数中出现phi函数，会将phi转换为对应的数据流，此时我们检查是否有转换
     if (op_1 != bin->Getuselist()[0]->GetValue() ||
         op_2 != bin->Getuselist()[1]->GetValue()) {
+      
       BinaryInst *newbin = new BinaryInst(op_1, bin->getopration(), op_2);
 
       int hash = VN->LookupOrAdd(newbin);
-      // TODO 为什么这里是AvailOut?
+
       if (!AvailOut[pred].IsAlreadyInsert(hash)) {
         gen_exp.push_back(newbin);
         return newbin;
@@ -619,7 +620,7 @@ Value *PRE::phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val) {
         delete newgep;
         for (auto x = AvailOut[pred].contents.begin();
              x != AvailOut[pred].contents.end(); x++)
-          if (hash = VN->LookupOrAdd(*x))
+          if (hash == VN->LookupOrAdd(*x))
             return *x;
       }
     }

@@ -99,9 +99,17 @@ struct ValueNumberedSet {
   }
 
   void init() {
+    // for(auto tmp:contents)
+    //   delete tmp;
     Record.clear();
     contents.clear();
   }
+
+  void operator=(const ValueNumberedSet& other){
+    Record=other.Record;
+    contents=other.contents;
+  }
+
   /// @brief return true if is inserted
   bool IsAlreadyInsert(int hash) {
     if (Record.size() < hash+1)
