@@ -112,7 +112,9 @@
         "__nullptr": "cpp",
         "__functional_base": "cpp",
         "filesystem": "cpp",
-        "version": "cpp"
+        "version": "cpp",
+        "__functional_03": "cpp",
+        "__tuple": "cpp"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true

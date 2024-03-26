@@ -156,7 +156,7 @@ void PRE::Eliminate() {
           dynamic_cast<GetElementPtrInst *>(inst)) {
         // 如果存在当前bb的Availout有Leader但是当前值不在的
         if (AvailOut[bb].IsAlreadyInsert(VN->LookupOrAdd(inst)) &&
-            !AvailOut[bb].contents.count(inst)) {
+            !AvailOut[bb].count(inst)) {
           auto lead = Find_Leader(AvailOut[bb], inst);
           rel.push_back(std::make_pair(lead, inst));
         }
@@ -275,7 +275,7 @@ void PRE::FixPartialRedundancy(
       ValueNumberedSet &newi = insert_set[pred];
       ValueNumberedSet &oldi = AvailOut[pred];
 
-      if (!newi.contents.count(newval)) {
+      if (!newi.count(newval)) {
         Value *lead = Find_Leader(newi, newval);
         if (lead != nullptr)
           newi.erase_val(lead);
@@ -283,7 +283,7 @@ void PRE::FixPartialRedundancy(
         newi.set_hash(VN->LookupOrAdd(newval));
       }
 
-      if (!oldi.contents.count(newval)) {
+      if (!oldi.count(newval)) {
         Value *lead = Find_Leader(oldi, newval);
         if (lead != nullptr)
           oldi.erase_val(lead);
@@ -321,9 +321,9 @@ RetStats PRE::CalculateAnticIn(BasicBlock *bb, ValueNumberedSet &AnticOut,
   auto &gen_tmp = GeneratedTemp[bb];
   auto &anticin = AnticipatedIn[bb];
   int o_size = anticin.contents.size(); //记录下原来的size大小，看后续是否有变化
-  anticin.init();
-
+  
   RetStats stat = CalculateAnticOut(bb, AnticOut, visited);
+  anticin.init();
   if (stat == Delay)
     return stat;
   // ANTIC OUT[b] ,其中已经保证了Anticout的元素都是leader

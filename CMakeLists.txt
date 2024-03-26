@@ -18,7 +18,7 @@ project(SYSY-compiler VERSION 0.1.0 LANGUAGES C CXX)
 include(CTest)
 enable_testing()
 
-set(CMAKE_CXX_FLAGS "-fsanitize=address")
+#set(CMAKE_CXX_FLAGS "-fsanitize=leak")
 
 
 include_directories(${CMAKE_SOURCE_DIR}/util)

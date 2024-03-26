@@ -81,10 +81,18 @@ struct ValueTable {
 
 struct ValueNumberedSet {
   std::vector<int> Record; //判断是否插入
-  std::set<Value *> contents;
+  std::vector<Value *> contents;
 
-  void insert_val(Value *val) { contents.insert(val); }
-  void erase_val(Value *val) { contents.erase(val); }
+  void insert_val(Value *val) { 
+    auto iter=std::find(contents.begin(),contents.end(),val);
+    if(iter!=contents.end())
+     return;
+    contents.push_back(val); 
+    }
+  void erase_val(Value *val) { 
+    auto iter=std::find(contents.begin(),contents.end(),val);
+    contents.erase(iter); 
+    }
   void set_hash(int hash) {
     if (Record.size() < hash+1)
       Record.resize(hash + 5);
@@ -97,7 +105,13 @@ struct ValueNumberedSet {
       return;
     Record[hash] = 0;
   }
-
+  bool count(Value* val){
+    auto iter=std::find(contents.begin(),contents.end(),val);
+    if(iter!=contents.end())
+      return true;
+    else 
+      return false;
+  }
   void init() {
     // for(auto tmp:contents)
     //   delete tmp;
@@ -139,6 +153,7 @@ public:
   BasicBlock *GetChild(BasicBlock *BB, int flag);
   /// @brief 传入一个BasicBlock，统计他的所有前驱
   void CalculatePredBB(BasicBlock *bb);
+  void ClearUnusedMem();
   RetStats
   IdentyPartilRedundancy(BasicBlock *cur,
                          std::map<BasicBlock *, ValueNumberedSet> &insert_set);
@@ -162,17 +177,17 @@ public:
   PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {}
   ~PRE(){
     delete VN;
-    AvailOut.clear();
-    //AnticipatedIn.clear();
-    for(auto iter=AnticipatedIn.begin();iter!=AnticipatedIn.end();++iter)
-     {iter->second.init();
-      AnticipatedIn.erase(iter);
-     }
-     AnticipatedIn.clear();
-    GeneratedPhis.clear();
-    Dfs.clear();
-    PostOrder.clear();
-    GeneratedTemp.clear();
+    // AvailOut.clear();
+    // //AnticipatedIn.clear();
+    // for(auto iter=AnticipatedIn.begin();iter!=AnticipatedIn.end();++iter)
+    //  {iter->second.init();
+    //   AnticipatedIn.erase(iter);
+    //  }
+    //  AnticipatedIn.clear();
+    // GeneratedPhis.clear();
+    // Dfs.clear();
+    // PostOrder.clear();
+    // GeneratedTemp.clear();
   }
 private:
   dominance *m_dom;
