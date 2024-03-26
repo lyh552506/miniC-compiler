@@ -68,7 +68,7 @@ void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, U
             XorInst* xorInst = new XorInst(inst->GetRd(), "xori", rs2);
             MachineInst* MxorInst = new MachineInst(xorInst, parent, "xori", xorInst->GetDef(), GetOperand(xorInst, 0), GetOperand(xorInst, 1));
             
-            std::cout << "insert xorInst:"  << xorInst->GetName() << " after icmp:" << inst->getIR()->GetName() << std::endl;
+            //std::cout << "insert xorInst:"  << xorInst->GetName() << " after icmp:" << inst->getIR()->GetName() << std::endl;
             it.insert_after(xorInst);
             ++it;
             
@@ -86,7 +86,7 @@ void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, U
         inst->SetRd(last->GetDef());
         ++it;
         
-        std::cout << "insert uncondInst:"  << uncondInst->GetName() << " after br:" << inst->getIR()->GetName() << std::endl;
+        //std::cout << "insert uncondInst:"  << uncondInst->GetName() << " after br:" << inst->getIR()->GetName() << std::endl;
         it.insert_after(uncondInst);
         ++it;
         
@@ -134,12 +134,13 @@ MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
         machineinst = MatchRetInst(parent, Tempinst);
     }
     else {
-        //std::cout << "Error: No Such Instruction." << std::endl;
         machineinst = new MachineInst(&inst, parent, "white");
     }
     return machineinst;
-} 
+}
 MachineInst* MatchStoreInst(MachineBasicBlock* parent, StoreInst* inst) {
+    
+    
     std::string op = "sw";
     Operand rd = (inst->Getuselist())[0]->GetValue();
     Operand rs1 = (inst->Getuselist())[1]->GetValue();
@@ -148,7 +149,7 @@ MachineInst* MatchStoreInst(MachineBasicBlock* parent, StoreInst* inst) {
 }
 MachineInst* MatchLoadInst(MachineBasicBlock* parent, LoadInst* inst) {
     std::string op = "lw";
-    Operand rd = inst->GetDef();        
+    Operand rd = inst->GetDef();
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
     return machineinst;
@@ -209,6 +210,15 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
             opcode = "addw";
         else if (is_float(rs1) && is_float(rs2)) 
             opcode = "fadd.s";
+        else if (rs1->isConst()) {
+            opcode = "addi";
+            Operand temp = rs1;
+            rs1 = rs2;
+            rs2 = temp;
+        }
+        else if (rs2->isConst()) {
+            opcode = "addi";
+        }
         else opcode = "white";
     }
     else if (op == "Op_Sub") {
@@ -235,22 +245,37 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
     else if (op == "Op_Mod") {
         if (is_int(rs1) && is_int(rs2)) 
             opcode = "remw";
-        // else if (is_float(rs1) && is_float(rs2)) 
-        //     opcode = "frem.s";
+        // %符号只能用于整型
         else opcode = "white";
     }  
     else if (op == "Op_And") {
         if (is_int(rs1) && is_int(rs2)) 
             opcode = "and";
-        // else if (is_float(rs1) && is_float(rs2)) 
-        //     opcode = " ";
+        else if (rs1->isConst()) {
+            opcode = "andi";
+            Operand temp = rs1;
+            rs1 = rs2;
+            rs2 = temp;
+        }
+        else if (rs2->isConst()) {
+            opcode = "andi";
+        }
         else opcode = "white";
     }  
     else if (op == "Op_Or") {
         if (is_int(rs1) && is_int(rs2)) 
             opcode = "or";
+        else if (rs1->isConst()) {
+            opcode = "ori";
+            Operand temp = rs1;
+            rs1 = rs2;
+            rs2 = temp;
+        }
+        else if (rs2->isConst()) {
+            opcode = "ori";
+        }
         else opcode = "white";
-    }  
+    }
     else if (op == "Op_E" || op == "Op_NE" || op == "Op_G" || op == "Op_GE" || op == "Op_L" || op == "Op_LE") {
         // need li inst
         opcode = "icmp_"; // head "icmp_"
