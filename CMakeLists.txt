@@ -13,10 +13,13 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 
+
 project(SYSY-compiler VERSION 0.1.0 LANGUAGES C CXX)
 
 include(CTest)
 enable_testing()
+
+
 
 include_directories(${CMAKE_SOURCE_DIR}/util)
 

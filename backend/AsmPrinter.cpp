@@ -59,6 +59,7 @@ void AsmPrinter(MachineUnit* unit) {
         }
         machinefunction->print_func_end();
     }
+    Singleton<Module>().Test();
 }
 
 //dump出机器指令文本
