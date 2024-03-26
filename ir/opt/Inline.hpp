@@ -183,3 +183,26 @@ public:
 private:
     InlineCost getCost(Function* func);
 };
+
+class CallAnalyzer
+{
+    friend class InlineCost;
+    friend class Inline;
+    Function& func;
+    bool IsCallerRecursive;
+    bool IsRecursiveCall;
+    bool HasDynamicAlloca;
+    bool HasReturn;
+    bool HasIndirectBr;
+    bool HasFrameEscape;
+    size_t AllocaSize;
+    std::map<Value*, std::pair<GetElementPtrInst*, int>> GepMap;
+    void analyzeblock(BasicBlock* block);
+    void analyzefunc();
+    bool visitAlloca(AllocaInst* alloca);
+    bool visitReturn(RetInst* ret);
+    bool visitGep(GetElementPtrInst* gep);
+public:
+    CallAnalyzer(Function& f) : func(f), GepMap{} {}
+
+};
