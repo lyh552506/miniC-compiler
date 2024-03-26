@@ -107,7 +107,7 @@ public:
     Singleton<Module>().Test();
   }
   dominance(Function *Func, int blockNum)
-      : count{1}, node(blockNum), block_num(blockNum), vertex(blockNum + 1),
+      : count{1}, node(blockNum), block_num(blockNum), vertex(105),
         dsu(blockNum + 1), df(blockNum + 1), thisFunc{Func},
         Dest(blockNum + 1) {}
   void dom_begin();
