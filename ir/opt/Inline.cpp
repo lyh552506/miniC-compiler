@@ -107,3 +107,19 @@ void Inline::RunOnFunction()
 /*
 CallInst use: vector{Func, arges} for(int i = 1 ; i < vector.size() ; i++)
 */
+
+void Inliner::PrintPass()
+{
+    std::cout << "--------Inline--------" << std::endl;
+    Singleton<Module>().Test();
+}
+
+void Inliner::Run()
+{
+    
+}
+
+void Inliner::init()
+{
+    LoopInfo lf;
+}

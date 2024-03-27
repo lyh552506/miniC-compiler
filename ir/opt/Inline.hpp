@@ -206,3 +206,27 @@ public:
     CallAnalyzer(Function& f) : func(f), GepMap{} {}
 
 };
+
+class Inliner
+{
+public:
+    const bool Only_Inline_Small_Function = false;
+    const bool Inline_Block_Num = 4;
+    const bool Inline_Recursive = false;
+
+public:
+    Inliner(Module* module) : m(module), inlinedFunc{}, 
+    NotInlineFunc{}, recursiveFunc{}, funcMap{} {}
+    void Run();
+    void Inline(Function* entry);
+    void InlineRecursive(Function* entry);
+    void PrintPass();
+    void init();
+private:
+    LoopAnalysis* loopAnalysis;
+    Module* m;
+    std::set<Function*> inlinedFunc;
+    std::set<Function*> NotInlineFunc;
+    std::set<Function*> recursiveFunc;
+    std::map<Function*, std::set<Function*>> funcMap;
+};
