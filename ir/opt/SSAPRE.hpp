@@ -131,8 +131,6 @@ public:
   /// @brief
   void Insert();
   /// @brief
-  void Eliminate();
-  /// @brief
   void DfsDT(int pos);
   void PostOrderCFG(BasicBlock *root);
   void BuidTopuSet(ValueNumberedSet &set);
@@ -156,6 +154,7 @@ public:
                              std::set<BasicBlock *> &visited);
   Value *phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val);
   void clean(ValueNumberedSet &val);
+  void CleanMemory();
   //在一个set中找到val的leader
   Value *Find_Leader(ValueNumberedSet &set, Value *val);
 

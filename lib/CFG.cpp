@@ -887,9 +887,13 @@ void PhiInst::Phiprop(Value* origin,Value* newval){
       Incomings[Num]=newval;
 }
 
-void PhiInst::Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord)
-{   if(_PhiRecord.find(CurrentNum) != _PhiRecord.end())
-        _PhiRecord.erase(CurrentNum);
+void PhiInst::Del_Incomes(int CurrentNum)
+{   if(PhiRecord.find(CurrentNum) != PhiRecord.end()){
+        PhiRecord.erase(CurrentNum);
+        for(auto&[_1,src]:PhiRecord){
+            
+        }
+    }
     else
         std::cerr << "No such PhiRecord" << std::endl;
 }

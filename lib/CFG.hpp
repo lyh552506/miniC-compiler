@@ -162,7 +162,7 @@ public:
 public:
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
-  void Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord);
+  void Del_Incomes(int CurrentNum);
   std::vector<BasicBlock*> Blocks;
   int oprandNum;
   bool IsGetIncomings=false;

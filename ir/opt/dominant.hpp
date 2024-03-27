@@ -48,7 +48,7 @@ public:
   std::vector<Node> node;
 
 private:
-  std::vector<int> vertex;            // 记录dfs对应的结点
+  int vertex[11000];            // 记录dfs对应的结点
   std::vector<int> bucket[200];       // bucket[u]代表sdom为u的点集
   std::vector<DSU> dsu;               //辅助数据结构实现路径压缩
   std::vector<DF> df;                 //存储每个结点的必经结点边界
@@ -107,7 +107,7 @@ public:
     Singleton<Module>().Test();
   }
   dominance(Function *Func, int blockNum)
-      : count{1}, node(blockNum), block_num(blockNum), vertex(blockNum + 1),
+      : count{1}, node(blockNum), block_num(blockNum),
         dsu(blockNum + 1), df(blockNum + 1), thisFunc{Func},
         Dest(blockNum + 1) {}
   void dom_begin();

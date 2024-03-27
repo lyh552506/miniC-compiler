@@ -15,7 +15,6 @@
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {
-    FList = new std::vector<Function *>();
   }
   void PreWork(int i);
   void IncludePass(int pass);
@@ -25,14 +24,14 @@ public:
   void PrintPass(){};
   void setAnalsis(bool choi) { Analysis = choi; }
   ~PassManager() {
-    delete FList;
+
   }
 
 private:
   bool Analysis = false;
   std::vector<int> InitpassRecorder;
-  std::vector<Function *> *FList;
-  std::vector<BasicBlock *> *BList;
+  std::vector<Function *> FList;
+  std::vector<BasicBlock *> BList;
   Function *m_func;
   std::unique_ptr<LoopAnalysis> m_loopAnlay;
   std::unique_ptr<dominance> m_dom;
