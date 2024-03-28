@@ -121,5 +121,23 @@ void Inliner::Run()
 
 void Inliner::init()
 {
-    LoopInfo lf;
+    for(auto &func_ : m->GetFuncTion())
+    {
+        Function* func = func_.get();
+        LoopAnalysis loopAnalysis(func, dom);
+        loopAnalysis.RunOnFunction();
+        if(func->GetBasicBlock().empty())
+            NotInlineFunc.insert(func);
+        else if(Only_Inline_Small_Function)
+        {
+            if(func->GetBasicBlock().size() > Inline_Block_Num)
+                NotInlineFunc.insert(func);
+        }
+        else if(Not_Inline_Multilevel_Loop_Func)
+        {
+            
+        }
+    }
+    
+        
 }

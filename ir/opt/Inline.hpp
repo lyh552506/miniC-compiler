@@ -213,20 +213,21 @@ public:
     const bool Only_Inline_Small_Function = false;
     const bool Inline_Block_Num = 4;
     const bool Inline_Recursive = false;
+    const bool Not_Inline_Multilevel_Loop_Func = true;
 
 public:
     Inliner(Module* module) : m(module), inlinedFunc{}, 
-    NotInlineFunc{}, recursiveFunc{}, funcMap{} {}
+    NotInlineFunc{}, recursiveFunc{}, CallMap{} {}
     void Run();
     void Inline(Function* entry);
     void InlineRecursive(Function* entry);
     void PrintPass();
     void init();
 private:
-    LoopAnalysis* loopAnalysis;
     Module* m;
+    dominance* dom;
     std::set<Function*> inlinedFunc;
     std::set<Function*> NotInlineFunc;
     std::set<Function*> recursiveFunc;
-    std::map<Function*, std::set<Function*>> funcMap;
+    std::map<Function*, std::set<Function*>> CallMap;
 };
