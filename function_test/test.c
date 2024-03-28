@@ -59,17 +59,32 @@
 // //     };
 // //     return a;
 // // }
-// int func(int dst[],int src[]){
-//   int i=0,j=0;
+// // int func(int dst[],int src[]){
+// //   int i=0,j=0;
+// //   while(i<5){
+// //     while(j<5){
+// //       dst[j]=dst[i]+src[i];
+// //       j=j+1;
+// //       i=i+1;
+// //     }
+// //   }
+// //   return 1;}
+// // }
+// int func(int i,int j,int b){
+//   int a=0;
 //   while(i<5){
 //     while(j<5){
-//       dst[j]=dst[i]+src[i];
-//       j=j+1;
-//       i=i+1;
+//       a=b+1;
 //     }
 //   }
-//   return 1;}
+//   return a;
 // }
+int func(int a,int b){
+  while(a<5){
+    if(a>0)
+      break;
+  }
+}
 // void reverse(int n) {
 //     int next;
 //     if (n <= 1) {

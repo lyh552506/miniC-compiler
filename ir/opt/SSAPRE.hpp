@@ -99,9 +99,17 @@ struct ValueNumberedSet {
   }
 
   void init() {
+    // for(auto tmp:contents)
+    //   delete tmp;
     Record.clear();
     contents.clear();
   }
+
+  void operator=(const ValueNumberedSet& other){
+    Record=other.Record;
+    contents=other.contents;
+  }
+
   /// @brief return true if is inserted
   bool IsAlreadyInsert(int hash) {
     if (Record.size() < hash+1)
@@ -122,8 +130,6 @@ public:
   void BuildSets();
   /// @brief
   void Insert();
-  /// @brief
-  void Eliminate();
   /// @brief
   void DfsDT(int pos);
   void PostOrderCFG(BasicBlock *root);
@@ -148,6 +154,7 @@ public:
                              std::set<BasicBlock *> &visited);
   Value *phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val);
   void clean(ValueNumberedSet &val);
+  void CleanMemory();
   //在一个set中找到val的leader
   Value *Find_Leader(ValueNumberedSet &set, Value *val);
 

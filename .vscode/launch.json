@@ -6,31 +6,27 @@
     "configurations": [
         {
             "name": "C++ Launch",
-            "type": "cppdbg",
+            "type": "lldb",
             "request": "launch",
             "preLaunchTask": "CMake: build",
             "program": "${workspaceFolder}/build/SYSY-compiler",
-            "cwd": "${workspaceFolder}",
-            "targetArchitecture": "x64",
-            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constprop","--pre","--loopinfo"],
-            "stopAtEntry": false,
-            "setupCommands": [
-              {
-                  "description": "为 gdb 启用整齐打印",
-                  "text": "-enable-pretty-printing",
-                  "ignoreFailures": true
-              }
-          ],
+  
+  
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constprop","--dce","--pre","--loopinfo"],
+          //   "setupCommands": [
+          //     {
+          //         "description": "为 gdb 启用整齐打印",
+          //         "text": "-enable-pretty-printing",
+          //         "ignoreFailures": true
+          //     }
+          // ],
             // "environment": [
             //   {
             //     "name": "LSAN_OPTIONS",
             //     "value": "verbosity=1:log_threads=1"
             //   }
             // ],
-            "linux": {
-              "MIMode": "gdb",
-              "miDebuggerPath": "/usr/bin/gdb"
-            }
+        
           },
           {
             "name": "C++ Launch(MacOS)",
