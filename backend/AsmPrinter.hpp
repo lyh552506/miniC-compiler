@@ -4,45 +4,104 @@
 #include "Mcode.hpp"
 #include "InstSelection.hpp"
 
-void RegAlloca(Function* function);
-MachineUnit* GenerateMir(Module* unit);
-void AsmPrinter(MachineUnit* unit);
-void PrintCodeToTxt(Module* unit);
-
 class globlvar;
-class Segment;
+class tempvar;
+class functionSegment;
 class textSegment;
 class dataSegment;
-class sectionSegment;
 
 class AsmPrinter {
     protected:
-    std::vector<Segment> segments;
     std::string filename;
+    //
     Module* unit;
+    MachineUnit* Machineunit;
 
     public:
     AsmPrinter(std::string filename, Module* unit);
 
-};
-class globlvar {
+    void RegAlloca(Function* function);
+    MachineUnit* GenerateMir(Module* unit);
+    void PrintInst(MachineUnit* unit);
 
-};
-class Segment {
+    void printAsm();
+    void PrintToTxt();
 
+    friend textSegment;
+    friend globlvar;
+    friend tempvar;
 };
-class textSegment : public Segment{
+
+class textSegment {
     private:
-    int align;
+    MachineUnit* Machineunit;
+    std::vector<functionSegment*> function_list;
 
+    public:
+    textSegment(MachineUnit* Machineunit);
+    void GenerateFuncList(MachineUnit* Machineunit);
+    void PrintTextSegment();
 };
 
-class dataSegment : public Segment{
-
-};
-
-// sbss or rodata
-class sectionSegment : public Segment{
+class functionSegment {
     private:
+    //structure
     int align;
+    std::string name;
+    std::string ty="function";
+    int size;
+    //
+    MachineFunction* machinefunction;
+    public:
+    functionSegment(MachineFunction* machinefunction);
+    void PrintFuncSegment();
+};
+
+class dataSegment {
+    private:
+    std::vector<globlvar*> globlvar_list;//.data or .bss
+    std::vector<tempvar*> tempvar_list;//.data
+    Module* unit;
+    protected:
+    enum section {
+        data,
+        bss
+    };
+    public:
+    dataSegment(Module* unit);
+    void GenerateGloblvarList(Module* unit);
+    void GenerateTempvarList(MachineUnit* Machineunit);
+
+
+};
+
+class globlvar : public dataSegment{
+    private:
+    //structure
+    std::string name;
+    section sec;
+    int align;
+    std::string ty="object";
+    int size;
+    std::vector<std::variant<int , float>> init_vector;
+    //
+    dataSegment* parent;
+
+    public:
+    globlvar(std::string name, section sec, int align, int size, std::vector<std::variant<int , float>> init_vector);
+
+};
+
+class tempvar : public dataSegment{
+    private:
+    //structure
+    std::string name;
+    section sec;
+    int align;
+    std::vector<std::variant<int , float>> init_vector;
+    //
+    dataSegment* parent;
+
+    public:
+    tempvar(std::string name, section sec, int align, std::vector<std::variant<int , float>> init_vector);
 };

@@ -130,6 +130,7 @@ void MachineFunction::set_stacksize() {
     size_t temp = offset % 16;
     stacksize += offset +(16 - temp);
 }
+Function* MachineFunction::get_function() {return this->func;}
 MachineUnit* MachineFunction::get_machineunit() {return this->Munit;}
 void MachineFunction::addMachineBasicBlock(MachineBasicBlock* mblock) {
     this->mblocks.push_back(mblock);
@@ -191,6 +192,7 @@ void MachineFunction::print_func_end() {
 
 //MachineUnit
 MachineUnit::MachineUnit(Module* unit) : unit(unit) {}
+Module* MachineUnit::get_module() {return unit;}
 void MachineUnit::addMachineFunction(MachineFunction* mfuncs) {
     this->mfuncs.push_back(mfuncs);
 }
