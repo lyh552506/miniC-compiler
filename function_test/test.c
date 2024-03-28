@@ -87,12 +87,10 @@
 //   return a;
 // }
 int func(int a,int b){
-  int x=0;
-  if(x>0){
-    x=a+b;
+  while(a<5){
+    if(a>0)
+      break;
   }
-  x=a+b;
-  return x;
 }
 // void reverse(int n) {
 //     int next;
