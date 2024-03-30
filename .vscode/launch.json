@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/build/SYSY-compiler",
             "cwd": "${workspaceFolder}",
             "targetArchitecture": "x64",
-            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constprop","--dce","--pre","--loopinfo"],
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--pre","--loopinfo"],
             "stopAtEntry": false,
             "setupCommands": [
               {

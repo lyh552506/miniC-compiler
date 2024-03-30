@@ -5,7 +5,7 @@
 
 class cfgSimplify : public PassManagerBase {
  public:
-  cfgSimplify(Function* func) : m_func(func) {}
+  cfgSimplify(Function* func,dominance* dom) : m_func(func),m_dom(dom) {}
   void RunOnFunction();
   void PrintPass();
  private:

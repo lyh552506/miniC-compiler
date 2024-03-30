@@ -1,7 +1,9 @@
 #pragma once
+#include <memory>
 #include "../../yacc/parser.hpp"
 #include "../Analysis/DealCriticalEdges.hpp"
 #include "ADCE.hpp"
+#include "CFG.hpp"
 #include "ConstantFold.hpp"
 #include "ConstantProp.hpp"
 #include "DCE.hpp"
@@ -12,6 +14,7 @@
 #include "PromoteMemtoRegister.hpp"
 #include "SSAPRE.hpp"
 #include "dominant.hpp"
+#include "cfgSimplify.hpp"
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {
@@ -41,4 +44,5 @@ private:
   std::unique_ptr<DCE> m_dce;
   std::unique_ptr<LivenessAnalysis> m_liveness;
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
+  std::unique_ptr<cfgSimplify> m_cfgsimple;
 };

@@ -216,6 +216,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     public:
     Function(InnerDataType _tp,std::string _id);
     void print();
+    void init_bbs(){ bbs.clear();}
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);

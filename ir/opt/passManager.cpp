@@ -6,13 +6,16 @@ void PassManager::InitPass() {
     m_eliedg = std::make_unique<ElimitCriticalEdge>(m_func);
     m_eliedg->RunOnFunction();
     PreWork(i);
+    m_dom = std::make_unique<dominance>(m_func, BList.size());
+    m_cfgsimple=std::make_unique<cfgSimplify>(m_func,m_dom.get());
+    m_cfgsimple->RunOnFunction();
     m_liveness = std::make_unique<LivenessAnalysis>(m_func);
     m_eliedg=std::make_unique<ElimitCriticalEdge>(m_func);
     m_adce = std::make_unique<ADCE>(m_func);
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
     
-    m_dom = std::make_unique<dominance>(m_func, BList.size());
+    
     m_loopAnlay = std::make_unique<LoopAnalysis>(m_func, m_dom.get());
     m_pre = std::make_unique<PRE>(m_dom.get(), m_func);
     RunOnFunction();
@@ -24,6 +27,7 @@ void PassManager::PreWork(int i) {
   BList.clear();
   Singleton<Module>().GetFuncTion()[i]->GetBasicBlock().clear();
   m_func = Singleton<Module>().GetFuncTion()[i].get();
+  m_func->init_bbs();
   FList.push_back(m_func);
   for (auto bb = m_func->begin(); bb != m_func->end(); ++bb)
     m_func->push_bb(*bb);
