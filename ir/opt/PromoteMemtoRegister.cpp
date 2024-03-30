@@ -14,7 +14,7 @@ void PromoteMem2Reg::run() {
   for (int i = 0; i != m_Allocas.size(); i++) {
     AllocaInst *AI = m_Allocas[i];
     // do some basic opt
-    if (!AI->IsUsed()) // if not used,then delete
+    if (!AI->IsUsed())  // if not used,then delete
     {
       AI->ClearRelation();
       AI->EraseFromParent();
@@ -24,7 +24,7 @@ void PromoteMem2Reg::run() {
     //看下哪些基本块在使用这个ALLOC，哪些基本块定义了这个ALLOC
     Info.AnalyzeAlloca(AI);
 
-    if (Info.DefineBlocks.size() == 1) { //只有一个定义基本块
+    if (Info.DefineBlocks.size() == 1) {  //只有一个定义基本块
       if (RewriteSingleStoreAlloca(Info, AI, BBInfo)) {
         RemoveFromAllocaList(i);
         continue;
@@ -33,7 +33,7 @@ void PromoteMem2Reg::run() {
     if (Info.IO_OnlySingleBlock &&
         Rewrite_IO_SingleBlock(
             Info, AI,
-            BBInfo)) { // ALLOC出来的局部变量的读或者写都只存在一个基本块中
+            BBInfo)) {  // ALLOC出来的局部变量的读或者写都只存在一个基本块中
       RemoveFromAllocaList(i);
       continue;
     }
@@ -61,7 +61,7 @@ void PromoteMem2Reg::run() {
     AllocaDict[x] = UndefValue::get(
         dynamic_cast<HasSubType *>(m_Allocas[x]->GetType())->GetSubType());
 
-  std::vector<RenamePass> WorkLists; //采用工作表法，传入EntryBlock
+  std::vector<RenamePass> WorkLists;  //采用工作表法，传入EntryBlock
   WorkLists.emplace_back(*(Func.begin()), nullptr, AllocaDict);
   do {
     auto tmp = std::move(WorkLists.back());
@@ -85,7 +85,6 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
     //当前块存在Phi指令
     if (PhiInst *Phi = dynamic_cast<PhiInst *>(*(BB->begin()))) {
       if (PhiToAlloca.count(Phi)) {
-
         for (auto Inst = BB->begin(); Inst != BB->end();) {
           int Allocanum = PhiToAlloca[Phi];
           Phi->updateIncoming(IncomingVal[Allocanum], Pred);
@@ -94,14 +93,12 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 
           ++Inst;
           Phi = dynamic_cast<PhiInst *>(*Inst);
-          if (!Phi)
-            break;
+          if (!Phi) break;
         }
       }
     }
 
-    if (!RenameVisited.insert(BB).second)
-      return;
+    if (!RenameVisited.insert(BB).second) return;
     // 下面的for循环是在做替换。
     // 比如 %a = alloca i32
     //		%0 = load i32 %a
@@ -114,32 +111,28 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
       User *user = *inst;
       if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
         Value *Src = GetOperand(LI, 0);
-        AllocaInst *AI = dynamic_cast<AllocaInst *>(Src); // src---->%a
-        if (!AI)
-          continue;
+        AllocaInst *AI = dynamic_cast<AllocaInst *>(Src);  // src---->%a
+        if (!AI) continue;
 
         auto it = AllocaToIndex.find(AI);
-        if (it == AllocaToIndex.end())
-          continue;
+        if (it == AllocaToIndex.end()) continue;
 
-        Value *RepL = IncomingVal[it->second]; //使用Alloca的value来替换
+        Value *RepL = IncomingVal[it->second];  //使用Alloca的value来替换
         LI->RAUW(RepL);
         LI->ClearRelation();
         LI->EraseFromParent();
       } else if (StoreInst *ST = dynamic_cast<StoreInst *>(user)) {
         auto &des = ST->Getuselist();
-        Value *Des = des[1]->GetValue(); //获取Store的第二个操作数
+        Value *Des = des[1]->GetValue();  //获取Store的第二个操作数
         AllocaInst *AI = dynamic_cast<AllocaInst *>(Des);
-        if (!AI)
-          continue;
+        if (!AI) continue;
 
         auto it = AllocaToIndex.find(AI);
-        if (it == AllocaToIndex.end())
-          continue;
+        if (it == AllocaToIndex.end()) continue;
 
         Value *RepL =
-            ST->Getuselist()[0]->GetValue(); //使用Store的第一个操作数来替换
-        IncomingVal[it->second] = RepL; //--->更新前面初始化的undef
+            ST->Getuselist()[0]->GetValue();  //使用Store的第一个操作数来替换
+        IncomingVal[it->second] = RepL;  //--->更新前面初始化的undef
         ST->ClearRelation();
         ST->EraseFromParent();
       }
@@ -147,10 +140,9 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 
     //将BB的后继添加到worklist继续循环处理
     auto cur = m_dom.GetNode(BB->num);
-    if (cur.des.empty())
-      return;
+    if (cur.des.empty()) return;
     //避免重复的visit前驱
-    std::set<BasicBlock*> visited;
+    std::set<BasicBlock *> visited;
 
     auto It = cur.des.begin();
     Pred = BB;
@@ -159,7 +151,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 
     while (It != cur.des.end()) {
       BasicBlock *tmp = m_dom.GetNode(*It++).thisBlock;
-      if(visited.insert(tmp).second)//tmp还未被插入
+      if (visited.insert(tmp).second)  // tmp还未被插入
         WorkLists.emplace_back(tmp, Pred, IncomingVal);
     }
   }
@@ -167,15 +159,13 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
 
 bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
   auto &vect = Func.GetBasicBlock();
-  auto it =
-      std::find_if(vect.begin(), vect.end(), [bb](BasicBlock *base) {
-        return base == bb;
-      }); // get index
+  auto it = std::find_if(vect.begin(), vect.end(), [bb](BasicBlock *base) {
+    return base == bb;
+  });  // get index
 
-  int index = std::distance(vect.begin(), it); //获取下标
-  PhiInst *&Phi = PrePhiNode[std::make_pair(index,AllocaNum)];
-  if (Phi)
-    return false;
+  int index = std::distance(vect.begin(), it);  //获取下标
+  PhiInst *&Phi = PrePhiNode[std::make_pair(index, AllocaNum)];
+  if (Phi) return false;
   AllocaInst *target = m_Allocas[AllocaNum];
   Phi = PhiInst::NewPhiNode(
       bb->front(), bb,
@@ -199,7 +189,7 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
             [](const std::pair<int, StoreInst *> &T1,
                const std::pair<int, StoreInst *> &T2) -> bool {
               return T1.first < T2.first;
-            }); //方便进行后续的二分搜索
+            });  //方便进行后续的二分搜索
 
   for (Use *use : AI->GetUserlist()) {
     User *user = use->GetUser();
@@ -211,16 +201,16 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
           [](const std::pair<int, StoreInst *> &T1,
              const std::pair<int, StoreInst *> &T2) -> bool {
             return T1.first < T2.first;
-          }); // find the first value which index is bigger than the inst in
-              // container
+          });  // find the first value which index is bigger than the inst in
+               // container
       if (it == StoreInstWithIndex.begin()) {
-        if (StoreInstWithIndex.empty()) // no stores
+        if (StoreInstWithIndex.empty())  // no stores
           LI->RAUW(UndefValue::get(LI->GetType()));
-        else            // no store before load
-          return false; /// @note why is this
+        else             // no store before load
+          return false;  /// @note why is this
       } else
         LI->RAUW(std::prev(it)->second->Getuselist()[0]->GetValue());
-        
+
       LI->ClearRelation();
       LI->EraseFromParent();
       BBInfo.DeleteIndex(LI);
@@ -252,7 +242,7 @@ void AllocaInfo::AnalyzeAlloca(AllocaInst *AI) {
       DefineBlocks.push_back(SI->GetParent());
       BB = SI->GetParent();
       OnlyStore = SI;
-    } else { //由于IsAllocaPromotable，所以只会是storeinst或者loadinst
+    } else {  //由于IsAllocaPromotable，所以只会是storeinst或者loadinst
       LoadInst *LI = dynamic_cast<LoadInst *>(user);
       BB = LI->GetParent();
       UsingBlocks.push_back(BB);
@@ -276,7 +266,7 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
   Value *val = OnlySt->Getuselist()[0]->GetValue();
   User *u = dynamic_cast<User *>(val);
   if (u == nullptr)
-    GlobalVal = true; //判断store语句的第一个操作数是否是全局变量/常量
+    GlobalVal = true;  //判断store语句的第一个操作数是否是全局变量/常量
   BasicBlock *StoreBB = OnlySt->GetParent();
 
   Info.UsingBlocks.clear();
@@ -284,16 +274,14 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
   for (Use *use : AI->GetUserlist()) {
     User *user = use->GetUser();
     LoadInst *LI = dynamic_cast<LoadInst *>(user);
-    if (!LI)
-      continue;
+    if (!LI) continue;
 
-    if (!GlobalVal) { // load语句和当前的store在同一个块,如果不是全局变量，需要寻找store和load的次序关系
+    if (!GlobalVal) {  // load语句和当前的store在同一个块,如果不是全局变量，需要寻找store和load的次序关系
       if (LI->GetParent() == StoreBB) {
-        if (StoreIndex == -1)
-          StoreIndex = BBInfo.GetInstIndex(OnlySt);
+        if (StoreIndex == -1) StoreIndex = BBInfo.GetInstIndex(OnlySt);
         int LoadIndex = BBInfo.GetInstIndex(LI);
         if (LoadIndex <
-            StoreIndex) { //如果load比store还早一些出现，那么出现undef
+            StoreIndex) {  //如果load比store还早一些出现，那么出现undef
           Info.UsingBlocks.push_back(StoreBB);
           continue;
         }
@@ -301,20 +289,19 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
           LI->GetParent() != StoreBB &&
           !m_dom.dominates(
               StoreBB,
-              LI->GetParent())) { // loadinst不在唯一store的bb，并且其所在bb不被支配
+              LI->GetParent())) {  // loadinst不在唯一store的bb，并且其所在bb不被支配
         Info.UsingBlocks.push_back(LI->GetParent());
         continue;
       }
     }
     LI->RAUW(val);
     LI->ClearRelation();
-    LI->EraseFromParent(); //可以将这个LoadInstruction删除了
+    LI->EraseFromParent();  //可以将这个LoadInstruction删除了
     BBInfo.DeleteIndex(LI);
   }
-  if (!Info.UsingBlocks.empty())
-    return false;
+  if (!Info.UsingBlocks.empty()) return false;
   OnlySt->ClearRelation();
-  OnlySt->EraseFromParent(); //结束后删除alloca和store
+  OnlySt->EraseFromParent();  //结束后删除alloca和store
   BBInfo.DeleteIndex(OnlySt);
   AI->ClearRelation();
   AI->EraseFromParent();
@@ -331,14 +318,13 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
   for (int i = 0, length = LiveIn.size(); i != length; i++) {
     BasicBlock *BB = LiveIn[i];
     if (DefineBlock.find(BB) == DefineBlock.end())
-      continue; //当前use的block没有define，不能简化
+      continue;  //当前use的block没有define，不能简化
 
     for (auto it = BB->begin();; ++it) {
       User *user = *it;
       if (StoreInst *ST = dynamic_cast<StoreInst *>(
-              user)) { //相当于直接给这个变量赋了一个确定值,不再需要phi
-        if (ST->Getuselist()[1]->GetValue() != AI)
-          continue;
+              user)) {  //相当于直接给这个变量赋了一个确定值,不再需要phi
+        if (ST->Getuselist()[1]->GetValue() != AI) continue;
 
         LiveIn[i] = LiveIn.back();
         LiveIn.pop_back();
@@ -347,8 +333,7 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
       }
 
       if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
-        if (LI->Getuselist()[0]->GetValue() == AI)
-          break;
+        if (LI->Getuselist()[0]->GetValue() == AI) break;
       }
     }
   }
@@ -364,7 +349,7 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
     BasicBlock *bb = LiveIn.back();
 
     LiveIn.pop_back();
-    if (!LiveInBlocks.insert(bb).second) //插入当前block
+    if (!LiveInBlocks.insert(bb).second)  //插入当前block
       continue;
     dominance::Node &node = m_dom.GetNode(bb->num);
     //遍历他的前驱,以简化phi函数的插入
@@ -372,8 +357,7 @@ void PromoteMem2Reg::PreWorkingAfterInsertPhi(
       BasicBlock *rev = m_dom.GetNode(it).thisBlock;
 
       //遍历到目前的前驱块刚好是定义块，则不添加
-      if (DefineBlock.find(rev) != DefineBlock.end())
-        continue;
+      if (DefineBlock.find(rev) != DefineBlock.end()) continue;
 
       LiveIn.push_back(rev);
     }
@@ -388,29 +372,27 @@ bool IsAllocaPromotable(AllocaInst *AI) {
       assert(LI && "LoadInst can not be nullptr");
       // do nothing
     } else if (StoreInst *SI = dynamic_cast<StoreInst *>(user)) {
-      if (SI->Getuselist()[0]->GetValue() == AI)
-        return false;
+      if (SI->Getuselist()[0]->GetValue() == AI) return false;
     } else if (GetElementPtrInst *gep =
                    dynamic_cast<GetElementPtrInst *>(user)) {
+      //TODO  
       return false;
     } else {
       return false;
     }
   }
-  return true; //到这步也可能是AI没有user，所以后续需要做一下判断
+  return true;  //到这步也可能是AI没有user，所以后续需要做一下判断
 }
 
 bool BlockInfo::IsAllocaRelated(User *Inst) {
-  if (LoadInst *LI = dynamic_cast<LoadInst *>(Inst)) { // if read this alloca
+  if (LoadInst *LI = dynamic_cast<LoadInst *>(Inst)) {  // if read this alloca
     AllocaInst *AI = dynamic_cast<AllocaInst *>(GetOperand(LI, 0));
-    if (AI != nullptr)
-      return true;
+    if (AI != nullptr) return true;
   } else if (StoreInst *ST =
-                 dynamic_cast<StoreInst *>(Inst)) { // if store to this alloca
+                 dynamic_cast<StoreInst *>(Inst)) {  // if store to this alloca
     AllocaInst *AI =
         dynamic_cast<AllocaInst *>(ST->Getuselist()[1]->GetValue());
-    if (AI != nullptr)
-      return true;
+    if (AI != nullptr) return true;
   }
   return false;
 }
@@ -418,8 +400,7 @@ bool BlockInfo::IsAllocaRelated(User *Inst) {
 /// @brief 提供当前块bb和指令inst，返回当前指令所在bb的index
 int BlockInfo::GetInstIndex(User *Inst) {
   auto It = IndexInfo.find(Inst);
-  if (It != IndexInfo.end())
-    return It->second;
+  if (It != IndexInfo.end()) return It->second;
 
   //目前user查找到当前的bb
   int num = 0;
