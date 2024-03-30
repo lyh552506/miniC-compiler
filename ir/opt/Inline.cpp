@@ -116,7 +116,9 @@ void Inliner::PrintPass()
 
 void Inliner::Run()
 {
-    
+    init();
+    CreateCallMap();
+    DetectRecursive();
 }
 
 void Inliner::init()
@@ -135,9 +137,107 @@ void Inliner::init()
         }
         else if(Not_Inline_Multilevel_Loop_Func)
         {
-            
+            for(BasicBlock* block : *func)
+            {
+                int nested = 0;
+                LoopInfo* lf = loopAnalysis.LookUp(block);
+                nested = lf->GetLoopDepth();
+                if(nested > Not_Inline_Multilevel_Loop_Func)
+                {
+                    if(NotInlineFunc.find(func) != NotInlineFunc.end())
+                        break;
+                    NotInlineFunc.insert(func);
+                }
+            }
         }
     }
-    
-        
+    for(auto& func_ : m->GetFuncTion())
+    {
+        Function* func = func_.get();
+        if(func->GetName() == "main")
+            NotInlineFunc.erase(func);
+    }
+}
+
+void Inliner::CreateCallMap()
+{
+    for(auto& func_ : m->GetFuncTion())
+    {
+        Function* func = func_.get();
+        for(BasicBlock* block : *func)
+        {
+            for(User* inst : *block)
+            {
+                if(CallInst* call = dynamic_cast<CallInst*>(inst))
+                {
+                    Function* Func = dynamic_cast<Function*>(call->Getuselist()[0]->usee);
+                    if(Func)
+                    {
+                        CallMap[func].insert(Func);
+                        CalledMap[Func].insert(func);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Inliner::DetectRecursive()
+{
+    Function* entry = m->GetMainFunc();
+    std::set<Function*> visited;
+    VisitFunc(entry, visited);
+}
+
+void Inliner::VisitFunc(Function* entry, std::set<Function*>& visited)
+{
+    visited.insert(entry);
+    for(Function* Succ : CallMap[entry])
+    {
+        if(visited.find(Succ) != visited.end())
+            RecursiveFunc.insert(Succ);
+        else
+            VisitFunc(Succ, visited);
+    }
+    visited.erase(entry);
+}
+void Inliner::Inline(Function* entry)
+{
+    if(inlinedFunc.find(entry) != inlinedFunc.end())
+        return;
+    inlinedFunc.insert(entry);
+    for(auto& func_ : m->GetFuncTion())
+    {
+        Function* func = func_.get();
+        if(func->GetName() == entry->GetName())
+            continue;
+        if(NotInlineFunc.find(func) != NotInlineFunc.end())
+            continue;
+        if(CallMap.find(func) == CallMap.end())
+            continue;
+        for(auto& call : CallMap[func])
+        {
+            if(call->GetName() == entry->GetName())
+            {
+                InlineCost cost = Cost.getCost(func);
+                if(cost.isNever())
+                    continue;
+                if(cost.isAlways())
+                {
+                    Inline(call);
+                    break;
+                }
+                if(cost.Cost < Inline_Block_Num)
+                {
+                    Inline(call);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void Inliner::InlineRecursive(Function* entry)
+{
+
 }

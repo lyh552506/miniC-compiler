@@ -248,5 +248,6 @@ class Module:public SymbolTable
     void Test();
     void EraseFunction(Function* func);
     bool isMIRSSALevel();
+    Function* GetMainFunc();
     // std::vector<GlobalVariblePtr> GetGlobalptrs(){return this->globalvaribleptr;};
 };

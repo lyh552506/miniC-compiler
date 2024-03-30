@@ -3,6 +3,7 @@
 #include "dominant.hpp"
 #define INT_MAX   __INT_MAX__
 #define INT_MIN (-__INT_MAX__ -1)
+class CallGraphNode;
 class Inline : public dominance
 {
 public:
@@ -147,6 +148,7 @@ public:
 
 class InlineCost
 {
+    friend class Inliner;
 protected:
     enum InlineConstants
     {
@@ -217,17 +219,22 @@ public:
 
 public:
     Inliner(Module* module) : m(module), inlinedFunc{}, 
-    NotInlineFunc{}, recursiveFunc{}, CallMap{} {}
+    NotInlineFunc{}, RecursiveFunc{}, CallMap{}, CalledMap{}, Cost(0, 0) {}
     void Run();
     void Inline(Function* entry);
     void InlineRecursive(Function* entry);
     void PrintPass();
     void init();
+    void CreateCallMap();
+    void DetectRecursive();
+    void VisitFunc(Function* entry, std::set<Function*>& visited);
 private:
+    InlineCost Cost;
     Module* m;
     dominance* dom;
     std::set<Function*> inlinedFunc;
     std::set<Function*> NotInlineFunc;
-    std::set<Function*> recursiveFunc;
+    std::set<Function*> RecursiveFunc;
     std::map<Function*, std::set<Function*>> CallMap;
+    std::map<Function*, std::set<Function*>> CalledMap;
 };
