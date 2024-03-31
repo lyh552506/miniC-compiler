@@ -597,7 +597,10 @@ std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
     if(!Succ_Block.empty())
         return this->Succ_Block;
     else
+    {
         std::cerr << "There is no Succ Block." << std::endl;
+        return std::vector<BasicBlock*>();
+    }
 }
 
 BasicBlock* BasicBlock::GenerateNewBlock(std::string name){

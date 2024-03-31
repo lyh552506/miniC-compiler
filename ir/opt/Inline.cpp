@@ -21,12 +21,12 @@ void CallGraphNode::MoveCallFuncFrom(CallGraphNode *Node)
     std::swap(CalledFunctions, Node->CalledFunctions);
 }
 
-void CallGraphNode::AddCallFunc(CallInst* inst)
-{
-    CalledFunctions.emplace_back( \
-        std::make_pair(inst, CallGraphNode \
-        (dynamic_cast<Function*>(inst->Getuselist()[0]->usee))));
-}
+// void CallGraphNode::AddCallFunc(CallInst* inst)
+// {
+//     CalledFunctions.emplace_back( \
+//         std::make_pair(inst, CallGraphNode \
+//         (dynamic_cast<Function*>(inst->Getuselist()[0]->usee))));
+// }
 
 void CallGraphNode::DelCallEdge(iterator iter)
 {
@@ -203,39 +203,93 @@ void Inliner::VisitFunc(Function* entry, std::set<Function*>& visited)
 }
 void Inliner::Inline(Function* entry)
 {
-    if(inlinedFunc.find(entry) != inlinedFunc.end())
-        return;
-    inlinedFunc.insert(entry);
-    for(auto& func_ : m->GetFuncTion())
+    // if(inlinedFunc.find(entry) != inlinedFunc.end())
+    //     return;
+    // inlinedFunc.insert(entry);
+    // for(auto& func_ : m->GetFuncTion())
+    // {
+    //     Function* func = func_.get();
+    //     if(func->GetName() == entry->GetName())
+    //         continue;
+    //     if(NotInlineFunc.find(func) != NotInlineFunc.end())
+    //         continue;
+    //     if(CallMap.find(func) == CallMap.end())
+    //         continue;
+    //     for(auto& call : CallMap[func])
+    //     {
+    //         if(call->GetName() == entry->GetName())
+    //         {
+    //             InlineCost cost = Cost.getCost(func);
+    //             if(cost.isNever())
+    //                 continue;
+    //             if(cost.isAlways())
+    //             {
+    //                 Inline(call);
+    //                 break;
+    //             }
+    //             if(cost.Cost < Inline_Block_Num)
+    //             {
+    //                 Inline(call);
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
+    for(auto iter = entry->GetBasicBlock().begin(); iter != entry->GetBasicBlock().end(); ++iter)
     {
-        Function* func = func_.get();
-        if(func->GetName() == entry->GetName())
-            continue;
-        if(NotInlineFunc.find(func) != NotInlineFunc.end())
-            continue;
-        if(CallMap.find(func) == CallMap.end())
-            continue;
-        for(auto& call : CallMap[func])
+        BasicBlock* block = *iter;
+        for(User* inst : *block)
         {
-            if(call->GetName() == entry->GetName())
+            if(CanBeInlined(inst))
             {
-                InlineCost cost = Cost.getCost(func);
-                if(cost.isNever())
-                    continue;
-                if(cost.isAlways())
-                {
-                    Inline(call);
-                    break;
-                }
-                if(cost.Cost < Inline_Block_Num)
-                {
-                    Inline(call);
-                    break;
-                }
+                // 切分basicblock
+                // 维护succ pred
+                // 复制block
+                // 设置新bb的父亲
+                // 将新bb插入函数
+                // 设置被split的块跳转到新的bb的entry
+                // 给返回值alloca空间，并跳转到新的BB
+                // 处理void返回值的情况，直接跳转到新的BB
             }
         }
     }
 }
+
+// void Inliner::Inline(Function* entry)
+// {
+//     if(inlinedFunc.find(entry) != inlinedFunc.end())
+//         return;
+//     inlinedFunc.insert(entry);
+//     for(auto& func_ : m->GetFuncTion())
+//     {
+//         Function* func = func_.get();
+//         if(func->GetName() == entry->GetName())
+//             continue;
+//         if(NotInlineFunc.find(func) != NotInlineFunc.end())
+//             continue;
+//         if(CallMap.find(func) == CallMap.end())
+//             continue;
+//         for(auto& call : CallMap[func])
+//         {
+//             if(call->GetName() == entry->GetName())
+//             {
+//                 InlineCost cost = Cost.getCost(func);
+//                 if(cost.isNever())
+//                     continue;
+//                 if(cost.isAlways())
+//                 {
+//                     Inline(call);
+//                     break;
+//                 }
+//                 if(cost.Cost < Inline_Block_Num)
+//                 {
+//                     Inline(call);
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+// }
 
 void Inliner::InlineRecursive(Function* entry)
 {
