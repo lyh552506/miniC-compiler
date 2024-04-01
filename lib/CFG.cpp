@@ -891,6 +891,8 @@ Value* PhiInst::ReturnValIn(BasicBlock* bb){
 }
 
 std::vector<Value*>& PhiInst::GetAllPhiVal(){
+    Incomings.clear();
+    Blocks.clear();
     for(const auto &[_1,value]:PhiRecord){
         Incomings.push_back(value.first);
         Blocks.push_back(value.second);

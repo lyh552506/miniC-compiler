@@ -86,12 +86,18 @@
 //   }
 //   return a;
 // }
-int func(int b){
-  int a=3;
-  while(a<5){
-    if(a>0)
-      break;
-  }
+// int func(int b){
+//   int a=3;
+//   while(a<5){
+//     if(a>0)
+//       break;
+//   }
+// }
+int func(int a){
+    int x;
+    if(x>1)
+      a=x;
+    return a;
 }
 // void reverse(int n) {
 //     int next;

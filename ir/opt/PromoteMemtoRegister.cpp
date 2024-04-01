@@ -1,5 +1,8 @@
 #include "PromoteMemtoRegister.hpp"
 
+#include "BaseCFG.hpp"
+#include "CFG.hpp"
+
 void PromoteMem2Reg::RemoveFromAllocaList(int &index) {
   m_Allocas[index] = m_Allocas.back();
   m_Allocas.pop_back();
@@ -75,6 +78,34 @@ void PromoteMem2Reg::run() {
       clean->ClearRelation();
       clean->EraseFromParent();
     }
+  }
+  SimplifyPhi();
+}
+
+void PromoteMem2Reg::SimplifyPhi() {
+  //遍历所有的phiinst
+  for (auto &[_1, phis] : PrePhiNode) {
+    bool HasUndef = false;
+    Value *origin = nullptr;
+    auto &incomes = phis->GetAllPhiVal();
+    for (auto &income : incomes) {
+      if (dynamic_cast<UndefValue *>(income)) {
+        HasUndef = true;
+        continue;
+      }
+      if(income==phis)
+        continue;
+      if(origin!=nullptr&&income!=origin)
+        break;
+      origin = income; 
+    }
+
+    if(origin==nullptr){
+      auto undef=UndefValue::get(phis->GetType());
+      phis->ClearRelation();
+      phis->RAUW(undef);
+    }
+    ///TODO if()
   }
 }
 
@@ -375,7 +406,7 @@ bool IsAllocaPromotable(AllocaInst *AI) {
       if (SI->Getuselist()[0]->GetValue() == AI) return false;
     } else if (GetElementPtrInst *gep =
                    dynamic_cast<GetElementPtrInst *>(user)) {
-      //TODO  
+      // TODO
       return false;
     } else {
       return false;
