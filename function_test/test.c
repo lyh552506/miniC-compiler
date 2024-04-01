@@ -86,7 +86,8 @@
 //   }
 //   return a;
 // }
-int func(int a,int b){
+int func(int b){
+  int a=3;
   while(a<5){
     if(a>0)
       break;

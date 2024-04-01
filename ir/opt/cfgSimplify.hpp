@@ -11,6 +11,8 @@ class cfgSimplify : public PassManagerBase {
  private:
   void simplify_Block();
   void DealBrInst();
+  void DelSamePhis();
+  void DelUndefBlock();
   Function* m_func;
   dominance* m_dom;
 };

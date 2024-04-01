@@ -1,9 +1,12 @@
 #include "CFG.hpp"
+#include <algorithm>
 #include <string>
 #include <memory>
 #include <iostream>
+#include "BaseCFG.hpp"
 #include "MagicEnum.hpp"
 #include <map>
+#include <utility>
 
 Initializer::Initializer(Type* _tp):Value(_tp){}
 
@@ -704,6 +707,30 @@ bool BasicBlock::EndWithBranch(){
     else if(auto data=dynamic_cast<RetInst*>(back()))return 1;
     else return 0;
 }
+
+void BasicBlock::RemovePredBB(BasicBlock* pred){
+    for(auto iter=pred->begin();iter!=pred->end();++iter){
+        // auto delet=std::find(Succ_Block.begin(),Succ_Block.end(),pred);
+        // if(delet!=Succ_Block.end())
+        //     Succ_Block.erase(delet);
+        auto inst=*iter;
+        if(auto phi=dynamic_cast<PhiInst*>(pred->front())){
+            auto tmp=std::find_if(phi->PhiRecord.begin(),phi->PhiRecord.end(),
+            [pred](const std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
+                return ele.second.second==pred;
+            });
+            if(tmp!=phi->PhiRecord.end())
+                phi->Del_Incomes(tmp->first);
+            if(phi->oprandNum==1){
+                Value* repl=(*(phi->PhiRecord.begin())).second.first;
+                phi->RAUW(repl);
+                phi->ClearRelation();
+                phi->EraseFromParent();
+            }
+        }else
+          return;
+    }
+}
 void BasicBlock::GenerateCondInst(Operand condi,BasicBlock* is_true,BasicBlock* is_false){
     auto inst=new CondInst(condi,is_true,is_false);
     push_back(inst);
@@ -855,7 +882,7 @@ void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
 /// @brief 找到当前phi函数bb块所对应的数据流
 Value* PhiInst::ReturnValIn(BasicBlock* bb){
     auto it=std::find_if(PhiRecord.begin(),PhiRecord.end(),
-    [bb](std::pair<const int,std::pair<Value*,BasicBlock*>>& ele){
+    [bb](const std::pair<const int,std::pair<Value*,BasicBlock*>>& ele){
         return ele.second.second==bb;
     });
     if(it==PhiRecord.end())
@@ -890,12 +917,22 @@ void PhiInst::Phiprop(Value* origin,Value* newval){
 void PhiInst::Del_Incomes(int CurrentNum)
 {   if(PhiRecord.find(CurrentNum) != PhiRecord.end()){
         PhiRecord.erase(CurrentNum);
-        for(auto&[_1,src]:PhiRecord){
-            
-        }
+        oprandNum--;
     }
     else
         std::cerr << "No such PhiRecord" << std::endl;
+}
+
+bool PhiInst::IsSame(PhiInst* phi){
+    if(this->oprandNum!=phi->oprandNum)
+      return false;
+    for(auto& [_1,v]:PhiRecord){
+        Value* val=v.first;
+        BasicBlock* bb=v.second;
+        if(phi->ReturnValIn(bb)==nullptr||phi->ReturnValIn(bb)!=val)
+          return false;
+    }
+    return true;
 }
 
 void Function::push_alloca(Variable* ptr){
