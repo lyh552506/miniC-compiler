@@ -592,16 +592,6 @@ BasicBlock* BasicBlock::GenerateNewBlock(){
     master.add_block(tmp);
     return tmp;
 }
-std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
-{   
-    if(!Succ_Block.empty())
-        return this->Succ_Block;
-    else
-    {
-        std::cerr << "There is no Succ Block." << std::endl;
-        return std::vector<BasicBlock*>();
-    }
-}
 
 BasicBlock* BasicBlock::GenerateNewBlock(std::string name){
     BasicBlock* tmp=new BasicBlock(master);
@@ -710,13 +700,10 @@ bool BasicBlock::EndWithBranch(){
 void BasicBlock::GenerateCondInst(Operand condi,BasicBlock* is_true,BasicBlock* is_false){
     auto inst=new CondInst(condi,is_true,is_false);
     push_back(inst);
-    Succ_Block.push_back(is_true);
-    Succ_Block.push_back(is_false);
 }
 void BasicBlock::GenerateUnCondInst(BasicBlock* des){
     auto inst=new UnCondInst(des);
     push_back(inst);
-    Succ_Block.push_back(des);
 }
 void BasicBlock::GenerateRetInst(Operand ret_val){
     if(master.GetTypeEnum()!=ret_val->GetTypeEnum()){

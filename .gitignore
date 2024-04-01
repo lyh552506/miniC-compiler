@@ -140,3 +140,7 @@ RISCInst
 .cache/clangd/index/TypeTrans.cpp.A071A6C6324EF9E3.idx
 .cache/clangd/index/TypeTrans.hpp.1DD10AA44E31604F.idx
 .cache/clangd/index/TypeTrans.hpp.F9148F505B6F3F7C.idx
+.vscode/launch.json
+.vscode/task.json
+.vscode/tasks.json
+function_test/test.c.ll

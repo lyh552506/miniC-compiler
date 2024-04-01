@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "CMake: build",
             "program": "${workspaceFolder}/build/SYSY-compiler",
-  
+
   
             "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constprop","--dce","--pre","--loopinfo"],
           //   "setupCommands": [
@@ -36,7 +36,7 @@
             "program": "${workspaceFolder}/build/SYSY-compiler",
             "cwd": "${workspaceFolder}",
             "targetArchitecture": "x64",
-            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--pre"],
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constprop"],
             "stopAtEntry": false,
             // "setupCommands": [
             //   {

@@ -191,9 +191,6 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
-    std::vector<BasicBlock*> Succ_Block;
-    std::vector<BasicBlock*> GetSuccBlock();
-    void AddSuccBlock(BasicBlock* block){this->Succ_Block.push_back(block);}
     bool EndWithBranch();
     int num=0;
     bool visited=false;

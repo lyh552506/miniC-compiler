@@ -44,10 +44,6 @@ class list_node
         if(this->next!=nullptr)this->next->prev=this->prev;
     }
     virtual derived_mylist* GetParent(){return this->fat;};
-    derived_mylist* Del_Pre(){};
-    derived_mylist* Del_Succ(){};
-    derived_mylist* Link_Pre(derived_list_node* ptr){};
-    derived_mylist* Link_Succ(derived_list_node* ptr){};
 };
 
 template<typename derived_mylist,typename derived_list_node>
@@ -134,4 +130,16 @@ class mylist
     }
     derived_list_node* front(){return this->head;}
     derived_list_node* back(){return this->tail;}
+    std::vector<derived_list_node*> GetSuccNodes()
+    {
+        std::vector<derived_list_node*> SuccNodes;
+        derived_list_node* Current = this->next;
+        while(Current != nullptr)
+        {
+            SuccNodes.push_back(Current);
+            Current = Current->next;
+        }
+        assert(!SuccNodes.empty() && "There is no succ node!");
+        return SuccNodes;
+    }
 };
