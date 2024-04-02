@@ -2,6 +2,7 @@
 #include "PassManagerBase.hpp"
 #include "dominant.hpp"
 #include <algorithm>
+#include <vector>
 
 class cfgSimplify : public PassManagerBase {
  public:
@@ -13,6 +14,9 @@ class cfgSimplify : public PassManagerBase {
   void DealBrInst();
   void DelSamePhis();
   void DelUndefBlock();
+  //对于每个block，检查是否只有一个前驱并且前驱只有自己一个后继
+  void mergeSpecialBlock();
   Function* m_func;
   dominance* m_dom;
+  std::map<BasicBlock*,std::vector<PhiInst*>> BlockToPhis;
 };

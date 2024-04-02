@@ -34,8 +34,8 @@ class Variable
     void print();
 };
 
-class UndefValue:public User{
-  UndefValue(Type* Ty):User(Ty){name="undef";}
+class UndefValue:public ConstantData{
+  UndefValue(Type* Ty):ConstantData(Ty){name="undef";}
 public:
   static UndefValue* get(Type *Ty);
   void print();

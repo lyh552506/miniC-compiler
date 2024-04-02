@@ -97,6 +97,14 @@ class mylist
             }
             return iterator(data);
         }
+        //指定迭代器后插入bb的所有inst
+        iterator splice(derived_list_node* data){
+            assert(ptr!=nullptr&&ptr->fat!=nullptr&&data!=nullptr&&"Invalid Iterator");
+            while(data!=nullptr){
+                insert_after(data);
+                data=data->next;
+            }
+        }
         bool operator==(const iterator& other){return ptr==other.ptr;}
         bool operator!=(const iterator& other){return ptr!=other.ptr;}
     };

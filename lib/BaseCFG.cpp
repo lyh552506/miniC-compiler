@@ -73,6 +73,18 @@ void Value::RAUW(Value* val){
         val->userlist.push_front(Head);
         Head=tmp;
     }
+    //使用传入val替换this block
+    if(dynamic_cast<BasicBlock*>(val) && dynamic_cast<BasicBlock*>(this))
+      for(auto succ:dynamic_cast<BasicBlock*>(this)->Succ_Block)
+        for(auto iter=succ->begin();iter!=succ->end();++iter){
+          if(auto phi=dynamic_cast<PhiInst*>(*iter))
+            for(auto&[_1,x]:phi->PhiRecord){
+              if(x.second==dynamic_cast<BasicBlock*>(this))
+                x.second=dynamic_cast<BasicBlock*>(val);
+            }
+          else
+            break;   
+        }
 }
 
 bool Value::isUndefVal()

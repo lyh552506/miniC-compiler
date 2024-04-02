@@ -123,6 +123,7 @@ class dominance : public PassManagerBase {
  public:
   /// @brief 判断bb1是否支配bb2
   bool dominates(BasicBlock *bb1, BasicBlock *bb2);
+  bool needToUpdate=false;
   void update(){
     RunOnFunction();}
   void PrintPass() {
