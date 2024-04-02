@@ -2,6 +2,15 @@
 //AsmPrinter
 AsmPrinter::AsmPrinter(std::string filename, Module* unit) 
     : filename(filename), unit(unit) {
+
+    MachineUnit* Munit = GenerateMir(unit);
+    this->Machineunit = Munit;
+
+    textSegment* textseg = new textSegment(Machineunit);
+    this->text = textseg;
+
+    dataSegment* data = new dataSegment(Machineunit);
+    this->data = data;
 }
 
 //寄存器分配 将剩余的虚拟寄存器分配到机器寄存器
@@ -50,7 +59,6 @@ MachineUnit* AsmPrinter::GenerateMir(Module* Unit) {
     }
     return machineunit; 
 }
-
 void AsmPrinter::PrintInst(MachineUnit* unit) {
     for (auto& machinefunction : unit->getMachineFunctions()) {
         machinefunction->print_func_name();
@@ -65,12 +73,7 @@ void AsmPrinter::PrintInst(MachineUnit* unit) {
     }
     Singleton<Module>().Test();
 }
-
-// void AsmPrinter::printAsm() {
-// }
-
-//dump出机器指令文本
-void AsmPrinter::PrintToTxt() {
+void AsmPrinter::printAsm() {
     std::ofstream outputFile("output.a", std::ios::out); // 以追加模式打开文件
     if (outputFile.is_open()) {
 
@@ -79,8 +82,14 @@ void AsmPrinter::PrintToTxt() {
         // std::streambuf* coutBuffer = std::cout.rdbuf();
         // std::cout.rdbuf(outputFile.rdbuf());
 
-        MachineUnit* Munit = GenerateMir(unit);
-        PrintInst(Munit);
+        std::cout << "    .file  \"" << filename << "\"" << std::endl;
+        std::cout << "    .attribute arch, \"rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0\"" << std::endl;
+        std::cout << "    .attribute unaligned_access, 0" << std::endl; 
+        std::cout << "    .attribute stack_align, 16" << std::endl;
+        std::cout << "    .text" << std::endl;
+
+        this->text->PrintTextSegment();
+
         //ChangeConditionInsts(Munit);
         //ChangeBranch(Munit);
 
@@ -89,11 +98,15 @@ void AsmPrinter::PrintToTxt() {
     } else {
         std::cout << "Unable to open the file." << std::endl;
     }
+
+
 }
 
 //textSegment
 textSegment::textSegment(MachineUnit* Machineunit) 
-    : Machineunit(Machineunit) {}
+    : Machineunit(Machineunit) {
+    GenerateFuncList(Machineunit);
+}
 void textSegment::GenerateFuncList(MachineUnit* Machineunit) {
     for (auto& machinefunction : Machineunit->getMachineFunctions()) {
         functionSegment* funcSeg = new functionSegment(machinefunction);
@@ -101,7 +114,6 @@ void textSegment::GenerateFuncList(MachineUnit* Machineunit) {
     }
 }
 void textSegment::PrintTextSegment() {
-    //std::cout << "    .text" << std::endl;
     for (auto& functionSegment : function_list) {
         functionSegment->PrintFuncSegment();
     }
@@ -109,16 +121,17 @@ void textSegment::PrintTextSegment() {
 
 //functionSegment
 functionSegment::functionSegment(MachineFunction* function)
-    : machinefunction(machinefunction) {
+    : machinefunction(function) {
     align = 1;
     name = function->get_function()->GetName();
     size = -1;
 }
 void functionSegment::PrintFuncSegment() {
-    std::cout << "    .align " << align << std::endl;
-    std::cout << "    .globl " << name << std::endl;
-    std::cout << "    .type " << name << ", " << ty << std::endl;
-    std::cout << name << ":" << std::endl;
+    std::cout << "    .align  " << align << std::endl;
+    std::cout << "    .globl  " << name << std::endl;
+    std::cout << "    .type  " << name << ", @" << ty << std::endl;
+    // std::cout << name << ":" << std::endl;
+    machinefunction->print_func_name();
     machinefunction->print_stack_frame();
     for (auto& machineblock : machinefunction->getMachineBasicBlocks()) {
         machineblock->print_block_lable();
@@ -132,13 +145,51 @@ void functionSegment::PrintFuncSegment() {
 }
 
 //dataSegment
-dataSegment::dataSegment(Module* unit) 
-    : unit(unit) {}
-
-void dataSegment::GenerateGloblvarList(Module* unit) {
-    
+dataSegment::dataSegment(MachineUnit* Machineunit) 
+    : Machineunit(Machineunit) {
+    GenerateGloblvarList(Machineunit);
+    //GenerateTempvarList(Machineunit);
 }
-//globlvar
+void dataSegment::GenerateGloblvarList(MachineUnit* Machineunit) {
+    for(auto& data : Machineunit->get_module()->GetGlobalVariable()) {
+        globlvar* gvar = new globlvar(data.get());
+        globlvar_list.push_back(gvar);
 
+    }
+
+}
+
+//globlvar
+globlvar::globlvar(Variable* data) {
+    name = data->get_name();
+    InnerDataType tp = data->GetType()->GetTypeEnum();
+    int align;
+    if(tp == InnerDataType::IR_Value_INT || tp == InnerDataType::IR_Value_Float) {
+        align = 2;
+        size = 4;
+        if (data->GetInitializer()) {
+            sec = "data";
+            std::string num = data->GetInitializer()->GetName();
+            int init = std::stoi(num);
+            init_vector.push_back(init);
+        }
+        else {
+            sec = "bss";
+        }
+    }
+    else if (tp == InnerDataType::IR_ARRAY) {
+        align = 3;
+        
+        if(auto arry_init = dynamic_cast<Initializer*>(data->GetInitializer())) {
+
+        }
+        else {
+            sec = "bss";
+        }
+    }
+    else align = -1;//Error
+
+
+}
 
 //tempvar

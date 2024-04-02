@@ -13,23 +13,21 @@ class dataSegment;
 class AsmPrinter {
     protected:
     std::string filename;
-    //
+    textSegment* text;
+    dataSegment* data;
+
     Module* unit;
     MachineUnit* Machineunit;
 
     public:
     AsmPrinter(std::string filename, Module* unit);
-
+    ~AsmPrinter() = default;
+    
     void RegAlloca(Function* function);
     MachineUnit* GenerateMir(Module* unit);
+
     void PrintInst(MachineUnit* unit);
-
     void printAsm();
-    void PrintToTxt();
-
-    friend textSegment;
-    friend globlvar;
-    friend tempvar;
 };
 
 class textSegment {
@@ -39,6 +37,7 @@ class textSegment {
 
     public:
     textSegment(MachineUnit* Machineunit);
+    ~textSegment() = default;
     void GenerateFuncList(MachineUnit* Machineunit);
     void PrintTextSegment();
 };
@@ -54,54 +53,50 @@ class functionSegment {
     MachineFunction* machinefunction;
     public:
     functionSegment(MachineFunction* machinefunction);
+    //~functionSegment() = default;
     void PrintFuncSegment();
 };
 
 class dataSegment {
     private:
-    std::vector<globlvar*> globlvar_list;//.data or .bss
+    std::vector<globlvar*> globlvar_list;//.data
+    std::vector<globlvar*> globlvar_undef_list;//.bss
     std::vector<tempvar*> tempvar_list;//.data
-    Module* unit;
-    protected:
-    enum section {
-        data,
-        bss
-    };
-    public:
-    dataSegment(Module* unit);
-    void GenerateGloblvarList(Module* unit);
-    void GenerateTempvarList(MachineUnit* Machineunit);
+    MachineUnit* Machineunit;
 
+    public:
+    dataSegment(MachineUnit* Machineunit);
+    ~dataSegment() = default;
+    void GenerateGloblvarList(MachineUnit* Machineunit);
+    void GenerateTempvarList(MachineUnit* Machineunit);
 
 };
 
-class globlvar : public dataSegment{
+class globlvar{
     private:
     //structure
     std::string name;
-    section sec;
+    std::string sec;
     int align;
     std::string ty="object";
     int size;
     std::vector<std::variant<int , float>> init_vector;
-    //
-    dataSegment* parent;
 
     public:
-    globlvar(std::string name, section sec, int align, int size, std::vector<std::variant<int , float>> init_vector);
-
+    // globlvar(std::string name, std::string sec, int align, int size, std::vector<std::variant<int , float>> init_vector);
+    globlvar(Variable* data);
+    ~globlvar() = default;
 };
 
-class tempvar : public dataSegment{
+class tempvar{
     private:
     //structure
     std::string name;
-    section sec;
+    std::string sec;
     int align;
     std::vector<std::variant<int , float>> init_vector;
-    //
-    dataSegment* parent;
 
     public:
-    tempvar(std::string name, section sec, int align, std::vector<std::variant<int , float>> init_vector);
+    tempvar(std::string name, std::string sec, int align, std::vector<std::variant<int , float>> init_vector);
+    ~tempvar() = default;
 };
