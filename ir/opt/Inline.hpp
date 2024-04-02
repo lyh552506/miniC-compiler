@@ -227,7 +227,9 @@ public:
     void init();
     void CreateCallMap();
     void DetectRecursive();
+    void CopyBlocks(CallInst* inst, Function& func);
     bool CanBeInlined(User* inst);
+    BasicBlock* SplitBlock(User* Calling, Function& func);
     void VisitFunc(Function* entry, std::set<Function*>& visited);
 private:
     InlineCost Cost;

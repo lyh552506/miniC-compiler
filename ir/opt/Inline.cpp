@@ -238,11 +238,12 @@ void Inliner::Inline(Function* entry)
     for(auto iter = entry->GetBasicBlock().begin(); iter != entry->GetBasicBlock().end(); ++iter)
     {
         BasicBlock* block = *iter;
-        for(User* inst : *block)
+        for(auto iter1 = block->begin(); iter1 != block->end(); ++iter1)
         {
-            if(CanBeInlined(inst))
+            if(CanBeInlined(*iter1))
             {
                 // 切分basicblock
+                // SplitBlock(iter1);
                 // 维护succ pred
                 // 复制block
                 // 设置新bb的父亲
@@ -290,6 +291,39 @@ void Inliner::Inline(Function* entry)
 //         }
 //     }
 // }
+
+BasicBlock* Inliner::SplitBlock(User* Calling, Function& func)
+{
+    BasicBlock* NewBlock = new BasicBlock(func); 
+    std::vector<User*> insts = Calling->GetSuccNodes();
+    
+    // auto test = *Calling;
+    // BasicBlock* NewBlock = new BasicBlock(*Calling->GetParent());
+    /*
+    创建一个新block
+    将Calling的后继节点全部移动到新block，并维护每个inst的parent关系
+    如果calling的user是phi节点，需要将phi节点的前驱节点中的calling替换为新block
+    */
+}
+
+void Inliner::CopyBlocks(CallInst* inst, Function& func)
+{
+    Function* Func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
+    std::list<BasicBlock*> blocks;
+    std::map<Value*, Value*> Old2New;
+    for(BasicBlock* block : func)
+    {
+        BasicBlock* NewBlock = new BasicBlock(func);
+        Old2New[block] = NewBlock;
+        blocks.push_back(NewBlock);
+        /*
+        复制block中的每个inst
+        */
+        
+        auto iter = std::find(Func->begin(), Func->end(), block);
+        iter.insert_after(NewBlock);
+    }
+}
 
 void Inliner::InlineRecursive(Function* entry)
 {
