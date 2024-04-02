@@ -104,7 +104,7 @@ class PromoteMem2Reg {
               std::vector<Value *> &IncomingVal,
               std::vector<RenamePass> &WorkLists);
   /// @brief 处理生成的phi：查看他的incoming，看是否只有一个，如果只有一个，那么就直接替换
-  void SimplifyPhi();
+  void SimplifyPhi(int& isEliminate,std::vector<PhiInst*>& Erase);
 
   dominance &m_dom;
   std::vector<AllocaInst *> m_Allocas;        // index->AllocaInst的映射

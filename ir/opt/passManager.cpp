@@ -4,7 +4,7 @@ void PassManager::InitPass() {
   for (int i = 0; i < Singleton<Module>().GetFuncTion().size(); i++) {
     PreWork(i);
     m_eliedg = std::make_unique<ElimitCriticalEdge>(m_func);
-    m_eliedg->RunOnFunction();
+    //m_eliedg->RunOnFunction();
     PreWork(i);
     m_dom = std::make_unique<dominance>(m_func, BList.size());
     m_pre = std::make_unique<PRE>(m_dom.get(), m_func);

@@ -1,4 +1,5 @@
 #include "PromoteMemtoRegister.hpp"
+#include <algorithm>
 
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
@@ -79,10 +80,23 @@ void PromoteMem2Reg::run() {
       clean->EraseFromParent();
     }
   }
-  SimplifyPhi();
+  int isEliminate=1;
+  while(isEliminate){
+    std::vector<PhiInst*> Erase;
+    isEliminate=0;
+    SimplifyPhi(isEliminate,Erase);
+    for(auto phi:Erase){
+      auto iter=std::find_if(PrePhiNode.begin(),PrePhiNode.end(),[phi](auto& pair){
+        return pair.second==phi;
+      });
+      if(iter!=PrePhiNode.end())
+        PrePhiNode.erase(iter);
+    }
+  }
+  PrePhiNode.clear();
 }
 
-void PromoteMem2Reg::SimplifyPhi() {
+void PromoteMem2Reg::SimplifyPhi(int& isEliminate,std::vector<PhiInst*>&Erase) {
   //遍历所有的phiinst
   for (auto &[_1, phis] : PrePhiNode) {
     bool HasUndef = false;
@@ -102,10 +116,25 @@ void PromoteMem2Reg::SimplifyPhi() {
 
     if(origin==nullptr){
       auto undef=UndefValue::get(phis->GetType());
+      Erase.push_back(phis);
       phis->ClearRelation();
       phis->RAUW(undef);
+      isEliminate=1;
+      continue;
     }
-    ///TODO if()
+    //处理类似 phi i32[tmp , undef ,tmp ……]的情况
+    //在这里需要判断此处的tmp是否支配phi才能实现替换
+    if(HasUndef){
+      if(auto inst=dynamic_cast<User*>(origin))
+        if(!m_dom.dominates(inst->GetParent(),phis->GetParent()))
+          continue;
+      Erase.push_back(phis);
+      phis->RAUW(origin);
+      phis->ClearRelation();
+      phis->EraseFromParent();
+      isEliminate=1;
+      continue;
+    }
   }
 }
 
