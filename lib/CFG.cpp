@@ -381,7 +381,7 @@ std::string Variable::get_name(){
 }
 
 Type* Variable::GetType(){return tp;}
-
+Operand& Variable::GetInitializer(){return attached_initializer;}
 void Variable::print(){
     std::cout<<"@.g."<<get_name()<<" = global ";
     GetType()->print();
@@ -955,6 +955,10 @@ void Module::EraseFunction(Function* func)
 
 std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() {
     return ls;
+}
+
+std::vector<std::unique_ptr<Variable>> &Module::GetGlobalVariable() {
+    return globalvaribleptr;
 }
 
 Operand Module::GenerateMemcpyHandle(Type* _tp,Operand oper){

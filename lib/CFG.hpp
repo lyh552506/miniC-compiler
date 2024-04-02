@@ -31,6 +31,7 @@ class Variable
     void attach(Operand);
     std::string get_name();
     Type* GetType();
+    Operand& GetInitializer();
     void print();
 };
 
@@ -237,8 +238,8 @@ class Module:public SymbolTable
     void GenerateGlobalVariable(Variable* ptr);
     Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
+    std::vector<GlobalVariblePtr>& GetGlobalVariable();
     void Test();
     void EraseFunction(Function* func);
     bool isMIRSSALevel();
-    // std::vector<GlobalVariblePtr> GetGlobalptrs(){return this->globalvaribleptr;};
 };
