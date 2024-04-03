@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
       pass_manager->IncludePass(5);
       break;
     case 6:
-      pass_manager->IncludePass(6);
+      std::cerr << "help" << std::endl;
       break;
     }
   }

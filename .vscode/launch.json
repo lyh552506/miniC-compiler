@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "C++ Launch",
-            "type": "lldb",
+            "type": "cppdbg",
             "request": "launch",
             "preLaunchTask": "CMake: build",
             "program": "${workspaceFolder}/build/SYSY-compiler",
@@ -26,7 +26,10 @@
             //     "value": "verbosity=1:log_threads=1"
             //   }
             // ],
-        
+            "linux": {
+              "MIMode": "gdb",
+              "miDebuggerPath": "/usr/bin/gdb"
+            }
           },
           {
             "name": "C++ Launch(MacOS)",

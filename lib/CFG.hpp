@@ -34,8 +34,8 @@ class Variable
     void print();
 };
 
-class UndefValue:public User{
-  UndefValue(Type* Ty):User(Ty){name="undef";}
+class UndefValue:public ConstantData{
+  UndefValue(Type* Ty):ConstantData(Ty){name="undef";}
 public:
   static UndefValue* get(Type *Ty);
   void print();
@@ -163,6 +163,7 @@ public:
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
   void Del_Incomes(int CurrentNum);
+  bool IsSame(PhiInst* phi);
   std::vector<BasicBlock*> Blocks;
   int oprandNum;
   bool IsGetIncomings=false;
@@ -192,6 +193,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
     bool EndWithBranch();
+    void RemovePredBB(BasicBlock* pred);
     int num=0;
     bool visited=false;
 };
@@ -220,6 +222,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     public:
     Function(InnerDataType _tp,std::string _id);
     void print();
+    void init_bbs(){ bbs.clear();}
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void push_alloca(Variable*);
