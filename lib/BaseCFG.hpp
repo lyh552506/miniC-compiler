@@ -31,7 +31,6 @@ class Use
     Value*& SetValue();
     Value* GetValue();
     User* GetUser();
-    
 };
 /// @brief prepare for Value to quickly find out its User
 class UserList

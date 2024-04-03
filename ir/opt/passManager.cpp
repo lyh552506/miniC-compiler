@@ -1,4 +1,5 @@
 #include "passManager.hpp"
+#include "Singleton.hpp"
 
 void PassManager::InitPass() {
   for (int i = 0; i < Singleton<Module>().GetFuncTion().size(); i++) {
@@ -11,12 +12,13 @@ void PassManager::InitPass() {
     m_adce = std::make_unique<ADCE>(m_func);
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
-    
     m_dom = std::make_unique<dominance>(m_func, BList.size());
     m_loopAnlay = std::make_unique<LoopAnalysis>(m_func, m_dom.get());
+    m_inliner = std::make_unique<Inliner>(m_func, m_dom.get(), m_loopAnlay.get());
     m_pre = std::make_unique<PRE>(m_dom.get(), m_func);
     RunOnFunction();
   }
+
 }
 
 void PassManager::PreWork(int i) {
@@ -59,6 +61,10 @@ void PassManager::RunOnFunction() {
   if(InitpassRecorder[5]){
     m_loopAnlay->RunOnFunction();
     m_loopAnlay->PrintPass();
+  }
+  if(InitpassRecorder[6]){
+    m_inliner->Run();
+    // m_inliner->PrintPass();
   }
 }
 

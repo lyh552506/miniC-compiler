@@ -64,6 +64,7 @@ class mylist
     friend class list_node<derived_mylist,derived_list_node>;
     derived_list_node* head;
     derived_list_node* tail;
+    int size;
     public:
     class iterator
     {
@@ -116,16 +117,19 @@ class mylist
     virtual iterator end(){return iterator(nullptr);}
     virtual iterator rbegin(){return iterator(this->tail);}
     virtual iterator rend(){return iterator(nullptr);}
+    int Size(){return this->size;}
     void push_back(derived_list_node* data){
         data->SetParent(dynamic_cast<derived_mylist*>(this));
         if(this->head==nullptr){
             this->head=data;
             this->tail=data;
+            size++;
         }
         else{
             this->tail->next=data;
             data->prev=this->tail;
             this->tail=data;
+            size++;
         }
     }
     void push_front(derived_list_node* data){
@@ -133,11 +137,13 @@ class mylist
         if(this->head==nullptr){
             this->head=data;
             this->tail=data;
+            size++;
         }
         else{
             this->head->prev=data;
             data->next=this->head;
             this->head=data;
+            size++;
         }
     }
     derived_list_node* front(){return this->head;}
