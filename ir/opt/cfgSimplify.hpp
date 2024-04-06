@@ -11,13 +11,15 @@ class cfgSimplify : public PassManagerBase {
   void PrintPass();
  private:
   void mergeRetBlock();
-  void simplify_Block();
-  void DealBrInst();
-  void DelSamePhis();
-  void DelUndefBlock();
+  bool simplify_Block();
+  bool DealBrInst();
+  bool DelSamePhis();
+  bool DelUndefBlock();
   //对于每个block，检查是否只有一个前驱并且前驱只有自己一个后继
-  void mergeSpecialBlock();
+  bool mergeSpecialBlock();
+  void updateDTinfo(BasicBlock* bb);
   Function* m_func;
   dominance* m_dom;
   std::map<BasicBlock*,std::vector<PhiInst*>> BlockToPhis;
+  
 };
