@@ -5,6 +5,15 @@
 #include "MagicEnum.hpp"
 #include <map>
 
+template<typename T>
+T* normal_clone(T* from,std::unordered_map<Operand,Operand>& mapping){
+    if(mapping.find(from)!=mapping.end())
+        return dynamic_cast<T*>(mapping[from]);
+    auto tmp=new T(from->GetType());
+    mapping[from]=tmp;
+    return dynamic_cast<T*>(from->User::clone(mapping));
+}
+
 Initializer::Initializer(Type* _tp):Value(_tp){}
 
 void Initializer::Var2Store(BasicBlock* bb,const std::string& name,std::vector<int>& gep_data){
@@ -60,6 +69,10 @@ MemcpyHandle::MemcpyHandle(Type* _tp,Operand _src):User(_tp){
     name="__constant."+name;
 }
 
+MemcpyHandle* MemcpyHandle::clone(std::unordered_map<Operand,Operand>& mapping){
+    return this;
+}
+
 void MemcpyHandle::print(){
     Value::print();
     std::cout<<" = constant ";
@@ -89,13 +102,19 @@ bool AllocaInst::IsUsed(){
     return true;
 }
 
+AllocaInst* AllocaInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<AllocaInst>(this,mapping);
+}
+
 
 StoreInst::StoreInst(Operand __src,Operand __des){
     add_use(__src);
     add_use(__des);
     name="StoreInst";
 }
+
 Operand StoreInst::GetDef(){return nullptr;}
+
 void StoreInst::print(){
     std::cout<<"store ";
     for(auto&i:uselist){
@@ -107,9 +126,17 @@ void StoreInst::print(){
     std::cout<<'\n';
 }
 
+StoreInst* StoreInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<StoreInst>(this,mapping);
+}
+
 LoadInst::LoadInst(Value* __src):User(dynamic_cast<PointerType*>(__src->GetType())->GetSubType()){
     assert(GetTypeEnum()==IR_Value_INT||GetTypeEnum()==IR_Value_Float||GetTypeEnum()==IR_PTR);
     add_use(__src);
+}
+
+LoadInst* LoadInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<LoadInst>(this,mapping);
 }
 
 // Value* LoadInst::GetLoadTarget(){
@@ -151,6 +178,10 @@ FPTSI::FPTSI(Operand __src):User(IntType::NewIntTypeGet()){
     add_use(__src);
 }
 
+FPTSI* FPTSI::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<FPTSI>(this,mapping);
+}
+
 void SITFP::print(){
     Value::print();
     std::cout<<" = sitofp ";
@@ -165,6 +196,10 @@ void SITFP::print(){
     std::cout<<'\n';
 }
 
+SITFP* SITFP::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<SITFP>(this,mapping);
+}
+
 SITFP::SITFP(Operand __src):User(FloatType::NewFloatTypeGet()){
     add_use(__src);
 }
@@ -173,6 +208,10 @@ Operand UnCondInst::GetDef(){return nullptr;}
 
 UnCondInst::UnCondInst(BasicBlock* __des){
     add_use(__des);
+}
+
+UnCondInst* UnCondInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<UnCondInst>(this,mapping);
 }
 
 void UnCondInst::print(){
@@ -189,6 +228,10 @@ CondInst::CondInst(Operand __cond,BasicBlock* __istrue,BasicBlock* __isfalse){
     add_use(__cond);
     add_use(__istrue);
     add_use(__isfalse);
+}
+
+CondInst* CondInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<CondInst>(this,mapping);
 }
 
 void CondInst::print(){
@@ -217,6 +260,15 @@ CallInst::CallInst(Value* _func,std::vector<Operand>& _args,std::string appendix
         add_use(i);
 }
 
+CallInst* CallInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<CallInst>(this,mapping);
+}
+
+void CallInst::FuncInline(){
+    auto call_func=dynamic_cast<Function*>(uselist[0]->GetValue());
+    call_func->FuncInline(this);
+}
+
 void CallInst::print(){
     if(tp!=VoidType::NewVoidTypeGet()){
         Value::print();
@@ -238,6 +290,10 @@ void CallInst::print(){
 RetInst::RetInst(){}
 
 RetInst::RetInst(Operand op){add_use(op);}
+
+RetInst* RetInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<RetInst>(this,mapping);
+}
 
 void RetInst::print(){
     std::cout<<"ret ";
@@ -277,6 +333,10 @@ BinaryInst::BinaryInst(Operand _A,Operation __op,Operand _B):User(check_binary_b
 std::string BinaryInst:: GetOperation() {
     std::string opcode = magic_enum::enum_name(op).data();
     return opcode;
+}
+
+BinaryInst* BinaryInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<BinaryInst>(this,mapping);
 }
 
 BinaryInst::Operation BinaryInst::getopration(){
@@ -404,6 +464,10 @@ GetElementPtrInst::GetElementPtrInst(Operand base_ptr,std::vector<Operand>& args
         add_use(i);
 }
 
+GetElementPtrInst* GetElementPtrInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<GetElementPtrInst>(this,mapping);
+}
+
 Type* GetElementPtrInst::GetType(){
     int limi=uselist.size()-1;
     tp=uselist[0]->GetValue()->GetType();
@@ -430,6 +494,10 @@ ZextInst::ZextInst(Operand ptr):User(IntType::NewIntTypeGet()){
     add_use(ptr);
 }
 
+ZextInst* ZextInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    return normal_clone<ZextInst>(this,mapping);
+}
+
 void ZextInst::print(){
     Value::print();
     std::cout<<" = zext i1 ";
@@ -437,7 +505,7 @@ void ZextInst::print(){
     std::cout<<" to i32";
 }
 
-BasicBlock::BasicBlock(Function& __master):Value(VoidType::NewVoidTypeGet()),master(__master){};
+BasicBlock::BasicBlock():Value(VoidType::NewVoidTypeGet()){};
 Operand BasicBlock::GenerateLoadInst(Operand data){
     auto tmp=new LoadInst(data);
     push_back(tmp);
@@ -576,10 +644,20 @@ void BasicBlock::GenerateStoreInst(Operand src,Operand des){
 }
 
 BasicBlock* BasicBlock::GenerateNewBlock(){
-    BasicBlock* tmp=new BasicBlock(master);
-    master.add_block(tmp);
+    BasicBlock* tmp=new BasicBlock();
+    GetParent()->push_back(tmp);
     return tmp;
 }
+
+BasicBlock* BasicBlock::SplitAt(User* inst){
+    auto call_inst=dynamic_cast<CallInst*>(inst);
+    assert(call_inst!=nullptr&&"CallInst Is Expected Here");
+    auto tmp=GenerateNewBlock();
+    auto [left,right]=split(inst,back());
+    tmp->collect(left,right);
+    return tmp;
+}
+
 std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
 {   
     if(!Succ_Block.empty())
@@ -589,9 +667,9 @@ std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
 }
 
 BasicBlock* BasicBlock::GenerateNewBlock(std::string name){
-    BasicBlock* tmp=new BasicBlock(master);
+    BasicBlock* tmp=new BasicBlock();
     tmp->name+=name;
-    master.add_block(tmp);
+    GetParent()->push_back(tmp);
     return tmp;
 }
 
@@ -617,6 +695,28 @@ void Function::print(){
     for(auto i:(*this))
         i->print();
     std::cout<<"}\n";
+}
+
+void Function::FuncInline(CallInst* call){
+    // 把 callee 的 allocas 合并到 caller 的 allocas 的最前面
+    auto pred=call->GetParent();
+    // !!! call is not removed here !!!
+    auto suff=pred->SplitAt(call);
+
+    std::unordered_map<Operand,Operand> OperandMapping;
+
+    // Copy Arguments
+    auto& params=GetParams();
+    std::vector<Operand> copied_params;
+    for(auto &param:params)
+        copied_params.push_back(param->clone(OperandMapping));
+
+    // Copy BasicBlocks
+    // In theory clone will be done recursively via dfs
+    // So is it necessary to iterate here ?
+    std::vector<BasicBlock*> copied_bbs;
+    for(auto bb:*this)
+        copied_bbs.push_back(bb->clone(OperandMapping));
 }
 
 void Function::push_bb(BasicBlock* bb){
@@ -683,7 +783,7 @@ BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
 Function::Function(InnerDataType _tp,std::string _id):Value(Type::NewTypeByEnum(_tp)){
     name=_id;
     //至少有一个bbs
-    push_back(new BasicBlock(*this));
+    push_back(new BasicBlock());
 }
 
 bool BasicBlock::EndWithBranch(){
@@ -704,7 +804,7 @@ void BasicBlock::GenerateUnCondInst(BasicBlock* des){
     Succ_Block.push_back(des);
 }
 void BasicBlock::GenerateRetInst(Operand ret_val){
-    if(master.GetTypeEnum()!=ret_val->GetTypeEnum()){
+    if(GetParent()->GetTypeEnum()!=ret_val->GetTypeEnum()){
         if(ret_val->GetTypeEnum()==IR_Value_INT)
             ret_val=GenerateSITFP(ret_val);
         else
@@ -797,7 +897,7 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
     }
 }
 void BasicBlock::GenerateAlloca(Variable* var){
-    master.push_alloca(var);
+    GetParent()->push_alloca(var);
 }
 Operand BasicBlock::GenerateGEPInst(Operand ptr){
     auto tmp=new GetElementPtrInst(ptr);
@@ -813,6 +913,16 @@ Operand BasicBlock::push_alloca(std::string name,Type* _tp){
     auto tmp=new AllocaInst(name,_tp);
     push_front(tmp);
     return tmp->GetDef();
+}
+
+BasicBlock* BasicBlock::clone(std::unordered_map<Operand,Operand>& mapping){
+    if(mapping.find(this)!=nullptr)
+        return dynamic_cast<BasicBlock*>(mapping[this]);
+    auto tmp=new BasicBlock();
+    mapping[this]=tmp;
+    for(auto i:(*this))
+        tmp->push_back(i->clone(mapping));
+    return tmp;
 }
 
 int BasicBlock::GetSuccNum(){
@@ -975,6 +1085,10 @@ UndefValue* UndefValue::get(Type *Ty){
     return UV;    
 }
 
+UndefValue* UndefValue::clone(std::unordered_map<Operand,Operand>& mapping){
+    return this;
+}
+
 void UndefValue::print(){
     dynamic_cast<Value*>(this)->print();
     return;
@@ -996,4 +1110,15 @@ void PhiInst::print() {
   }
   std::cout << "\n";
   return;
+}
+
+PhiInst* PhiInst::clone(std::unordered_map<Operand,Operand>& mapping){
+    if(mapping.find(this)!=mapping.end())
+      return dynamic_cast<PhiInst*>(mapping[this]);
+    auto to=new PhiInst(GetType());
+    mapping[this]=to;
+    for(auto&[i,data]:PhiRecord){
+        to->updateIncoming(data.first->clone(mapping),data.second->clone(mapping));
+    }
+    return to;
 }
