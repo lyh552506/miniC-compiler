@@ -8,10 +8,11 @@
 #include "Singleton.hpp"
 
 void cfgSimplify::RunOnFunction() {
-  DealBrInst();
+  mergeRetBlock();
   simplify_Block();
+  DealBrInst();
   DelSamePhis();
-  mergeSpecialBlock();
+  //mergeSpecialBlock();
 }
 
 void cfgSimplify::mergeSpecialBlock() {
@@ -25,24 +26,75 @@ void cfgSimplify::mergeSpecialBlock() {
         m_dom->GetNode(m_dom->GetNode(bb->num).rev.front()).thisBlock;
     if (pred == bb) continue;
     ///@warning 此处暂时不考虑单个前驱依然存在phi函数的情况
+
+    //确保前驱也只有一个后继
+    auto& node = m_dom->GetNode(pred->num);
+    int succ_num = std::distance(node.des.begin(), node.des.end());
+    if (succ_num != 1 || node.des.front() != bb->num) continue;
     bb->RAUW(pred);
-    //TODO确保前驱也只有一个后继
-    // if(m_dom->GetNode(pred->num).des.||pred->Succ_Block[0]!=bb)
-    //   continue;
     User* cond = pred->back();
     cond->EraseFromParent();
     delete cond;
     //将后续的指令转移
     auto lastInstrIter = pred->rbegin();
     lastInstrIter.splice(bb->front());
-    int length=m_func->GetBasicBlock().size();
-    m_func->GetBasicBlock()[index-1]=m_func->GetBasicBlock()[length-1];
+    int length = m_func->GetBasicBlock().size();
+    m_func->GetBasicBlock()[index - 1] = m_func->GetBasicBlock()[length - 1];
     m_func->GetBasicBlock().pop_back();
     bb->EraseFromParent();
   }
 }
 
-void cfgSimplify::DelUndefBlock() {}
+void cfgSimplify::mergeRetBlock() {
+  BasicBlock* RetBlock = nullptr;
+  int i = 0;
+  while (i < m_func->GetBasicBlock().size()) {
+    BasicBlock* bbs = m_func->GetBasicBlock()[i++];
+    RetInst* ret = dynamic_cast<RetInst*>(bbs->back());
+    if (!ret) continue;
+    //找到对应的迭代器
+    auto ret_iter = bbs->rbegin();
+    if (ret != bbs->front()) {
+      --ret_iter;
+      if (!dynamic_cast<PhiInst*>(*ret_iter) || ret_iter != bbs->begin() ||
+          ret->Getuselist().size() == 0 ||
+          ret->Getuselist()[0]->GetValue() != *ret_iter)
+        continue;
+    }
+    if (!RetBlock) {
+      RetBlock = bbs;
+      continue;
+    }
+    //找到了第二个符合条件的retblock
+    if (ret->Getuselist().size() == 0 ||
+        ret->Getuselist()[0]->GetValue() ==
+            RetBlock->back()->Getuselist()[0]->GetValue()) {
+      bbs->RAUW(RetBlock);
+      bbs->EraseFromParent();
+      m_func->GetBasicBlock()[i - 1] =
+          m_func->GetBasicBlock()[m_func->GetBasicBlock().size() - 1];
+      m_func->GetBasicBlock().pop_back();
+      continue;
+    }
+    PhiInst* insert = dynamic_cast<PhiInst*>(RetBlock->front());
+    if (!insert) {
+      insert=PhiInst::NewPhiNode(
+          RetBlock->front(), RetBlock,
+          RetBlock->back()->Getuselist()[0]->GetValue()->GetType());
+      Value* val=RetBlock->back()->Getuselist()[0]->GetValue();
+      auto& node=m_dom->GetNode(RetBlock->num);
+      for(int rev:node.rev){
+        BasicBlock* pre=m_dom->node[rev].thisBlock;
+        insert->updateIncoming(val,pre);
+      }
+      RetBlock->back()->RSUW(0,insert);
+    }
+    insert->updateIncoming(ret->Getuselist()[0]->GetValue(), bbs);
+    ret->EraseFromParent();
+    UnCondInst* uncond=new UnCondInst(RetBlock);
+    bbs->push_back(uncond);
+  }
+}
 
 void cfgSimplify::DelSamePhis() {
   int i = 0;
@@ -106,7 +158,7 @@ void cfgSimplify::DealBrInst() {
           ignore->RemovePredBB(pred);
           m_dom->update();
         } else {
-          UnCondInst* uncond = new UnCondInst(nxt);
+          UnCondInst* uncond = new UnCondInst(ignore);
           auto tmp = pred->begin();
           for (auto iter = pred->begin();; ++iter) {
             if (iter == pred->end()) break;

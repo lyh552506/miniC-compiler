@@ -10,6 +10,7 @@ class cfgSimplify : public PassManagerBase {
   void RunOnFunction();
   void PrintPass();
  private:
+  void mergeRetBlock();
   void simplify_Block();
   void DealBrInst();
   void DelSamePhis();
