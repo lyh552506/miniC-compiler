@@ -218,7 +218,7 @@ public:
     const bool Not_Inline_Multilevel_Loop_Func = true;
 
 public:
-    Inliner(Function* f, dominance* dom_, LoopAnalysis* loopAnalysis_) : dom(dom_), func(f), loopAnalysis(loopAnalysis_) {}
+    Inliner(Function* f, dominance* dom_, LoopAnalysis* loopAnalysis_, Module& module) : dom(dom_), func(f), m(module), loopAnalysis(loopAnalysis_) {}
     void Run();
     void Inline(Function* entry);
     void InlineRecursive(Function* entry);
@@ -230,12 +230,15 @@ public:
     bool CanBeInlined(User* inst);
     BasicBlock* SplitBlock(User* Calling, Function& func);
     void VisitFunc(Function* entry, std::set<Function*>& visited);
+    void removeInlinedFunc();
 private:
     // InlineCost Cost;
+    Module& m;
     LoopAnalysis* loopAnalysis;
     void init();
     Function* func;
     dominance* dom;
+    std::set<Function*> hasInlinedFunc;
     std::set<Function*> inlinedFunc;
     std::set<Function*> NotInlineFunc;
     std::set<Function*> RecursiveFunc;

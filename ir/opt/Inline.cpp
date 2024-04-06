@@ -121,7 +121,8 @@ void Inliner::Run()
     CreateCallMap();
     if(func->GetName() == "main")
         DetectRecursive();
-    Inline(func);
+    // Inline(func);
+    removeInlinedFunc();
 }
 
 void Inliner::init()
@@ -541,3 +542,35 @@ bool Inliner::CanBeInlined(User *inst)
 //   }
 //   return false;
 // }
+
+void Inliner::removeInlinedFunc()
+{
+    inlinedFunc.insert(func);
+    for(Function* func_ : inlinedFunc)
+    {
+        bool remove = true;
+        for(Use* user_ : func_->GetUserlist())
+        {
+            User* user = user_->GetUser();
+            if(dynamic_cast<CallInst*>(user))
+            {
+                Function* Func_use = user->GetParent()->GetParent();
+                if(Func_use)
+                {
+                    if(hasInlinedFunc.find(Func_use) == hasInlinedFunc.end() \
+                    && inlinedFunc.find(Func_use) == inlinedFunc.end())
+                        // remove = false;
+                        remove = true;
+                }
+            }
+            if(remove)
+                m.EraseFunction(func_);
+        }
+    }
+}
+
+void Inliner::PrintPass()
+{
+    std::cout << "--------Inline--------" << std::endl;
+    Singleton<Module>().Test();
+}

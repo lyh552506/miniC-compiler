@@ -987,10 +987,13 @@ void Module::EraseFunction(Function* func)
             inst->ClearRelation();
             inst->EraseFromParent();
         }
+        block->EraseFromParent();
     }
     for(auto iter = ls.begin(); iter != ls.end(); iter++)
     {
-        if(iter->get() == func)
+        auto &Ptr = *iter;
+        auto Func = Ptr.get();
+        if(Func == func)
         {
             ls.erase(iter);
             break;

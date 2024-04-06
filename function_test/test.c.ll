@@ -421,23 +421,4 @@ define i32 @main(){
   %.34 = load i32, i32* %.33
   ret i32 %.34 
 }
---------mem2reg--------
-define i32 @at(i32* %.3){
-.1:
-  %.8 = getelementptr inbounds i32, i32* %.3, i32 1
-  store i32 3, i32* %.8
-  ret i32 1 
-}
-define i32 @main(){
-.12:
-  %.14 = alloca [20 x i32]
-  %.24 = add i32 5, 6
-  %.27 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 %.24
-  store i32 1, i32* %.27
-  %.30 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 0
-  %.31at136 = call i32 @at(i32* %.30)
-  %.33 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 %.24
-  %.34 = load i32, i32* %.33
-  ret i32 %.34 
-}
---------constprop--------
+--------Inline--------
