@@ -42,6 +42,7 @@ class list_node
         if(fat->tail==dynamic_cast<derived_list_node*>(this))fat->tail=this->prev;
         if(this->prev!=nullptr)this->prev->next=this->next;
         if(this->next!=nullptr)this->next->prev=this->prev;
+        fat->size--;
     }
     virtual derived_mylist* GetParent(){return this->fat;};
     std::vector<derived_list_node*> GetSuccNodes()

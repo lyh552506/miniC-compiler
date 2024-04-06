@@ -118,8 +118,10 @@
 void Inliner::Run()
 {
     init();
-    // CreateCallMap();
-    // DetectRecursive();
+    CreateCallMap();
+    if(func->GetName() == "main")
+        DetectRecursive();
+    Inline(func);
 }
 
 void Inliner::init()
@@ -150,6 +152,7 @@ void Inliner::init()
                         ++iter1;
                     }
                 }
+                ++iter;
             }
             else
                 ++iter;
@@ -168,7 +171,8 @@ void Inliner::init()
         {
             int nested = 0;
             LoopInfo* lf = loopAnalysis->LookUp(block);
-            nested = lf->GetLoopDepth();
+            if(lf)
+                nested = lf->GetLoopDepth();
             if(nested > Not_Inline_Multilevel_Loop_Func)
             {
                 if(NotInlineFunc.find(func) != NotInlineFunc.end())
@@ -203,12 +207,11 @@ void Inliner::CreateCallMap()
 }
 
 
-// void Inliner::DetectRecursive()
-// {
-//     Function* entry = m->GetMainFunc();
-//     std::set<Function*> visited;
-//     VisitFunc(entry, visited);
-// }
+void Inliner::DetectRecursive()
+{
+    std::set<Function*> visited;
+    VisitFunc(func, visited);
+}
 
 void Inliner::VisitFunc(Function* entry, std::set<Function*>& visited)
 {
@@ -222,74 +225,75 @@ void Inliner::VisitFunc(Function* entry, std::set<Function*>& visited)
     }
     visited.erase(entry);
 }
-// void Inliner::Inline(Function* entry)
-// {
-//     // if(inlinedFunc.find(entry) != inlinedFunc.end())
-//     //     return;
-//     // inlinedFunc.insert(entry);
-//     // for(auto& func_ : m->GetFuncTion())
-//     // {
-//     //     Function* func = func_.get();
-//     //     if(func->GetName() == entry->GetName())
-//     //         continue;
-//     //     if(NotInlineFunc.find(func) != NotInlineFunc.end())
-//     //         continue;
-//     //     if(CallMap.find(func) == CallMap.end())
-//     //         continue;
-//     //     for(auto& call : CallMap[func])
-//     //     {
-//     //         if(call->GetName() == entry->GetName())
-//     //         {
-//     //             InlineCost cost = Cost.getCost(func);
-//     //             if(cost.isNever())
-//     //                 continue;
-//     //             if(cost.isAlways())
-//     //             {
-//     //                 Inline(call);
-//     //                 break;
-//     //             }
-//     //             if(cost.Cost < Inline_Block_Num)
-//     //             {
-//     //                 Inline(call);
-//     //                 break;
-//     //             }
-//     //         }
-//     //     }
-//     // }
-//     for(auto iter = entry->GetBasicBlock().begin(); iter != entry->GetBasicBlock().end(); ++iter)
-//     {
-//         BasicBlock* block = *iter;
-//         for(auto iter1 = block->begin(); iter1 != block->end(); ++iter1)
-//         {
-//             User* inst = *iter1;
-//             if(CanBeInlined(inst))
-//             {
-//                 // 切分basicblock
-//                 BasicBlock* NewBlock = SplitBlock(*iter1, *entry);
-//                 UnCondInst* Br = new UnCondInst(NewBlock);
-//                 block->push_back(Br);
-//                 auto Block_Pos = std::find(entry->begin(), entry->end(), block);
-//                 ++Block_Pos;
-//                 Block_Pos.insert_before(NewBlock);
-//                 // for(auto &Args : inst->Getuselist())
-//                 // {
-//                 //     if(dynamic_cast<Function*>(Args->usee))
-//                 //         continue;
-//                 //     User* args = Args->GetUser();
-//                 //     if(args && args->GetUserlist().is_empty())
-//                 //         args->RAUW(Value *val)
-//                 // }
-//                 // 维护succ pred
-//                 // 复制block
-//                 // 设置新bb的父亲
-//                 // 将新bb插入函数
-//                 // 设置被split的块跳转到新的bb的entry
-//                 // 给返回值alloca空间，并跳转到新的BB
-//                 // 处理void返回值的情况，直接跳转到新的BB
-//             }
-//         }
-//     }
-// }
+void Inliner::Inline(Function* entry)
+{
+    // if(inlinedFunc.find(entry) != inlinedFunc.end())
+    //     return;
+    // inlinedFunc.insert(entry);
+    // for(auto& func_ : m->GetFuncTion())
+    // {
+    //     Function* func = func_.get();
+    //     if(func->GetName() == entry->GetName())
+    //         continue;
+    //     if(NotInlineFunc.find(func) != NotInlineFunc.end())
+    //         continue;
+    //     if(CallMap.find(func) == CallMap.end())
+    //         continue;
+    //     for(auto& call : CallMap[func])
+    //     {
+    //         if(call->GetName() == entry->GetName())
+    //         {
+    //             InlineCost cost = Cost.getCost(func);
+    //             if(cost.isNever())
+    //                 continue;
+    //             if(cost.isAlways())
+    //             {
+    //                 Inline(call);
+    //                 break;
+    //             }
+    //             if(cost.Cost < Inline_Block_Num)
+    //             {
+    //                 Inline(call);
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
+    for(auto iter = entry->GetBasicBlock().begin(); iter != entry->GetBasicBlock().end(); ++iter)
+    {
+        BasicBlock* block = *iter;
+        for(auto iter1 = block->begin(); iter1 != block->end(); ++iter1)
+        {
+            User* inst = *iter1;
+            if(CanBeInlined(inst))
+            {
+                // 切分basicblock
+                // BasicBlock* NewBlock = SplitBlock(*iter1, *entry);
+                BasicBlock* NewBlock;
+                UnCondInst* Br = new UnCondInst(NewBlock);
+                block->push_back(Br);
+                auto Block_Pos = std::find(entry->begin(), entry->end(), block);
+                ++Block_Pos;
+                Block_Pos.insert_before(NewBlock);
+                // for(auto &Args : inst->Getuselist())
+                // {
+                //     if(dynamic_cast<Function*>(Args->usee))
+                //         continue;
+                //     User* args = Args->GetUser();
+                //     if(args && args->GetUserlist().is_empty())
+                //         args->RAUW(Value *val)
+                // }
+                // 维护succ pred
+                // 复制block
+                // 设置新bb的父亲
+                // 将新bb插入函数
+                // 设置被split的块跳转到新的bb的entry
+                // 给返回值alloca空间，并跳转到新的BB
+                // 处理void返回值的情况，直接跳转到新的BB
+            }
+        }
+    }
+}
 
 // void FunctionInline::inlining(Function *entry_func) {
 //   auto &entry_func_bbs = entry_func->getBasicBlocks();

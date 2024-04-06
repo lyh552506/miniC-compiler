@@ -10,7 +10,7 @@ void PassManager::InitPass() {
     m_dom = std::make_unique<dominance>(m_func, BList.size());
     m_pre = std::make_unique<PRE>(m_dom.get(), m_func);
     
-    m_cfgsimple=std::make_unique<cfgSimplify>(m_func,m_dom.get());
+    // m_cfgsimple=std::make_unique<cfgSimplify>(m_func,m_dom.get());
     m_liveness = std::make_unique<LivenessAnalysis>(m_func);
     m_eliedg=std::make_unique<ElimitCriticalEdge>(m_func);
     m_adce = std::make_unique<ADCE>(m_func);
@@ -71,10 +71,10 @@ void PassManager::RunOnFunction() {
     m_inliner->Run();
     // m_inliner->PrintPass();
   }
-  if(InitpassRecorder[7]){
-    m_cfgsimple->RunOnFunction();
-    m_cfgsimple->PrintPass();
-  }
+  // if(InitpassRecorder[7]){
+  //   m_cfgsimple->RunOnFunction();
+  //   m_cfgsimple->PrintPass();
+  // }
 }
 
 void PassManager::IncludePass(int pass) { InitpassRecorder[pass] = 1; }

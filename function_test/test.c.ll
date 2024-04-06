@@ -332,304 +332,112 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @func(i32 %.3, i32 %.6){
+define i32 @at(i32* %.3){
 .1:
-  %.5 = alloca i32
-  %.2 = alloca i32
-  store i32 %.3, i32* %.2
-  store i32 %.6, i32* %.5
-  br label %.8wc83 
-.8wc83:
-  %.12 = load i32, i32* %.2
-  %.14 = icmp slt i32 %.12, 5
-  br i1 %.14, label %.9wloop.83.86, label %.10wn86
-.9wloop.83.86:
-  %.18 = load i32, i32* %.2
-  %.20 = icmp sgt i32 %.18, 0
-  br i1 %.20, label %.16, label %.17
-.10wn86:
-  ret i32 undef 
-.16:
-  br label %.10wn86 
-.17:
-  br label %.8wc83 
-}
-define i32 @func(i32* %.29, i32* %.32){
-.27:
-  %.36 = alloca i32
-  %.34 = alloca i32
-  %.31 = alloca i32*
-  %.28 = alloca i32*
-  store i32* %.29, i32** %.28
-  store i32* %.32, i32** %.31
-  store i32 0, i32* %.34
-  store i32 0, i32* %.36
-  br label %.38wc185 
-.38wc185:
-  %.42 = load i32, i32* %.34
-  %.43 = icmp slt i32 %.42, 5
-  br i1 %.43, label %.39wloop.185.191, label %.40wn191
-.39wloop.185.191:
-  br label %.45wc186 
-.40wn191:
+  %.2 = alloca i32*
+  store i32* %.3, i32** %.2
+  %.7 = load i32*, i32** %.2
+  %.8 = getelementptr inbounds i32, i32* %.7, i32 1
+  store i32 3, i32* %.8
   ret i32 1 
-.45wc186:
-  %.49 = load i32, i32* %.36
-  %.50 = icmp slt i32 %.49, 5
-  br i1 %.50, label %.46wloop.186.190, label %.47wn190
-.46wloop.186.190:
-  %.52 = load i32, i32* %.34
-  %.53 = load i32*, i32** %.28
-  %.54 = getelementptr inbounds i32, i32* %.53, i32 %.52
-  %.55 = load i32, i32* %.54
-  %.56 = load i32, i32* %.34
-  %.57 = load i32*, i32** %.31
-  %.58 = getelementptr inbounds i32, i32* %.57, i32 %.56
-  %.59 = load i32, i32* %.58
-  %.60 = add i32 %.55, %.59
-  %.61 = load i32, i32* %.36
-  %.62 = load i32*, i32** %.28
-  %.63 = getelementptr inbounds i32, i32* %.62, i32 %.61
-  store i32 %.60, i32* %.63
-  %.65 = load i32, i32* %.36
-  %.67 = add i32 %.65, 1
-  store i32 %.67, i32* %.36
-  %.69 = load i32, i32* %.34
-  %.70 = add i32 %.69, 1
-  store i32 %.70, i32* %.34
-  br label %.45wc186 
-.47wn190:
-  br label %.38wc185 
+}
+define i32 @main(){
+.12:
+  %.21 = alloca i32
+  %.16 = alloca i32
+  %.15 = alloca i32
+  %.14 = alloca [20 x i32]
+  store i32 5, i32* %.15
+  store i32 6, i32* %.16
+  %.22 = load i32, i32* %.15
+  %.23 = load i32, i32* %.16
+  %.24 = add i32 %.22, %.23
+  store i32 %.24, i32* %.21
+  %.26 = load i32, i32* %.21
+  %.27 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 %.26
+  store i32 1, i32* %.27
+  %.30 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 0
+  %.31at136 = call i32 @at(i32* %.30)
+  %.32 = load i32, i32* %.21
+  %.33 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 %.32
+  %.34 = load i32, i32* %.33
+  ret i32 %.34 
 }
 --------mem2reg--------
-define i32 @func(i32 %.3, i32 %.6){
+define i32 @at(i32* %.3){
 .1:
-  br label %.8wc83 
-.8wc83:
-  %.14 = icmp slt i32 %.3, 5
-  br i1 %.14, label %.9wloop.83.86, label %.75
-.9wloop.83.86:
-  %.20 = icmp sgt i32 %.3, 0
-  br i1 %.20, label %.16, label %.17
-.10wn86:
-  ret i32 undef 
-.16:
-  br label %.10wn86 
-.17:
-  br label %.8wc83 
-.75:
-  br label %.10wn86 
-}
-define i32 @func(i32* %.29, i32* %.32){
-.27:
-  %.36 = alloca i32
-  %.34 = alloca i32
-  %.31 = alloca i32*
-  %.28 = alloca i32*
-  store i32* %.29, i32** %.28
-  store i32* %.32, i32** %.31
-  store i32 0, i32* %.34
-  store i32 0, i32* %.36
-  br label %.38wc185 
-.38wc185:
-  %.42 = load i32, i32* %.34
-  %.43 = icmp slt i32 %.42, 5
-  br i1 %.43, label %.39wloop.185.191, label %.40wn191
-.39wloop.185.191:
-  br label %.45wc186 
-.40wn191:
+  %.8 = getelementptr inbounds i32, i32* %.3, i32 1
+  store i32 3, i32* %.8
   ret i32 1 
-.45wc186:
-  %.49 = load i32, i32* %.36
-  %.50 = icmp slt i32 %.49, 5
-  br i1 %.50, label %.46wloop.186.190, label %.47wn190
-.46wloop.186.190:
-  %.52 = load i32, i32* %.34
-  %.53 = load i32*, i32** %.28
-  %.54 = getelementptr inbounds i32, i32* %.53, i32 %.52
-  %.55 = load i32, i32* %.54
-  %.56 = load i32, i32* %.34
-  %.57 = load i32*, i32** %.31
-  %.58 = getelementptr inbounds i32, i32* %.57, i32 %.56
-  %.59 = load i32, i32* %.58
-  %.60 = add i32 %.55, %.59
-  %.61 = load i32, i32* %.36
-  %.62 = load i32*, i32** %.28
-  %.63 = getelementptr inbounds i32, i32* %.62, i32 %.61
-  store i32 %.60, i32* %.63
-  %.65 = load i32, i32* %.36
-  %.67 = add i32 %.65, 1
-  store i32 %.67, i32* %.36
-  %.69 = load i32, i32* %.34
-  %.70 = add i32 %.69, 1
-  store i32 %.70, i32* %.34
-  br label %.45wc186 
-.47wn190:
-  br label %.38wc185 
+}
+define i32 @main(){
+.12:
+  %.21 = alloca i32
+  %.16 = alloca i32
+  %.15 = alloca i32
+  %.14 = alloca [20 x i32]
+  store i32 5, i32* %.15
+  store i32 6, i32* %.16
+  %.22 = load i32, i32* %.15
+  %.23 = load i32, i32* %.16
+  %.24 = add i32 %.22, %.23
+  store i32 %.24, i32* %.21
+  %.26 = load i32, i32* %.21
+  %.27 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 %.26
+  store i32 1, i32* %.27
+  %.30 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 0
+  %.31at136 = call i32 @at(i32* %.30)
+  %.32 = load i32, i32* %.21
+  %.33 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 %.32
+  %.34 = load i32, i32* %.33
+  ret i32 %.34 
 }
 --------constprop--------
-define i32 @func(i32 %.3, i32 %.6){
+define i32 @at(i32* %.3){
 .1:
-  br label %.8wc83 
-.8wc83:
-  %.14 = icmp slt i32 %.3, 5
-  br i1 %.14, label %.9wloop.83.86, label %.75
-.9wloop.83.86:
-  %.20 = icmp sgt i32 %.3, 0
-  br i1 %.20, label %.16, label %.17
-.10wn86:
-  ret i32 undef 
-.16:
-  br label %.10wn86 
-.17:
-  br label %.8wc83 
-.75:
-  br label %.10wn86 
-}
-define i32 @func(i32* %.29, i32* %.32){
-.27:
-  %.36 = alloca i32
-  %.34 = alloca i32
-  %.31 = alloca i32*
-  %.28 = alloca i32*
-  store i32* %.29, i32** %.28
-  store i32* %.32, i32** %.31
-  store i32 0, i32* %.34
-  store i32 0, i32* %.36
-  br label %.38wc185 
-.38wc185:
-  %.42 = load i32, i32* %.34
-  %.43 = icmp slt i32 %.42, 5
-  br i1 %.43, label %.39wloop.185.191, label %.40wn191
-.39wloop.185.191:
-  br label %.45wc186 
-.40wn191:
+  %.8 = getelementptr inbounds i32, i32* %.3, i32 1
+  store i32 3, i32* %.8
   ret i32 1 
-.45wc186:
-  %.49 = load i32, i32* %.36
-  %.50 = icmp slt i32 %.49, 5
-  br i1 %.50, label %.46wloop.186.190, label %.47wn190
-.46wloop.186.190:
-  %.52 = load i32, i32* %.34
-  %.53 = load i32*, i32** %.28
-  %.54 = getelementptr inbounds i32, i32* %.53, i32 %.52
-  %.55 = load i32, i32* %.54
-  %.56 = load i32, i32* %.34
-  %.57 = load i32*, i32** %.31
-  %.58 = getelementptr inbounds i32, i32* %.57, i32 %.56
-  %.59 = load i32, i32* %.58
-  %.60 = add i32 %.55, %.59
-  %.61 = load i32, i32* %.36
-  %.62 = load i32*, i32** %.28
-  %.63 = getelementptr inbounds i32, i32* %.62, i32 %.61
-  store i32 %.60, i32* %.63
-  %.65 = load i32, i32* %.36
-  %.67 = add i32 %.65, 1
-  store i32 %.67, i32* %.36
-  %.69 = load i32, i32* %.34
-  %.70 = add i32 %.69, 1
-  store i32 %.70, i32* %.34
-  br label %.45wc186 
-.47wn190:
-  br label %.38wc185 
+}
+define i32 @main(){
+.12:
+  %.21 = alloca i32
+  %.16 = alloca i32
+  %.15 = alloca i32
+  %.14 = alloca [20 x i32]
+  store i32 5, i32* %.15
+  store i32 6, i32* %.16
+  %.22 = load i32, i32* %.15
+  %.23 = load i32, i32* %.16
+  %.24 = add i32 %.22, %.23
+  store i32 %.24, i32* %.21
+  %.26 = load i32, i32* %.21
+  %.27 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 %.26
+  store i32 1, i32* %.27
+  %.30 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 0
+  %.31at136 = call i32 @at(i32* %.30)
+  %.32 = load i32, i32* %.21
+  %.33 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 %.32
+  %.34 = load i32, i32* %.33
+  ret i32 %.34 
 }
 --------mem2reg--------
-define i32 @func(i32 %.3, i32 %.6){
+define i32 @at(i32* %.3){
 .1:
-  br label %.8wc83 
-.8wc83:
-  %.14 = icmp slt i32 %.3, 5
-  br i1 %.14, label %.9wloop.83.86, label %.75
-.9wloop.83.86:
-  %.20 = icmp sgt i32 %.3, 0
-  br i1 %.20, label %.16, label %.17
-.10wn86:
-  ret i32 undef 
-.16:
-  br label %.10wn86 
-.17:
-  br label %.8wc83 
-.75:
-  br label %.10wn86 
-}
-define i32 @func(i32* %.29, i32* %.32){
-.27:
-  br label %.38wc185 
-.38wc185:
-  %.80 = Phi i32 [0, %.27], [%.79, %.47wn190]
-  %.78 = Phi i32 [0, %.27], [%.77, %.47wn190]
-  %.43 = icmp slt i32 %.80, 5
-  br i1 %.43, label %.39wloop.185.191, label %.40wn191
-.39wloop.185.191:
-  br label %.45wc186 
-.40wn191:
+  %.8 = getelementptr inbounds i32, i32* %.3, i32 1
+  store i32 3, i32* %.8
   ret i32 1 
-.45wc186:
-  %.79 = Phi i32 [%.80, %.39wloop.185.191], [%.70, %.46wloop.186.190]
-  %.77 = Phi i32 [%.78, %.39wloop.185.191], [%.67, %.46wloop.186.190]
-  %.50 = icmp slt i32 %.77, 5
-  br i1 %.50, label %.46wloop.186.190, label %.47wn190
-.46wloop.186.190:
-  %.54 = getelementptr inbounds i32, i32* %.29, i32 %.79
-  %.55 = load i32, i32* %.54
-  %.58 = getelementptr inbounds i32, i32* %.32, i32 %.79
-  %.59 = load i32, i32* %.58
-  %.60 = add i32 %.55, %.59
-  %.63 = getelementptr inbounds i32, i32* %.29, i32 %.77
-  store i32 %.60, i32* %.63
-  %.67 = add i32 %.77, 1
-  %.70 = add i32 %.79, 1
-  br label %.45wc186 
-.47wn190:
-  br label %.38wc185 
+}
+define i32 @main(){
+.12:
+  %.14 = alloca [20 x i32]
+  %.24 = add i32 5, 6
+  %.27 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 %.24
+  store i32 1, i32* %.27
+  %.30 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 0
+  %.31at136 = call i32 @at(i32* %.30)
+  %.33 = getelementptr inbounds [20 x i32], [20 x i32]* %.14, i32 0, i32 %.24
+  %.34 = load i32, i32* %.33
+  ret i32 %.34 
 }
 --------constprop--------
-define i32 @func(i32 %.3, i32 %.6){
-.1:
-  br label %.8wc83 
-.8wc83:
-  %.14 = icmp slt i32 %.3, 5
-  br i1 %.14, label %.9wloop.83.86, label %.75
-.9wloop.83.86:
-  %.20 = icmp sgt i32 %.3, 0
-  br i1 %.20, label %.16, label %.17
-.10wn86:
-  ret i32 undef 
-.16:
-  br label %.10wn86 
-.17:
-  br label %.8wc83 
-.75:
-  br label %.10wn86 
-}
-define i32 @func(i32* %.29, i32* %.32){
-.27:
-  br label %.38wc185 
-.38wc185:
-  %.80 = Phi i32 [0, %.27], [%.79, %.47wn190]
-  %.78 = Phi i32 [0, %.27], [%.77, %.47wn190]
-  %.43 = icmp slt i32 %.80, 5
-  br i1 %.43, label %.39wloop.185.191, label %.40wn191
-.39wloop.185.191:
-  br label %.45wc186 
-.40wn191:
-  ret i32 1 
-.45wc186:
-  %.79 = Phi i32 [%.80, %.39wloop.185.191], [%.70, %.46wloop.186.190]
-  %.77 = Phi i32 [%.78, %.39wloop.185.191], [%.67, %.46wloop.186.190]
-  %.50 = icmp slt i32 %.77, 5
-  br i1 %.50, label %.46wloop.186.190, label %.47wn190
-.46wloop.186.190:
-  %.54 = getelementptr inbounds i32, i32* %.29, i32 %.79
-  %.55 = load i32, i32* %.54
-  %.58 = getelementptr inbounds i32, i32* %.32, i32 %.79
-  %.59 = load i32, i32* %.58
-  %.60 = add i32 %.55, %.59
-  %.63 = getelementptr inbounds i32, i32* %.29, i32 %.77
-  store i32 %.60, i32* %.63
-  %.67 = add i32 %.77, 1
-  %.70 = add i32 %.79, 1
-  br label %.45wc186 
-.47wn190:
-  br label %.38wc185 
-}

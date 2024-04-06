@@ -46,5 +46,5 @@ private:
   std::unique_ptr<LivenessAnalysis> m_liveness;
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
   std::unique_ptr<Inliner> m_inliner;
-  std::unique_ptr<cfgSimplify> m_cfgsimple;
+  // std::unique_ptr<cfgSimplify> m_cfgsimple;
 };

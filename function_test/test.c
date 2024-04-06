@@ -86,12 +86,12 @@
 //       break;
 //   }
 // }
-int func(int a){
-    int x;
-    if(x>1)
-      a=x;
-    return a;
-}
+// int func(int a){
+//     int x;
+//     if(x>1)
+//       a=x;
+//     return a;
+// }
 // void reverse(int n) {
 //     int next;
 //     if (n <= 1) {
@@ -122,20 +122,20 @@ int func(int a){
 //      int v2 = a + b; // BB3
 //      return v1 + v2;
 // }
-// int at(int b[])
-// {
-//     b[1] = 3;
-//     return 1;
-// }
-// int FullRedundancy2 () {
-//      int x[20],a,b;
-//      a=5;
-//      b=6;
-//      int t=a+b;
-//      x[t]=1;
-//      at(x);
-//      return x[t];
-// }
+int at(int b[])
+{
+    b[1] = 3;
+    return 1;
+}
+int main () {
+     int x[20],a,b;
+     a=5;
+     b=6;
+     int t=a+b;
+     x[t]=1;
+     at(x);
+     return x[t];
+}
 // int main() {
 //     int x, cond = 1;
 //     float b;
@@ -187,17 +187,17 @@ int func(int a){
 //   }
 //   return 1;
 // }
-int func(int dst[],int src[]){
-  int i=0,j=0;
-  while(i<5){
-    while(j<5){
-      dst[j]=dst[i]+src[i];
-      j=j+1;
-      i=i+1;
-    }
-  }
-  return 1;
-}
+// int func(int dst[],int src[]){
+//   int i=0,j=0;
+//   while(i<5){
+//     while(j<5){
+//       dst[j]=dst[i]+src[i];
+//       j=j+1;
+//       i=i+1;
+//     }
+//   }
+//   return 1;
+// }
 // int func(int a, int b)
 // {
 //   int c;
