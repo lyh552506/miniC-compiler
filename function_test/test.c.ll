@@ -335,7 +335,31 @@ attributes #7 = { cold }
 @.g.a = global i32 1
 @.g.b = global i32 zeroinitializer
 @.g.d = global float zeroinitializer
-@.g.arri = global [5 x i32]  [i32 1, i32 2, i32 3, i32 4, i32 5]
+@.g.arri = global [2 x [3 x i32]]  [[3 x i32]  [i32 1, i32 2, i32 3], [3 x i32]  [i32 1, i32 2, i32 zeroinitializer]]
+define i32 @main(){
+.11:
+  %.19 = alloca i32
+  %.13 = alloca [10 x i32]
+  %.15 = getelementptr inbounds [10 x i32], [10 x i32]* %.13, i32 0, i32 0
+  store i32 1, i32* %.15
+  store i32 10, i32* @.g.a
+  store i32 3, i32* @.g.b
+  store float 0x3ff0000000000000, float* @.g.d
+  %.22 = load i32, i32* @.g.a
+  %.23 = load i32, i32* @.g.b
+  %.24 = srem i32 %.22, %.23
+  store i32 %.24, i32* %.19
+  %.26 = load i32, i32* %.19
+  %.27 = getelementptr inbounds [10 x i32], [10 x i32]* %.13, i32 0, i32 0
+  %.28 = load i32, i32* %.27
+  %.29 = add i32 %.26, %.28
+  %.30 = load i32, i32* %.19
+  ret i32 %.30 
+}
+@.g.a = global i32 1
+@.g.b = global i32 zeroinitializer
+@.g.d = global float zeroinitializer
+@.g.arri = global [2 x [3 x i32]]  [[3 x i32]  [i32 1, i32 2, i32 3], [3 x i32]  [i32 1, i32 2, i32 zeroinitializer]]
 define i32 @main(){
 .11:
   %.19 = alloca i32
@@ -371,17 +395,17 @@ main:
     addi s0, sp, 64
 .LBB0_0:
 Error: No Such Instruction.
-    sw 1, -93824993064112(s0)
-    sw 10, -93824993064112(s0)
-    sw 3, -93824993064112(s0)
-    sw 0x3ff0000000000000, -93824993064112(s0)
-    lw .22, -93824993064112(s0)
-    lw .23, -93824993064112(s0)
+    sw 1, -93824993068912(s0)
+    sw 10, -93824993068912(s0)
+    sw 3, -93824993068912(s0)
+    sw 0x3ff0000000000000, -93824993068912(s0)
+    lw .22, -93824993068912(s0)
+    lw .23, -93824993068912(s0)
     remw .24, .22, .23
     sw .24, -20(s0)
     lw .26, -20(s0)
 Error: No Such Instruction.
-    lw .28, -93824993064112(s0)
+    lw .28, -93824993068912(s0)
     addw .29, .26, .28
     lw .30, -20(s0)
     lw a0, .30

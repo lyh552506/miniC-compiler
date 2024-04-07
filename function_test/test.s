@@ -4,7 +4,6 @@
         .attribute unaligned_access, 0
         .attribute stack_align, 16
         .text
-        
         .globl  a
         .section        .sdata,"aw"
         .align  2
@@ -12,7 +11,6 @@
         .size   a, 4
 a:
         .word   1
-        
         .globl  b
         .section        .sbss,"aw",@nobits
         .align  2
@@ -27,12 +25,18 @@ b:
 d:
         .zero   4
         .globl  arri
-        .bss
+        
+        .data
         .align  3
         .type   arri, @object
-        .size   arri, 20
+        .size   arri, 24
 arri:
-        .zero   20
+        .word   1
+        .word   2
+        .word   3
+        .word   1
+        .word   2
+        .zero   4
         .text
         .align  1
         .globl  main
