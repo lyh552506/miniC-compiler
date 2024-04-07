@@ -56,7 +56,10 @@ public:
     AlreadyGetInfo = true;
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }
-
+  ~LoopAnalysis(){
+    for(auto i:LoopRecord)
+    delete i;
+  }
 private:
   Function *m_func;
   dominance *m_dom;

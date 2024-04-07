@@ -1,37 +1,41 @@
 #pragma once
+#include <memory>
+#include "../../yacc/parser.hpp"
+#include "../Analysis/DealCriticalEdges.hpp"
+#include "ADCE.hpp"
+#include "CFG.hpp"
 #include "ConstantFold.hpp"
 #include "ConstantProp.hpp"
+#include "DCE.hpp"
 #include "IDF.hpp"
 #include "LivenessAnalysis.hpp"
+#include "LoopInfo.hpp"
+#include "PassManagerBase.hpp"
 #include "PromoteMemtoRegister.hpp"
 #include "SSAPRE.hpp"
 #include "dominant.hpp"
-#include "DCE.hpp"
-#include "ADCE.hpp"
-#include "PassManagerBase.hpp"
-#include "../../yacc/parser.hpp"
-#include "LoopInfo.hpp"
-#include "../Analysis/DealCriticalEdges.hpp"
-class PassManager:public PassManagerBase {
+#include "cfgSimplify.hpp"
+class PassManager : public PassManagerBase {
 public:
-  PassManager():InitpassRecorder(50){
-    FList=new std::vector<Function*>();
+  PassManager() : InitpassRecorder(50) {
   }
   void PreWork(int i);
   void IncludePass(int pass);
   void InitPass();
   void RunOnFunction();
-  void Anlaysis();
+  //void Anlaysis();
   void PrintPass(){};
-  void setAnalsis(bool choi){
-    Analysis=choi;
+  void setAnalsis(bool choi) { Analysis = choi; }
+  ~PassManager() {
+
   }
+
 private:
-  bool Analysis=false; 
+  bool Analysis = false;
   std::vector<int> InitpassRecorder;
-  std::vector<Function*>* FList;
-  std::vector<BasicBlock *>* BList;
-  Function* m_func;
+  std::vector<Function *> FList;
+  std::vector<BasicBlock *> BList;
+  Function *m_func;
   std::unique_ptr<LoopAnalysis> m_loopAnlay;
   std::unique_ptr<dominance> m_dom;
   std::unique_ptr<PRE> m_pre;
@@ -40,4 +44,5 @@ private:
   std::unique_ptr<DCE> m_dce;
   std::unique_ptr<LivenessAnalysis> m_liveness;
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
+  std::unique_ptr<cfgSimplify> m_cfgsimple;
 };

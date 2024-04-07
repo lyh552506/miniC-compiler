@@ -5,22 +5,20 @@
 // mem2reg的开始函数
 bool promoteMemoryToRegister(Function &func, dominance &dom) {
   std::vector<AllocaInst *> Allocas;
-  //auto& BB = func.GetBasicBlock(); // BB是一个std::vector<BasicBlockPtr>
-  while (true) {
-    Allocas.clear();
-    // auto& EntryBlock=BB.front();
-    auto EntryBlock=func.front();
-      For_inst_In(EntryBlock) {
-        if (AllocaInst *allocaInst =dynamic_cast<AllocaInst *>(inst))
-          if (IsAllocaPromotable(allocaInst))
-            Allocas.push_back(allocaInst);
-    }
+  // auto& BB = func.GetBasicBlock(); // BB是一个std::vector<BasicBlockPtr>
 
-    if (Allocas.empty()) //当前没有可以promote的alloca指令
-      break;
-    RunPromoteMem2Reg(dom, Allocas, func);
-    break;
+  Allocas.clear();
+  // auto& EntryBlock=BB.front();
+  auto EntryBlock = func.front();
+  For_inst_In(EntryBlock) {
+    if (AllocaInst *allocaInst = dynamic_cast<AllocaInst *>(inst))
+      if (IsAllocaPromotable(allocaInst)) Allocas.push_back(allocaInst);
   }
+
+  if (Allocas.empty())  //当前没有可以promote的alloca指令
+    return false;
+  RunPromoteMem2Reg(dom, Allocas, func);
+  return false;
 }
 
 /// @brief 一个wrapper，在这里创建对象

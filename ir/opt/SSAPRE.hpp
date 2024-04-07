@@ -7,6 +7,7 @@ by Thomas VanDrunen and Antony L. Hosking
 #include "IDF.hpp"
 #include "dominant.hpp"
 #include "PassManagerBase.hpp"
+#include "DealCriticalEdges.hpp"
 
 enum RetStats { Delay, Changed, Unchanged };
 
@@ -57,7 +58,6 @@ struct Expression {
         return false;
     return true;
   }
-  // Expression();
 };
 
 struct ValueTable {
@@ -99,9 +99,17 @@ struct ValueNumberedSet {
   }
 
   void init() {
+    // for(auto tmp:contents)
+    //   delete tmp;
     Record.clear();
     contents.clear();
   }
+
+  void operator=(const ValueNumberedSet& other){
+    Record=other.Record;
+    contents=other.contents;
+  }
+
   /// @brief return true if is inserted
   bool IsAlreadyInsert(int hash) {
     if (Record.size() < hash+1)
@@ -122,8 +130,6 @@ public:
   void BuildSets();
   /// @brief
   void Insert();
-  /// @brief
-  void Eliminate();
   /// @brief
   void DfsDT(int pos);
   void PostOrderCFG(BasicBlock *root);
@@ -148,11 +154,25 @@ public:
                              std::set<BasicBlock *> &visited);
   Value *phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val);
   void clean(ValueNumberedSet &val);
+  void CleanMemory();
   //在一个set中找到val的leader
   Value *Find_Leader(ValueNumberedSet &set, Value *val);
 
   PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {}
-
+  ~PRE(){
+    delete VN;
+    AvailOut.clear();
+    //AnticipatedIn.clear();
+    for(auto iter=AnticipatedIn.begin();iter!=AnticipatedIn.end();++iter)
+     {iter->second.init();
+      AnticipatedIn.erase(iter);
+     }
+     AnticipatedIn.clear();
+    GeneratedPhis.clear();
+    Dfs.clear();
+    PostOrder.clear();
+    GeneratedTemp.clear();
+  }
 private:
   dominance *m_dom;
   Function *m_func;

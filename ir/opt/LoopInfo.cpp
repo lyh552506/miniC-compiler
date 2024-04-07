@@ -41,7 +41,7 @@ void LoopAnalysis::Analysis() {
               WorkLists.push_back(GetCorrespondBlock(rev));
         }
       }
-      LoopRecord.push_back(loop);
+      LoopRecord.push_back(std::move(loop));
     }
   }
 }

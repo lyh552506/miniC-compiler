@@ -1,6 +1,5 @@
 #pragma once
 
-
 class PassManagerBase{
 public:
     PassManagerBase()=default;
