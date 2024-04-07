@@ -332,3 +332,55 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
+define i32 @func(i32 %.3, i32 %.6){
+.1:
+  %.12 = alloca i32
+  %.5 = alloca i32
+  %.2 = alloca i32
+  store i32 %.3, i32* %.2
+  store i32 %.6, i32* %.5
+  %.9 = load i32, i32* %.2
+  %.10 = mul i32 5, %.9
+  store i32 %.10, i32* %.5
+  %.13 = load i32, i32* %.2
+  %.14 = load i32, i32* %.5
+  %.15 = add i32 %.13, %.14
+  store i32 %.15, i32* %.12
+  %.17 = load i32, i32* %.2
+  ret i32 %.17 
+}
+--------mem2reg--------
+define i32 @func(i32 %.3, i32 %.6){
+.1:
+  %.10 = mul i32 5, %.3
+  %.15 = add i32 %.3, %.10
+  ret i32 %.3 
+}
+--------pre--------
+define i32 @func(i32 %.3, i32 %.6){
+.1:
+  %.10 = mul i32 5, %.3
+  %.15 = add i32 %.3, %.10
+  ret i32 %.3 
+}
+--------constprop--------
+define i32 @func(i32 %.3, i32 %.6){
+.1:
+  %.10 = mul i32 5, %.3
+  %.15 = add i32 %.3, %.10
+  ret i32 %.3 
+}
+-------cfgsimplify--------
+define i32 @func(i32 %.3, i32 %.6){
+.1:
+  %.10 = mul i32 5, %.3
+  %.15 = add i32 %.3, %.10
+  ret i32 %.3 
+}
+--------DCE--------
+define i32 @func(i32 %.3, i32 %.6){
+.1:
+  ret i32 %.3 
+}
+---------------------Loop Analysis-----------------------
+Num Of Loops:0

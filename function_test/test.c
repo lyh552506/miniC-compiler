@@ -18,14 +18,14 @@
 //     a=b+c;
 //     return a;
 // }
-// int main() {
-//     int x, cond = 1;
-//     if (cond > 0)
-//         x = 1;
-//     else
-//         x = -1;
-//     return x;
-// }
+int main() {
+    int x, cond = 1;
+    if (cond > 0)
+        x = 1;
+    else
+        x = -1;
+    return x;
+}
 // int func2(){
 //   int x=1,c;
 //   float y=3.6;
@@ -93,10 +93,9 @@
 //       break;
 //   }
 // }
-int func(int a){
-    int x;
-    if(x>1)
-      a=x;
+int func(int a,int b){
+    b=5*a;
+    int c=a+b;
     return a;
 }
 // void reverse(int n) {
