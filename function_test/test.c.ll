@@ -332,101 +332,65 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
---------mem2reg--------
-define i32 @func(i32 %.3, i32 %.6){
-.1:
-  %.14 = add i32 %.3, %.6
-  br label %.16wc51 
-.16wc51:
-  %.73 = Phi i32 [%.3, %.1], [%.72, %.50]
-  %.70 = Phi i32 [%.14, %.1], [%.69, %.50]
-  %.67 = Phi i32 [5, %.1], [%.26, %.50]
-  %.22 = icmp slt i32 %.67, 10
-  br i1 %.22, label %.17wloop.51.59, label %.18wn59
-.17wloop.51.59:
-  %.26 = add i32 1, %.67
-  %.30 = add i32 %.6, %.26
-  %.36 = icmp sgt i32 %.26, 7
-  br i1 %.36, label %.32, label %.33
-.18wn59:
-  ret i32 %.70 
-.32:
-  br label %.38wc55 
-.33:
-  %.56 = icmp slt i32 %.26, 4
-  br i1 %.56, label %.52, label %.65
-.38wc55:
-  %.71 = Phi i32 [%.73, %.32], [%.47, %.39wloop.55.55]
-  %.44 = icmp slt i32 %.26, 9
-  br i1 %.44, label %.39wloop.55.55, label %.40wn55
-.39wloop.55.55:
-  %.47 = add i32 %.71, 1
-  br label %.38wc55 
-.40wn55:
-  br label %.50 
-.50:
-  %.72 = Phi i32 [%.73, %.53], [%.71, %.40wn55]
-  %.69 = Phi i32 [%.68, %.53], [%.30, %.40wn55]
-  br label %.16wc51 
-.52:
-  br label %.53 
-.53:
-  %.68 = Phi i32 [%.30, %.65], [3, %.52]
-  br label %.50 
-.65:
-  br label %.53 
+@.g.a = global i32 1
+@.g.b = global i32 zeroinitializer
+@.g.d = global float zeroinitializer
+@.g.arri = global [5 x i32]  [i32 1, i32 2, i32 3, i32 4, i32 5]
+define i32 @main(){
+.11:
+  %.19 = alloca i32
+  %.13 = alloca [10 x i32]
+  %.15 = getelementptr inbounds [10 x i32], [10 x i32]* %.13, i32 0, i32 0
+  store i32 1, i32* %.15
+  store i32 10, i32* @.g.a
+  store i32 3, i32* @.g.b
+  store float 0x3ff0000000000000, float* @.g.d
+  %.22 = load i32, i32* @.g.a
+  %.23 = load i32, i32* @.g.b
+  %.24 = srem i32 %.22, %.23
+  store i32 %.24, i32* %.19
+  %.26 = load i32, i32* %.19
+  %.27 = getelementptr inbounds [10 x i32], [10 x i32]* %.13, i32 0, i32 0
+  %.28 = load i32, i32* %.27
+  %.29 = add i32 %.26, %.28
+  %.30 = load i32, i32* %.19
+  ret i32 %.30 
 }
---------pre--------
-define i32 @func(i32 %.3, i32 %.6){
-.1:
-  %.14 = add i32 %.3, %.6
-  br label %.16wc51 
-.16wc51:
-  %.73 = Phi i32 [%.3, %.1], [%.72, %.50]
-  %.70 = Phi i32 [%.14, %.1], [%.69, %.50]
-  %.67 = Phi i32 [5, %.1], [%.26, %.50]
-  %.22 = icmp slt i32 %.67, 10
-  br i1 %.22, label %.17wloop.51.59, label %.18wn59
-.17wloop.51.59:
-  %.26 = add i32 1, %.67
-  %.30 = add i32 %.6, %.26
-  %.36 = icmp sgt i32 %.26, 7
-  br i1 %.36, label %.32, label %.33
-.18wn59:
-  ret i32 %.70 
-.32:
-  %.81 = icmp slt i32 %.26, 9
-  br label %.38wc55 
-.33:
-  %.56 = icmp slt i32 %.26, 4
-  br i1 %.56, label %.52, label %.65
-.38wc55:
-  %.82 = Phi i1 [%.82, %.39wloop.55.55], [%.81, %.32]
-  %.71 = Phi i32 [%.73, %.32], [%.47, %.39wloop.55.55]
-  br i1 %.82, label %.39wloop.55.55, label %.40wn55
-.39wloop.55.55:
-  %.47 = add i32 %.71, 1
-  br label %.38wc55 
-.40wn55:
-  br label %.50 
-.50:
-  %.72 = Phi i32 [%.73, %.53], [%.71, %.40wn55]
-  %.69 = Phi i32 [%.68, %.53], [%.30, %.40wn55]
-  br label %.16wc51 
-.52:
-  br label %.53 
-.53:
-  %.68 = Phi i32 [%.30, %.65], [3, %.52]
-  br label %.50 
-.65:
-  br label %.53 
-}
----------------------Loop Analysis-----------------------
-Num Of Loops:2
-Loop Depth:2
-Loop Head:.38wc55
-Loop Body:.39wloop.55.55 
-Loop Depth:1
-Loop Head:.16wc51
-Loop Body:.50 .40wn55 .38wc55 .39wloop.55.55 .32 .17wloop.51.59 .53 .52 .33 .65 
-
+    .file  "/home/nanqin/compiler/SB-compiler/function_test/test.c"
+    .attribute arch, "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0"
+    .attribute unaligned_access, 0
+    .attribute stack_align, 16
+    .text
+    .align  1
+    .globl  main
+    .type  main, @function
+main:
+    addi sp, sp, -64
+    sd ra, 56(sp)
+    sd s0, 48(sp)
+    addi s0, sp, 64
+.LBB0_0:
+Error: No Such Instruction.
+    sw 1, -93824993064112(s0)
+    sw 10, -93824993064112(s0)
+    sw 3, -93824993064112(s0)
+    sw 0x3ff0000000000000, -93824993064112(s0)
+    lw .22, -93824993064112(s0)
+    lw .23, -93824993064112(s0)
+    remw .24, .22, .23
+    sw .24, -20(s0)
+    lw .26, -20(s0)
+Error: No Such Instruction.
+    lw .28, -93824993064112(s0)
+    addw .29, .26, .28
+    lw .30, -20(s0)
+    lw a0, .30
+    ld ra, 56(sp)
+    ld s0, 48(sp)
+    addi sp, sp, 64
+    ret
+    ld ra, 56(sp)
+    ld s0, 48(sp)
+    addi sp, sp, 64
+    ret
+    .size main, -main

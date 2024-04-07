@@ -1,4 +1,4 @@
-#include "AsmPrinter.hpp"
+#include "backend/AsmPrinter.hpp"
 #include "opt/dominant.hpp"
 #include "opt/passManager.hpp"
 #include "parser.hpp"
@@ -30,43 +30,45 @@ int main(int argc, char **argv) {
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
-  //Singleton<Module>().Test();
+  Singleton<Module>().Test();
   // output_path = argv[1];
   // output_path += ".a";
   // freopen(output_path.c_str(),"a",stdout);
 
   // freopen("/dev/tty", "a", stdout);
-  std::unique_ptr<PassManager> pass_manager(new PassManager);
+  //std::unique_ptr<PassManager> pass_manager(new PassManager);
 
-  int optionIndex, option;
-  //目前处于调试阶段，最终会换成-O1 -O2 -O3
-  while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
-         -1) {
-    switch (option) {
-    case 0:
-      pass_manager->IncludePass(0);
-      break;
-    case 1:
-      pass_manager->IncludePass(1);
-      break;
-    case 2:
-      pass_manager->IncludePass(2);
-      break;
-    case 3:
-      pass_manager->IncludePass(3);
-      break;
-    case 4:
-      pass_manager->IncludePass(4);
-      break;
-    case 5:
-      pass_manager->IncludePass(5);
-      break;
-    case 6:
-      std::cerr << "help" << std::endl;
-      break;
-    }
-  }
-  pass_manager->InitPass();
-  // PrintCodeToTxt(&Singleton<Module>());
+  // int optionIndex, option;
+  // //目前处于调试阶段，最终会换成-O1 -O2 -O3
+  // while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
+  //        -1) {
+  //   switch (option) {
+  //   case 0:
+  //     pass_manager->IncludePass(0);
+  //     break;
+  //   case 1:
+  //     pass_manager->IncludePass(1);
+  //     break;
+  //   case 2:
+  //     pass_manager->IncludePass(2);
+  //     break;
+  //   case 3:
+  //     pass_manager->IncludePass(3);
+  //     break;
+  //   case 4:
+  //     pass_manager->IncludePass(4);
+  //     break;
+  //   case 5:
+  //     pass_manager->IncludePass(5);
+  //     break;
+  //   case 6:
+  //     std::cerr << "help" << std::endl;
+  //     break;
+  //   }
+  // }
+  //pass_manager->InitPass();
+  AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
+  asmPrinter.printAsm();
+  //PrintCodeToTxt(&Singleton<Module>());
   return 0;
 }
