@@ -918,6 +918,11 @@ void PhiInst::Phiprop(Value* origin,Value* newval){
 
 void PhiInst::Del_Incomes(int CurrentNum)
 {   if(PhiRecord.find(CurrentNum) != PhiRecord.end()){
+        auto iter=std::find_if(uselist.begin(),uselist.end(),
+        [=](const std::unique_ptr<Use>& ele){
+            return ele->GetValue()==PhiRecord[CurrentNum].first;
+        });
+        (*iter)->RemoveFromUserList((*iter)->GetUser());
         PhiRecord.erase(CurrentNum);
         oprandNum--;
     }

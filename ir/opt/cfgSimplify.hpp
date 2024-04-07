@@ -18,6 +18,8 @@ class cfgSimplify : public PassManagerBase {
   //对于每个block，检查是否只有一个前驱并且前驱只有自己一个后继
   bool mergeSpecialBlock();
   void updateDTinfo(BasicBlock* bb);
+  bool SimplifyUncondBr(BasicBlock* bb);
+  bool SimplifyEmptyUncondBlock(BasicBlock* bb);
   Function* m_func;
   dominance* m_dom;
   std::map<BasicBlock*,std::vector<PhiInst*>> BlockToPhis;

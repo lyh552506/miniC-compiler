@@ -135,6 +135,10 @@ class mylist
             this->head=data;
         }
     }
+    //TODO 未实现
+    void Clear(){
+
+    }
     derived_list_node* front(){return this->head;}
     derived_list_node* back(){return this->tail;}
 };
