@@ -20,12 +20,14 @@ public:
 
     void CreateCallMap();
     void DetectRecursive();
-    void CopyBlocks(CallInst* inst, Function& func);
+    std::list<BasicBlock*> CopyBlocks(User* inst, Function& func);
     bool CanBeInlined(User* inst);
     BasicBlock* SplitBlock(User* Calling, Function& func);
     void VisitFunc(Function* entry, std::set<Function*>& visited);
     void removeInlinedFunc();
-    void HandleVoidRet();
+    void HandleVoidRet(BasicBlock* spiltBlock, std::list<BasicBlock*>& blocks);
+    void HandleRetPhi(BasicBlock* RetBlock, PhiInst* phi, std::list<BasicBlock*>& blocks);
+    void UpdateRAUWArgsMap(User* inst, Value* val);
 private:
     Module& m;
     LoopAnalysis* loopAnalysis;
@@ -40,5 +42,5 @@ private:
     std::map<Function*, std::set<Function*>> CalledMap;
     std::set<std::pair<Value*, Value*>> ArgsMap;
     typedef struct ArgsMap argsmap;
-    std::map<Value*, std::vector<std::pair<User*, argsmap*>>> RAUWArgsMap;
+    std::map<Value*, std::set<std::pair<User*, argsmap*>>> RAUWArgsMap;
 };

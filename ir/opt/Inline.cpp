@@ -129,8 +129,45 @@ void Inliner::Inline(Function* entry)
                 block->push_back(Br);
                 auto Block_Pos = std::find(entry->begin(), entry->end(), block);
                 ++Block_Pos;
+                BasicBlock* SuccBlock = *Block_Pos;
                 Block_Pos.insert_before(NewBlock);
-                auto test = NewBlock->back();
+                Function* func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
+                std::list<BasicBlock*> blocks = CopyBlocks(inst, *func);
+                for(BasicBlock* block_ : blocks)
+                {
+                    ++Block_Pos;
+                    Block_Pos.insert_before(block_);
+                }
+                if(inst->GetTypeEnum() != InnerDataType::IR_Value_VOID)
+                {
+                    // if(SSALevel){
+                    PhiInst* Phi = PhiInst::NewPhiNode(SuccBlock->front(), SuccBlock, inst->GetType());
+                    HandleRetPhi(SuccBlock, Phi, blocks);
+                    if(Phi->Getuselist().size() == 2)
+                    {
+                        Value* val = Phi->Getuselist()[0]->usee;
+                        inst->RAUW(val);
+                        inst->ClearRelation();
+                        inst->EraseFromParent();
+                    }
+                    else
+                        inst->RAUW(Phi);
+                    // }
+                    // else{
+                    AllocaInst* Alloca = new AllocaInst(" ",inst->GetType());
+                    entry->InsertAlloca(Alloca);
+                    LoadInst* load = new LoadInst(Alloca);
+                    inst->RAUW(load);
+                    inst->ClearRelation();
+                    inst->EraseFromParent();
+                    NewBlock->push_front(load);
+                    // }
+                }
+                else
+                    HandleVoidRet(NewBlock, blocks);
+                inlinedFunc.insert(func);
+                hasInlinedFunc.insert(entry);
+                // auto test = NewBlock->back();
                 // for(auto &Args : inst->Getuselist())
                 // {
                 //     if(dynamic_cast<Function*>(Args->usee))
@@ -166,7 +203,7 @@ BasicBlock* Inliner::SplitBlock(User* Calling, Function& func)
     */
 }
 
-void Inliner::CopyBlocks(CallInst* inst, Function& func)
+std::list<BasicBlock*> Inliner::CopyBlocks(User* inst, Function& func)
 {
     Function* Func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
     std::list<BasicBlock*> blocks;
@@ -265,11 +302,45 @@ void Inliner::removeInlinedFunc()
     }
 }
 
-void Inliner::HandleVoidRet()
+void Inliner::HandleVoidRet(BasicBlock* spiltBlock, std::list<BasicBlock*>& blocks)
 {
-
+    for(BasicBlock* block : blocks)
+    {
+        User* inst = block->back();
+        if(dynamic_cast<RetInst*>(inst))
+        {
+            UnCondInst* Br = new UnCondInst(spiltBlock);
+            inst->ClearRelation();
+            inst->EraseFromParent();
+            block->push_back(Br);
+        }
+    }
 }
 
+void Inliner::HandleRetPhi(BasicBlock* RetBlock, PhiInst* Phi, std::list<BasicBlock*>& blocks)
+{
+    for(BasicBlock* block : blocks)
+    {
+        User* inst = block->back();
+        if(dynamic_cast<RetInst*>(inst))
+        {
+            Phi->updateIncoming(inst->Getuselist()[0]->usee, block);
+            UnCondInst* Br = new UnCondInst(RetBlock);
+            inst->ClearRelation();
+            inst->EraseFromParent();
+            block->push_back(Br);
+        }
+    }
+}
+
+void Inliner::UpdateRAUWArgsMap(User* inst, Value* val)
+{
+    for(Use* user_ : inst->GetUserlist())
+    {
+        User* user = user_->GetUser();
+
+    }
+}
 void Inliner::PrintPass()
 {
     std::cout << "--------Inline--------" << std::endl;

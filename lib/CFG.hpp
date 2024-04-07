@@ -221,8 +221,8 @@ class Function:public Value,public mylist<Function,BasicBlock>
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
     std::vector<BasicBlock*> bbs;
-    void InsertAlloca(AllocaInst* ptr);
     public:
+    void InsertAlloca(AllocaInst* ptr);
     Function(InnerDataType _tp,std::string _id);
     void print();
     void init_bbs(){ bbs.clear();}
