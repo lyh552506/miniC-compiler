@@ -239,12 +239,12 @@ ConstIRFloat::ConstIRFloat(float _val)
 float ConstIRFloat::GetVal() { return val; }
 
 ConstIRBoolean *ConstIRBoolean::GetNewConstant(bool _val) {
-  static ConstIRBoolean *true_const = new ConstIRBoolean(true);
-  static ConstIRBoolean *false_const = new ConstIRBoolean(false);
+  static ConstIRBoolean true_const(true);
+  static ConstIRBoolean false_const(false);
   if (_val)
-    return true_const;
+    return &true_const;
   else
-    return false_const;
+    return &false_const;
 }
 
 bool ConstIRBoolean::GetVal() { return val; }

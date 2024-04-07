@@ -835,6 +835,12 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         assert(0);
     }
 }
+
+void BasicBlock::Delete(){
+    assert(GetUserlist().is_empty()&&"It should not be used when human delete");
+    this->~BasicBlock();
+}
+
 void BasicBlock::GenerateAlloca(Variable* var){
     master.push_alloca(var);
 }
@@ -861,6 +867,12 @@ int BasicBlock::GetSuccNum(){
     return 1;
   else 
     return 0;
+}
+
+void BasicBlock::clear(){
+    for(auto inst:*this)
+        assert(inst->GetUserListSize()==0&&"Check No User Fail");
+    mylist<BasicBlock,User>::clear();
 }
 
 PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB){

@@ -30,13 +30,15 @@ class list_node
     derived_list_node* prev;
     derived_list_node* next;
     derived_mylist* fat;
-
     void SetParent(derived_mylist* _fat){fat=_fat;}
     public:
+    virtual ~list_node(){
+        if(fat!=nullptr)EraseFromParent();
+    }
     list_node(){
         this->prev=nullptr;
         this->next=nullptr;
-    };
+    }
     virtual void EraseFromParent(){
         if(fat->head==dynamic_cast<derived_list_node*>(this))fat->head=this->next;
         if(fat->tail==dynamic_cast<derived_list_node*>(this))fat->tail=this->prev;
@@ -57,6 +59,9 @@ class mylist
     derived_list_node* head;
     derived_list_node* tail;
     public:
+    virtual ~mylist(){
+        clear();
+    }
     class iterator
     {
         derived_list_node* ptr;
@@ -135,9 +140,11 @@ class mylist
             this->head=data;
         }
     }
-    //TODO 未实现
-    void Clear(){
-
+    virtual void clear(){
+        for(auto poi=this->head;poi;poi=poi->next)
+            delete poi;
+        this->head=nullptr;
+        this->tail=nullptr;
     }
     derived_list_node* front(){return this->head;}
     derived_list_node* back(){return this->tail;}
