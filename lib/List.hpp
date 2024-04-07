@@ -97,6 +97,9 @@ class mylist
             }
             return iterator(data);
         }
+        //指定迭代器后插入bb的所有inst
+        void splice(derived_list_node* data){
+        }
         bool operator==(const iterator& other){return ptr==other.ptr;}
         bool operator!=(const iterator& other){return ptr!=other.ptr;}
     };
@@ -155,6 +158,10 @@ class mylist
             data->next=this->head;
             this->head=data;
         }
+    }
+    //TODO 未实现
+    void Clear(){
+
     }
     derived_list_node* front(){return this->head;}
     derived_list_node* back(){return this->tail;}

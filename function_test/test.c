@@ -45,18 +45,58 @@
 //     }
 //     return b;
 // }
-int func(int b,int c) {
-    int a,x=5;
-    a=b+c;
-    while(x<10){
-        x=1+x;
-        a=c+x;
-        if(x>7)
-          while(x<9)
-            b=b+1;
-        else if(x<4)
-          a=3;
-    };
+// int func(int b,int c) {
+//     int a,x=5;
+//     a=b+c;
+//     while(x<10){
+//         x=1+x;
+//         a=c+x;
+//         if(x>7)
+//           while(x<9)
+//             b=b+1;
+//         else if(x<4)
+//           a=3;
+//     };
+//     return a;
+// }
+// int func(int a,int b){
+//   int x=0;
+//   while(x<5){
+//     a=b+1;
+//     x=x+1;
+//   }
+// }
+// int func(int dst[],int src[]){
+//   int i=0,j=0;
+//   while(i<5){
+//     while(j<5){
+//       dst[j]=dst[i]+src[i];
+//       j=j+1;
+//       i=i+1;
+//     }
+//   }
+//   return 1;
+// }
+// int func(int i,int j,int b){
+//   int a=0;
+//   while(i<5){
+//     while(j<5){
+//       a=b+1;
+//     }
+//   }
+//   return a;
+// }
+// int func(int b){
+//   int a=3;
+//   while(a<5){
+//     if(a>0)
+//       break;
+//   }
+// }
+int func(int a){
+    int x;
+    if(x>1)
+      a=x;
     return a;
 }
 // void reverse(int n) {

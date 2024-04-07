@@ -2,6 +2,8 @@
 
 void dominance::init() {
   auto &bbs = thisFunc->GetBasicBlock();
+  for(auto bb:bbs)
+    node[bb->num].init();
   for (auto bb : bbs) {
     User *Inst = bb->back(); //获取到最后一条指令
     node[bb->num].thisBlock = bb;
@@ -57,7 +59,7 @@ void dominance::DFS(int pos) {
 void dominance::find_dom() {
   int n, fat;
   for (int i = block_num; i > 1; i--) { // 从dfs最大的结点开始
-    int sdom_cadidate = 999999;
+    int sdom_cadidate = 10000;
     n = vertex[i]; // 获取dfs序对应的结点号
     fat = node[n].father;
     for (auto front : node[n].rev) {
