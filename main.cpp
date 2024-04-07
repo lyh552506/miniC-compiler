@@ -19,7 +19,8 @@ static struct option long_options[] = {
     {"mem2reg", no_argument, 0, 0},   {"pre", no_argument, 0, 1},
     {"constprop", no_argument, 0, 2}, {"dce", no_argument, 0, 3},
     {"adce", no_argument, 0, 4},     {"loopinfo",no_argument,0,5},
-    {"help", no_argument, 0, 6},      {0, 0, 0, 0}};
+    {"help", no_argument, 0, 6},      {"simplifycfg",no_argument,0,7},
+    {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
@@ -30,7 +31,7 @@ int main(int argc, char **argv) {
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
-  //Singleton<Module>().Test();
+  Singleton<Module>().Test();
   // output_path = argv[1];
   // output_path += ".a";
   // freopen(output_path.c_str(),"a",stdout);
@@ -63,6 +64,9 @@ int main(int argc, char **argv) {
       break;
     case 6:
       std::cerr << "help" << std::endl;
+      break;
+    case 7:
+      pass_manager->IncludePass(7);
       break;
     }
   }

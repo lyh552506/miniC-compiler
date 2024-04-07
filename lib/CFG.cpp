@@ -1,9 +1,12 @@
 #include "CFG.hpp"
+#include <algorithm>
 #include <string>
 #include <memory>
 #include <iostream>
+#include "BaseCFG.hpp"
 #include "MagicEnum.hpp"
 #include <map>
+#include <utility>
 
 Initializer::Initializer(Type* _tp):Value(_tp){}
 
@@ -281,6 +284,18 @@ std::string BinaryInst:: GetOperation() {
 
 BinaryInst::Operation BinaryInst::getopration(){
     return op;
+}
+
+BinaryInst* BinaryInst::CreateInst(Operand _A,Operation __op,Operand _B,User* place){
+    
+    BinaryInst* bin=new BinaryInst(_A,__op,_B);
+    if(place!=nullptr){
+    BasicBlock* instbb=place->GetParent();
+      for(auto iter=instbb->begin();iter!=instbb->end();++iter)
+        if(*iter==place)
+          iter.insert_before(bin);
+    }
+    return bin;
 }
 
 void BinaryInst::print(){
@@ -692,6 +707,30 @@ bool BasicBlock::EndWithBranch(){
     else if(auto data=dynamic_cast<RetInst*>(back()))return 1;
     else return 0;
 }
+
+void BasicBlock::RemovePredBB(BasicBlock* pred){
+    for(auto iter=pred->begin();iter!=pred->end();++iter){
+        // auto delet=std::find(Succ_Block.begin(),Succ_Block.end(),pred);
+        // if(delet!=Succ_Block.end())
+        //     Succ_Block.erase(delet);
+        auto inst=*iter;
+        if(auto phi=dynamic_cast<PhiInst*>(pred->front())){
+            auto tmp=std::find_if(phi->PhiRecord.begin(),phi->PhiRecord.end(),
+            [pred](const std::pair<int,std::pair<Value*,BasicBlock*>>& ele){
+                return ele.second.second==pred;
+            });
+            if(tmp!=phi->PhiRecord.end())
+                phi->Del_Incomes(tmp->first);
+            if(phi->oprandNum==1){
+                Value* repl=(*(phi->PhiRecord.begin())).second.first;
+                phi->RAUW(repl);
+                phi->ClearRelation();
+                phi->EraseFromParent();
+            }
+        }else
+          return;
+    }
+}
 void BasicBlock::GenerateCondInst(Operand condi,BasicBlock* is_true,BasicBlock* is_false){
     auto inst=new CondInst(condi,is_true,is_false);
     push_back(inst);
@@ -843,7 +882,7 @@ void PhiInst::updateIncoming(Value* Income,BasicBlock* BB){
 /// @brief 找到当前phi函数bb块所对应的数据流
 Value* PhiInst::ReturnValIn(BasicBlock* bb){
     auto it=std::find_if(PhiRecord.begin(),PhiRecord.end(),
-    [bb](std::pair<const int,std::pair<Value*,BasicBlock*>>& ele){
+    [bb](const std::pair<const int,std::pair<Value*,BasicBlock*>>& ele){
         return ele.second.second==bb;
     });
     if(it==PhiRecord.end())
@@ -852,6 +891,8 @@ Value* PhiInst::ReturnValIn(BasicBlock* bb){
 }
 
 std::vector<Value*>& PhiInst::GetAllPhiVal(){
+    Incomings.clear();
+    Blocks.clear();
     for(const auto &[_1,value]:PhiRecord){
         Incomings.push_back(value.first);
         Blocks.push_back(value.second);
@@ -875,11 +916,30 @@ void PhiInst::Phiprop(Value* origin,Value* newval){
       Incomings[Num]=newval;
 }
 
-void PhiInst::Del_Incomes(int CurrentNum, std::map<int, std::pair<Value*, BasicBlock*>> _PhiRecord)
-{   if(_PhiRecord.find(CurrentNum) != _PhiRecord.end())
-        _PhiRecord.erase(CurrentNum);
+void PhiInst::Del_Incomes(int CurrentNum)
+{   if(PhiRecord.find(CurrentNum) != PhiRecord.end()){
+        auto iter=std::find_if(uselist.begin(),uselist.end(),
+        [=](const std::unique_ptr<Use>& ele){
+            return ele->GetValue()==PhiRecord[CurrentNum].first;
+        });
+        (*iter)->RemoveFromUserList((*iter)->GetUser());
+        PhiRecord.erase(CurrentNum);
+        oprandNum--;
+    }
     else
         std::cerr << "No such PhiRecord" << std::endl;
+}
+
+bool PhiInst::IsSame(PhiInst* phi){
+    if(this->oprandNum!=phi->oprandNum)
+      return false;
+    for(auto& [_1,v]:PhiRecord){
+        Value* val=v.first;
+        BasicBlock* bb=v.second;
+        if(phi->ReturnValIn(bb)==nullptr||phi->ReturnValIn(bb)!=val)
+          return false;
+    }
+    return true;
 }
 
 void Function::push_alloca(Variable* ptr){
