@@ -49,7 +49,7 @@ bool cfgSimplify::mergeSpecialBlock() {
     int length = m_func->GetBasicBlock().size();
     m_func->GetBasicBlock()[index - 1] = m_func->GetBasicBlock()[length - 1];
     m_func->GetBasicBlock().pop_back();
-    bb->Clear();
+    bb->clear();
     bb->EraseFromParent();
     //更新m_dom相关参数
     updateDTinfo(bb);
@@ -136,7 +136,7 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock* bb) {
     } else
       break;
   }
-  bb->Clear();
+  bb->clear();
   bb->EraseFromParent();
   return true;
 }
@@ -166,7 +166,7 @@ void cfgSimplify::mergeRetBlock() {
         ret->Getuselist()[0]->GetValue() ==
             RetBlock->back()->Getuselist()[0]->GetValue()) {
       bbs->RAUW(RetBlock);
-      bbs->Clear();
+      bbs->clear();
       bbs->EraseFromParent();
       //更新m_dom相关参数
       updateDTinfo(bbs);
@@ -233,7 +233,7 @@ bool cfgSimplify::simplify_Block() {
                                  m_dom->GetNode(bb->num).rev.end());
     if ((pred_num == 0 && m_dom->GetNode(bb->num).idom != bb->num) ||
         (pred_num == 1 && m_dom->GetNode(bb->num).rev.front() == bb->num)) {
-      bb->Clear();
+      bb->clear();
       bb->EraseFromParent();
       //更新m_dom相关参数
       updateDTinfo(bb);
