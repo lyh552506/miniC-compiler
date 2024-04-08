@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     }
   }
   pass_manager->InitPass();
-  //AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
+  AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
   //asmPrinter.printAsm();
   //PrintCodeToTxt(&Singleton<Module>());
   return 0;
