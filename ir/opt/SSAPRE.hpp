@@ -158,7 +158,9 @@ public:
   //在一个set中找到val的leader
   Value *Find_Leader(ValueNumberedSet &set, Value *val);
 
-  PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {}
+  PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {
+    VN = new ValueTable();
+  }
   ~PRE(){
     delete VN;
   }

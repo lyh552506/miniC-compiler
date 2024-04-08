@@ -19,26 +19,6 @@ int getNumPos(int num, int pos){
     }
     return num % base;
 }
-int main(){
-    int n = getarray(a);
-
-    starttime();
-
-    radixSort(8, a, 0, n);
-
-    int i = 0;
-    while (i < n){
-        ans = ans + i * (a[i] % (2 + i));
-        i = i + 1;
-    }
-
-    if (ans < 0)
-        ans = -ans;
-    stoptime();
-    putint(ans);
-    putch(10);
-    return 0;
-}
 
 void radixSort(int bitround, int a[], int l, int r){
     int head[base] = {};
@@ -104,3 +84,23 @@ void radixSort(int bitround, int a[], int l, int r){
 int a[30000010];
 int ans;
 
+int main(){
+    int n = getarray(a);
+
+    starttime();
+
+    radixSort(8, a, 0, n);
+
+    int i = 0;
+    while (i < n){
+        ans = ans + i * (a[i] % (2 + i));
+        i = i + 1;
+    }
+
+    if (ans < 0)
+        ans = -ans;
+    stoptime();
+    putint(ans);
+    putch(10);
+    return 0;
+}

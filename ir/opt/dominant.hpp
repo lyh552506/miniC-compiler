@@ -127,8 +127,10 @@ class dominance : public PassManagerBase {
   void update(){
     RunOnFunction();}
   void PrintPass() {
-    std::cout << "--------mem2reg--------" << std::endl;
+    #ifdef SYSY_MIDDLE_END_DEBUG
+    std::cerr << "--------mem2reg--------" << std::endl;
     Singleton<Module>().Test();
+    #endif
   }
   dominance(Function *Func, int blockNum)
       : count{1},
