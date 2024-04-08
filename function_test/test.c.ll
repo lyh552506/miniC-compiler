@@ -332,89 +332,119 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.a = global i32 1
-@.g.b = global i32 zeroinitializer
-@.g.d = global float zeroinitializer
-@.g.arri = global [2 x [3 x i32]]  [[3 x i32]  [i32 1, i32 2, i32 3], [3 x i32]  [i32 1, i32 2, i32 zeroinitializer]]
-define i32 @main(){
+define i32 @fuhnc(i32 %.3, i32 %.6){
+.1:
+  %.8 = alloca i32
+  %.5 = alloca i32
+  %.2 = alloca i32
+  store i32 %.3, i32* %.2
+  store i32 %.6, i32* %.5
+  store i32 0, i32* %.8
+  %.13 = load i32, i32* %.8
+  %.15 = icmp sgt i32 %.13, 1
+  br i1 %.15, label %.11, label %.12
 .11:
-  %.19 = alloca i32
-  %.13 = alloca [10 x i32]
-  %.15 = getelementptr inbounds [10 x i32], [10 x i32]* %.13, i32 0, i32 0
-  store i32 1, i32* %.15
-  store i32 10, i32* @.g.a
-  store i32 3, i32* @.g.b
-  store float 0x3ff0000000000000, float* @.g.d
-  %.22 = load i32, i32* @.g.a
-  %.23 = load i32, i32* @.g.b
-  %.24 = srem i32 %.22, %.23
-  store i32 %.24, i32* %.19
-  %.26 = load i32, i32* %.19
-  %.27 = getelementptr inbounds [10 x i32], [10 x i32]* %.13, i32 0, i32 0
-  %.28 = load i32, i32* %.27
-  %.29 = add i32 %.26, %.28
-  %.30 = load i32, i32* %.19
-  ret i32 %.30 
+  %.17 = load i32, i32* %.2
+  %.18 = load i32, i32* %.5
+  %.19 = add i32 %.17, %.18
+  store i32 %.19, i32* %.8
+  br label %.21 
+.12:
+  %.23 = load i32, i32* %.2
+  %.24 = add i32 %.23, 1
+  store i32 %.24, i32* %.2
+  %.26 = load i32, i32* %.5
+  %.27 = load i32, i32* %.2
+  %.28 = add i32 %.26, %.27
+  store i32 %.28, i32* %.8
+  br label %.21 
+.21:
+  %.31 = load i32, i32* %.8
+  ret i32 %.31 
 }
-@.g.a = global i32 1
-@.g.b = global i32 zeroinitializer
-@.g.d = global float zeroinitializer
-@.g.arri = global [2 x [3 x i32]]  [[3 x i32]  [i32 1, i32 2, i32 3], [3 x i32]  [i32 1, i32 2, i32 zeroinitializer]]
-define i32 @main(){
+define i32 @fuhnc(i32 %.3, i32 %.6){
+.1:
+  %.8 = alloca i32
+  %.5 = alloca i32
+  %.2 = alloca i32
+  store i32 %.3, i32* %.2
+  store i32 %.6, i32* %.5
+  store i32 0, i32* %.8
+  %.13 = load i32, i32* %.8
+  %.15 = icmp sgt i32 %.13, 1
+  br i1 %.15, label %.11, label %.12
 .11:
-  %.19 = alloca i32
-  %.13 = alloca [10 x i32]
-  %.15 = getelementptr inbounds [10 x i32], [10 x i32]* %.13, i32 0, i32 0
-  store i32 1, i32* %.15
-  store i32 10, i32* @.g.a
-  store i32 3, i32* @.g.b
-  store float 0x3ff0000000000000, float* @.g.d
-  %.22 = load i32, i32* @.g.a
-  %.23 = load i32, i32* @.g.b
-  %.24 = srem i32 %.22, %.23
-  store i32 %.24, i32* %.19
-  %.26 = load i32, i32* %.19
-  %.27 = getelementptr inbounds [10 x i32], [10 x i32]* %.13, i32 0, i32 0
-  %.28 = load i32, i32* %.27
-  %.29 = add i32 %.26, %.28
-  %.30 = load i32, i32* %.19
-  ret i32 %.30 
+  %.17 = load i32, i32* %.2
+  %.18 = load i32, i32* %.5
+  %.19 = add i32 %.17, %.18
+  store i32 %.19, i32* %.8
+  br label %.21 
+.12:
+  %.23 = load i32, i32* %.2
+  %.24 = add i32 %.23, 1
+  store i32 %.24, i32* %.2
+  %.26 = load i32, i32* %.5
+  %.27 = load i32, i32* %.2
+  %.28 = add i32 %.26, %.27
+  store i32 %.28, i32* %.8
+  br label %.21 
+.21:
+  %.31 = load i32, i32* %.8
+  ret i32 %.31 
 }
-    .file  "/home/nanqin/compiler/SB-compiler/function_test/test.c"
-    .attribute arch, "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0"
-    .attribute unaligned_access, 0
-    .attribute stack_align, 16
-    .text
-    .align  1
-    .globl  main
-    .type  main, @function
-main:
-    addi sp, sp, -64
-    sd ra, 56(sp)
-    sd s0, 48(sp)
-    addi s0, sp, 64
-.LBB0_0:
-Error: No Such Instruction.
-    sw 1, -93824993068912(s0)
-    sw 10, -93824993068912(s0)
-    sw 3, -93824993068912(s0)
-    sw 0x3ff0000000000000, -93824993068912(s0)
-    lw .22, -93824993068912(s0)
-    lw .23, -93824993068912(s0)
-    remw .24, .22, .23
-    sw .24, -20(s0)
-    lw .26, -20(s0)
-Error: No Such Instruction.
-    lw .28, -93824993068912(s0)
-    addw .29, .26, .28
-    lw .30, -20(s0)
-    lw a0, .30
-    ld ra, 56(sp)
-    ld s0, 48(sp)
-    addi sp, sp, 64
-    ret
-    ld ra, 56(sp)
-    ld s0, 48(sp)
-    addi sp, sp, 64
-    ret
-    .size main, -main
+--------mem2reg--------
+define i32 @fuhnc(i32 %.3, i32 %.6){
+.1:
+  %.15 = icmp sgt i32 0, 1
+  br i1 %.15, label %.11, label %.12
+.11:
+  %.19 = add i32 %.3, %.6
+  br label %.21 
+.12:
+  %.24 = add i32 %.3, 1
+  %.28 = add i32 %.6, %.24
+  br label %.21 
+.21:
+  %.33 = Phi i32 [%.28, %.12], [%.19, %.11]
+  ret i32 %.33 
+}
+--------pre--------
+define i32 @fuhnc(i32 %.3, i32 %.6){
+.1:
+  %.15 = icmp sgt i32 0, 1
+  br i1 %.15, label %.11, label %.12
+.11:
+  %.19 = add i32 %.3, %.6
+  br label %.21 
+.12:
+  %.24 = add i32 %.3, 1
+  %.28 = add i32 %.6, %.24
+  br label %.21 
+.21:
+  %.33 = Phi i32 [%.28, %.12], [%.19, %.11]
+  ret i32 %.33 
+}
+--------constprop--------
+define i32 @fuhnc(i32 %.3, i32 %.6){
+.1:
+  br i1 false, label %.11, label %.12
+.11:
+  %.19 = add i32 %.3, %.6
+  br label %.21 
+.12:
+  %.24 = add i32 %.3, 1
+  %.28 = add i32 %.6, %.24
+  br label %.21 
+.21:
+  %.33 = Phi i32 [%.28, %.12], [%.19, %.11]
+  ret i32 %.33 
+}
+-------cfgsimplify--------
+define i32 @fuhnc(i32 %.3, i32 %.6){
+.1:
+  %.24 = add i32 %.3, 1
+  %.28 = add i32 %.6, %.24
+  ret i32 %.28 
+}
+---------------------Loop Analysis-----------------------
+Num Of Loops:0

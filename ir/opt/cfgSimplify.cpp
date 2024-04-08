@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <iterator>
 
 #include "BaseCFG.hpp"
@@ -16,9 +17,53 @@ void cfgSimplify::RunOnFunction() {
     keep_loop |= simplify_Block();
     keep_loop |= DealBrInst();
     keep_loop |= DelSamePhis();
-    keep_loop |= mergeSpecialBlock();
+    keep_loop |= mergeSpecialBlock();    
+    keep_loop |= SimplifyUncondBr();
+
   }
   m_dom->update();
+}
+
+bool cfgSimplify::simplifyPhiInst() {
+  bool changed=false;
+  for (auto bb : m_func->GetBasicBlock()) {
+    for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
+      if (auto phi = dynamic_cast<PhiInst*>(*iter)) {
+        bool HasUndef = false;
+        Value* origin = nullptr;
+        auto& incomes = phi->GetAllPhiVal();
+        for (auto& income : incomes) {
+          if (dynamic_cast<UndefValue*>(income)) {
+            HasUndef = true;
+            continue;
+          }
+          if (income == phi) continue;
+          if (origin != nullptr && income != origin) break;
+          origin = income;
+        }
+        if (origin == nullptr) {
+          auto undef = UndefValue::get(phi->GetType());
+          phi->ClearRelation();
+          phi->RAUW(undef);
+          delete phi;
+          changed=true;
+          continue;
+        }
+        if (HasUndef) {
+          if (auto inst = dynamic_cast<User*>(origin))
+            if (!m_dom->dominates(inst->GetParent(), phi->GetParent()))
+              continue;
+          phi->RAUW(origin);
+          phi->ClearRelation();
+          phi->EraseFromParent();
+          changed=true;
+          continue;
+        }
+      } else
+        break;
+    }
+  }
+  return changed;
 }
 
 bool cfgSimplify::mergeSpecialBlock() {
@@ -31,28 +76,29 @@ bool cfgSimplify::mergeSpecialBlock() {
     BasicBlock* pred =
         m_dom->GetNode(m_dom->GetNode(bb->num).rev.front()).thisBlock;
     if (pred == bb) continue;
-    ///@warning 此处不考虑单个前驱依然存在phi函数的情况
+    simplifyPhiInst();
 
     //确保前驱也只有一个后继
     auto& node = m_dom->GetNode(pred->num);
     int succ_num = std::distance(node.des.begin(), node.des.end());
     if (succ_num != 1 || node.des.front() != bb->num) continue;
-    bb->RAUW(pred);
+    BasicBlock* nxt =
+        dynamic_cast<BasicBlock*>(bb->back()->Getuselist()[0]->GetValue());
     User* cond = pred->back();
-    cond->ClearRelation();
-    cond->EraseFromParent();
     delete cond;
     //将后续的指令转移
     for (auto i = bb->begin(); i != bb->end(); ++i) {
+      (*i)->EraseFromParent();
       pred->push_back(*i);
     }
     int length = m_func->GetBasicBlock().size();
     m_func->GetBasicBlock()[index - 1] = m_func->GetBasicBlock()[length - 1];
     m_func->GetBasicBlock().pop_back();
-    bb->clear();
-    bb->EraseFromParent();
-    //更新m_dom相关参数
-    updateDTinfo(bb);
+    DeletDeadBlock(bb);
+    if (nxt != nullptr) {
+      m_dom->GetNode(nxt->num).rev.push_front(pred->num);
+      m_dom->GetNode(pred->num).des.push_front(nxt->num);
+    }
     return true;
   }
   return false;
@@ -71,7 +117,7 @@ void cfgSimplify::updateDTinfo(BasicBlock* bb) {
   }
 }
 
-bool cfgSimplify::SimplifyUncondBr(BasicBlock* bb) {
+bool cfgSimplify::SimplifyUncondBr() {
   int index = 0;
   bool changed = false;
   while (index < m_func->GetBasicBlock().size()) {
@@ -81,7 +127,8 @@ bool cfgSimplify::SimplifyUncondBr(BasicBlock* bb) {
       //检查是否是empty block，在这里我们忽略其他phi存在情况，不值得花费太多时间
       if (*(bb->begin()) != inst) continue;
       changed |= SimplifyEmptyUncondBlock(bb);
-    }
+    } else
+      continue;
   }
   return changed;
 }
@@ -136,8 +183,11 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock* bb) {
     } else
       break;
   }
-  bb->clear();
-  bb->EraseFromParent();
+  for(int rev:m_dom->GetNode(bb->num).rev){
+    m_dom->GetNode(succ->num).rev.push_front(rev);
+    m_dom->GetNode(rev).des.push_front(succ->num);
+  }
+  DeletDeadBlock(bb);
   return true;
 }
 
@@ -166,10 +216,7 @@ void cfgSimplify::mergeRetBlock() {
         ret->Getuselist()[0]->GetValue() ==
             RetBlock->back()->Getuselist()[0]->GetValue()) {
       bbs->RAUW(RetBlock);
-      bbs->clear();
-      bbs->EraseFromParent();
-      //更新m_dom相关参数
-      updateDTinfo(bbs);
+      DeletDeadBlock(bbs);
       m_func->GetBasicBlock()[i - 1] =
           m_func->GetBasicBlock()[m_func->GetBasicBlock().size() - 1];
       m_func->GetBasicBlock().pop_back();
@@ -189,7 +236,7 @@ void cfgSimplify::mergeRetBlock() {
       RetBlock->back()->RSUW(0, insert);
     }
     insert->updateIncoming(ret->Getuselist()[0]->GetValue(), bbs);
-    ret->EraseFromParent();
+    delete ret;
     UnCondInst* uncond = new UnCondInst(RetBlock);
     bbs->push_back(uncond);
   }
@@ -213,9 +260,8 @@ bool cfgSimplify::DelSamePhis() {
     for (int i = 0; i < phis.size(); ++i)
       for (int j = i + 1; j < phis.size(); ++j)
         if (phis[i]->IsSame(phis[j])) {
-          phis[j]->ClearRelation();
           phis[j]->RAUW(phis[i]);
-          phis[j]->EraseFromParent();
+          delete phis[j];
           //替换了phi后可能会对其他的phi造成影响，此处我们记录并在后续再进行循环
           i--;
           changed = true;
@@ -233,10 +279,7 @@ bool cfgSimplify::simplify_Block() {
                                  m_dom->GetNode(bb->num).rev.end());
     if ((pred_num == 0 && m_dom->GetNode(bb->num).idom != bb->num) ||
         (pred_num == 1 && m_dom->GetNode(bb->num).rev.front() == bb->num)) {
-      bb->clear();
-      bb->EraseFromParent();
-      //更新m_dom相关参数
-      updateDTinfo(bb);
+      DeletDeadBlock(bb);
       m_func->GetBasicBlock()[index - 1] =
           m_func->GetBasicBlock()[m_func->GetBasicBlock().size() - 1];
       m_func->GetBasicBlock().pop_back();
@@ -268,8 +311,7 @@ bool cfgSimplify::DealBrInst() {
             tmp = iter;
           }
           tmp.insert_before(uncond);
-          cond->ClearRelation();
-          cond->EraseFromParent();
+          delete cond;
           ignore->RemovePredBB(pred);
           //更新m_dom相关参数
           m_dom->GetNode(ignore->num).rev.remove(pred->num);
@@ -282,8 +324,7 @@ bool cfgSimplify::DealBrInst() {
             tmp = iter;
           }
           tmp.insert_before(uncond);
-          cond->ClearRelation();
-          cond->EraseFromParent();
+          delete cond;
           nxt->RemovePredBB(pred);
           m_dom->GetNode(nxt->num).rev.remove(pred->num);
           m_dom->GetNode(pred->num).des.remove(nxt->num);
@@ -297,13 +338,27 @@ bool cfgSimplify::DealBrInst() {
           tmp = iter;
         }
         tmp.insert_before(uncond);
-        cond->ClearRelation();
-        cond->EraseFromParent();
+        delete cond;
         return true;
       }
     }
   }
   return false;
+}
+
+void cfgSimplify::DeletDeadBlock(BasicBlock* bb) {
+  auto& node = m_dom->GetNode(bb->num);
+  //维护后续的phi关系
+  for (int des : node.des) {
+    BasicBlock* succ = m_dom->GetNode(des).thisBlock;
+    succ->RemovePredBB(bb);
+  }
+  for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
+    User* inst = *iter;
+    inst->RAUW(UndefValue::get(inst->GetType()));
+  }
+  updateDTinfo(bb);
+  bb->Delete();
 }
 
 void cfgSimplify::PrintPass() {

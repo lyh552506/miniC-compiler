@@ -7,6 +7,7 @@
 #include "MagicEnum.hpp"
 #include <map>
 #include <utility>
+#include <vector>
 
 Initializer::Initializer(Type* _tp):Value(_tp){}
 
@@ -709,10 +710,9 @@ bool BasicBlock::EndWithBranch(){
 }
 
 void BasicBlock::RemovePredBB(BasicBlock* pred){
+    //不能自己删除自己
+    if(pred==this) return;
     for(auto iter=pred->begin();iter!=pred->end();++iter){
-        // auto delet=std::find(Succ_Block.begin(),Succ_Block.end(),pred);
-        // if(delet!=Succ_Block.end())
-        //     Succ_Block.erase(delet);
         auto inst=*iter;
         if(auto phi=dynamic_cast<PhiInst*>(pred->front())){
             auto tmp=std::find_if(phi->PhiRecord.begin(),phi->PhiRecord.end(),
@@ -722,10 +722,20 @@ void BasicBlock::RemovePredBB(BasicBlock* pred){
             if(tmp!=phi->PhiRecord.end())
                 phi->Del_Incomes(tmp->first);
             if(phi->oprandNum==1){
-                Value* repl=(*(phi->PhiRecord.begin())).second.first;
-                phi->RAUW(repl);
-                phi->ClearRelation();
-                phi->EraseFromParent();
+                //如果删除后还剩一个operand,检查是否是循环
+                BasicBlock* b=phi->PhiRecord.begin()->second.second;
+                if(b==this){
+                    phi->RAUW(UndefValue::get(phi->GetType()));
+                    phi->ClearRelation();
+                    phi->EraseFromParent();
+                    delete phi;
+                }else{
+                    Value* repl=(*(phi->PhiRecord.begin())).second.first;
+                    phi->RAUW(repl);
+                    phi->ClearRelation();
+                    phi->EraseFromParent();
+                    delete phi;
+                }
             }
         }else
           return;
@@ -936,6 +946,15 @@ void PhiInst::Del_Incomes(int CurrentNum)
         });
         (*iter)->RemoveFromUserList((*iter)->GetUser());
         PhiRecord.erase(CurrentNum);
+        //维护PhiRecord的关系
+        std::vector<std::pair<int,std::pair<Value*,BasicBlock*>>> Defend;
+        for(auto& [_1,v]:PhiRecord)
+          if(_1>CurrentNum)
+            Defend.push_back(std::make_pair(_1,v));
+        for(const auto& item:Defend)
+          PhiRecord.erase(item.first);
+        for(const auto& item:Defend)
+          PhiRecord.insert(std::make_pair(item.first-1,item.second));
         oprandNum--;
     }
     else
