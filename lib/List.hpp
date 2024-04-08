@@ -40,8 +40,8 @@ class list_node
         this->next=nullptr;
     }
     virtual void EraseFromParent(){
-        if(fat->head==dynamic_cast<derived_list_node*>(this))fat->head=this->next;
-        if(fat->tail==dynamic_cast<derived_list_node*>(this))fat->tail=this->prev;
+        if(this->prev==nullptr)fat->head=this->next;
+        if(this->next==nullptr)fat->tail=this->prev;
         if(this->prev!=nullptr)this->prev->next=this->next;
         if(this->next!=nullptr)this->next->prev=this->prev;
     }
@@ -141,10 +141,9 @@ class mylist
         }
     }
     virtual void clear(){
-        for(auto poi=this->head;poi;poi=poi->next)
-            delete poi;
-        this->head=nullptr;
-        this->tail=nullptr;
+        while(this->head!=nullptr){
+            delete head;
+        }
     }
     derived_list_node* front(){return this->head;}
     derived_list_node* back(){return this->tail;}

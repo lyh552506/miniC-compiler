@@ -26,10 +26,7 @@ class Use
     Use()=delete;
     Use(User*,Value*);
     ~Use(){
-        if(fat==nullptr)
-            return;
-        else
-            RemoveFromUserList(fat);
+        RemoveFromUserList(fat);
     };
     /// @brief 注意，调用这个方法的一定是User，所以我加了个鉴权
     void RemoveFromUserList(User* is_valid);
@@ -82,7 +79,7 @@ class Value
     Type* tp;
     public:
     /// @warning Value的析构应该反着来，如果userlist没有析构，那么就先析构userlist
-    virtual ~Value()=default;
+    virtual ~Value();
     Value()=delete;
     Value(Type*);
     void print();
