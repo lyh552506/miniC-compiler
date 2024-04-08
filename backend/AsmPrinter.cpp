@@ -198,7 +198,7 @@ globlvar::globlvar(Variable* data) {
                 if(i < init_size){
                     if(auto inits=dynamic_cast<Initializer*>((*arry_init)[i])) {
                         //递归
-                        
+                        init_vector.push_back(generate_array_init(inits, basetype));
                     }
                     else {//Leaf 
                         std::string num = data->GetInitializer()->GetName();
@@ -224,6 +224,35 @@ globlvar::globlvar(Variable* data) {
         }
     }
     else align = -1;//Error
+}
+std::variant<int, float> globlvar::generate_array_init(Initializer* arry_init, Type* basetype) {
+    int init_size = arry_init->size();
+    if (init_size == 0) {
+        if (basetype->GetTypeEnum() == IR_Value_INT) {
+            init_vector.push_back((int)0);
+        }
+        else if (basetype->GetTypeEnum() == IR_Value_Float) {
+            init_vector.push_back((float)0);   
+        }
+    }
+    else {
+        int limi = dynamic_cast<ArrayType*>(arry_init)->GetNumEle();
+        for(int i=0; i<limi; i++) {
+            if(auto inits=dynamic_cast<Initializer*>((*arry_init)[i]))
+                init_vector.push_back(generate_array_init(inits, basetype));
+            else {
+                    std::string num = arry_init->GetName();
+                    if(basetype->GetTypeEnum() == IR_Value_INT) {
+                        int init = std::stoi(num);
+                        init_vector.push_back(init);
+                    }
+                    else if (basetype->GetTypeEnum() == IR_Value_Float) {
+                        float init = std::stof(num);
+                        init_vector.push_back(init);
+                    }                    
+            }
+        }
+    }
 }
 
 //tempvar
