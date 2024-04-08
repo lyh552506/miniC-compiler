@@ -85,7 +85,7 @@ class globlvar{
     public:
     globlvar(Variable* data);
     ~globlvar() = default;
-
+    void generate_array_init(Initializer* arry_init, Type* basetype);
 };
 
 class tempvar{

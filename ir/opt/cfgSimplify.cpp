@@ -19,7 +19,6 @@ void cfgSimplify::RunOnFunction() {
     keep_loop |= DelSamePhis();
     keep_loop |= mergeSpecialBlock();    
     keep_loop |= SimplifyUncondBr();
-
   }
   m_dom->update();
 }
