@@ -15,6 +15,7 @@ public:
     void Run();
     void PrintPass();
     void Inline(Function* entry);
+    void Inline();
 private:
     // void InlineRecursive(Function* entry);
     bool NotInline(Function *f) { return NotInlineFunc.find(f) != NotInlineFunc.end(); }
@@ -32,8 +33,7 @@ private:
     LoopAnalysis* loopAnalysis;
     void init();
     Function* func;
-    std::set<Function*> hasInlinedFunc; // Func that has done inlined pass
-    std::set<Function*> inlinedFunc; // Func who is inlined by pass
+    std::vector<User*> NeedInlineCall;
     std::set<Function*> NotInlineFunc; // Func not inline
     std::set<Function*> RecursiveFunc;
 };

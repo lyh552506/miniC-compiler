@@ -42,16 +42,16 @@ void PassManager::PreWork(int i) {
 void PassManager::RunOnFunction() {
   if (InitpassRecorder[0]) {
     m_dom->RunOnFunction();
-    m_dom->PrintPass();
+    // m_dom->PrintPass();
   }
   if (InitpassRecorder[1]) {
     m_pre->RunOnFunction();
-    m_pre->PrintPass();
+    // m_pre->PrintPass();
   }
   if(InitpassRecorder[2])
   {
     m_constprop->RunOnFunction();
-    m_constprop->PrintPass();
+    // m_constprop->PrintPass();
   }
   if(InitpassRecorder[3])
   {

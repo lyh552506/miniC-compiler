@@ -136,7 +136,7 @@ class mylist
 
     std::pair<derived_list_node*,derived_list_node*> split(derived_list_node* _begin,derived_list_node* _end){
         assert(_begin!=nullptr&&_end!=nullptr&&"Invalid Split");
-        assert(_begin->fat==this&&_end->fat==this&&"Invalid Split");
+        assert(_begin->fat==dynamic_cast<derived_mylist*>(this)&&_end->fat==dynamic_cast<derived_mylist*>(this)&&"Invalid Split");
         if(_begin==this->head)this->head=_end->next;
         if(_end==this->tail)this->tail=_begin->prev;
         if(_begin->prev!=nullptr)_begin->prev->next=_end->next;

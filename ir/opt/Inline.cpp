@@ -6,7 +6,7 @@ void Inliner::Run()
     init();
     CreateCallMap();
     DetectRecursive();
-    Inline(func);
+    Inline();
     removeInlinedFunc();
 }
 
@@ -37,6 +37,17 @@ void Inliner::init()
     }
     if(func->GetName() == "main")
         NotInlineFunc.erase(func);
+    if(NotInlineFunc.find(func) == NotInlineFunc.end())
+    {
+        for(BasicBlock* block : *func)
+        {
+            for(User* inst : *block)
+            {
+                if(CanBeInlined(inst))
+                    NeedInlineCall.push_back(inst);
+            }
+        }
+    }
 }
 
 void Inliner::CreateCallMap()
@@ -83,75 +94,82 @@ void Inliner::VisitFunc(Function* entry, std::set<Function*>& visited)
     }
     visited.erase(entry);
 }
-void Inliner::Inline(Function* entry)
+void Inliner::Inline()
 {
-    for(auto iter = entry->GetBasicBlock().begin(); iter != entry->GetBasicBlock().end(); ++iter)
+    for(User* inst : NeedInlineCall)
     {
-        BasicBlock* block = *iter;
-        for(auto iter1 = block->begin(); iter1 != block->end(); ++iter1)
+        BasicBlock* block = inst->GetParent();
+
+        BasicBlock* SplitBlock = block->SplitAt(inst);
+        BasicBlock::mylist<Function,BasicBlock>::iterator Block_Pos(block);
+        Block_Pos.insert_after(SplitBlock);
+        ++Block_Pos;
+
+        std::vector<BasicBlock*> blocks = CopyBlocks(inst);
+        UnCondInst* Br = new UnCondInst(blocks[0]);
+        block->push_back(Br);
+        for(BasicBlock* block_ : blocks)
+            Block_Pos.insert_before(block_);
+        if(inst->GetTypeEnum() != InnerDataType::IR_Value_VOID)
         {
-            User* inst = *iter1;
-            if(CanBeInlined(inst))
+            // if(SSALevel)
+            // {
+            PhiInst* Phi = PhiInst::NewPhiNode(SplitBlock->front(), SplitBlock, inst->GetType());
+            HandleRetPhi(SplitBlock, Phi, blocks);
+            if(Phi->Getuselist().size() == 1)
             {
-                BasicBlock* pred = inst->GetParent();
-
-                BasicBlock* SplitBlock = block->SplitAt(inst);
-
-                auto Block_Pos = std::find(entry->begin(), entry->end(), block);
-                ++Block_Pos;
-                
-                std::vector<BasicBlock*> blocks = CopyBlocks(inst);
-                UnCondInst* Br = new UnCondInst(blocks[0]);
-                block->push_back(Br);
-                for(BasicBlock* block_ : blocks)
-                    Block_Pos.insert_before(block_);
-                if(inst->GetTypeEnum() != InnerDataType::IR_Value_VOID)
-                {
-                    // if(SSALevel)
-                    // {
-                    PhiInst* Phi = PhiInst::NewPhiNode(SplitBlock->front(), SplitBlock, inst->GetType());
-                    HandleRetPhi(SplitBlock, Phi, blocks);
-                    if(Phi->Getuselist().size() == 1)
-                    {
-                        Value* val = Phi->Getuselist()[0]->usee;
-                        inst->RAUW(val);
-                        inst->ClearRelation();
-                        inst->EraseFromParent();
-                    }
-                    else
-                    {
-                        inst->RAUW(Phi);
-                        inst->ClearRelation();
-                        inst->EraseFromParent();
-                    }
-                    // }
-                    // else
-                    // {
-                    // AllocaInst* Alloca = new AllocaInst(" ",inst->GetType());
-                    // entry->InsertAlloca(Alloca);
-                    // LoadInst* load = new LoadInst(Alloca);
-                    // for(Use* user_ : inst->GetUserlist())
-                    // {
-                    //     User* user = user_->GetUser();
-                    //     auto Inst_Pos = std::find(inst->GetParent()->begin(), inst->GetParent()->end(), user);
-                    //     Inst_Pos.insert_before(load);
-                    // }
-                    // inst->RAUW(load);
-                    // // NewBlock->push_front(load);
-                    // }
-                }
-                else
-                {
-                    HandleVoidRet(SplitBlock, blocks);
-                    inst->ClearRelation();
-                    inst->EraseFromParent();
-                }
-                inlinedFunc.insert(dynamic_cast<Function*>(inst->Getuselist()[0]->usee));
-                hasInlinedFunc.insert(entry);
+                Value* val = Phi->Getuselist()[0]->usee;
+                inst->RAUW(val);
+                inst->ClearRelation();
+                inst->EraseFromParent();
             }
+            else
+            {
+                inst->RAUW(Phi);
+                inst->ClearRelation();
+                inst->EraseFromParent();
+            }
+            // }
+            // else
+            // {
+            // AllocaInst* Alloca = new AllocaInst(" ",inst->GetType());
+            // entry->InsertAlloca(Alloca);
+            // LoadInst* load = new LoadInst(Alloca);
+            // for(Use* user_ : inst->GetUserlist())
+            // {
+            //     User* user = user_->GetUser();
+            //     auto Inst_Pos = std::find(inst->GetParent()->begin(), inst->GetParent()->end(), user);
+            //     Inst_Pos.insert_before(load);
+            // }
+            // inst->RAUW(load);
+            // // NewBlock->push_front(load);
+            // }
         }
+        else
+        {
+            HandleVoidRet(SplitBlock, blocks);
+            inst->ClearRelation();
+            inst->EraseFromParent();
+        }
+        m.inlinedFunc.insert(dynamic_cast<Function*>(inst->Getuselist()[0]->usee));
+        m.hasInlinedFunc.insert(func);
     }
 }
+// void Inliner::Inline(Function* entry)
+// {
+//     for(auto iter = entry->GetBasicBlock().begin(); iter != entry->GetBasicBlock().end(); ++iter)
+//     {
+//         BasicBlock* block = *iter;
+//         for(auto iter1 = block->begin(); iter1 != block->end(); ++iter1)
+//         {
+//             User* inst = *iter1;
+//             if(CanBeInlined(inst))
+//             {
+                
+//             }
+//         }
+//     }
+// }
 
 std::vector<BasicBlock*> Inliner::CopyBlocks(User* inst)
 {
@@ -184,7 +202,10 @@ bool Inliner::CanBeInlined(User *inst)
         {
             if(func->GetBasicBlock().size() <= Inline_Block_Num)
             {
-                if(func->GetBasicBlock().back()->Size() <= 5)
+                int Size = 0;
+                for(BasicBlock* block : func->GetBasicBlock())
+                    Size += block->Size();
+                if(Size <= 5)
                     return true;
             }
             return false; //todo handle ignored and recursive
@@ -204,7 +225,7 @@ bool Inliner::CanBeInlined(User *inst)
 
 void Inliner::removeInlinedFunc()
 {
-    for(Function* func_ : inlinedFunc)
+    for(Function* func_ : m.inlinedFunc)
     {
         bool remove = true;
         for(Use* user_ : func_->GetUserlist())
@@ -215,8 +236,8 @@ void Inliner::removeInlinedFunc()
                 Function* Func_use = user->GetParent()->GetParent();
                 if(Func_use)
                 {
-                    if(hasInlinedFunc.find(Func_use) != hasInlinedFunc.end() \
-                    && inlinedFunc.find(Func_use) == inlinedFunc.end())
+                    if(m.hasInlinedFunc.find(Func_use) != m.hasInlinedFunc.end() \
+                    && m.inlinedFunc.find(Func_use) == m.inlinedFunc.end())
                         remove = false;
                 }
             }   

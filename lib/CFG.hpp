@@ -281,6 +281,8 @@ class Module:public SymbolTable
     std::vector<GlobalVariblePtr> globalvaribleptr;
     std::vector<MemcpyHandle*> constants_handle;
     public:
+    std::set<Function*> hasInlinedFunc; // Func that has done inlined pass
+    std::set<Function*> inlinedFunc; // Func who is inlined by pass
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
