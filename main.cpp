@@ -70,5 +70,5 @@ int main(int argc, char **argv) {
   #else
   Singleton<Module>().Test();
   #endif
-  exit(0);
+  return 0;
 }
