@@ -185,6 +185,7 @@ globlvar::globlvar(Variable* data) {
         align = 3;
         Type* basetype = dynamic_cast<HasSubType*>(data->GetType())->get_baseType();
         auto arry_init = dynamic_cast<Initializer*>(data->GetInitializer());
+        
         size = arry_init->GetType()->get_size();
         int init_size = arry_init->size();
         if (init_size == 0) {
@@ -207,7 +208,7 @@ globlvar::globlvar(Variable* data) {
                         }
                         else if (basetype->GetTypeEnum() == IR_Value_Float) {
                             float init = std::stof(num);
-                            init_vector.push_back(init);                            
+                            init_vector.push_back(init);
                         }
                     }
                 }
