@@ -83,9 +83,9 @@ class globlvar{
     std::vector<std::variant<int , float>> init_vector;
 
     public:
-    // globlvar(std::string name, std::string sec, int align, int size, std::vector<std::variant<int , float>> init_vector);
     globlvar(Variable* data);
     ~globlvar() = default;
+
 };
 
 class tempvar{
