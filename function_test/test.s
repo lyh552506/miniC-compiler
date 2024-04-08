@@ -5,72 +5,71 @@
         .attribute stack_align, 16
         .text
         .globl  a
-        .section        .sdata,"aw"
+        .section        .sbss,"aw",@nobits
         .align  2
         .type   a, @object
         .size   a, 4
 a:
-        .word   1
+        .zero   4
         .globl  b
-        .section        .sbss,"aw",@nobits
         .align  2
         .type   b, @object
         .size   b, 4
 b:
         .zero   4
-        .globl  d
-        .align  2
-        .type   d, @object
-        .size   d, 4
-d:
-        .zero   4
-        .globl  arri
+        .globl  arry
+
         
         .data
         .align  3
-        .type   arri, @object
-        .size   arri, 24
-arri:
-        .word   1
-        .word   2
-        .word   3
+        .type   arry, @object
+        .size   arry, 48
+arry:
         .word   1
         .word   2
         .zero   4
+        .zero   12
+        .word   3
+        .zero   8
+        .zero   12
         .text
         .align  1
         .globl  main
         .type   main, @function
 main:
-        addi    sp,sp,-64
-        sd      s0,56(sp)
-        addi    s0,sp,64
-        li      a5,1
-        sw      a5,-64(s0)
-        lui     a5,%hi(a)
-        li      a4,10
-        sw      a4,%lo(a)(a5)
+        addi    sp,sp,-16
+        sd      s0,8(sp)
+        addi    s0,sp,16
         lui     a5,%hi(b)
-        li      a4,3
-        sw      a4,%lo(b)(a5)
-        lui     a5,%hi(d)
-        lui     a4,%hi(.LC0)
-        flw     fa5,%lo(.LC0)(a4)
-        fsw     fa5,%lo(d)(a5)
+        sw      zero,%lo(b)(a5)
         lui     a5,%hi(a)
-        lw      a4,%lo(a)(a5)
+        li      a4,3
+        sw      a4,%lo(a)(a5)
+        j       .L2
+.L3:
+        lui     a5,%hi(b)
+        lw      a4,%lo(b)(a5)
+        lui     a5,%hi(a)
+        lw      a5,%lo(a)(a5)
+        addw    a5,a4,a5
+        sext.w  a4,a5
+        lui     a5,%hi(b)
+        sw      a4,%lo(b)(a5)
+        lui     a5,%hi(a)
+        lw      a5,%lo(a)(a5)
+        addiw   a5,a5,-1
+        sext.w  a4,a5
+        lui     a5,%hi(a)
+        sw      a4,%lo(a)(a5)
+.L2:
+        lui     a5,%hi(a)
+        lw      a5,%lo(a)(a5)
+        bgt     a5,zero,.L3
         lui     a5,%hi(b)
         lw      a5,%lo(b)(a5)
-        remw    a5,a4,a5
-        sw      a5,-20(s0)
-        lw      a5,-20(s0)
         mv      a0,a5
-        ld      s0,56(sp)
-        addi    sp,sp,64
+        ld      s0,8(sp)
+        addi    sp,sp,16
         jr      ra
         .size   main, .-main
-        .section        .rodata
-        .align  2
-.LC0:
-        .word   1065353216
         .ident  "GCC: (gc891d8dc23e) 13.2.0"
