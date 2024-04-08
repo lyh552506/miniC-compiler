@@ -17,10 +17,10 @@ elif [ "$option" == "-testall" ]; then
     done
 
 elif [ "$option" == "-test" ]; then 
-    file=$2
+    file="../function_test/test.c"
     base=$(basename $file)
     base=${base%.*}
-    riscv64-unknown-elf-gcc -S -o $output_dir/$base.s $input_dir/$file
+    riscv64-unknown-elf-gcc -S -o $output_dir/$base.s $input_dir/$file -O0
     riscv64-unknown-elf-as -o $output_dir/$base.o $output_dir/$base.s 
     riscv64-unknown-elf-gcc -o $output_dir/$base $output_dir/$base.o $lib_dir
     echo "running: $file"

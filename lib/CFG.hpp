@@ -2,6 +2,7 @@
 #include "SymbolTable.hpp"
 #include "Singleton.hpp"
 #include "BaseCFG.hpp"
+#include <set>
 class BasicBlock;
 class Function;
 
@@ -31,18 +32,21 @@ class Variable
     void attach(Operand);
     std::string get_name();
     Type* GetType();
+    Operand& GetInitializer();
     void print();
 };
 
 class UndefValue:public ConstantData{
   UndefValue(Type* Ty):ConstantData(Ty){name="undef";}
 public:
+  virtual UndefValue* clone(std::unordered_map<Operand,Operand>&) override;
   static UndefValue* get(Type *Ty);
   void print();
 };
 
 class MemcpyHandle:public User{
     public:
+    MemcpyHandle* clone(std::unordered_map<Operand,Operand>&)override;
     MemcpyHandle(Type*,Operand);
     void print();
 };
@@ -50,7 +54,9 @@ class MemcpyHandle:public User{
 class AllocaInst:public User
 {
     public:
+    AllocaInst(Type* _tp):User(_tp){};
     AllocaInst(std::string,Type*);
+    AllocaInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
     bool IsUsed();
 };
@@ -58,14 +64,18 @@ class AllocaInst:public User
 class StoreInst:public User
 {
     public:
+    StoreInst(Type* _tp):User(_tp){};
     StoreInst(Operand,Operand);
+    StoreInst* clone(std::unordered_map<Operand,Operand>&)override;
     Operand GetDef()final;
     void print()final;
 };
 class LoadInst:public User
 {
     public:
+    LoadInst(Type* _tp):User(_tp){};
     LoadInst(Operand __src);
+    LoadInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
     Value* GetSrc();
 };
@@ -73,41 +83,54 @@ class LoadInst:public User
 class FPTSI:public User
 {
     public:
+    FPTSI(Type* _tp):User(_tp){};
     FPTSI(Operand __src);
+    FPTSI* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
 };
 /// @brief int to float
 class SITFP:public User
 {
     public:
+    SITFP(Type* _tp):User(_tp){};
     SITFP(Operand __src);
+    SITFP* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
 };
 class UnCondInst:public User
 {
     public:
+    UnCondInst(Type* _tp):User(_tp){};
     UnCondInst(BasicBlock*);
+    UnCondInst* clone(std::unordered_map<Operand,Operand>&)override;
     Operand GetDef()final;
     void print()final;
 };
 class CondInst:public User
 {
     public:
+    CondInst(Type* _tp):User(_tp){};
     CondInst(Operand,BasicBlock*,BasicBlock*);
+    CondInst* clone(std::unordered_map<Operand,Operand>&)override;
     Operand GetDef()final;
     void print()final;
 };
 class CallInst:public User
 {
     public:
+    CallInst(Type* _tp):User(_tp){};
     CallInst(Value*,std::vector<Operand>&,std::string);
+    CallInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
+    void FuncInline();
 };
 class RetInst:public User
 {
     public:
     RetInst();
+    RetInst(Type* _tp):User(_tp){};
     RetInst(Operand);
+    RetInst* clone(std::unordered_map<Operand,Operand>&)override;
     Operand GetDef()final;
     void print()final;
 };
@@ -123,7 +146,9 @@ class BinaryInst:public User
     private:
     Operation op;
     public:
+    BinaryInst(Type* _tp):User(_tp){};
     BinaryInst(Operand _A,Operation __op,Operand _B);
+    BinaryInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
     std::string GetOperation();
     Operation getopration();
@@ -132,8 +157,10 @@ class BinaryInst:public User
 class GetElementPtrInst:public User
 {
     public:
+    GetElementPtrInst(Type* _tp):User(_tp){};
     GetElementPtrInst(Operand);
     GetElementPtrInst(Operand,std::vector<Operand>&);
+    GetElementPtrInst* clone(std::unordered_map<Operand,Operand>&)override;
     Type* GetType()final;
     void print()final;
     Value* GetPtrVal();
@@ -142,12 +169,15 @@ class GetElementPtrInst:public User
 class ZextInst:public User
 {
     public:
+    ZextInst(Type* _tp):User(_tp){};
     ZextInst(Operand);
+    ZextInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
 };
 
 class PhiInst : public User {
 public:
+  PhiInst(Type *ty) : User{ty} {}
   PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {}
 
   PhiInst(User *BeforeInst):oprandNum(0) {}
@@ -160,6 +190,7 @@ public:
   Value* ReturnValIn(BasicBlock* bb);
   void Phiprop(Value* origin,Value* newval);
 public:
+  PhiInst* clone(std::unordered_map<Operand,Operand>&)override;
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
   void Del_Incomes(int CurrentNum);
@@ -170,11 +201,11 @@ public:
 };
 class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
 {
-    Function& master;
     public:
-    BasicBlock(Function& __master);
+    BasicBlock();
     void print();
     int GetSuccNum();
+    BasicBlock* clone(std::unordered_map<Operand,Operand>&) override;
     Operand push_alloca(std::string,Type*);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
@@ -192,6 +223,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     void GenerateAlloca(Variable*);
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
+    BasicBlock* SplitAt(User*);
     std::vector<BasicBlock*> Succ_Block;
     std::vector<BasicBlock*> GetSuccBlock();
     void AddSuccBlock(BasicBlock* block){this->Succ_Block.push_back(block);}
@@ -205,6 +237,7 @@ class BuildInFunction:public Value
 {
     BuildInFunction(Type*,std::string);
     public:
+    virtual BuildInFunction* clone(std::unordered_map<Operand,Operand>&) override{return this;};
     static BuildInFunction* GetBuildInFunction(std::string);
 };
 
@@ -222,12 +255,17 @@ class Function:public Value,public mylist<Function,BasicBlock>
     std::vector<ParamPtr> params;//存放形式参数
     std::vector<BasicBlock*> bbs;
     public:
+    std::set<Function*> CalleeFuncs; // The Function who calls this
+    std::set<Function*> CallingFuncs; // The Function that the func calls
     void InsertAlloca(AllocaInst* ptr);
+    public:
+    virtual Function* clone(std::unordered_map<Operand,Operand>&) override{return this;};
     Function(InnerDataType _tp,std::string _id);
     void print();
-    void init_bbs(){ bbs.clear();}
+    void FuncInline(CallInst*);
     void add_block(BasicBlock*);
     void push_param(Variable*);
+    void init_bbs(){ bbs.clear();}
     void push_alloca(Variable*);
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
@@ -248,9 +286,9 @@ class Module:public SymbolTable
     void GenerateGlobalVariable(Variable* ptr);
     Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
+    std::vector<GlobalVariblePtr>& GetGlobalVariable();
     void Test();
     void EraseFunction(Function* func);
     bool isMIRSSALevel();
     Function* GetMainFunc();
-    // std::vector<GlobalVariblePtr> GetGlobalptrs(){return this->globalvaribleptr;};
 };

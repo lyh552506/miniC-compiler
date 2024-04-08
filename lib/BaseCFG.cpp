@@ -38,6 +38,15 @@ Value::Value(Type *_tp) : tp(_tp) {
   name += std::to_string(Singleton<Module>().IR_number("."));
 }
 
+Value* Value::clone(std::unordered_map<Operand,Operand>& mapping){
+  // if this is called it must be a param
+  if(mapping.find(this)!=mapping.end())
+    return mapping[this];
+  Value* newval=new Value(this->GetType());
+  mapping[this]=newval;
+  return newval;
+}
+
 void Value::add_user(Use *__data) { userlist.push_front(__data); }
 void Value::SetName(std::string newname) { this->name = newname; }
 std::string Value::GetName() { return name; }
@@ -93,7 +102,7 @@ std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
     else
     {
         std::cerr << "There is no Succ Block." << std::endl;
-        return std::vector<BasicBlock*>();
+        return std::vector<BasicBlock*>{};
     }
 }
 bool Value::isUndefVal()
@@ -136,6 +145,16 @@ void User::add_use(Value *__data) {
 
 User::User() : Value(VoidType::NewVoidTypeGet()) {}
 
+User* User::clone(std::unordered_map<Operand,Operand>& mapping){
+  // this method is responsible for copying uselist
+  assert(mapping.find(this)!=mapping.end()&&"User not copied!");
+  auto to=dynamic_cast<User*>(mapping[this]);
+  assert(to!=nullptr&&"It is not a User!Impossible");
+  for(auto& use:uselist)
+    to->add_use(use->GetValue()->clone(mapping));
+  return to;
+}
+
 User::User(Type *_tp) : Value(_tp) {}
 
 void User::ClearRelation() {
@@ -143,6 +162,7 @@ void User::ClearRelation() {
   for (auto &use : uselist)
     use->RemoveFromUserList(use->GetUser());
 }
+
 bool User::IsTerminateInst()
 {
   if(dynamic_cast<UnCondInst*>(this))
@@ -219,6 +239,10 @@ void User::RSUW(int num,Operand val){
 }
 
 ConstantData::ConstantData(Type *_tp) : Value(_tp) {}
+
+ConstantData* ConstantData::clone(std::unordered_map<Operand,Operand>& mapping){
+  return this;
+}
 
 ConstIRBoolean::ConstIRBoolean(bool _val)
     : ConstantData(BoolType::NewBoolTypeGet()), val(_val) {

@@ -33,7 +33,7 @@ void ElimitCriticalEdge::AddNullBlock(User *inst, int succ) {
     return;
 
   BasicBlock *CurrBB = inst->GetParent();
-  BasicBlock *criticalbb = new BasicBlock(*m_func);
+  BasicBlock *criticalbb = new BasicBlock();
   m_func->push_back(criticalbb);
   
   //在关键边中插入block

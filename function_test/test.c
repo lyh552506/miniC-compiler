@@ -122,20 +122,67 @@
 //      int v2 = a + b; // BB3
 //      return v1 + v2;
 // }
-int at(int b[])
-{
-    b[1] = 3;
-    return 1;
-}
-int main () {
-     int x[20],a,b;
-     a=5;
-     b=6;
-     int t=a+b;
-     x[t]=1;
-     at(x);
-     return x[t];
-}
+// int at(int b[])
+// {
+//     b[1] = 3;
+//     return 1;
+// }
+// int main () {
+//      int x[20],a,b;
+//      a=5;
+//      b=6;
+//      int t=a+b;
+//      x[t]=1;
+//      at(x);
+//      return x[t];
+// }
+// int at(int b[])
+// {
+//     b[1] = 3;
+//     b[2] = 4;
+//     return 1;
+// }
+// int FullRedundancy2 () {
+//      int x[20],a,b;
+//      a=5;
+//      b=6;
+//      int t=a+b;
+//      x[t]=1;
+//      x[2] = 10;
+//      at(x);
+//      return x[10];
+// }
+// int test[5] = {1,3,4,5,6};
+// void func(int a, int g) {
+//     int x, cond = 1;
+//     float b;
+//     if (cond > 0)
+//     {
+//         int c = 1;
+//         test[3] = 1;
+//         int d = -1;
+//         x = c / d ;
+//     }
+//     else
+//     {
+//         int e = -1;
+//         int f = 1;
+//         x = e / f+a*g;
+//     }
+
+// }
+
+// int main() {
+//      int x[20],a,b;
+//      a=5;
+//      b=6;
+//      int t=a+b;
+//      x[t]=1;
+//      x[2] = 10;
+//      test[2] = 0;
+//      func(a,b);
+//      return x[10];
+// }
 // int main() {
 //     int x, cond = 1;
 //     float b;
@@ -215,3 +262,80 @@ int main () {
 //   // d = 100;
 //   return d;
 // }
+int func(int i, int j) {
+    return ((i+j) * (i+j+1) / 2 + i + 1);
+}
+
+float Vectordot(float v[], float u[], int n) {
+    int i = 0;
+    float sum = 0;
+    while (i < n) {
+        sum =sum+ v[i] * u[i];
+        i=i+1;
+    }
+    return sum;
+}
+
+void mult1(float v[], float out[],int n) {
+    int i = 0, j = 0;
+    float sum = 0;
+
+    while (i < n) {
+        while (j < n) {
+            sum =sum+ v[j] / func(i,j);
+            j=j+1;
+        }
+        out[i] = sum;
+        i=i+1;
+     }
+}
+
+void mult2(float v[], float out[], int n) {
+    int i = 0, j = 0;
+    float sum = 0;
+
+    while (i < n) {
+        while (j < n) {
+            sum =sum+ v[j] / func(j,i);
+            j=j+1;
+        }
+        out[i] = sum;
+        i=i+1;
+     }
+}
+
+
+void mult_combin(float v[], float out[], int n, float tmp[]) {
+    mult1(v, tmp, n);
+    mult2(tmp, out, n);
+}
+
+float temp = 1;
+float my_sqrt(float input) {
+    while (temp - input / temp > 1e-6 || temp - input / temp < -1e-6){
+        temp = (temp+input/temp)/2;
+    }
+    return temp;
+}
+
+int main() {
+    int n = 100000;
+    if (n <= 0) {
+     n = 2000;
+}
+    float vectorA[100000], vectorB[100000], Vectortmp[100000];
+
+    int i;
+    while(i < n) {
+        vectorA[i] = 1;
+        i=i+1;
+    }
+    i = 0;
+    while(i < 1000) {
+        mult_combin(vectorA, vectorB, n, Vectortmp);
+        mult_combin(vectorB, vectorA, n, Vectortmp);
+        i=i+1;
+
+    float result = my_sqrt(Vectordot(vectorA,vectorB, n) / Vectordot(vectorB,vectorB,n));
+    return 0;
+}}

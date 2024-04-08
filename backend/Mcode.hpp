@@ -68,6 +68,7 @@ class MachineFunction {
     void set_alloca_and_num();
     void set_stacksize();
 
+    Function* get_function();
     MachineUnit* get_machineunit();
     void addMachineBasicBlock(MachineBasicBlock* mblock);
     std::vector<MachineBasicBlock*> getMachineBasicBlocks();
@@ -89,6 +90,7 @@ class MachineUnit {
     std::vector<MachineFunction*> mfuncs;
     public:
     MachineUnit(Module* unit);
+    Module* get_module();
     void addMachineFunction(MachineFunction* mfuncs);
     std::vector<MachineFunction*> getMachineFunctions();
 };

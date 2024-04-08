@@ -74,6 +74,7 @@ class Value
     std::string name;
     Type* tp;
     public:
+    virtual Value* clone(std::unordered_map<Value*,Value*>&);
     virtual ~Value()=default;
     Value()=delete;
     Value(Type*);
@@ -106,10 +107,12 @@ class User:public Value,public list_node<BasicBlock,User>
     virtual void print()=0;
     User();
     User(Type* tp);
+    virtual User* clone(std::unordered_map<Operand,Operand>&)override;
     virtual Operand GetDef();
     void ClearRelation();//在EraseFromBasic()前调用
     bool IsTerminateInst();
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
+    inline Operand GetOperand(int i){return uselist[i]->GetValue();}
     bool Alive = false;
     bool HasSideEffect();
     void RSUW(int,Operand);
@@ -118,6 +121,7 @@ class User:public Value,public list_node<BasicBlock,User>
 class ConstantData:public Value
 {
     public:
+    virtual ConstantData* clone(std::unordered_map<Operand,Operand>&)override;
     ConstantData()=delete;
     ConstantData(Type* tp);
     bool isConst()final{return true;}

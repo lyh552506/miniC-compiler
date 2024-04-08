@@ -127,6 +127,30 @@ class mylist
     virtual iterator rbegin(){return iterator(this->tail);}
     virtual iterator rend(){return iterator(nullptr);}
     int Size(){return this->size;}
+    void collect(derived_list_node* _begin,derived_list_node* _end){
+        assert(this->head==nullptr&&this->tail==nullptr&&"Used to Separte List");
+        this->head=_begin;
+        this->tail=_end;
+        for(auto poi=head;poi!=nullptr;poi=poi->next)poi->SetParent(dynamic_cast<derived_mylist*>(this));
+    }
+
+    std::pair<derived_list_node*,derived_list_node*> split(derived_list_node* _begin,derived_list_node* _end){
+        assert(_begin!=nullptr&&_end!=nullptr&&"Invalid Split");
+        assert(_begin->fat==this&&_end->fat==this&&"Invalid Split");
+        if(_begin==this->head)this->head=_end->next;
+        if(_end==this->tail)this->tail=_begin->prev;
+        if(_begin->prev!=nullptr)_begin->prev->next=_end->next;
+        if(_end->next!=nullptr)_end->next->prev=_begin->prev;
+        _begin->prev=nullptr;
+        _end->next=nullptr;
+        return std::make_pair(_begin,_end);
+    }
+
+    // 以后再说
+    // void merge(derived_mylist*& other){
+    //     other=nullptr;
+    // }
+
     void push_back(derived_list_node* data){
         data->SetParent(dynamic_cast<derived_mylist*>(this));
         if(this->head==nullptr){

@@ -1,46 +1,39 @@
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
 #include "dominant.hpp"
-#define INT_MAX   __INT_MAX__
-#define INT_MIN (-__INT_MAX__ -1)
 class Inliner
 {
 public:
-    const bool Only_Inline_Small_Function = false;
-    const int Inline_Block_Num = 4;
+    const bool Only_Inline_Small_Function = true;
+    const int Inline_Block_Num = 5;
     const bool Inline_Recursive = false;
     const bool Not_Inline_Multilevel_Loop_Func = true;
-
+    const int Not_Inline_Multilevel_Loop_Nest = 5;
+    const bool SSALevel = true;
 public:
-    Inliner(Function* f, dominance* dom_, LoopAnalysis* loopAnalysis_, Module& module) : dom(dom_), func(f), m(module), loopAnalysis(loopAnalysis_) {}
+    Inliner(Function* f, LoopAnalysis* loopAnalysis_, Module& module) : func(f), m(module), loopAnalysis(loopAnalysis_) {}
     void Run();
-    void Inline(Function* entry);
-    void InlineRecursive(Function* entry);
     void PrintPass();
-
+    void Inline(Function* entry);
+private:
+    // void InlineRecursive(Function* entry);
+    bool NotInline(Function *f) { return NotInlineFunc.find(f) != NotInlineFunc.end(); }
+    bool isRecursive(Function *f) { return RecursiveFunc.find(f) != RecursiveFunc.end(); }
     void CreateCallMap();
     void DetectRecursive();
-    std::list<BasicBlock*> CopyBlocks(User* inst, Function& func);
+    std::vector<BasicBlock*> CopyBlocks(User* inst);
     bool CanBeInlined(User* inst);
-    BasicBlock* SplitBlock(User* Calling, Function& func);
     void VisitFunc(Function* entry, std::set<Function*>& visited);
     void removeInlinedFunc();
-    void HandleVoidRet(BasicBlock* spiltBlock, std::list<BasicBlock*>& blocks);
-    void HandleRetPhi(BasicBlock* RetBlock, PhiInst* phi, std::list<BasicBlock*>& blocks);
-    void UpdateRAUWArgsMap(User* inst, Value* val);
+    void HandleVoidRet(BasicBlock* spiltBlock, std::vector<BasicBlock*>& blocks);
+    void HandleRetPhi(BasicBlock* RetBlock, PhiInst* phi, std::vector<BasicBlock*>& blocks);
 private:
     Module& m;
     LoopAnalysis* loopAnalysis;
     void init();
     Function* func;
-    dominance* dom;
-    std::set<Function*> hasInlinedFunc;
-    std::set<Function*> inlinedFunc;
-    std::set<Function*> NotInlineFunc;
+    std::set<Function*> hasInlinedFunc; // Func that has done inlined pass
+    std::set<Function*> inlinedFunc; // Func who is inlined by pass
+    std::set<Function*> NotInlineFunc; // Func not inline
     std::set<Function*> RecursiveFunc;
-    std::map<Function*, std::set<Function*>> CallMap;
-    std::map<Function*, std::set<Function*>> CalledMap;
-    std::set<std::pair<Value*, Value*>> ArgsMap;
-    typedef struct ArgsMap argsmap;
-    std::map<Value*, std::set<std::pair<User*, argsmap*>>> RAUWArgsMap;
 };
