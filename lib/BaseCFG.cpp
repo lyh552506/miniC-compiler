@@ -38,6 +38,11 @@ Value::Value(Type *_tp) : tp(_tp) {
   name += std::to_string(Singleton<Module>().IR_number("."));
 }
 
+Value::~Value(){
+  while(!userlist.is_empty())
+    delete userlist.Front()->fat;
+}
+
 void Value::add_user(Use *__data) { userlist.push_front(__data); }
 void Value::SetName(std::string newname) { this->name = newname; }
 std::string Value::GetName() { return name; }
