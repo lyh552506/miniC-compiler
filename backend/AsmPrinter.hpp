@@ -85,7 +85,7 @@ class globlvar{
     public:
     globlvar(Variable* data);
     ~globlvar() = default;
-    std::variant<int, float> generate_array_init(Initializer* arry_init, Type* basetype);
+    void generate_array_init(Initializer* arry_init, Type* basetype);
 };
 
 class tempvar{

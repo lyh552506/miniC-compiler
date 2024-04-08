@@ -63,11 +63,16 @@ HasSubType::HasSubType(InnerDataType tp_enum,Type* _subtype):Type(tp_enum),subty
 int HasSubType::get_layer(){return layer;}
 Type* HasSubType::get_baseType() {
     Type* basetype = nullptr;
+    basetype = this;
     for(int i=0; i<layer; i++) {
-        if(basetype = this->GetSubType()) {}
+        if(HasSubType* hassubtype = dynamic_cast<HasSubType*>(basetype)) {
+            basetype = hassubtype->GetSubType();
+        }
     }
     return basetype;
 }
+
+
 Type* HasSubType::GetSubType(){
     return subtype;
 }
