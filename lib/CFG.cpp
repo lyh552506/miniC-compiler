@@ -1178,7 +1178,7 @@ void UndefValue::print(){
 
 void PhiInst::print() {
   dynamic_cast<Value*>(this)->print();
-  std::cout << " = Phi ";
+  std::cout << " = phi ";
   this->GetType()->print();
   std::cout << " ";
   for (int i = 0; i < oprandNum; i++) {

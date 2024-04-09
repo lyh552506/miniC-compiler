@@ -1,7 +1,6 @@
-
 option=$1
-input_dir="../test_cases"
-output_dir="../test_cases_output"
+input_dir="../testcases_c"
+output_dir="../testcases_output"
 lib_dir="../RISCVLib/sylib.o"
 
 if [ "$option" == "-run" ]; then    

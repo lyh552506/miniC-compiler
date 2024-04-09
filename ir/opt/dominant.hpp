@@ -70,8 +70,8 @@ class dominance : public PassManagerBase {
   std::vector<Node> node;
 
  private:
-  int vertex[11000];                   // 记录dfs对应的结点
-  std::vector<int> bucket[200];        // bucket[u]代表sdom为u的点集
+  int vertex[91000];                   // 记录dfs对应的结点
+  std::vector<int> bucket[20000];        // bucket[u]代表sdom为u的点集
   std::vector<DSU> dsu;                //辅助数据结构实现路径压缩
   std::vector<DF> df;                  //存储每个结点的必经结点边界
   std::vector<std::vector<int>> Dest;  // CFG中的后继
@@ -125,6 +125,7 @@ class dominance : public PassManagerBase {
   bool dominates(BasicBlock *bb1, BasicBlock *bb2);
   bool needToUpdate=false;
   void update(){
+    IsDFSValid=false;
     RunOnFunction();}
   void PrintPass() {
     #ifdef SYSY_MIDDLE_END_DEBUG
@@ -139,7 +140,8 @@ class dominance : public PassManagerBase {
         dsu(blockNum + 1),
         df(blockNum + 1),
         thisFunc{Func},
-        Dest(blockNum + 1) {}
+        Dest(blockNum + 1),
+        IsDFSValid(false) {}
   void dom_begin();
 };
 bool promoteMemoryToRegister(Function &func, dominance &dom);

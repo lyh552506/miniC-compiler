@@ -2,3 +2,5 @@ build
 .vscode/settings.json
 RISCInst
 testcases/*.ll
+testcases_output
+testcases_c

@@ -321,7 +321,7 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
                                               BlockInfo &BBInfo) {
   StoreInst *OnlySt = Info.OnlyStore;
   int StoreIndex = -1;
-  bool GlobalVal;
+  bool GlobalVal=false;
 
   Value *val = OnlySt->Getuselist()[0]->GetValue();
   User *u = dynamic_cast<User *>(val);

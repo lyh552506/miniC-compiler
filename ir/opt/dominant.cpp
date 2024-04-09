@@ -59,7 +59,7 @@ void dominance::DFS(int pos) {
 void dominance::find_dom() {
   int n, fat;
   for (int i = block_num; i > 1; i--) { // 从dfs最大的结点开始
-    int sdom_cadidate = 10000;
+    int sdom_cadidate = 90000;
     n = vertex[i]; // 获取dfs序对应的结点号
     fat = node[n].father;
     for (auto front : node[n].rev) {
@@ -110,9 +110,7 @@ void dominance::dom_begin() {
 
 /// @brief 判断bb1是否dominate bb2
 bool dominance::dominates(BasicBlock *bb1, BasicBlock *bb2) {
-  if (!IsDFSValid) {
-    DfsDominator(0);
-  }
+  DfsDominator(0);
   Node &n1 = node[bb1->num];
   Node &n2 = node[bb2->num];
 
