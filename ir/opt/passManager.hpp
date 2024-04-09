@@ -14,6 +14,7 @@
 #include "PromoteMemtoRegister.hpp"
 #include "SSAPRE.hpp"
 #include "dominant.hpp"
+#include "Inline.hpp"
 #include "cfgSimplify.hpp"
 class PassManager : public PassManagerBase {
 public:
@@ -44,5 +45,6 @@ private:
   std::unique_ptr<DCE> m_dce;
   std::unique_ptr<LivenessAnalysis> m_liveness;
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
+  std::unique_ptr<Inliner> m_inliner;
   std::unique_ptr<cfgSimplify> m_cfgsimple;
 };

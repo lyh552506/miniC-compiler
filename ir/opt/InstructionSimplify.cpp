@@ -91,7 +91,7 @@ Value* SimplifyDivInst(Value* LHS, Value* RHS)
     if(LHS->isUndefVal() && !RHS->isUndefVal())
         return ConstIRInt::GetNewConstant(0);
     // 0 / X -> 0
-    if(LHS->isConstOne() && !RHS->isConstOne())
+    if(LHS->isConstZero() && !RHS->isConstZero())
         return ConstIRInt::GetNewConstant(0);
     // X / 1 -> X
     if(RHS->isConstOne())

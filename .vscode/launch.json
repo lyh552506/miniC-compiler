@@ -40,11 +40,11 @@
             "program": "${workspaceFolder}/build/SYSY-compiler",
             "cwd": "${workspaceFolder}",
             "targetArchitecture": "x64",
-            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constprop","--dce"],
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constprop","--inline"],
             "stopAtEntry": false,
             // "setupCommands": [
             //   {
-            //       "description": "为 lldb 启用整齐打印",
+            //       "description": "为 lldb 启用整齐打印"
             //       "text": "-enable-pretty-printing",
             //       "ignoreFailures": true
             //   }
