@@ -54,6 +54,7 @@ class HasSubType:public Type
     HasSubType(InnerDataType,Type*);
     Type* GetSubType();
     int get_layer()final;
+    Type* get_baseType();
 };
 class PointerType:public HasSubType
 {

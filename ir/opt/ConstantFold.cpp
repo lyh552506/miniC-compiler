@@ -62,8 +62,6 @@ Value* ConstantFolding::ConstantFoldBinaryInst(BinaryInst* inst)
 
 Value* ConstantFolding::ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Value* RHS)
 {
-    int LVal = dynamic_cast<ConstIRInt*>(LHS)->GetVal();
-    int RVal = dynamic_cast<ConstIRInt*>(RHS)->GetVal();
     BinaryInst::Operation Opcode = inst->getopration();
     switch(Opcode)
     {
@@ -72,7 +70,7 @@ Value* ConstantFolding::ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Valu
         case BinaryInst::Op_Mul:
         case BinaryInst::Op_Div:
         case BinaryInst::Op_Mod:
-            return ConstFoldInt(Opcode, LVal, RVal);
+            return ConstFoldInt(Opcode, LHS, RHS);
         case BinaryInst::Op_E:
         case BinaryInst::Op_G:
         case BinaryInst::Op_GE:
@@ -80,15 +78,13 @@ Value* ConstantFolding::ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Valu
         case BinaryInst::Op_LE:
         case BinaryInst::Op_And:
         case BinaryInst::Op_Or:
-            return ConstFoldIntCmp(Opcode, LVal, RVal);
+            return ConstFoldCmp(Opcode, LHS, RHS);
     }
     return nullptr;
 }
 
 Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Value* RHS)
 {
-    float LVal = dynamic_cast<ConstIRFloat*>(LHS)->GetVal();
-    float RVal = dynamic_cast<ConstIRFloat*>(RHS)->GetVal();
     BinaryInst::Operation Opcode = inst->getopration();
     switch(Opcode)
     {
@@ -96,7 +92,7 @@ Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Va
         case BinaryInst::Op_Sub:
         case BinaryInst::Op_Mul:
         case BinaryInst::Op_Div:
-            return ConstFoldFloat(Opcode, LVal, RVal);
+            return ConstFoldFloat(Opcode, LHS, RHS);
         case BinaryInst::Op_E:
         case BinaryInst::Op_G:
         case BinaryInst::Op_GE:
@@ -104,7 +100,7 @@ Value* ConstantFolding::ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Va
         case BinaryInst::Op_LE:
         case BinaryInst::Op_And:
         case BinaryInst::Op_Or:
-            return ConstFoldFloatCmp(Opcode, LVal, RVal);
+            return ConstFoldCmp(Opcode, LHS, RHS);
     }
     return nullptr;
 }
@@ -138,13 +134,20 @@ Value* ConstantFolding::ConstantFoldZextInst(ZextInst* inst)
     Value* Val = inst->Getuselist()[0]->GetValue();
     if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
         return UndefValue::get(UNdefValue->GetType());
-    else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
-        return ConstIRInt::GetNewConstant(iNt->GetVal());
+    else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
+    {
+        if(BOol->GetVal())
+            return ConstIRInt::GetNewConstant(1);
+        else
+            return ConstIRInt::GetNewConstant(0);
+    }
     return nullptr;
 }
 
-Value* ConstantFolding::ConstFoldInt(BinaryInst::Operation Opcode, int LVal, int RVal)
+Value* ConstantFolding::ConstFoldInt(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
 {
+    int LVal = dynamic_cast<ConstIRInt*>(LHS)->GetVal();
+    int RVal = dynamic_cast<ConstIRInt*>(RHS)->GetVal();
     int Result;
     switch(Opcode)
     {
@@ -167,8 +170,10 @@ Value* ConstantFolding::ConstFoldInt(BinaryInst::Operation Opcode, int LVal, int
     return ConstIRInt::GetNewConstant(Result);
 }
 
-Value* ConstantFolding::ConstFoldFloat(BinaryInst::Operation Opcode, float LVal, float RVal)
+Value* ConstantFolding::ConstFoldFloat(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
 {
+    float LVal = dynamic_cast<ConstIRFloat*>(LHS)->GetVal();
+    float RVal = dynamic_cast<ConstIRFloat*>(RHS)->GetVal();
     float Result;
     switch(Opcode)
     {
@@ -187,55 +192,92 @@ Value* ConstantFolding::ConstFoldFloat(BinaryInst::Operation Opcode, float LVal,
     }
     return ConstIRFloat::GetNewConstant(Result);
 }
-Value* ConstantFolding::ConstFoldIntCmp(BinaryInst::Operation Opcode, int LVal, int RVal)
+
+Value* ConstantFolding::ConstFoldCmp(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
 {
-    bool Result;
-    switch(Opcode)
+    if(dynamic_cast<ConstIRInt*>(LHS) && dynamic_cast<ConstIRInt*>(RHS))
     {
-        case BinaryInst::Op_E:
-            Result = (LVal == RVal);
-            break;
-        case BinaryInst::Op_NE:
-            Result = (LVal != RVal);
-            break;
-        case BinaryInst::Op_GE:
-            Result = (LVal >= RVal);
-            break;
-        case BinaryInst::Op_L:
-            Result = (LVal < RVal);
-            break;
-        case BinaryInst::Op_LE:
-            Result = (LVal <= RVal);
-            break;
-        case BinaryInst::Op_G:
-            Result = (LVal > RVal);
-            break;
+        int LVal = dynamic_cast<ConstIRInt*>(LHS)->GetVal();
+        int RVal = dynamic_cast<ConstIRInt*>(RHS)->GetVal();
+        bool Result;
+        switch(Opcode)
+        {
+            case BinaryInst::Op_E:
+                Result = (LVal == RVal);
+                break;
+            case BinaryInst::Op_NE:
+                Result = (LVal != RVal);
+                break;
+            case BinaryInst::Op_GE:
+                Result = (LVal >= RVal);
+                break;
+            case BinaryInst::Op_L:
+                Result = (LVal < RVal);
+                break;
+            case BinaryInst::Op_LE:
+                Result = (LVal <= RVal);
+                break;
+            case BinaryInst::Op_G:
+                Result = (LVal > RVal);
+                break;
+        }
+        return ConstIRBoolean::GetNewConstant(Result); 
     }
-    return ConstIRBoolean::GetNewConstant(Result); 
-}
-Value* ConstantFolding::ConstFoldFloatCmp(BinaryInst::Operation Opcode, float LVal, float RVal)
-{
-    bool Result;
-    switch(Opcode)
+    if(dynamic_cast<ConstIRFloat*>(LHS) && dynamic_cast<ConstIRFloat*>(RHS))
     {
-        case BinaryInst::Op_E:
-            Result = (LVal == RVal);
-            break;
-        case BinaryInst::Op_NE:
-            Result = (LVal != RVal);
-            break;
-        case BinaryInst::Op_GE:
-            Result = (LVal >= RVal);
-            break;
-        case BinaryInst::Op_L:
-            Result = (LVal < RVal);
-            break;
-        case BinaryInst::Op_LE:
-            Result = (LVal <= RVal);
-            break;
-        case BinaryInst::Op_G:
-            Result = (LVal > RVal);
-            break;
+        float LVal = dynamic_cast<ConstIRFloat*>(LHS)->GetVal();
+        float RVal = dynamic_cast<ConstIRFloat*>(RHS)->GetVal();
+        bool Result;
+        switch(Opcode)
+        {
+            case BinaryInst::Op_E:
+                Result = (LVal == RVal);
+                break;
+            case BinaryInst::Op_NE:
+                Result = (LVal != RVal);
+                break;
+            case BinaryInst::Op_GE:
+                Result = (LVal >= RVal);
+                break;
+            case BinaryInst::Op_L:
+                Result = (LVal < RVal);
+                break;
+            case BinaryInst::Op_LE:
+                Result = (LVal <= RVal);
+                break;
+            case BinaryInst::Op_G:
+                Result = (LVal > RVal);
+                break;
+        }
+        return ConstIRBoolean::GetNewConstant(Result); 
     }
-    return ConstIRBoolean::GetNewConstant(Result); 
+    if(dynamic_cast<ConstIRBoolean*>(LHS) && dynamic_cast<ConstIRBoolean*>(RHS))
+    {
+        bool LVal = dynamic_cast<ConstIRBoolean*>(LHS)->GetVal();
+        bool RVal = dynamic_cast<ConstIRBoolean*>(RHS)->GetVal();
+        bool Result;
+        switch(Opcode)
+        {
+            case BinaryInst::Op_E:
+                Result = (LVal == RVal);
+                break;
+            case BinaryInst::Op_NE:
+                Result = (LVal != RVal);
+                break;
+            case BinaryInst::Op_GE:
+                Result = (LVal >= RVal);
+                break;
+            case BinaryInst::Op_L:
+                Result = (LVal < RVal);
+                break;
+            case BinaryInst::Op_LE:
+                Result = (LVal <= RVal);
+                break;
+            case BinaryInst::Op_G:
+                Result = (LVal > RVal);
+                break;
+        }
+        return ConstIRBoolean::GetNewConstant(Result); 
+    }
+    return nullptr;
 }

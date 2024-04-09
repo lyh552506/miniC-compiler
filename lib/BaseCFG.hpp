@@ -25,6 +25,9 @@ class Use
     public:
     Use()=delete;
     Use(User*,Value*);
+    ~Use(){
+        RemoveFromUserList(fat);
+    };
     /// @brief 注意，调用这个方法的一定是User，所以我加了个鉴权
     void RemoveFromUserList(User* is_valid);
     User*& SetUser();
@@ -106,6 +109,7 @@ class User:public Value,public list_node<BasicBlock,User>
     public:
     void add_use(Value* __data);
     virtual void print()=0;
+    virtual ~User()=default;
     User();
     User(Type* tp);
     virtual User* clone(std::unordered_map<Operand,Operand>&)override;

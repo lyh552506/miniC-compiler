@@ -228,6 +228,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     void AddSuccBlock(BasicBlock* block){this->Succ_Block.push_back(block);}
     bool EndWithBranch();
     void RemovePredBB(BasicBlock* pred);
+    virtual void clear()override;
     int num=0;
     bool visited=false;
 };

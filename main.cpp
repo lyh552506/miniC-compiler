@@ -1,4 +1,4 @@
-#include "AsmPrinter.hpp"
+#include "backend/AsmPrinter.hpp"
 #include "opt/dominant.hpp"
 #include "opt/passManager.hpp"
 #include "parser.hpp"
@@ -31,14 +31,8 @@ int main(int argc, char **argv) {
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
-  Singleton<Module>().Test();
-  // output_path = argv[1];
-  // output_path += ".a";
-  // freopen(output_path.c_str(),"a",stdout);
-
-  // freopen("/dev/tty", "a", stdout);
+  #ifdef SYSY_ENABLE_MIDDLE_END
   std::unique_ptr<PassManager> pass_manager(new PassManager);
-
   int optionIndex, option;
   //目前处于调试阶段，最终会换成-O1 -O2 -O3
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -65,12 +59,16 @@ int main(int argc, char **argv) {
     case 6:
       std::cerr << "help" << std::endl;
       break;
-    case 7:
-      pass_manager->IncludePass(7);
-      break;
     }
   }
   pass_manager->InitPass();
-  // PrintCodeToTxt(&Singleton<Module>());
+  #endif
+  #ifdef SYSY_ENABLE_BACKEND
+  AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
+  asmPrinter.printAsm();
+  PrintCodeToTxt(&Singleton<Module>());
+  #else
+  Singleton<Module>().Test();
+  #endif
   return 0;
 }

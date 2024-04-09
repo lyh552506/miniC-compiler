@@ -7,6 +7,7 @@
 #include "MagicEnum.hpp"
 #include <map>
 #include <utility>
+#include <vector>
 
 template<typename T>
 T* normal_clone(T* from,std::unordered_map<Operand,Operand>& mapping){
@@ -518,6 +519,7 @@ void ZextInst::print(){
     std::cout<<" = zext i1 ";
     uselist[0]->GetValue()->print();
     std::cout<<" to i32";
+    std::cout<<"\n";
 }
 
 BasicBlock::BasicBlock():Value(VoidType::NewVoidTypeGet()){};
@@ -809,10 +811,9 @@ bool BasicBlock::EndWithBranch(){
 }
 
 void BasicBlock::RemovePredBB(BasicBlock* pred){
+    //不能自己删除自己
+    if(pred==this) return;
     for(auto iter=pred->begin();iter!=pred->end();++iter){
-        // auto delet=std::find(Succ_Block.begin(),Succ_Block.end(),pred);
-        // if(delet!=Succ_Block.end())
-        //     Succ_Block.erase(delet);
         auto inst=*iter;
         if(auto phi=dynamic_cast<PhiInst*>(pred->front())){
             auto tmp=std::find_if(phi->PhiRecord.begin(),phi->PhiRecord.end(),
@@ -822,10 +823,20 @@ void BasicBlock::RemovePredBB(BasicBlock* pred){
             if(tmp!=phi->PhiRecord.end())
                 phi->Del_Incomes(tmp->first);
             if(phi->oprandNum==1){
-                Value* repl=(*(phi->PhiRecord.begin())).second.first;
-                phi->RAUW(repl);
-                phi->ClearRelation();
-                phi->EraseFromParent();
+                //如果删除后还剩一个operand,检查是否是循环
+                BasicBlock* b=phi->PhiRecord.begin()->second.second;
+                if(b==this){
+                    phi->RAUW(UndefValue::get(phi->GetType()));
+                    phi->ClearRelation();
+                    phi->EraseFromParent();
+                    delete phi;
+                }else{
+                    Value* repl=(*(phi->PhiRecord.begin())).second.first;
+                    phi->RAUW(repl);
+                    phi->ClearRelation();
+                    phi->EraseFromParent();
+                    delete phi;
+                }
             }
         }else
           return;
@@ -935,6 +946,12 @@ Operand BasicBlock::GenerateCallInst(std::string id,std::vector<Operand> args,in
         assert(0);
     }
 }
+
+void BasicBlock::Delete(){
+    assert(GetUserlist().is_empty()&&"It should not be used when human delete");
+    this->~BasicBlock();
+}
+
 void BasicBlock::GenerateAlloca(Variable* var){
     GetParent()->push_alloca(var);
 }
@@ -971,6 +988,12 @@ int BasicBlock::GetSuccNum(){
     return 1;
   else 
     return 0;
+}
+
+void BasicBlock::clear(){
+    for(auto inst:*this)
+        assert(inst->GetUserListSize()==0&&"Check No User Fail");
+    mylist<BasicBlock,User>::clear();
 }
 
 PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB){
@@ -1034,6 +1057,15 @@ void PhiInst::Del_Incomes(int CurrentNum)
         });
         (*iter)->RemoveFromUserList((*iter)->GetUser());
         PhiRecord.erase(CurrentNum);
+        //维护PhiRecord的关系
+        std::vector<std::pair<int,std::pair<Value*,BasicBlock*>>> Defend;
+        for(auto& [_1,v]:PhiRecord)
+          if(_1>CurrentNum)
+            Defend.push_back(std::make_pair(_1,v));
+        for(const auto& item:Defend)
+          PhiRecord.erase(item.first);
+        for(const auto& item:Defend)
+          PhiRecord.insert(std::make_pair(item.first-1,item.second));
         oprandNum--;
     }
     else
@@ -1156,7 +1188,7 @@ void UndefValue::print(){
 
 void PhiInst::print() {
   dynamic_cast<Value*>(this)->print();
-  std::cout << " = Phi ";
+  std::cout << " = phi ";
   this->GetType()->print();
   std::cout << " ";
   for (int i = 0; i < oprandNum; i++) {

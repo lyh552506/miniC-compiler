@@ -152,7 +152,6 @@ void PRE::Insert() {
 
 void PRE::RunOnFunction() {
   BasicBlock *Entry = m_func->front();
-  VN = new ValueTable();
   auto entrynode = &(m_dom->GetNode(Entry->num));
   m_func->init_visited_block();
   DfsDT(0);

@@ -130,6 +130,9 @@ Value* SimplifyIcmpInst(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
     // X == X -> true
     if(LHS == RHS && Opcode == BinaryInst::Op_E)
         return ConstIRBoolean::GetNewConstant(true);
+    // X != X -> false
+    if(LHS != RHS && Opcode == BinaryInst::Op_NE)
+        return ConstIRBoolean::GetNewConstant(false);
     // X <= X -> false
     // X >= X -> false
     // X < X -> false
