@@ -125,6 +125,7 @@ class dominance : public PassManagerBase {
   bool dominates(BasicBlock *bb1, BasicBlock *bb2);
   bool needToUpdate=false;
   void update(){
+    IsDFSValid=false;
     RunOnFunction();}
   void PrintPass() {
     #ifdef SYSY_MIDDLE_END_DEBUG
@@ -139,7 +140,8 @@ class dominance : public PassManagerBase {
         dsu(blockNum + 1),
         df(blockNum + 1),
         thisFunc{Func},
-        Dest(blockNum + 1) {}
+        Dest(blockNum + 1),
+        IsDFSValid(false) {}
   void dom_begin();
 };
 bool promoteMemoryToRegister(Function &func, dominance &dom);

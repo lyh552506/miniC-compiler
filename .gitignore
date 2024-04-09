@@ -4,3 +4,4 @@ RISCInst
 testcases/*.ll
 test_cases
 test_cases_output
+.cache/clangd
