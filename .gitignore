@@ -2,6 +2,5 @@ build
 .vscode/settings.json
 RISCInst
 testcases/*.ll
-test_cases
-test_cases_output
-.cache/clangd
+testcases_output
+testcases_c
