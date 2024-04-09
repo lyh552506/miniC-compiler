@@ -2,8 +2,10 @@
 
 void DCE::PrintPass()
 {
+    #ifdef SYSY_MIDDLE_END_DEBUG
     std::cout << "--------DCE--------" << std::endl;
     Singleton<Module>().Test();
+    #endif
 }
 
 void DCE::RunOnFunction()

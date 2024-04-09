@@ -5,7 +5,7 @@ class Inliner
 {
 public:
     const bool Only_Inline_Small_Function = true;
-    const int Inline_Block_Num = 5;
+    const int Inline_Block_Num = 4;
     const bool Inline_Recursive = false;
     const bool Not_Inline_Multilevel_Loop_Func = true;
     const int Not_Inline_Multilevel_Loop_Nest = 5;

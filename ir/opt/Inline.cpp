@@ -14,12 +14,12 @@ void Inliner::init()
 {
     if(func->GetBasicBlock().empty())
         NotInlineFunc.insert(func);
-    else if(Only_Inline_Small_Function)
+    if(Only_Inline_Small_Function)
     {
         if(func->GetBasicBlock().size() > Inline_Block_Num)
             NotInlineFunc.insert(func);
     }
-    else if(Not_Inline_Multilevel_Loop_Func)
+    if(Not_Inline_Multilevel_Loop_Func)
     {
         for(BasicBlock* block : *func)
         {
@@ -36,7 +36,7 @@ void Inliner::init()
         }
     }
     if(func->GetName() == "main")
-        NotInlineFunc.erase(func);
+        NotInlineFunc.insert(func);
     if(NotInlineFunc.find(func) == NotInlineFunc.end())
     {
         for(BasicBlock* block : *func)
@@ -96,8 +96,10 @@ void Inliner::VisitFunc(Function* entry, std::set<Function*>& visited)
 }
 void Inliner::Inline()
 {
-    for(User* inst : NeedInlineCall)
+    while(!NeedInlineCall.empty())
     {
+        User* inst = NeedInlineCall.front();
+        NeedInlineCall.erase(NeedInlineCall.begin());
         BasicBlock* block = inst->GetParent();
 
         BasicBlock* SplitBlock = block->SplitAt(inst);
@@ -120,15 +122,9 @@ void Inliner::Inline()
             {
                 Value* val = Phi->Getuselist()[0]->usee;
                 inst->RAUW(val);
-                inst->ClearRelation();
-                inst->EraseFromParent();
             }
             else
-            {
                 inst->RAUW(Phi);
-                inst->ClearRelation();
-                inst->EraseFromParent();
-            }
             // }
             // else
             // {
@@ -146,13 +142,11 @@ void Inliner::Inline()
             // }
         }
         else
-        {
             HandleVoidRet(SplitBlock, blocks);
-            inst->ClearRelation();
-            inst->EraseFromParent();
-        }
         m.inlinedFunc.insert(dynamic_cast<Function*>(inst->Getuselist()[0]->usee));
         m.hasInlinedFunc.insert(func);
+        inst->ClearRelation();
+        inst->EraseFromParent();
     }
 }
 // void Inliner::Inline(Function* entry)
@@ -197,20 +191,22 @@ bool Inliner::CanBeInlined(User *inst)
 {
     if(dynamic_cast<CallInst*>(inst))
     {
-        Function* func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
-        if(Only_Inline_Small_Function && !NotInline(func))
+        Function* Func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
+        if(Only_Inline_Small_Function && !NotInline(Func))
         {
-            if(func->GetBasicBlock().size() <= Inline_Block_Num)
+            if(Func->GetBasicBlock().size() <= Inline_Block_Num)
             {
                 int Size = 0;
-                for(BasicBlock* block : func->GetBasicBlock())
+                for(BasicBlock* block : Func->GetBasicBlock())
                     Size += block->Size();
-                if(Size <= 5)
+                if(Size <= 10)
                     return true;
+                else
+                    return false;
             }
-            return false; //todo handle ignored and recursive
+            return false; 
         }
-        else if(isRecursive(func) && Inline_Recursive)
+        else if(isRecursive(Func) && Inline_Recursive)
         {
             // int nest = CalRecursiveDepth(func); //TODO
             // if(nest < Nest_Max)
@@ -280,6 +276,8 @@ void Inliner::HandleRetPhi(BasicBlock* RetBlock, PhiInst* Phi, std::vector<Basic
 
 void Inliner::PrintPass()
 {
+    #ifdef SYSY_MIDDLE_END_DEBUG
     std::cout << "--------Inline--------" << std::endl;
     Singleton<Module>().Test();
+    #endif
 }
