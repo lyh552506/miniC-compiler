@@ -5,8 +5,10 @@ void ElimitCriticalEdge::RunOnFunction(){
 }
 
 void ElimitCriticalEdge::PrintPass(){
+  #ifdef SYSY_MIDDLE_END_DEBUG
   std::cout<<"-----------ElimitCriticalEdge------------\n";
   Singleton<Module>().Test();
+  #endif
 }
 
 void ElimitCriticalEdge::DealCriticalEdges() {
