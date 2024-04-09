@@ -10,16 +10,17 @@
             "request": "launch",
             "preLaunchTask": "CMake: build",
             "program": "${workspaceFolder}/build/SYSY-compiler",
-
-  
-            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constprop","--dce","--pre","--loopinfo"],
-          //   "setupCommands": [
-          //     {
-          //         "description": "为 gdb 启用整齐打印",
-          //         "text": "-enable-pretty-printing",
-          //         "ignoreFailures": true
-          //     }
-          // ],
+            "cwd": "${workspaceFolder}",
+            "targetArchitecture": "x64",
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg"],
+            "stopAtEntry": false,
+            "setupCommands": [
+              {
+                  "description": "为 gdb 启用整齐打印",
+                  "text": "-enable-pretty-printing",
+                  "ignoreFailures": true
+              }
+          ],
             // "environment": [
             //   {
             //     "name": "LSAN_OPTIONS",

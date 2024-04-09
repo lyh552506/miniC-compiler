@@ -202,6 +202,8 @@ public:
 class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
 {
     public:
+    virtual ~BasicBlock()=default;
+    void Delete();
     BasicBlock();
     void print();
     int GetSuccNum();
@@ -229,6 +231,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     void AddSuccBlock(BasicBlock* block){this->Succ_Block.push_back(block);}
     bool EndWithBranch();
     void RemovePredBB(BasicBlock* pred);
+    virtual void clear()override;
     int num=0;
     bool visited=false;
 };
@@ -291,6 +294,4 @@ class Module:public SymbolTable
     std::vector<GlobalVariblePtr>& GetGlobalVariable();
     void Test();
     void EraseFunction(Function* func);
-    bool isMIRSSALevel();
-    Function* GetMainFunc();
 };

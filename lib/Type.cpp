@@ -61,6 +61,18 @@ void VoidType::print(){
 /*HasSubType*/
 HasSubType::HasSubType(InnerDataType tp_enum,Type* _subtype):Type(tp_enum),subtype(_subtype),layer(_subtype->get_layer()+1){}
 int HasSubType::get_layer(){return layer;}
+Type* HasSubType::get_baseType() {
+    Type* basetype = nullptr;
+    basetype = this;
+    for(int i=0; i<layer; i++) {
+        if(HasSubType* hassubtype = dynamic_cast<HasSubType*>(basetype)) {
+            basetype = hassubtype->GetSubType();
+        }
+    }
+    return basetype;
+}
+
+
 Type* HasSubType::GetSubType(){
     return subtype;
 }

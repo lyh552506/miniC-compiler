@@ -158,20 +158,11 @@ public:
   //在一个set中找到val的leader
   Value *Find_Leader(ValueNumberedSet &set, Value *val);
 
-  PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {}
+  PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {
+    VN = new ValueTable();
+  }
   ~PRE(){
     delete VN;
-    AvailOut.clear();
-    //AnticipatedIn.clear();
-    for(auto iter=AnticipatedIn.begin();iter!=AnticipatedIn.end();++iter)
-     {iter->second.init();
-      AnticipatedIn.erase(iter);
-     }
-     AnticipatedIn.clear();
-    GeneratedPhis.clear();
-    Dfs.clear();
-    PostOrder.clear();
-    GeneratedTemp.clear();
   }
 private:
   dominance *m_dom;
