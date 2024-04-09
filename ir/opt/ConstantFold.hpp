@@ -17,10 +17,9 @@ Value* ConstantFoldBinaryInst(BinaryInst* inst);
 Value* ConstantFoldBinaryInt(BinaryInst* inst, Value* LHS, Value* RHS);
 // For ConsantFoldBinaryInst 
 Value* ConstantFoldBinaryFloat(BinaryInst* inst, Value* LHS, Value* RHS);
-Value* ConstFoldInt(BinaryInst::Operation Opcode, int LVal, int RVal);
-Value* ConstFoldFloat(BinaryInst::Operation Opcode, float LVal, float RVal);
-Value* ConstFoldIntCmp(BinaryInst::Operation Opcode, int LVal, int RVal);
-Value* ConstFoldFloatCmp(BinaryInst::Operation Opcode, float LVal, float RVal);
+Value* ConstFoldInt(BinaryInst::Operation Opcode, Value* LHS, Value* RHS);
+Value* ConstFoldFloat(BinaryInst::Operation Opcode, Value* LHS, Value* RHS);
+Value* ConstFoldCmp(BinaryInst::Operation Opcode, Value* LHS, Value* RHS);
 // Handle SITFP
 Value* ConstantFoldSITFPInst(SITFP* inst);
 // Handle FPTSI
