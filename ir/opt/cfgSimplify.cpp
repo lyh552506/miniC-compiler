@@ -1,13 +1,13 @@
-// #include "cfgSimplify.hpp"
+#include "cfgSimplify.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <iterator>
 
-// #include "BaseCFG.hpp"
-// #include "CFG.hpp"
-// #include "Singleton.hpp"
+#include "BaseCFG.hpp"
+#include "CFG.hpp"
+#include "Singleton.hpp"
 
 void cfgSimplify::RunOnFunction() {
   bool keep_loop = true;
@@ -290,7 +290,7 @@ bool cfgSimplify::simplify_Block() {
   return changed;
 }
 
-void cfgSimplify::DealBrInst() {
+bool cfgSimplify::DealBrInst() {
   for (auto bb : m_func->GetBasicBlock()) {
     User* x = bb->back();
     if (auto cond = dynamic_cast<CondInst*>(x)) {
@@ -310,24 +310,25 @@ void cfgSimplify::DealBrInst() {
             tmp = iter;
           }
           tmp.insert_before(uncond);
-          cond->ClearRelation();
-          cond->EraseFromParent();
+          delete cond;
           ignore->RemovePredBB(pred);
-          m_dom->update();
+          //更新m_dom相关参数
+          m_dom->GetNode(ignore->num).rev.remove(pred->num);
+          m_dom->GetNode(pred->num).des.remove(ignore->num);
         } else {
-          UnCondInst* uncond = new UnCondInst(nxt);
+          UnCondInst* uncond = new UnCondInst(ignore);
           auto tmp = pred->begin();
           for (auto iter = pred->begin();; ++iter) {
             if (iter == pred->end()) break;
             tmp = iter;
           }
           tmp.insert_before(uncond);
-          cond->ClearRelation();
-          cond->EraseFromParent();
-          ignore->RemovePredBB(pred);
-          m_dom->update();
+          delete cond;
+          nxt->RemovePredBB(pred);
+          m_dom->GetNode(nxt->num).rev.remove(pred->num);
+          m_dom->GetNode(pred->num).des.remove(nxt->num);
         }
-        return;
+        return true;
       } else if (nxt == ignore) {
         UnCondInst* uncond = new UnCondInst(nxt);
         auto tmp = pred->begin();
@@ -336,12 +337,27 @@ void cfgSimplify::DealBrInst() {
           tmp = iter;
         }
         tmp.insert_before(uncond);
-        cond->ClearRelation();
-        cond->EraseFromParent();
-        return;
+        delete cond;
+        return true;
       }
     }
   }
+  return false;
+}
+
+void cfgSimplify::DeletDeadBlock(BasicBlock* bb) {
+  auto& node = m_dom->GetNode(bb->num);
+  //维护后续的phi关系
+  for (int des : node.des) {
+    BasicBlock* succ = m_dom->GetNode(des).thisBlock;
+    succ->RemovePredBB(bb);
+  }
+  for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
+    User* inst = *iter;
+    inst->RAUW(UndefValue::get(inst->GetType()));
+  }
+  updateDTinfo(bb);
+  bb->Delete();
 }
 
 void cfgSimplify::PrintPass() {

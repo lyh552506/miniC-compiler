@@ -1,8 +1,8 @@
-// #include "CFG.hpp"
-// #include "PassManagerBase.hpp"
-// #include "dominant.hpp"
-// #include <algorithm>
-// #include <vector>
+#include "CFG.hpp"
+#include "PassManagerBase.hpp"
+#include "dominant.hpp"
+#include <algorithm>
+#include <vector>
 
 class cfgSimplify : public PassManagerBase {
  public:
