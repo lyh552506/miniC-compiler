@@ -1,6 +1,7 @@
 #pragma once
 #include <list>
 #include <memory>
+#include <vector>
 /// @brief 设计的先发劣势，要写什么自己加，最简单的一集
 /// @tparam T 
 template<typename T>

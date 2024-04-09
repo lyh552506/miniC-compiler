@@ -138,8 +138,13 @@ Value* ConstantFolding::ConstantFoldZextInst(ZextInst* inst)
     Value* Val = inst->Getuselist()[0]->GetValue();
     if(auto UNdefValue = dynamic_cast<UndefValue*>(Val))
         return UndefValue::get(UNdefValue->GetType());
-    else if(auto iNt = dynamic_cast<ConstIRInt*>(Val))
-        return ConstIRInt::GetNewConstant(iNt->GetVal());
+    else if(auto BOol = dynamic_cast<ConstIRBoolean*>(Val))
+    {
+        if(BOol->GetVal())
+            return ConstIRInt::GetNewConstant(1);
+        else
+            return ConstIRInt::GetNewConstant(0);
+    }
     return nullptr;
 }
 
