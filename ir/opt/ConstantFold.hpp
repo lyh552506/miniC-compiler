@@ -21,6 +21,7 @@ Value* ConstFoldInt(BinaryInst::Operation Opcode, int LVal, int RVal);
 Value* ConstFoldFloat(BinaryInst::Operation Opcode, float LVal, float RVal);
 Value* ConstFoldIntCmp(BinaryInst::Operation Opcode, int LVal, int RVal);
 Value* ConstFoldFloatCmp(BinaryInst::Operation Opcode, float LVal, float RVal);
+Value* ConstFoldCmp(BinaryInst::Operation Opcode, bool LVal, bool RVal);
 // Handle SITFP
 Value* ConstantFoldSITFPInst(SITFP* inst);
 // Handle FPTSI
