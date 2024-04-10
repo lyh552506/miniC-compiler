@@ -71,6 +71,10 @@ void PassManager::RunOnFunction() {
     m_loopAnlay->RunOnFunction();
     m_loopAnlay->PrintPass();
   }
+  if(InitpassRecorder[8]){
+    m_eliedg->RunOnFunction();
+    m_eliedg->PrintPass();
+  }
   if(InitpassRecorder[6]){
     m_inliner->Run();
     m_inliner->PrintPass();
