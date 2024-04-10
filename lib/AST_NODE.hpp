@@ -265,7 +265,11 @@ inline void BaseExp<LAndExp>::GetOperand(BasicBlock* block,BasicBlock* is_true,B
             i->GetOperand(block,is_true,nxt_building);
             if(!nxt_building->GetUserlist().is_empty())
                 block=nxt_building;
-            else nxt_building->EraseFromParent();
+            else{
+                /// @note 说明直接短路到is_true，可以结束了
+                nxt_building->EraseFromParent();
+                return;
+            }
         }
         else i->GetOperand(block,is_true,is_false);
     }
