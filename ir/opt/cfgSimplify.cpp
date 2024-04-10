@@ -18,16 +18,14 @@ void cfgSimplify::RunOnFunction() {
     keep_loop |= simplify_Block();
     keep_loop |= DealBrInst();
     keep_loop |= DelSamePhis();
-    keep_loop |= mergeSpecialBlock();    
+    keep_loop |= mergeSpecialBlock();
     keep_loop |= SimplifyUncondBr();
   }
   m_dom->update();
-  Singleton<Module>().Test();
-  exit(0);
 }
 
 bool cfgSimplify::simplifyPhiInst() {
-  bool changed=false;
+  bool changed = false;
   for (auto bb : m_func->GetBasicBlock()) {
     for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
       if (auto phi = dynamic_cast<PhiInst*>(*iter)) {
@@ -48,7 +46,7 @@ bool cfgSimplify::simplifyPhiInst() {
           phi->ClearRelation();
           phi->RAUW(undef);
           delete phi;
-          changed=true;
+          changed = true;
           continue;
         }
         if (HasUndef) {
@@ -58,7 +56,7 @@ bool cfgSimplify::simplifyPhiInst() {
           phi->RAUW(origin);
           phi->ClearRelation();
           phi->EraseFromParent();
-          changed=true;
+          changed = true;
           continue;
         }
       } else
@@ -138,7 +136,7 @@ bool cfgSimplify::SimplifyUncondBr() {
 
 // 传入的bb满足：跳转语句是uncondbr，并且只有uncondinst这一条指令
 bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock* bb) {
-  if(bb->num==m_dom->GetNode(bb->num).idom) return false;
+  if (bb->num == m_dom->GetNode(bb->num).idom) return false;
   BasicBlock* succ = dynamic_cast<BasicBlock*>(
       dynamic_cast<UnCondInst*>(bb->back())->Getuselist()[0]->GetValue());
   assert(succ);
@@ -189,26 +187,29 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock* bb) {
       break;
   }
   //更新user关系
-  for(auto u=succ->GetUserlist().begin();u!=succ->GetUserlist().end();++u){
-    Use *tmp=*u;
-    if(tmp->fat->GetParent()==bb){
+  for (auto u = succ->GetUserlist().begin(); u != succ->GetUserlist().end();
+       ++u) {
+    Use* tmp = *u;
+    if (tmp->fat->GetParent() == bb) {
       tmp->fat->EraseFromParent();
-      //tmp->RemoveFromUserList(bb->back());
-      delete tmp;
     }
   }
-  for(auto iter=bb->GetUserlist().begin();iter!=bb->GetUserlist().end();++iter){
-    Use* tmp=*iter;
-    auto pred=tmp->GetUser();
-    tmp->RemoveFromUserList(pred);
-    delete tmp;
-    pred->add_user(new Use(pred,succ));
+  for (auto iter = bb->GetUserlist().begin(); iter != bb->GetUserlist().end();
+       ++iter) {
+    Use* tmp = *iter;
+    auto pred = tmp->GetUser();
+    int index;
+    for (index = 0; index < pred->Getuselist().size(); index++)
+      if (pred->Getuselist()[index]->GetValue() == bb) {
+        pred->RSUW(index, succ);
+        break;
+      }
   }
-  for(int rev:m_dom->GetNode(bb->num).rev){
+  for (int rev : m_dom->GetNode(bb->num).rev) {
     m_dom->GetNode(succ->num).rev.push_front(rev);
     m_dom->GetNode(rev).des.push_front(succ->num);
   }
-  
+
   DeletDeadBlock(bb);
   return true;
 }
@@ -384,8 +385,8 @@ void cfgSimplify::DeletDeadBlock(BasicBlock* bb) {
 }
 
 void cfgSimplify::PrintPass() {
-  #ifdef SYSY_MIDDLE_END_DEBUG
+#ifdef SYSY_MIDDLE_END_DEBUG
   std::cout << "-------cfgsimplify--------\n";
   Singleton<Module>().Test();
-  #endif
+#endif
 }
