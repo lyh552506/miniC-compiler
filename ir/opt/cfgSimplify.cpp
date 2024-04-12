@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdlib>
 #include <iterator>
+#include <utility>
+#include <vector>
 
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
@@ -12,7 +14,6 @@
 
 void cfgSimplify::RunOnFunction() {
   bool keep_loop = true;
-  mergeRetBlock();
   while (keep_loop) {
     keep_loop = false;
     keep_loop |= simplify_Block();
@@ -20,6 +21,7 @@ void cfgSimplify::RunOnFunction() {
     keep_loop |= DelSamePhis();
     keep_loop |= mergeSpecialBlock();
     keep_loop |= SimplifyUncondBr();
+    keep_loop |= mergeRetBlock();
   }
   m_dom->update();
 }
@@ -67,6 +69,7 @@ bool cfgSimplify::simplifyPhiInst() {
 }
 
 bool cfgSimplify::mergeSpecialBlock() {
+  bool changed=false;
   int index = 0;
   while (index < m_func->GetBasicBlock().size()) {
     auto bb = m_func->GetBasicBlock()[index++];
@@ -95,14 +98,15 @@ bool cfgSimplify::mergeSpecialBlock() {
     int length = m_func->GetBasicBlock().size();
     m_func->GetBasicBlock()[index - 1] = m_func->GetBasicBlock()[length - 1];
     m_func->GetBasicBlock().pop_back();
+    index--;
     DeletDeadBlock(bb);
     if (nxt != nullptr) {
       m_dom->GetNode(nxt->num).rev.push_front(pred->num);
       m_dom->GetNode(pred->num).des.push_front(nxt->num);
     }
-    return true;
+    changed|=true;
   }
-  return false;
+  return changed;
 }
 
 void cfgSimplify::updateDTinfo(BasicBlock* bb) {
@@ -194,6 +198,7 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock* bb) {
       tmp->fat->EraseFromParent();
     }
   }
+  std::vector<std::pair<User*,int>> Erase;
   for (auto iter = bb->GetUserlist().begin(); iter != bb->GetUserlist().end();
        ++iter) {
     Use* tmp = *iter;
@@ -201,9 +206,13 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock* bb) {
     int index;
     for (index = 0; index < pred->Getuselist().size(); index++)
       if (pred->Getuselist()[index]->GetValue() == bb) {
-        pred->RSUW(index, succ);
+        Erase.push_back(std::make_pair(pred,index));
         break;
       }
+  }
+  for(int i=0;i<Erase.size();i++){
+    auto& [pred,index]=Erase[i];
+    pred->RSUW(index,succ);
   }
   for (int rev : m_dom->GetNode(bb->num).rev) {
     m_dom->GetNode(succ->num).rev.push_front(rev);
@@ -214,7 +223,8 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock* bb) {
   return true;
 }
 
-void cfgSimplify::mergeRetBlock() {
+bool cfgSimplify::mergeRetBlock() {
+  bool changed=false;
   BasicBlock* RetBlock = nullptr;
   int i = 0;
   while (i < m_func->GetBasicBlock().size()) {
@@ -243,6 +253,7 @@ void cfgSimplify::mergeRetBlock() {
       m_func->GetBasicBlock()[i - 1] =
           m_func->GetBasicBlock()[m_func->GetBasicBlock().size() - 1];
       m_func->GetBasicBlock().pop_back();
+      changed|=true;
       continue;
     }
     PhiInst* insert = dynamic_cast<PhiInst*>(RetBlock->front());
@@ -262,7 +273,9 @@ void cfgSimplify::mergeRetBlock() {
     delete ret;
     UnCondInst* uncond = new UnCondInst(RetBlock);
     bbs->push_back(uncond);
+    changed|=true;
   }
+  return changed;
 }
 
 bool cfgSimplify::DelSamePhis() {
