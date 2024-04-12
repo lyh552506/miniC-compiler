@@ -76,8 +76,6 @@ bool cfgSimplify::mergeSpecialBlock() {
     BasicBlock* pred =
         m_dom->GetNode(m_dom->GetNode(bb->num).rev.front()).thisBlock;
     if (pred == bb) continue;
-    m_dom->update();
-    simplifyPhiInst();
 
     //确保前驱也只有一个后继
     auto& node = m_dom->GetNode(pred->num);
@@ -100,6 +98,8 @@ bool cfgSimplify::mergeSpecialBlock() {
       m_dom->GetNode(nxt->num).rev.push_front(pred->num);
       m_dom->GetNode(pred->num).des.push_front(nxt->num);
     }
+    m_dom->update();
+    simplifyPhiInst();
     return true;
   }
   return false;
