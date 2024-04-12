@@ -222,8 +222,8 @@ Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 void User::RSUW(int num,Operand val){
   auto& uselist=Getuselist();
   assert(0<=num&&num<uselist.size()&&"Invalid Location!");
-  uselist[num]->usee=val;
   uselist[num]->RemoveFromUserList(this);
+  uselist[num]->usee=val;
   val->add_user(uselist[num].get());
 }
 
