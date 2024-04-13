@@ -162,6 +162,17 @@ bool User::IsTerminateInst()
     return false;
 }
 
+bool User::IsCondInst(){
+  if(dynamic_cast<CondInst*>(this))
+    return true;
+  return false;
+}
+
+bool User::IsUncondInst(){
+  if(dynamic_cast<UnCondInst*>(this))
+    return true;
+  return false;
+}
 bool User::HasSideEffect()
 {
   if(dynamic_cast<StoreInst*>(this))
