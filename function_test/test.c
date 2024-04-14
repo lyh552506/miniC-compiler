@@ -1,27 +1,34 @@
-float a=10.342432;
-int b=1;
-float c;
-int d;
-int arri[2][2][3] = {1, 3 ,4};
-float arrf[3][3][3] = {1.2};
-int arri_un[19];
-float arrf_un[4][3];
-int main () {
-    int arr_in_def[10000] = {1, 2};
-    int i=0;
-    while(i<10000) {
-        arr_in_def[i] = i;
-        i = i+1;
+int main() {
+  const int a = 1;
+  const int b = 2;
+  const int c = 3;
+  const int d = 4;
+  const int e = 5;
+  const int f = 6;
+  if (a * b + c < 6 && d != 0) {
+    if (e || !a + 0) {
+      if (c == 2 && d + e > 2) return 3;
+      else {
+        if (f % c && e) return 4;
+        else {
+          if (d / b + a >= 2) {
+            if (e - f >= 0 || d > 4) return 6;
+            else {
+              if (c != f) {
+                if (b + e * d > 10) {
+                  if (!f) return 9;
+                  else return 10;
+                }
+                else return 8;
+              }
+              else return 7;
+            }
+          }
+          else return 5;
+        }
+      }
     }
-    arr_in_def[9999] = 9999;
-    a = a+2.0;
-    b = b+1;
-    c = 1.0;
-    d = arr_in_def[13];
-    arri[0][1][0] = 0;
-    arrf[0][1][0] = 0.0;
-    arri_un[1] = 0;
-    arrf_un[1][0] = 0.0;
-    return 0;
+    else return 2;
+  }
+  else return 1;
 }
-

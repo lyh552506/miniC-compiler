@@ -110,9 +110,7 @@ void dominance::dom_begin() {
 
 /// @brief 判断bb1是否dominate bb2
 bool dominance::dominates(BasicBlock *bb1, BasicBlock *bb2) {
-  if (!IsDFSValid) {
-    DfsDominator(0);
-  }
+  DfsDominator(0);
   Node &n1 = node[bb1->num];
   Node &n2 = node[bb2->num];
 

@@ -130,13 +130,24 @@ Value* SimplifyIcmpInst(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
     // X == X -> true
     if(LHS == RHS && Opcode == BinaryInst::Op_E)
         return ConstIRBoolean::GetNewConstant(true);
-    // X <= X -> false
-    // X >= X -> false
+    // X <= X -> true
+    // X >= X -> true
     // X < X -> false
     // X > X -> false
-    if(LHS == RHS && (Opcode ==BinaryInst::Op_L || Opcode == BinaryInst::Op_LE \
-    || Opcode == BinaryInst::Op_G || Opcode == BinaryInst::Op_GE || BinaryInst::Op_NE))
+    // X != X -> false
+    if(LHS == RHS && Opcode ==BinaryInst::Op_L)
         return ConstIRBoolean::GetNewConstant(false);
+    if(LHS == RHS && Opcode ==BinaryInst::Op_LE)
+        return ConstIRBoolean::GetNewConstant(true);
+    if(LHS == RHS && Opcode ==BinaryInst::Op_G)
+        return ConstIRBoolean::GetNewConstant(false);
+    if(LHS == RHS && Opcode ==BinaryInst::Op_GE)
+        return ConstIRBoolean::GetNewConstant(true);
+    if(LHS == RHS && Opcode ==BinaryInst::Op_NE)
+        return ConstIRBoolean::GetNewConstant(false);
+    // X != Y -> true
+    if(LHS == RHS && Opcode ==BinaryInst::Op_NE)
+        return ConstIRBoolean::GetNewConstant(true);
     // UndefValue op UndefValue -> false
     if(dynamic_cast<UndefValue*>(LHS) || dynamic_cast<UndefValue*>(RHS))
         return ConstIRBoolean::GetNewConstant(false);

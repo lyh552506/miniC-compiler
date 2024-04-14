@@ -450,7 +450,7 @@ void ZextInst::print(){
     Value::print();
     std::cout<<" = zext i1 ";
     uselist[0]->GetValue()->print();
-    std::cout<<" to i32";
+    std::cout<<" to i32\n";
 }
 
 BasicBlock::BasicBlock(Function& __master):Value(VoidType::NewVoidTypeGet()),master(__master){};

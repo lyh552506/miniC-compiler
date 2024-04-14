@@ -20,6 +20,7 @@ static struct option long_options[] = {
     {"constprop", no_argument, 0, 2}, {"dce", no_argument, 0, 3},
     {"adce", no_argument, 0, 4},     {"loopinfo",no_argument,0,5},
     {"help", no_argument, 0, 6},      {"simplifycfg",no_argument,0,7},
+    {"ece", no_argument, 0, 8},
     {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
@@ -58,6 +59,12 @@ int main(int argc, char **argv) {
       break;
     case 6:
       std::cerr << "help" << std::endl;
+      break;
+    case 7:
+      pass_manager->IncludePass(7);
+      break;
+    case 8:
+      pass_manager->IncludePass(8);
       break;
     }
   }

@@ -162,6 +162,17 @@ bool User::IsTerminateInst()
     return false;
 }
 
+bool User::IsCondInst(){
+  if(dynamic_cast<CondInst*>(this))
+    return true;
+  return false;
+}
+
+bool User::IsUncondInst(){
+  if(dynamic_cast<UnCondInst*>(this))
+    return true;
+  return false;
+}
 bool User::HasSideEffect()
 {
   if(dynamic_cast<StoreInst*>(this))
@@ -222,8 +233,8 @@ Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 void User::RSUW(int num,Operand val){
   auto& uselist=Getuselist();
   assert(0<=num&&num<uselist.size()&&"Invalid Location!");
-  uselist[num]->usee=val;
   uselist[num]->RemoveFromUserList(this);
+  uselist[num]->usee=val;
   val->add_user(uselist[num].get());
 }
 
