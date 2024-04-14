@@ -61,8 +61,13 @@ void MachineInst::print() {
         std::cout << rd->GetName() << std::endl;
     }
     else if (opcode == "ret") {
-        std::cout << "    lw a0, " << rd->GetName() << std::endl; 
-        this->get_machinebasicblock()->get_parent()->print_func_end();
+        if (rd == nullptr) {
+            std::cout << "    ret" << std::endl;
+        }
+        else {
+            std::cout << "    lw a0, " << rd->GetName() << std::endl; 
+            this->get_machinebasicblock()->get_parent()->print_func_end();
+        }
     }
     else if (opcode == "li") {
         std::cout << "    li " << rd->GetName() << ", " << rs1->GetName() << std::endl;
@@ -70,8 +75,9 @@ void MachineInst::print() {
     else if (opcode == "xori") {
         std::cout << "    xori " << rd->GetName() << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl; 
     }
-    else if (opcode == "white")
-        std::cout << "Error: No Such Instruction." << std::endl;
+    else if (opcode == "white") {
+        //std::cout << "Error: No Such Instruction." << std::endl;
+    }
     else {
         //binary
         std::cout << "    " << opcode << " ";
@@ -101,7 +107,7 @@ void MachineBasicBlock::print_block_lable() {
 
 /*MachineFunction*/
 MachineFunction::MachineFunction(Function* func, MachineUnit* Munit) 
-    : func(func),  Munit(Munit), offset(0), alloca_num(0), stacksize(0), mblocks(mblocks) {}
+    : func(func),  Munit(Munit), offset(0), alloca_num(0), stacksize(0) {}
 void MachineFunction::set_offset_map(std::string name, size_t offset) {
     offsetMap.insert(std::pair<std::string, size_t>(name, offset));
 }

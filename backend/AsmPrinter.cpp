@@ -48,7 +48,7 @@ MachineUnit* AsmPrinter::GenerateMir(Module* Unit) {
             for (auto it = block->begin(); it != block->end(); ++it) {
                 User* Inst = *it;
                 //生成需要放在数据段的内容
-                if (GetOperand(Inst, 0)->isConst()){
+                if (!(Inst->Getuselist().empty()) && (GetOperand(Inst, 0)->isConst())){
 
                 }
                 //生成机器指令 
