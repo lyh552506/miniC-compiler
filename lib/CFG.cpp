@@ -453,7 +453,7 @@ void ZextInst::print(){
     std::cout<<" to i32\n";
 }
 
-BasicBlock::BasicBlock(Function& __master):Value(VoidType::NewVoidTypeGet()),master(__master){};
+BasicBlock::BasicBlock():Value(VoidType::NewVoidTypeGet()){};
 Operand BasicBlock::GenerateLoadInst(Operand data){
     auto tmp=new LoadInst(data);
     push_back(tmp);
@@ -592,8 +592,8 @@ void BasicBlock::GenerateStoreInst(Operand src,Operand des){
 }
 
 BasicBlock* BasicBlock::GenerateNewBlock(){
-    BasicBlock* tmp=new BasicBlock(master);
-    master.add_block(tmp);
+    BasicBlock* tmp=new BasicBlock();
+    GetParent()->add_block(tmp);
     return tmp;
 }
 std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
@@ -605,9 +605,9 @@ std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
 }
 
 BasicBlock* BasicBlock::GenerateNewBlock(std::string name){
-    BasicBlock* tmp=new BasicBlock(master);
+    BasicBlock* tmp=new BasicBlock();
     tmp->name+=name;
-    master.add_block(tmp);
+    GetParent()->add_block(tmp);
     return tmp;
 }
 
@@ -699,7 +699,7 @@ BuildInFunction* BuildInFunction::GetBuildInFunction(std::string _id){
 Function::Function(InnerDataType _tp,std::string _id):Value(Type::NewTypeByEnum(_tp)){
     name=_id;
     //至少有一个bbs
-    push_back(new BasicBlock(*this));
+    push_back(new BasicBlock());
 }
 
 bool BasicBlock::EndWithBranch(){
@@ -753,7 +753,7 @@ void BasicBlock::GenerateUnCondInst(BasicBlock* des){
     Succ_Block.push_back(des);
 }
 void BasicBlock::GenerateRetInst(Operand ret_val){
-    if(master.GetTypeEnum()!=ret_val->GetTypeEnum()){
+    if(GetParent()->GetTypeEnum()!=ret_val->GetTypeEnum()){
         if(ret_val->GetTypeEnum()==IR_Value_INT)
             ret_val=GenerateSITFP(ret_val);
         else
@@ -852,7 +852,7 @@ void BasicBlock::Delete(){
 }
 
 void BasicBlock::GenerateAlloca(Variable* var){
-    master.push_alloca(var);
+    GetParent()->push_alloca(var);
 }
 Operand BasicBlock::GenerateGEPInst(Operand ptr){
     auto tmp=new GetElementPtrInst(ptr);

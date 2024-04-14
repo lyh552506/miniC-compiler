@@ -171,11 +171,10 @@ public:
 };
 class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Function,BasicBlock>
 {
-    Function& master;
     public:
     virtual ~BasicBlock()=default;
     void Delete();
-    BasicBlock(Function& __master);
+    BasicBlock();
     void print();
     int GetSuccNum();
     Operand push_alloca(std::string,Type*);
