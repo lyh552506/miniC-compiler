@@ -10,7 +10,7 @@ class cfgSimplify : public PassManagerBase {
   void RunOnFunction();
   void PrintPass();
  private:
-  void mergeRetBlock();
+  bool mergeRetBlock();
   bool simplify_Block();
   bool DealBrInst();
   bool DelSamePhis();
@@ -25,5 +25,4 @@ class cfgSimplify : public PassManagerBase {
   Function* m_func;
   dominance* m_dom;
   std::map<BasicBlock*,std::vector<PhiInst*>> BlockToPhis;
-  
 };

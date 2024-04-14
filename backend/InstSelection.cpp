@@ -193,9 +193,14 @@ MachineInst* MatchCallInst(MachineBasicBlock* parent, CallInst* inst) {
     return machineinst;
 }
 MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst) {
+    MachineInst* machineinst = nullptr;
+    if(inst->Getuselist().empty()) {
+        machineinst = new MachineInst(inst, parent, "ret");
+        return machineinst;
+    }
     Operand rd = inst->Getuselist()[0]->GetValue();
     //std::cout << "    lw a0, " << rd->GetName() << std::endl; 
-    MachineInst* machineinst = new MachineInst(inst, parent, "ret", rd);
+    machineinst = new MachineInst(inst, parent, "ret", rd);
     return machineinst;
 }
 MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {

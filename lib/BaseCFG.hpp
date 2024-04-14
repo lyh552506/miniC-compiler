@@ -116,6 +116,8 @@ class User:public Value,public list_node<BasicBlock,User>
     virtual Operand GetDef();
     void ClearRelation();//在EraseFromBasic()前调用
     bool IsTerminateInst();
+    bool IsCondInst();
+    bool IsUncondInst();
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
     inline Operand GetOperand(int i){return uselist[i]->GetValue();}
     bool Alive = false;
