@@ -146,7 +146,7 @@ Value* SimplifyIcmpInst(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
     if(LHS == RHS && Opcode ==BinaryInst::Op_NE)
         return ConstIRBoolean::GetNewConstant(false);
     // X != Y -> true
-    if(LHS == RHS && Opcode ==BinaryInst::Op_NE)
+    if(LHS != RHS && Opcode ==BinaryInst::Op_NE)
         return ConstIRBoolean::GetNewConstant(true);
     // UndefValue op UndefValue -> false
     if(dynamic_cast<UndefValue*>(LHS) || dynamic_cast<UndefValue*>(RHS))
