@@ -60,7 +60,6 @@ class functionSegment {
 class dataSegment {
     private:
     std::vector<globlvar*> globlvar_list;//.data
-    std::vector<globlvar*> globlvar_undef_list;//.bss
     std::vector<tempvar*> tempvar_list;//.data
     MachineUnit* Machineunit;
 
@@ -85,6 +84,7 @@ class globlvar{
     public:
     globlvar(Variable* data);
     ~globlvar() = default;
+    std::string get_sec();
     void generate_array_init(Initializer* arry_init, Type* basetype);
 };
 
