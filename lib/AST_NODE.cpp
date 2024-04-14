@@ -602,11 +602,15 @@ BasicBlock* WhileStmt::GetInst(GetInstState state){
     state.current_building->GenerateUnCondInst(condition_part);
 
     condition->GetOperand(condition_part,inner_loop,nxt_building);
-    GetInstState loop_state={inner_loop,nxt_building,condition_part};
-    inner_loop=stmt->GetInst(loop_state);
+    /// @note 考虑while true和while false的情况
+    if(!inner_loop->GetUserlist().is_empty()){
+        GetInstState loop_state={inner_loop,nxt_building,condition_part};
+        inner_loop=stmt->GetInst(loop_state);
+    }
+    else delete inner_loop;
     if(!inner_loop->EndWithBranch())inner_loop->GenerateUnCondInst(condition_part);
     if(nxt_building->GetUserlist().is_empty()){
-        nxt_building->EraseFromParent();
+        delete nxt_building;
         return state.current_building;
     }
     else return nxt_building;
@@ -637,7 +641,7 @@ BasicBlock* IfStmt::GetInst(GetInstState state){
     auto reset_unuse=[](BasicBlock*& tmp){
         if(tmp==nullptr)return;
         if(tmp->GetUserlist().is_empty()){
-            tmp->EraseFromParent();
+            delete tmp;
             tmp=nullptr;
         }
     };
