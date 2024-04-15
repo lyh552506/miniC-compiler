@@ -71,12 +71,12 @@ int main(int argc, char **argv) {
   pass_manager->InitPass();
   #endif
   #ifdef SYSY_ENABLE_BACKEND
+  std::cout << std::endl;
+  AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
+  asmPrinter.printAsm();
   #else
   Singleton<Module>().Test();
   #endif
-  // std::cout << std::endl;
-  // AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
-  // asmPrinter.printAsm();
   
   return 0;
 }
