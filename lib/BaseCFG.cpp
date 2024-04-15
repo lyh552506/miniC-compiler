@@ -214,10 +214,12 @@ bool User::HasSideEffect()
   }
   if(dynamic_cast<CallInst*>(this))
   {
-    std::string name = this->Getuselist()[0]->GetUser()->GetName();
+    std::string name = this->Getuselist()[0]->usee->GetName();
     if(name =="getint" || name == "getch" || name == "getfloat" \
     || name == "getfarray" || name == "putint" || name == "putfloat" \
-    || name == "putarray" || name == "putfarray" || name == "putf")
+    || name == "putarray" || name == "putfarray" || name == "putf" \
+    || name == "putch" || name == "_sysy_starttime" || name == "_sysy_stoptime" \
+    || name == "llvm.memcpy.p0.p0.i32")
       return true;
     Function* func = dynamic_cast<Function*>(this->Getuselist()[0]->GetValue());
     if(func){
