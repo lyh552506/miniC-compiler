@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
   AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
   asmPrinter.printAsm();
   #else
-  Singleton<Module>().Test();
+  // Singleton<Module>().Test();
   #endif
   
   return 0;
