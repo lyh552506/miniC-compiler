@@ -214,6 +214,11 @@ bool User::HasSideEffect()
   }
   if(dynamic_cast<CallInst*>(this))
   {
+    std::string name = this->Getuselist()[0]->GetUser()->GetName();
+    if(name =="getint" || name == "getch" || name == "getfloat" \
+    || name == "getfarray" || name == "putint" || name == "putfloat" \
+    || name == "putarray" || name == "putfarray" || name == "putf")
+      return true;
     Function* func = dynamic_cast<Function*>(this->Getuselist()[0]->GetValue());
     if(func){
     auto& params = func->GetParams();

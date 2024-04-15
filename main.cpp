@@ -74,9 +74,9 @@ int main(int argc, char **argv) {
   #else
   Singleton<Module>().Test();
   #endif
-  std::cout << std::endl;
-  AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
-  asmPrinter.printAsm();
+  // std::cout << std::endl;
+  // AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
+  // asmPrinter.printAsm();
   
   return 0;
 }
