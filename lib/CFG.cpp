@@ -660,7 +660,7 @@ void BasicBlock::GenerateStoreInst(Operand src,Operand des){
 
 BasicBlock* BasicBlock::GenerateNewBlock(){
     BasicBlock* tmp=new BasicBlock();
-    GetParent()->push_back(tmp);
+    GetParent()->add_block(tmp);
     return tmp;
 }
 
@@ -676,7 +676,7 @@ BasicBlock* BasicBlock::SplitAt(User* inst){
 BasicBlock* BasicBlock::GenerateNewBlock(std::string name){
     BasicBlock* tmp=new BasicBlock();
     tmp->name+=name;
-    GetParent()->push_back(tmp);
+    GetParent()->add_block(tmp);
     return tmp;
 }
 

@@ -607,8 +607,11 @@ BasicBlock* WhileStmt::GetInst(GetInstState state){
         GetInstState loop_state={inner_loop,nxt_building,condition_part};
         inner_loop=stmt->GetInst(loop_state);
     }
-    else delete inner_loop;
-    if(!inner_loop->EndWithBranch())inner_loop->GenerateUnCondInst(condition_part);
+    else{
+        delete inner_loop;
+        inner_loop=nullptr;
+    };
+    if(inner_loop!=nullptr&&!inner_loop->EndWithBranch())inner_loop->GenerateUnCondInst(condition_part);
     if(nxt_building->GetUserlist().is_empty()){
         delete nxt_building;
         return state.current_building;
@@ -645,6 +648,8 @@ BasicBlock* IfStmt::GetInst(GetInstState state){
             tmp=nullptr;
         }
     };
+    /// @note 考虑条件语句都是常量的情况
+    reset_unuse(istrue);
     reset_unuse(isfalse);
     reset_unuse(nxt_building);
 
@@ -655,8 +660,11 @@ BasicBlock* IfStmt::GetInst(GetInstState state){
         }
     };
 
-    istrue=t->GetInst(t_state);
-    make_uncond(istrue);
+    /// @note if(false)的情况
+    if(istrue!=nullptr){
+        istrue=t->GetInst(t_state);
+        make_uncond(istrue);
+    }
     if(isfalse!=nullptr){
         GetInstState f_state=state;f_state.current_building=isfalse;
         isfalse=f->GetInst(f_state);
