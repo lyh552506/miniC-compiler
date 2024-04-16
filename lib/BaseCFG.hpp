@@ -96,7 +96,6 @@ class Value
     bool isConstZero();
     bool isConstOne();
     int GetUserListSize(){return GetUserlist().GetSize();}
-    int BelongsToExp;
 };
 using Operand=Value*;
 // class Constant:public User

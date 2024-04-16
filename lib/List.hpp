@@ -29,7 +29,7 @@ class list_node
     
     derived_list_node* prev;
     derived_list_node* next;
-    derived_mylist* fat;
+    derived_mylist* fat=nullptr;
     void SetParent(derived_mylist* _fat){fat=_fat;}
     public:
     virtual ~list_node(){
@@ -44,6 +44,7 @@ class list_node
         if(this->next==nullptr)fat->tail=this->prev;
         if(this->prev!=nullptr)this->prev->next=this->next;
         if(this->next!=nullptr)this->next->prev=this->prev;
+        fat=nullptr;
     }
     virtual derived_mylist* GetParent(){return this->fat;};
     derived_mylist* Del_Pre(){};

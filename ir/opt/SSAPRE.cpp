@@ -28,8 +28,14 @@ void PRE::CalculatePredBB(BasicBlock *bb) {
 }
 
 void PRE::CleanMemory() {
-  for (auto tmp : gen_exp)
+  for(int i=0;i<gen_exp.size();i++){
+    auto tmp=gen_exp[i];
+    gen_exp[i]=gen_exp[gen_exp.size()-1];
+    gen_exp.pop_back();
+    i--;
+    auto x=dynamic_cast<User*>(tmp);
     delete tmp;
+  }
 }
 
 void PRE::init_pass() {
@@ -560,6 +566,9 @@ Value *PRE::phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val) {
   } else if (auto bin = dynamic_cast<BinaryInst *>(val)) {
     Value *op_1 = bin->Getuselist()[0]->GetValue();
     Value *op_2 = bin->Getuselist()[1]->GetValue();
+    if(bin->GetName()==".194"){
+      int a=0;
+    }
     if (dynamic_cast<User *>(op_1))
       op_1 = phi_translate(pred, succ, op_1);
     if (dynamic_cast<User *>(op_2))
@@ -604,6 +613,9 @@ Value *PRE::phi_translate(BasicBlock *pred, BasicBlock *succ, Value *val) {
       GetElementPtrInst *newgep = new GetElementPtrInst(ptr, args);
       int hash = VN->LookupOrAdd(newgep);
       if (!AvailOut[pred].IsAlreadyInsert(hash)) {
+        // if(newgep->GetName()==".307"){
+        //   int x=0;
+        // }
         gen_exp.push_back(newgep);
         return newgep;
       } else {

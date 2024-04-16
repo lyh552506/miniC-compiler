@@ -40,11 +40,15 @@ void PassManager::PreWork(int i) {
 void PassManager::RunOnFunction() {
   if (InitpassRecorder[0]) {
     m_dom->RunOnFunction();
-    m_dom->PrintPass();
+    //m_dom->PrintPass();
+  } 
+  if(InitpassRecorder[8]){
+    m_eliedg->RunOnFunction();
+    //m_eliedg->PrintPass();
   }
   if (InitpassRecorder[1]) {
     m_pre->RunOnFunction();
-    m_pre->PrintPass();
+    //m_pre->PrintPass();
   }
   if(InitpassRecorder[2])
   {
@@ -53,7 +57,7 @@ void PassManager::RunOnFunction() {
   }
   if(InitpassRecorder[7]){
     m_cfgsimple->RunOnFunction();
-    m_cfgsimple->PrintPass();
+    //m_cfgsimple->PrintPass();
   }
   if(InitpassRecorder[3])
   {
@@ -69,10 +73,7 @@ void PassManager::RunOnFunction() {
     m_loopAnlay->RunOnFunction();
     m_loopAnlay->PrintPass();
   }
-  if(InitpassRecorder[8]){
-    m_eliedg->RunOnFunction();
-    m_eliedg->PrintPass();
-  }
+
   
 }
 
