@@ -1,14 +1,34 @@
 #include "Mcode.hpp"
 
 /*MachinInst*/
+//without IR
+MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode) 
+    : mbb(mbb), opcode(opcode) {}
+MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd) 
+    : mbb(mbb), opcode(opcode), rd(rd) {}
+MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1) 
+    : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1) {
+    vector_used.push_back(rs1);
+}
+MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1, Operand rs2) 
+    : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
+    vector_used.push_back(rs1);
+    vector_used.push_back(rs2);
+}
+//with IR
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode) 
     : IR(IR), mbb(mbb), opcode(opcode) {}
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd) 
     : IR(IR), mbb(mbb), opcode(opcode), rd(rd) {}
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1) 
-    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1) {}
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1) {
+    vector_used.push_back(rs1);
+}
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1, Operand rs2) 
-    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {}
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
+    vector_used.push_back(rs1);
+    vector_used.push_back(rs2);
+}
 User* MachineInst::getIR() {return this->IR;}
 MachineBasicBlock* MachineInst::get_machinebasicblock() {return this->mbb;}
 std::string MachineInst::GetOpcode() {return opcode;}
@@ -16,6 +36,7 @@ void MachineInst::SetOpcode(std::string opcode) {this->opcode = opcode;}
 Operand MachineInst::GetRd() {return rd;}
 Operand MachineInst::GetRs1() {return rs1;}
 Operand MachineInst::GetRs2() {return rs2;}
+std::vector<Operand> MachineInst::GetVector_used() {return vector_used;}
 void MachineInst::SetRd(Operand rd) {this->rd = rd;}
 void MachineInst::SetRs1(Operand rs1) {this->rs1 = rs1;}
 void MachineInst::SetRs2(Operand rs2) {this->rs2 = rs2;}
@@ -76,7 +97,7 @@ void MachineInst::print() {
         std::cout << "    xori " << rd->GetName() << ", " << rs1->GetName() << ", " << rs2->GetName() << std::endl; 
     }
     else if (opcode == "white") {
-        //std::cout << "Error: No Such Instruction." << std::endl;
+        std::cout << "Error: No Such Instruction." << std::endl;
     }
     else {
         //binary
@@ -101,9 +122,18 @@ std::vector<MachineInst*> MachineBasicBlock::getMachineInsts() {
 }
 BasicBlock* MachineBasicBlock::get_block() {return this->block;}
 MachineFunction* MachineBasicBlock::get_parent() {return this->mfuc;}
+void MachineBasicBlock::insert_inst_after(std::vector<MachineInst*>::iterator it, MachineInst* machineinst) {
+    this->minsts.insert(it, machineinst);
+    it++;
+}
+void MachineBasicBlock::insert_inst_before(std::vector<MachineInst*>::iterator it, MachineInst* machineinst) {
+    it--;
+    this->minsts.insert(it, machineinst);
+    it+=2;
+}
 void MachineBasicBlock::print_block_lable() {
     std::cout << name << ":" << std::endl;
-}
+} 
 
 /*MachineFunction*/
 MachineFunction::MachineFunction(Function* func, MachineUnit* Munit) 

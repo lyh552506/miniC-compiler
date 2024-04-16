@@ -15,7 +15,13 @@ class MachineInst : public User {
     Operand rs1;
     Operand rs2;
     std::string opcode;
+    std::vector<Operand> vector_used;
     public:
+    MachineInst(MachineBasicBlock* mbb, std::string opcode);
+    MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd);
+    MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1);
+    MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1, Operand rs2);
+    
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode);
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode, Operand rd);
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1);
@@ -27,6 +33,7 @@ class MachineInst : public User {
     Operand GetRd();
     Operand GetRs1();
     Operand GetRs2();
+    std::vector<Operand> GetVector_used();
     void SetRd(Operand rd);
     void SetRs1(Operand rs1);
     void SetRs2(Operand rs2);
@@ -48,6 +55,8 @@ class MachineBasicBlock {
     std::vector<MachineInst*> getMachineInsts();
     BasicBlock* get_block();
     MachineFunction* get_parent();
+    void insert_inst_before(std::vector<MachineInst*>::iterator it, MachineInst* machineinst);
+    void insert_inst_after(std::vector<MachineInst*>::iterator it, MachineInst* machineinst);
     void print_block_lable();
 };
 
