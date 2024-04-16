@@ -356,8 +356,4 @@ main:
     ld s0, 16(sp)
     addi sp, sp, 32
     ret
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    addi sp, sp, 32
-    ret
     .size main, -main
