@@ -5,7 +5,11 @@
 
 void dominance::init() {
   auto &bbs = thisFunc->GetBasicBlock();
-  for (auto bb : bbs) node[bb->num].init();
+  block_num=bbs.size();
+  node.resize(bbs.size());
+  Dest.resize(bbs.size());
+  for (auto bb : bbs) 
+    node[bb->num].init();
   for (auto bb : bbs) {
     User *Inst = bb->back();  //获取到最后一条指令
     node[bb->num].thisBlock = bb;

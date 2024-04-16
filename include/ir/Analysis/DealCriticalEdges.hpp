@@ -10,12 +10,11 @@ class ElimitCriticalEdge : public PassManagerBase {
  public:
   void DealCriticalEdges();
   void AddNullBlock(User *inst, int succ);
-  ElimitCriticalEdge(Function *func, dominance *dom)
-      : m_func(func), m_dom(dom) {}
+  ElimitCriticalEdge(Function *func)
+      : m_func(func) {}
   void RunOnFunction();
   void PrintPass();
 
  private:
   Function *m_func;
-  dominance *m_dom;
 };

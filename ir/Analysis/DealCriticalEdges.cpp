@@ -43,9 +43,8 @@ void ElimitCriticalEdge::AddNullBlock(User *inst, int succ) {
     int a=0;
   }
   m_func->InsertBlock(CurrBB, DstBB, criticalbb);
-  criticalbb->num=m_func->GetBasicBlock().size();
+  criticalbb->num=++m_func->bb_num;
   m_func->GetBasicBlock().push_back(criticalbb);
-  m_dom->GetNode(CurrBB->num).des.push_front(criticalbb->num);
   //还需要修改phi函数的incoming
   for (auto iter = DstBB->begin();
        iter != DstBB->end() && dynamic_cast<PhiInst *>(*iter) != nullptr;

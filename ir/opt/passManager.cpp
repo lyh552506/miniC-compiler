@@ -2,12 +2,11 @@
 
 void PassManager::InitPass() {
   for (int i = 0; i < Singleton<Module>().GetFuncTion().size(); i++) {
+    func = i;
     PreWork(i);
-
-    // m_eliedg->RunOnFunction();
-    // PreWork(i);
+    m_eliedg = std::make_unique<ElimitCriticalEdge>(m_func);
     m_dom = std::make_unique<dominance>(m_func, BList.size());
-    m_eliedg = std::make_unique<ElimitCriticalEdge>(m_func, m_dom.get());
+
     m_pre = std::make_unique<PRE>(m_dom.get(), m_func);
     m_cfgsimple = std::make_unique<cfgSimplify>(m_func, m_dom.get());
     m_liveness = std::make_unique<LivenessAnalysis>(m_func);
@@ -40,6 +39,8 @@ void PassManager::RunOnFunction() {
   }
   if (InitpassRecorder[8]) {
     m_eliedg->RunOnFunction();
+    PreWork(func);
+    m_dom->update();
     // m_eliedg->PrintPass();
   }
   if (InitpassRecorder[1]) {
@@ -52,6 +53,8 @@ void PassManager::RunOnFunction() {
   }
   if (InitpassRecorder[7]) {
     m_cfgsimple->RunOnFunction();
+    PreWork(func);
+    m_dom->update();
     // m_cfgsimple->PrintPass();
   }
   if (InitpassRecorder[3]) {
