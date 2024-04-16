@@ -1,18 +1,21 @@
 #pragma once
 #include "../yacc/parser.hpp"
 #include "CFG.hpp"
-#include "my_stl.hpp"
 #include "PassManagerBase.hpp"
+#include "dominant.hpp"
+#include "my_stl.hpp"
 
 // this pass is belongs to Analysis
 class ElimitCriticalEdge : public PassManagerBase {
-public:
+ public:
   void DealCriticalEdges();
   void AddNullBlock(User *inst, int succ);
-  ElimitCriticalEdge(Function *func) : m_func(func) {}
+  ElimitCriticalEdge(Function *func, dominance *dom)
+      : m_func(func), m_dom(dom) {}
   void RunOnFunction();
   void PrintPass();
 
-private:
+ private:
   Function *m_func;
+  dominance *m_dom;
 };

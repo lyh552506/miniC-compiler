@@ -1,6 +1,6 @@
-#include "backend/AsmPrinter.hpp"
-#include "opt/dominant.hpp"
-#include "opt/passManager.hpp"
+#include "AsmPrinter.hpp"
+#include "dominant.hpp"
+#include "passManager.hpp"
 #include "parser.hpp"
 #include <fstream>
 #include <getopt.h>
