@@ -1,7 +1,7 @@
 #include <memory>
 enum InnerDataType
 {
-    IR_Value_INT,IR_Value_VOID,IR_Value_Float,IR_PTR,IR_ARRAY
+    IR_Value_INT,IR_Value_VOID,IR_Value_Float,IR_PTR,IR_ARRAY,BACKEND_PTR
 };
 class Type
 {
@@ -71,5 +71,10 @@ class ArrayType:public HasSubType
     public:
     static ArrayType* NewArrayTypeGet(int,Type*);
     int GetNumEle();
+    void print()final;
+};
+class BackendPtr:public Type {
+    public:
+    BackendPtr();
     void print()final;
 };
