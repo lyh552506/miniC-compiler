@@ -8,10 +8,8 @@ void ConstantProp::RunOnFunction()
 }
 void ConstantProp::PrintPass()
 {
-    #ifdef SYSY_MIDDLE_END_DEBUG
     std::cout << "--------constprop--------" << std::endl;
     Singleton<Module>().Test();
-    #endif
 }
 void ConstantProp::RunOnBlock(BasicBlock* block)
 {

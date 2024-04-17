@@ -91,7 +91,7 @@ Value* SimplifyDivInst(Value* LHS, Value* RHS)
     if(LHS->isUndefVal() && !RHS->isUndefVal())
         return ConstIRInt::GetNewConstant(0);
     // 0 / X -> 0
-    if(LHS->isConstZero() && !RHS->isConstZero())
+    if(LHS->isConstOne() && !RHS->isConstOne())
         return ConstIRInt::GetNewConstant(0);
     // X / 1 -> X
     if(RHS->isConstOne())
@@ -146,8 +146,8 @@ Value* SimplifyIcmpInst(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
     if(LHS == RHS && Opcode ==BinaryInst::Op_NE)
         return ConstIRBoolean::GetNewConstant(false);
     // X != Y -> true
-    // if(LHS != RHS && Opcode ==BinaryInst::Op_NE)
-        // return ConstIRBoolean::GetNewConstant(true);
+    if(LHS != RHS && Opcode ==BinaryInst::Op_NE)
+        return ConstIRBoolean::GetNewConstant(true);
     // UndefValue op UndefValue -> false
     if(dynamic_cast<UndefValue*>(LHS) || dynamic_cast<UndefValue*>(RHS))
         return ConstIRBoolean::GetNewConstant(false);
