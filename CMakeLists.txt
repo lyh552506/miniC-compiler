@@ -14,6 +14,11 @@ set(CMAKE_EXPORT_COMPILECOMMANDS ON)
 set(CMAKE_CXX_FLAGS "-DCMAKE_EXPORT_COMPILE_COMMANDS=1")
 
 include_directories(${CMAKE_SOURCE_DIR}/util)
+include_directories(${CMAKE_SOURCE_DIR}/include/backend)
+include_directories(${CMAKE_SOURCE_DIR}/include/ir/opt)
+include_directories(${CMAKE_SOURCE_DIR}/include/ir/Analysis)
+include_directories(${CMAKE_SOURCE_DIR}/include/lib)
+include_directories(${CMAKE_SOURCE_DIR}/include/yacc)
 
 add_executable(SYSY-compiler main.cpp)
 add_subdirectory(${PROJECT_SOURCE_DIR}/yacc)

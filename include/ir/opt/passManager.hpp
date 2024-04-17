@@ -33,6 +33,7 @@ public:
 
 private:
   bool Analysis = false;
+  int func=0;
   std::vector<int> InitpassRecorder;
   std::vector<Function *> FList;
   std::vector<BasicBlock *> BList;

@@ -21,10 +21,10 @@ void cfgSimplify::RunOnFunction() {
     keep_loop |= DelSamePhis();
     keep_loop |= mergeSpecialBlock();
     keep_loop |= SimplifyUncondBr();
-    keep_loop |= mergeRetBlock();
+    // return ;
+        keep_loop |= mergeRetBlock();
     keep_loop |=simplifyPhiInst();
   }
-  m_dom->update();
 }
 
 bool cfgSimplify::simplifyPhiInst() {
@@ -221,13 +221,13 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock* bb) {
       break;
   }
   //更新user关系
-  for (auto u = succ->GetUserlist().begin(); u != succ->GetUserlist().end();
-       ++u) {
-    Use* tmp = *u;
-    if (tmp->fat->GetParent() == bb) {
-      tmp->fat->EraseFromParent();
-    }
-  }
+  // for (auto u = succ->GetUserlist().begin(); u != succ->GetUserlist().end();
+  //      ++u) {
+  //   Use* tmp = *u;
+    // if (tmp->fat->GetParent() == bb) {
+    //   tmp->fat->EraseFromParent();
+    // }
+  //}
   std::vector<std::pair<User*, int>> Erase;
   for (auto iter = bb->GetUserlist().begin(); iter != bb->GetUserlist().end();
        ++iter) {

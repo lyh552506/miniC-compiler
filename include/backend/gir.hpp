@@ -1,5 +1,5 @@
 #pragma once
-#include <CFG.hpp>
+#include "CFG.hpp"
 
 class LiInst : public User
 {

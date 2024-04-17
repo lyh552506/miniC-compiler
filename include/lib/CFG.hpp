@@ -275,6 +275,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
     void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);
     void init_visited_block();
+    int bb_num=0;
 };
 class Module:public SymbolTable
 {
