@@ -4,6 +4,7 @@
 #include "gir.hpp"
 #include "my_stl.hpp"
 #include <variant>
+#include <list>
 class MachineUnit;
 class MachineFunction;
 class MachineBasicBlock;
@@ -15,6 +16,7 @@ class MachineInst : public User {
     Operand rs1;
     Operand rs2;
     std::string opcode;
+    int offset=0;
     std::vector<Operand> vector_used;
     public:
     MachineInst(MachineBasicBlock* mbb, std::string opcode);
@@ -45,18 +47,16 @@ class MachineBasicBlock {
     BasicBlock* block;
     MachineFunction* mfuc;
     std::string name;
-    std::vector<MachineInst*> minsts;
+    std::list<MachineInst*> minsts;
     public:
     MachineBasicBlock(BasicBlock* block, MachineFunction* parent);
     void set_lable(int func_num, int block_num);
     std::string get_name();
     void set_name(std::string name);
     void addMachineInst(MachineInst* minst);
-    std::vector<MachineInst*> getMachineInsts();
+    std::list<MachineInst*>& getMachineInsts();
     BasicBlock* get_block();
     MachineFunction* get_parent();
-    void insert_inst_before(std::vector<MachineInst*>::iterator it, MachineInst* machineinst);
-    void insert_inst_after(std::vector<MachineInst*>::iterator it, MachineInst* machineinst);
     void print_block_lable();
 };
 
@@ -80,7 +80,7 @@ class MachineFunction {
     Function* get_function();
     MachineUnit* get_machineunit();
     void addMachineBasicBlock(MachineBasicBlock* mblock);
-    std::vector<MachineBasicBlock*> getMachineBasicBlocks();
+    std::vector<MachineBasicBlock*>& getMachineBasicBlocks();
 
     size_t get_offset(std::string name);
     std::string get_lable(std::string name);
@@ -101,5 +101,5 @@ class MachineUnit {
     MachineUnit(Module* unit);
     Module* get_module();
     void addMachineFunction(MachineFunction* mfuncs);
-    std::vector<MachineFunction*> getMachineFunctions();
+    std::vector<MachineFunction*>& getMachineFunctions();
 };

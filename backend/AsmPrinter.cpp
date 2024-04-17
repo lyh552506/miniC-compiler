@@ -175,18 +175,21 @@ void dataSegment::GenerateTempvarList(MachineUnit* Machineunit) {
     int num_lable=0; // 用于浮点常量计数
     for (auto& machinefuntion : Machineunit->getMachineFunctions()) {
         for (auto& machineblock : machinefuntion->getMachineBasicBlocks()) {
-            for (auto it = machineblock->getMachineInsts().begin(); it != machineblock->getMachineInsts().end(); ++it) {
+            std::list<MachineInst*>& minsts = machineblock->getMachineInsts();
+            for (std::list<MachineInst*>::iterator it = minsts.begin(); it != minsts.end(); ++it) {
                 MachineInst* machineinst = *it;
+                if(machineinst->GetVector_used().empty()) {
+                    break;
+                }
                 //生成需要放在只读数据段的内容， 应该只有浮点常量
                 for(auto& used : machineinst->GetVector_used()) {
                     if (auto constfloat = dynamic_cast<ConstIRFloat*>(used)) {
                         tempvar* tempfloat = new tempvar(num_lable, constfloat->GetVal());
                         num_lable++;
                         tempvar_list.push_back(tempfloat); 
-
                         //todo
                         //在代码中修改加载方式；
-                        //Change_LoadConstFloat(machineinst, constfloat);
+                        Change_LoadConstFloat(machineinst, tempfloat, it);
                     }
                 }
             }
@@ -194,12 +197,25 @@ void dataSegment::GenerateTempvarList(MachineUnit* Machineunit) {
     }
 }
 std::vector<tempvar*> dataSegment::get_tempvar_list() {return tempvar_list;}
-void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat) {
+void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat, std::list<MachineInst*>::iterator it) {
+    MachineBasicBlock* block = machineinst->get_machinebasicblock();
+    std::list<MachineInst*>& insts = block->getMachineInsts();
     Type* backendptr = new BackendPtr();
+    Operand rd = new Value(backendptr);
     Operand rs1 = new Value(backendptr);
-    MachineInst* inst1 = new MachineInst()
-
-}
+    Operand rs2 = new Value(backendptr);
+    std::string nameHi = "\%hi(" + tempfloat->Getname() + ")";
+    rs1->SetName(nameHi);
+    std::string nameLo = "\%lo(" + tempfloat->Getname() + ")";
+    rs2->SetName(nameLo);
+    MachineInst* inst1 = new MachineInst(machineinst->get_machinebasicblock(), "lui", rd, rs1); // lui  a5, %hi(lable)
+    MachineInst* inst2 = new MachineInst(machineinst->get_machinebasicblock(), "addi", rd, rd, rs1);// addi  a5, a5, %lo(lable)
+    it = insts.insert(it, inst1);
+    ++it;
+    it = insts.insert(it, inst2);
+    ++it;
+    machineinst->GetRs1()->SetName(rd->GetName());
+}  
 void dataSegment::PrintDataSegment_Globval() {
     for(auto& gvar : globlvar_list) {
         gvar->PrintGloblvar();
@@ -391,7 +407,9 @@ tempvar::tempvar(int num_lable, float init) :
     num_lable(num_lable), align(2), init(init) {
     name = ".LC"+ std::to_string(num_lable);
 }
-
+std::string tempvar::Getname() {
+    return name;
+}
 void tempvar::PrintTempvar() {
     PrintSegmentType(RODATA, oldtype);
     std::cout << "    .align  " << align << std::endl;
