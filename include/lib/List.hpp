@@ -148,4 +148,11 @@ class mylist
     }
     derived_list_node* front(){return this->head;}
     derived_list_node* back(){return this->tail;}
+    // int Size()
+    // {
+    //     int cnt=0;
+    //     for(auto i=begin();i!=end();++i)
+    //         cnt++;
+    //     return cnt;
+    // }
 };
