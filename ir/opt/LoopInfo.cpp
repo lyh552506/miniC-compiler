@@ -99,6 +99,7 @@ void LoopAnalysis::CalculateLoopDepth(LoopInfo *loop, int depth) {
 // num of loops
 // each loop nodes
 void LoopAnalysis::PrintPass() {
+  #ifdef DEBUG
   std::cout << "---------------------Loop Analysis-----------------------\n";
   std::cout << "Num Of Loops:" << LoopRecord.size() << "\n";
   for (int i = 0; i < LoopRecord.size(); i++) {
@@ -111,4 +112,5 @@ void LoopAnalysis::PrintPass() {
         std::cout << x->GetName() << " ";
     std::cout << "\n\r";
   }
+  #endif
 }

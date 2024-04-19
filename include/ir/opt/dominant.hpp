@@ -24,6 +24,10 @@ class dominance : public PassManagerBase {
    public:
     int ancestor;
     int min_sdom;
+    void init(){
+      ancestor=0;
+      min_sdom=0;
+    }
   };
   class Node {
    public:
@@ -130,6 +134,7 @@ class dominance : public PassManagerBase {
     count=0;
     std::fill_n(vertex, 91000, 0);
     bucket->clear();
+    std::for_each(dsu.begin(), dsu.end(), [](DSU &x) { x.init(); });
     init();
     for (int i = 1; i <= block_num; i++) {
       dsu[i].ancestor = i;

@@ -4,10 +4,13 @@ the details can be found in "Value-Based Partial Redundancy Elimination" written
 by Thomas VanDrunen and Antony L. Hosking
 ----------------------------------------------------------------------------------------------------*/
 #pragma once
-#include "IDF.hpp"
-#include "dominant.hpp"
-#include "PassManagerBase.hpp"
+#include <vector>
+
+#include "BaseCFG.hpp"
 #include "DealCriticalEdges.hpp"
+#include "IDF.hpp"
+#include "PassManagerBase.hpp"
+#include "dominant.hpp"
 
 enum RetStats { Delay, Changed, Unchanged };
 
@@ -41,29 +44,22 @@ struct Expression {
 
   //因为后续使用find寻找相同的exp，这里需要增加一个判断两个exp是否相同
   bool operator==(Expression &other) {
-    if (firVal != other.firVal)
-      return false;
-    if (SecVal != other.SecVal)
-      return false;
-    if (ThirdVal != other.ThirdVal)
-      return false;
-    if (type != other.type)
-      return false;
-    if (op != other.op)
-      return false;
-    if (args.size() != other.args.size())
-      return false;
+    if (firVal != other.firVal) return false;
+    if (SecVal != other.SecVal) return false;
+    if (ThirdVal != other.ThirdVal) return false;
+    if (type != other.type) return false;
+    if (op != other.op) return false;
+    if (args.size() != other.args.size()) return false;
     for (int i = 0; i < args.size(); i++)
-      if (args[i] != other.args[i])
-        return false;
+      if (args[i] != other.args[i]) return false;
     return true;
   }
 };
 
 struct ValueTable {
-  std::map<Value *, int> ValueNumber; // value* to kind number
+  std::map<Value *, int> ValueNumber;  // value* to kind number
   std::vector<std::pair<Expression, int>>
-      ExpNumber; // expression to kind number
+      ExpNumber;  // expression to kind number
   int valuekinds = 0;
 
   int LookupOrAdd(Value *val);
@@ -71,30 +67,27 @@ struct ValueTable {
 
   Expression CreatExp(BinaryInst *bin);
   Expression CreatExp(GetElementPtrInst *gep);
-  void Add(Value *val) {
-    if (ValueNumber.find(val) != ValueNumber.end())
-      ValueNumber.erase(val);
-    ValueNumber.insert(std::make_pair(val, LookupOrAdd(val)));
+  void Add(Value *val, int num) {
+    if (ValueNumber.find(val) != ValueNumber.end()) ValueNumber.erase(val);
+    ValueNumber.insert(std::make_pair(val, num));
   }
   ValueTable() : ValueNumber{} {}
 };
 
 struct ValueNumberedSet {
-  std::vector<int> Record; //判断是否插入
+  std::vector<int> Record;  //判断是否插入
   std::set<Value *> contents;
 
   void insert_val(Value *val) { contents.insert(val); }
   void erase_val(Value *val) { contents.erase(val); }
   void set_hash(int hash) {
-    if (Record.size() < hash+1)
-      Record.resize(hash + 5);
+    if (Record.size() < hash + 1) Record.resize(hash + 5);
     Record[hash] = 1;
   }
   void clear_hash(int hash) {
-    if (Record.size() < hash+1)
+    if (Record.size() < hash + 1)
       assert(0 && "hash can't bigger than Record size!");
-    if (Record[hash] == 0)
-      return;
+    if (Record[hash] == 0) return;
     Record[hash] = 0;
   }
 
@@ -105,45 +98,42 @@ struct ValueNumberedSet {
     contents.clear();
   }
 
-  void operator=(const ValueNumberedSet& other){
-    Record=other.Record;
-    contents=other.contents;
+  void operator=(const ValueNumberedSet &other) {
+    Record = other.Record;
+    contents = other.contents;
   }
 
   /// @brief return true if is inserted
   bool IsAlreadyInsert(int hash) {
-    if (Record.size() < hash+1)
-      return false;
+    if (Record.size() < hash + 1) return false;
     return Record[hash] == 0 ? false : true;
   }
 };
 
-class PRE :public PassManagerBase{
-public:
+class PRE : public PassManagerBase {
+ public:
   void RunOnFunction();
-  void PrintPass(){
+  void PrintPass() {
     std::cout << "--------pre--------" << std::endl;
     Singleton<Module>().Test();
   }
   void init_pass();
-  /// @brief
   void BuildSets();
-  /// @brief
   void Insert();
-  /// @brief
+  void Elimination();
+  void check(const Value *val);
+  bool CanBeElim(Value *val);
   void DfsDT(int pos);
   void PostOrderCFG(BasicBlock *root);
   void BuidTopuSet(ValueNumberedSet &set);
   BasicBlock *GetChild(BasicBlock *BB, int flag);
   /// @brief 传入一个BasicBlock，统计他的所有前驱
   void CalculatePredBB(BasicBlock *bb);
-  RetStats
-  IdentyPartilRedundancy(BasicBlock *cur,
-                         std::map<BasicBlock *, ValueNumberedSet> &insert_set);
-  void
-  FixPartialRedundancy(BasicBlock *cur,
-                       std::map<BasicBlock *, Value *> &predAvail,
-                       std::map<BasicBlock *, ValueNumberedSet> &insert_set);
+  RetStats IdentyPartilRedundancy(
+      BasicBlock *cur, std::map<BasicBlock *, ValueNumberedSet> &insert_set);
+  bool FixPartialRedundancy(
+      Value *val, BasicBlock *cur, std::map<BasicBlock *, Value *> &predAvail,
+      std::map<BasicBlock *, ValueNumberedSet> &insert_set);
   void CalculateAvailOut(User *inst, ValueNumberedSet &avail,
                          ValueNumberedSet &genexp, ValueNumberedSet &gentemp,
                          ValueNumberedSet &genphis);
@@ -161,20 +151,20 @@ public:
   PRE(dominance *dom, Function *func) : m_dom(dom), m_func(func) {
     VN = new ValueTable();
   }
-  ~PRE(){
-    delete VN;
-  }
-private:
+  ~PRE() { delete VN; }
+
+ private:
   dominance *m_dom;
   Function *m_func;
   ValueTable *VN;
   std::map<BasicBlock *, ValueNumberedSet> AvailOut;
   std::map<BasicBlock *, ValueNumberedSet> AnticipatedIn;
   std::map<BasicBlock *, ValueNumberedSet> GeneratedPhis;
-  std::vector<BasicBlock *> Dfs; //记录深度遍历支配树信息
+  std::vector<BasicBlock *> Dfs;  //记录深度遍历支配树信息
   std::vector<BasicBlock *> PostOrder;
   std::vector<Value *> TopuOrder;
   std::vector<BasicBlock *> Preds;
-  std::vector<Value *> gen_exp; //原来的block中没有，属于是自己创建的exp
+  std::vector<std::pair<Value *, bool>>
+      gen_exp;  //原来的block中没有，属于是自己创建的exp
   std::map<BasicBlock *, ValueNumberedSet> GeneratedTemp;
 };
