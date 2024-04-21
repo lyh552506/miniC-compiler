@@ -179,7 +179,7 @@ void dataSegment::GenerateTempvarList(MachineUnit* Machineunit) {
             for (std::list<MachineInst*>::iterator it = minsts.begin(); it != minsts.end(); ++it) {
                 MachineInst* machineinst = *it;
                 if(machineinst->GetVector_used().empty()) {
-                    break;
+                    continue;;
                 }
                 //生成需要放在只读数据段的内容， 应该只有浮点常量
                 for(auto& used : machineinst->GetVector_used()) {

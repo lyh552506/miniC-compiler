@@ -26,6 +26,13 @@ static struct option long_options[] = {
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
   output_path += ".ll";
+
+  std::string filename = argv[1];
+  size_t lastSlashPos = filename.find_last_of("/\\") + 1;
+  filename = filename.substr(lastSlashPos);
+
+  std::string asmoutput_path = argv[1];
+  asmoutput_path = asmoutput_path.substr(0, asmoutput_path.length()-2) + ".s";
   copyFile("runtime.ll", output_path);
   freopen(output_path.c_str(), "a", stdout);
   yyin = fopen(argv[1], "r");
@@ -70,13 +77,20 @@ int main(int argc, char **argv) {
   }
   pass_manager->InitPass();
   #endif
-  #ifdef SYSY_ENABLE_BACKEND
-  std::cout << std::endl;
-  AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
-  asmPrinter.printAsm();
-  #else
+  //#ifdef SYSY_ENABLE_BACKEND
+  //std::cout << std::endl;
+  //AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
+  //asmPrinter.printAsm();
+  //#else
+
   Singleton<Module>().Test();
-  #endif
-  
+  freopen("dev/tty", "w", stdout);
+  //#endif
+
+  freopen(asmoutput_path.c_str(), "w", stdout);
+  AsmPrinter asmPrinter = AsmPrinter(filename, &Singleton<Module>());
+  asmPrinter.printAsm();
+  freopen("dev/tty", "w", stdout);
+
   return 0;
 }
