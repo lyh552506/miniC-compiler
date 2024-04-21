@@ -25,7 +25,6 @@ void cfgSimplify::RunOnFunction() {
         keep_loop |= mergeRetBlock();
     keep_loop |=simplifyPhiInst();
   }
-  m_dom->update();
 }
 
 bool cfgSimplify::simplifyPhiInst() {

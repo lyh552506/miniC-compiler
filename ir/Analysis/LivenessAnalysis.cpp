@@ -2,24 +2,23 @@
 #include <algorithm>
 #include <map>
 
-void LivenessAnalysis::GetBlockLivein(BasicBlock* block)
+void LivenessAnalysis::GetBlockLivein(MachineBasicBlock* block)
 {
-  for(auto inst = block->rbegin();inst != block->rend(); --inst)
-  {
-    for(auto &usePtr:(*inst)->Getuselist())
+    for(auto inst = block->getMachineInsts().rbegin();inst != block->getMachineInsts().rend(); --inst)
     {
-      Value* useValue = usePtr->GetValue();
-      if(!useValue->isConst())
-        BlockLivein[block].insert(useValue); 
+        for(auto val : (*inst)->GetVector_used())
+        {
+            if(!val->isConst())
+                BlockLivein[block].insert(val); 
+        }
+        Value* DefValue = (*inst)->GetVector_used()[0];
+        BlockLivein[block].erase(DefValue);
     }
-    Value* DefValue = (*inst)->GetDef();
-    BlockLivein[block].erase(DefValue);
-  }
 }
 
-void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
+void LivenessAnalysis::GetBlockLiveout(MachineBasicBlock* block)
 {
-  User* inst = block->back();
+    MachineInst* inst = block->getMachineInsts().back();
   if(CondInst* _CondInst = dynamic_cast<CondInst *>(inst))
   {
     auto &_Use = inst->Getuselist(); 
@@ -38,7 +37,7 @@ void LivenessAnalysis::GetBlockLiveout(BasicBlock* block)
 
 void LivenessAnalysis::RunOnFunction()
 {
-  for(BasicBlock* _block:*F)
+  for(MachineBasicBlock* _block:*F)
   {
     BlockLivein[_block].clear();
     BlockLiveout[_block].clear();
@@ -50,7 +49,7 @@ void LivenessAnalysis::RunOnFunction()
     iterate(F);
 }
 
-void LivenessAnalysis::iterate(Function *func)
+void LivenessAnalysis::iterate(MachineFunction *func)
 {
   RunOnFunc(func);  
   bool isChanged = false;
@@ -64,7 +63,7 @@ void LivenessAnalysis::iterate(Function *func)
   }
 }
 
-void LivenessAnalysis::RunOnFunc(Function *func)
+void LivenessAnalysis::RunOnFunc(MachineFunction *func)
 {
   for(auto BB = (*func).rbegin(); BB != (*func).rend(); ++BB)
   {
@@ -84,7 +83,7 @@ void LivenessAnalysis::RunOnFunc(Function *func)
 void LivenessAnalysis::PrintPass()
 {
   std::cout << "--------LivenessAnalysis--------" << std::endl;
-  for(BasicBlock* _block:*F)
+  for(MachineBasicBlock* _block:*F)
   {
     std::cout << "--------Block:"<< _block->GetName() << "--------" << std::endl;
     std::cout << "        Livein" << std::endl;
