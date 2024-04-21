@@ -85,13 +85,14 @@ void Inliner::DetectRecursive()
 void Inliner::VisitFunc(Function* entry, std::set<Function*>& visited)
 {
     visited.insert(entry);
+    if(!entry->CallingFuncs.empty()){
     for(Function* Succ : entry->CallingFuncs)
     {
         if(visited.find(Succ) != visited.end())
             RecursiveFunc.insert(Succ);
         else
             VisitFunc(Succ, visited);
-    }
+    }}
     visited.erase(entry);
 }
 void Inliner::Inline()
@@ -190,8 +191,17 @@ std::vector<BasicBlock*> Inliner::CopyBlocks(User* inst)
 bool Inliner::CanBeInlined(User *inst)
 {
     if(dynamic_cast<CallInst*>(inst))
-    {
+    {    
+        std::string name = inst->Getuselist()[0]->usee->GetName();
+        if(name =="getint" || name == "getch" || name == "getfloat" \
+        || name == "getfarray" || name == "putint" || name == "putfloat" \
+        || name == "putarray" || name == "putfarray" || name == "putf" || name == "getarray" \
+        || name == "putch" || name == "_sysy_starttime" || name == "_sysy_stoptime" \
+        || name == "llvm.memcpy.p0.p0.i32")
+            return false;
         Function* Func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
+        if(Func->GetUserlist().GetSize() > 2)
+            return false;
         if(Only_Inline_Small_Function && !NotInline(Func))
         {
             if(Func->GetBasicBlock().size() <= Inline_Block_Num)
@@ -199,7 +209,7 @@ bool Inliner::CanBeInlined(User *inst)
                 int Size = 0;
                 for(BasicBlock* block : Func->GetBasicBlock())
                     Size += block->Size();
-                if(Size <= 10)
+                if(Size <= 5)
                     return true;
                 else
                     return false;
@@ -238,8 +248,11 @@ void Inliner::removeInlinedFunc()
                 }
             }   
         }
-        if(remove)
+        if(remove && func_->GetUserlist().is_empty())
+        {
+            m.inlinedFunc.erase(func_);
             m.EraseFunction(func_);
+        }
     }
 }
 
