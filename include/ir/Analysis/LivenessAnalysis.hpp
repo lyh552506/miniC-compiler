@@ -1,22 +1,23 @@
 #pragma once
+#include "Mcode.hpp"
 #include "CFG.hpp"
 #include <set>
 
 class LivenessAnalysis
 {
     private:
-    void GetBlockLivein(BasicBlock* block);
-    void GetBlockLiveout(BasicBlock* block);
-    void iterate(Function* func);
-    void RunOnFunc(Function *func);
-    std::map<BasicBlock*, bool> UnChanged;
+    void GetBlockLivein(MachineBasicBlock* block);
+    void GetBlockLiveout(MachineBasicBlock* block);
+    void iterate(MachineFunction* func);
+    void RunOnFunc(MachineFunction *func);
+    std::map<MachineBasicBlock*, bool> UnChanged;
     bool isChanged = false;
-    Function* F;
+    MachineFunction* F;
     public:
-    std::map<BasicBlock*, std::set<Value*>> BlockLivein;
-    std::map<BasicBlock*, std::set<Value*>> BlockLiveout;
+    std::map<MachineBasicBlock*, std::set<Value*>> BlockLivein;
+    std::map<MachineBasicBlock*, std::set<Value*>> BlockLiveout;
     void RunOnFunction();
     void PrintPass();
-    LivenessAnalysis(Function* f) : F(f), BlockLivein{}, BlockLiveout{}, UnChanged{} {};
+    LivenessAnalysis(MachineFunction* f) : F(f), BlockLivein{}, BlockLiveout{}, UnChanged{} {};
 
 };
