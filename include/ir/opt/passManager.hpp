@@ -44,7 +44,7 @@ private:
   std::unique_ptr<ConstantProp> m_constprop;
   std::unique_ptr<ADCE> m_adce;
   std::unique_ptr<DCE> m_dce;
-  std::unique_ptr<LivenessAnalysis> m_liveness;
+  // std::unique_ptr<LivenessAnalysis> m_liveness;
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
   std::unique_ptr<cfgSimplify> m_cfgsimple;
   std::unique_ptr<Inliner> m_inline;
