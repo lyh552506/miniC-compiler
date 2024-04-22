@@ -36,6 +36,7 @@ class MachineInst : public User {
     Operand GetRs1();
     Operand GetRs2();
     std::vector<Operand> GetVector_used();
+    bool isVirtual(Operand Op) { return false; }
     void SetRd(Operand rd);
     void SetRs1(Operand rs1);
     void SetRs2(Operand rs2);
@@ -88,7 +89,7 @@ class MachineFunction {
     std::vector<MachineBasicBlock*>& getMachineBasicBlocks();
     std::map<BasicBlock*, MachineBasicBlock*>& get_blockMap();
     MachineBasicBlock* get_mbbFrombb(BasicBlock* block);
-
+    MachineBasicBlock* GetBlock(std::string name);
     size_t get_offset(std::string name);
     std::string get_lable(std::string name);
     int get_allocanum();

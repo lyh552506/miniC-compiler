@@ -198,6 +198,15 @@ std::map<BasicBlock*, MachineBasicBlock*>& MachineFunction::get_blockMap() {
 MachineBasicBlock* MachineFunction::get_mbbFrombb(BasicBlock* block) {
     return blockMap.find(block)->second;
 }
+MachineBasicBlock* MachineFunction::GetBlock(std::string name)
+{
+    for(MachineBasicBlock* block : mblocks)
+    {
+        if(block->get_name() == name)
+            return block;
+    }
+    return nullptr;
+}
 size_t MachineFunction::get_offset(std::string name) {
     return offsetMap.find(name)->second;
 }
