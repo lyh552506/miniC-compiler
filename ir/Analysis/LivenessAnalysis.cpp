@@ -166,26 +166,63 @@ void LiveInterval::init()
   }
 }
 
-void LiveInterval::AddRegLiveInterval(const RegLiveInterval& interval, Operand Op)
-{
-  RegLiveness[Op].push_back(interval);
-}
-
 // void LiveInterval::computeLiveIntervals()
 // {
 //   for (MachineBasicBlock* block : func->getMachineBasicBlocks())
 //   {
+//     std::unordered_map<Operand, std::vector<RegLiveInterval>> CurrentRegLiveinterval;
 //     BlockLiveInfo blockinfo = BlockLiveInfo(func);
-//     // LiveVariablesBlockInfo* blockInfo = block->getLiveVariablesBlockInfo();
-//     std::unordered_map<Operand, RegLiveInterval> CurrentRegLiveinterval;
 //     std::map<Operand, int> laseUse;
 //     int begin = -1;
-//     int end = -1;
-//     int firstInstNum = -1;
-//     int lastInstNum = -1;
 //     for(MachineInst* inst : block->getMachineInsts())
 //     {
 //       int Curr = instNum[inst];
+//       if(inst == block->getMachineInsts().front())
+//         begin = instNum[inst];
+//       for(Operand Op : InstLive[inst])
+//       {
+//         if(!CurrentRegLiveinterval.count(Op))
+//         {
+//           RegLiveInterval interval;
+//           interval.start = Curr;
+//           interval.end = -1;
+//           CurrentRegLiveinterval[Op].push_back(interval);
+//         }
+//         else
+//         {
+//           if(CurrentRegLiveinterval[Op].back().end == -1 && count(Op))
+//             CurrentRegLiveinterval[Op].back().end = Curr;
+//           else
+//           {
+//             RegLiveInterval interval;
+//             interval.start = Curr;
+//             interval.end = -1;
+//             CurrentRegLiveinterval[Op].push_back(interval);
+//           }
+//         }
+//         if(!Op->isConst())
+//         {
+//           if(!CurrentRegLiveinterval.count(Op))
+//           {
+//             RegLiveInterval interval;
+//             interval.start = Curr;
+//             interval.end = Curr;
+//             CurrentRegLiveinterval[Op] = interval;
+//           }
+//           else
+//           {
+//             CurrentRegLiveinterval[Op].end = Curr;
+//           }
+//           if(laseUse.count(Op) > 0)
+//           {
+//             RegLiveInterval interval;
+//             interval.start = laseUse[Op];
+//             interval.end = Curr;
+//             AddRegLiveInterval(interval, Op);
+//           }
+//           laseUse[Op] = Curr;
+//         }
+//       }
 //     }
 //     for (Instruction* inst : block->getInstructions())
 //     {

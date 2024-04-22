@@ -3,9 +3,8 @@
 #include "CFG.hpp"
 #include <unordered_set>
 
-class BlockLiveInfo
+class BlockLiveInfo : public MachineInst
 {
-    friend class LiveInterval;
     private:
     void GetBlockLivein(MachineBasicBlock* block);
     void GetBlockLiveout(MachineBasicBlock* block);
@@ -32,6 +31,7 @@ class BlockLiveInfo
     std::unordered_set<Operand> GetMachineRegs() { return Regs; }
     void RunOnFunction();
     void PrintPass();
+    bool count(Operand Op) { return InstLive[this].count(Op); }
     BlockLiveInfo(MachineFunction* f) : F(f), BlockLivein{}, BlockLiveout{}, UnChanged{} {};
     BlockLiveInfo() = default;
 };
@@ -40,8 +40,8 @@ struct RegLiveInterval
 {
     int start;
     int end;
-    bool operator<(const RegLiveInterval& rhs) \ 
-    const { return start < rhs.start; }
+    bool operator<=(const RegLiveInterval& rhs) \ 
+    const { return start <= rhs.start; }
 };
 class LiveInterval : public BlockLiveInfo
 {
@@ -49,13 +49,12 @@ class LiveInterval : public BlockLiveInfo
     protected:
     std::unordered_map<MachineInst*, int> instNum;
     std::unordered_map<MachineBasicBlock*, BlockLiveInfo*> BlockInfo;
-    std::unordered_map<Operand, std::vector<RegLiveInterval>> RegLiveness;
+    std::map<MachineBasicBlock*, std::unordered_map<Operand, std::vector<RegLiveInterval>>> RegLiveness;
     private:
     void init();
-    void AddRegLiveInterval(const RegLiveInterval& interval, Operand Op);
     void computeLiveIntervals();
     public:
     LiveInterval(MachineFunction* f) : func(f), BlockLiveInfo() {}
-    std::unordered_map<Operand, std::vector<RegLiveInterval>> GetRegLiveInterval() \
-    { return RegLiveness; }
+    std::unordered_map<Operand, std::vector<RegLiveInterval>> GetRegLiveInterval(MachineBasicBlock* block) \
+    { return RegLiveness[block]; }
 };
