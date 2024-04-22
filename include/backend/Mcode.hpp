@@ -48,10 +48,13 @@ class MachineBasicBlock {
     MachineFunction* mfuc;
     std::string name;
     std::list<MachineInst*> minsts;
+    int succNum;//后继块的数量
     public:
     MachineBasicBlock(BasicBlock* block, MachineFunction* parent);
     void set_lable(int func_num, int block_num);
+    void set_succNum(int succNum);
     std::string get_name();
+    int get_succNum();
     void set_name(std::string name);
     void addMachineInst(MachineInst* minst);
     std::list<MachineInst*>& getMachineInsts();
@@ -69,11 +72,13 @@ class MachineFunction {
     size_t stacksize;
     std::vector<MachineBasicBlock*> mblocks;
     std::map<std::string, size_t> offsetMap;
+    std::map<BasicBlock*, MachineBasicBlock*> blockMap;
     std::map<std::string, std::string> lableMap;
     public:
     MachineFunction(Function* func, MachineUnit* Munit);
     void set_offset_map(std::string name, size_t offset);
     void set_lable_map(std::string name, std::string lable);
+    void set_blockMap(BasicBlock* bb, MachineBasicBlock* mbb);
     void set_alloca_and_num();
     void set_stacksize();
 
@@ -81,6 +86,8 @@ class MachineFunction {
     MachineUnit* get_machineunit();
     void addMachineBasicBlock(MachineBasicBlock* mblock);
     std::vector<MachineBasicBlock*>& getMachineBasicBlocks();
+    std::map<BasicBlock*, MachineBasicBlock*>& get_blockMap();
+    MachineBasicBlock* get_mbbFrombb(BasicBlock* block);
 
     size_t get_offset(std::string name);
     std::string get_lable(std::string name);

@@ -1,34 +1,31 @@
+int a=343;
+float b=141.2;
+int arr_int_undef[3][2][2];
+float arr_float_undef[4][2]={{1.2, 3.4}, {2.0, 3.3}};
+int function(int a, int b) {
+  int c = a+b;
+  return c;
+}
 int main() {
-  const int a = 1;
-  const int b = 2;
-  const int c = 3;
-  const int d = 4;
-  const int e = 5;
-  const int f = 6;
-  if (a * b + c < 6 && d != 0) {
-    if (e || !a + 0) {
-      if (c == 2 && d + e > 2) return 3;
-      else {
-        if (f % c && e) return 4;
-        else {
-          if (d / b + a >= 2) {
-            if (e - f >= 0 || d > 4) return 6;
-            else {
-              if (c != f) {
-                if (b + e * d > 10) {
-                  if (!f) return 9;
-                  else return 10;
-                }
-                else return 8;
-              }
-              else return 7;
-            }
-          }
-          else return 5;
-        }
-      }
-    }
-    else return 2;
+  // int arr_inner[10][10000];
+  // arr_inner[0][1]=0;
+  // arr_int_undef[0][0][2] = 1;
+  // float a=3.1;
+  // float b=3.1;
+  // float c=a+b;
+  // arr_float_undef[0][1] = c;
+  // int d =  3;
+  // int func = function(a, b);
+  // return 0;
+  int a=3;
+  while (a>0) {
+    a = a-1;
   }
-  else return 1;
+  if (a>0) {
+    a = a-1;
+  }
+  else {
+    a = a+1;
+  }
+  return 0;
 }
