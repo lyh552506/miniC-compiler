@@ -9,6 +9,7 @@ class MachineUnit;
 class MachineFunction;
 class MachineBasicBlock;
 class MachineInst : public User {
+    friend class BlockLiveInfo;
     protected:
     User* IR;
     MachineBasicBlock* mbb;
@@ -19,6 +20,7 @@ class MachineInst : public User {
     int offset=0;
     std::vector<Operand> vector_used;
     public:
+    MachineInst() = default;
     MachineInst(MachineBasicBlock* mbb, std::string opcode);
     MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd);
     MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1);
@@ -36,6 +38,9 @@ class MachineInst : public User {
     Operand GetRs1();
     Operand GetRs2();
     std::vector<Operand> GetVector_used();
+    std::vector<Operand> GetDefs(){return vector_used;}
+    std::vector<Operand> GetUses(){return vector_used;}
+    bool isVirtual(Operand Op) { return Op->GetName()[0] == '.' ; }
     void SetRd(Operand rd);
     void SetRs1(Operand rs1);
     void SetRs2(Operand rs2);
@@ -88,7 +93,7 @@ class MachineFunction {
     std::vector<MachineBasicBlock*>& getMachineBasicBlocks();
     std::map<BasicBlock*, MachineBasicBlock*>& get_blockMap();
     MachineBasicBlock* get_mbbFrombb(BasicBlock* block);
-
+    MachineBasicBlock* GetBlock(std::string name);
     size_t get_offset(std::string name);
     std::string get_lable(std::string name);
     int get_allocanum();

@@ -89,6 +89,7 @@ class Value
     virtual bool isConst(){return false;}
     void RAUW(Value* val); //ReplaceAllUseWith
     void SetName(std::string newname);
+    bool isVirtual(){ return name[0] == '.'; }
     virtual std::string GetName();
     UserList& GetUserlist(){return userlist;};
     bool isGlobVal();
