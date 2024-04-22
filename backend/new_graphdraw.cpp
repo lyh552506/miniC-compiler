@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <cassert>
+#include <functional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -19,20 +21,21 @@ class GraphColor {
   void Build();
   /// @brief 初始化各个工作表
   void MakeWorklist();
-  bool IsMoveRelated(Operand v);
+  //返回vector为0则不是move相关
+  std::vector<MachineInst*> MoveRelated(Operand v);
   void simplify();
   void coalesce();
   void freeze();
   void spill();
   enum MoveState { coalesced, constrained, frozen, worklist, active };
   // interference graph
-  std::unordered_map<Operand, std::vector<RegInfo>> IG;
+  std::unordered_map<Operand, std::vector<Operand>> IG;
   // 低度数的传送有关节点表
   std::unordered_set<Operand> freezeWorkList;
   // 有可能合并的传送指令
   std::unordered_set<MachineInst*> worklistMoves;
   // 低度数的传送无关节点表
-  std::unordered_set<Operand> simplifyWorkList;
+  std::vector<Operand> simplifyWorkList;
   // 高度数的节点表
   std::unordered_set<Operand> spillWorkList;
   // 本轮中要溢出的节点集合
@@ -79,29 +82,59 @@ void GraphColor::MakeWorklist() {
     //添加溢出节点
     if (IG[node].size() > colors)
       spilledNodes.insert(node);
-    else if (IsMoveRelated(node))
+    else if (MoveRelated(node).size() != 0)
       freezeWorkList.insert(node);
     else
-      simplifyWorkList.insert(node);
+      simplifyWorkList.push_back(node);
   }
 }
 
-bool GraphColor::IsMoveRelated(Operand v) {
+std::vector<MachineInst*> GraphColor::MoveRelated(Operand v) {
+  std::vector<MachineInst*> tmp;
   for (auto t : moveList) {
     auto move = t.second;
     for (auto inst : move) {
       if (activeMoves.find(inst) != activeMoves.end() ||
           worklistMoves.find(inst) != worklistMoves.end())
-        return true;
+        tmp.push_back(inst);
     }
   }
-  return false;
+  return tmp;
 }
 
 void GraphColor::simplify() {
-  for (auto val : simplifyWorkList) {
+  for (int i = 0; i < simplifyWorkList.size(); i++) {
+    auto val = simplifyWorkList[i];
+    int size = simplifyWorkList.size();
+    simplifyWorkList[i] = simplifyWorkList[size - 1];
+    simplifyWorkList.pop_back();
     selectstack.push_back(val);
     //此时需要更新冲突图上和当前val相邻的边
-    
+    for (auto target : IG[val]) {
+      auto iter = std::find(IG[target].begin(), IG[target].end(), val);
+      if (iter == IG[target].end()) assert(0 && "wrong with ig");
+      IG[target].erase(iter);
+      //这里注意需要检查一下更新后的相邻边是否只有color-1
+      if (IG[target].size() == colors - 1) {
+        spillWorkList.erase(target);
+        std::vector<Operand> tmp(IG[target].begin(), IG[target].end());
+        tmp.push_back(target);
+        // EnableMove
+        for (auto node : tmp)
+          for (auto mov : MoveRelated(node)) {
+            activeMoves.erase(mov);
+            worklistMoves.insert(mov);
+          }
+        if(MoveRelated(target).size()!=0){
+          freezeWorkList.insert(target);
+        }else{
+          simplifyWorkList.push_back(target);
+        }
+      }
+    }
   }
+}
+
+void GraphColor::coalesce(){
+  
 }
