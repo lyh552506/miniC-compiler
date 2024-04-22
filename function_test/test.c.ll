@@ -332,28 +332,107 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-define i32 @main(){
-.1:
-  ret i32 10 
+--------constprop--------
+@.g.a = global i32 343
+@.g.b = global float 0x4061a66660000000
+@.g.arr_int_undef = global [3 x [2 x [2 x i32]]] zeroinitializer
+@.g.arr_float_undef = global [4 x [2 x float]]  [[2 x float]  [float 0x3ff3333340000000, float 0x400b333340000000], [2 x float]  [float 0x4000000000000000, float 0x400a666660000000], [2 x float] zeroinitializer, [2 x float] zeroinitializer]
+define i32 @function(i32 %.19, i32 %.22){
+.17:
+  %.27 = add i32 %.19, %.22
+  ret i32 %.27 
 }
-
-    .file  "--mem2reg"
-    .attribute arch, "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0"
-    .attribute unaligned_access, 0
-    .attribute stack_align, 16
-    .text
-    .align  1
-    .globl  main
-    .type  main, @function
-main:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    addi s0, sp, 32
-.LBB0_0:
-    lw a0, 10
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    addi sp, sp, 32
-    ret
-    .size main, -main
+define i32 @main(){
+.32:
+  %.33 = alloca i32
+  store i32 3, i32* %.33
+  br label %.35wc21 
+.35wc21:
+  %.39 = load i32, i32* %.33
+  %.41 = icmp sgt i32 %.39, 0
+  br i1 %.41, label %.36wloop.21.23, label %.37wn23
+.36wloop.21.23:
+  %.43 = load i32, i32* %.33
+  %.45 = sub i32 %.43, 1
+  store i32 %.45, i32* %.33
+  br label %.35wc21 
+.37wn23:
+  %.50 = load i32, i32* %.33
+  %.51 = icmp sgt i32 %.50, 0
+  br i1 %.51, label %.48, label %.49
+.48:
+  %.53 = load i32, i32* %.33
+  %.54 = sub i32 %.53, 1
+  store i32 %.54, i32* %.33
+  br label %.56 
+.49:
+  %.58 = load i32, i32* %.33
+  %.59 = add i32 %.58, 1
+  store i32 %.59, i32* %.33
+  br label %.56 
+.56:
+  ret i32 0 
+}
+--------constprop--------
+@.g.a = global i32 343
+@.g.b = global float 0x4061a66660000000
+@.g.arr_int_undef = global [3 x [2 x [2 x i32]]] zeroinitializer
+@.g.arr_float_undef = global [4 x [2 x float]]  [[2 x float]  [float 0x3ff3333340000000, float 0x400b333340000000], [2 x float]  [float 0x4000000000000000, float 0x400a666660000000], [2 x float] zeroinitializer, [2 x float] zeroinitializer]
+define i32 @function(i32 %.19, i32 %.22){
+.17:
+  %.27 = add i32 %.19, %.22
+  ret i32 %.27 
+}
+define i32 @main(){
+.32:
+  br label %.35wc21 
+.35wc21:
+  %.63 = phi i32 [3, %.32], [%.45, %.36wloop.21.23]
+  %.41 = icmp sgt i32 %.63, 0
+  br i1 %.41, label %.36wloop.21.23, label %.37wn23
+.36wloop.21.23:
+  %.45 = sub i32 %.63, 1
+  br label %.35wc21 
+.37wn23:
+  %.51 = icmp sgt i32 %.63, 0
+  br i1 %.51, label %.48, label %.49
+.48:
+  %.54 = sub i32 %.63, 1
+  br label %.56 
+.49:
+  %.59 = add i32 %.63, 1
+  br label %.56 
+.56:
+  ret i32 0 
+}
+@.g.a = global i32 343
+@.g.b = global float 0x4061a66660000000
+@.g.arr_int_undef = global [3 x [2 x [2 x i32]]] zeroinitializer
+@.g.arr_float_undef = global [4 x [2 x float]]  [[2 x float]  [float 0x3ff3333340000000, float 0x400b333340000000], [2 x float]  [float 0x4000000000000000, float 0x400a666660000000], [2 x float] zeroinitializer, [2 x float] zeroinitializer]
+define i32 @function(i32 %.19, i32 %.22){
+.17:
+  %.27 = add i32 %.19, %.22
+  ret i32 %.27 
+}
+define i32 @main(){
+.32:
+  br label %.35wc21 
+.35wc21:
+  %.63 = phi i32 [3, %.32], [%.45, %.36wloop.21.23]
+  %.41 = icmp sgt i32 %.63, 0
+  br i1 %.41, label %.36wloop.21.23, label %.37wn23
+.36wloop.21.23:
+  %.45 = sub i32 %.63, 1
+  br label %.35wc21 
+.37wn23:
+  %.51 = icmp sgt i32 %.63, 0
+  br i1 %.51, label %.48, label %.49
+.48:
+  %.54 = sub i32 %.63, 1
+  br label %.56 
+.49:
+  %.59 = add i32 %.63, 1
+  br label %.56 
+.56:
+  ret i32 0 
+}
