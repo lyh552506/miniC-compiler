@@ -8,13 +8,13 @@
 #include "ConstantProp.hpp"
 #include "DCE.hpp"
 #include "IDF.hpp"
-#include "LivenessAnalysis.hpp"
 #include "LoopInfo.hpp"
 #include "PassManagerBase.hpp"
 #include "PromoteMemtoRegister.hpp"
 #include "SSAPRE.hpp"
 #include "dominant.hpp"
 #include "cfgSimplify.hpp"
+#include "Inline.hpp"
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {
@@ -32,6 +32,7 @@ public:
 
 private:
   bool Analysis = false;
+  int func=0;
   std::vector<int> InitpassRecorder;
   std::vector<Function *> FList;
   std::vector<BasicBlock *> BList;
@@ -42,7 +43,7 @@ private:
   std::unique_ptr<ConstantProp> m_constprop;
   std::unique_ptr<ADCE> m_adce;
   std::unique_ptr<DCE> m_dce;
-  std::unique_ptr<LivenessAnalysis> m_liveness;
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
   std::unique_ptr<cfgSimplify> m_cfgsimple;
+  std::unique_ptr<Inliner> m_inline;
 };

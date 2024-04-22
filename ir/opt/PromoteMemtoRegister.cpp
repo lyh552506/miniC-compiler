@@ -14,7 +14,7 @@ void PromoteMem2Reg::run() {
   AllocaInfo Info;
   BlockInfo BBInfo;
   IDF idf(m_dom);
-  // starting to deal alloc56a with promotable,this place are method3,method4
+  // starting to deal alloca with promotable,this place are method3,method4
   for (int i = 0; i != m_Allocas.size(); i++) {
     AllocaInst *AI = m_Allocas[i];
     // do some basic opt

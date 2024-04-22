@@ -4,8 +4,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdebug-prefix-map=${CMAKE_BINARY_DIR}=$
 message(${CMAKE_CXX_FLAGS})
 set(CMAKE_BUILD_TYPE "Debug")
 
-
-
 project(SYSY-compiler VERSION 0.1.0 LANGUAGES C CXX)
 add_definitions(-DSYSY_ENABLE_MIDDLE_END)
 
@@ -16,12 +14,19 @@ set(CMAKE_EXPORT_COMPILECOMMANDS ON)
 set(CMAKE_CXX_FLAGS "-DCMAKE_EXPORT_COMPILE_COMMANDS=1")
 
 include_directories(${CMAKE_SOURCE_DIR}/util)
+include_directories(${CMAKE_SOURCE_DIR}/include/backend)
+include_directories(${CMAKE_SOURCE_DIR}/include/ir/opt)
+include_directories(${CMAKE_SOURCE_DIR}/include/ir/Analysis)
+include_directories(${CMAKE_SOURCE_DIR}/include/lib)
+include_directories(${CMAKE_SOURCE_DIR}/include/yacc)
 
 add_executable(SYSY-compiler main.cpp)
 add_subdirectory(${PROJECT_SOURCE_DIR}/yacc)
 add_subdirectory(${PROJECT_SOURCE_DIR}/ir)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/backend)
+add_subdirectory(${PROJECT_SOURCE_DIR}/test_infrastructure)
+
 target_link_libraries(SYSY-compiler Yacc Lib Backend opt Analysis)
 
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/yacc)

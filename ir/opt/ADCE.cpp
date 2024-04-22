@@ -33,8 +33,9 @@ void ADCE::RunOnFunction()
             User* inst = *inst_;
             if(!inst->Alive)
             {
-                inst->ClearRelation();
-                inst->EraseFromParent();
+                // inst->ClearRelation();
+                // inst->EraseFromParent();
+                delete inst;
             }
         }
     }

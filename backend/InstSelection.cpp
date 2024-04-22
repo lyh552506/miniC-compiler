@@ -116,9 +116,11 @@ MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
         machineinst = MatchSITFP(parent, Tempinst);
     }
     else if (auto Tempinst = dynamic_cast<UnCondInst*>(&inst)) {
+        parent->set_succNum(1);
         machineinst = MatchUnCondInst(parent, Tempinst);
     }
     else if (auto Tempinst = dynamic_cast<CondInst*>(&inst)) {
+        parent->set_succNum(0);
         machineinst = MatchCondInst(parent, Tempinst);
     }
     else if (auto Tempinst = dynamic_cast<CallInst*>(&inst)) {
@@ -139,8 +141,6 @@ MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
     return machineinst;
 }
 MachineInst* MatchStoreInst(MachineBasicBlock* parent, StoreInst* inst) {
-    
-    
     std::string op = "sw";
     Operand rd = (inst->Getuselist())[0]->GetValue();
     Operand rs1 = (inst->Getuselist())[1]->GetValue();
@@ -193,9 +193,14 @@ MachineInst* MatchCallInst(MachineBasicBlock* parent, CallInst* inst) {
     return machineinst;
 }
 MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst) {
+    MachineInst* machineinst = nullptr;
+    if(inst->Getuselist().empty()) {
+        machineinst = new MachineInst(inst, parent, "ret");
+        return machineinst;
+    }
     Operand rd = inst->Getuselist()[0]->GetValue();
     //std::cout << "    lw a0, " << rd->GetName() << std::endl; 
-    MachineInst* machineinst = new MachineInst(inst, parent, "ret", rd);
+    machineinst = new MachineInst(inst, parent, "ret", rd);
     return machineinst;
 }
 MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {

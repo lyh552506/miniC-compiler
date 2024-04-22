@@ -7,4 +7,4 @@ testcases_c
 test.ipynb
 function_test
 .cache/clangd/index
-*.ipynb
+Testing
