@@ -80,19 +80,16 @@ void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, U
         parent->addMachineInst(inst);
         UnCondInst* uncondInst = new UnCondInst(dynamic_cast<BasicBlock*>((inst->getIR()->Getuselist())[1]->GetValue()));
 
-        --it;
-        User* last = *it;
-        inst->getIR()->RSUW(0, last->GetDef());
-        inst->SetRd(last->GetDef());
-        ++it;
-        
-        //std::cout << "insert uncondInst:"  << uncondInst->GetName() << " after br:" << inst->getIR()->GetName() << std::endl;
-        it.insert_after(uncondInst);
-        ++it;
-        
+        // 不再对中端IR进行维护
+        // --it;
+        // User* last = *it;
+        // inst->getIR()->RSUW(0, last->GetDef());
+        // inst->SetRd(last->GetDef());
+        // ++it;
+        // it.insert_after(uncondInst);
+        // ++it;
         MachineInst* jInst = MatchUnCondInst(parent, uncondInst);
         parent->addMachineInst(jInst);
-
     }
     else parent->addMachineInst(inst);
 }
