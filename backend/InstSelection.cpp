@@ -116,9 +116,11 @@ MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
         machineinst = MatchSITFP(parent, Tempinst);
     }
     else if (auto Tempinst = dynamic_cast<UnCondInst*>(&inst)) {
+        parent->set_succNum(1);
         machineinst = MatchUnCondInst(parent, Tempinst);
     }
     else if (auto Tempinst = dynamic_cast<CondInst*>(&inst)) {
+        parent->set_succNum(0);
         machineinst = MatchCondInst(parent, Tempinst);
     }
     else if (auto Tempinst = dynamic_cast<CallInst*>(&inst)) {

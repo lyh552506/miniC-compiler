@@ -60,6 +60,7 @@ MachineUnit* AsmPrinter::GenerateMir(Module* Unit) {
             machineblock->set_lable(func_num, block_num);
             machinefunction->set_lable_map(Block->GetName(), machineblock->get_name());
             machinefunction->addMachineBasicBlock(machineblock);
+            machinefunction->set_blockMap(Block, machineblock);
             block_num++;
         }
         block_num = 0;
@@ -198,6 +199,7 @@ void dataSegment::GenerateTempvarList(MachineUnit* Machineunit) {
 }
 std::vector<tempvar*> dataSegment::get_tempvar_list() {return tempvar_list;}
 void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat, std::list<MachineInst*>::iterator it) {
+    std::string opcode = machineinst->GetOpcode();
     MachineBasicBlock* block = machineinst->get_machinebasicblock();
     std::list<MachineInst*>& insts = block->getMachineInsts();
     Type* backendptr = new BackendPtr();
@@ -214,7 +216,8 @@ void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempf
     ++it;
     it = insts.insert(it, inst2);
     ++it;
-    machineinst->GetRs1()->SetName(rd->GetName());
+    if(opcode == "sw")
+        machineinst->GetRd()->SetName(rd->GetName());
 }  
 void dataSegment::PrintDataSegment_Globval() {
     for(auto& gvar : globlvar_list) {

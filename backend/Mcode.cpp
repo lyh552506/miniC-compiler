@@ -128,11 +128,15 @@ void MachineInst::print() {
 
 /*MachineBasicBlock*/
 MachineBasicBlock::MachineBasicBlock(BasicBlock* block, MachineFunction* parent)
-    : block(block), mfuc(parent) {}
+    : block(block), mfuc(parent), succNum(0) {}
 void MachineBasicBlock::set_lable(int func_num, int block_num) {
     name = ".LBB" + std::to_string(func_num) + "_" + std::to_string(block_num);
 }
+void MachineBasicBlock::set_succNum(int succNum) {
+    this->succNum = succNum;
+}
 std::string MachineBasicBlock::get_name() {return this->name;}
+int MachineBasicBlock::get_succNum() {return this->succNum;}
 void MachineBasicBlock::set_name(std::string name) {this->name = name;}
 void MachineBasicBlock::addMachineInst(MachineInst* minst) {
     this->minsts.push_back(minst);
@@ -154,6 +158,9 @@ void MachineFunction::set_offset_map(std::string name, size_t offset) {
 }
 void MachineFunction::set_lable_map(std::string name, std::string lable) {
     lableMap.insert(std::pair<std::string, std::string>(name, lable));
+}
+void MachineFunction::set_blockMap(BasicBlock* bb, MachineBasicBlock* mbb) {
+    blockMap.insert(std::pair<BasicBlock*, MachineBasicBlock*>(bb, mbb));
 }
 void MachineFunction::set_alloca_and_num() {
     alloca_num = 0;
@@ -184,6 +191,12 @@ void MachineFunction::addMachineBasicBlock(MachineBasicBlock* mblock) {
 }
 std::vector<MachineBasicBlock*>& MachineFunction::getMachineBasicBlocks() {
     return this->mblocks;
+}
+std::map<BasicBlock*, MachineBasicBlock*>& MachineFunction::get_blockMap() {
+    return this->blockMap;
+}
+MachineBasicBlock* MachineFunction::get_mbbFrombb(BasicBlock* block) {
+    return blockMap.find(block)->second;
 }
 size_t MachineFunction::get_offset(std::string name) {
     return offsetMap.find(name)->second;
