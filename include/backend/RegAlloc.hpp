@@ -1,20 +1,26 @@
+#include <algorithm>
 #include <list>
 #include <map>
 #include <stack>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include<unordered_map>
-#include<algorithm>
-#include "MachineCode.hpp"
-#include "PassManagerBase.hpp"
 #include "CFG.hpp"
+#include "MachineCode.hpp"
+#include "Mcode.hpp"
+#include "PassManagerBase.hpp"
 
-class RegAlloc:public PassManagerBase{
-    public:
-        RegAlloc(Function* func):m_func(func){}
-        void Run();
-        void PrintPass();
-    private:
-    Function* m_func;
+class RegInfo {
+  using Reg = unsigned int;//r0-
+  Reg name;
+};
+
+class RegAlloc{
+ public:
+  RegAlloc(MachineFunction* func) : m_func(func) {}
+ protected:
+  std::vector<RegInfo> avail;
+  MachineFunction* m_func;
+  void run();
 };
