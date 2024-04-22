@@ -166,133 +166,83 @@ void LiveInterval::init()
   }
 }
 
-// void LiveInterval::computeLiveIntervals()
-// {
-//   for (MachineBasicBlock* block : func->getMachineBasicBlocks())
-//   {
-//     std::unordered_map<Operand, std::vector<RegLiveInterval>> CurrentRegLiveinterval;
-//     BlockLiveInfo blockinfo = BlockLiveInfo(func);
-//     std::map<Operand, int> laseUse;
-//     int begin = -1;
-//     for(MachineInst* inst : block->getMachineInsts())
-//     {
-//       int Curr = instNum[inst];
-//       if(inst == block->getMachineInsts().front())
-//         begin = instNum[inst];
-//       for(Operand Op : InstLive[inst])
-//       {
-//         if(!CurrentRegLiveinterval.count(Op))
-//         {
-//           RegLiveInterval interval;
-//           interval.start = Curr;
-//           interval.end = -1;
-//           CurrentRegLiveinterval[Op].push_back(interval);
-//         }
-//         else
-//         {
-//           if(CurrentRegLiveinterval[Op].back().end == -1 && count(Op))
-//             CurrentRegLiveinterval[Op].back().end = Curr;
-//           else
-//           {
-//             RegLiveInterval interval;
-//             interval.start = Curr;
-//             interval.end = -1;
-//             CurrentRegLiveinterval[Op].push_back(interval);
-//           }
-//         }
-//         if(!Op->isConst())
-//         {
-//           if(!CurrentRegLiveinterval.count(Op))
-//           {
-//             RegLiveInterval interval;
-//             interval.start = Curr;
-//             interval.end = Curr;
-//             CurrentRegLiveinterval[Op] = interval;
-//           }
-//           else
-//           {
-//             CurrentRegLiveinterval[Op].end = Curr;
-//           }
-//           if(laseUse.count(Op) > 0)
-//           {
-//             RegLiveInterval interval;
-//             interval.start = laseUse[Op];
-//             interval.end = Curr;
-//             AddRegLiveInterval(interval, Op);
-//           }
-//           laseUse[Op] = Curr;
-//         }
-//       }
-//     }
-//     for (Instruction* inst : block->getInstructions())
-//     {
-//       InstInfo* instInfo = inst->getInstInfo();
-//       int instNum = instInfo->getInstNum();
+void LiveInterval::computeLiveIntervals()
+{
+  for (MachineBasicBlock* block : func->getMachineBasicBlocks())
+  {
+    std::unordered_map<Operand, std::vector<RegLiveInterval>> CurrentRegLiveinterval;
+    BlockLiveInfo blockinfo = BlockLiveInfo(func);
+    std::map<Operand, int> laseUse;
+    int begin = -1;
+    for(MachineInst* inst : block->getMachineInsts())
+    {
+      int Curr = instNum[inst];
+      if(inst == block->getMachineInsts().front())
+        begin = instNum[inst];
+      for(Operand Op : InstLive[inst])
+      {
+        if(!CurrentRegLiveinterval.count(Op))
+        {
+          RegLiveInterval interval;
+          interval.start = Curr;
+          interval.end = -1;
+          CurrentRegLiveinterval[Op].push_back(interval);
+        }
+        else
+        {
+          if(CurrentRegLiveinterval[Op].back().end == -1 && !count(Op))
+            CurrentRegLiveinterval[Op].back().end = Curr - 1;
+          else if(CurrentRegLiveinterval[Op].back().end == -1 && inst == block->getMachineInsts().back())
+            CurrentRegLiveinterval[Op].back().end = Curr;
+          else if(count(Op))
+          {
+            RegLiveInterval interval;
+            interval.start = Curr;
+            interval.end = -1;
+            CurrentRegLiveinterval[Op].push_back(interval);
+          }
+        }
+      }
+    }
+    if(verify(CurrentRegLiveinterval))
+      CurrentRegLiveinterval = Simplify(CurrentRegLiveinterval); 
+    RegLiveness[block] = CurrentRegLiveinterval;
+  }
+}
 
-//       if (firstInstNum == -1)
-//         firstInstNum = instNum;
-//       lastInstNum = instNum;
+bool LiveInterval::verify(std::unordered_map<Operand, std::vector<RegLiveInterval>> Liveinterval)
+{
+  int num = 0;
+  for(auto& [op, intervals] : Liveinterval)
+  {
+      for(auto& i : intervals)
+      {
+          if(i.start >= i.end)
+            return false;
+          if(num >= i.end)
+            return false;
+      }
+  }
+  return true;
+}
 
-//       for (Operand* operand : inst->getOperands())
-//       {
-//         bool isUse = operand->isUse();
-//         bool isDef = operand->isDef();
-//         Value* value = operand->getValue();
-//         int regNum = operand->getRegNum();
-
-//         if (value->isVirtualRegister())
-//         {
-//           if (isUse)
-//           {
-//             currentSegment[value] = std::make_pair(firstInstNum, lastInstNum);
-//             lastUse[value] = lastInstNum;
-//           }
-//           if (isDef)
-//           {
-//             currentSegment[value] = std::make_pair(firstInstNum, lastInstNum);
-//             if (lastUse.count(value) > 0)
-//             {
-//               value->setDead(true);
-//               lastUse.erase(value);
-//             }
-//           }
-//         }
-//       }
-//     }
-
-//     for (auto& segment : currentSegment)
-//     {
-//       Value* value = segment.first;
-//       std::pair<int, int> interval = segment.second;
-//       if (blockInfo->getOutputSet().count(value) > 0)
-//       {
-//         interval.second = lastInstNum;
-//         value->addInterval(interval);
-//       }
-//     }
-
-//     for (auto& lastUseEntry : lastUse)
-//     {
-//       Value* value = lastUseEntry.first;
-//       if (blockInfo->getOutputSet().count(value) == 0)
-//       {
-//         value->setDead(true);
-//       }
-//     }
-
-//     for (Value* value : blockInfo->getOutputSet())
-//     {
-//       if (currentSegment.count(value) == 0)
-//       {
-//         std::pair<int, int> interval(firstInstNum, lastInstNum);
-//         value->addInterval(interval);
-//       }
-//     }
-//   }
-
-//   for (Value* value : func->getValues())
-//   {
-//     value->optimizeIntervals();
-//     value->verifyIntervals();
-//   }
-// }
+std::unordered_map<Operand, std::vector<RegLiveInterval>>& Simplify(std::unordered_map<Operand, std::vector<RegLiveInterval>> Liveinterval)
+{
+  for(auto& [op, intervals] : Liveinterval)
+  {
+    auto beg = intervals.begin();
+    for(auto iter = intervals.begin(); iter != intervals.end(); ++iter)
+    {
+      if(iter == beg)
+        continue;
+      if(beg->start < iter->start)
+      {
+        ++beg;
+        *beg = *iter;
+      }
+      else
+        beg->end = std::max(beg->end, iter->end);
+    }
+    intervals.erase(std::next(beg), intervals.end());
+  }
+}

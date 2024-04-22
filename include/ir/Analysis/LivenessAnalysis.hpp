@@ -40,9 +40,8 @@ struct RegLiveInterval
 {
     int start;
     int end;
-    bool operator<=(const RegLiveInterval& rhs) \ 
-    const { return start <= rhs.start; }
 };
+
 class LiveInterval : public BlockLiveInfo
 {
     MachineFunction* func;
@@ -53,6 +52,8 @@ class LiveInterval : public BlockLiveInfo
     private:
     void init();
     void computeLiveIntervals();
+    bool verify(std::unordered_map<Operand, std::vector<RegLiveInterval>> Liveinterval);
+    std::unordered_map<Operand, std::vector<RegLiveInterval>>& Simplify(std::unordered_map<Operand, std::vector<RegLiveInterval>> Liveinterval);
     public:
     LiveInterval(MachineFunction* f) : func(f), BlockLiveInfo() {}
     std::unordered_map<Operand, std::vector<RegLiveInterval>> GetRegLiveInterval(MachineBasicBlock* block) \
