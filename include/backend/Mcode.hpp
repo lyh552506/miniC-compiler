@@ -38,6 +38,8 @@ class MachineInst : public User {
     Operand GetRs1();
     Operand GetRs2();
     std::vector<Operand> GetVector_used();
+    std::vector<Operand> GetDefs(){return vector_used;}
+    std::vector<Operand> GetUses(){return vector_used;}
     bool isVirtual(Operand Op) { return Op->GetName()[0] == '.' ; }
     void SetRd(Operand rd);
     void SetRs1(Operand rs1);

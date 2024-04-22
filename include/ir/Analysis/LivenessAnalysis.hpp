@@ -11,7 +11,7 @@ class BlockLiveInfo : public MachineInst
     void iterate(MachineFunction* func);
     void RunOnFunc(MachineFunction *func);
     void CalcReg2Mov(MachineBasicBlock* block);
-    void CalcReg2Reg(MachineBasicBlock* block);
+    void CalcRegInterfer(MachineBasicBlock* block);
     void CalInstLive(MachineBasicBlock* block);
     std::map<MachineBasicBlock*, bool> UnChanged;
     bool isChanged = false;
@@ -22,13 +22,13 @@ class BlockLiveInfo : public MachineInst
     std::map<MachineInst*, std::set<Value*>> InstLive;
     std::map<MachineBasicBlock*, std::set<Value*>> BlockLivein;
     std::map<MachineBasicBlock*, std::set<Value*>> BlockLiveout;
-    std::map<Operand, std::vector<MachineInst*>> Reg2Mov; // 寄存器MOV指令映射
-    std::map<Operand, std::vector<Operand>> Reg2Reg; // 同时使用的寄存器映射
-    std::unordered_set<Operand> Regs;   // Machine register
+    std::map<MachineBasicBlock*, std::unordered_map<Operand, std::vector<MachineInst*>>> Reg2Mov; // 寄存器MOV指令映射
+    std::map<MachineBasicBlock*, std::unordered_map<Operand, std::vector<Operand>>> RegInterfer; // 同时使用的寄存器映射
+    std::map<MachineBasicBlock*, std::unordered_set<Operand>> Regs;   // Machine register
     public:
-    std::map<Operand, std::vector<MachineInst*>> GetReg2Mov() { return Reg2Mov; }
-    std::map<Operand, std::vector<Operand>> GetReg2Reg() { return Reg2Reg; }
-    std::unordered_set<Operand> GetMachineRegs() { return Regs; }
+    std::unordered_map<Operand, std::vector<MachineInst*>> GetReg2Mov(MachineBasicBlock* block) { return Reg2Mov[block]; }
+    std::unordered_map<Operand, std::vector<Operand>> GetRegInterfer(MachineBasicBlock* block) { return RegInterfer[block]; }
+    std::unordered_set<Operand> GetMachineRegs(MachineBasicBlock* block) { return Regs[block]; }
     void RunOnFunction();
     void PrintPass();
     bool count(Operand Op) { return InstLive[this].count(Op); }
@@ -52,10 +52,12 @@ class LiveInterval : public BlockLiveInfo
     private:
     void init();
     void computeLiveIntervals();
+    void PrintAnalysis();
     bool verify(std::unordered_map<Operand, std::vector<RegLiveInterval>> Liveinterval);
-    std::unordered_map<Operand, std::vector<RegLiveInterval>>& Simplify(std::unordered_map<Operand, std::vector<RegLiveInterval>> Liveinterval);
+    std::unique_ptr<BlockLiveInfo> blockinfo;
     public:
     LiveInterval(MachineFunction* f) : func(f), BlockLiveInfo() {}
     std::unordered_map<Operand, std::vector<RegLiveInterval>> GetRegLiveInterval(MachineBasicBlock* block) \
     { return RegLiveness[block]; }
+    void RunOnFunc();
 };

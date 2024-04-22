@@ -1,12 +1,14 @@
 #include "LivenessAnalysis.hpp"
 #include <algorithm>
 #include <map>
-
+#include <regex>
 void BlockLiveInfo::GetBlockLivein(MachineBasicBlock* block)
 {
-    for(auto inst = block->getMachineInsts().rbegin();inst != block->getMachineInsts().rend(); --inst)
+    for(auto inst = block->getMachineInsts().rbegin();inst != block->getMachineInsts().rend(); ++inst)
     {
-        for(auto val : (*inst)->GetVector_used())
+      if(!(*inst)->GetVector_used().empty())
+      {
+        for(Operand val : (*inst)->GetUses())
         {
             if(!val->isConst())
             {
@@ -14,10 +16,15 @@ void BlockLiveInfo::GetBlockLivein(MachineBasicBlock* block)
               Uses[block].insert(val);
             }
         }
-        Value* DefValue = (*inst)->GetVector_used()[0];
-        BlockLivein[block].erase(DefValue);
-        Uses[block].erase(DefValue);
-        Defs[block].insert(DefValue);
+        for(Operand DefValue : (*inst)->GetDefs())
+        {
+          BlockLivein[block].erase(DefValue);
+          Uses[block].erase(DefValue);
+          Defs[block].insert(DefValue);
+        }
+      }
+      else
+        continue;
     }
 }
 
@@ -48,6 +55,7 @@ void BlockLiveInfo::RunOnFunction()
     GetBlockLivein(_block);
     GetBlockLiveout(_block);
   }
+  PrintPass();
   iterate(F); 
   while(isChanged)
     iterate(F);
@@ -55,8 +63,9 @@ void BlockLiveInfo::RunOnFunction()
   {
     CalInstLive(_block);
     CalcReg2Mov(_block);
-    CalcReg2Reg(_block);
+    CalcRegInterfer(_block);
   }
+  PrintPass();
 }
 
 void BlockLiveInfo::iterate(MachineFunction *func)
@@ -75,9 +84,9 @@ void BlockLiveInfo::iterate(MachineFunction *func)
 
 void BlockLiveInfo::RunOnFunc(MachineFunction *func)
 {
-  for(auto BB = func->getMachineBasicBlocks().rbegin(); BB != func->getMachineBasicBlocks().rend(); --BB)
+  for(auto BB = func->getMachineBasicBlocks().rbegin(); BB != func->getMachineBasicBlocks().rend(); ++BB)
   {
-    MachineBasicBlock*_Block = *BB;
+    MachineBasicBlock* _Block = *BB;
     std::set<Value*> old_BlockLivein = BlockLivein[_Block];
     std::set<Value*>old_BlockLiveout = BlockLiveout[_Block];
     GetBlockLiveout(_Block);
@@ -95,17 +104,17 @@ void BlockLiveInfo::CalInstLive(MachineBasicBlock* block)
   for(MachineInst* inst : block->getMachineInsts())
   {
     std::set<Value*> Live = BlockLiveout[block];
-    for(Operand val : inst->GetVector_used())
+    for(Operand val : inst->GetUses())
     {
       if(!val->isConst())
       {
         Live.insert(val);
         if(!inst->isVirtual(val))
-          Regs.insert(val);
+          Regs[block].insert(val);
       }
     }
-    Value* DefValue = inst->GetVector_used()[0];
-    Live.erase(DefValue);
+    for(Operand DefValue : inst->GetDefs())
+      Live.erase(DefValue);
     InstLive[inst] = Live;
   }
 }
@@ -114,15 +123,17 @@ void BlockLiveInfo::CalcReg2Mov(MachineBasicBlock* block)
   for(MachineInst* inst : block->getMachineInsts())
   {
     std::string Opcode = inst->GetOpcode();
-    if(Opcode == "mov")
+    std::regex mvRegex("mv"); 
+    if(std::regex_match(Opcode, mvRegex))
     {
-      for(Operand Op : inst->GetVector_used())
-        Reg2Mov[Op].push_back(inst);
+      for (Operand Op : inst->GetVector_used()) {
+        Reg2Mov[block][Op].push_back(inst);
+      }
     }
   }
 }
 
-void BlockLiveInfo::CalcReg2Reg(MachineBasicBlock* block)
+void BlockLiveInfo::CalcRegInterfer(MachineBasicBlock* block)
 {
   for(MachineInst* inst : block->getMachineInsts())
   {
@@ -131,7 +142,7 @@ void BlockLiveInfo::CalcReg2Reg(MachineBasicBlock* block)
       for(Value* Op2: InstLive[inst])
       {
         if(Op2 != Op1)
-          Reg2Reg[Op1].push_back(Op2);
+          RegInterfer[block][Op1].push_back(Op2);
       }
     }
   }
@@ -144,11 +155,21 @@ void BlockLiveInfo::PrintPass()
     std::cout << "--------Block:"<< _block->get_name() << "--------" << std::endl;
     std::cout << "        Livein" << std::endl;
     for(Value* _value:BlockLivein[_block])
-      std::cout << "%" << _value->GetName() << " ";
+    {
+      if(_value->isVirtual())
+        std::cout << "%" << _value->GetName() << " ";
+      else
+        std::cout << _value->GetName() << " ";
+    }
     std::cout << std::endl;
     std::cout << "        Liveout" << std::endl;
     for(Value* _value:BlockLiveout[_block])
-      std::cout << "%" << _value->GetName() << " ";
+    {
+      if(_value->isVirtual())
+        std::cout << "%" << _value->GetName() << " ";
+      else
+        std::cout << _value->GetName() << " ";
+    }
     std::cout << std::endl;
   }
 }
@@ -166,13 +187,20 @@ void LiveInterval::init()
   }
 }
 
+void LiveInterval::RunOnFunc()
+{
+  blockinfo = std::make_unique<BlockLiveInfo>(func);
+  blockinfo->RunOnFunction();
+  blockinfo->PrintPass();
+  init();
+  computeLiveIntervals();
+  PrintAnalysis();
+}
 void LiveInterval::computeLiveIntervals()
 {
   for (MachineBasicBlock* block : func->getMachineBasicBlocks())
   {
     std::unordered_map<Operand, std::vector<RegLiveInterval>> CurrentRegLiveinterval;
-    BlockLiveInfo blockinfo = BlockLiveInfo(func);
-    std::map<Operand, int> laseUse;
     int begin = -1;
     for(MachineInst* inst : block->getMachineInsts())
     {
@@ -194,7 +222,7 @@ void LiveInterval::computeLiveIntervals()
             CurrentRegLiveinterval[Op].back().end = Curr - 1;
           else if(CurrentRegLiveinterval[Op].back().end == -1 && inst == block->getMachineInsts().back())
             CurrentRegLiveinterval[Op].back().end = Curr;
-          else if(count(Op))
+          else if(CurrentRegLiveinterval[Op].back().end != -1 && count(Op))
           {
             RegLiveInterval interval;
             interval.start = Curr;
@@ -205,7 +233,25 @@ void LiveInterval::computeLiveIntervals()
       }
     }
     if(verify(CurrentRegLiveinterval))
-      CurrentRegLiveinterval = Simplify(CurrentRegLiveinterval); 
+    {
+      for(auto& [op, intervals] : CurrentRegLiveinterval)
+      {
+        auto beg = intervals.begin();
+        for(auto iter = intervals.begin(); iter != intervals.end(); ++iter)
+        {
+          if(iter == beg)
+            continue;
+          if(beg->start < iter->start)
+          {
+            ++beg;
+            *beg = *iter;
+          }
+          else
+            beg->end = std::max(beg->end, iter->end);
+        }
+        intervals.erase(std::next(beg), intervals.end());
+      }
+    }
     RegLiveness[block] = CurrentRegLiveinterval;
   }
 }
@@ -226,23 +272,21 @@ bool LiveInterval::verify(std::unordered_map<Operand, std::vector<RegLiveInterva
   return true;
 }
 
-std::unordered_map<Operand, std::vector<RegLiveInterval>>& Simplify(std::unordered_map<Operand, std::vector<RegLiveInterval>> Liveinterval)
+void LiveInterval::PrintAnalysis()
 {
-  for(auto& [op, intervals] : Liveinterval)
+  std::cout << "--------LiveInterval--------" << std::endl;
+  for(MachineBasicBlock* block : func->getMachineBasicBlocks())
   {
-    auto beg = intervals.begin();
-    for(auto iter = intervals.begin(); iter != intervals.end(); ++iter)
+    std::cout << "--------Block:" << block->get_name() << "--------" << std::endl;
+    for(auto& [op, intervals] : RegLiveness[block])
     {
-      if(iter == beg)
-        continue;
-      if(beg->start < iter->start)
-      {
-        ++beg;
-        *beg = *iter;
-      }
+      if(!op->isVirtual())
+      std::cout << "% "<< op->GetName() << ":";
       else
-        beg->end = std::max(beg->end, iter->end);
+        std::cout << op->GetName() << ":";
+      for(auto& i : intervals)
+        std::cout << "[" << i.start << "," << i.end << "]";
+      std::cout << std::endl;
     }
-    intervals.erase(std::next(beg), intervals.end());
   }
 }
