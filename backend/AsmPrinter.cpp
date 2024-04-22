@@ -188,9 +188,8 @@ void dataSegment::GenerateTempvarList(MachineUnit* Machineunit) {
                         tempvar* tempfloat = new tempvar(num_lable, constfloat->GetVal());
                         num_lable++;
                         tempvar_list.push_back(tempfloat); 
-                        //todo
                         //在代码中修改加载方式；
-                        Change_LoadConstFloat(machineinst, tempfloat, it);
+                        Change_LoadConstFloat(machineinst, tempfloat, it, used);
                     }
                 }
             }
@@ -198,7 +197,7 @@ void dataSegment::GenerateTempvarList(MachineUnit* Machineunit) {
     }
 }
 std::vector<tempvar*> dataSegment::get_tempvar_list() {return tempvar_list;}
-void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat, std::list<MachineInst*>::iterator it) {
+void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat, std::list<MachineInst *>::iterator it, Operand used) {
     std::string opcode = machineinst->GetOpcode();
     MachineBasicBlock* block = machineinst->get_machinebasicblock();
     std::list<MachineInst*>& insts = block->getMachineInsts();
@@ -214,10 +213,14 @@ void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempf
     MachineInst* inst2 = new MachineInst(machineinst->get_machinebasicblock(), "addi", rd, rd, rs1);// addi  a5, a5, %lo(lable)
     it = insts.insert(it, inst1);
     ++it;
-    it = insts.insert(it, inst2);
+    it = insts.insert(it, inst2); 
     ++it;
-    if(opcode == "sw")
-        machineinst->GetRd()->SetName(rd->GetName());
+    used->SetName(rd->GetName());
+    // if(opcode == "sw")
+    //     machineinst->GetRd()->SetName(rd->GetName());
+    // else {
+    //     machineinst->GetRs1
+    // }
 }  
 void dataSegment::PrintDataSegment_Globval() {
     for(auto& gvar : globlvar_list) {

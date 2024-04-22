@@ -74,7 +74,7 @@ class dataSegment {
     void GenerateGloblvarList(MachineUnit* Machineunit);
     void GenerateTempvarList(MachineUnit* Machineunit);
     std::vector<tempvar*> get_tempvar_list();
-    void Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat, std::list<MachineInst *>::iterator it);
+    void Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat, std::list<MachineInst *>::iterator it, Operand used);
     void PrintDataSegment_Globval();
     void PrintDataSegment_Tempvar();
 };
