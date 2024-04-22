@@ -12,7 +12,6 @@ void PassManager::InitPass() {
 
     // m_pre = std::make_unique<PRE>(m_dom.get(), m_func);
     m_cfgsimple = std::make_unique<cfgSimplify>(m_func, m_dom.get());
-    // m_liveness = std::make_unique<LivenessAnalysis>(m_func);
     m_adce = std::make_unique<ADCE>(m_func);
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);

@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/build/SYSY-compiler",
             "cwd": "${workspaceFolder}",
             "targetArchitecture": "x64",
-            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--simplifycfg", "--constprop"],
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--ece","--pre"],
             "stopAtEntry": false,
             "setupCommands": [
               {
@@ -40,7 +40,7 @@
             "program": "${workspaceFolder}/build/SYSY-compiler",
             "cwd": "${workspaceFolder}",
             "targetArchitecture": "x64",
-            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--constprop","--dce"],
+            "args": ["${workspaceFolder}/function_test/test.c","--mem2reg","--pre"],
             "stopAtEntry": false,
             // "setupCommands": [
             //   {
