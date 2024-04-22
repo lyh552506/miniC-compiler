@@ -236,20 +236,20 @@ void LiveInterval::computeLiveIntervals()
     {
       for(auto& [op, intervals] : CurrentRegLiveinterval)
       {
-        auto beg = intervals.begin();
+        auto curr = intervals.begin();
         for(auto iter = intervals.begin(); iter != intervals.end(); ++iter)
         {
-          if(iter == beg)
+          if(iter == curr)
             continue;
-          if(beg->start < iter->start)
+          if(curr->start < iter->start)
           {
-            ++beg;
-            *beg = *iter;
+            ++curr;
+            *curr = *iter;
           }
           else
-            beg->end = std::max(beg->end, iter->end);
+            curr->end = std::max(curr->end, iter->end);
         }
-        intervals.erase(std::next(beg), intervals.end());
+        intervals.erase(std::next(curr), intervals.end());
       }
     }
     RegLiveness[block] = CurrentRegLiveinterval;
