@@ -107,3 +107,6 @@ void ArrayType::print(){
     subtype->print();
     std::cout<<"]";
 }
+
+BackendPtr::BackendPtr ():Type(BACKEND_PTR) {size=8;}
+void BackendPtr::print() {return;}

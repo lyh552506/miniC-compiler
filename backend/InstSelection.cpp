@@ -139,8 +139,6 @@ MachineInst* InstSelect(MachineBasicBlock* parent, User& inst) {
     return machineinst;
 }
 MachineInst* MatchStoreInst(MachineBasicBlock* parent, StoreInst* inst) {
-    
-    
     std::string op = "sw";
     Operand rd = (inst->Getuselist())[0]->GetValue();
     Operand rs1 = (inst->Getuselist())[1]->GetValue();
