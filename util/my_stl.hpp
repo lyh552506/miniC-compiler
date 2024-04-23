@@ -43,3 +43,10 @@ void vec_pop(std::vector<T>& vec,int& index){
   vec.pop_back();
   index--;
 }
+///@brief 实现vec没有重复元素
+template<typename T>
+void PushVecSingleVal(std::vector<T>&vec,T v){
+  auto iter=std::find(vec.begin(),vec.end(),v);
+  if(iter!=vec.end()) return;
+  vec.push_back(v);
+}
