@@ -1,7 +1,8 @@
 build
 .vscode/settings.json
 RISCInst
-testcases/*.ll
+testcases/**/*.ll
+testcases/**/*.s
 testcases_output
 testcases_c
 test.ipynb
