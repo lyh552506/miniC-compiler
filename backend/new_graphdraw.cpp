@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
 #include "BaseCFG.hpp"
 #include "Mcode.hpp"
 #include "RegAlloc.hpp"
@@ -24,7 +25,8 @@ void GraphColor::RunOnFunc() {
       freeze();
     else if (!spillWorkList.empty())
       spill();
-  } while (simplifyWorkList.empty() && worklistMoves.empty());
+  } while (simplifyWorkList.empty() && worklistMoves.empty() &&
+           freezeWorkList.empty() && spillWorkList.empty());
 }
 
 void GraphColor::MakeWorklist() {
@@ -91,6 +93,12 @@ void GraphColor::AddWorkList(Operand v) {
     PushVecSingleVal(simplifyWorkList, v);
   }
 }
+// TODO spill node的启发式函数
+Operand GraphColor::HeuristicSpill() {}
+
+// TODO选择freeze node的启发式函数
+Operand GraphColor::HeuristicFreeze() {}
+
 // rd <-rs变成 rs(rs)
 void GraphColor::combine(Operand rd, Operand rs) {
   if (freezeWorkList.find(rs) != freezeWorkList.end())
@@ -136,8 +144,27 @@ void GraphColor::combine(Operand rd, Operand rs) {
     spillWorkList.insert(rd);
   }
 }
-// TODO选择freeze node的启发式函数
-Operand GraphColor::HeuristicFreeze() {}
+
+void GraphColor::FreezeMoves(Operand freeze) {
+  for (auto mov : MoveRelated(freeze)) {
+    // mov: dst<-src
+    Operand dst = mov->GetRd();
+    Operand src = mov->GetRs1();
+    Operand value;
+    //找到除了freeze的另外一个操作数
+    if (GetAlias(src) == GetAlias(freeze)) {
+      value = GetAlias(dst);
+    } else {
+      value = GetAlias(src);
+    }
+    activeMoves.erase(mov);
+    frozenMoves.insert(mov);
+    if (MoveRelated(value).size() == 0 && IG[value].size() < colors) {
+      freezeWorkList.erase(value);
+      PushVecSingleVal(simplifyWorkList, value);
+    }
+  }
+}
 
 void GraphColor::simplify() {
   for (int i = 0; i < simplifyWorkList.size(); i++) {
@@ -223,26 +250,32 @@ void GraphColor::freeze() {
   freezeWorkList.erase(freeze);
   PushVecSingleVal(simplifyWorkList, freeze);
   //放弃对这个freeze节点合并的希望，将他看成是传送无关节点
-  for (auto mov : MoveRelated(freeze)) {
-    // mov: dst<-src
-    Operand dst = mov->GetRd();
-    Operand src = mov->GetRs1();
-    Operand value;
-    //找到除了freeze的另外一个操作数
-    if (GetAlias(src) == GetAlias(freeze)) {
-      value = GetAlias(dst);
-    } else {
-      value = GetAlias(src);
-    }
-    activeMoves.erase(mov);
-    frozenMoves.insert(mov);
-    if (MoveRelated(value).size() == 0 && IG[value].size() < colors) {
-      freezeWorkList.erase(value);
-      PushVecSingleVal(simplifyWorkList, value);
-    }
+  FreezeMoves(freeze);
+}
+
+void GraphColor::spill() {
+  auto spill = HeuristicSpill();
+  spillWorkList.erase(spill);
+  PushVecSingleVal(simplifyWorkList, spill);
+  FreezeMoves(spill);
+}
+
+void GraphColor::AssignColors() {
+  while (!selectstack.empty()) {
+    Operand select = selectstack.back();
+    selectstack.pop_back();
+    std::vector<RegInfo::REG> assist(colors);
+    //遍历所有的冲突点，查看他们分配的颜色，保证我们分配的颜色一定是不同的
+    for (auto adj : IG[select])
+      if (coloredNode.find(GetAlias(adj)) != coloredNode.end()||
+          Precolored.find(GetAlias(adj))!=Precolored.end()) {
+        //TODO we loss the map with operand to Reg
+      }
+    bool flag=false;
+    std::for_each(assist.begin(),assist.end(),[&flag](){
+      
+    });
   }
 }
 
-void GraphColor::spill(){
-   
-}
+void GraphColor::RewriteProgram() {}

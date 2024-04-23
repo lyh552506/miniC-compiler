@@ -7,39 +7,40 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "MachineCode.hpp"
 #include "Mcode.hpp"
 #include "PassManagerBase.hpp"
 
-enum REG {
-  r0,
-  r1,
-  r2,
-  r3,
-  r4,
-  r5,
-  r6,
-  r7,
-  r8,
-  r9,
-  r10,
-  r11,
-  r12,
-  r13,
-  r14,
-  r15,
-  r16,
-  r17,
-  r18,
-  r19,
-  r20,
-  r21,
-};
-
 class RegInfo {
-  using Reg = unsigned int;  // r0-
-  Reg name;
+public:
+  enum REG {
+    r0,
+    r1,
+    r2,
+    r3,
+    r4,
+    r5,
+    r6,
+    r7,
+    r8,
+    r9,
+    r10,
+    r11,
+    r12,
+    r13,
+    r14,
+    r15,
+    r16,
+    r17,
+    r18,
+    r19,
+    r20,
+    r21,
+  };
+  REG name;
 };
 
 class RegAlloc {
@@ -59,6 +60,7 @@ class GraphColor {
 
  private:
   MachineFunction* m_func;
+  //记录available的寄存器
   int colors;
   void EliminatePhi();
   /// @brief 构建冲突图
@@ -71,12 +73,16 @@ class GraphColor {
   void coalesce();
   void freeze();
   void spill();
+  void AssignColors();
+  void RewriteProgram();
   Operand HeuristicFreeze();
+  Operand HeuristicSpill();
   bool GeorgeCheck(Operand dst, Operand src);
   bool BriggsCheck(std::unordered_set<Operand> target);
   void AddWorkList(Operand v);
   void combine(Operand rd, Operand rs);
   Operand GetAlias(Operand v);
+  void FreezeMoves(Operand freeze);
   enum MoveState { coalesced, constrained, frozen, worklist, active };
   // interference graph
   std::unordered_map<Operand, std::vector<Operand>> IG;
@@ -114,4 +120,6 @@ class GraphColor {
   std::unordered_set<MachineInst*> activeMoves;
   //合并后的别名管理
   std::unordered_map<Operand, Operand> alias;
+  //算法最后为每一个operand选择的颜色
+  std::unordered_map<Operand,RegInfo> color;
 };
