@@ -34,6 +34,7 @@ class Variable
     Type* GetType();
     Operand& GetInitializer();
     void print();
+    bool isFunction(){ return false; }
 };
 
 class UndefValue:public ConstantData{
@@ -264,7 +265,6 @@ class Function:public Value,public mylist<Function,BasicBlock>
     virtual Function* clone(std::unordered_map<Operand,Operand>&) override{return this;};
     Function(InnerDataType _tp,std::string _id);
     void print();
-    void FuncInline(CallInst*);
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void init_bbs(){ bbs.clear();}

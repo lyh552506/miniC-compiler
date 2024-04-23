@@ -1,11 +1,11 @@
-#include "CFG.hpp"
+// #include "CFG.hpp"
 
-class Global2Local : public Variable
-{
-    Module& module;
-public:
-    Global2Local(Module& m, std::string name) : Variable(name), module(m) {}
-    void Run();
-    private:
-    
-};
+// class Global2Local
+// {
+//     private:
+//     Module& module;
+//     void init();
+//     public:
+//     Global2Local(Module& m) :  module(m) {}
+//     void RunOnModule();
+// };
