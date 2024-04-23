@@ -1,4 +1,4 @@
-#include"InstSelection.hpp"
+#include "InstSelection.hpp"
 
 bool is_int(Operand op) {
     if (op->GetType()->GetTypeEnum() == InnerDataType::IR_Value_INT) 
@@ -91,6 +91,7 @@ void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, U
         MachineInst* jInst = MatchUnCondInst(parent, uncondInst);
         parent->addMachineInst(jInst);
     }
+    
     else parent->addMachineInst(inst);
 }
 
@@ -142,6 +143,8 @@ MachineInst* MatchStoreInst(MachineBasicBlock* parent, StoreInst* inst) {
     Operand rd = (inst->Getuselist())[0]->GetValue();
     Operand rs1 = (inst->Getuselist())[1]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
+    machineinst->SetDefs(rs1);
+    machineinst->GetUses().push_back(rd);
     return machineinst;
 }
 MachineInst* MatchLoadInst(MachineBasicBlock* parent, LoadInst* inst) {
@@ -149,6 +152,8 @@ MachineInst* MatchLoadInst(MachineBasicBlock* parent, LoadInst* inst) {
     Operand rd = inst->GetDef();
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
+    machineinst->SetDefs(rd);
+    machineinst->GetUses().push_back(rs1);
     return machineinst;
 }
 MachineInst* MatchFPTSI(MachineBasicBlock* parent,FPTSI* inst) {
@@ -156,6 +161,8 @@ MachineInst* MatchFPTSI(MachineBasicBlock* parent,FPTSI* inst) {
     Operand rd = inst->GetDef();
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
+    machineinst->SetDefs(rd);
+    machineinst->GetUses().push_back(rs1);
     return machineinst;
 }
 MachineInst* MatchSITFP(MachineBasicBlock* parent,SITFP* inst) {
@@ -163,12 +170,16 @@ MachineInst* MatchSITFP(MachineBasicBlock* parent,SITFP* inst) {
     Operand rd = inst->GetDef();
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
+    machineinst->SetDefs(rd);
+    machineinst->GetUses().push_back(rs1);
     return machineinst;
 }
 MachineInst* MatchUnCondInst(MachineBasicBlock* parent, UnCondInst* inst) {
     std::string op = "j";
     Operand rd = inst->Getuselist()[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd);
+    // 特殊
+    machineinst->GetUses().push_back(rd);  
     return machineinst;
 }
 MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst) {
@@ -182,11 +193,20 @@ MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst) {
         Operand rs2 = (inst->Getuselist())[1]->GetValue();
     } else {} // beqz rs label2
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1, rs2);
+    machineinst->GetUses().push_back(rd);    
+    machineinst->GetUses().push_back(rs1);    
+    machineinst->GetUses().push_back(rs2);
     return machineinst;
 }
 MachineInst* MatchCallInst(MachineBasicBlock* parent, CallInst* inst) {
     Operand rd = inst->Getuselist()[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, "call", rd);
+    int i=1;
+    // 
+    while (Value* rs =dynamic_cast<Value*>(inst->Getuselist()[i]->GetValue())) {
+        machineinst->GetUses().push_back(rs);
+        i++;
+    }
     return machineinst;
 }
 MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst) {
@@ -195,8 +215,7 @@ MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst) {
         machineinst = new MachineInst(inst, parent, "ret");
         return machineinst;
     }
-    Operand rd = inst->Getuselist()[0]->GetValue();
-    //std::cout << "    lw a0, " << rd->GetName() << std::endl; 
+    Operand rd = inst->Getuselist()[0]->GetValue(); 
     machineinst = new MachineInst(inst, parent, "ret", rd);
     return machineinst;
 }
@@ -324,5 +343,8 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
         return machineinst; 
     }
     machineinst = new MachineInst(inst, parent, opcode, rd, rs1, rs2);
+    machineinst->SetDefs(rd);
+    machineinst->GetUses().push_back(rs1);
+    machineinst->GetUses().push_back(rs2);
     return machineinst;
 }

@@ -3,42 +3,22 @@
 /*MachinInst*/
 //without IR
 MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode) 
-    : mbb(mbb), opcode(opcode) {
-}    
+    : mbb(mbb), opcode(opcode), offset(0), def(NULL), used(NULL) {}    
 MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd) 
-    : mbb(mbb), opcode(opcode), rd(rd) {
-    vector_used.push_back(rd);
-}
+    : mbb(mbb), opcode(opcode), rd(rd), offset(0), def(NULL), used(NULL) {}
 MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1) 
-    : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1) {
-    vector_used.push_back(rd);
-    vector_used.push_back(rs1);
-}
+    : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), offset(0), def(NULL), used(NULL) {}
 MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1, Operand rs2) 
-    : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
-    vector_used.push_back(rd);
-    vector_used.push_back(rs1);
-    vector_used.push_back(rs2);
-}
+    : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2), offset(0), def(NULL), used(NULL) {}
 //with IR
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode) 
-    : IR(IR), mbb(mbb), opcode(opcode) {
-}
+    : IR(IR), mbb(mbb), opcode(opcode), offset(0), def(NULL), used(NULL) {}
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd) 
-    : IR(IR), mbb(mbb), opcode(opcode), rd(rd) {
-    vector_used.push_back(rd);
-}
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), offset(0), def(NULL), used(NULL) {}
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1) 
-    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1) {
-    vector_used.push_back(rd);
-    vector_used.push_back(rs1);
-}
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), offset(0), def(NULL), used(NULL) {}
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1, Operand rs2) 
-    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2) {
-    vector_used.push_back(rd);
-    vector_used.push_back(rs1);
-    vector_used.push_back(rs2);
-}
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2), offset(0), def(NULL), used(NULL) {}
 User* MachineInst::getIR() {return this->IR;}
 MachineBasicBlock* MachineInst::get_machinebasicblock() {return this->mbb;}
 std::string MachineInst::GetOpcode() {return opcode;}
@@ -46,10 +26,16 @@ void MachineInst::SetOpcode(std::string opcode) {this->opcode = opcode;}
 Operand MachineInst::GetRd() {return rd;}
 Operand MachineInst::GetRs1() {return rs1;}
 Operand MachineInst::GetRs2() {return rs2;}
-std::vector<Operand> MachineInst::GetVector_used() {return this->vector_used;}
+Operand MachineInst::GetDefs(){return def;}
+std::vector<Operand>& MachineInst::GetUses() {return this->used;}
+// bool MachineInst::isVirtual(Operand Op) { 
+//     if (Op->GetName().find(".LBB")) {return 0;}
+//     else {return Op->GetName()[0] == '.' ;}
+// }
 void MachineInst::SetRd(Operand rd) {this->rd = rd;}
 void MachineInst::SetRs1(Operand rs1) {this->rs1 = rs1;}
 void MachineInst::SetRs2(Operand rs2) {this->rs2 = rs2;}
+void MachineInst::SetDefs(Operand def) {this->def = def;}
 
 void MachineInst::print() {
     if (opcode == "alloca") {

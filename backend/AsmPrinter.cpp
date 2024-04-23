@@ -179,11 +179,11 @@ void dataSegment::GenerateTempvarList(MachineUnit* Machineunit) {
             std::list<MachineInst*>& minsts = machineblock->getMachineInsts();
             for (std::list<MachineInst*>::iterator it = minsts.begin(); it != minsts.end(); ++it) {
                 MachineInst* machineinst = *it;
-                if(machineinst->GetVector_used().empty()) {
-                    continue;;
+                if(machineinst->GetUses().empty()) {
+                    continue;
                 }
                 //生成需要放在只读数据段的内容， 应该只有浮点常量
-                for(auto& used : machineinst->GetVector_used()) {
+                for(auto& used : machineinst->GetUses()) {
                     if (auto constfloat = dynamic_cast<ConstIRFloat*>(used)) {
                         tempvar* tempfloat = new tempvar(num_lable, constfloat->GetVal());
                         num_lable++;

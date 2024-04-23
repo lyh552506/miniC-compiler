@@ -17,15 +17,15 @@ class MachineInst : public User {
     Operand rs1;
     Operand rs2;
     std::string opcode;
-    int offset=0;
-    std::vector<Operand> vector_used;
+    int offset;
+    Operand def;
+    std::vector<Operand> used;
     public:
     MachineInst() = default;
     MachineInst(MachineBasicBlock* mbb, std::string opcode);
     MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd);
     MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1);
     MachineInst(MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1, Operand rs2);
-    
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode);
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode, Operand rd);
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1);
@@ -37,13 +37,13 @@ class MachineInst : public User {
     Operand GetRd();
     Operand GetRs1();
     Operand GetRs2();
-    std::vector<Operand> GetVector_used();
-    std::vector<Operand> GetDefs(){return vector_used;}
-    std::vector<Operand> GetUses(){return vector_used;}
-    bool isVirtual(Operand Op) { return Op->GetName()[0] == '.' ; }
+    Operand GetDefs();
+    std::vector<Operand>& GetUses();
+    // bool isVirtual(Operand Op);
     void SetRd(Operand rd);
     void SetRs1(Operand rs1);
     void SetRs2(Operand rs2);
+    void SetDefs(Operand def);
     void print();
 };
 
