@@ -34,6 +34,7 @@ class Variable
     Type* GetType();
     Operand& GetInitializer();
     void print();
+    bool isFunction(){ return false; }
 };
 
 class UndefValue:public ConstantData{
