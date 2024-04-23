@@ -1,76 +1,16 @@
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <functional>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-
 #include "BaseCFG.hpp"
 #include "Mcode.hpp"
 #include "RegAlloc.hpp"
 #include "my_stl.hpp"
-class GraphColor {
- public:
-  GraphColor(MachineFunction* func, int K) : m_func(func), colors(K) {}
-  void RunOnFunc();
-
- private:
-  MachineFunction* m_func;
-  int colors;
-  void EliminatePhi();
-  /// @brief 构建冲突图
-  void Build();
-  /// @brief 初始化各个工作表
-  void MakeWorklist();
-  //返回vector为0则不是move相关
-  std::unordered_set<MachineInst*> MoveRelated(Operand v);
-  void simplify();
-  void coalesce();
-  void freeze();
-  void spill();
-  bool GeorgeCheck(Operand dst, Operand src);
-  bool BriggsCheck(std::unordered_set<Operand> target);
-  void AddWorkList(Operand v);
-  void combine(Operand rd, Operand rs);
-  Operand GetAlias(Operand v);
-  enum MoveState { coalesced, constrained, frozen, worklist, active };
-  // interference graph
-  std::unordered_map<Operand, std::vector<Operand>> IG;
-  // 低度数的传送有关节点表
-  std::unordered_set<Operand> freezeWorkList;
-  // 有可能合并的传送指令
-  std::vector<MachineInst*> worklistMoves;
-  // 低度数的传送无关节点表
-  std::vector<Operand> simplifyWorkList;
-  // 高度数的节点表
-  std::unordered_set<Operand> spillWorkList;
-  // 本轮中要溢出的节点集合
-  std::unordered_set<Operand> spilledNodes;
-  // 机器寄存器的集合，每个寄存器都预先指派了一种颜色
-  std::unordered_set<Operand> Precolored;
-  // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
-  std::unordered_set<Operand> initial;
-  // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
-  std::unordered_set<Operand> coalescedNodes;
-  //源操作数和目标操作数冲突的传送指令集合
-  std::unordered_set<MachineInst*> constrainedMoves;
-  //已经合并的传送指令集合
-  std::vector<MachineInst*> coalescedMoves;
-  //已成功着色的结点集合
-  std::unordered_set<Operand> coloredNode;
-  // 从图中删除的临时变量的栈
-  std::vector<Operand> selectstack;
-  //查询每个传送指令属于哪一个集合
-  std::unordered_map<MachineInst*, MoveState> belongs;
-  // 从一个结点到与该节点相关的传送指令表的映射
-  std::unordered_map<Operand, std::unordered_set<MachineInst*>> moveList;
-  // 还未做好准备的传送指令集合
-  std::unordered_set<MachineInst*> activeMoves;
-  //合并后的别名管理
-  std::unordered_map<Operand, Operand> alias;
-};
 
 void GraphColor::RunOnFunc() {
   Build();
@@ -183,18 +123,22 @@ void GraphColor::combine(Operand rd, Operand rs) {
             PushVecSingleVal(worklistMoves, mov);
           }
         }
-      if(!MoveRelated(neighbor).empty()){
+      if (!MoveRelated(neighbor).empty()) {
         freezeWorkList.insert(neighbor);
-      }else{
-        PushVecSingleVal(simplifyWorkList,neighbor);
+      } else {
+        PushVecSingleVal(simplifyWorkList, neighbor);
       }
     }
   }
-  if(IG[rd].size()>=colors&&freezeWorkList.find(rd)!=freezeWorkList.end()){
+  if (IG[rd].size() >= colors &&
+      freezeWorkList.find(rd) != freezeWorkList.end()) {
     freezeWorkList.erase(rd);
     spillWorkList.insert(rd);
   }
 }
+// TODO选择freeze node的启发式函数
+Operand GraphColor::HeuristicFreeze() {}
+
 void GraphColor::simplify() {
   for (int i = 0; i < simplifyWorkList.size(); i++) {
     auto val = simplifyWorkList[i];
@@ -272,4 +216,33 @@ void GraphColor::coalesce() {
       activeMoves.insert(mv);
     }
   }
+}
+
+void GraphColor::freeze() {
+  auto freeze = HeuristicFreeze();
+  freezeWorkList.erase(freeze);
+  PushVecSingleVal(simplifyWorkList, freeze);
+  //放弃对这个freeze节点合并的希望，将他看成是传送无关节点
+  for (auto mov : MoveRelated(freeze)) {
+    // mov: dst<-src
+    Operand dst = mov->GetRd();
+    Operand src = mov->GetRs1();
+    Operand value;
+    //找到除了freeze的另外一个操作数
+    if (GetAlias(src) == GetAlias(freeze)) {
+      value = GetAlias(dst);
+    } else {
+      value = GetAlias(src);
+    }
+    activeMoves.erase(mov);
+    frozenMoves.insert(mov);
+    if (MoveRelated(value).size() == 0 && IG[value].size() < colors) {
+      freezeWorkList.erase(value);
+      PushVecSingleVal(simplifyWorkList, value);
+    }
+  }
+}
+
+void GraphColor::spill(){
+   
 }
