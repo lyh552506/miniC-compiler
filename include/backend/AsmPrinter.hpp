@@ -34,6 +34,8 @@ class AsmPrinter {
     
     void RegAlloca(Function* function);
     MachineUnit* GenerateMir(Module* unit);
+    MachineUnit* GenerateLir(MachineUnit* unit);
+    void IntImm(MachineInst* inst, std::list<MachineInst*>::iterator it);
     //void PrintInst(MachineUnit* unit);
     void printAsm();
 };
