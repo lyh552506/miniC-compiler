@@ -14,19 +14,28 @@
 #include "my_stl.hpp"
 
 void GraphColor::RunOnFunc() {
-  Build();
-  MakeWorklist();
-  do {
-    if (!simplifyWorkList.empty())
-      simplify();
-    else if (!worklistMoves.empty())
-      coalesce();
-    else if (!freezeWorkList.empty())
-      freeze();
-    else if (!spillWorkList.empty())
-      spill();
-  } while (simplifyWorkList.empty() && worklistMoves.empty() &&
-           freezeWorkList.empty() && spillWorkList.empty());
+  bool condition = true;
+  while (condition) {
+    condition=false;
+    Build();
+    MakeWorklist();
+    do {
+      if (!simplifyWorkList.empty())
+        simplify();
+      else if (!worklistMoves.empty())
+        coalesce();
+      else if (!freezeWorkList.empty())
+        freeze();
+      else if (!spillWorkList.empty())
+        spill();
+    } while (simplifyWorkList.empty() && worklistMoves.empty() &&
+             freezeWorkList.empty() && spillWorkList.empty());
+    AssignColors();
+    if (!spilledNodes.empty()) {
+      RewriteProgram();
+      condition=true;
+    }
+  }
 }
 
 void GraphColor::MakeWorklist() {
@@ -260,6 +269,7 @@ void GraphColor::spill() {
   FreezeMoves(spill);
 }
 
+//TODO waiting for the construct of backend
 void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     Operand select = selectstack.back();
@@ -267,15 +277,17 @@ void GraphColor::AssignColors() {
     std::vector<RegInfo::REG> assist(colors);
     //遍历所有的冲突点，查看他们分配的颜色，保证我们分配的颜色一定是不同的
     for (auto adj : IG[select])
-      if (coloredNode.find(GetAlias(adj)) != coloredNode.end()||
-          Precolored.find(GetAlias(adj))!=Precolored.end()) {
-        //TODO we loss the map with operand to Reg
+      if (coloredNode.find(GetAlias(adj)) != coloredNode.end() ||
+          Precolored.find(GetAlias(adj)) != Precolored.end()) {
+        // TODO we loss the map with operand to Reg
       }
-    bool flag=false;
-    std::for_each(assist.begin(),assist.end(),[&flag](){
-      
-    });
+    bool flag = false;
+    // std::for_each(assist.begin(), assist.end(), [&flag]() {
+
+    // });
   }
 }
 
-void GraphColor::RewriteProgram() {}
+void GraphColor::RewriteProgram() {
+  
+}

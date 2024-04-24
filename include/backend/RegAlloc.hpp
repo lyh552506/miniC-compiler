@@ -50,10 +50,10 @@ class RegAlloc {
  protected:
   std::vector<RegInfo> avail;
   MachineFunction* m_func;
-  void run();
+  void RunGCpass();
 };
 
-class GraphColor {
+class GraphColor{
  public:
   GraphColor(MachineFunction* func, int K) : m_func(func), colors(K) {}
   void RunOnFunc();
