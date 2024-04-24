@@ -187,6 +187,22 @@ void GraphColor::FreezeMoves(Operand freeze) {
   }
 }
 
+void GraphColor::Build()
+{
+  liveinterval = std::make_unique<LiveInterval>(m_func);
+  blockinfo = std::make_unique<BlockLiveInfo>(m_func);
+  blockinfo->RunOnFunction();
+  blockinfo->PrintPass();
+  for(MachineBasicBlock* block : m_func->getMachineBasicBlocks())
+  {
+    CalcmoveList(block);
+    CalcIG(block);
+    CalInstLive(block);
+  }
+  liveinterval->RunOnFunc();
+  liveinterval->PrintAnalysis();
+}
+
 void GraphColor::simplify() {
   for (int i = 0; i < simplifyWorkList.size(); i++) {
     auto val = simplifyWorkList[i];

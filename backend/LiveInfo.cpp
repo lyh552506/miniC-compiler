@@ -65,11 +65,9 @@ void BlockInfo::RunOnFunction()
     GetBlockLivein(_block);
     GetBlockLiveout(_block);
   }
-  PrintPass();
   iterate(F); 
   while(isChanged)
     iterate(F);
-  PrintPass();
 }
 
 void BlockInfo::iterate(MachineFunction *func)
@@ -154,28 +152,28 @@ void GraphColor::CalcIG(MachineBasicBlock* block)
 }
 void BlockInfo::PrintPass()
 {
-  std::cout << "--------BlockLiveInfo--------" << std::endl;
+  std::cerr << "--------BlockLiveInfo--------" << std::endl;
   for(MachineBasicBlock* _block : F->getMachineBasicBlocks())
   {
-    std::cout << "--------Block:"<< _block->get_name() << "--------" << std::endl;
-    std::cout << "        Livein" << std::endl;
+    std::cerr << "--------Block:"<< _block->get_name() << "--------" << std::endl;
+    std::cerr << "        Livein" << std::endl;
     for(Value* _value:BlockLivein[_block])
     {
       if(_value->isVirtual())
-        std::cout << "%" << _value->GetName() << " ";
+        std::cerr << "%" << _value->GetName() << " ";
       else
-        std::cout << _value->GetName() << " ";
+        std::cerr << _value->GetName() << " ";
     }
-    std::cout << std::endl;
-    std::cout << "        Liveout" << std::endl;
+    std::cerr << std::endl;
+    std::cerr << "        Liveout" << std::endl;
     for(Value* _value:BlockLiveout[_block])
     {
       if(_value->isVirtual())
-        std::cout << "%" << _value->GetName() << " ";
+        std::cerr << "%" << _value->GetName() << " ";
       else
-        std::cout << _value->GetName() << " ";
+        std::cerr << _value->GetName() << " ";
     }
-    std::cout << std::endl;
+    std::cerr << std::endl;
   }
 }
 
@@ -277,44 +275,40 @@ bool InterVal::verify(std::unordered_map<Operand, std::vector<Interval>> Liveint
 
 void InterVal::PrintAnalysis()
 {
-  std::cout << "--------LiveInterval--------" << std::endl;
+  std::cerr << "--------LiveInterval--------" << std::endl;
   for(MachineBasicBlock* block : func->getMachineBasicBlocks())
   {
     for(MachineInst* inst : block->getMachineInsts())
     {
-        std::cout << "inst" << instNum[inst] << "Liveness:";
+        std::cerr << "inst" << instNum[inst] << "Liveness:";
         for(Operand Op : blockinfo.get()->InstLive[inst])
         {
           if(!Op->isVirtual())
-            std::cout << "%" << Op->GetName() << ", ";
+            std::cerr << "%" << Op->GetName() << ", ";
           else
-            std::cout << Op->GetName() << ", ";
+            std::cerr << Op->GetName() << ", ";
         }
-        std::cout<<std::endl;
+        std::cerr<<std::endl;
     }
   }
   for(MachineBasicBlock* block : func->getMachineBasicBlocks())
   {
-    std::cout << "--------Block:" << block->get_name() << "--------" << std::endl;
+    std::cerr << "--------Block:" << block->get_name() << "--------" << std::endl;
     for(auto& [op, intervals] : RegLiveness[block])
     {
       if(!op->isVirtual())
-      std::cout << "% "<< op->GetName() << ":";
+      std::cerr << "% "<< op->GetName() << ":";
       else
-        std::cout << op->GetName() << ":";
+        std::cerr << op->GetName() << ":";
       for(auto& i : intervals)
-        std::cout << "[" << i.start << "," << i.end << "]";
-      std::cout << std::endl;
+        std::cerr << "[" << i.start << "," << i.end << "]";
+      std::cerr << std::endl;
     }
   }
 }
 
 void InterVal::RunOnFunc()
 {
-  blockinfo = std::make_unique<BlockLiveInfo>(func);
-  blockinfo->RunOnFunction();
-  blockinfo->PrintPass();
   init();
   computeLiveIntervals();
-  PrintAnalysis();
 }
