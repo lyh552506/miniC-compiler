@@ -27,7 +27,14 @@ AsmPrinter::AsmPrinter(std::string filename, Module* unit)
     
     MachineUnit* Munit = GenerateMir(unit);
     this->Machineunit = Munit;
-
+    /* 活跃性测试打印
+    for(MachineFunction* func : Machineunit->getMachineFunctions())
+    {
+        std::unique_ptr<LiveInterval> li;
+        li = std::make_unique<LiveInterval>(func);
+        li->RunOnFunc();
+    }
+    */
     dataSegment* data = new dataSegment(Machineunit);
     this->data = data;
 
