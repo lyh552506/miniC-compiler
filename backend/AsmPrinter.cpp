@@ -33,6 +33,8 @@ AsmPrinter::AsmPrinter(std::string filename, Module* unit)
 
     textSegment* textseg = new textSegment(Machineunit);
     this->text = textseg;
+
+    Munit = GenerateLir(Munit);
 }
 
 //寄存器分配 将剩余的虚拟寄存器分配到机器寄存器
@@ -81,6 +83,37 @@ MachineUnit* AsmPrinter::GenerateMir(Module* Unit) {
         func_num++;
     }
     return machineunit; 
+}
+
+MachineUnit* AsmPrinter::GenerateLir(MachineUnit* unit) {
+    /*MachineFunction*/
+    for (auto& Func : unit->getMachineFunctions()) {
+        for(auto& Block : Func->getMachineBasicBlocks()) {
+            std::list<MachineInst*> minsts = Block->getMachineInsts();
+            for(std::list<MachineInst*>::iterator it=minsts.begin(); it!=minsts.end(); ++it) {
+                MachineInst* inst = *it;
+                IntImm(inst, it);
+            }
+        }
+    }
+    return unit;
+}
+
+void AsmPrinter::IntImm(MachineInst* inst, std::list<MachineInst*>::iterator it) {
+    if (inst->GetOpcode() == "li") {return;}
+    if (!inst->GetUses().empty()) {
+        if(auto constint = dynamic_cast<ConstIRInt*>(inst->GetUses()[0])) {
+            MachineBasicBlock* block = inst->get_machinebasicblock();
+            std::list<MachineInst*>& insts = block->getMachineInsts();
+            int value = std::stoi(inst->GetUses()[0]->GetName());
+            Operand rd = new Value(IntType::NewIntTypeGet());
+            Operand rs1 = ConstIRInt::GetNewConstant(value);
+            MachineInst* newinst = new MachineInst(block, "li", rd, rs1);
+            it = insts.insert(it, newinst);
+            ++it;
+            inst->SetRs1(rd);
+        }
+    }
 }
 
 // void AsmPrinter::PrintInst(MachineUnit* unit) {
