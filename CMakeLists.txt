@@ -26,6 +26,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/ir)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/backend)
 add_subdirectory(${PROJECT_SOURCE_DIR}/test_infrastructure)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/Target)
 
 target_link_libraries(SYSY-compiler Yacc Lib Backend opt Analysis)
 
@@ -33,6 +34,7 @@ target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/yacc)
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/lib)
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/backend)
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/ir)
+# target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/Target)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
