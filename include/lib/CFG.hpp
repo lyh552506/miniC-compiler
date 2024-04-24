@@ -232,6 +232,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     bool EndWithBranch();
     void RemovePredBB(BasicBlock* pred);
     virtual void clear()override;
+    int LoopDepth=0;
     int num=0;
     bool visited=false;
 };

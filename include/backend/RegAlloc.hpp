@@ -2,16 +2,19 @@
 #include <algorithm>
 #include <list>
 #include <map>
+#include <queue>
+#include<cmath>
 #include <stack>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include"my_stl.hpp"
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "MachineCode.hpp"
 #include "Mcode.hpp"
-#include "PassManagerBase.hpp"
+
 class GraphColor;
 class RegInfo {
  public:
@@ -45,7 +48,6 @@ class RegInfo {
 class RegAllocImpl {
  public:
   RegAllocImpl(MachineFunction* func) : m_func(func) {}
-  
   void RunGCpass();
   struct RegLiveInterval {
     int start;
@@ -55,7 +57,6 @@ class RegAllocImpl {
     }
   };
  protected:
-  void PhiElimination();
   std::vector<RegInfo> avail;
   MachineFunction* m_func;
   GraphColor* gc;
@@ -66,7 +67,11 @@ class GraphColor {
  public:
   friend class BlockLiveInfo;
   using Interval = RegAllocImpl::RegLiveInterval;
-  GraphColor(MachineFunction* func, int K) : m_func(func), colors(K) {}
+  using IntervalLength = unsigned int;
+  GraphColor(MachineFunction* func, int K) : m_func(func), colors(K) {
+    blockinfo = std::make_unique<BlockLiveInfo>(m_func);
+    liveinterval = std::make_unique<LiveInterval>(m_func);
+  }
   void RunOnFunc();
   class BlockLiveInfo {
    private:
@@ -108,7 +113,7 @@ class GraphColor {
    private:
     void init();
     void computeLiveIntervals();
-    
+
     bool verify(
         std::unordered_map<Operand, std::vector<Interval>> Liveinterval);
     std::unique_ptr<BlockLiveInfo> blockinfo;
@@ -129,9 +134,6 @@ class GraphColor {
   std::unique_ptr<LiveInterval> liveinterval;
   //记录available的寄存器
   int colors;
-  void EliminatePhi();
-  /// @brief 构建冲突图
-  void Build();
   /// @brief 初始化各个工作表
   void MakeWorklist();
   //返回vector为0则不是move相关
@@ -139,6 +141,7 @@ class GraphColor {
   void CalcmoveList(MachineBasicBlock* block);
   void CalcIG(MachineBasicBlock* block);
   void CalInstLive(MachineBasicBlock* block);
+  void CaculateLiveness(MachineBasicBlock* mbb);
   void simplify();
   void coalesce();
   void freeze();
@@ -153,6 +156,8 @@ class GraphColor {
   void combine(Operand rd, Operand rs);
   Operand GetAlias(Operand v);
   void FreezeMoves(Operand freeze);
+  //保证Interval vector的顺序
+  std::unordered_map<Operand, IntervalLength> ValsInterval;
   enum MoveState { coalesced, constrained, frozen, worklist, active };
   // interference graph
   std::unordered_map<Operand, std::vector<Operand>> IG;  // reg2reg IG[op]
@@ -193,4 +198,7 @@ class GraphColor {
   std::unordered_map<Operand, Operand> alias;
   //算法最后为每一个operand选择的颜色
   std::unordered_map<Operand, RegInfo> color;
+  int LoopWeight = 1;
+  int livenessWeight = 1;
+  int DegreeWeight = 1;
 };

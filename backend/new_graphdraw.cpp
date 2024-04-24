@@ -1,39 +1,29 @@
-#include <algorithm>
-#include <cassert>
-#include <cstddef>
-#include <functional>
-#include <optional>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-
-#include "BaseCFG.hpp"
 #include "Mcode.hpp"
 #include "RegAlloc.hpp"
-#include "my_stl.hpp"
 
 void GraphColor::RunOnFunc() {
   bool condition = true;
-  while (condition) {
-    condition=false;
-    Build();
-    MakeWorklist();
-    do {
-      if (!simplifyWorkList.empty())
-        simplify();
-      else if (!worklistMoves.empty())
-        coalesce();
-      else if (!freezeWorkList.empty())
-        freeze();
-      else if (!spillWorkList.empty())
-        spill();
-    } while (simplifyWorkList.empty() && worklistMoves.empty() &&
-             freezeWorkList.empty() && spillWorkList.empty());
-    AssignColors();
-    if (!spilledNodes.empty()) {
-      RewriteProgram();
-      condition=true;
+  for (auto mbb : m_func->getMachineBasicBlocks()) {
+    while (condition) {
+      condition = false;
+      CaculateLiveness(mbb);
+      MakeWorklist();
+      do {
+        if (!simplifyWorkList.empty())
+          simplify();
+        else if (!worklistMoves.empty())
+          coalesce();
+        else if (!freezeWorkList.empty())
+          freeze();
+        else if (!spillWorkList.empty())
+          spill();
+      } while (simplifyWorkList.empty() && worklistMoves.empty() &&
+               freezeWorkList.empty() && spillWorkList.empty());
+      AssignColors();
+      if (!spilledNodes.empty()) {
+        RewriteProgram();
+        condition = true;
+      }
     }
   }
 }
@@ -102,6 +92,23 @@ void GraphColor::AddWorkList(Operand v) {
     PushVecSingleVal(simplifyWorkList, v);
   }
 }
+
+void GraphColor::CaculateLiveness(MachineBasicBlock* mbb) {
+  blockinfo->RunOnFunction();
+  //计算IG,并且添加precolored集合
+  CalInstLive(mbb);
+  CalcmoveList(mbb);
+  CalcIG(mbb);
+  liveinterval->RunOnFunc();
+  //计算区间并存入
+  auto IntervInfo = liveinterval->GetRegLiveInterval(mbb);
+  for (auto& [val, vec] : IntervInfo) {
+    unsigned int length = 0;
+    for (auto v : vec) length += v.end - v.start;
+    ValsInterval[val] = length;
+  }
+}
+
 // TODO spill node的启发式函数
 /*
   需要考虑的点：
@@ -109,16 +116,26 @@ void GraphColor::AddWorkList(Operand v) {
   2.度数越高越优先选择溢出
   3.是否需要考虑loopcounter循环嵌套数
 */
-Operand GraphColor::HeuristicSpill() {}
+Operand GraphColor::HeuristicSpill() {
+  int max = 0;
+  for (auto spill : spillWorkList) {
+    float weight = 0;
+    //考虑degree
+    int degree = IG[spill].size();
+    weight += (degree * DegreeWeight) << 2;
+    //考虑interval区间
+    int intervalLength = ValsInterval[spill];
+    weight += (intervalLength * livenessWeight) << 3;
+    //考虑嵌套层数
+    int loopdepth;  // TODO
+    weight /= std::pow(LoopWeight, loopdepth);
+  }
+}
 
 // TODO选择freeze node的启发式函数
 /*
-  需要考虑的点：
-  1.
-*/
-Operand GraphColor::HeuristicFreeze() {
-
-}
+ */
+Operand GraphColor::HeuristicFreeze() {}
 
 // rd <-rs变成 rs(rs)
 void GraphColor::combine(Operand rd, Operand rs) {
@@ -185,22 +202,6 @@ void GraphColor::FreezeMoves(Operand freeze) {
       PushVecSingleVal(simplifyWorkList, value);
     }
   }
-}
-
-void GraphColor::Build()
-{
-  liveinterval = std::make_unique<LiveInterval>(m_func);
-  blockinfo = std::make_unique<BlockLiveInfo>(m_func);
-  blockinfo->RunOnFunction();
-  blockinfo->PrintPass();
-  for(MachineBasicBlock* block : m_func->getMachineBasicBlocks())
-  {
-    CalcmoveList(block);
-    CalcIG(block);
-    CalInstLive(block);
-  }
-  liveinterval->RunOnFunc();
-  liveinterval->PrintAnalysis();
 }
 
 void GraphColor::simplify() {
@@ -297,7 +298,7 @@ void GraphColor::spill() {
   FreezeMoves(spill);
 }
 
-//TODO waiting for the construct of backend
+// TODO waiting for the construct of backend
 void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     Operand select = selectstack.back();
@@ -317,7 +318,7 @@ void GraphColor::AssignColors() {
 }
 
 void GraphColor::RewriteProgram() {
-  for(auto spilled:spilledNodes){
-    //TODO 创建临时变量寄存器的接口
+  for (auto spilled : spilledNodes) {
+    // TODO 创建临时变量寄存器的接口
   }
 }
