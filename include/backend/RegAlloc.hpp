@@ -15,7 +15,7 @@
 #include "PassManagerBase.hpp"
 
 class RegInfo {
-public:
+ public:
   enum REG {
     r0,
     r1,
@@ -49,18 +49,83 @@ class RegAlloc {
 
  private:
   void PhiElimination();
+  struct RegLiveInterval {
+    int start;
+    int end;
+    bool operator<(const RegLiveInterval& other) const {
+      return start < other.start;
+    }
+  };
+
+ protected:
   std::vector<RegInfo> avail;
   MachineFunction* m_func;
   void RunGCpass();
 };
 
-class GraphColor{
+class GraphColor {
  public:
+ friend class BlockLiveInfo;
+  using Interval = RegAlloc::RegLiveInterval;
   GraphColor(MachineFunction* func, int K) : m_func(func), colors(K) {}
   void RunOnFunc();
+  class BlockLiveInfo {
+   private:
+    void GetBlockLivein(MachineBasicBlock* block);
+    void GetBlockLiveout(MachineBasicBlock* block);
+    void iterate(MachineFunction* func);
+    void RunOnFunc(MachineFunction* func);
+    std::map<MachineBasicBlock*, bool> UnChanged;
+    bool isChanged = false;
+    MachineFunction* F;
+
+   public:
+    std::map<MachineBasicBlock*, std::unordered_set<Value*>>
+        Uses;  // block uses
+    std::map<MachineBasicBlock*, std::unordered_set<Value*>>
+        Defs;  // block defs
+    std::map<MachineBasicBlock*, std::set<Value*>> BlockLivein;
+    std::map<MachineBasicBlock*, std::set<Value*>> BlockLiveout;
+    std::map<MachineInst*, std::set<Value*>> InstLive;
+    void RunOnFunction();
+    void PrintPass();
+    bool count(Operand Op, MachineInst* inst) {
+      return InstLive[inst].count(Op);
+    }
+    BlockLiveInfo(MachineFunction* f) : F(f), BlockLivein{}, BlockLiveout{}, InstLive{} {}
+  };
+
+  class LiveInterval {
+    MachineFunction* func;
+
+   protected:
+    std::unordered_map<MachineInst*, int> instNum;
+    std::unordered_map<MachineBasicBlock*, BlockLiveInfo*> BlockInfo;
+    std::map<MachineBasicBlock*,
+             std::unordered_map<Operand, std::vector<Interval>>>
+        RegLiveness;
+
+   private:
+    void init();
+    void computeLiveIntervals();
+    void PrintAnalysis();
+    bool verify(
+        std::unordered_map<Operand, std::vector<Interval>> Liveinterval);
+    std::unique_ptr<BlockLiveInfo> blockinfo;
+
+   public:
+    LiveInterval(MachineFunction* f) : func(f) {}
+    std::unordered_map<Operand, std::vector<Interval>> GetRegLiveInterval(
+        MachineBasicBlock* block) {
+      return RegLiveness[block];
+    }
+    void RunOnFunc();
+  };
 
  private:
   MachineFunction* m_func;
+  std::unique_ptr<BlockLiveInfo> blockinfo;
+  std::unique_ptr<LiveInterval> liveinterval;
   //记录available的寄存器
   int colors;
   void EliminatePhi();
@@ -70,6 +135,9 @@ class GraphColor{
   void MakeWorklist();
   //返回vector为0则不是move相关
   std::unordered_set<MachineInst*> MoveRelated(Operand v);
+  void CalcmoveList(MachineBasicBlock* block);
+  void CalcIG(MachineBasicBlock* block);
+  void CalInstLive(MachineBasicBlock* block);
   void simplify();
   void coalesce();
   void freeze();
@@ -86,7 +154,7 @@ class GraphColor{
   void FreezeMoves(Operand freeze);
   enum MoveState { coalesced, constrained, frozen, worklist, active };
   // interference graph
-  std::unordered_map<Operand, std::vector<Operand>> IG;
+  std::unordered_map<Operand, std::vector<Operand>> IG;    // reg2reg IG[op]
   // 低度数的传送有关节点表
   std::unordered_set<Operand> freezeWorkList;
   // 有可能合并的传送指令
@@ -98,7 +166,7 @@ class GraphColor{
   // 本轮中要溢出的节点集合
   std::unordered_set<Operand> spilledNodes;
   // 机器寄存器的集合，每个寄存器都预先指派了一种颜色
-  std::unordered_set<Operand> Precolored;
+  std::unordered_set<Operand> Precolored;    // reg
   // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
   std::unordered_set<Operand> initial;
   // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
@@ -116,11 +184,12 @@ class GraphColor{
   //查询每个传送指令属于哪一个集合
   std::unordered_map<MachineInst*, MoveState> belongs;
   // 从一个结点到与该节点相关的传送指令表的映射
-  std::unordered_map<Operand, std::unordered_set<MachineInst*>> moveList;
+  std::unordered_map<Operand, std::unordered_set<MachineInst*>> moveList;   //reg2mov
   // 还未做好准备的传送指令集合
   std::unordered_set<MachineInst*> activeMoves;
   //合并后的别名管理
   std::unordered_map<Operand, Operand> alias;
   //算法最后为每一个operand选择的颜色
-  std::unordered_map<Operand,RegInfo> color;
+  std::unordered_map<Operand, RegInfo> color;
+  
 };

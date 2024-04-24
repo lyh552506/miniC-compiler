@@ -1,8 +1,11 @@
-#include "LivenessAnalysis.hpp"
+#include "RegAlloc.hpp"
+#include "my_stl.hpp"
 #include <algorithm>
 #include <map>
 #include <regex>
-void BlockLiveInfo::GetBlockLivein(MachineBasicBlock* block)
+using BlockInfo = GraphColor::BlockLiveInfo;
+using InterVal = GraphColor::LiveInterval;
+void BlockInfo::GetBlockLivein(MachineBasicBlock* block)
 {
     for(auto inst = block->getMachineInsts().rbegin();inst != block->getMachineInsts().rend(); ++inst)
     {
@@ -35,7 +38,7 @@ void BlockLiveInfo::GetBlockLivein(MachineBasicBlock* block)
    }
 }
 
-void BlockLiveInfo::GetBlockLiveout(MachineBasicBlock* block)
+void BlockInfo::GetBlockLiveout(MachineBasicBlock* block)
 {
   for(MachineInst* inst : block->getMachineInsts())
   {
@@ -53,7 +56,7 @@ void BlockLiveInfo::GetBlockLiveout(MachineBasicBlock* block)
   }
 }
 
-void BlockLiveInfo::RunOnFunction()
+void BlockInfo::RunOnFunction()
 {
   for(MachineBasicBlock* _block : F->getMachineBasicBlocks())
   {
@@ -66,16 +69,10 @@ void BlockLiveInfo::RunOnFunction()
   iterate(F); 
   while(isChanged)
     iterate(F);
-  for(MachineBasicBlock* _block : F->getMachineBasicBlocks())
-  {
-    CalInstLive(_block);
-    CalcReg2Mov(_block);
-    CalcRegInterfer(_block);
-  }
   PrintPass();
 }
 
-void BlockLiveInfo::iterate(MachineFunction *func)
+void BlockInfo::iterate(MachineFunction *func)
 {
   RunOnFunc(func);  
   bool isChanged = false;
@@ -89,7 +86,7 @@ void BlockLiveInfo::iterate(MachineFunction *func)
   }
 }
 
-void BlockLiveInfo::RunOnFunc(MachineFunction *func)
+void BlockInfo::RunOnFunc(MachineFunction *func)
 {
   for(auto BB = func->getMachineBasicBlocks().rbegin(); BB != func->getMachineBasicBlocks().rend(); ++BB)
   {
@@ -106,26 +103,26 @@ void BlockLiveInfo::RunOnFunc(MachineFunction *func)
   }
 }
 
-void BlockLiveInfo::CalInstLive(MachineBasicBlock* block)
+void GraphColor::CalInstLive(MachineBasicBlock* block)
 {
   for(MachineInst* inst : block->getMachineInsts())
   {
-    std::set<Value*> Live = BlockLiveout[block];
+    std::set<Value*> Live = blockinfo->BlockLiveout[block];
     for(Operand val : inst->GetUses())
     {
       if(!val->isConst())
       {
         Live.insert(val);
         if(!inst->isVirtual(val))
-          Regs[block].insert(val);
+          Precolored.insert(val);
       }
     }
     if(Operand DefValue = inst->GetDefs())
       Live.erase(DefValue);
-    InstLive[inst] = Live;
+    blockinfo->InstLive[inst] = Live;
   }
 }
-void BlockLiveInfo::CalcReg2Mov(MachineBasicBlock* block)
+void GraphColor::CalcmoveList(MachineBasicBlock* block)
 {
   for(MachineInst* inst : block->getMachineInsts())
   {
@@ -134,28 +131,28 @@ void BlockLiveInfo::CalcReg2Mov(MachineBasicBlock* block)
     if(std::regex_match(Opcode, mvRegex))
     {
         for (Operand Op : inst->GetUses())
-            Reg2Mov[block][Op].push_back(inst);
+            moveList[Op].insert(inst);
         if(Operand Op = inst->GetDefs())
-            Reg2Mov[block][Op].push_back(inst);
+            moveList[Op].insert(inst);
     }
   }
 }
 
-void BlockLiveInfo::CalcRegInterfer(MachineBasicBlock* block)
+void GraphColor::CalcIG(MachineBasicBlock* block)
 {
   for(MachineInst* inst : block->getMachineInsts())
   {
-    for(Value* Op1 : InstLive[inst])
+    for(Value* Op1 : blockinfo->InstLive[inst])
     {
-      for(Value* Op2: InstLive[inst])
+      for(Value* Op2: blockinfo->InstLive[inst])
       {
         if(Op2 != Op1)
-          RegInterfer[block][Op1].push_back(Op2);
+          PushVecSingleVal(IG[Op1], Op2);
       }
     }
   }
 }
-void BlockLiveInfo::PrintPass()
+void BlockInfo::PrintPass()
 {
   std::cout << "--------BlockLiveInfo--------" << std::endl;
   for(MachineBasicBlock* _block : F->getMachineBasicBlocks())
@@ -182,7 +179,7 @@ void BlockLiveInfo::PrintPass()
   }
 }
 
-void LiveInterval::init()
+void InterVal::init()
 {
   int curr = 0;
   for(MachineBasicBlock* block : func->getMachineBasicBlocks())
@@ -195,11 +192,11 @@ void LiveInterval::init()
   }
 }
 
-void LiveInterval::computeLiveIntervals()
+void InterVal::computeLiveIntervals()
 {
   for (MachineBasicBlock* block : func->getMachineBasicBlocks())
   {
-    std::unordered_map<Operand, std::vector<RegLiveInterval>> CurrentRegLiveinterval;
+    std::unordered_map<Operand, std::vector<Interval>> CurrentRegLiveinterval;
     int begin = -1;
     for(MachineInst* inst : block->getMachineInsts())
     {
@@ -210,7 +207,7 @@ void LiveInterval::computeLiveIntervals()
       {
         if(!CurrentRegLiveinterval.count(Op))
         {
-          RegLiveInterval interval;
+          Interval interval;
           interval.start = Curr;
           interval.end = -1;
           CurrentRegLiveinterval[Op].push_back(interval);
@@ -221,7 +218,7 @@ void LiveInterval::computeLiveIntervals()
             CurrentRegLiveinterval[Op].back().end = Curr;
           else if(CurrentRegLiveinterval[Op].back().end != -1 && blockinfo.get()->count(Op, inst))
           {
-            RegLiveInterval interval;
+            Interval interval;
             interval.start = Curr;
             interval.end = -1;
             CurrentRegLiveinterval[Op].push_back(interval);
@@ -262,7 +259,7 @@ void LiveInterval::computeLiveIntervals()
   }
 }
 
-bool LiveInterval::verify(std::unordered_map<Operand, std::vector<RegLiveInterval>> Liveinterval)
+bool InterVal::verify(std::unordered_map<Operand, std::vector<Interval>> Liveinterval)
 {
   int num = 0;
   for(auto& [op, intervals] : Liveinterval)
@@ -278,7 +275,7 @@ bool LiveInterval::verify(std::unordered_map<Operand, std::vector<RegLiveInterva
   return true;
 }
 
-void LiveInterval::PrintAnalysis()
+void InterVal::PrintAnalysis()
 {
   std::cout << "--------LiveInterval--------" << std::endl;
   for(MachineBasicBlock* block : func->getMachineBasicBlocks())
@@ -312,7 +309,7 @@ void LiveInterval::PrintAnalysis()
   }
 }
 
-void LiveInterval::RunOnFunc()
+void InterVal::RunOnFunc()
 {
   blockinfo = std::make_unique<BlockLiveInfo>(func);
   blockinfo->RunOnFunction();
