@@ -5,7 +5,7 @@
 #include "Mcode.hpp"
 #include "InstSelection.hpp"
 #include "FloatToDex.hpp"
-#include "LivenessAnalysis.hpp"
+
 class globlvar;
 class tempvar;
 class functionSegment;
