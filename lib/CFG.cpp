@@ -1118,6 +1118,16 @@ void Module::EraseFunction(Function* func)
     }
 }
 
+Function* Module::GetMainFunction()
+{
+    for(auto &i : ls)
+    {
+        if(i->GetName() == "main")
+            return i.get();
+    }
+    return nullptr;
+}
+
 std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() {
     return ls;
 }

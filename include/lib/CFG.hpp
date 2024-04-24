@@ -294,4 +294,5 @@ class Module:public SymbolTable
     std::vector<GlobalVariblePtr>& GetGlobalVariable();
     void Test();
     void EraseFunction(Function* func);
+    Function* GetMainFunction();
 };

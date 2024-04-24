@@ -1,91 +1,62 @@
-// #include "Global2Local.hpp"
+#include "Global2Local.hpp"
 
-// void Global2Local::RunOnModule()
-// {
-//     for(auto& GlobalVarPtr : module.GetGlobalVariable())
-//     {
-//         Variable* Global = GlobalVarPtr.get();
-        
-        
-//     }
-// }
-// bool processModule(Module& module) {
-//     bool foundEntry = false;
-//     bool foundGlobal = false;
+void Global2Local::init()
+{
+    createSuccFuncs();
+    DetectRecursive();
+}
 
-//     // Traverse all global variables
-//     for (GlobalVariable& global : module.getGlobalList()) {
-//         if (global.isFunction()) {
-//             // Process function
-//             // ...
-//         } else {
-//             // Process global variable
-//             // ...
-//         }
-//     }
+void Global2Local::createSuccFuncs()
+{
+    for(auto& func_ : module.GetFuncTion())
+    {
+        Function* func = func_.get();
+        for(Use* user : func->GetUserlist())
+        {
+            if(auto inst = dynamic_cast<CallInst*>(user->GetValue()))
+                SuccFuncs[func].insert(inst->GetParent()->GetParent());
+        }
+    }
+}
 
-//     if (!foundEntry || !foundGlobal) {
-//         return false;
-//     }
+void Global2Local::DetectRecursive()
+{
+    Function* entry = module.GetMainFunction();
+    std::set<Function*> visited;
+    visit(entry, visited);
+}
 
-//     IRBuilder<> builder(module.getContext());
-//     builder.SetInsertPoint(&module.getEntryBlock());
+void Global2Local::visit(Function* entry, std::set<Function*>& visited)
+{
+    visited.insert(entry);
+    for(Function* Succ : SuccFuncs[entry])
+    {
+        if(visited.find(Succ) != visited.end())
+            RecursiveFunctions.insert(Succ);
+        else
+            visit(Succ, visited);
+    }
+    visited.erase(entry);
+}
 
-//     // Traverse all global variables again
-//     for (GlobalVariable& global : module.getGlobalList()) {
-//         if (global.isFunction()) {
-//             continue;
-//         }
+void Global2Local::RunOnModule()
+{
+    init();
+    RunPass();
+}
 
-//         // Create allocation instruction for global variable
-//         // ...
+void Global2Local::RunPass()
+{
+    std::map<Value*, std::set<Function*>> Global2Funcs;  // 哪些func 用了这个 globalvalue
+    for(auto & global_ptr : module.GetGlobalVariable())
+    {
+        Value* val = module.GetValueByName(global_ptr->get_name());
+        for(Use* user_ : val->GetUserlist())
+        {
+            if(User* inst = dynamic_cast<User*>(user_->GetValue()))
+                Global2Funcs[val].insert(inst->GetParent()->GetParent());
+        }
+    }
 
-//         // Initialize global variable
-//         // ...
-
-//         // Modify function signatures
-//         // ...
-
-//         // Modify call instructions
-//         // ...
-
-//         // Replace uses of global variables
-//         // ...
-
-//         // Delete global variables
-//         // ...
-//     }
-
-//     return true;
-// }
-
-// void initializeArray(IRBuilder<>& builder, Value* storage, ArrayType* arrayType, Value* initialValue, Value* zeroScalar) {
-//     Type* elementType = arrayType->getElementType();
-//     uint64_t numElements = arrayType->getNumElements();
-
-//     ConstantArray* constantArray = dyn_cast<ConstantArray>(initialValue);
-//     if (!constantArray) {
-//         // Handle non-constant array initialization
-//         // ...
-//     }
-
-//     for (uint64_t i = 0; i < numElements; ++i) {
-//         // Create GetElementPtrInst instruction to get element address
-//         // ...
-
-//         Value* elementValue;
-//         if (constantArray) {
-//             elementValue = constantArray->getOperand(i);
-//         } else {
-//             elementValue = zeroScalar;
-//         }
-
-//         if (ArrayType* nestedArrayType = dyn_cast<ArrayType>(elementType)) {
-//             // Recursively initialize nested array
-//             initializeArray(builder, elementAddress, nestedArrayType, elementValue, zeroScalar);
-//         } else {
-//             // Create StoreInst instruction to store element value
-//             // ...
-//         }
-//     }
-// // }
+    
+}
