@@ -103,10 +103,22 @@ void GraphColor::AddWorkList(Operand v) {
   }
 }
 // TODO spill node的启发式函数
+/*
+  需要考虑的点：
+  1.活跃interval区间越大越优先选择溢出
+  2.度数越高越优先选择溢出
+  3.是否需要考虑loopcounter循环嵌套数
+*/
 Operand GraphColor::HeuristicSpill() {}
 
 // TODO选择freeze node的启发式函数
-Operand GraphColor::HeuristicFreeze() {}
+/*
+  需要考虑的点：
+  1.
+*/
+Operand GraphColor::HeuristicFreeze() {
+
+}
 
 // rd <-rs变成 rs(rs)
 void GraphColor::combine(Operand rd, Operand rs) {
@@ -289,5 +301,7 @@ void GraphColor::AssignColors() {
 }
 
 void GraphColor::RewriteProgram() {
-  
+  for(auto spilled:spilledNodes){
+    //TODO 创建临时变量寄存器的接口
+  }
 }

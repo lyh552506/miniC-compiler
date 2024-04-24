@@ -47,7 +47,8 @@ class RegAlloc {
  public:
   RegAlloc(MachineFunction* func) : m_func(func) {}
 
- protected:
+ private:
+  void PhiElimination();
   std::vector<RegInfo> avail;
   MachineFunction* m_func;
   void RunGCpass();
