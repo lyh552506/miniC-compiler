@@ -39,47 +39,47 @@ int main(int argc, char **argv) {
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
-  #ifdef SYSY_ENABLE_MIDDLE_END
-  std::unique_ptr<PassManager> pass_manager(new PassManager);
-  int optionIndex, option;
+  // #ifdef SYSY_ENABLE_MIDDLE_END
+  // std::unique_ptr<PassManager> pass_manager(new PassManager);
+  // int optionIndex, option;
   //目前处于调试阶段，最终会换成-O1 -O2 -O3
-  while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
-         -1) {
-    switch (option) {
-    case 0:
-      pass_manager->IncludePass(0);
-      break;
-    case 1:
-      pass_manager->IncludePass(1);
-      break;
-    case 2:
-      pass_manager->IncludePass(2);
-      break;
-    case 3:
-      pass_manager->IncludePass(3);
-      break;
-    case 4:
-      pass_manager->IncludePass(4);
-      break;
-    case 5:
-      pass_manager->IncludePass(5);
-      break;
-    case 6:
-      std::cerr << "help" << std::endl;
-      break;
-    case 7:
-      pass_manager->IncludePass(7);
-      break;
-    case 8:
-      pass_manager->IncludePass(8);
-      break;
-    case 9:
-      pass_manager->IncludePass(9);
-      break;
-    }
-  }
-  pass_manager->InitPass();
-  #endif
+  // while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
+  //        -1) {
+  //   switch (option) {
+  //   case 0:
+  //     pass_manager->IncludePass(0);
+  //     break;
+  //   case 1:
+  //     pass_manager->IncludePass(1);
+  //     break;
+  //   case 2:
+  //     pass_manager->IncludePass(2);
+  //     break;
+  //   case 3:
+  //     pass_manager->IncludePass(3);
+  //     break;
+  //   case 4:
+  //     pass_manager->IncludePass(4);
+  //     break;
+  //   case 5:
+  //     pass_manager->IncludePass(5);
+  //     break;
+  //   case 6:
+  //     std::cerr << "help" << std::endl;
+  //     break;
+  //   case 7:
+  //     pass_manager->IncludePass(7);
+  //     break;
+  //   case 8:
+  //     pass_manager->IncludePass(8);
+  //     break;
+  //   case 9:
+  //     pass_manager->IncludePass(9);
+  //     break;
+  //   }
+  // }
+  // pass_manager->InitPass();
+  // #endif
   //#ifdef SYSY_ENABLE_BACKEND
   //std::cout << std::endl;
   //AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());

@@ -26,7 +26,7 @@ void BlockLiveInfo::GetBlockLivein(MachineBasicBlock* block)
               Uses[block].insert(val);
           }
       }
-      if(Operand DefValue = (*inst)->GetDefs())
+      if(Operand DefValue = (*inst)->GetDef())
       {
           BlockLivein[block].erase(DefValue);
           Uses[block].erase(DefValue);
@@ -120,7 +120,7 @@ void BlockLiveInfo::CalInstLive(MachineBasicBlock* block)
           Regs[block].insert(val);
       }
     }
-    if(Operand DefValue = inst->GetDefs())
+    if(Operand DefValue = inst->GetDef())
       Live.erase(DefValue);
     InstLive[inst] = Live;
   }
@@ -135,7 +135,7 @@ void BlockLiveInfo::CalcReg2Mov(MachineBasicBlock* block)
     {
         for (Operand Op : inst->GetUses())
             Reg2Mov[block][Op].push_back(inst);
-        if(Operand Op = inst->GetDefs())
+        if(Operand Op = inst->GetDef())
             Reg2Mov[block][Op].push_back(inst);
     }
   }
