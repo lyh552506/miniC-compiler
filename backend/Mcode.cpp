@@ -186,6 +186,7 @@ MachineBasicBlock* MachineFunction::get_mbbFrombb(BasicBlock* block) {
 }
 MachineBasicBlock* MachineFunction::GetBlock(std::string name)
 {
+    name = lableMap[name];
     for(MachineBasicBlock* block : mblocks)
     {
         if(block->get_name() == name)
