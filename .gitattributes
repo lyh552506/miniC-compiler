@@ -1,0 +1,4 @@
+testcases/final_performance/03_sort2.in filter=lfs diff=lfs merge=lfs -text
+testcases/final_performance/shuffle2.in filter=lfs diff=lfs merge=lfs -text
+testcases/performance/03_sort2.in filter=lfs diff=lfs merge=lfs -text
+testcases/performance/shuffle2.in filter=lfs diff=lfs merge=lfs -text

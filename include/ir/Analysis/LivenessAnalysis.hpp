@@ -19,19 +19,19 @@ class BlockLiveInfo : public MachineInst
     protected:
     std::map<MachineBasicBlock*, std::unordered_set<Value*>> Uses; // block uses
     std::map<MachineBasicBlock*, std::unordered_set<Value*>> Defs; // block defs
-    std::map<MachineInst*, std::set<Value*>> InstLive;
     std::map<MachineBasicBlock*, std::set<Value*>> BlockLivein;
     std::map<MachineBasicBlock*, std::set<Value*>> BlockLiveout;
     std::map<MachineBasicBlock*, std::unordered_map<Operand, std::vector<MachineInst*>>> Reg2Mov; // 寄存器MOV指令映射
     std::map<MachineBasicBlock*, std::unordered_map<Operand, std::vector<Operand>>> RegInterfer; // 同时使用的寄存器映射
     std::map<MachineBasicBlock*, std::unordered_set<Operand>> Regs;   // Machine register
     public:
+    std::map<MachineInst*, std::set<Value*>> InstLive;
     std::unordered_map<Operand, std::vector<MachineInst*>> GetReg2Mov(MachineBasicBlock* block) { return Reg2Mov[block]; }
     std::unordered_map<Operand, std::vector<Operand>> GetRegInterfer(MachineBasicBlock* block) { return RegInterfer[block]; }
     std::unordered_set<Operand> GetMachineRegs(MachineBasicBlock* block) { return Regs[block]; }
     void RunOnFunction();
     void PrintPass();
-    bool count(Operand Op) { return InstLive[this].count(Op); }
+    bool count(Operand Op, MachineInst* inst) { return InstLive[inst].count(Op); }
     BlockLiveInfo(MachineFunction* f) : F(f), BlockLivein{}, BlockLiveout{}, UnChanged{} {};
     BlockLiveInfo() = default;
 };
@@ -40,9 +40,10 @@ struct RegLiveInterval
 {
     int start;
     int end;
+    bool operator<(const RegLiveInterval& other) const { return start < other.start; }
 };
 
-class LiveInterval : public BlockLiveInfo
+class LiveInterval
 {
     MachineFunction* func;
     protected:
@@ -56,7 +57,7 @@ class LiveInterval : public BlockLiveInfo
     bool verify(std::unordered_map<Operand, std::vector<RegLiveInterval>> Liveinterval);
     std::unique_ptr<BlockLiveInfo> blockinfo;
     public:
-    LiveInterval(MachineFunction* f) : func(f), BlockLiveInfo() {}
+    LiveInterval(MachineFunction* f) : func(f) {}
     std::unordered_map<Operand, std::vector<RegLiveInterval>> GetRegLiveInterval(MachineBasicBlock* block) \
     { return RegLiveness[block]; }
     void RunOnFunc();

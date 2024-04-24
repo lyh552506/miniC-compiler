@@ -1,4 +1,6 @@
 #pragma once
+#include <cassert>
+#include <vector>
 #include "CFG.hpp"
 ///@brief 自定义宏，更加方便，需要什么自己加
 
@@ -32,3 +34,19 @@ template <typename T> Value *GetOperand(T inst, int i) {
 
 /// @brief 获取前驱节点的个数
 #define GetPredNum(BB) BB->GetUserListSize()
+
+///@brief 实现vector元素的pop
+template <typename T>
+void vec_pop(std::vector<T>& vec,int& index){
+  assert(index<vec.size()&&"index can not bigger than size");
+  vec[index]=vec[vec.size()-1];
+  vec.pop_back();
+  index--;
+}
+///@brief 实现vec没有重复元素
+template<typename T>
+void PushVecSingleVal(std::vector<T>&vec,T v){
+  auto iter=std::find(vec.begin(),vec.end(),v);
+  if(iter!=vec.end()) return;
+  vec.push_back(v);
+}

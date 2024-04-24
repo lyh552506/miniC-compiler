@@ -14,7 +14,6 @@ public:
     Inliner(Function* f, LoopAnalysis* loopAnalysis_, Module& module) : func(f), m(module), loopAnalysis(loopAnalysis_) {}
     void Run();
     void PrintPass();
-    void Inline(Function* entry);
     void Inline();
 private:
     // void InlineRecursive(Function* entry);

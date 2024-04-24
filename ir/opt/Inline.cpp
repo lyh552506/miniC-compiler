@@ -112,6 +112,18 @@ void Inliner::Inline()
         UnCondInst* Br = new UnCondInst(blocks[0]);
         block->push_back(Br);
         for(BasicBlock* block_ : blocks)
+        {
+            for(User* inst : *block_)
+            {
+                if(dynamic_cast<AllocaInst*>(inst))
+                {
+                    BasicBlock* front_block = func->front();
+                    inst->EraseFromParent();
+                    front_block->push_front(inst);
+                }
+            }
+        }
+        for(BasicBlock* block_ : blocks)
             Block_Pos.insert_before(block_);
         if(inst->GetTypeEnum() != InnerDataType::IR_Value_VOID)
         {
@@ -150,21 +162,6 @@ void Inliner::Inline()
         inst->EraseFromParent();
     }
 }
-// void Inliner::Inline(Function* entry)
-// {
-//     for(auto iter = entry->GetBasicBlock().begin(); iter != entry->GetBasicBlock().end(); ++iter)
-//     {
-//         BasicBlock* block = *iter;
-//         for(auto iter1 = block->begin(); iter1 != block->end(); ++iter1)
-//         {
-//             User* inst = *iter1;
-//             if(CanBeInlined(inst))
-//             {
-                
-//             }
-//         }
-//     }
-// }
 
 std::vector<BasicBlock*> Inliner::CopyBlocks(User* inst)
 {
