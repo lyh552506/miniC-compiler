@@ -1,16 +1,14 @@
 #include "RISCVLowering.hpp"
-#include "RISCVISel.hpp"
 
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
-    assert(0&&"Handled later");
-    // auto& var_vec=m->GetGlobalVariable();
-    // for(auto &i:var_vec){
-
-    // }
+    // need file name
+    RISCVAsmPrinter* asmprinter = new RISCVAsmPrinter("file", m);
+    asmprinter->printAsm();
+    // assert(0&&"Handled later");
 }
 
 bool RISCVModuleLowering::run(Module* m){
-    // LoweringGlobalValue(m);
+    LowerGlobalArgument(m);
     // start lowering function
     RISCVFunctionLowering funclower(ctx);
     auto& funcS=m->GetFuncTion();

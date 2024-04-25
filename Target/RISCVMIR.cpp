@@ -6,6 +6,9 @@ RISCVMOperand*& RISCVMIR::GetOperand(int ind){
     return operands[ind];
 }
 
+void RISCVMIR::SetDef(RISCVMOperand* def){
+    this->def=def;
+}
 void RISCVMIR::AddOperand(RISCVMOperand* op){
     operands.push_back(op);
 }

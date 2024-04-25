@@ -9,7 +9,7 @@ class RISCVMIR;
 /// @note RISCVMIR no longer is an MOperand for SSA is destructed
 class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 {
-    // RISCVMOperand* def;
+    RISCVMOperand* def = nullptr;
     std::vector<RISCVMOperand*> operands;
     public:
     enum RISCVISA{
@@ -150,6 +150,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
     // RISCVMIR(RISCVISA,RISCVMOperand*...);
     RISCVMIR(RISCVISA _isa):opcode(_isa){};
     RISCVMOperand*& GetOperand(int);
+    void SetDef(RISCVMOperand* def);
     void AddOperand(RISCVMOperand*);
     inline RISCVISA& GetOpcode(){return opcode;};
     bool isArithmetic(){

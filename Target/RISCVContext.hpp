@@ -24,6 +24,7 @@ class RISCVLoweringContext{
     /// This works as a factory but is not responsible for delete yet 
     RISCVMOperand* Create(Value*);
     public:  
+    //
     void operator()(RISCVMIR*);
     void operator()(RISCVBasicBlock*);
     void operator()(RISCVFunction*);

@@ -34,3 +34,9 @@ class RISCVGlobalObject:public RISCVObject{
     void print()override;
 };
 
+class RISCVTempFloatObject:public RISCVObject{
+    public:
+    RISCVTempFloatObject(std::string name);
+    void print()override;
+};
+

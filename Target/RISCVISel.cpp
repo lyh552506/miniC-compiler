@@ -3,6 +3,7 @@
 
 RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,User* inst){
     auto minst=new RISCVMIR(_isa);
+    minst->SetDef(ctx.mapping(inst));
     for(int i=0;i<inst->Getuselist().size();i++)
         minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
     return minst;
@@ -10,8 +11,11 @@ RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,User* inst){
 
 RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,std::initializer_list<RISCVMOperand*> list){
     auto minst=new RISCVMIR(_isa);
-    for(auto i:list)
+    minst->SetDef(list.begin()[0]); 
+    for(auto it=list.begin()+1; it!=list.end(); ++it) {
+        RISCVMOperand* i=*it;
         minst->AddOperand(i);
+    }
     return minst;
 }
 
@@ -60,7 +64,7 @@ void RISCVISel::InstLowering(CondInst* inst){
     #define M(x) ctx.mapping(x)
     auto cond=inst->GetOperand(0)->as<BinaryInst>();
     assert(cond!=nullptr&&"Invalid Condition");
-    assert((cond->GetOperand(0)->GetType()==IntType::NewIntTypeGet()||cond->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet())&&"Invalid Condition Type");
+    assert((cond->GetOperand(0)->GetType()==BoolType::NewBoolTypeGet())&&"Invalid Condition Type");
     if(cond->GetOperand(0)->GetType()==IntType::NewIntTypeGet()){
         switch (cond->getopration())
         {
@@ -203,16 +207,16 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
             else assert("?Impossible Here");
         }
         else{
-            auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index),M(ConstSize_t::GetNewConstant(size))});
-            ctx(mul);
-            auto temp=ctx.createVReg(riscv_ptr);
-            ctx(Builder(RISCVMIR::_addw,{temp,baseptr,mul->GetOperand(0)}));
-            baseptr=temp;
+            // auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index),M(ConstSize_t::GetNewConstant(size))});
+            // ctx(mul);
+            // auto temp=ctx.createVReg(riscv_ptr);
+            // ctx(Builder(RISCVMIR::_addw,{temp,baseptr,mul->GetOperand(0)}));
+            // baseptr=temp;
         }
         hasSubtype=dynamic_cast<HasSubType*>(hasSubtype->GetSubType());
     }
-    if(offset!=0)
-        ctx(Builder(RISCVMIR::_addw,{baseptr,M(ConstSize_t::GetNewConstant(offset))}));
+    if(offset!=0) {}
+        // ctx(Builder(RISCVMIR::_addw,{baseptr,M(ConstSize_t::GetNewConstant(offset))}));
     #undef M
 }
 
