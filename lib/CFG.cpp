@@ -499,6 +499,13 @@ void GetElementPtrInst::print(){
     }
     std::cout<<'\n';
 }
+std::vector<Operand>& GetElementPtrInst::GetIndexs()
+{
+    std::vector<Operand> indexs;
+    for(int i = 1; i < uselist.size(); i++)
+        indexs.push_back(uselist[i]->GetValue());
+    return indexs;
+}
 
 ZextInst::ZextInst(Operand ptr):User(IntType::NewIntTypeGet()){
     add_use(ptr);

@@ -31,8 +31,8 @@ class list_node
     derived_list_node* prev;
     derived_list_node* next;
     derived_mylist* fat=nullptr;
-    void SetParent(derived_mylist* _fat){fat=_fat;}
     public:
+    void SetParent(derived_mylist* _fat){fat=_fat;}
     virtual ~list_node(){
         if(fat!=nullptr)EraseFromParent();
     }

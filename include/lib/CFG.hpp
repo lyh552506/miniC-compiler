@@ -163,7 +163,7 @@ class GetElementPtrInst:public User
     GetElementPtrInst* clone(std::unordered_map<Operand,Operand>&)override;
     Type* GetType()final;
     void print()final;
-    Value* GetPtrVal();
+    std::vector<Operand>& GetIndexs();
 };
 //zext i1 to i32
 class ZextInst:public User
