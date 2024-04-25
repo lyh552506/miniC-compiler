@@ -27,9 +27,10 @@ class RISCVFrameObject:public RISCVObject{
     void print()override;
 };
 
-/// @brief pointer to machine function or a machine global value 
+/// @brief pointer to machine function or a machine global value
 class RISCVGlobalObject:public RISCVObject{
     public:
     RISCVGlobalObject(Type*,std::string name);
     void print()override;
 };
+

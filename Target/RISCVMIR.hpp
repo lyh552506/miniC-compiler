@@ -9,6 +9,7 @@ class RISCVMIR;
 /// @note RISCVMIR no longer is an MOperand for SSA is destructed
 class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 {
+    // RISCVMOperand* def;
     std::vector<RISCVMOperand*> operands;
     public:
     enum RISCVISA{
@@ -74,7 +75,6 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _bge,
         _bltu,
         _bgeu,
-        _call,
         EndBranch,
 
         BeginJumpAndLink,

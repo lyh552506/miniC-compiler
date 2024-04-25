@@ -188,5 +188,4 @@ class GraphColor {
   std::unordered_map<Operand, Operand> alias;
   //算法最后为每一个operand选择的颜色
   std::unordered_map<Operand, RegInfo> color;
-  
 };
