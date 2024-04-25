@@ -2,8 +2,9 @@
 #include "Type.hpp"
 #include <cassert>
 
-/// riscv_ptr   :   a pointer to some address() 
-/// riscv_none  :   ?
+/// riscv_ptr   :   a pointer to objects, frame or global
+/// riscv_none  :   none for function and basicblock
+/// maybe function needs to be relocable
 enum RISCVType{
     riscv_i32,riscv_float32,riscv_ptr,riscv_none
 };

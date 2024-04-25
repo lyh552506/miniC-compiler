@@ -161,7 +161,11 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMIR>,public list_node<RISCVFunction,RISCVBasicBlock>
 {    
     public:
+    RISCVBasicBlock();
     RISCVBasicBlock(std::string);
+    /// @note used by phielimination  
+    void push_before_branch(RISCVMIR*);
+    void replace_succ(RISCVBasicBlock*,RISCVBasicBlock*);
     void printfull();
 };
 
