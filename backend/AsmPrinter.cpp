@@ -1,4 +1,6 @@
 #include"AsmPrinter.hpp"
+#include "Mcode.hpp"
+#include "RegAlloc.hpp"
 SegmentType __oldtype=TEXT;
 SegmentType* oldtype = &__oldtype;
 SegmentType ChangeSegmentType(SegmentType newtype) {
@@ -35,6 +37,8 @@ AsmPrinter::AsmPrinter(std::string filename, Module* unit)
         li->RunOnFunc();
     }
     */
+    for( auto mf:Munit->getMachineFunctions())
+        RegAlloca(mf);
     dataSegment* data = new dataSegment(Machineunit);
     this->data = data;
 
@@ -43,7 +47,9 @@ AsmPrinter::AsmPrinter(std::string filename, Module* unit)
 }
 
 //寄存器分配 将剩余的虚拟寄存器分配到机器寄存器
-void AsmPrinter::RegAlloca(Function* function) {
+void AsmPrinter::RegAlloca(MachineFunction* m_function) {
+    regalloc=new RegAllocImpl(m_function);
+    regalloc->RunGCpass();
 }
 
 //生成机器指令

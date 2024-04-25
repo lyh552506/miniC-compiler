@@ -5,6 +5,7 @@
 #include "Mcode.hpp"
 #include "InstSelection.hpp"
 #include "FloatToDex.hpp"
+#include "RegAlloc.hpp"
 
 class globlvar;
 class tempvar;
@@ -24,15 +25,14 @@ class AsmPrinter {
     std::string filename;
     textSegment* text;
     dataSegment* data;
-
     Module* unit;
     MachineUnit* Machineunit;
-
+    RegAllocImpl* regalloc;
     public:
     AsmPrinter(std::string filename, Module* unit);
     ~AsmPrinter() = default;
     
-    void RegAlloca(Function* function);
+    void RegAlloca(MachineFunction* m_function);
     MachineUnit* GenerateMir(Module* unit);
     //void PrintInst(MachineUnit* unit);
     void printAsm();

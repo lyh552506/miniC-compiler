@@ -114,7 +114,9 @@ void MachineInst::print() {
 
 /*MachineBasicBlock*/
 MachineBasicBlock::MachineBasicBlock(BasicBlock* block, MachineFunction* parent)
-    : block(block), mfuc(parent), succNum(0) {}
+    : block(block), mfuc(parent), succNum(0) {
+        this->LoopDepth=block->LoopDepth;
+    }
 void MachineBasicBlock::set_lable(int func_num, int block_num) {
     name = ".LBB" + std::to_string(func_num) + "_" + std::to_string(block_num);
 }

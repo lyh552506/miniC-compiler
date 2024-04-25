@@ -98,7 +98,8 @@ class Value
     bool isConstZero();
     bool isConstOne();
     int GetUserListSize(){return GetUserlist().GetSize();}
-    int BelongsToExp;
+    template<typename T>
+    T* as(){return dynamic_cast<T*>(this);}
 };
 using Operand=Value*;
 // class Constant:public User
@@ -170,4 +171,13 @@ class ConstPtr:public ConstantData
     ConstPtr(Type*);
     public:
     static ConstPtr* GetNewConstant(Type*);
+};
+
+class ConstSize_t:public ConstantData
+{
+    size_t val;
+    ConstSize_t(size_t);
+    public:
+    static ConstSize_t* GetNewConstant(size_t=0);
+    size_t GetVal();
 };

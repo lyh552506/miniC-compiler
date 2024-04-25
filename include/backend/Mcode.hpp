@@ -53,6 +53,7 @@ class MachineBasicBlock {
     std::string name;
     std::list<MachineInst*> minsts;
     int succNum;//后继块的数量
+    int LoopDepth=0;
     public:
     MachineBasicBlock(BasicBlock* block, MachineFunction* parent);
     void set_lable(int func_num, int block_num);
