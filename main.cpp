@@ -87,13 +87,13 @@ int main(int argc, char **argv) {
   //#else
 
   Singleton<Module>().Test();
-  freopen("dev/tty", "w", stdout);
-  //#endif
+  // freopen("dev/tty", "w", stdout);
+  // //#endif
 
-  freopen(asmoutput_path.c_str(), "w", stdout);
-  AsmPrinter asmPrinter = AsmPrinter(filename, &Singleton<Module>());
-  asmPrinter.printAsm();
-  freopen("dev/tty", "w", stdout);
+  // freopen(asmoutput_path.c_str(), "w", stdout);
+  // AsmPrinter asmPrinter = AsmPrinter(filename, &Singleton<Module>());
+  // asmPrinter.printAsm();
+  // freopen("dev/tty", "w", stdout);
 
   return 0;
 }

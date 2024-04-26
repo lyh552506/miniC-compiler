@@ -4,6 +4,9 @@
 #include "dominant.hpp"
 
 void PassManager::InitPass() {
+  Module& m = Singleton<Module>();
+  m_g2l = std::make_unique<Global2Local>(m);
+  m_g2l->RunOnModule();
   for (int i = 0; i < Singleton<Module>().GetFuncTion().size(); i++) {
     func = i;
     PreWork(i);

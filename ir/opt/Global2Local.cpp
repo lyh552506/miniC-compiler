@@ -5,7 +5,7 @@ void Global2Local::init()
     createSuccFuncs();
     DetectRecursive();
     CalGlobal2Funcs();
-}
+}  
 
 void Global2Local::createSuccFuncs()
 {
@@ -97,20 +97,19 @@ void Global2Local::RunPass()
 
 void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
 {
-    std::vector<User*> insts;
     AllocaInst* alloca = new AllocaInst(val->GetType());
     BasicBlock* begin = func->front();
     alloca->SetParent(begin);
-    insts.push_back(alloca);
+    insert_insts.push_back(alloca);
     if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
     {
-        bool ret = GetArrayinit(val, alloca);
-        if(!ret)
-        {
-            StoreInst* store = new StoreInst(ConstIRInt::GetNewConstant(0), alloca);
-            store->SetParent(begin);
-            insts.push_back(store);
-        }
+        // bool ret = GetArrayinit(val, alloca);
+        // if(!ret)
+        // {
+        //     StoreInst* store = new StoreInst(ConstIRInt::GetNewConstant(0), alloca);
+        //     store->SetParent(begin);
+        //     insert_insts.push_back(store);
+        // }
         //插入insts
         module.GetValueByName(val->get_name())->RAUW(alloca);
     }
@@ -120,7 +119,6 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
         module.GetValueByName(val->get_name())->RAUW(load);
     }
 }
-
 
 void Global2Local::LocalGep(Variable* val, Function* func)
 {

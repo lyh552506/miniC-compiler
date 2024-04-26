@@ -1,31 +1,50 @@
-int a=343;
-float b=141.2;
-int arr_int_undef[3][2][2];
-float arr_float_undef[4][2]={{1.2, 3.4}, {2.0, 3.3}};
-int function(int a, int b) {
-  int c = a+b;
-  return c;
+int h =5;
+int n;
+int array[100] = {5};
+int insertsort(int a[])
+{
+    int i;
+    i = 1;
+    while(i<n)     
+    {
+        int temp;
+        temp=a[i]; 
+        int j;
+        j=i-1;
+        while(j>-1&&temp<a[j])
+        {
+            a[j+1]=a[j];  
+            j = j - 1;
+        }
+        array[10] = 19;
+        a[j+1]=temp; 
+        i = i + 1;
+        h=6;
+    }
+    return 0;
 }
-int main() {
-  // int arr_inner[10][10000];
-  // arr_inner[0][1]=0;
-  // arr_int_undef[0][0][2] = 1;
-  // float a=3.1;
-  // float b=3.1;
-  // float c=a+b;
-  // arr_float_undef[0][1] = c;
-  // int d =  3;
-  // int func = function(a, b);
-  // return 0;
-  int a=3;
-  while (a>0) {
-    a = a-1;
-  }
-  if (a>0) {
-    a = a-1;
-  }
-  else {
-    a = a+1;
-  }
-  return 0;
+int swap(int a , int b )
+{
+  int c  = a;
+  a = b;
+  b = c;
+  return a; 
+}
+int main(){
+  int w =10;
+    n = 10+h;
+    int a[10];
+    a[0]=4;a[1]=3;a[2]=9;a[3]=2;a[4]=0;
+    a[5]=1;a[6]=6;a[7]=5;a[8]=7;a[9]=8;
+    int i;
+    i = insertsort(array);
+    swap(h, n);
+    while (i < n) {
+        int tmp;
+        tmp = a[i];
+        tmp = 10;
+        i = i + 1;
+    }
+    h = h+1;
+    return 0;
 }

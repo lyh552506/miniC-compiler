@@ -4,10 +4,10 @@ class Global2Local
 {
     protected:
     int MaxNum = 5;
-    std::vector<User*> insts;
     std::map<Function*, std::set<Function*>> SuccFuncs;
     std::set<Function*> RecursiveFunctions;
     std::map<Variable*, std::set<Function*>> Global2Funcs;  // 哪些func 用了这个 globalvalue
+    std::vector<User*> insert_insts;
     private:
     Module& module;
     void init();
@@ -21,7 +21,7 @@ class Global2Local
     void LocalGep(Variable* val, Function* func);
 
     public:
-    Global2Local(Module& m) :  module(m), insts{}, SuccFuncs{}, \
+    Global2Local(Module& m) :  module(m), insert_insts{}, SuccFuncs{}, \
     RecursiveFunctions{} {}
     void RunOnModule();
 };
