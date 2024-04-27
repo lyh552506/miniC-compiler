@@ -1051,6 +1051,11 @@ bool PhiInst::IsSame(PhiInst* phi){
     return true;
 }
 
+BasicBlock* PhiInst::GetBlock(int index){
+    auto& [v,bb]=PhiRecord[index];
+    return bb;
+}
+
 void Function::push_alloca(Variable* ptr){
     auto obj=front()->push_alloca(ptr->get_name(),ptr->GetType());
     Singleton<Module>().Register(ptr->get_name(),obj);
