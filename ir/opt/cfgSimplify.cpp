@@ -21,9 +21,9 @@ void cfgSimplify::RunOnFunction() {
     keep_loop |= DelSamePhis();
     keep_loop |= mergeSpecialBlock();
     keep_loop |= SimplifyUncondBr();
-    // return ;
-        keep_loop |= mergeRetBlock();
-    keep_loop |=simplifyPhiInst();
+    keep_loop |= mergeRetBlock();
+    if(m_dom!=nullptr)
+      keep_loop |=simplifyPhiInst();
   }
 }
 
@@ -87,12 +87,6 @@ bool cfgSimplify::mergeSpecialBlock() {
     auto& node = m_dom->GetNode(pred->num);
     int succ_num = std::distance(node.des.begin(), node.des.end());
     if (succ_num != 1 || node.des.front() != bb->num) continue;
-
-    // BasicBlock* nxt = nullptr;
-    // if (!dynamic_cast<RetInst*>(bb->back())) {
-    //   nxt =
-    //   dynamic_cast<BasicBlock*>(bb->back()->Getuselist()[0]->GetValue());
-    // }
     if (bb->back()->IsCondInst()) {
       auto cond = dynamic_cast<CondInst*>(bb->back());
       BasicBlock* succ_1 =

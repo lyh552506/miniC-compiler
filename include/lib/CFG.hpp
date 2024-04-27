@@ -273,7 +273,10 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
+    //pred -> succ  ==>pred -> insert -> succ
     void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);
+    //curr ==>  insert -> curr
+    void InsertBlock(BasicBlock* curr,BasicBlock* insert);
     void init_visited_block();
     int bb_num=0;
 };

@@ -730,6 +730,13 @@ void Function::InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert)
     assert("Null BasicBlock Or Invalid Branch Inst");
 }
 
+void Function::InsertBlock(BasicBlock* curr,BasicBlock* insert){
+    insert->GenerateUnCondInst(curr);
+    this->push_back(insert);
+    insert->num=++this->bb_num;
+    this->push_bb(insert);
+}
+
 BuildInFunction::BuildInFunction(Type* tp,std::string _id):Value(tp){
     name=_id;
     if(name=="starttime"||name=="stoptime")name="_sysy_"+name;

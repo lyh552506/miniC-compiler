@@ -1,4 +1,5 @@
 #include "LoopInfo.hpp"
+#include "CFG.hpp"
 
 void LoopAnalysis::Analysis() {
   //此处后续遍历支配树
@@ -94,11 +95,34 @@ void LoopAnalysis::CalculateLoopDepth(LoopInfo *loop, int depth) {
   }
   return;
 }
+
+BasicBlock *LoopAnalysis::GetPreHeader(LoopInfo* loopinfo){
+  BasicBlock* preheader=nullptr;
+  if(loopinfo->Pre_Header!=nullptr)
+    return loopinfo->Pre_Header;
+  BasicBlock* header=loopinfo->GetHeader();
+  for(auto rev:m_dom->GetNode(header->num).rev){
+    //出现前驱不属于这个循环的情况
+    if(Loops.find(GetCorrespondBlock(rev))==Loops.end()){
+      if(preheader==nullptr){
+        preheader=GetCorrespondBlock(rev);
+        continue;
+      }
+      if(preheader!=GetCorrespondBlock(rev)){
+        preheader=nullptr;
+        return preheader;
+      }
+    }
+  }
+  if(preheader!=nullptr)
+    loopinfo->setPreHeader(preheader);
+  return preheader;
+}
+
 //打印格式：
 // num of loops
 // each loop nodes
 void LoopAnalysis::PrintPass() {
-#ifdef DEBUG
   std::cout << "---------------------Loop Analysis-----------------------\n";
   std::cout << "Num Of Loops:" << LoopRecord.size() << "\n";
   for (int i = 0; i < LoopRecord.size(); i++) {
@@ -110,5 +134,4 @@ void LoopAnalysis::PrintPass() {
       if (x != tmp->GetHeader()) std::cout << x->GetName() << " ";
     std::cout << "\n\r";
   }
-#endif
 }

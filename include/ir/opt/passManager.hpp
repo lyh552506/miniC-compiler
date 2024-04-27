@@ -15,6 +15,7 @@
 #include "dominant.hpp"
 #include "cfgSimplify.hpp"
 #include "Inline.hpp"
+#include "LoopSimplify.hpp"
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {
@@ -38,6 +39,7 @@ private:
   std::vector<BasicBlock *> BList;
   Function *m_func;
   std::unique_ptr<LoopAnalysis> m_loopAnlay;
+  std::unique_ptr<LoopSimplify> m_loopsimple;
   std::unique_ptr<dominance> m_dom;
   std::unique_ptr<PRE> m_pre;
   std::unique_ptr<ConstantProp> m_constprop;

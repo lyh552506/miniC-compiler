@@ -15,7 +15,7 @@ void PassManager::InitPass() {
     m_adce = std::make_unique<ADCE>(m_func);
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
-    m_loopAnlay = std::make_unique<LoopAnalysis>(m_func, m_dom.get());
+    m_loopsimple = std::make_unique<LoopSimplify>(m_func, m_dom.get());
     m_inline = std::make_unique<Inliner>(m_func, m_loopAnlay.get(), Singleton<Module>());
     RunOnFunction();
   }
@@ -75,8 +75,8 @@ void PassManager::RunOnFunction() {
     m_adce->PrintPass();
   }
   if (InitpassRecorder[5]) {
-    m_loopAnlay->RunOnFunction();
-    m_loopAnlay->PrintPass();
+    m_loopsimple->RunOnFunction();
+    m_loopsimple->PrintPass();
   }
   if(InitpassRecorder[9]){
     m_inline->Run();
