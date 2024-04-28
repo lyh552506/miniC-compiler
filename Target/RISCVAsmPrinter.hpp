@@ -25,7 +25,7 @@ class RISCVAsmPrinter {
     textSegment* text;
     dataSegment* data;
     public:
-    RISCVAsmPrinter(std::string filename, Module* unit);
+    RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweringContext& ctx);
     ~RISCVAsmPrinter() = default;
     void printAsm();
 };
@@ -56,8 +56,8 @@ class dataSegment {
     std::vector<globlvar*> globlvar_list;//.data
     std::vector<tempvar*> tempvar_list;//.data
     public:
-    dataSegment(Module* module);
-    void GenerateGloblvarList(Module* module);
+    dataSegment(Module* module, RISCVLoweringContext& ctx);
+    void GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx);
     void GenerateTempvarList(Module* module);
     std::vector<tempvar*> get_tempvar_list();
     //

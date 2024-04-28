@@ -2,6 +2,8 @@
 #include "BackendPass.hpp"
 #include "CFG.hpp"
 #include "RISCVContext.hpp"
+#include "RISCVRegister.hpp"
+#include <algorithm>
 
 
 class RISCVISel:public BackEndPass<Function>{

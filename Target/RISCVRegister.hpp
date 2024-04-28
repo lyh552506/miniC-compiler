@@ -21,7 +21,10 @@ class PhyRegister:public Register{
         s2=x18,s3=x19,s4=x20,s5=x21,s6=x22,s7=x23,s8=x24,s9=x25,s10=x26,s11=x27,
         t3=x28,t4=x29,t5=x30,t6=x31
     }regenum;
+    protected:
     PhyRegister(PhyReg);
+    public:
+    static PhyRegister* GetPhyReg(PhyReg);
     void print()final;
     bool isPhysical()final{return true;};
 };

@@ -24,6 +24,9 @@ RISCVMOperand* RISCVLoweringContext::Create(Value* val){
         return new RISCVFunction(func);
     assert(0&&"Can't be Used");
 }
+void RISCVLoweringContext::insert_val2mop(Value* val, RISCVMOperand* mop) {
+    val2mop.insert(std::make_pair(val, mop));
+}
 
 RISCVMOperand* RISCVLoweringContext::mapping(Value* val){
     if(val2mop.find(val)==val2mop.end())

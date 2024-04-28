@@ -2,7 +2,7 @@
 
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
     // need file name
-    RISCVAsmPrinter* asmprinter = new RISCVAsmPrinter("file", m);
+    RISCVAsmPrinter* asmprinter = new RISCVAsmPrinter("file", m, ctx);
     asmprinter->printAsm();
     // assert(0&&"Handled later");
 }

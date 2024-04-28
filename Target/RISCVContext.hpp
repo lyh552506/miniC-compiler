@@ -28,6 +28,7 @@ class RISCVLoweringContext{
     void operator()(RISCVMIR*);
     void operator()(RISCVBasicBlock*);
     void operator()(RISCVFunction*);
+    void insert_val2mop(Value*, RISCVMOperand*);
     RISCVMOperand* mapping(Value*);
     VirRegister* createVReg(RISCVType);
     void print();

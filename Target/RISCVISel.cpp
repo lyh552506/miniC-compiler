@@ -33,10 +33,17 @@ void RISCVISel::InstLowering(AllocaInst* inst){
 }
 
 void RISCVISel::InstLowering(StoreInst* inst){
-    if(inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet())
-        ctx(Builder(RISCVMIR::_sw,inst));
-    else if(inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet())
-        ctx(Builder(RISCVMIR::_fsw,inst));
+    if(inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
+        auto minst=new RISCVMIR(RISCVMIR::_sw);
+        for(int i=0;i<inst->Getuselist().size();i++)
+            minst->AddOperand(ctx.mapping(inst->GetOperand(i)));          
+    }
+    else if(inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
+        auto minst=new RISCVMIR(RISCVMIR::_fsw);
+        for(int i=0;i<inst->Getuselist().size();i++)
+            minst->AddOperand(ctx.mapping(inst->GetOperand(i)));   
+    }
+        // ctx(Builder(RISCVMIR::_fsw,inst));
     else assert("invalid store type");
 }
 
@@ -230,14 +237,44 @@ void RISCVISel::InstLowering(CallInst* inst){
     // 把VReg Copy到PhyReg
     // 如果溢出则按照规约store
     // 如果有返回值则copy a0 到 VReg
+    // if(!inst->GetUserlist().is_empty()&&inst->GetType()!=VoidType::NewVoidTypeGet()){
 
-    if(!inst->GetUserlist().is_empty()&&inst->GetType()!=VoidType::NewVoidTypeGet()){
-
+    // }
+    #define M(x) ctx.mapping(x)
+    if(!inst->Getuselist().empty()) {
+        int MAXnum = 8, paramnum=inst->Getuselist().size()-1;
+        if (paramnum > MAXnum) {
+        // to do 
+        // spill to stack
+        // 
+        }
+        for (int i=0; i<std::min(paramnum, MAXnum); i++) {
+            int regnum=PhyRegister::PhyReg::a0;
+            regnum+=i;
+            ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i+1))}));
+        }
     }
+    ctx(Builder(RISCVMIR::call, inst));
+    if(!inst->GetUserlist().is_empty()&&inst->GetType()!=VoidType::NewVoidTypeGet())
+        ctx(Builder(RISCVMIR::mv, {ctx.createVReg(RISCVTyper(inst->GetType())), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
 }
 
 void RISCVISel::InstLowering(RetInst* inst){
-
+    #define M(x) ctx.mapping(x)
+    if(inst->Getuselist().empty()) {
+        auto minst=new RISCVMIR(RISCVMIR::ret);
+        ctx(minst);
+    }
+    else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
+        ctx(Builder(RISCVMIR::_lw,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
+        ctx(Builder(RISCVMIR::ret,inst));
+    }
+    else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
+        ctx(Builder(RISCVMIR::_flw,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
+        ctx(Builder(RISCVMIR::ret,inst));
+    }
+    else 
+        assert(0&&"Invalid return type");
 }
 
 void RISCVISel::InstLowering(User* inst){

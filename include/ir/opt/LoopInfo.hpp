@@ -45,6 +45,7 @@ public:
   BasicBlock *FindLoopHeader(BasicBlock *bb);
   void CalculateLoopDepth(LoopInfo* loop,int depth);
   void LoopAnaly();
+  void CloneToBB();
   // only for test
   void PrintPass();
   void RunOnFunction() {
@@ -53,6 +54,7 @@ public:
     PostOrderDT(entry->num);
     Analysis();
     LoopAnaly();
+    CloneToBB();
     AlreadyGetInfo = true;
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }

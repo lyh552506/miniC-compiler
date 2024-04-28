@@ -23,9 +23,9 @@ void PrintSegmentType(SegmentType newtype, SegmentType* oldtype) {
 }
 
 //AsmPrinter
-RISCVAsmPrinter::RISCVAsmPrinter(std::string filename, Module* unit) 
+RISCVAsmPrinter::RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweringContext& ctx) 
     : filename(filename){ 
-    dataSegment* data = new dataSegment(unit);
+    dataSegment* data = new dataSegment(unit,ctx);
     this->data = data;
 
     textSegment* textseg = new textSegment(unit);
@@ -91,14 +91,15 @@ void functionSegment::PrintFuncSegment() {
 }
 
 //dataSegment
-dataSegment::dataSegment(Module* module) {
-    GenerateGloblvarList(module);
+dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
+    GenerateGloblvarList(module, ctx);
     GenerateTempvarList(module);
 }
-void dataSegment::GenerateGloblvarList(Module* module) {
+void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx) {
     for(auto& data : module->GetGlobalVariable()) {
         globlvar* gvar = new globlvar(data.get());
-            globlvar_list.push_back(gvar);
+        ctx.insert_val2mop(data->GetValue(), gvar);
+        globlvar_list.push_back(gvar);
     }
 }
 void dataSegment::GenerateTempvarList(Module* module) {

@@ -141,6 +141,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         /// @brief Used for call and ret 
         BeginMIRPseudo,
+        mv,
         call,
         ret,
         EndMIRPseudo,
