@@ -1,5 +1,5 @@
 #include "Global2Local.hpp"
-
+#include "Trival.hpp"
 void Global2Local::init()
 {
     createSuccFuncs();
@@ -63,15 +63,12 @@ void Global2Local::RunPass()
 {
     Function* main = module.GetMainFunction();
     auto& globalvals = module.GetGlobalVariable();
-    // if(globalvals.size() > MaxNum)
-        // return;
-    for(auto iter = globalvals.begin(); iter != globalvals.end(); iter++)
+    for(auto iter = globalvals.begin(); iter != globalvals.end();)
     {
         Variable* global = iter->get();
         if(Global2Funcs[global].size() == 0)
         {
-            globalvals.erase(iter);
-            continue;
+            iter = globalvals.erase(iter);
         }
         else if(Global2Funcs[global].size() == 1)
         {
@@ -79,17 +76,22 @@ void Global2Local::RunPass()
             if(RecursiveFunctions.find(func) == RecursiveFunctions.end())
             {
                 LocalGlobalVariable(global, func);
-                globalvals.erase(iter);
-                continue;
+                iter = globalvals.erase(iter);
             }
         }
-        else if(global->GetType()->GetTypeEnum() == InnerDataType::IR_PTR)
+        // FIXME : 适配多个func使用Global Array
+        // else if(global->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
+        // {
+        //     for(Function* func : Global2Funcs[global])
+        //     {
+        //         if(RecursiveFunctions.find(func) == RecursiveFunctions.end())
+        //             LocalGep(global, func); //todo 需要完善
+        //     }
+        //     ++iter;
+        // }
+        else
         {
-            for(Function* func : Global2Funcs[global])
-            {
-                if(RecursiveFunctions.find(func) == RecursiveFunctions.end())
-                    LocalGep(global, func);
-            }
+            ++iter;
         }
     }
 }
@@ -101,52 +103,68 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
     BasicBlock* begin = func->front();
     alloca->SetParent(begin);
     begin->push_front(alloca);
-    if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
-    {
-        GetArrayinit(val, alloca);
-        // bool ret = GetArrayinit(val, alloca);
-        // if(!ret)
-        // {
-        //     StoreInst* store = new StoreInst(ConstIRInt::GetNewConstant(0), alloca);
-        //     store->SetParent(begin);
-        //     insert_insts.push_back(store);
-        // }
-        //插入insts
-        module.GetValueByName(val->get_name())->RAUW(alloca);
-    }
-    else if(!val->GetInitializer())
+    if(!val->GetInitializer())
         module.GetValueByName(val->get_name())->RAUW(alloca);
     else
     {
-        auto iter = begin->begin();
-        for (; iter != begin->end(); ++iter) 
+        if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
         {
-            if (!dynamic_cast<AllocaInst*>(*iter))
-                break;
+            LocalArray(val, alloca, begin);
+            module.GetValueByName(val->get_name())->RAUW(alloca);
         }
-        Operand init = val->GetInitializer();
-        LoadInst* load = new LoadInst(alloca->GetType());
-        load->add_use(alloca);
-        iter.insert_before(load);
-        --iter;
-        StoreInst* store = new StoreInst(init, load);
-        iter.insert_after(store);
-        module.GetValueByName(val->get_name())->RAUW(alloca);
+        else
+        {
+            auto iter = begin->begin();
+            for (; iter != begin->end(); ++iter) 
+            {
+                if (!dynamic_cast<AllocaInst*>(*iter))
+                    break;
+            }
+            Operand init = val->GetInitializer();
+            LoadInst* load = new LoadInst(alloca->GetType());
+            load->add_use(alloca);
+            iter.insert_before(load);
+            --iter;
+            StoreInst* store = new StoreInst(init, load);
+            iter.insert_after(store);
+            module.GetValueByName(val->get_name())->RAUW(alloca);
+        }
     }
 }
 
-void Global2Local::LocalGep(Variable* val, Function* func)
+// void Global2Local::LocalGep(Variable* val, Function* func)
+// {
+//     BasicBlock* begin = func->front();
+//     Value* Val = module.GetValueByName(val->get_name());
+//     GetElementPtrInst* gep = new GetElementPtrInst(Val);
+//     begin->GenerateGEPInst(gep);
+//     for(Use* use_ : Val->GetUserlist())
+//     {
+//         if(User* inst = dynamic_cast<User*>(use_->GetUser()))
+//         {
+//             if(inst->GetParent()->GetParent() == func)
+//                 inst->RSUW(inst->GetUseIndex(use_), gep);   //可能有问题
+//         }
+//     }
+// }
+
+void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* block)
 {
-    BasicBlock* begin = func->front();
-    Value* Val = module.GetValueByName(val->get_name());
-    GetElementPtrInst* gep = new GetElementPtrInst(Val);
-    begin->GenerateGEPInst(gep);
-    for(Use* use_ : Val->GetUserlist())
+    Operand initializer = arr->GetInitializer();
+    Value* val = module.GetValueByName(arr->get_name());
+    Type* tp = val->GetType();
+    std::vector<Operand> args;
+    Operand src = module.GenerateMemcpyHandle(PointerType::NewPointerTypeGet(tp), initializer);
+    args.push_back(alloca);
+    args.push_back(src);
+    args.push_back(ConstIRInt::GetNewConstant(tp->get_size()));
+    args.push_back(ConstIRBoolean::GetNewConstant(false));
+    User* inst = Trival::GenerateCallInst("llvm.memcpy.p0.p0.i32",args);
+    auto iter = block->begin();
+    for (; iter != block->end(); ++iter) 
     {
-        if(User* inst = dynamic_cast<User*>(use_->GetUser()))
-        {
-            if(inst->GetParent()->GetParent() == func)
-                inst->RSUW(inst->GetUseIndex(use_), gep);   //可能有问题
-        }
+        if (!dynamic_cast<AllocaInst*>(*iter))
+            break;
     }
+    iter.insert_before(inst);
 }
