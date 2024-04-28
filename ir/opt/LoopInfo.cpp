@@ -1,5 +1,8 @@
 #include "LoopInfo.hpp"
+#include <vector>
+
 #include "CFG.hpp"
+#include "my_stl.hpp"
 
 void LoopAnalysis::Analysis() {
   //此处后续遍历支配树
@@ -96,27 +99,37 @@ void LoopAnalysis::CalculateLoopDepth(LoopInfo *loop, int depth) {
   return;
 }
 
-BasicBlock *LoopAnalysis::GetPreHeader(LoopInfo* loopinfo){
-  BasicBlock* preheader=nullptr;
-  if(loopinfo->Pre_Header!=nullptr)
-    return loopinfo->Pre_Header;
-  BasicBlock* header=loopinfo->GetHeader();
-  for(auto rev:m_dom->GetNode(header->num).rev){
+BasicBlock *LoopAnalysis::GetPreHeader(LoopInfo *loopinfo) {
+  BasicBlock *preheader = nullptr;
+  if (loopinfo->Pre_Header != nullptr) return loopinfo->Pre_Header;
+  BasicBlock *header = loopinfo->GetHeader();
+  for (auto rev : m_dom->GetNode(header->num).rev) {
     //出现前驱不属于这个循环的情况
-    if(Loops.find(GetCorrespondBlock(rev))==Loops.end()){
-      if(preheader==nullptr){
-        preheader=GetCorrespondBlock(rev);
+    if (Loops.find(GetCorrespondBlock(rev)) == Loops.end()) {
+      if (preheader == nullptr) {
+        preheader = GetCorrespondBlock(rev);
         continue;
       }
-      if(preheader!=GetCorrespondBlock(rev)){
-        preheader=nullptr;
+      if (preheader != GetCorrespondBlock(rev)) {
+        preheader = nullptr;
         return preheader;
       }
     }
   }
-  if(preheader!=nullptr)
-    loopinfo->setPreHeader(preheader);
+  if (preheader != nullptr) loopinfo->setPreHeader(preheader);
   return preheader;
+}
+
+std::vector<BasicBlock*> LoopAnalysis::GetExit(LoopInfo *loopinfo) {
+  std::vector<BasicBlock *> workList;
+  for (auto bb : loopinfo->ContainBlocks) {
+    for (auto des : m_dom->GetNode(bb->num).des) {
+      BasicBlock* B=m_dom->GetNode(des).thisBlock;
+      if(Loops[B]!=loopinfo)
+        PushVecSingleVal(workList,B);
+    }
+  }
+  return workList;
 }
 
 //打印格式：

@@ -58,6 +58,7 @@ class LoopAnalysis : public PassManagerBase {
   void Analysis();
   BasicBlock *GetLatch();
   BasicBlock *GetPreHeader(LoopInfo *loopinfo);
+  std::vector<BasicBlock*> GetExit(LoopInfo *loopinfo);
   void setBBs() { bbs = &(m_func->GetBasicBlock()); }
   void setDest() { Dest = &(m_dom->GetDest()); }
   void PostOrderDT(int entry);

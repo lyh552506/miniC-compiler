@@ -965,13 +965,19 @@ void BasicBlock::clear(){
 
 PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB){
     PhiInst *tmp = new PhiInst{BeforeInst};
-    currentBB->push_front(tmp);
+    for(auto iter=currentBB->begin();iter!=currentBB->end();++iter){
+        if(*iter==BeforeInst)
+          iter.insert_before(tmp);
+    }
     return tmp;
 }
 
 PhiInst* PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty){
     PhiInst *tmp = new PhiInst(BeforeInst,ty);
-    currentBB->push_front(tmp);
+    for(auto iter=currentBB->begin();iter!=currentBB->end();++iter){
+        if(*iter==BeforeInst)
+          iter.insert_before(tmp);
+    }
     return tmp;
 }
 
@@ -1017,7 +1023,8 @@ void PhiInst::Phiprop(Value* origin,Value* newval){
 }
 
 void PhiInst::Del_Incomes(int CurrentNum)
-{   if(PhiRecord.find(CurrentNum) != PhiRecord.end()){
+{   
+    if(PhiRecord.find(CurrentNum) != PhiRecord.end()){
         auto iter=std::find_if(uselist.begin(),uselist.end(),
         [=](const std::unique_ptr<Use>& ele){
             return ele->GetValue()==PhiRecord[CurrentNum].first;
@@ -1054,6 +1061,11 @@ bool PhiInst::IsSame(PhiInst* phi){
 BasicBlock* PhiInst::GetBlock(int index){
     auto& [v,bb]=PhiRecord[index];
     return bb;
+}
+
+Value* PhiInst::GetVal(int index){
+    auto& [v,bb]=PhiRecord[index];
+    return v;
 }
 
 void Function::push_alloca(Variable* ptr){

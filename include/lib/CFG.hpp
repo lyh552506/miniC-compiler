@@ -196,6 +196,7 @@ public:
   void Del_Incomes(int CurrentNum);
   bool IsSame(PhiInst* phi);
   BasicBlock* GetBlock(int index);
+  Value* GetVal(int index);
   std::vector<BasicBlock*> Blocks;
   int oprandNum;
   bool IsGetIncomings=false;

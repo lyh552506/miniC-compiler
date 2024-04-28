@@ -1,4 +1,5 @@
 #include <vector>
+
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
 #include "PassManagerBase.hpp"
@@ -10,12 +11,14 @@ class LoopSimplify : public PassManagerBase {
   }
   void RunOnFunction() override;
   void PrintPass() override{};
+
  private:
   void SimplifyLoosImpl(LoopInfo* loop);
   void InsertPreHeader(LoopInfo* loop);
   void InsertLatch();
-  void InsertExit();
-  void UpdatePhiNode(PhiInst* phi,std::set<BasicBlock*>& outside);
+  void FormatExit();
+  void UpdatePhiNode(PhiInst* phi, std::set<BasicBlock*>& outside,
+                     BasicBlock* PreHeader);
   LoopAnalysis* loopAnlay;
   Function* m_func;
   dominance* m_dom;

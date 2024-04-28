@@ -58,7 +58,7 @@ void PassManager::RunOnFunction() {
   }
   if (InitpassRecorder[2]) {
     m_constprop->RunOnFunction();
-    m_constprop->PrintPass();
+    //m_constprop->PrintPass();
   }
   if (InitpassRecorder[7]) {
     m_cfgsimple->RunOnFunction();
@@ -68,7 +68,7 @@ void PassManager::RunOnFunction() {
   }
   if (InitpassRecorder[3]) {
     m_dce->RunOnFunction();
-    m_dce->PrintPass();
+    //m_dce->PrintPass();
   }
   if (InitpassRecorder[4]) {
     m_adce->RunOnFunction();
