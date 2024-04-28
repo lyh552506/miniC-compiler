@@ -14,7 +14,7 @@ void Global2Local::createSuccFuncs()
         Function* func = func_.get();
         for(Use* user : func->GetUserlist())
         {
-            if(auto inst = dynamic_cast<CallInst*>(user->GetValue()))
+            if(auto inst = dynamic_cast<CallInst*>(user->GetUser()))
                 SuccFuncs[func].insert(inst->GetParent()->GetParent());
         }
     }
@@ -48,7 +48,7 @@ void Global2Local::CalGlobal2Funcs()
         Value* val = module.GetValueByName(global->get_name());
         for(Use* user_ : val->GetUserlist())
         {
-            if(User* inst = dynamic_cast<User*>(user_->GetValue()))
+            if(User* inst = dynamic_cast<User*>(user_->GetUser()))
                 Global2Funcs[global].insert(inst->GetParent()->GetParent());
         }
     }
@@ -97,12 +97,13 @@ void Global2Local::RunPass()
 
 void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
 {
-    AllocaInst* alloca = new AllocaInst(val->GetType());
+    AllocaInst* alloca = new AllocaInst(" ",val->GetType());
     BasicBlock* begin = func->front();
     alloca->SetParent(begin);
-    insert_insts.push_back(alloca);
+    begin->push_front(alloca);
     if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
     {
+        GetArrayinit(val, alloca);
         // bool ret = GetArrayinit(val, alloca);
         // if(!ret)
         // {
@@ -113,10 +114,24 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
         //插入insts
         module.GetValueByName(val->get_name())->RAUW(alloca);
     }
+    else if(!val->GetInitializer())
+        module.GetValueByName(val->get_name())->RAUW(alloca);
     else
     {
-        Operand load = begin->GenerateLoadInst(alloca);
-        module.GetValueByName(val->get_name())->RAUW(load);
+        auto iter = begin->begin();
+        for (; iter != begin->end(); ++iter) 
+        {
+            if (!dynamic_cast<AllocaInst*>(*iter))
+                break;
+        }
+        Operand init = val->GetInitializer();
+        LoadInst* load = new LoadInst(alloca->GetType());
+        load->add_use(alloca);
+        iter.insert_before(load);
+        --iter;
+        StoreInst* store = new StoreInst(init, load);
+        iter.insert_after(store);
+        module.GetValueByName(val->get_name())->RAUW(alloca);
     }
 }
 
@@ -128,7 +143,7 @@ void Global2Local::LocalGep(Variable* val, Function* func)
     begin->GenerateGEPInst(gep);
     for(Use* use_ : Val->GetUserlist())
     {
-        if(User* inst = dynamic_cast<User*>(use_->GetValue()))
+        if(User* inst = dynamic_cast<User*>(use_->GetUser()))
         {
             if(inst->GetParent()->GetParent() == func)
                 inst->RSUW(inst->GetUseIndex(use_), gep);   //可能有问题
