@@ -1,14 +1,8 @@
 #include "LoopSimplify.hpp"
-
-#include <cassert>
-#include <set>
-#include <utility>
-#include <vector>
-
-#include "BaseCFG.hpp"
 #include "CFG.hpp"
-#include "LoopInfo.hpp"
 #include "my_stl.hpp"
+#include <set>
+#include <vector>
 
 void LoopSimplify::RunOnFunction() {
   loopAnlay->RunOnFunction();
@@ -35,8 +29,19 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       InsertPreHeader(L);
     // step 2: deal with exit
     auto exit = loopAnlay->GetExit(L);
-    bool NeedToFormat = false;
-    for (auto bb : exit) {
+    for (int index = 0; index < exit.size(); ++index) {
+      bool NeedToFormat = false;
+      BasicBlock *bb = exit[index];
+      for (auto rev : m_dom->GetNode(bb->num).rev) {
+        if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != loop)
+          NeedToFormat = true;
+      }
+      if (!NeedToFormat)
+        vec_pop(exit, index);
+    }
+    for (int index = 0; index < exit.size(); index++) {
+      FormatExit(L, exit[index]);
+      vec_pop(exit, index);
     }
   }
 }
@@ -79,22 +84,61 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
     m_dom->GetNode(Header->num).rev.remove(bb->num);
     m_dom->GetNode(bb->num).des.remove(Header->num);
     m_dom->GetNode(bb->num).des.push_front(preheader->num);
+    m_dom->GetNode(preheader->num).rev.push_front(bb->num);
   }
   m_dom->GetNode(Header->num).rev.push_front(preheader->num);
 }
 
-void LoopSimplify::FormatExit() {}
+void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
+  std::vector<BasicBlock *> OutSide, Inside;
+  for (auto rev : m_dom->GetNode(exit->num).rev) {
+    if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != loop)
+      OutSide.push_back(m_dom->GetNode(rev).thisBlock);
+    else
+      Inside.push_back(m_dom->GetNode(rev).thisBlock);
+  }
+  BasicBlock *new_exit = new BasicBlock();
+  new_exit->SetName(new_exit->GetName() + "_exit");
+  m_func->InsertBlock(exit, new_exit);
+#ifdef DEBUG
+  std::cerr << "insert a exit: " << new_exit->GetName() << std::endl;
+#endif
+  for (auto bb : Inside) {
+    auto condition = bb->back();
+    if (auto cond = dynamic_cast<CondInst *>(condition)) {
+      for (int i = 0; i < 3; i++)
+        if (GetOperand(cond, i) == exit)
+          cond->RSUW(i, new_exit);
+    } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
+      uncond->RSUW(0, new_exit);
+    }
+  }
+  std::set<BasicBlock *> work{Inside.begin(), Inside.end()};
+  for (auto inst : *exit) {
+    if (auto phi = dynamic_cast<PhiInst *>(inst))
+      UpdatePhiNode(phi, work, new_exit);
+    else
+      break;
+  }
+  for (auto bb : Inside) {
+    m_dom->GetNode(bb->num).des.remove(exit->num);
+    m_dom->GetNode(exit->num).rev.remove(bb->num);
+    m_dom->GetNode(bb->num).des.push_front(new_exit->num);
+    m_dom->GetNode(new_exit->num).rev.push_front(bb->num);
+  }
+  m_dom->GetNode(exit->num).rev.push_front(new_exit->num);
+}
 
-void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &outside,
-                                 BasicBlock *PreHeader) {
+void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
+                                 BasicBlock *target) {
   Value *ComingVal = nullptr;
   for (auto &[_1, tmp] : phi->PhiRecord) {
-    if (outside.find(tmp.second) == outside.end()) {
+    if (worklist.find(tmp.second) == worklist.end()) {
       if (ComingVal == nullptr) {
         ComingVal = tmp.first;
         continue;
       }
-      if (ComingVal != nullptr) {
+      if (ComingVal != tmp.second) {
         ComingVal = nullptr;
         break;
       }
@@ -104,28 +148,28 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &outside,
   if (ComingVal) {
     std::vector<int> Erase;
     for (auto &[_1, tmp] : phi->PhiRecord) {
-      if (outside.find(tmp.second) != outside.end()) {
+      if (worklist.find(tmp.second) != worklist.end()) {
         Erase.push_back(_1);
       }
     }
     for (auto i : Erase)
       phi->Del_Incomes(i);
-    phi->updateIncoming(ComingVal, PreHeader);
+    phi->updateIncoming(ComingVal, target);
     return;
   }
   //对应的传入值有多个
   std::vector<std::pair<int, std::pair<Value *, BasicBlock *>>> Erase;
   for (auto &[_1, tmp] : phi->PhiRecord) {
-    if (outside.find(tmp.second) != outside.end()) {
+    if (worklist.find(tmp.second) != worklist.end()) {
       Erase.push_back(std::make_pair(_1, tmp));
     }
   }
   PhiInst *pre_phi =
-      PhiInst::NewPhiNode(PreHeader->front(), PreHeader, phi->GetType());
+      PhiInst::NewPhiNode(target->front(), target, phi->GetType());
   for (auto &[i, v] : Erase) {
     pre_phi->updateIncoming(v.first, v.second);
     phi->Del_Incomes(i);
   }
-  phi->updateIncoming(pre_phi, PreHeader);
+  phi->updateIncoming(pre_phi, target);
   return;
 }

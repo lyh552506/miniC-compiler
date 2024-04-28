@@ -16,9 +16,9 @@ class LoopSimplify : public PassManagerBase {
   void SimplifyLoosImpl(LoopInfo* loop);
   void InsertPreHeader(LoopInfo* loop);
   void InsertLatch();
-  void FormatExit();
-  void UpdatePhiNode(PhiInst* phi, std::set<BasicBlock*>& outside,
-                     BasicBlock* PreHeader);
+  void FormatExit(LoopInfo* loop,BasicBlock* exit);
+  void UpdatePhiNode(PhiInst* phi, std::set<BasicBlock*>& worklist,
+                     BasicBlock* target);
   LoopAnalysis* loopAnlay;
   Function* m_func;
   dominance* m_dom;
