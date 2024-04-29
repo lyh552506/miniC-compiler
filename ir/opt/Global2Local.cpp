@@ -121,12 +121,12 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
                     break;
             }
             Operand init = val->GetInitializer();
-            LoadInst* load = new LoadInst(alloca->GetType());
-            load->add_use(alloca);
-            iter.insert_before(load);
-            --iter;
-            StoreInst* store = new StoreInst(init, load);
-            iter.insert_after(store);
+            // LoadInst* load = new LoadInst(alloca->GetType());
+            // load->add_use(alloca);
+            // iter.insert_before(load);
+            // --iter;
+            StoreInst* store = new StoreInst(init, alloca);
+            iter.insert_before(store);
             module.GetValueByName(val->get_name())->RAUW(alloca);
         }
     }
