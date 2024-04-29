@@ -94,7 +94,7 @@ class GraphColor {
     std::map<RISCVMIR*, std::set<RISCVMOperand*>> InstLive;
     void RunOnFunction();
     void PrintPass();
-    bool count(RISCVMOperand Op, RISCVMIR* inst) {
+    bool count(RISCVMOperand* Op, RISCVMIR* inst) {
       return InstLive[inst].count(Op);
     }
     BlockLiveInfo(RISCVFunction* f)
@@ -158,10 +158,10 @@ class GraphColor {
   Operand GetAlias(Operand v);
   void FreezeMoves(Operand freeze);
   //保证Interval vector的顺序
-  std::unordered_map<Operand, IntervalLength> ValsInterval;
+  std::unordered_map<RISCVMOperand*, IntervalLength> ValsInterval;
   enum MoveState { coalesced, constrained, frozen, worklist, active };
   // interference graph
-  std::unordered_map<Operand, std::vector<Operand>> IG;  // reg2reg IG[op]
+  std::unordered_map<RISCVMOperand, std::vector<RISCVMOperand>> IG;  // reg2reg IG[op]
   // 低度数的传送有关节点表
   std::unordered_set<Operand> freezeWorkList;
   // 有可能合并的传送指令
@@ -173,7 +173,7 @@ class GraphColor {
   // 本轮中要溢出的节点集合
   std::unordered_set<Operand> spilledNodes;
   // 机器寄存器的集合，每个寄存器都预先指派了一种颜色
-  std::unordered_set<Operand> Precolored;  // reg
+  std::unordered_set<RISCVMOperand*> Precolored;  // reg
   // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
   std::unordered_set<Operand> initial;
   // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
@@ -191,7 +191,7 @@ class GraphColor {
   //查询每个传送指令属于哪一个集合
   std::unordered_map<RISCVMIR*, MoveState> belongs;
   // 从一个结点到与该节点相关的传送指令表的映射
-  std::unordered_map<Operand, std::unordered_set<RISCVMIR*>>
+  std::unordered_map<RISCVMOperand*, std::unordered_set<RISCVMIR*>>
       moveList;  // reg2mov
   // 还未做好准备的传送指令集合
   std::unordered_set<RISCVMIR*> activeMoves;
