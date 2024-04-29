@@ -21,6 +21,7 @@ class LoopInfo {
   void setPreHeader(BasicBlock *bb) { Pre_Header = bb; }
   BasicBlock *GetHeader() { return Header; }
   LoopInfo *GetParent() { return Parent; }
+  BasicBlock* GetPreHeader(){return Pre_Header;}
   int GetLoopDepth() { return LoopDepth; }
   int LoopBodyNum() { return ContainBlocks.size(); }
   void InsertLoopBody(BasicBlock *bb) { ContainBlocks.push_back(bb); }
@@ -33,7 +34,12 @@ class LoopInfo {
   iterator end() { return SubLoops.end(); }
   reverse_iterator rbegin() { return SubLoops.rbegin(); }
   reverse_iterator rend() { return SubLoops.rend(); }
-
+  void clear(){
+    Latch=nullptr;
+    Pre_Header=nullptr;
+    Existing_Block=nullptr;
+    LoopDepth=0;
+  }
  private:
   BasicBlock *Header = nullptr;
   LoopInfo *Parent = nullptr;  // subloop --> loop

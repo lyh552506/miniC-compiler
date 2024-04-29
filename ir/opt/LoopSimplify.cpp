@@ -1,8 +1,5 @@
 #include "LoopSimplify.hpp"
-#include "CFG.hpp"
-#include "my_stl.hpp"
-#include <set>
-#include <vector>
+#include "LoopInfo.hpp"
 
 void LoopSimplify::RunOnFunction() {
   loopAnlay->RunOnFunction();
@@ -43,6 +40,20 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       FormatExit(L, exit[index]);
       vec_pop(exit, index);
     }
+    // step 3: deal with latch/back-edge
+    BasicBlock *header = loop->GetHeader();
+    std::vector<BasicBlock *> Latch;
+    for (auto rev : m_dom->GetNode(header->num).rev) {
+      if (m_dom->GetNode(rev).thisBlock != preheader)
+        Latch.push_back(m_dom->GetNode(rev).thisBlock);
+    }
+    if (Latch.size() > 1) {
+      // if (Latch.size() < 8) {
+      //   SplitNewLoop(loop);
+
+      // }
+      FormatLatch(loop, preheader, Latch);
+    }
   }
 }
 
@@ -80,13 +91,7 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
       break;
   }
   // phase 5: update the rev and des
-  for (auto bb : OutSide) {
-    m_dom->GetNode(Header->num).rev.remove(bb->num);
-    m_dom->GetNode(bb->num).des.remove(Header->num);
-    m_dom->GetNode(bb->num).des.push_front(preheader->num);
-    m_dom->GetNode(preheader->num).rev.push_front(bb->num);
-  }
-  m_dom->GetNode(Header->num).rev.push_front(preheader->num);
+  UpdateInfo(OutSide,preheader,Header);
 }
 
 void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
@@ -120,13 +125,7 @@ void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
     else
       break;
   }
-  for (auto bb : Inside) {
-    m_dom->GetNode(bb->num).des.remove(exit->num);
-    m_dom->GetNode(exit->num).rev.remove(bb->num);
-    m_dom->GetNode(bb->num).des.push_front(new_exit->num);
-    m_dom->GetNode(new_exit->num).rev.push_front(bb->num);
-  }
-  m_dom->GetNode(exit->num).rev.push_front(new_exit->num);
+  UpdateInfo(Inside,new_exit,exit);
 }
 
 void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
@@ -172,4 +171,88 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
   }
   phi->updateIncoming(pre_phi, target);
   return;
+}
+
+void LoopSimplify::FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
+                               std::vector<BasicBlock *> &latch) {
+  BasicBlock *head = loop->GetHeader();
+  BasicBlock *new_latch = new BasicBlock();
+  new_latch->SetName(new_latch->GetName() + "_latch");
+#ifdef DEBUG
+  std::cerr << "insert a latch: " << new_latch->GetName() << std::endl;
+#endif
+  m_func->InsertBlock(head, new_latch);
+  for (auto bb : latch) {
+    auto condition = bb->back();
+    if (auto cond = dynamic_cast<CondInst *>(condition)) {
+      for (int i = 0; i < 3; i++)
+        if (GetOperand(cond, i) == head)
+          cond->RSUW(i, new_latch);
+    } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
+      uncond->RSUW(0, new_latch);
+    }
+  }
+  std::set<BasicBlock *> work{latch.begin(), latch.end()};
+  for (auto inst : *head) {
+    if (auto phi = dynamic_cast<PhiInst *>(inst))
+      UpdatePhiNode(phi, work, new_latch);
+    else
+      break;
+  }
+  UpdateInfo(latch,new_latch,head);
+}
+// need to ReAnlaysis loops
+LoopInfo* LoopSimplify::SplitNewLoop(LoopInfo *L) {
+  BasicBlock *prehead = L->GetPreHeader();
+  PhiInst *target = nullptr;
+  bool FindOne = false;
+  for (auto inst : *(L->GetHeader())) {
+    if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+      for (auto &[_1, val] : phi->PhiRecord) {
+        if (val.first == phi) {
+          target = phi;
+          FindOne = true;
+          break;
+        }
+      }
+    } else
+      return nullptr;
+    if (FindOne)
+      break;
+  }
+  assert(target && "phi in there must be a nullptr");
+  std::vector<BasicBlock *> Outer;
+  for (auto &[_1, val] : target->PhiRecord) {
+    if (val.first != target)
+      Outer.push_back(val.second);
+  }
+  BasicBlock *out = new BasicBlock();
+  m_func->InsertBlock(L->GetHeader(), out);
+  out->SetName(out->GetName() + "_out");
+#ifdef DEBUG
+  std::cerr << "insert a out: " << out->GetName() << std::endl;
+#endif
+  for (auto bb : Outer) {
+    auto condition = bb->back();
+    if (auto cond = dynamic_cast<CondInst *>(condition)) {
+      for (int i = 0; i < 3; i++)
+        if (GetOperand(cond, i) == L->GetHeader())
+          cond->RSUW(i, out);
+    } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
+      uncond->RSUW(0, out);
+    }
+  }
+  UpdateInfo(Outer,out,L->GetHeader());
+  //TODO
+}
+
+void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
+                              BasicBlock *insert, BasicBlock *head) {
+  for (auto bb : bbs) {
+    m_dom->GetNode(bb->num).des.remove(head->num);
+    m_dom->GetNode(head->num).rev.remove(bb->num);
+    m_dom->GetNode(bb->num).des.push_front(insert->num);
+    m_dom->GetNode(insert->num).rev.push_front(bb->num);
+  }
+  m_dom->GetNode(head->num).rev.push_front(insert->num);
 }
