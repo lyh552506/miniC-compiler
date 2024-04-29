@@ -1,5 +1,7 @@
 #include "LoopSimplify.hpp"
+#include "CFG.hpp"
 #include "LoopInfo.hpp"
+#include <vector>
 
 void LoopSimplify::RunOnFunction() {
   loopAnlay->RunOnFunction();
@@ -54,6 +56,32 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       // }
       FormatLatch(loop, preheader, Latch);
     }
+    // step 4: deal with existing block to the same block
+    std::vector<BasicBlock *> exiting = loopAnlay->GetExitingBlock(loop);
+    bool same = false;
+    BasicBlock *target = nullptr;
+    for (auto bb : exiting) {
+      for (auto des : m_dom->GetNode(bb->num).des) {
+        BasicBlock *dest = m_dom->GetNode(des).thisBlock;
+        if(loopAnlay->LookUp(dest)==loop)
+          continue;
+        if (target == nullptr) {
+          target = dest;
+          continue;
+        }
+        if (target != dest) {
+          same = false;
+          target = nullptr;
+          break;
+        }
+      }
+      if (!same)
+        break;
+    }
+
+    if(same){
+      
+    }
   }
 }
 
@@ -91,7 +119,8 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
       break;
   }
   // phase 5: update the rev and des
-  UpdateInfo(OutSide,preheader,Header);
+  UpdateInfo(OutSide, preheader, Header);
+  loop->setPreHeader(preheader);
 }
 
 void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
@@ -125,7 +154,7 @@ void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
     else
       break;
   }
-  UpdateInfo(Inside,new_exit,exit);
+  UpdateInfo(Inside, new_exit, exit);
 }
 
 void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
@@ -199,11 +228,12 @@ void LoopSimplify::FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
     else
       break;
   }
-  UpdateInfo(latch,new_latch,head);
+  UpdateInfo(latch, new_latch, head);
+  loop->setLatch(new_latch);
 }
-// need to ReAnlaysis loops
-LoopInfo* LoopSimplify::SplitNewLoop(LoopInfo *L) {
-  BasicBlock *prehead = L->GetPreHeader();
+// need to ReAnlaysis loops （暂时先不使用这个功能）
+LoopInfo *LoopSimplify::SplitNewLoop(LoopInfo *L) {
+  BasicBlock *prehead = loopAnlay->GetPreHeader(L);
   PhiInst *target = nullptr;
   bool FindOne = false;
   for (auto inst : *(L->GetHeader())) {
@@ -242,8 +272,8 @@ LoopInfo* LoopSimplify::SplitNewLoop(LoopInfo *L) {
       uncond->RSUW(0, out);
     }
   }
-  UpdateInfo(Outer,out,L->GetHeader());
-  //TODO
+  UpdateInfo(Outer, out, L->GetHeader());
+  // TODO
 }
 
 void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
