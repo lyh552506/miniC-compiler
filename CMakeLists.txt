@@ -30,7 +30,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/backend)
 add_subdirectory(${PROJECT_SOURCE_DIR}/test_infrastructure)
 # add_subdirectory(${PROJECT_SOURCE_DIR}/Target)
 
-target_link_libraries(SYSY-compiler Yacc Lib Backend opt Analysis )#Target
+target_link_libraries(SYSY-compiler Yacc Lib Backend opt Analysis) #Target
 
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/yacc)
 target_include_directories(SYSY-compiler PRIVATE ${PROJECT_SOURCE_DIR}/lib)

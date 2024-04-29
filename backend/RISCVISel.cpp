@@ -55,7 +55,7 @@ void RISCVISel::InstLowering(StoreInst* inst){
     }
     else assert("invalid store type");
 }
-// todo : something wrong here
+
 void RISCVISel::InstLowering(LoadInst* inst){
     if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(IntType::NewIntTypeGet())) {
         ctx(Builder(RISCVMIR::_lw,inst));
@@ -74,14 +74,16 @@ void RISCVISel::InstLowering(SITFP* inst){
 }
 
 void RISCVISel::InstLowering(UnCondInst* inst){
-    ctx(Builder(RISCVMIR::_j,inst));
+    // ctx(Builder(RISCVMIR::_j,inst));
+    ctx(Builder(RISCVMIR::_j, {ctx.mapping(inst->GetOperand(0))}));
 }
 
 void RISCVISel::InstLowering(CondInst* inst){
     #define M(x) ctx.mapping(x)
     auto cond=inst->GetOperand(0)->as<BinaryInst>();
     assert(cond!=nullptr&&"Invalid Condition");
-    assert((cond->GetOperand(0)->GetType()==BoolType::NewBoolTypeGet())&&"Invalid Condition Type");
+    // assert((cond->GetOperand(0)->GetType()==BoolType::NewBoolTypeGet())&&"Invalid Condition Type");
+    assert((cond->GetDef()->GetType()==BoolType::NewBoolTypeGet())&&"Invalid Condition Type");
     if(cond->GetOperand(0)->GetType()==IntType::NewIntTypeGet()){
         switch (cond->getopration())
         {
@@ -169,11 +171,12 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                         minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
                         minst->AddOperand(Li_Intimm(constint));
                         ctx(minst);
-                    } else assert(0&&"Invalid constint in add"); 
+                    } else assert(0&&"Invalid constint in add inst"); 
                 } else 
                     ctx(Builder(RISCVMIR::_addw,inst));
-            } else if(inst->GetType()==FloatType::NewFloatTypeGet())
+            } else if(inst->GetType()==FloatType::NewFloatTypeGet()) {
                 ctx(Builder(RISCVMIR::_fadd_s,inst));
+            }
             else assert("Illegal!");
             break;
         }
@@ -283,9 +286,6 @@ void RISCVISel::InstLowering(CallInst* inst){
     // 把VReg Copy到PhyReg
     // 如果溢出则按照规约store
     // 如果有返回值则copy a0 到 VReg
-    // if(!inst->GetUserlist().is_empty()&&inst->GetType()!=VoidType::NewVoidTypeGet()){
-
-    // }
     #define M(x) ctx.mapping(x)
     if(!inst->Getuselist().empty()) {
         int MAXnum = 8, paramnum=inst->Getuselist().size()-1;
@@ -341,14 +341,14 @@ RISCVMOperand* RISCVISel::Li_Intimm(ConstIRInt* Intconst) {
             Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod));
             ctx(Builder(RISCVMIR::li, {vreg, const_imm}));
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod));
-            ctx(Builder(RISCVMIR::_addi, {vreg, vreg, mod_imm}));
+            ctx(Builder(RISCVMIR::_addiw, {vreg, vreg, mod_imm}));
         } else if (mod >=2048 && mod <4095) {
             //li .a int-m+4096
             //addi .a, .a, m-4096
             Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod+4096));
             ctx(Builder(RISCVMIR::li, {vreg, const_imm}));
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod-4096));
-            ctx(Builder(RISCVMIR::_addi, {vreg, vreg, mod_imm}));
+            ctx(Builder(RISCVMIR::_addiw, {vreg, vreg, mod_imm}));
         }   
         else if (mod>-4095&&mod<-2048) {
             //li .a int-m-4096
@@ -356,7 +356,7 @@ RISCVMOperand* RISCVISel::Li_Intimm(ConstIRInt* Intconst) {
             Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod-4096));
             ctx(Builder(RISCVMIR::li, {vreg, const_imm}));
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod+4096));
-            ctx(Builder(RISCVMIR::_addi, {vreg, vreg, mod_imm}));
+            ctx(Builder(RISCVMIR::_addiw, {vreg, vreg, mod_imm}));
         } else assert(0&&"error imm");
     }
     return vreg;

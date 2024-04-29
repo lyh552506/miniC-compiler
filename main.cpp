@@ -1,10 +1,10 @@
-#include "AsmPrinter.hpp"
+// #include "AsmPrinter.hpp"
 #include "dominant.hpp"
 #include "passManager.hpp"
 #include "parser.hpp"
 #include <fstream>
 #include <getopt.h>
-// #include "RISCVLowering.hpp"
+#include "RISCVLowering.hpp"
 
 extern FILE *yyin;
 extern int optind, opterr, optopt;
@@ -93,10 +93,10 @@ int main(int argc, char **argv) {
   #endif
 
   freopen(asmoutput_path.c_str(), "w", stdout);
-  AsmPrinter asmPrinter = AsmPrinter(filename, &Singleton<Module>());
-  asmPrinter.printAsm();
-  // RISCVModuleLowering RISCVasm;
-  // RISCVasm.run(&Singleton<Module>());
+  // AsmPrinter asmPrinter = AsmPrinter(filename, &Singleton<Module>());
+  // asmPrinter.printAsm();
+  RISCVModuleLowering RISCVasm;
+  RISCVasm.run(&Singleton<Module>());
   freopen("dev/tty", "w", stdout);
 
   return 0;

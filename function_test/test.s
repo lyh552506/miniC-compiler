@@ -1,90 +1,72 @@
-    .file  "test.c"
+    .file  "file"
     .attribute arch, "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0"
     .attribute unaligned_access, 0
     .attribute stack_align, 16
     .text
-    .globl  a
+    .globl  def_a
     .data
     .align  2
-    .type  a, @object
-    .size  a, 4
-a:
-    .word  343
-    .globl  b
+    .type  def_a, @object
+    .size  def_a, 4
+def_a:
+    .word  1
+    .globl  def_b
     .align  2
-    .type  b, @object
-    .size  b, 4
-b:
-    .word  1124938547
-    .globl  arr_int_undef
+    .type  def_b, @object
+    .size  def_b, 4
+def_b:
+    .word  1078397501
+    .globl  undef_a
     .bss
-    .align  3
-    .type  arr_int_undef, @object
-    .size  arr_int_undef, 48
-arr_int_undef:
-    .zero  48
-    .globl  arr_float_undef
+    .align  2
+    .type  undef_a, @object
+    .size  undef_a, 4
+undef_a:
+    .zero  4
+    .globl  undef_b
+    .align  2
+    .type  undef_b, @object
+    .size  undef_b, 4
+undef_b:
+    .zero  4
+    .globl  def_arr
     .data
     .align  3
-    .type  arr_float_undef, @object
-    .size  arr_float_undef, 32
-arr_float_undef:
-    .word  1067030938
-    .word  1079613850
-    .word  1073741824
-    .word  1079194419
-    .zero  16
-    .text
-    .align  1
-    .globl  function
-    .type  function, @function
-function:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    addi s0, sp, 32
-.LBB0_0:
-    addw .27, .19, .22
-    lw a0, .27
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    addi sp, sp, 32
-    ret
-    .size function, -function
-    .align  1
-    .globl  main
-    .type  main, @function
+    .type  def_arr, @object
+    .size  def_arr, 48
+def_arr:
+    .word  1
+    .word  3
+    .zero  40
+    .globl  def_arrf
+    .align  3
+    .type  def_arrf, @object
+    .size  def_arrf, 144
+def_arrf:
+    .word  1078867263
+    .zero  140
 main:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    addi s0, sp, 32
-.LBB1_0:
-    j .LBB1_1
-.LBB1_1:
-Error: No Such Instruction.
-    li .70, 0
-    slt .41, .70, .63
-    beqz .41, .LBB1_3
-    j .LBB1_2
-.LBB1_2:
-    subw .45, .63, 1
-    j .LBB1_1
-.LBB1_3:
-    li .78, 0
-    slt .51, .78, .63
-    beqz .51, .LBB1_5
-    j .LBB1_4
-.LBB1_4:
-    subw .54, .63, 1
-    j .LBB1_6
-.LBB1_5:
-    addw .59, .63, 1
-    j .LBB1_6
-.LBB1_6:
-    lw a0, 0
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    addi sp, sp, 32
-    ret
-    .size main, -main
+.19:
+	lw %0, ***i32GlobalObject:def_a***
+
+	flw %1, ***floatGlobalObject:def_b***
+
+	fcvt.s.w %2, %0
+
+.20:
+	lw %3, ***i32GlobalObject:def_a***
+
+	addi %4, %3, 3
+	sw , %4, ***i32GlobalObject:def_a***
+
+	j .30
+
+.21:
+	li %5, 5
+	sw , %5, %6
+	fsw , 0x400aa9fbe0000000, %7
+	j .30
+
+.30:
+	lw x10, 0
+	ret 
