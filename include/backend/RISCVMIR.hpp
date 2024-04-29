@@ -150,6 +150,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
     // RISCVMIR(RISCVISA,User* inst);
     // RISCVMIR(RISCVISA,RISCVMOperand*...);
     RISCVMIR(RISCVISA _isa):opcode(_isa){};
+    RISCVMOperand*& GetDef();
     RISCVMOperand*& GetOperand(int);
     void SetDef(RISCVMOperand* def);
     void AddOperand(RISCVMOperand*);
