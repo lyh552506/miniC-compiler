@@ -31,5 +31,6 @@ class RISCVLoweringContext{
     void insert_val2mop(Value*, RISCVMOperand*);
     RISCVMOperand* mapping(Value*);
     VirRegister* createVReg(RISCVType);
+    // std::vector<MFuncPtr> Get;
     void print();
 };

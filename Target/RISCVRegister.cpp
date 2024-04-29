@@ -17,9 +17,18 @@ VirRegister::VirRegister(RISCVType tp):Register(tp){
 }
 
 void PhyRegister::print(){
-    std::cout<<"$"<<magic_enum::enum_name(regenum);
+    std::cout<<magic_enum::enum_name(regenum);
 }
 
 void VirRegister::print(){
     std::cout<<"%"<<counter;
 }
+
+LARegister::LARegister(std::string _name, LAReg regnum):Register(RISCVType::riscv_float32),name(_name){}
+
+void LARegister::print(){
+    //todo
+    std::cout<<"%"<< magic_enum::enum_name(regnum);
+    std::cout<<"("<< name << ")";
+}
+

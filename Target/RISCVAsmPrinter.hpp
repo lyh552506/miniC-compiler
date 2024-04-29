@@ -27,28 +27,9 @@ class RISCVAsmPrinter {
     public:
     RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweringContext& ctx);
     ~RISCVAsmPrinter() = default;
-    void printAsm();
-};
-
-class textSegment {
-    private:
-    std::vector<functionSegment*> function_list;
-    public:
-    textSegment(Module* module);
-    void GenerateFuncList(Module* module);
-    void PrintTextSegment();
-};
-
-class functionSegment {
-    private:
-    //structure
-    int align;
-    std::string name;
-    std::string ty="function";
-    int size;
-    public:
-    functionSegment(Function* func);
-    void PrintFuncSegment();
+    void printAsmGlobal();
+    void printAsmText();
+    void printAsmTempFloat();
 };
 
 class dataSegment {
@@ -91,4 +72,25 @@ class tempvar: public RISCVTempFloatObject{
     ~tempvar() = default;
     std::string Getname();
     void PrintTempvar();
+};
+
+class textSegment {
+    private:
+    std::vector<functionSegment*> function_list;
+    public:
+    textSegment(Module* module);
+    void GenerateFuncList(Module* module);
+    void PrintTextSegment();
+};
+
+class functionSegment {
+    private:
+    //structure
+    int align;
+    std::string name;
+    std::string ty="function";
+    int size;
+    public:
+    functionSegment(Function* func);
+    void PrintFuncSegment();
 };

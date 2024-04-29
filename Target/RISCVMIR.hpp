@@ -1,7 +1,6 @@
 #pragma once
 #include "CFG.hpp"
 #include "RISCVFrameContext.hpp"
-
 class RISCVFunction;
 class RISCVBasicBlock;
 class RISCVMIR;
@@ -144,6 +143,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         mv,
         call,
         ret,
+        li,
         EndMIRPseudo,
     }opcode;
     /// @note def in the front while use in the back

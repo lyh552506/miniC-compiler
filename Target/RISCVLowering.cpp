@@ -1,9 +1,9 @@
 #include "RISCVLowering.hpp"
-
+RISCVAsmPrinter* asmprinter;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
     // need file name
-    RISCVAsmPrinter* asmprinter = new RISCVAsmPrinter("file", m, ctx);
-    asmprinter->printAsm();
+    asmprinter = new RISCVAsmPrinter("file", m, ctx);
+    asmprinter->printAsmGlobal();
     // assert(0&&"Handled later");
 }
 
@@ -19,6 +19,7 @@ bool RISCVModuleLowering::run(Module* m){
         }
     }
     ctx.print();
+    
     return false;
 }
 

@@ -34,25 +34,35 @@ void RISCVISel::InstLowering(AllocaInst* inst){
 
 void RISCVISel::InstLowering(StoreInst* inst){
     if(inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
-        auto minst=new RISCVMIR(RISCVMIR::_sw);
-        for(int i=0;i<inst->Getuselist().size();i++)
-            minst->AddOperand(ctx.mapping(inst->GetOperand(i)));          
+        if(ConstIRInt* Intconst = dynamic_cast<ConstIRInt*>(inst->GetOperand(0))) {
+            auto minst=new RISCVMIR(RISCVMIR::_sw);
+            minst->AddOperand(Li_Intimm(Intconst));
+            minst->AddOperand(ctx.mapping(inst->GetOperand(1)));
+            ctx(minst);
+        }
+        else {
+            auto minst=new RISCVMIR(RISCVMIR::_sw);
+            for(int i=0;i<inst->Getuselist().size();i++)
+                minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
+            ctx(minst);
+        }
     }
     else if(inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
         auto minst=new RISCVMIR(RISCVMIR::_fsw);
         for(int i=0;i<inst->Getuselist().size();i++)
-            minst->AddOperand(ctx.mapping(inst->GetOperand(i)));   
+            minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
+        ctx(minst);
     }
-        // ctx(Builder(RISCVMIR::_fsw,inst));
     else assert("invalid store type");
 }
-
+// todo : something wrong here
 void RISCVISel::InstLowering(LoadInst* inst){
-    if(inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet())
+    if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(IntType::NewIntTypeGet())) {
         ctx(Builder(RISCVMIR::_lw,inst));
-    else if(inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet())
+    }
+    else if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(FloatType::NewFloatTypeGet()))
         ctx(Builder(RISCVMIR::_flw,inst));
-    else assert("invalid load type");
+    else assert(0&&"invalid load type");
 }
 
 void RISCVISel::InstLowering(FPTSI* inst){
@@ -143,50 +153,86 @@ void RISCVISel::InstLowering(CondInst* inst){
 
 void RISCVISel::InstLowering(BinaryInst* inst){
     if(inst->getopration()<BinaryInst::Op_And){
-        // if(inst->ConstCalc())return;
         RISCVMIR* result;
         switch (inst->getopration())
         {
         case BinaryInst::Op_Add:
         {
-            if(inst->GetType()==IntType::NewIntTypeGet())
-                ctx(Builder(RISCVMIR::_add,inst));
-            else if(inst->GetType()==FloatType::NewFloatTypeGet())
+            if(inst->GetType()==IntType::NewIntTypeGet()) {
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
+                    int inttemp = constint->GetVal();
+                    if(inttemp<2048)
+                        ctx(Builder(RISCVMIR::_addi,inst));
+                    else if(inttemp>=2048) {
+                        auto minst=new RISCVMIR(RISCVMIR::_addw);
+                        minst->SetDef(ctx.mapping(inst->GetDef()));
+                        minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                        minst->AddOperand(Li_Intimm(constint));
+                        ctx(minst);
+                    } else assert(0&&"Invalid constint in add"); 
+                } else 
+                    ctx(Builder(RISCVMIR::_addw,inst));
+            } else if(inst->GetType()==FloatType::NewFloatTypeGet())
                 ctx(Builder(RISCVMIR::_fadd_s,inst));
             else assert("Illegal!");
             break;
         }
         case BinaryInst::Op_Sub:
         {
-            if(inst->GetType()==IntType::NewIntTypeGet())
-                ctx(Builder(RISCVMIR::_sub,inst));
-            else if(inst->GetType()==FloatType::NewFloatTypeGet())
+            if(inst->GetType()==IntType::NewIntTypeGet()) {
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
+                    auto minst=new RISCVMIR(RISCVMIR::_subw);
+                    minst->SetDef(ctx.mapping(inst->GetDef()));
+                    minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                    minst->AddOperand(Li_Intimm(constint));
+                    ctx(minst);
+                } else ctx(Builder(RISCVMIR::_subw,inst));
+            } else if(inst->GetType()==FloatType::NewFloatTypeGet())
                 ctx(Builder(RISCVMIR::_fsub_s,inst));
             else assert("Illegal!");
             break;
         }
         case BinaryInst::Op_Mul:
         {
-            if(inst->GetType()==IntType::NewIntTypeGet())
-                ctx(Builder(RISCVMIR::_mul,inst));
-            else if(inst->GetType()==FloatType::NewFloatTypeGet())
+            if(inst->GetType()==IntType::NewIntTypeGet()) {
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
+                    auto minst=new RISCVMIR(RISCVMIR::_mulw);
+                    minst->SetDef(ctx.mapping(inst->GetDef()));
+                    minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                    minst->AddOperand(Li_Intimm(constint));
+                    ctx(minst);
+                } else ctx(Builder(RISCVMIR::_mulw,inst));
+            } else if(inst->GetType()==FloatType::NewFloatTypeGet())
                 ctx(Builder(RISCVMIR::_fmul_s,inst));
             else assert("Illegal!");
             break;
         }
         case BinaryInst::Op_Div:
         {
-            if(inst->GetType()==IntType::NewIntTypeGet())
-                ctx(Builder(RISCVMIR::_div,inst));
-            else if(inst->GetType()==FloatType::NewFloatTypeGet())
+            if(inst->GetType()==IntType::NewIntTypeGet()) {
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
+                    auto minst=new RISCVMIR(RISCVMIR::_divw);
+                    minst->SetDef(ctx.mapping(inst->GetDef()));
+                    minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                    minst->AddOperand(Li_Intimm(constint));
+                    ctx(minst);
+                } else ctx(Builder(RISCVMIR::_divw,inst));            
+            } else if(inst->GetType()==FloatType::NewFloatTypeGet())
                 ctx(Builder(RISCVMIR::_fdiv_s,inst));
             else assert("Illegal!");
             break;
         }
         case BinaryInst::Op_Mod:
         {
-            if(inst->GetType()==IntType::NewIntTypeGet())ctx(Builder(RISCVMIR::_rem,inst));
-            else assert("Illegal!");
+            if(inst->GetType()==IntType::NewIntTypeGet()) {
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
+                    auto minst=new RISCVMIR(RISCVMIR::_remw);
+                    minst->SetDef(ctx.mapping(inst->GetDef()));
+                    minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                    minst->AddOperand(Li_Intimm(constint));
+                    ctx(minst);
+                } else ctx(Builder(RISCVMIR::_remw,inst));
+            } else assert(0&&"Illegal!");
             break;
         }
         default:
@@ -275,6 +321,45 @@ void RISCVISel::InstLowering(RetInst* inst){
     }
     else 
         assert(0&&"Invalid return type");
+}
+
+RISCVMOperand* RISCVISel::Li_Intimm(ConstIRInt* Intconst) {
+    int inttemp = Intconst->GetVal();
+    VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+    if(inttemp>=-2048 && inttemp<2048) {
+        Imm* const_imm = new Imm(Intconst);
+        ctx(Builder(RISCVMIR::li, {vreg, const_imm}));
+    } else {
+        int mod = inttemp%4096;
+        if(mod==0) {
+            //li .a int
+            Imm* const_imm = new Imm(Intconst);
+            ctx(Builder(RISCVMIR::li, {vreg, const_imm}));
+        } else if ((mod>0&&mod<2048)||(mod>=-2048&&mod<0)) {
+            //li .a int-m
+            //addi .a, .a, m
+            Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod));
+            ctx(Builder(RISCVMIR::li, {vreg, const_imm}));
+            Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod));
+            ctx(Builder(RISCVMIR::_addi, {vreg, vreg, mod_imm}));
+        } else if (mod >=2048 && mod <4095) {
+            //li .a int-m+4096
+            //addi .a, .a, m-4096
+            Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod+4096));
+            ctx(Builder(RISCVMIR::li, {vreg, const_imm}));
+            Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod-4096));
+            ctx(Builder(RISCVMIR::_addi, {vreg, vreg, mod_imm}));
+        }   
+        else if (mod>-4095&&mod<-2048) {
+            //li .a int-m-4096
+            //addi .a, .a, m+4096
+            Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod-4096));
+            ctx(Builder(RISCVMIR::li, {vreg, const_imm}));
+            Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod+4096));
+            ctx(Builder(RISCVMIR::_addi, {vreg, vreg, mod_imm}));
+        } else assert(0&&"error imm");
+    }
+    return vreg;
 }
 
 void RISCVISel::InstLowering(User* inst){

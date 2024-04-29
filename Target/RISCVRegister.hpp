@@ -36,3 +36,16 @@ class VirRegister:public Register{
     void print()final;
     bool isPhysical()final{return false;};
 };
+
+/// @brief 用于加载地址的特殊寄存器，形如%hi(L0) %lo(L0)
+/// Not finished
+class LARegister:public Register{
+    enum LAReg {
+        hi,lo
+    } regnum;
+    std::string name;
+    public:
+    LARegister(std::string, LAReg);
+    void print()final;
+    bool isPhysical()final{return false;};
+};

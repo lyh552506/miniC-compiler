@@ -27,12 +27,9 @@ RISCVAsmPrinter::RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweri
     : filename(filename){ 
     dataSegment* data = new dataSegment(unit,ctx);
     this->data = data;
-
-    textSegment* textseg = new textSegment(unit);
-    this->text = textseg;
 }
 
-void RISCVAsmPrinter::printAsm() {
+void RISCVAsmPrinter::printAsmGlobal() {
     std::ofstream outputFile("output.a", std::ios::out); // 以追加模式打开文件
     if (outputFile.is_open()) {
         std::cout << "    .file  \"" << filename << "\"" << std::endl;
@@ -41,8 +38,6 @@ void RISCVAsmPrinter::printAsm() {
         std::cout << "    .attribute stack_align, 16" << std::endl;
         std::cout << "    .text" << std::endl;
         this->data->PrintDataSegment_Globval();
-        this->text->PrintTextSegment();
-        // this->data->PrintDataSegment_Tempvar();
         outputFile.close();
     } else {
         std::cout << "Unable to open the file." << std::endl;
@@ -93,12 +88,12 @@ void functionSegment::PrintFuncSegment() {
 //dataSegment
 dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
     GenerateGloblvarList(module, ctx);
-    GenerateTempvarList(module);
+    // GenerateTempvarList(module);
 }
 void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx) {
     for(auto& data : module->GetGlobalVariable()) {
         globlvar* gvar = new globlvar(data.get());
-        ctx.insert_val2mop(data->GetValue(), gvar);
+        // ctx.insert_val2mop(data->GetValue(), gvar);
         globlvar_list.push_back(gvar);
     }
 }

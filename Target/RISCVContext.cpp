@@ -1,7 +1,7 @@
 #include "RISCVContext.hpp"
 RISCVMOperand* RISCVLoweringContext::Create(Value* val){
     if(auto inst=dynamic_cast<User*>(val)){
-        if(auto alloca=dynamic_cast<User*>(inst)){
+        if(auto alloca=dynamic_cast<AllocaInst*>(inst)){
             auto& frameobjs=cur_func->GetFrameObjects();
             frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(alloca->GetType(),alloca->GetName()));
             return frameobjs.back().get();

@@ -17,7 +17,7 @@ void RISCVFrameObject::print(){
     tp->print();
     std::cout<<"FrameObject:";
     NamedMOperand::print();
-    std::cout<<"---\n";
+    std::cout<<"---";
 }
 
 RISCVGlobalObject::RISCVGlobalObject(Type* _tp,std::string _name):RISCVObject(_tp,_name){
