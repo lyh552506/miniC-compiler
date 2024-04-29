@@ -153,6 +153,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
     RISCVMOperand*& GetOperand(int);
     void SetDef(RISCVMOperand* def);
     void AddOperand(RISCVMOperand*);
+    void SetMopcode(RISCVISA);
     inline RISCVISA& GetOpcode(){return opcode;};
     bool isArithmetic(){
         return (EndArithmetic>opcode&&opcode>BeginArithmetic)|(EndFloatArithmetic>opcode&&opcode>BeginFloatArithmetic);

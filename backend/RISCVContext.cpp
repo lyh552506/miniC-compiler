@@ -52,6 +52,8 @@ VirRegister* RISCVLoweringContext::createVReg(RISCVType type){
     return new VirRegister(type);
 }
 
+std::vector<std::unique_ptr<RISCVFunction>>& RISCVLoweringContext::GetFunctions() {return this->functions;}
+
 void RISCVLoweringContext::print(){
     /// @todo print global variables
     for(auto& mfunc:functions)

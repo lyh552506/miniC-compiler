@@ -24,11 +24,19 @@ void VirRegister::print(){
     std::cout<<"%"<<counter;
 }
 
-LARegister::LARegister(std::string _name, LAReg regnum):Register(RISCVType::riscv_float32),name(_name){}
+LARegister::LARegister(RISCVType _type, std::string _name)
+    :Register(_type),name(_name),regnum(LAReg::hi){}
+LARegister::LARegister(RISCVType _type, std::string _name, VirRegister* _vreg)
+    :Register(_type),name(_name),regnum(LAReg::lo),vreg(_vreg){}
 
 void LARegister::print(){
     //todo
     std::cout<<"%"<< magic_enum::enum_name(regnum);
     std::cout<<"("<< name << ")";
+    if(vreg!=nullptr) {
+        std::cout << "(";
+        vreg->print();
+        std::cout << ")" << std::endl;
+    }
 }
 

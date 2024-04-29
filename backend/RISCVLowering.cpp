@@ -18,8 +18,8 @@ bool RISCVModuleLowering::run(Module* m){
             std::cerr<<"FUNC Lowering failed\n";
         }
     }
-    ctx.print();
     
+    ctx.print();
     return false;
 }
 

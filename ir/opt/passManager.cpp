@@ -58,7 +58,7 @@ void PassManager::RunOnFunction() {
   }
   if (InitpassRecorder[2]) {
     m_constprop->RunOnFunction();
-    m_constprop->PrintPass();
+    // m_constprop->PrintPass();
   }
   if (InitpassRecorder[7]) {
     m_cfgsimple->RunOnFunction();

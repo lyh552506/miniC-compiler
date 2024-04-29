@@ -12,6 +12,9 @@ void RISCVMIR::SetDef(RISCVMOperand* def){
 void RISCVMIR::AddOperand(RISCVMOperand* op){
     operands.push_back(op);
 }
+void RISCVMIR::SetMopcode(RISCVISA isa) {
+    this->opcode=isa;
+}
 
 void RISCVMIR::printfull(){
     std::string name(magic_enum::enum_name(opcode));

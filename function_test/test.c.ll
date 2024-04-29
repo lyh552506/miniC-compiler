@@ -332,107 +332,30 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
---------constprop--------
-@.g.a = global i32 343
-@.g.b = global float 0x4061a66660000000
-@.g.arr_int_undef = global [3 x [2 x [2 x i32]]] zeroinitializer
-@.g.arr_float_undef = global [4 x [2 x float]]  [[2 x float]  [float 0x3ff3333340000000, float 0x400b333340000000], [2 x float]  [float 0x4000000000000000, float 0x400a666660000000], [2 x float] zeroinitializer, [2 x float] zeroinitializer]
-define i32 @function(i32 %.19, i32 %.22){
-.17:
-  %.27 = add i32 %.19, %.22
-  ret i32 %.27 
-}
+@.g.def_a = global i32 1
+@.g.def_b = global float 0x4008e147a0000000
+@.g.undef_a = global i32 zeroinitializer
+@.g.undef_b = global float zeroinitializer
+@.g.def_arr = global [3 x [2 x [2 x i32]]]  [[2 x [2 x i32]]  [[2 x i32]  [i32 1, i32 3], [2 x i32] zeroinitializer], [2 x [2 x i32]] zeroinitializer, [2 x [2 x i32]] zeroinitializer]
+@.g.def_arrf = global [2 x [2 x [3 x [3 x float]]]]  [[2 x [3 x [3 x float]]]  [[3 x [3 x float]]  [[3 x float]  [float 0x4009c6a7e0000000, float zeroinitializer, float zeroinitializer], [3 x float] zeroinitializer, [3 x float] zeroinitializer], [3 x [3 x float]] zeroinitializer], [2 x [3 x [3 x float]]] zeroinitializer]
 define i32 @main(){
-.32:
-  %.33 = alloca i32
-  store i32 3, i32* %.33
-  br label %.35wc21 
-.35wc21:
-  %.39 = load i32, i32* %.33
-  %.41 = icmp sgt i32 %.39, 0
-  br i1 %.41, label %.36wloop.21.23, label %.37wn23
-.36wloop.21.23:
-  %.43 = load i32, i32* %.33
-  %.45 = sub i32 %.43, 1
-  store i32 %.45, i32* %.33
-  br label %.35wc21 
-.37wn23:
-  %.50 = load i32, i32* %.33
-  %.51 = icmp sgt i32 %.50, 0
-  br i1 %.51, label %.48, label %.49
-.48:
-  %.53 = load i32, i32* %.33
-  %.54 = sub i32 %.53, 1
-  store i32 %.54, i32* %.33
-  br label %.56 
-.49:
-  %.58 = load i32, i32* %.33
-  %.59 = add i32 %.58, 1
-  store i32 %.59, i32* %.33
-  br label %.56 
-.56:
-  ret i32 0 
-}
---------constprop--------
-@.g.a = global i32 343
-@.g.b = global float 0x4061a66660000000
-@.g.arr_int_undef = global [3 x [2 x [2 x i32]]] zeroinitializer
-@.g.arr_float_undef = global [4 x [2 x float]]  [[2 x float]  [float 0x3ff3333340000000, float 0x400b333340000000], [2 x float]  [float 0x4000000000000000, float 0x400a666660000000], [2 x float] zeroinitializer, [2 x float] zeroinitializer]
-define i32 @function(i32 %.19, i32 %.22){
-.17:
-  %.27 = add i32 %.19, %.22
-  ret i32 %.27 
-}
-define i32 @main(){
-.32:
-  br label %.35wc21 
-.35wc21:
-  %.63 = phi i32 [3, %.32], [%.45, %.36wloop.21.23]
-  %.41 = icmp sgt i32 %.63, 0
-  br i1 %.41, label %.36wloop.21.23, label %.37wn23
-.36wloop.21.23:
-  %.45 = sub i32 %.63, 1
-  br label %.35wc21 
-.37wn23:
-  %.51 = icmp sgt i32 %.63, 0
-  br i1 %.51, label %.48, label %.49
-.48:
-  %.54 = sub i32 %.63, 1
-  br label %.56 
-.49:
-  %.59 = add i32 %.63, 1
-  br label %.56 
-.56:
-  ret i32 0 
-}
-@.g.a = global i32 343
-@.g.b = global float 0x4061a66660000000
-@.g.arr_int_undef = global [3 x [2 x [2 x i32]]] zeroinitializer
-@.g.arr_float_undef = global [4 x [2 x float]]  [[2 x float]  [float 0x3ff3333340000000, float 0x400b333340000000], [2 x float]  [float 0x4000000000000000, float 0x400a666660000000], [2 x float] zeroinitializer, [2 x float] zeroinitializer]
-define i32 @function(i32 %.19, i32 %.22){
-.17:
-  %.27 = add i32 %.19, %.22
-  ret i32 %.27 
-}
-define i32 @main(){
-.32:
-  br label %.35wc21 
-.35wc21:
-  %.63 = phi i32 [3, %.32], [%.45, %.36wloop.21.23]
-  %.41 = icmp sgt i32 %.63, 0
-  br i1 %.41, label %.36wloop.21.23, label %.37wn23
-.36wloop.21.23:
-  %.45 = sub i32 %.63, 1
-  br label %.35wc21 
-.37wn23:
-  %.51 = icmp sgt i32 %.63, 0
-  br i1 %.51, label %.48, label %.49
-.48:
-  %.54 = sub i32 %.63, 1
-  br label %.56 
-.49:
-  %.59 = add i32 %.63, 1
-  br label %.56 
-.56:
+.19:
+  %.22 = load i32, i32* @.g.def_a
+  %.23 = load float, float* @.g.def_b
+  %.24 = sitofp i32 %.22 to float
+  %.25 = fcmp ult float %.24, %.23
+  br i1 %.25, label %.20, label %.21
+.20:
+  %.27 = load i32, i32* @.g.def_a
+  %.28 = add i32 %.27, 3
+  store i32 %.28, i32* @.g.def_a
+  br label %.30 
+.21:
+  %.33 = getelementptr inbounds [3 x [2 x [2 x i32]]], [3 x [2 x [2 x i32]]]* @.g.def_arr, i32 0, i32 2, i32 1, i32 1
+  store i32 5, i32* %.33
+  %.37 = getelementptr inbounds [2 x [2 x [3 x [3 x float]]]], [2 x [2 x [3 x [3 x float]]]]* @.g.def_arrf, i32 0, i32 1, i32 1, i32 1, i32 1
+  store float 0x400aa9fbe0000000, float* %.37
+  br label %.30 
+.30:
   ret i32 0 
 }

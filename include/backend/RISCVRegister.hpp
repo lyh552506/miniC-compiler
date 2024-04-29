@@ -44,8 +44,10 @@ class LARegister:public Register{
         hi,lo
     } regnum;
     std::string name;
+    VirRegister* vreg=nullptr;
     public:
-    LARegister(std::string, LAReg);
+    LARegister(RISCVType, std::string);
+    LARegister(RISCVType, std::string, VirRegister*);
     void print()final;
     bool isPhysical()final{return false;};
 };
