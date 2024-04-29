@@ -29,7 +29,7 @@ void BlockInfo::GetBlockLivein(MachineBasicBlock* block)
               Uses[block].insert(val);
           }
       }
-      if(Operand DefValue = (*inst)->GetDefs())
+      if(Operand DefValue = (*inst)->GetDef())
       {
           BlockLivein[block].erase(DefValue);
           Uses[block].erase(DefValue);
@@ -115,7 +115,7 @@ void GraphColor::CalInstLive(MachineBasicBlock* block)
           Precolored.insert(val);
       }
     }
-    if(Operand DefValue = inst->GetDefs())
+    if(Operand DefValue = inst->GetDef())
       Live.erase(DefValue);
     blockinfo->InstLive[inst] = Live;
   }
@@ -130,7 +130,7 @@ void GraphColor::CalcmoveList(MachineBasicBlock* block)
     {
         for (Operand Op : inst->GetUses())
             moveList[Op].insert(inst);
-        if(Operand Op = inst->GetDefs())
+        if(Operand Op = inst->GetDef())
             moveList[Op].insert(inst);
     }
   }

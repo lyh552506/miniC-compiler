@@ -1,7 +1,8 @@
 #pragma once
 #include "BackendPass.hpp"
 #include "RISCVContext.hpp"
-
+#include "RISCVISel.hpp"
+#include "RISCVAsmPrinter.hpp"
 class RISCVModuleLowering:BackEndPass<Module>{
     // bool LoweringGlobalValue(Module*);
     RISCVLoweringContext ctx;

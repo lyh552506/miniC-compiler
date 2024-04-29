@@ -6,18 +6,33 @@ RISCVMOperand*& RISCVMIR::GetOperand(int ind){
     return operands[ind];
 }
 
+void RISCVMIR::SetDef(RISCVMOperand* def){
+    this->def=def;
+}
 void RISCVMIR::AddOperand(RISCVMOperand* op){
     operands.push_back(op);
 }
 
 void RISCVMIR::printfull(){
-    std::cout<<"\t"<<magic_enum::enum_name(opcode)<<" ";
-    for(int i=0;i<operands.size();i++){
-        operands[i]->print();
-        if(i!=operands.size()-1)
-            std::cout<<", ";
+    std::string name(magic_enum::enum_name(opcode));
+    if (name.find('_') != std::string::npos) name.erase(0,1);
+    size_t pos=0;
+    while((pos=name.find('_'))!=std::string::npos) name.replace(pos, 1, ".");
+    std::cout<<"\t"<< name <<" ";
+    
+    if(name=="ret") {;}
+    else {
+        if(def!=nullptr) {
+            def->print();
+        }
+        if(operands.size()>0) std::cout << ", ";
+        for(int i=0;i<operands.size();i++){
+            operands[i]->print();
+            if(i!=operands.size()-1)
+                std::cout<<", ";
+        }
+        std::cout<<"\n";
     }
-    std::cout<<"\n";
 }
 
 std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects(){
@@ -30,7 +45,7 @@ RISCVFunction::RISCVFunction(Function* _func):RISCVGlobalObject(_func->GetType()
 
 void RISCVBasicBlock::printfull(){
     NamedMOperand::print();
-    std::cout<<":\n\t";
+    std::cout<<":\n";
     for(auto minst:*this)
         minst->printfull();
 }

@@ -17,10 +17,10 @@ bool need_load(User* inst) { // icmp
     if (rs1->isConst() && rs2->isConst()) {
         return false;
     }
-    else if (rs1->isConst() && rs2->isConst() == false) {
+    else if (rs1->isConst() && (rs2->isConst() == false)) {
         return true;
     }
-    else if (rs1->isConst() == false && rs2->isConst()) {
+    else if ((rs1->isConst() == false) && rs2->isConst()) {
         return true;
     }
     else {
@@ -67,11 +67,8 @@ void add_inst(MachineInst* inst, MachineBasicBlock* parent, mylist<BasicBlock, U
             Operand rs2 = ConstIRInt::GetNewConstant(1); //issue：常数 1
             XorInst* xorInst = new XorInst(inst->GetRd(), "xori", rs2);
             MachineInst* MxorInst = new MachineInst(xorInst, parent, "xori", xorInst->GetDef(), GetOperand(xorInst, 0), GetOperand(xorInst, 1));
-            
-            //std::cout << "insert xorInst:"  << xorInst->GetName() << " after icmp:" << inst->getIR()->GetName() << std::endl;
-            it.insert_after(xorInst);
-            ++it;
-            
+            // it.insert_after(xorInst);
+            // ++it;
             parent->addMachineInst(MxorInst);
         }
     }
@@ -143,8 +140,8 @@ MachineInst* MatchStoreInst(MachineBasicBlock* parent, StoreInst* inst) {
     Operand rd = (inst->Getuselist())[0]->GetValue();
     Operand rs1 = (inst->Getuselist())[1]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
-    machineinst->SetDefs(rs1);
-    machineinst->GetUses().push_back(rd);
+    // machineinst->SetDef(rs1);
+    // machineinst->GetUses().push_back(rd);
     return machineinst;
 }
 MachineInst* MatchLoadInst(MachineBasicBlock* parent, LoadInst* inst) {
@@ -152,8 +149,8 @@ MachineInst* MatchLoadInst(MachineBasicBlock* parent, LoadInst* inst) {
     Operand rd = inst->GetDef();
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
-    machineinst->SetDefs(rd);
-    machineinst->GetUses().push_back(rs1);
+    // machineinst->SetDefs(rd);
+    // machineinst->GetUses().push_back(rs1);
     return machineinst;
 }
 MachineInst* MatchFPTSI(MachineBasicBlock* parent,FPTSI* inst) {
@@ -161,8 +158,8 @@ MachineInst* MatchFPTSI(MachineBasicBlock* parent,FPTSI* inst) {
     Operand rd = inst->GetDef();
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
-    machineinst->SetDefs(rd);
-    machineinst->GetUses().push_back(rs1);
+    // machineinst->SetDefs(rd);
+    // machineinst->GetUses().push_back(rs1);
     return machineinst;
 }
 MachineInst* MatchSITFP(MachineBasicBlock* parent,SITFP* inst) {
@@ -170,8 +167,8 @@ MachineInst* MatchSITFP(MachineBasicBlock* parent,SITFP* inst) {
     Operand rd = inst->GetDef();
     Operand rs1 = (inst->Getuselist())[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1);
-    machineinst->SetDefs(rd);
-    machineinst->GetUses().push_back(rs1);
+    // machineinst->SetDefs(rd);
+    // machineinst->GetUses().push_back(rs1);
     return machineinst;
 }
 MachineInst* MatchUnCondInst(MachineBasicBlock* parent, UnCondInst* inst) {
@@ -179,7 +176,7 @@ MachineInst* MatchUnCondInst(MachineBasicBlock* parent, UnCondInst* inst) {
     Operand rd = inst->Getuselist()[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd);
     // 特殊
-    machineinst->GetUses().push_back(rd);  
+    // machineinst->GetUses().push_back(rd);  
     return machineinst;
 }
 MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst) {
@@ -193,20 +190,19 @@ MachineInst* MatchCondInst(MachineBasicBlock* parent, CondInst* inst) {
         Operand rs2 = (inst->Getuselist())[1]->GetValue();
     } else {} // beqz rs label2
     MachineInst* machineinst = new MachineInst(inst, parent, op, rd, rs1, rs2);
-    machineinst->GetUses().push_back(rd);    
-    machineinst->GetUses().push_back(rs1);    
-    machineinst->GetUses().push_back(rs2);
+    // machineinst->GetUses().push_back(rd);
+    // machineinst->GetUses().push_back(rs1);
     return machineinst;
 }
 MachineInst* MatchCallInst(MachineBasicBlock* parent, CallInst* inst) {
     Operand rd = inst->Getuselist()[0]->GetValue();
     MachineInst* machineinst = new MachineInst(inst, parent, "call", rd);
-    int i=1;
+    // int i=1;
     // 
-    while (Value* rs =dynamic_cast<Value*>(inst->Getuselist()[i]->GetValue())) {
-        machineinst->GetUses().push_back(rs);
-        i++;
-    }
+    // while (Value* rs =dynamic_cast<Value*>(inst->Getuselist()[i]->GetValue())) {
+    //     machineinst->GetUses().push_back(rs);
+    //     i++;
+    // }
     return machineinst;
 }
 MachineInst* MatchRetInst(MachineBasicBlock* parent, RetInst* inst) {
@@ -235,7 +231,7 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
             opcode = "addi";
             Operand temp = rs1;
             rs1 = rs2;
-            rs2 = temp;
+            rs2 = temp; 
         }
         else if (rs2->isConst()) {
             opcode = "addi";
@@ -343,8 +339,8 @@ MachineInst* MatchBinaryInst(MachineBasicBlock* parent, BinaryInst* inst) {
         return machineinst; 
     }
     machineinst = new MachineInst(inst, parent, opcode, rd, rs1, rs2);
-    machineinst->SetDefs(rd);
-    machineinst->GetUses().push_back(rs1);
-    machineinst->GetUses().push_back(rs2);
+    // machineinst->SetDefs(rd);
+    // machineinst->GetUses().push_back(rs1);
+    // machineinst->GetUses().push_back(rs2);
     return machineinst;
 }

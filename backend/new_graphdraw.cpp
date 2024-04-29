@@ -128,7 +128,7 @@ Operand GraphColor::HeuristicSpill() {
     weight += (intervalLength * livenessWeight) << 3;
     //考虑嵌套层数
     int loopdepth;  // TODO
-    weight /= std::pow(LoopWeight, loopdepth);
+    // weight /= std::pow(LoopWeight, loopdepth);
   }
 }
 

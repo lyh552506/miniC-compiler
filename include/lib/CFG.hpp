@@ -31,6 +31,7 @@ class Variable
     Variable(InnerDataType,std::string);
     void attach(Operand);
     std::string get_name();
+    // Value* GetValue();
     Type* GetType();
     Operand& GetInitializer();
     void print();
@@ -139,7 +140,7 @@ class BinaryInst:public User
     public:
     enum Operation
     {
-        Op_Add,Op_Sub,Op_Mul,Op_Div,Op_And,Op_Or,Op_Mod,
+        Op_Add,Op_Sub,Op_Mul,Op_Div,Op_Mod,Op_And,Op_Or,
         //what's below should be translate to cmp inst in llvm
         Op_E,Op_NE,Op_GE,Op_L,Op_LE,Op_G
     };//卧槽，原批

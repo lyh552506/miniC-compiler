@@ -4,6 +4,8 @@
 #include "parser.hpp"
 #include <fstream>
 #include <getopt.h>
+// #include "RISCVLowering.hpp"
+
 extern FILE *yyin;
 extern int optind, opterr, optopt;
 extern char *optargi;
@@ -42,7 +44,7 @@ int main(int argc, char **argv) {
   #ifdef SYSY_ENABLE_MIDDLE_END
   std::unique_ptr<PassManager> pass_manager(new PassManager);
   int optionIndex, option;
-  //目前处于调试阶段，最终会换成-O1 -O2 -O3
+  // 目前处于调试阶段，最终会换成-O1 -O2 -O3
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
          -1) {
     switch (option) {
@@ -80,19 +82,21 @@ int main(int argc, char **argv) {
   }
   pass_manager->InitPass();
   #endif
-  //#ifdef SYSY_ENABLE_BACKEND
-  //std::cout << std::endl;
-  //AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
-  //asmPrinter.printAsm();
-  //#else
+  #ifdef SYSY_ENABLE_BACKEND
+  std::cout << std::endl;
+  AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
+  asmPrinter.printAsm();
+  #else
 
   Singleton<Module>().Test();
   freopen("dev/tty", "w", stdout);
-  //#endif
+  #endif
 
   freopen(asmoutput_path.c_str(), "w", stdout);
   AsmPrinter asmPrinter = AsmPrinter(filename, &Singleton<Module>());
   asmPrinter.printAsm();
+  // RISCVModuleLowering RISCVasm;
+  // RISCVasm.run(&Singleton<Module>());
   freopen("dev/tty", "w", stdout);
 
   return 0;
