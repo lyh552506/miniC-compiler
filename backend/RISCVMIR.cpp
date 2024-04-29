@@ -1,6 +1,7 @@
 #include "RISCVMIR.hpp"
 #include "MagicEnum.hpp"
 
+RISCVMOperand*& RISCVMIR:: GetDef() {return def;}
 RISCVMOperand*& RISCVMIR::GetOperand(int ind){
     assert(0<=ind&&ind<operands.size()&&"Range Assertion");
     return operands[ind];
