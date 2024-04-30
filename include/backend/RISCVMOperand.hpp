@@ -3,8 +3,10 @@
 #include "BaseCFG.hpp"
 /// @brief  Just need a type currently
 class RISCVMOperand{
+    RISCVType tp;
     public:
-    RISCVMOperand();
+    RISCVMOperand(RISCVType _tp):tp(_tp){};
+    RISCVType GetType(){return tp;}
     virtual void print()=0;
     template<typename T>
     T* as(){

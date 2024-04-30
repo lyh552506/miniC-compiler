@@ -1,12 +1,12 @@
 #include "RISCVFrameContext.hpp"
 std::string& NamedMOperand::GetName() {return name;}
-NamedMOperand::NamedMOperand(std::string _name):RISCVMOperand(),name(_name){}
+NamedMOperand::NamedMOperand(std::string _name,RISCVType _tp):RISCVMOperand(_tp),name(_name){}
 
 void NamedMOperand::print(){
     std::cout<<name;
 }
 
-RISCVObject::RISCVObject(Type* _tp,std::string _name):NamedMOperand(_name),tp(_tp){}
+RISCVObject::RISCVObject(Type* _tp,std::string _name):NamedMOperand(_name,riscv_ptr),tp(_tp){}
 
 RISCVFrameObject::RISCVFrameObject(Type* _tp,std::string _name):RISCVObject(_tp,_name){
     local=true;
