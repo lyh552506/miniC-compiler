@@ -113,6 +113,8 @@ void RISCVISel::InstLowering(CondInst* inst){
             {
                 auto fi=Builder_withoutDef(RISCVMIR::_bge,{M(cond->GetOperand(1)),M(cond->GetOperand(0)),M(inst->GetOperand(1))});
                 auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                ctx(fi);
+                ctx(se);
                 break;
             }
             case BinaryInst::Op_G:
@@ -161,8 +163,84 @@ void RISCVISel::InstLowering(CondInst* inst){
                 break;
         }
     }
-    else{
-        assert("Not IMPL");
+    else if (cond->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
+        switch (cond->getopration())
+        {
+            case BinaryInst::Op_L:
+            {
+                auto condi=Builder(RISCVMIR::_flt_s,cond);
+                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                ctx(condi);
+                ctx(fi);
+                ctx(se);
+                break;
+            }
+            case BinaryInst::Op_LE:
+            {
+                auto condi=Builder(RISCVMIR::_fle_s,cond);
+                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                ctx(condi);
+                ctx(fi);
+                ctx(se);
+                break;
+            }
+            case BinaryInst::Op_G:
+            {
+                auto condi=Builder(RISCVMIR::_fgt_s,cond);
+                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                ctx(condi);
+                ctx(fi);
+                ctx(se);
+                break;
+            }
+            case BinaryInst::Op_GE:
+            {
+                auto condi=Builder(RISCVMIR::_fge_s,cond);
+                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                ctx(condi);
+                ctx(fi);
+                ctx(se);
+                break;
+            }
+            case BinaryInst::Op_E:
+            {    
+                auto condi=Builder(RISCVMIR::_feq_s,cond);
+                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                ctx(condi);
+                ctx(fi);
+                ctx(se);
+                break;
+            }
+            case BinaryInst::Op_NE:
+            {
+                auto condi=Builder(RISCVMIR::_feq_s,cond);
+                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
+                ctx(condi);
+                ctx(fi);
+                ctx(se);
+                break;
+            }
+            case BinaryInst::Op_Or:
+            {
+                assert("Or will not appear in IR");
+                break;
+            }
+            case BinaryInst::Op_And:
+            {
+                assert("And will not appear in IR");
+                break;
+            }
+            default:
+                break;
+        }
+    } else{
+        assert(0&&"Invalid cmp");
     }
     #undef M
 }
@@ -319,6 +397,7 @@ void RISCVISel::InstLowering(CallInst* inst){
     
     if(!inst->GetUserlist().is_empty()&&inst->GetType()!=VoidType::NewVoidTypeGet())
         ctx(Builder(RISCVMIR::mv, {ctx.createVReg(RISCVTyper(inst->GetType())), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
+    #undef M
 }
 
 void RISCVISel::InstLowering(RetInst* inst){
@@ -337,6 +416,7 @@ void RISCVISel::InstLowering(RetInst* inst){
     }
     else 
         assert(0&&"Invalid return type");
+    #undef M
 }
 
 RISCVMOperand* RISCVISel::Li_Intimm(ConstIRInt* Intconst) {

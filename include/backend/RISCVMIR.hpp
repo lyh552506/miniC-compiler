@@ -135,7 +135,8 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _feq_s,
         _flt_s,
         _fle_s,
-        // _fgt_s,
+        _fgt_s,
+        _fge_s,
 
         EndFloatArithmetic,
         EndFloat,

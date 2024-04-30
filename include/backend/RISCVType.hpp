@@ -15,5 +15,6 @@ inline RISCVType RISCVTyper(Type* tp){
     else if(tp==IntType::NewIntTypeGet())return RISCVType::riscv_i32;
     else if(tp==FloatType::NewFloatTypeGet())return RISCVType::riscv_float32;
     else if(tp==VoidType::NewVoidTypeGet())return RISCVType::riscv_none;
+    else if(tp==BoolType::NewBoolTypeGet())return RISCVType::riscv_i32;
     assert(0&&"Invalid Type");
 }
