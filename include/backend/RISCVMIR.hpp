@@ -87,6 +87,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _lh,
         _lhu,
         _lw,
+        _ld,
 
         _sb,
         _sh,
@@ -134,6 +135,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _feq_s,
         _flt_s,
         _fle_s,
+        // _fgt_s,
 
         EndFloatArithmetic,
         EndFloat,
@@ -166,6 +168,7 @@ class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMI
 {    
     public:
     RISCVBasicBlock(std::string);
+    void push_before_branch(RISCVMIR*);
     void printfull();
 };
 

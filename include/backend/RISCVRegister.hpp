@@ -25,7 +25,7 @@ class PhyRegister:public Register{
     PhyRegister(PhyReg);
     public:
     static PhyRegister* GetPhyReg(PhyReg);
-    void print()final;
+    void print();
     bool isPhysical()final{return true;};
 };
 
@@ -49,5 +49,12 @@ class LARegister:public Register{
     LARegister(RISCVType, std::string);
     LARegister(RISCVType, std::string, VirRegister*);
     void print()final;
-    bool isPhysical()final{return false;};
+    bool isPhysical()final{return true;};
+};
+
+class StackRegister:public PhyRegister{
+    int offset;
+    public:
+    StackRegister(PhyReg, int);
+    void print()final;
 };

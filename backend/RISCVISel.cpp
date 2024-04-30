@@ -8,6 +8,20 @@ RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,User* inst){
         minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
     return minst;
 }
+RISCVMIR* RISCVISel::Builder_withoutDef(RISCVMIR::RISCVISA _isa,User* inst){
+    auto minst=new RISCVMIR(_isa);
+    for(int i=0;i<inst->Getuselist().size();i++)
+        minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
+    return minst;
+}
+RISCVMIR* RISCVISel::Builder_withoutDef(RISCVMIR::RISCVISA _isa,std::initializer_list<RISCVMOperand*> list) {
+    auto minst=new RISCVMIR(_isa);
+    for(auto it=list.begin(); it!=list.end(); ++it) {
+        RISCVMOperand* i=*it;
+        minst->AddOperand(i);
+    }
+    return minst;    
+}
 
 RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,std::initializer_list<RISCVMOperand*> list){
     auto minst=new RISCVMIR(_isa);
@@ -89,46 +103,46 @@ void RISCVISel::InstLowering(CondInst* inst){
         {
             case BinaryInst::Op_L:
             {
-                auto fi=Builder(RISCVMIR::_blt,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
-                auto se=Builder(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                auto fi=Builder_withoutDef(RISCVMIR::_blt,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
                 ctx(fi);
                 ctx(se);
                 break;
             }
             case BinaryInst::Op_LE:
             {
-                auto fi=Builder(RISCVMIR::_bge,{M(cond->GetOperand(1)),M(cond->GetOperand(0)),M(inst->GetOperand(1))});
-                auto se=Builder(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                auto fi=Builder_withoutDef(RISCVMIR::_bge,{M(cond->GetOperand(1)),M(cond->GetOperand(0)),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
                 break;
             }
             case BinaryInst::Op_G:
             {
-                auto fi=Builder(RISCVMIR::_blt,{M(cond->GetOperand(1)),M(cond->GetOperand(0)),M(inst->GetOperand(1))});
-                auto se=Builder(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                auto fi=Builder_withoutDef(RISCVMIR::_blt,{M(cond->GetOperand(1)),M(cond->GetOperand(0)),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
                 ctx(fi);
                 ctx(se);
                 break;
             }
             case BinaryInst::Op_GE:
             {
-                auto fi=Builder(RISCVMIR::_bge,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
-                auto se=Builder(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                auto fi=Builder_withoutDef(RISCVMIR::_bge,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
                 ctx(fi);
                 ctx(se);
                 break;
             }
             case BinaryInst::Op_E:
             {    
-                auto fi=Builder(RISCVMIR::_beq,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
-                auto se=Builder(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
                 ctx(fi);
                 ctx(se);
                 break;
             }
             case BinaryInst::Op_NE:
             {
-                auto fi=Builder(RISCVMIR::_bne,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
-                auto se=Builder(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                auto fi=Builder_withoutDef(RISCVMIR::_bne,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
+                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
                 ctx(fi);
                 ctx(se);
                 break;
@@ -300,7 +314,9 @@ void RISCVISel::InstLowering(CallInst* inst){
             ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i+1))}));
         }
     }
-    ctx(Builder(RISCVMIR::call, inst));
+    if(inst->GetOperand(0)->as<Function>()->GetType()!=VoidType::NewVoidTypeGet())
+        ctx(Builder(RISCVMIR::call, inst));
+    
     if(!inst->GetUserlist().is_empty()&&inst->GetType()!=VoidType::NewVoidTypeGet())
         ctx(Builder(RISCVMIR::mv, {ctx.createVReg(RISCVTyper(inst->GetType())), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
 }
@@ -313,7 +329,7 @@ void RISCVISel::InstLowering(RetInst* inst){
     }
     else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
         ctx(Builder(RISCVMIR::_lw,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
-        ctx(Builder(RISCVMIR::ret,inst));
+        ctx(Builder_withoutDef(RISCVMIR::ret,inst));
     }
     else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
         ctx(Builder(RISCVMIR::_flw,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));

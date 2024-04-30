@@ -12,6 +12,10 @@ RISCVMOperand* RISCVLoweringContext::Create(Value* val){
             assert("Can't be Used");
         else if(auto uncond=dynamic_cast<UnCondInst*>(inst))
             assert("Can't be Used");
+        else if(auto ret=dynamic_cast<RetInst*>(inst))
+            assert("Can't be Used");
+        else if(auto call=dynamic_cast<CallInst*>(inst))
+            assert("Can't be Used");
         else{
             return createVReg(RISCVTyper(inst->GetType()));
         }
