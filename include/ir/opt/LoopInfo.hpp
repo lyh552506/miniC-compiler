@@ -85,6 +85,7 @@ public:
   void RunOnFunction() {
     m_func->init_visited_block();
     BasicBlock *entry = m_func->front();
+    
     PostOrderDT(entry->num);
     Analysis();
     LoopAnaly();
@@ -94,6 +95,7 @@ public:
                 return a1->LoopDepth > a2->LoopDepth;
               });
     AlreadyGetInfo = true;
+    PrintPass();
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }
   iterator begin() { return LoopRecord.begin(); }

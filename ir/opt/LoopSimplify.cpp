@@ -1,7 +1,5 @@
 #include "LoopSimplify.hpp"
 #include "CFG.hpp"
-#include "LoopInfo.hpp"
-#include <vector>
 
 void LoopSimplify::RunOnFunction() {
   loopAnlay->RunOnFunction();
@@ -57,31 +55,31 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       FormatLatch(loop, preheader, Latch);
     }
     // step 4: deal with existing block to the same block
-    std::vector<BasicBlock *> exiting = loopAnlay->GetExitingBlock(loop);
-    bool same = false;
-    BasicBlock *target = nullptr;
-    for (auto bb : exiting) {
-      for (auto des : m_dom->GetNode(bb->num).des) {
-        BasicBlock *dest = m_dom->GetNode(des).thisBlock;
-        if(loopAnlay->LookUp(dest)==loop)
-          continue;
-        if (target == nullptr) {
-          target = dest;
-          continue;
-        }
-        if (target != dest) {
-          same = false;
-          target = nullptr;
-          break;
-        }
-      }
-      if (!same)
-        break;
-    }
+    // std::vector<BasicBlock *> exiting = loopAnlay->GetExitingBlock(loop);
+    // bool same = false;
+    // BasicBlock *target = nullptr;
+    // for (auto bb : exiting) {
+    //   for (auto des : m_dom->GetNode(bb->num).des) {
+    //     BasicBlock *dest = m_dom->GetNode(des).thisBlock;
+    //     if(loopAnlay->LookUp(dest)==loop)
+    //       continue;
+    //     if (target == nullptr) {
+    //       target = dest;
+    //       continue;
+    //     }
+    //     if (target != dest) {
+    //       same = false;
+    //       target = nullptr;
+    //       break;
+    //     }
+    //   }
+    //   if (!same)
+    //     break;
+    // }
 
-    if(same){
-      
-    }
+    // if(same){
+
+    // }
   }
 }
 
@@ -161,7 +159,7 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
                                  BasicBlock *target) {
   Value *ComingVal = nullptr;
   for (auto &[_1, tmp] : phi->PhiRecord) {
-    if (worklist.find(tmp.second) == worklist.end()) {
+    if (worklist.find(tmp.second) != worklist.end()) {
       if (ComingVal == nullptr) {
         ComingVal = tmp.first;
         continue;
@@ -174,10 +172,10 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
   }
   // outside传入的数据流对应的值为一个
   if (ComingVal) {
-    std::vector<int> Erase;
+    std::vector<BasicBlock*> Erase;
     for (auto &[_1, tmp] : phi->PhiRecord) {
       if (worklist.find(tmp.second) != worklist.end()) {
-        Erase.push_back(_1);
+        Erase.push_back(tmp.second);
       }
     }
     for (auto i : Erase)
@@ -196,7 +194,7 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
       PhiInst::NewPhiNode(target->front(), target, phi->GetType());
   for (auto &[i, v] : Erase) {
     pre_phi->updateIncoming(v.first, v.second);
-    phi->Del_Incomes(i);
+    phi->Del_Incomes(v.second);
   }
   phi->updateIncoming(pre_phi, target);
   return;
@@ -211,6 +209,13 @@ void LoopSimplify::FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
   std::cerr << "insert a latch: " << new_latch->GetName() << std::endl;
 #endif
   m_func->InsertBlock(head, new_latch);
+  std::set<BasicBlock *> work{latch.begin(), latch.end()};
+  for (auto inst : *head) {
+    if (auto phi = dynamic_cast<PhiInst *>(inst))
+      UpdatePhiNode(phi, work, new_latch);
+    else
+      break;
+  }
   for (auto bb : latch) {
     auto condition = bb->back();
     if (auto cond = dynamic_cast<CondInst *>(condition)) {
@@ -220,13 +225,6 @@ void LoopSimplify::FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
     } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
       uncond->RSUW(0, new_latch);
     }
-  }
-  std::set<BasicBlock *> work{latch.begin(), latch.end()};
-  for (auto inst : *head) {
-    if (auto phi = dynamic_cast<PhiInst *>(inst))
-      UpdatePhiNode(phi, work, new_latch);
-    else
-      break;
   }
   UpdateInfo(latch, new_latch, head);
   loop->setLatch(new_latch);

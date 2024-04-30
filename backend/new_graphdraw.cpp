@@ -40,7 +40,7 @@ void GraphColor::MakeWorklist() {
   }
 }
 
-std::unordered_set<RISCVMIR *> GraphColor::MoveRelated(Operand v) {
+std::unordered_set<RISCVMIR *> GraphColor::MoveRelated(MOperand v) {
   std::unordered_set<RISCVMIR *> tmp;
   for (auto t : moveList) {
     auto move = t.second;
@@ -54,7 +54,7 @@ std::unordered_set<RISCVMIR *> GraphColor::MoveRelated(Operand v) {
   return tmp;
 }
 
-Operand GraphColor::GetAlias(Operand v) {
+MOperand GraphColor::GetAlias(MOperand v) {
   //当前v存在于coalescedNodes，则返回v的alias
   if (coalescedNodes.find(v) != coalescedNodes.end()) {
     return GetAlias(alias[v]);
@@ -64,7 +64,7 @@ Operand GraphColor::GetAlias(Operand v) {
 }
 
 //实行George的启发式合并
-bool GraphColor::GeorgeCheck(Operand dst, Operand src) {
+bool GraphColor::GeorgeCheck(MOperand dst, MOperand src) {
   for (auto tmp : IG[src]) {
     bool ok = false;
     if (IG[tmp].size() < colors)
@@ -81,7 +81,7 @@ bool GraphColor::GeorgeCheck(Operand dst, Operand src) {
   return true;
 }
 //实行Briggs的启发合并
-bool GraphColor::BriggsCheck(std::unordered_set<Operand> target) {
+bool GraphColor::BriggsCheck(std::unordered_set<MOperand> target) {
   int num = 0;
   for (auto node : target) {
     if (IG[node].size() >= colors)
@@ -90,7 +90,7 @@ bool GraphColor::BriggsCheck(std::unordered_set<Operand> target) {
   return (num < colors);
 }
 
-void GraphColor::AddWorkList(Operand v) {
+void GraphColor::AddWorkList(MOperand v) {
   if (Precolored.find(v) != Precolored.end() && IG[v].size() < colors &&
       MoveRelated(v).size() == 0) {
     freezeWorkList.erase(v);
@@ -122,7 +122,7 @@ void GraphColor::CaculateLiveness(RISCVBasicBlock *mbb) {
   2.度数越高越优先选择溢出
   3.是否需要考虑loopcounter循环嵌套数
 */
-Operand GraphColor::HeuristicSpill() {
+MOperand GraphColor::HeuristicSpill() {
   int max = 0;
   for (auto spill : spillWorkList) {
     float weight = 0;
@@ -141,10 +141,10 @@ Operand GraphColor::HeuristicSpill() {
 // TODO选择freeze node的启发式函数
 /*
  */
-Operand GraphColor::HeuristicFreeze() {}
+MOperand GraphColor::HeuristicFreeze() {}
 
 // rd <-rs变成 rs(rs)
-void GraphColor::combine(Operand rd, Operand rs) {
+void GraphColor::combine(MOperand rd, MOperand rs) {
   if (freezeWorkList.find(rs) != freezeWorkList.end())
     freezeWorkList.erase(rs);
   else
@@ -157,7 +157,7 @@ void GraphColor::combine(Operand rd, Operand rs) {
   }
   //更新已合并点的所有临边(DecrementDegree)
   for (int i = 0; i != IG[rs].size(); i++) {
-    Operand neighbor = IG[rs][i];
+    MOperand neighbor = IG[rs][i];
     PushVecSingleVal(IG[rd], neighbor);
     auto iter = std::find(IG[neighbor].begin(), IG[neighbor].end(), rs);
     if (iter == IG[neighbor].end())
@@ -167,7 +167,7 @@ void GraphColor::combine(Operand rd, Operand rs) {
     //减去边后度数恰好不是高度数
     if (IG[neighbor].size() == colors - 1) {
       spillWorkList.erase(neighbor);
-      std::unordered_set<Operand> tmp(IG[neighbor].begin(), IG[neighbor].end());
+      std::unordered_set<MOperand> tmp(IG[neighbor].begin(), IG[neighbor].end());
       tmp.insert(neighbor);
       for (auto node : tmp)
         for (auto mov : MoveRelated(node)) {
@@ -190,12 +190,12 @@ void GraphColor::combine(Operand rd, Operand rs) {
   }
 }
 
-void GraphColor::FreezeMoves(Operand freeze) {
+void GraphColor::FreezeMoves(MOperand freeze) {
   for (auto mov : MoveRelated(freeze)) {
     // mov: dst<-src
-    Operand dst = mov->GetRd();
-    Operand src = mov->GetRs1();
-    Operand value;
+    MOperand dst = mov->GetDef();
+    MOperand src =nullptr;
+    MOperand value;
     //找到除了freeze的另外一个操作数
     if (GetAlias(src) == GetAlias(freeze)) {
       value = GetAlias(dst);
@@ -229,7 +229,7 @@ void GraphColor::simplify() {
       //这里注意需要检查一下更新后的相邻边是否只有color-1
       if (IG[target].size() == colors - 1) {
         spillWorkList.erase(target);
-        std::unordered_set<Operand> tmp(IG[target].begin(), IG[target].end());
+        std::unordered_set<MOperand> tmp(IG[target].begin(), IG[target].end());
         tmp.insert(target);
         // EnableMove
         for (auto node : tmp)
@@ -254,8 +254,8 @@ void GraphColor::coalesce() {
   for (int i = 0; i < worklistMoves.size(); i++) {
     RISCVMIR *mv = worklistMoves[i];
     // rd <- rs
-    Operand rd = mv->GetRd();
-    Operand rs = mv->GetRs1();
+    MOperand rd = mv->GetDef();
+    MOperand rs = mv->GetOperand(0);
     rd = GetAlias(rd);
     rs = GetAlias(rs);
     if (Precolored.find(rs) != Precolored.end()) {
@@ -265,7 +265,7 @@ void GraphColor::coalesce() {
     moveList[rs].erase(mv);
     moveList[rd].erase(mv);
     auto iter = std::find(IG[rs].begin(), IG[rs].end(), rd);
-    std::unordered_set<Operand> Adjset(IG[rs].begin(), IG[rs].end());
+    std::unordered_set<MOperand> Adjset(IG[rs].begin(), IG[rs].end());
     for (auto tmp : IG[rd])
       Adjset.insert(tmp);
     if (rd == rs) {
@@ -310,14 +310,14 @@ void GraphColor::spill() {
 // TODO waiting for the construct of backend
 void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
-    Operand select = selectstack.back();
+    MOperand select = selectstack.back();
     selectstack.pop_back();
     std::vector<RegInfo::REG> assist(colors);
     //遍历所有的冲突点，查看他们分配的颜色，保证我们分配的颜色一定是不同的
     for (auto adj : IG[select])
       if (coloredNode.find(GetAlias(adj)) != coloredNode.end() ||
           Precolored.find(GetAlias(adj)) != Precolored.end()) {
-        // TODO we loss the map with operand to Reg
+        // TODO we loss the map with MOperand to Reg
       }
     bool flag = false;
     // std::for_each(assist.begin(), assist.end(), [&flag]() {

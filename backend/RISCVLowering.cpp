@@ -1,4 +1,6 @@
 #include "RISCVLowering.hpp"
+#include "RISCVMIR.hpp"
+#include "RegAlloc.hpp"
 RISCVAsmPrinter* asmprinter;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
     // need file name
@@ -33,6 +35,7 @@ bool RISCVFunctionLowering::run(Function* m){
     isel.run(m);
 
     // Register Allocation
-
+    RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
+    regalloc.RunGCpass();
     return false;
 }

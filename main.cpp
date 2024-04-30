@@ -83,22 +83,13 @@ int main(int argc, char **argv) {
   pass_manager->InitPass();
   Singleton<Module>().Test();
   #endif
-  //#ifdef SYSY_ENABLE_BACKEND
-  // std::cout << std::endl;
-  // AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
+  #ifdef SYSY_ENABLE_BACKEND
+  freopen(asmoutput_path.c_str(), "w", stdout);
+  // AsmPrinter asmPrinter = AsmPrinter(filename, &Singleton<Module>());
   // asmPrinter.printAsm();
-  // #else
-
-  
-  // freopen("dev/tty", "w", stdout);
-  // #endif
-
-  // freopen(asmoutput_path.c_str(), "w", stdout);
-  // // AsmPrinter asmPrinter = AsmPrinter(filename, &Singleton<Module>());
-  // // asmPrinter.printAsm();
-  // RISCVModuleLowering RISCVasm;
-  // RISCVasm.run(&Singleton<Module>());
-  // freopen("dev/tty", "w", stdout);
-
+  RISCVModuleLowering RISCVasm;
+  RISCVasm.run(&Singleton<Module>());
+  freopen("dev/tty", "w", stdout);
+  #endif
   return 0;
 }

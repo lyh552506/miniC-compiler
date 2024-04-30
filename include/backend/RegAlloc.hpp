@@ -63,7 +63,7 @@ class RegAllocImpl {
   GraphColor* gc;
   int availble;
 };
-
+using MOperand=RISCVMOperand*;
 class GraphColor {
  public:
   friend class BlockLiveInfo;
@@ -85,16 +85,16 @@ class GraphColor {
     RISCVFunction* F;
 
    public:
-    std::map<RISCVBasicBlock*, std::unordered_set<RISCVMOperand*>>
+    std::map<RISCVBasicBlock*, std::unordered_set<MOperand>>
         Uses;  // block uses
-    std::map<RISCVBasicBlock*, std::unordered_set<RISCVMOperand*>>
+    std::map<RISCVBasicBlock*, std::unordered_set<MOperand>>
         Defs;  // block defs
-    std::map<RISCVBasicBlock*, std::set<RISCVMOperand*>> BlockLivein;
-    std::map<RISCVBasicBlock*, std::set<RISCVMOperand*>> BlockLiveout;
-    std::map<RISCVMIR*, std::set<RISCVMOperand*>> InstLive;
+    std::map<RISCVBasicBlock*, std::set<MOperand>> BlockLivein;
+    std::map<RISCVBasicBlock*, std::set<MOperand>> BlockLiveout;
+    std::map<RISCVMIR*, std::set<MOperand>> InstLive;
     void RunOnFunction();
     void PrintPass();
-    bool count(RISCVMOperand* Op, RISCVMIR* inst) {
+    bool count(MOperand Op, RISCVMIR* inst) {
       return InstLive[inst].count(Op);
     }
     BlockLiveInfo(RISCVFunction* f)
@@ -108,7 +108,7 @@ class GraphColor {
     std::unordered_map<RISCVMIR*, int> instNum;
     std::unordered_map<RISCVBasicBlock*, BlockLiveInfo*> BlockInfo;
     std::map<RISCVBasicBlock*,
-             std::unordered_map<RISCVMOperand*, std::vector<Interval>>>
+             std::unordered_map<MOperand, std::vector<Interval>>>
         RegLiveness;
 
    private:
@@ -116,12 +116,12 @@ class GraphColor {
     void computeLiveIntervals();
 
     bool verify(
-        std::unordered_map<RISCVMOperand*, std::vector<Interval>> Liveinterval);
+        std::unordered_map<MOperand, std::vector<Interval>> Liveinterval);
     std::unique_ptr<BlockLiveInfo> blockinfo;
 
    public:
     LiveInterval(RISCVFunction* f) : func(f) {}
-    std::unordered_map<RISCVMOperand*, std::vector<Interval>> GetRegLiveInterval(
+    std::unordered_map<MOperand, std::vector<Interval>> GetRegLiveInterval(
         RISCVBasicBlock* block) {
       return RegLiveness[block];
     }
@@ -138,7 +138,7 @@ class GraphColor {
   /// @brief 初始化各个工作表
   void MakeWorklist();
   //返回vector为0则不是move相关
-  std::unordered_set<RISCVMIR*> MoveRelated(Operand v);
+  std::unordered_set<RISCVMIR*> MoveRelated(MOperand v);
   void CalcmoveList(RISCVBasicBlock* block);
   void CalcIG(RISCVBasicBlock* block);
   void CalInstLive(RISCVBasicBlock* block);
@@ -149,35 +149,35 @@ class GraphColor {
   void spill();
   void AssignColors();
   void RewriteProgram();
-  Operand HeuristicFreeze();
-  Operand HeuristicSpill();
-  bool GeorgeCheck(Operand dst, Operand src);
-  bool BriggsCheck(std::unordered_set<Operand> target);
-  void AddWorkList(Operand v);
-  void combine(Operand rd, Operand rs);
-  Operand GetAlias(Operand v);
-  void FreezeMoves(Operand freeze);
+  MOperand HeuristicFreeze();
+  MOperand HeuristicSpill();
+  bool GeorgeCheck(MOperand dst, MOperand src);
+  bool BriggsCheck(std::unordered_set<MOperand> target);
+  void AddWorkList(MOperand v);
+  void combine(MOperand rd, MOperand rs);
+  MOperand GetAlias(MOperand v);
+  void FreezeMoves(MOperand freeze);
   //保证Interval vector的顺序
-  std::unordered_map<RISCVMOperand*, IntervalLength> ValsInterval;
+  std::unordered_map<MOperand, IntervalLength> ValsInterval;
   enum MoveState { coalesced, constrained, frozen, worklist, active };
   // interference graph
-  std::unordered_map<RISCVMOperand, std::vector<RISCVMOperand>> IG;  // reg2reg IG[op]
+  std::unordered_map<MOperand, std::vector<MOperand>> IG;  // reg2reg IG[op]
   // 低度数的传送有关节点表
-  std::unordered_set<Operand> freezeWorkList;
+  std::unordered_set<MOperand> freezeWorkList;
   // 有可能合并的传送指令
   std::vector<RISCVMIR*> worklistMoves;
   // 低度数的传送无关节点表
-  std::vector<Operand> simplifyWorkList;
+  std::vector<MOperand> simplifyWorkList;
   // 高度数的节点表
-  std::unordered_set<Operand> spillWorkList;
+  std::unordered_set<MOperand> spillWorkList;
   // 本轮中要溢出的节点集合
-  std::unordered_set<Operand> spilledNodes;
+  std::unordered_set<MOperand> spilledNodes;
   // 机器寄存器的集合，每个寄存器都预先指派了一种颜色
-  std::unordered_set<RISCVMOperand*> Precolored;  // reg
+  std::unordered_set<MOperand> Precolored;  // reg
   // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
-  std::unordered_set<Operand> initial;
+  std::unordered_set<MOperand> initial;
   // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
-  std::unordered_set<Operand> coalescedNodes;
+  std::unordered_set<MOperand> coalescedNodes;
   //源操作数和目标操作数冲突的传送指令集合
   std::unordered_set<RISCVMIR*> constrainedMoves;
   //已经合并的传送指令集合
@@ -185,20 +185,20 @@ class GraphColor {
   //不再考虑合并的传送指令集合
   std::unordered_set<RISCVMIR*> frozenMoves;
   //已成功着色的结点集合
-  std::unordered_set<Operand> coloredNode;
+  std::unordered_set<MOperand> coloredNode;
   // 从图中删除的临时变量的栈
-  std::vector<Operand> selectstack;
+  std::vector<MOperand> selectstack;
   //查询每个传送指令属于哪一个集合
   std::unordered_map<RISCVMIR*, MoveState> belongs;
   // 从一个结点到与该节点相关的传送指令表的映射
-  std::unordered_map<RISCVMOperand*, std::unordered_set<RISCVMIR*>>
+  std::unordered_map<MOperand, std::unordered_set<RISCVMIR*>>
       moveList;  // reg2mov
   // 还未做好准备的传送指令集合
   std::unordered_set<RISCVMIR*> activeMoves;
   //合并后的别名管理
-  std::unordered_map<Operand, Operand> alias;
+  std::unordered_map<MOperand, MOperand> alias;
   //算法最后为每一个operand选择的颜色
-  std::unordered_map<Operand, RegInfo> color;
+  std::unordered_map<MOperand, RegInfo> color;
   int LoopWeight = 1;
   int livenessWeight = 1;
   int DegreeWeight = 1;

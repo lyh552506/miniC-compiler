@@ -181,18 +181,18 @@ void BlockInfo::PrintPass()
     for(RISCVMOperand* _value:BlockLivein[_block])
     {
       if(dynamic_cast<VirRegister*>(_value))
-        std::cerr << "%" << _value->GetName() << " ";
+        _value->print();
       else
-        std::cerr << _value->GetName() << " ";
+        _value->print();
     }
     std::cerr << std::endl;
     std::cerr << "        Liveout" << std::endl;
     for(RISCVMOperand* _value:BlockLiveout[_block])
     {
       if(dynamic_cast<VirRegister*>(_value))
-        std::cerr << "%" << _value->GetName() << " ";
+        _value->print();
       else
-        std::cerr << _value->GetName() << " ";
+        _value->print();
     }
     std::cerr << std::endl;
   }
@@ -305,9 +305,9 @@ void InterVal::PrintAnalysis()
         for(RISCVMOperand* Op : blockinfo.get()->InstLive[inst])
         {
           if(dynamic_cast<VirRegister*>(Op))
-            std::cerr << "%" << Op->GetName() << ", ";
+            Op->print();
           else
-            std::cerr << Op->GetName() << ", ";
+            Op->print();
         }
         std::cerr<<std::endl;
     }
@@ -318,9 +318,9 @@ void InterVal::PrintAnalysis()
     for(auto& [op, intervals] : RegLiveness[block])
     {
       if(dynamic_cast<VirRegister*>(op))
-      std::cerr << "% "<< op->GetName() << ":";
+      op->print();
       else
-        std::cerr << op->GetName() << ":";
+        op->print();
       for(auto& i : intervals)
         std::cerr << "[" << i.start << "," << i.end << "]";
       std::cerr << std::endl;

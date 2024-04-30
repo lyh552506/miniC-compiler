@@ -3,6 +3,7 @@
 #include "RISCVContext.hpp"
 #include "RISCVISel.hpp"
 #include "RISCVAsmPrinter.hpp"
+#include "RegAlloc.hpp"
 class RISCVModuleLowering:BackEndPass<Module>{
     // bool LoweringGlobalValue(Module*);
     RISCVLoweringContext ctx;

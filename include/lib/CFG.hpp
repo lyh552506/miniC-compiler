@@ -194,7 +194,7 @@ public:
   PhiInst* clone(std::unordered_map<Operand,Operand>&)override;
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
-  void Del_Incomes(int CurrentNum);
+  void Del_Incomes(BasicBlock* currBB);
   bool IsSame(PhiInst* phi);
   BasicBlock* GetBlock(int index);
   Value* GetVal(int index);
