@@ -1,10 +1,12 @@
 #include "CFG.hpp"
 #include "BaseCFG.hpp"
 #include "MagicEnum.hpp"
+#include "my_stl.hpp"
 #include <algorithm>
 #include <iostream>
 #include <map>
 #include <memory>
+#include <pstl/glue_algorithm_defs.h>
 #include <string>
 #include <vector>
 template <typename T>
@@ -849,29 +851,29 @@ void BasicBlock::RemovePredBB(BasicBlock *pred) {
   //不能自己删除自己
   if (pred == this)
     return;
-  for (auto iter = pred->begin(); iter != pred->end(); ++iter) {
+  for (auto iter = this->begin(); iter != this->end(); ++iter) {
     auto inst = *iter;
-    if (auto phi = dynamic_cast<PhiInst *>(pred->front())) {
+    if (auto phi = dynamic_cast<PhiInst *>(this->front())) {
       auto tmp = std::find_if(
           phi->PhiRecord.begin(), phi->PhiRecord.end(),
           [pred](const std::pair<int, std::pair<Value *, BasicBlock *>> &ele) {
             return ele.second.second == pred;
           });
       if (tmp != phi->PhiRecord.end())
-        phi->Del_Incomes(tmp->second.second);
-      if (phi->oprandNum == 1) {
+        phi->Del_Incomes(tmp->first);
+      if (phi->PhiRecord.size() == 1) {
         //如果删除后还剩一个operand,检查是否是循环
         BasicBlock *b = phi->PhiRecord.begin()->second.second;
         if (b == this) {
           phi->RAUW(UndefValue::get(phi->GetType()));
-          phi->ClearRelation();
-          phi->EraseFromParent();
+          // phi->ClearRelation();
+          // phi->EraseFromParent();
           delete phi;
         } else {
           Value *repl = (*(phi->PhiRecord.begin())).second.first;
           phi->RAUW(repl);
-          phi->ClearRelation();
-          phi->EraseFromParent();
+          // phi->ClearRelation();
+          // phi->EraseFromParent();
           delete phi;
         }
       }
@@ -1111,37 +1113,46 @@ void PhiInst::Phiprop(Value *origin, Value *newval) {
   if (IsGetIncomings == true)
     Incomings[Num] = newval;
 }
-//TODO have bugs
-void PhiInst::Del_Incomes(BasicBlock *currBB) {
-  auto it =
-      std::find_if(PhiRecord.begin(), PhiRecord.end(),
-                   [&](const std::pair<int, std::pair<Value *, BasicBlock *>> &ele) {
-                     return ele.second.second == currBB;
-                   });
-  if (it != PhiRecord.end()) {
+
+void PhiInst::Del_Incomes(int CurrentNum) {
+  if (PhiRecord.find(CurrentNum) != PhiRecord.end()) {
     auto iter = std::find_if(
-        uselist.begin(), uselist.end(), [&](const std::unique_ptr<Use> &ele) {
-          return ele->GetValue() == ReturnValIn(currBB);
+        uselist.begin(), uselist.end(), [=](const std::unique_ptr<Use> &ele) {
+          return ele->GetValue() == PhiRecord[CurrentNum].first;
         });
-    // (*iter)->RemoveFromUserList((*iter)->GetUser());
-    PhiRecord.erase(it->first);
-    for(int i=0;i<Getuselist().size();i++)
-      if(Getuselist()[i]->GetValue()==)
-    
+    auto &vec = Getuselist();
+    (*iter)->RemoveFromUserList((*iter)->GetUser());
+    for (int i = 0; i < vec.size(); i++)
+      if (vec[i].get() == (*iter).get())
+        vec.erase(std::remove(vec.begin(), vec.end(), (*iter)));
+    PhiRecord.erase(CurrentNum);
     //维护PhiRecord的关系
-    {
-      std::vector<std::pair<int, std::pair<Value *, BasicBlock *>>> Defend;
-      for (auto &[_1, v] : PhiRecord)
-        if (_1 > it->first)
-          Defend.push_back(std::make_pair(_1, v));
-      for (const auto &item : Defend)
-        PhiRecord.erase(item.first);
-      for (const auto &item : Defend)
-        PhiRecord.insert(std::make_pair(item.first - 1, item.second));
-    }
-    oprandNum--;
+    // std::vector<std::pair<int,std::pair<Value*,BasicBlock*>>> Defend;
+    // for(auto& [_1,v]:PhiRecord)
+    //   if(_1>CurrentNum)
+    //     Defend.push_back(std::make_pair(_1,v));
+    // for(const auto& item:Defend)
+    //   PhiRecord.erase(item.first);
+    // for(const auto& item:Defend)
+    //   PhiRecord.insert(std::make_pair(item.first-1,item.second));
+    // oprandNum--;
   } else
     std::cerr << "No such PhiRecord" << std::endl;
+}
+
+void PhiInst::FormatPhi(){
+  int CurrentNum=0;
+  std::vector<std::pair<int,std::pair<Value*,BasicBlock*>>> Defend;
+    for(auto& [_1,v]:PhiRecord)
+      if(_1>CurrentNum)
+        Defend.push_back(std::make_pair(_1,v));
+      else
+       CurrentNum++;
+    for(const auto& item:Defend)
+      PhiRecord.erase(item.first);
+    for(const auto& item:Defend)
+      PhiRecord.insert(std::make_pair(PhiRecord.size(),item.second));
+    oprandNum=PhiRecord.size();
 }
 
 bool PhiInst::IsSame(PhiInst *phi) {
@@ -1263,18 +1274,20 @@ void UndefValue::print() {
 }
 
 void PhiInst::print() {
+  int cnt=0;
   dynamic_cast<Value *>(this)->print();
   std::cout << " = phi ";
   this->GetType()->print();
   std::cout << " ";
-  for (int i = 0; i < oprandNum; i++) {
+  for (auto& [_1,val]:PhiRecord) {
     std::cout << "[";
-    PhiRecord[i].first->print();
+    val.first->print();
     std::cout << ", ";
-    dynamic_cast<Value *>(PhiRecord[i].second)->print();
+    dynamic_cast<Value *>(val.second)->print();
     std::cout << "]";
-    if (i != oprandNum - 1)
+    if (cnt != PhiRecord.size() - 1)
       std::cout << ", ";
+    cnt++;
   }
   std::cout << "\n";
   return;

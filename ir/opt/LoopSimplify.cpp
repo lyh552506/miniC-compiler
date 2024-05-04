@@ -172,15 +172,16 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
   }
   // outside传入的数据流对应的值为一个
   if (ComingVal) {
-    std::vector<BasicBlock*> Erase;
+    std::vector<int> Erase;
     for (auto &[_1, tmp] : phi->PhiRecord) {
       if (worklist.find(tmp.second) != worklist.end()) {
-        Erase.push_back(tmp.second);
+        Erase.push_back(_1);
       }
     }
     for (auto i : Erase)
       phi->Del_Incomes(i);
     phi->updateIncoming(ComingVal, target);
+    phi->FormatPhi();
     return;
   }
   //对应的传入值有多个
@@ -194,9 +195,10 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
       PhiInst::NewPhiNode(target->front(), target, phi->GetType());
   for (auto &[i, v] : Erase) {
     pre_phi->updateIncoming(v.first, v.second);
-    phi->Del_Incomes(v.second);
+    phi->Del_Incomes(i);
   }
-  phi->updateIncoming(pre_phi, target);
+  phi->updateIncoming(pre_phi, target); 
+  phi->FormatPhi();
   return;
 }
 
