@@ -129,19 +129,7 @@ class dominance : public PassManagerBase {
   /// @brief 判断bb1是否支配bb2
   bool dominates(BasicBlock *bb1, BasicBlock *bb2);
   bool needToUpdate = false;
-  void update() {
-    IsDFSValid = false;
-    count=0;
-    std::fill_n(vertex, 91000, 0);
-    bucket->clear();
-    std::for_each(dsu.begin(), dsu.end(), [](DSU &x) { x.init(); });
-    init();
-    for (int i = 1; i <= block_num; i++) {
-      dsu[i].ancestor = i;
-      dsu[i].min_sdom = i;
-    }
-    dom_begin();  //标志开始函数
-  }
+  void update();
   void PrintPass() {
 #ifdef SYSY_MIDDLE_END_DEBUG
     std::cerr << "--------mem2reg--------" << std::endl;

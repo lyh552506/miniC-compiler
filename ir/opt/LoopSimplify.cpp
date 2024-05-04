@@ -1,5 +1,6 @@
 #include "LoopSimplify.hpp"
 #include "CFG.hpp"
+#include "dominant.hpp"
 
 void LoopSimplify::RunOnFunction() {
   loopAnlay->RunOnFunction();
@@ -9,6 +10,10 @@ void LoopSimplify::RunOnFunction() {
 }
 
 void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
+  if(loop->GetHeader()->GetName()==".64wc20")
+  {
+    int a=0;
+  }
   std::vector<LoopInfo *> WorkLists;
   WorkLists.push_back(loop);
   //将子循环递归的加入进来
@@ -30,7 +35,7 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       bool NeedToFormat = false;
       BasicBlock *bb = exit[index];
       for (auto rev : m_dom->GetNode(bb->num).rev) {
-        if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != loop)
+        if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != L)
           NeedToFormat = true;
       }
       if (!NeedToFormat)
@@ -41,10 +46,11 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       vec_pop(exit, index);
     }
     // step 3: deal with latch/back-edge
-    BasicBlock *header = loop->GetHeader();
+    BasicBlock *header = L->GetHeader();
     std::vector<BasicBlock *> Latch;
     for (auto rev : m_dom->GetNode(header->num).rev) {
-      if (m_dom->GetNode(rev).thisBlock != preheader)
+      auto B=m_dom->GetNode(rev).thisBlock;
+      if (B != preheader&&loopAnlay->LookUp(B)==L)
         Latch.push_back(m_dom->GetNode(rev).thisBlock);
     }
     if (Latch.size() > 1) {
@@ -95,6 +101,8 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
   BasicBlock *preheader = new BasicBlock();
   preheader->SetName(preheader->GetName() + "_preheader");
   m_func->InsertBlock(Header, preheader);
+  dominance::Node Node;
+  Node.thisBlock=preheader;
 #ifdef DEBUG
   std::cerr << "insert a preheader: " << preheader->GetName() << std::endl;
 #endif
@@ -108,6 +116,7 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
     } else if (auto uncond = dynamic_cast<UnCondInst *>(condition))
       uncond->RSUW(0, preheader);
   }
+  m_dom->node.push_back(Node);
   // phase 4: update the phiNode
   std::set<BasicBlock *> work{OutSide.begin(), OutSide.end()};
   for (auto inst : *Header) {
@@ -132,11 +141,16 @@ void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
   BasicBlock *new_exit = new BasicBlock();
   new_exit->SetName(new_exit->GetName() + "_exit");
   m_func->InsertBlock(exit, new_exit);
+  //update the node info 
+  dominance::Node Node;
+  Node.thisBlock=new_exit;
+  Node.des.push_front(exit->num);
 #ifdef DEBUG
   std::cerr << "insert a exit: " << new_exit->GetName() << std::endl;
 #endif
   for (auto bb : Inside) {
     auto condition = bb->back();
+    Node.rev.push_front(bb->num);
     if (auto cond = dynamic_cast<CondInst *>(condition)) {
       for (int i = 0; i < 3; i++)
         if (GetOperand(cond, i) == exit)
@@ -145,6 +159,7 @@ void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
       uncond->RSUW(0, new_exit);
     }
   }
+  m_dom->node.push_back(Node);
   std::set<BasicBlock *> work{Inside.begin(), Inside.end()};
   for (auto inst : *exit) {
     if (auto phi = dynamic_cast<PhiInst *>(inst))
@@ -207,6 +222,8 @@ void LoopSimplify::FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
   BasicBlock *head = loop->GetHeader();
   BasicBlock *new_latch = new BasicBlock();
   new_latch->SetName(new_latch->GetName() + "_latch");
+  dominance::Node Node;
+  Node.thisBlock=new_latch;
 #ifdef DEBUG
   std::cerr << "insert a latch: " << new_latch->GetName() << std::endl;
 #endif
