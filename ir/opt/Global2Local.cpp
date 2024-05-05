@@ -3,6 +3,7 @@
 void Global2Local::init()
 {
     createSuccFuncs();
+    CreateCallNum();
     DetectRecursive();
     CalGlobal2Funcs();
 }  
@@ -73,11 +74,13 @@ void Global2Local::RunPass()
         else if(Global2Funcs[global].size() == 1)
         {
             Function* func = *Global2Funcs[global].begin();
-            if(RecursiveFunctions.find(func) == RecursiveFunctions.end())
+            if(CanLocal(global, func))
             {
                 LocalGlobalVariable(global, func);
                 iter = globalvals.erase(iter);
             }
+            else
+                ++iter;
         }
         // FIXME : 适配多个func使用Global Array
         // else if(global->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
@@ -89,17 +92,20 @@ void Global2Local::RunPass()
         //     }
         //     ++iter;
         // }
-        else
+        else if(global->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
         {
             ++iter;
+            continue;
         }
+        else
+            ++iter;
     }
 }
 
 
 void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
 {
-    AllocaInst* alloca = new AllocaInst(" ",val->GetType());
+    AllocaInst* alloca = new AllocaInst(val->get_name(),val->GetType());
     BasicBlock* begin = func->front();
     alloca->SetParent(begin);
     begin->push_front(alloca);
@@ -154,7 +160,7 @@ void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* blo
     Value* val = module.GetValueByName(arr->get_name());
     Type* tp = val->GetType();
     std::vector<Operand> args;
-    Operand src = module.GenerateMemcpyHandle(PointerType::NewPointerTypeGet(tp), initializer);
+    Operand src = module.GenerateMemcpyHandle(tp, initializer);
     args.push_back(alloca);
     args.push_back(src);
     args.push_back(ConstIRInt::GetNewConstant(tp->get_size()));
@@ -167,4 +173,77 @@ void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* blo
             break;
     }
     iter.insert_before(inst);
+}
+
+bool Global2Local::CanLocal(Variable* val, Function* func)
+{
+    if(RecursiveFunctions.find(func) != RecursiveFunctions.end())
+        return false;
+    Value* Val = module.GetValueByName(val->get_name());
+    bool changed = false;
+    for(Use* use_ : Val->GetUserlist())
+    {
+        if(StoreInst* inst = dynamic_cast<StoreInst*>(use_->GetUser()))
+            changed = true;
+        else if(GetElementPtrInst* inst = dynamic_cast<GetElementPtrInst*>(use_->GetUser()))
+        {
+            for(Use* use__ : inst->GetUserlist())
+                if(dynamic_cast<StoreInst*>(use__->GetUser()))
+                    changed = true;
+        }
+    }
+    if(changed)
+    {
+        if(CallTimes[func] > 1)
+            return false;
+        else
+            return true;
+    }
+    else
+        return true;
+}
+
+// bool Global2Local::CanLocal(Variable* val)
+// {
+//     if((val->GetType()->GetTypeEnum() != InnerDataType::IR_ARRAY) && (val->GetType()->GetTypeEnum() != InnerDataType::IR_PTR) \
+//     && val->GetInitializer())
+//     {
+//     Value* Val = module.GetValueByName(val->get_name());
+//     bool changed = false;
+//     for(Use* use_ : Val->GetUserlist())
+//     {
+//         if(StoreInst* inst = dynamic_cast<StoreInst*>(use_->GetUser()))
+//             changed = true;
+//         else if(GetElementPtrInst* inst = dynamic_cast<GetElementPtrInst*>(use_->GetUser()))
+//         {
+//             for(Use* use__ : inst->GetUserlist())
+//                 if(dynamic_cast<StoreInst*>(use__->GetUser()))
+//                     changed = true;
+//         }
+//     }
+//     if(changed)
+//             return false;
+//     else
+//         return true;
+//     }
+//     else
+//         return false;
+// }
+
+void Global2Local::CreateCallNum()
+{
+    for(auto& func_ : module.GetFuncTion())
+    {
+        Function* func = func_.get();
+        for(Use* user_ : func->GetUserlist())
+        {
+            User* user = user_->GetUser();
+            if(dynamic_cast<CallInst*>(user))
+            {
+                Function* CallFunc = user->GetParent()->GetParent();
+                if(CallFunc)
+                    CallTimes[func]++;
+            }
+        }
+    }
 }

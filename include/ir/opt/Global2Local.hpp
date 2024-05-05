@@ -8,6 +8,7 @@ class Global2Local
     std::set<Function*> RecursiveFunctions;
     std::map<Variable*, std::set<Function*>> Global2Funcs;  // 哪些func 用了这个 globalvalue
     std::vector<User*> insert_insts;
+    std::map<Function*, int> CallTimes;
     private:
     Module& module;
     void init();
@@ -18,6 +19,9 @@ class Global2Local
     void RunPass();
     void LocalGlobalVariable(Variable* val, Function* func);
     void LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* block);
+    bool CanLocal(Variable* val, Function* func);
+    bool CanLocal(Variable* val);
+    void CreateCallNum();
     public:
     Global2Local(Module& m) :  module(m), insert_insts{}, SuccFuncs{}, \
     RecursiveFunctions{} {}
