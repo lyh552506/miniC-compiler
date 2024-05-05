@@ -80,14 +80,15 @@ public:
   void CalculateLoopDepth(LoopInfo *loop, int depth);
   void LoopAnaly();
   void CloneToBB();
+  void ExpandSubLoops();
   // only for test
   void PrintPass();
   void RunOnFunction() {
     m_func->init_visited_block();
     BasicBlock *entry = m_func->front();
-    
     PostOrderDT(entry->num);
     Analysis();
+    ExpandSubLoops();
     LoopAnaly();
     CloneToBB();
     std::sort(LoopRecord.begin(), LoopRecord.end(),
