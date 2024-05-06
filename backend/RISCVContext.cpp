@@ -21,7 +21,7 @@ RISCVMOperand* RISCVLoweringContext::Create(Value* val){
         }
     }
     else if(auto bb=dynamic_cast<BasicBlock*>(val))
-        return new RISCVBasicBlock(bb->GetName());
+        return RISCVBasicBlock::CreateRISCVBasicBlock();
     else if(val->isConst())
         return Imm::GetImm(val->as<ConstantData>());
     else if(auto func=dynamic_cast<Function*>(val))
