@@ -67,6 +67,8 @@ public:
     setDest();
   }
   void Analysis();
+  bool IsLoopIncludeBB(LoopInfo* loop,int index);
+  bool IsLoopIncludeBB(LoopInfo* loop,BasicBlock* bb);
   BasicBlock *GetLatch();
   BasicBlock *GetPreHeader(LoopInfo *loopinfo);
   std::vector<BasicBlock*> GetExitingBlock(LoopInfo* loopinfo);

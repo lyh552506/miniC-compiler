@@ -57,6 +57,22 @@ void LoopAnalysis::ExpandSubLoops() {
         PushVecSingleVal(loop->ContainBlocks, bb);
 }
 
+bool LoopAnalysis::IsLoopIncludeBB(LoopInfo *loop, int index) {
+  auto iter = std::find(loop->ContainBlocks.begin(), loop->ContainBlocks.end(),
+                        GetCorrespondBlock(index));
+  if (iter == loop->ContainBlocks.end())
+    return false;
+  return true;
+}
+
+bool LoopAnalysis::IsLoopIncludeBB(LoopInfo *loop, BasicBlock *bb) {
+  auto iter =
+      std::find(loop->ContainBlocks.begin(), loop->ContainBlocks.end(), bb);
+  if (iter == loop->ContainBlocks.end())
+    return false;
+  return true;
+}
+
 LoopInfo *LoopAnalysis::LookUp(BasicBlock *bb) {
   auto iter = Loops.find(bb);
   if (iter != Loops.end())
@@ -123,10 +139,10 @@ BasicBlock *LoopAnalysis::GetPreHeader(LoopInfo *loopinfo) {
   BasicBlock *header = loopinfo->GetHeader();
   for (auto rev : m_dom->GetNode(header->num).rev) {
     //出现前驱不属于这个循环的情况
-    auto iter =
-        std::find(loopinfo->ContainBlocks.begin(),
-                  loopinfo->ContainBlocks.end(), GetCorrespondBlock(rev));
-    if (iter == loopinfo->ContainBlocks.end()) {
+    // auto iter =
+    //     std::find(loopinfo->ContainBlocks.begin(),
+    //               loopinfo->ContainBlocks.end(), GetCorrespondBlock(rev));
+    if (!IsLoopIncludeBB(loopinfo,rev)) {
       if (preheader == nullptr) {
         preheader = GetCorrespondBlock(rev);
         continue;
@@ -146,10 +162,10 @@ std::vector<BasicBlock *> LoopAnalysis::GetExitingBlock(LoopInfo *loopinfo) {
   std::vector<BasicBlock *> exit;
   for (auto bb : loopinfo->ContainBlocks) {
     for (auto succ : m_dom->GetNode(bb->num).des) {
-      auto iter =
-          std::find(loopinfo->ContainBlocks.begin(),
-                    loopinfo->ContainBlocks.end(), GetCorrespondBlock(succ));
-      if (iter == loopinfo->ContainBlocks.end())
+      // auto iter =
+      //     std::find(loopinfo->ContainBlocks.begin(),
+      //               loopinfo->ContainBlocks.end(), GetCorrespondBlock(succ));
+      if (!IsLoopIncludeBB(loopinfo,succ))
         PushVecSingleVal(exit, bb);
     }
   }
@@ -161,9 +177,9 @@ std::vector<BasicBlock *> LoopAnalysis::GetExit(LoopInfo *loopinfo) {
   for (auto bb : loopinfo->ContainBlocks) {
     for (auto des : m_dom->GetNode(bb->num).des) {
       BasicBlock *B = m_dom->GetNode(des).thisBlock;
-      auto iter = std::find(loopinfo->ContainBlocks.begin(),
-                            loopinfo->ContainBlocks.end(), B);
-      if (iter == loopinfo->ContainBlocks.end())
+      // auto iter = std::find(loopinfo->ContainBlocks.begin(),
+      //                       loopinfo->ContainBlocks.end(), B);
+      if (!IsLoopIncludeBB(loopinfo,B))
         PushVecSingleVal(workList, B);
     }
   }

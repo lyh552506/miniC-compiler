@@ -31,7 +31,7 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       bool NeedToFormat = false;
       BasicBlock *bb = exit[index];
       for (auto rev : m_dom->GetNode(bb->num).rev) {
-        if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != L)
+        if (!loopAnlay->IsLoopIncludeBB(L,rev))
           NeedToFormat = true;
       }
       if (!NeedToFormat)
@@ -56,32 +56,6 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       // }
       FormatLatch(loop, preheader, Latch);
     }
-    // step 4: deal with existing block to the same block
-    // std::vector<BasicBlock *> exiting = loopAnlay->GetExitingBlock(loop);
-    // bool same = false;
-    // BasicBlock *target = nullptr;
-    // for (auto bb : exiting) {
-    //   for (auto des : m_dom->GetNode(bb->num).des) {
-    //     BasicBlock *dest = m_dom->GetNode(des).thisBlock;
-    //     if(loopAnlay->LookUp(dest)==loop)
-    //       continue;
-    //     if (target == nullptr) {
-    //       target = dest;
-    //       continue;
-    //     }
-    //     if (target != dest) {
-    //       same = false;
-    //       target = nullptr;
-    //       break;
-    //     }
-    //   }
-    //   if (!same)
-    //     break;
-    // }
-
-    // if(same){
-
-    // }
   }
 }
 
