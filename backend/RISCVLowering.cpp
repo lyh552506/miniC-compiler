@@ -1,6 +1,6 @@
 #include "RISCVLowering.hpp"
 
-RISCVAsmPrinter* asmprinter;
+RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
     // need file name
     asmprinter = new RISCVAsmPrinter("file", m, ctx);
@@ -19,7 +19,7 @@ bool RISCVModuleLowering::run(Module* m){
             std::cerr<<"FUNC Lowering failed\n";
         }
     }
-    
+    // asmprinter->printAsm();
     ctx.print();
     return false;
 }
@@ -45,9 +45,9 @@ void RISCVFunctionLowering::LowerFormalArguments(Function* func) {
     else {
         // ctx(Builder(RISCVMIR::mv, {ctx.createVReg(RISCVTyper(inst->GetType())), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
         int paramnum=params.size();
-        int max_param=8;
+        int max_param=9;
         int min=std::min(paramnum, max_param);
-        if(min>8) {
+        if(min>9) {
             int offset =0;
             for(int i=paramnum; i>min; --i) {
                 if(params[paramnum]->GetType()->GetTypeEnum()==InnerDataType::IR_Value_Float) 

@@ -380,23 +380,43 @@ void RISCVISel::InstLowering(CallInst* inst){
     // 如果有返回值则copy a0 到 VReg
     #define M(x) ctx.mapping(x)
     if(!inst->Getuselist().empty()) {
-        int MAXnum = 8, paramnum=inst->Getuselist().size()-1;
+        int MAXnum = 9, paramnum=inst->Getuselist().size();
         if (paramnum > MAXnum) {
         // to do 
         // spill to stack
         // 
         }
-        for (int i=0; i<std::min(paramnum, MAXnum); i++) {
-            int regnum=PhyRegister::PhyReg::a0;
+        for (int i=1; i<std::min(paramnum, MAXnum); i++) {
+            int regnum=PhyRegister::PhyReg::a0-1;
             regnum+=i;
-            ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i+1))}));
+            if(inst->GetOperand(i)->GetType()==IntType::NewIntTypeGet()\
+            || inst->GetOperand(i)->GetType()==FloatType::NewFloatTypeGet())
+            ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i))}));
+            if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(i))) {
+                auto li = new RISCVMIR(RISCVMIR::li);
+                VirRegister* vreg = ctx.createVReg(RISCVTyper(inst->GetOperand(i)->GetType()));
+                li->SetDef(vreg);
+                Imm* imm = new Imm(constint);
+                li->AddOperand(imm);
+                ctx.insert_val2mop(constint, imm);
+                ctx(li);
+            }
+            else if(ConstIRFloat* constfloat = dynamic_cast<ConstIRFloat*>(inst->GetOperand(i))) {
+                auto load = new RISCVMIR(RISCVMIR::_lw);
+                VirRegister* vreg = ctx.createVReg(RISCVTyper(inst->GetOperand(i)->GetType()));
+                load->SetDef(vreg);
+                Imm* imm = new Imm(constint);
+                load->AddOperand(imm);
+                ctx.insert_val2mop(constint, imm);
+                ctx(load);
+            }
         }
     }
-    if(inst->GetOperand(0)->as<Function>()->GetType()!=VoidType::NewVoidTypeGet())
+    if(!inst->GetUserlist().is_empty()){
         ctx(Builder(RISCVMIR::call, inst));
-    
-    if(!inst->GetUserlist().is_empty()&&inst->GetType()!=VoidType::NewVoidTypeGet())
-        ctx(Builder(RISCVMIR::mv, {ctx.createVReg(RISCVTyper(inst->GetType())), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
+        ctx(Builder(RISCVMIR::mv, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
+    }
+    else ctx(Builder_withoutDef(RISCVMIR::call, inst));
     #undef M
 }
 

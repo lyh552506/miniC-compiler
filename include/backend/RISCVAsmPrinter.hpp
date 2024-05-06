@@ -30,6 +30,7 @@ class RISCVAsmPrinter {
     void printAsmGlobal();
     void printAsmText();
     void printAsmTempFloat();
+    void printAsm();
 };
 
 class dataSegment {

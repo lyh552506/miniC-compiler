@@ -30,18 +30,18 @@ RISCVAsmPrinter::RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweri
 }
 
 void RISCVAsmPrinter::printAsmGlobal() {
-    std::ofstream outputFile("output.a", std::ios::out); // 以追加模式打开文件
-    if (outputFile.is_open()) {
-        std::cout << "    .file  \"" << filename << "\"" << std::endl;
-        std::cout << "    .attribute arch, \"rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0\"" << std::endl;
-        std::cout << "    .attribute unaligned_access, 0" << std::endl; 
-        std::cout << "    .attribute stack_align, 16" << std::endl;
-        std::cout << "    .text" << std::endl;
-        this->data->PrintDataSegment_Globval();
-        outputFile.close();
-    } else {
-        std::cout << "Unable to open the file." << std::endl;
-    }
+    std::cout << "    .file  \"" << filename << "\"" << std::endl;
+    std::cout << "    .attribute arch, \"rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0\"" << std::endl;
+    std::cout << "    .attribute unaligned_access, 0" << std::endl; 
+    std::cout << "    .attribute stack_align, 16" << std::endl;
+    std::cout << "    .text" << std::endl;
+    this->data->PrintDataSegment_Globval();
+}
+
+void RISCVAsmPrinter::printAsm() {
+    this->printAsmGlobal();
+    this->text->PrintTextSegment();
+    this->data->PrintDataSegment_Tempvar();
 }
 
 //textSegment
@@ -80,7 +80,7 @@ void functionSegment::PrintFuncSegment() {
     //         machineinst->print();
     //     }
     // }
-    //machinefunction->print_func_end();
+    // machinefunction->print_func_end();
     if(size == -1)
         std::cout << "    .size " << name << ", " << "-" << name << std::endl;
 }
