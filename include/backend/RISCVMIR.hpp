@@ -155,6 +155,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
     RISCVMIR(RISCVISA _isa):opcode(_isa){};
     RISCVMOperand*& GetDef();
     RISCVMOperand*& GetOperand(int);
+    const int GetOperandSize(){return operands.size();}
     void SetDef(RISCVMOperand* def);
     void AddOperand(RISCVMOperand*);
     void SetMopcode(RISCVISA);
@@ -168,9 +169,12 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMIR>,public list_node<RISCVFunction,RISCVBasicBlock>
 {    
     public:
+    // RISCVBasicBlock();
     RISCVBasicBlock(std::string);
+    static RISCVBasicBlock* CreateRISCVBasicBlock();
     void push_before_branch(RISCVMIR*);
     void printfull();
+    void replace_succ(RISCVBasicBlock*,RISCVBasicBlock*);
 };
 
 /// should we save return type here? I suppose not.

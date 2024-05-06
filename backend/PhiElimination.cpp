@@ -4,26 +4,26 @@
 #include <queue>
 #include "RISCVTrival.hpp"
 
-// RISCVBasicBlock* PhiElimination::find_copy_block(BasicBlock* from,BasicBlock* to){
-//     if(CopyBlockFinder.find(from)==CopyBlockFinder.end())
-//         CopyBlockFinder[from]=std::map<BasicBlock*,RISCVBasicBlock*>();
-//     if(CopyBlockFinder[from].find(to)==CopyBlockFinder[from].end()){
-//         auto mfunc=cxt.mapping(from->GetParent())->as<RISCVFunction>();
-//         auto mfrom=cxt.mapping(from)->as<RISCVBasicBlock>();
-//         auto mto=cxt.mapping(to)->as<RISCVBasicBlock>();
+RISCVBasicBlock* PhiElimination::find_copy_block(BasicBlock* from,BasicBlock* to){
+    if(CopyBlockFinder.find(from)==CopyBlockFinder.end())
+        CopyBlockFinder[from]=std::map<BasicBlock*,RISCVBasicBlock*>();
+    if(CopyBlockFinder[from].find(to)==CopyBlockFinder[from].end()){
+        auto mfunc=cxt.mapping(from->GetParent())->as<RISCVFunction>();
+        auto mfrom=cxt.mapping(from)->as<RISCVBasicBlock>();
+        auto mto=cxt.mapping(to)->as<RISCVBasicBlock>();
         
-//         auto critialmbb=new RISCVBasicBlock();
-//         mfrom->replace_succ(mto,critialmbb);
-//         auto uncond=new RISCVMIR(RISCVMIR::_j);
-//         uncond->AddOperand(mto);
-//         critialmbb->push_back(uncond);
+        auto critialmbb=RISCVBasicBlock::CreateRISCVBasicBlock();
+        mfrom->replace_succ(mto,critialmbb);
+        auto uncond=new RISCVMIR(RISCVMIR::_j);
+        uncond->AddOperand(mto);
+        critialmbb->push_back(uncond);
 
-//         mfunc->push_back(critialmbb);
+        mfunc->push_back(critialmbb);
 
-//         CopyBlockFinder[from][to]=critialmbb;
-//     }
-//     return CopyBlockFinder[from][to];
-// }
+        CopyBlockFinder[from][to]=critialmbb;
+    }
+    return CopyBlockFinder[from][to];
+}
 
 void PhiElimination::runOnGraph(BasicBlock* pred,BasicBlock* succ,std::vector<std::pair<RISCVMOperand*,RISCVMOperand*>>& vec){
 
@@ -54,11 +54,11 @@ void PhiElimination::runOnGraph(BasicBlock* pred,BasicBlock* succ,std::vector<st
 
     /// @note Get the basicblock for emitting copy inst
     RISCVBasicBlock* emitMBB;
-    // if(auto cond=dynamic_cast<CondInst*>(pred->back()))
-    //     /// @todo try split critial edge
-    //     // emitMBB=;
-    //     emitMBB=find_copy_block(pred,succ);
-    // else 
+    if(auto cond=dynamic_cast<CondInst*>(pred->back()))
+        /// @todo try split critial edge
+        // emitMBB=;
+        emitMBB=find_copy_block(pred,succ);
+    else 
     emitMBB=cxt.mapping(pred)->as<RISCVBasicBlock>();
     
     for(int i=0,j=0,limi=vec.size();i<limi;){
@@ -72,6 +72,7 @@ void PhiElimination::runOnGraph(BasicBlock* pred,BasicBlock* succ,std::vector<st
 
             if(graph[i].indo!=0){
                 /// @note stage register
+                assert(graph[i].indo==1&&"Unexpected Degree");
                 auto stageR=cxt.createVReg(src->GetType());
                 emitMBB->push_before_branch(RISCVTrival::CopyFrom(stageR,dst));
                 stagedRegister[dst]=stageR;

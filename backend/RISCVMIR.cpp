@@ -45,6 +45,29 @@ std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects()
 
 RISCVBasicBlock::RISCVBasicBlock(std::string _name):NamedMOperand(_name,RISCVType::riscv_none){}
 
+RISCVBasicBlock* RISCVBasicBlock::CreateRISCVBasicBlock(){
+    static int cnt=0;
+    return new RISCVBasicBlock("_BB"+std::to_string(cnt++));
+}
+
+void RISCVBasicBlock::replace_succ(RISCVBasicBlock* from,RISCVBasicBlock* to){
+    for(auto it=rbegin();it!=rend();++it){
+        RISCVMIR* inst=*it;
+        RISCVMIR::RISCVISA opcode = inst->GetOpcode();
+        if(opcode<RISCVMIR::EndBranch&&opcode>RISCVMIR::BeginBranch){
+            bool flag=false;
+            for(int i=0;i<inst->GetOperandSize();i++){
+                if(inst->GetOperand(i)==from){
+                    inst->SetDef(to);
+                    flag=true;
+                }
+            }
+            if(flag)return;
+        }
+    }
+    assert(0&&"IMPOSSIBLE");
+}
+
 void RISCVBasicBlock::push_before_branch(RISCVMIR* minst) {
     assert(this->Size()!=0 && "Empty BasicBlock"); 
     for(auto it=this->rbegin(); it!=this->rend(); --it) {
