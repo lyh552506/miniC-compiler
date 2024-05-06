@@ -369,9 +369,8 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
 }
 
 void RISCVISel::InstLowering(PhiInst* inst){
-    ///@note phi elimination here,
-    ///
-    assert(0&&"NOT IMPL");
+    ///@note phi elimination not here, no op
+    return;
 }
 
 void RISCVISel::InstLowering(CallInst* inst){
@@ -392,11 +391,11 @@ void RISCVISel::InstLowering(CallInst* inst){
             ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i+1))}));
         }
     }
-    if(inst->GetOperand(0)->as<Function>()->GetType()!=VoidType::NewVoidTypeGet())
+    if(!inst->GetUserlist().is_empty()){
         ctx(Builder(RISCVMIR::call, inst));
-    
-    if(!inst->GetUserlist().is_empty()&&inst->GetType()!=VoidType::NewVoidTypeGet())
-        ctx(Builder(RISCVMIR::mv, {ctx.createVReg(RISCVTyper(inst->GetType())), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
+        ctx(Builder(RISCVMIR::mv, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
+    }
+    else ctx(Builder_withoutDef(RISCVMIR::call, inst));
     #undef M
 }
 

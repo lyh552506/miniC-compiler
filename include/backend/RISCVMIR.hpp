@@ -177,13 +177,13 @@ class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMI
 class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBasicBlock>{
     /// originally return type
     /// @todo some info like arguments doesn't need to store twice? 
-    Function* func;
+    Value* func;
     /// @todo FrameContext here
     RISCVBasicBlock* entry;
     using FOBJPTR=std::unique_ptr<RISCVFrameObject>;
     std::vector<FOBJPTR> frame;
     public:
-    RISCVFunction(Function*);
+    RISCVFunction(Value*);
     std::vector<FOBJPTR>& GetFrameObjects();
     void printfull();
 };

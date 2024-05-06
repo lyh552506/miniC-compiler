@@ -5,7 +5,7 @@ class NamedMOperand:public RISCVMOperand{
     std::string name;
     public:
     std::string& GetName();
-    NamedMOperand(std::string);
+    NamedMOperand(std::string,RISCVType);
     void print()override;
 };
 
