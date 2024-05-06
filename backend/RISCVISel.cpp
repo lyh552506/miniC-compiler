@@ -369,9 +369,8 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
 }
 
 void RISCVISel::InstLowering(PhiInst* inst){
-    ///@note phi elimination here,
-    ///
-    assert(0&&"NOT IMPL");
+    ///@note phi elimination not here, no op
+    return;
 }
 
 void RISCVISel::InstLowering(CallInst* inst){

@@ -43,7 +43,7 @@ std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects()
     return frame;
 }
 
-RISCVBasicBlock::RISCVBasicBlock(std::string _name):NamedMOperand(_name){}
+RISCVBasicBlock::RISCVBasicBlock(std::string _name):NamedMOperand(_name,RISCVType::riscv_none){}
 
 void RISCVBasicBlock::push_before_branch(RISCVMIR* minst) {
     assert(this->Size()!=0 && "Empty BasicBlock"); 
@@ -59,7 +59,7 @@ void RISCVBasicBlock::push_before_branch(RISCVMIR* minst) {
     this->push_front(minst);
 }
 
-RISCVFunction::RISCVFunction(Function* _func):RISCVGlobalObject(_func->GetType(),_func->GetName()),func(_func){}
+RISCVFunction::RISCVFunction(Value* _func):RISCVGlobalObject(_func->GetType(),_func->GetName()),func(_func){}
 
 
 void RISCVBasicBlock::printfull(){

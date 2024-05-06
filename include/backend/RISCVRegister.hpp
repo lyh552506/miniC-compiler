@@ -3,9 +3,8 @@
 
 /// @brief 这个写成接口吧...
 class Register:public RISCVMOperand{
-    RISCVType tp;
     public:
-    Register(RISCVType _tp):RISCVMOperand(),tp(_tp){};
+    Register(RISCVType _tp):RISCVMOperand(_tp){};
     virtual bool isPhysical()=0;
 };
 

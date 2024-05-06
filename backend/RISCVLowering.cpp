@@ -1,4 +1,5 @@
 #include "RISCVLowering.hpp"
+#include "PhiElimination.hpp"
 
 RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
@@ -33,7 +34,8 @@ bool RISCVFunctionLowering::run(Function* m){
     LowerFormalArguments(m);
     RISCVISel isel(ctx);
     isel.run(m);
-
+    PhiElimination phi(ctx);
+    phi.run(m);
     // Register Allocation
 
     return false;
