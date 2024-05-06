@@ -12,10 +12,10 @@ class functionSegment;
 class textSegment;
 class dataSegment;
 enum SegmentType {
-        TEXT,
-        DATA,
-        BSS,
-        RODATA
+    TEXT,
+    DATA,
+    BSS,
+    RODATA
 };
 SegmentType ChangeSegmentType(SegmentType newtype);
 void PrintSegmentType(SegmentType newtype, SegmentType* oldtype);

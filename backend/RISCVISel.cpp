@@ -34,6 +34,9 @@ RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,std::initializer_list<RISCV
 }
 
 bool RISCVISel::run(Function* m){
+    /// @todo create first Mbb;
+    RISCVLoweringContext& ctx=this->ctx;
+    LowerFormalArguments(m,ctx);
     for(auto i:*m){
         ctx(ctx.mapping(i)->as<RISCVBasicBlock>());
         for(auto inst:*i)
