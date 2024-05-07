@@ -45,7 +45,7 @@ bool RISCVFunctionLowering::run(Function* m){
     // Register Allocation
     // funcseg->PrintFuncSegmentTail();
     RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
-    regalloc.RunGCpass();
+    //regalloc.RunGCpass();
     return false;
 }
 
