@@ -163,7 +163,10 @@ void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* blo
     Operand src = module.GenerateMemcpyHandle(tp, initializer);
     args.push_back(alloca);
     args.push_back(src);
-    args.push_back(ConstIRInt::GetNewConstant(tp->get_size()));
+    if(auto subtp = dynamic_cast<HasSubType*>(tp)->GetSubType())
+        args.push_back(ConstIRInt::GetNewConstant(subtp->get_size()));
+    else
+        args.push_back(ConstIRInt::GetNewConstant(tp->get_size()));
     args.push_back(ConstIRBoolean::GetNewConstant(false));
     User* inst = Trival::GenerateCallInst("llvm.memcpy.p0.p0.i32",args);
     auto iter = block->begin();
@@ -177,30 +180,125 @@ void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* blo
 
 bool Global2Local::CanLocal(Variable* val, Function* func)
 {
+    if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY \ 
+    || val->GetType()->GetTypeEnum() == InnerDataType::IR_PTR)
+    {
+        size_t size;
+        Type* tp = val->GetType();
+        if(auto subtp = dynamic_cast<HasSubType*>(tp)->GetSubType())
+            size = subtp->get_size();
+        else
+            size = tp->get_size();
+        if(size > MaxSize)
+            return false;
+    }
     if(RecursiveFunctions.find(func) != RecursiveFunctions.end())
         return false;
     Value* Val = module.GetValueByName(val->get_name());
-    bool changed = false;
-    for(Use* use_ : Val->GetUserlist())
+    if(val->GetType()->GetTypeEnum() != InnerDataType::IR_ARRAY)
     {
-        if(StoreInst* inst = dynamic_cast<StoreInst*>(use_->GetUser()))
-            changed = true;
-        else if(GetElementPtrInst* inst = dynamic_cast<GetElementPtrInst*>(use_->GetUser()))
+        bool changed = false;
+        for(Use* use_ : Val->GetUserlist())
         {
-            for(Use* use__ : inst->GetUserlist())
-                if(dynamic_cast<StoreInst*>(use__->GetUser()))
-                    changed = true;
+            if(StoreInst* inst = dynamic_cast<StoreInst*>(use_->GetUser()))
+                changed = true;
+            else if(GetElementPtrInst* inst = dynamic_cast<GetElementPtrInst*>(use_->GetUser()))
+            {
+                for(Use* use__ : inst->GetUserlist())
+                    if(dynamic_cast<StoreInst*>(use__->GetUser()))
+                        changed = true;
+            }
         }
-    }
-    if(changed)
-    {
-        if(CallTimes[func] > 1)
-            return false;
+        if(changed)
+        {
+            if(CallTimes[func] > 1)
+                return false;
+            else
+            {
+                dom_info = std::make_unique<dominance>(func, func->GetBasicBlock().size());
+                dom_info->RunOnFunction();
+                loopAnalysis = std::make_unique<LoopAnalysis>(func, dom_info.get());
+                loopAnalysis->RunOnFunction();
+                for(Use* use_ : func->GetUserlist())
+                {
+                    if(auto call = dynamic_cast<CallInst*>(use_->GetUser()))
+                    {
+                        BasicBlock* block = call->GetParent();
+                        if(block->LoopDepth != 0)
+                            return false;
+                    }
+                }
+                return true;
+            }
+        }
         else
             return true;
     }
     else
-        return true;
+    {
+        for(Use* use_ : Val->GetUserlist())
+        {
+            if(GetElementPtrInst* inst = dynamic_cast<GetElementPtrInst*>(use_->GetUser()))
+            {
+                for(Use* use__ : inst->GetUserlist())
+                    if(CallInst* call = dynamic_cast<CallInst*>(use__->GetUser()))
+                    {
+                        int index = call->GetUseIndex(use__);
+                        Function* calleefunc = dynamic_cast<Function*>(call->Getuselist()[0]->usee);
+                        if(calleefunc)
+                        {
+                            if(hasChanged(index - 1, calleefunc))
+                                return false;
+                            else
+                                return true;
+                        }
+                    }
+            }
+        }
+    }
+    return true;
+}
+
+bool Global2Local::hasChanged(int index, Function* func)
+{
+    Value* val = func->GetParams()[index].get();
+    for(Use* use_ : val->GetUserlist())
+    {
+        if(StoreInst* inst = dynamic_cast<StoreInst*>(use_->GetUser()))
+                return true;
+        else if(GetElementPtrInst* inst = dynamic_cast<GetElementPtrInst*>(use_->GetUser()))
+        {
+            for(Use* use__ : inst->GetUserlist())
+            {
+                if(StoreInst* inst_ = dynamic_cast<StoreInst*>(use__->GetUser()))
+                    return true;
+                else if(CallInst* call = dynamic_cast<CallInst*>(use__->GetUser()))
+                {
+                    int index_ = call->GetUseIndex(use__);
+                    Function* calleefunc = dynamic_cast<Function*>(call->Getuselist()[0]->usee);
+                    if(calleefunc)
+                        return hasChanged(index_ - 1, calleefunc);
+                }
+            }
+        }
+        else if(CallInst* inst = dynamic_cast<CallInst*>(use_->GetUser()))
+        {
+            int index_ = inst->GetUseIndex(use_);
+            Function* calleefunc = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
+            if(calleefunc)
+                return hasChanged(index_ - 1, calleefunc);
+        }
+        else
+            return false;
+    }
+    //             {
+    //                 if(inst_->GetParent()->GetParent() == func)
+    //                     return true;
+    //             }
+    //         }
+    //     }
+    // }
+    // return false;
 }
 
 // bool Global2Local::CanLocal(Variable* val)
