@@ -6,6 +6,6 @@ testcases/**/*.s
 testcases_output
 testcases_c
 test.ipynb
-function_test
+function_test/
 .cache/clangd/index
 Testing

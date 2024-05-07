@@ -237,7 +237,14 @@ bool User::HasSideEffect()
     return false;
   return false;
 }
-
+int User::GetUseIndex(Use* Op)
+{
+  for(int i = 0; i < uselist.size(); i++)
+  {
+    if(uselist[i].get() == Op)
+      return i;
+  }
+}
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 
 // change uselist[num] to val while manage use-def relation

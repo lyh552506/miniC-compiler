@@ -6,6 +6,8 @@
 #include "RISCVISel.hpp"
 #include "RISCVRegister.hpp"
 #include "RegAlloc.hpp"
+#include "BaseCFG.hpp"
+#include "PhiElimination.hpp"
 class RISCVModuleLowering:BackEndPass<Module>{
     // bool LoweringGlobalValue(Module*);
     RISCVLoweringContext ctx;
@@ -19,5 +21,5 @@ class RISCVFunctionLowering:BackEndPass<Function>{
     public:
     bool run(Function*);
     RISCVFunctionLowering(RISCVLoweringContext& ctx):ctx(ctx){};
-    void LowerFormalArguments(Function* func);
+
 };

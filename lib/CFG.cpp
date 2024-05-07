@@ -522,19 +522,24 @@ Type *GetElementPtrInst::GetType() {
   return tp = PointerType::NewPointerTypeGet(tp);
 }
 
-void GetElementPtrInst::print() {
-  Value::print();
-  std::cout << " = getelementptr inbounds ";
-  dynamic_cast<HasSubType *>(uselist[0]->GetValue()->GetType())
-      ->GetSubType()
-      ->print();
-  for (int i = 0; i < uselist.size(); i++) {
-    std::cout << ", ";
-    uselist[i]->GetValue()->GetType()->print();
-    std::cout << " ";
-    uselist[i]->GetValue()->print();
-  }
-  std::cout << '\n';
+void GetElementPtrInst::print(){
+    Value::print();
+    std::cout<<" = getelementptr inbounds ";
+    dynamic_cast<HasSubType*>(uselist[0]->GetValue()->GetType())->GetSubType()->print();
+    for(int i=0;i<uselist.size();i++){
+        std::cout<<", ";
+        uselist[i]->GetValue()->GetType()->print();
+        std::cout<<" ";
+        uselist[i]->GetValue()->print();
+    }
+    std::cout<<'\n';
+}
+std::vector<Operand>& GetElementPtrInst::GetIndexs()
+{
+    std::vector<Operand> indexs;
+    for(int i = 1; i < uselist.size(); i++)
+        indexs.push_back(uselist[i]->GetValue());
+    return indexs;
 }
 
 ZextInst::ZextInst(Operand ptr) : User(IntType::NewIntTypeGet()) {
@@ -1245,7 +1250,19 @@ void Module::EraseFunction(Function *func) {
   }
 }
 
-std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() { return ls; }
+Function* Module::GetMainFunction()
+{
+    for(auto &i : ls)
+    {
+        if(i->GetName() == "main")
+            return i.get();
+    }
+    return nullptr;
+}
+
+std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() {
+    return ls;
+}
 
 std::vector<std::unique_ptr<Variable>> &Module::GetGlobalVariable() {
   return globalvaribleptr;

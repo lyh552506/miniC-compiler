@@ -6,16 +6,17 @@
 #include "RISCVMIR.hpp"
 #include "RISCVISel.hpp"
 #include "FloatToDex.hpp"
+#include "MagicEnum.hpp"
 class globlvar;
 class tempvar;
 class functionSegment;
 class textSegment;
 class dataSegment;
 enum SegmentType {
-        TEXT,
-        DATA,
-        BSS,
-        RODATA
+    TEXT,
+    DATA,
+    BSS,
+    RODATA
 };
 SegmentType ChangeSegmentType(SegmentType newtype);
 void PrintSegmentType(SegmentType newtype, SegmentType* oldtype);
@@ -27,9 +28,12 @@ class RISCVAsmPrinter {
     public:
     RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweringContext& ctx);
     ~RISCVAsmPrinter() = default;
+    void SetTextSegment(textSegment*);
+    dataSegment*& GetData();
     void printAsmGlobal();
     void printAsmText();
     void printAsmTempFloat();
+    void printAsm();
 };
 
 class dataSegment {
@@ -39,10 +43,9 @@ class dataSegment {
     public:
     dataSegment(Module* module, RISCVLoweringContext& ctx);
     void GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx);
-    void GenerateTempvarList(Module* module);
+    void GenerateTempvarList(RISCVLoweringContext& ctx);
     std::vector<tempvar*> get_tempvar_list();
-    //
-    void Change_LoadConstFloat(Value* inst, tempvar* tempfloat, std::list<Value*>::iterator it, Operand used);
+    void Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, mylist<RISCVBasicBlock,RISCVMIR>::iterator it, Imm* used);
     void PrintDataSegment_Globval();
     void PrintDataSegment_Tempvar();
 };
@@ -78,8 +81,8 @@ class textSegment {
     private:
     std::vector<functionSegment*> function_list;
     public:
-    textSegment(Module* module);
-    void GenerateFuncList(Module* module);
+    textSegment(RISCVLoweringContext& ctx);
+    void GenerateFuncList(RISCVLoweringContext& ctx);
     void PrintTextSegment();
 };
 
@@ -89,8 +92,9 @@ class functionSegment {
     int align;
     std::string name;
     std::string ty="function";
+    RISCVFunction* func;
     int size;
     public:
-    functionSegment(Function* func);
+    functionSegment(RISCVFunction* func);
     void PrintFuncSegment();
 };

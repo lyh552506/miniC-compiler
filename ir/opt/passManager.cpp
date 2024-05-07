@@ -18,6 +18,11 @@ void PassManager::InitPass() {
     m_inline = std::make_unique<Inliner>(m_func, m_loopAnlay.get(), Singleton<Module>());
     RunOnFunction();
   }
+  if(InitpassRecorder[10])
+  {
+    m_g2l = std::make_unique<Global2Local>(Singleton<Module>());
+    m_g2l->RunOnModule();
+  }
 }
 
 void PassManager::PreWork(int i) {
@@ -57,7 +62,7 @@ void PassManager::RunOnFunction() {
   }
   if (InitpassRecorder[2]) {
     m_constprop->RunOnFunction();
-    //m_constprop->PrintPass();
+    // m_constprop->PrintPass();
   }
   if (InitpassRecorder[7]) {
     m_cfgsimple->RunOnFunction();
@@ -67,11 +72,11 @@ void PassManager::RunOnFunction() {
   }
   if (InitpassRecorder[3]) {
     m_dce->RunOnFunction();
-    //m_dce->PrintPass();
+    // m_dce->PrintPass();
   }
   if (InitpassRecorder[4]) {
     m_adce->RunOnFunction();
-    m_adce->PrintPass();
+    // m_adce->PrintPass();
   }
   if (InitpassRecorder[5]) {
     PreWork(func);

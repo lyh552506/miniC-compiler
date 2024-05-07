@@ -11,7 +11,7 @@
 // RISCVMOperand::RISCVMOperand(){}
 
 Imm::Imm(ConstantData* _data):RISCVMOperand(RISCVTyper(_data->GetType())), data(_data){} //RISCVTyper(_data->GetType())),data(_data
-
+ConstantData* Imm::Getdata() {return data;}
 Imm* Imm::GetImm(ConstantData* _data){
     using Manager=std::unique_ptr<Imm>;
     static std::map<ConstantData*,Manager> mapping;

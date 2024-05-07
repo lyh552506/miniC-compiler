@@ -15,6 +15,7 @@
 #include "dominant.hpp"
 #include "cfgSimplify.hpp"
 #include "Inline.hpp"
+#include "Global2Local.hpp"
 #include "LoopSimplify.hpp"
 class PassManager : public PassManagerBase {
 public:
@@ -48,4 +49,5 @@ private:
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
   std::unique_ptr<cfgSimplify> m_cfgsimple;
   std::unique_ptr<Inliner> m_inline;
+  std::unique_ptr<Global2Local> m_g2l;
 };

@@ -36,13 +36,14 @@ void LARegister::print(){
     if(vreg!=nullptr) {
         std::cout << "(";
         vreg->print();
-        std::cout << ")" << std::endl;
+        std::cout << ")";
+        // std::cout << ")" << std::endl;
     }
 }
 
 StackRegister::StackRegister(PhyReg _regnum, int _offset)
     :PhyRegister(_regnum),offset(_offset){}
 void StackRegister::print(){
-    std::cout<<"("<<offset<<")" << magic_enum::enum_name(regenum);
+    std::cout << offset <<"(" << magic_enum::enum_name(regenum) <<")";
 }
 
