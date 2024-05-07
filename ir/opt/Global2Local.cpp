@@ -109,7 +109,7 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
     BasicBlock* begin = func->front();
     alloca->SetParent(begin);
     begin->push_front(alloca);
-    if(!val->GetInitializer())
+    if(!val->GetInitializer() && val->GetType()->GetTypeEnum() != InnerDataType::IR_ARRAY)
         module.GetValueByName(val->get_name())->RAUW(alloca);
     else
     {
@@ -127,10 +127,6 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
                     break;
             }
             Operand init = val->GetInitializer();
-            // LoadInst* load = new LoadInst(alloca->GetType());
-            // load->add_use(alloca);
-            // iter.insert_before(load);
-            // --iter;
             StoreInst* store = new StoreInst(init, alloca);
             iter.insert_before(store);
             module.GetValueByName(val->get_name())->RAUW(alloca);
@@ -160,7 +156,11 @@ void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* blo
     Value* val = module.GetValueByName(arr->get_name());
     Type* tp = val->GetType();
     std::vector<Operand> args;
-    Operand src = module.GenerateMemcpyHandle(tp, initializer);
+    Operand src;
+    if(initializer)
+        src = module.GenerateMemcpyHandle(tp, initializer);
+    else
+        src = module.GenerateMemcpyHandle(tp, new Initializer(tp));
     args.push_back(alloca);
     args.push_back(src);
     if(auto subtp = dynamic_cast<HasSubType*>(tp)->GetSubType())
@@ -180,18 +180,11 @@ void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* blo
 
 bool Global2Local::CanLocal(Variable* val, Function* func)
 {
-    if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY \ 
+    if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY 
     || val->GetType()->GetTypeEnum() == InnerDataType::IR_PTR)
     {
         Type* tp = val->GetType();
-        
-        // if(auto subtp = dynamic_cast<HasSubType*>(tp)->GetSubType())
-        // {
-        //     size = subtp->get_size();
-        // }
         size_t size = tp->get_size();
-        // else
-            // size = tp->get_size();
         if(size > MaxSize)
             return false;
     }
@@ -257,6 +250,23 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
                                 return true;
                         }
                     }
+                    else if(StoreInst* store = dynamic_cast<StoreInst*>(use__->GetUser()))
+                    {
+                        for(Use* use_ : func->GetUserlist())
+                        {
+                            if(auto call = dynamic_cast<CallInst*>(use_->GetUser()))
+                            {
+                                BasicBlock* block = call->GetParent();
+                                Function* func_ = block->GetParent();
+                                dom_info = std::make_unique<dominance>(func_, func_->GetBasicBlock().size());
+                                dom_info->RunOnFunction();
+                                loopAnalysis = std::make_unique<LoopAnalysis>(func_, dom_info.get());
+                                loopAnalysis->RunOnFunction();
+                                if(block->LoopDepth != 0)
+                                    return false;
+                            }
+                        }
+                    }
             }
         }
     }
@@ -295,14 +305,6 @@ bool Global2Local::hasChanged(int index, Function* func)
         else
             return false;
     }
-    //             {
-    //                 if(inst_->GetParent()->GetParent() == func)
-    //                     return true;
-    //             }
-    //         }
-    //     }
-    // }
-    // return false;
 }
 
 // bool Global2Local::CanLocal(Variable* val)
