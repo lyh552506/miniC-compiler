@@ -4,27 +4,28 @@
 void GraphColor::RunOnFunc() {
   bool condition = true;
   for (auto mbb : *m_func) {
-    while (condition) {
-      condition = false;
-      CaculateLiveness(mbb);
-      MakeWorklist();
-      do {
-        if (!simplifyWorkList.empty())
-          simplify();
-        else if (!worklistMoves.empty())
-          coalesce();
-        else if (!freezeWorkList.empty())
-          freeze();
-        else if (!spillWorkList.empty())
-          spill();
-      } while (simplifyWorkList.empty() && worklistMoves.empty() &&
-               freezeWorkList.empty() && spillWorkList.empty());
-      AssignColors();
-      if (!spilledNodes.empty()) {
-        RewriteProgram();
-        condition = true;
-      }
-    }
+    CaculateLiveness(mbb);
+    // while (condition) {
+    //   condition = false;
+    //   CaculateLiveness(mbb);
+    //   MakeWorklist();
+    //   do {
+    //     if (!simplifyWorkList.empty())
+    //       simplify();
+    //     else if (!worklistMoves.empty())
+    //       coalesce();
+    //     else if (!freezeWorkList.empty())
+    //       freeze();
+    //     else if (!spillWorkList.empty())
+    //       spill();
+    //   } while (simplifyWorkList.empty() && worklistMoves.empty() &&
+    //            freezeWorkList.empty() && spillWorkList.empty());
+    //   AssignColors();
+    //   if (!spilledNodes.empty()) {
+    //     RewriteProgram();
+    //     condition = true;
+    //   }
+    // }
   }
 }
 

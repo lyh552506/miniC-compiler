@@ -12,19 +12,19 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock* block)
     for(auto inst = block->rbegin();inst != block->rend(); ++inst)
     {
       OpType Opcode = (*inst)->GetOpcode();
-      if((*inst)->GetOpcode() == OpType::_j)
+      if(Opcode == OpType::_j)
         continue;
       else if(Opcode == OpType::_beq || Opcode == OpType::_bne || Opcode == OpType::_blt || \
       Opcode == OpType::_bge || Opcode == OpType::_bltu || Opcode == OpType::_bgeu)
       {
         RISCVMOperand* val1 = (*inst)->GetOperand(0);
         RISCVMOperand* val2 = (*inst)->GetOperand(1);
-        if(!dynamic_cast<Imm*>(val1) && !val1->ignoreLA())
+        if(!val1->ignoreLA())
         {
           BlockLivein[block].insert(val1); 
           Uses[block].insert(val1);
         }
-        if(!dynamic_cast<Imm*>(val2) && !val2->ignoreLA())
+        if(!val2->ignoreLA())
         {
           BlockLivein[block].insert(val2); 
           Uses[block].insert(val2);
@@ -33,7 +33,7 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock* block)
       else if(Opcode == OpType::ret)
       {
         RISCVMOperand* val1 = (*inst)->GetOperand(0);
-        if(!dynamic_cast<Imm*>(val1) && !val1->ignoreLA())
+        if(!val1->ignoreLA())
         {
             BlockLivein[block].insert(val1); 
             Uses[block].insert(val1);
@@ -42,7 +42,7 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock* block)
       else if((*inst)->GetOperandSize() == 1)
       {
         RISCVMOperand* val = (*inst)->GetOperand(0);
-        if(!dynamic_cast<Imm*>(val) && !val->ignoreLA())
+        if(!val->ignoreLA())
         {
             BlockLivein[block].insert(val); 
             Uses[block].insert(val);
@@ -52,12 +52,12 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock* block)
       {
         RISCVMOperand* val1 = (*inst)->GetOperand(0);
         RISCVMOperand* val2 = (*inst)->GetOperand(1);
-        if(!dynamic_cast<Imm*>(val1) && !val1->ignoreLA())
+        if(!val1->ignoreLA())
         {
             BlockLivein[block].insert(val1); 
             Uses[block].insert(val1);
         }
-        if(!dynamic_cast<Imm*>(val2) && !val2->ignoreLA())
+        if(!val2->ignoreLA())
         {
           BlockLivein[block].insert(val2); 
           Uses[block].insert(val2);
@@ -148,7 +148,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock* block)
       if(inst->GetOperandSize() == 1)
       {
         RISCVMOperand* val1 = inst->GetOperand(0);
-        if(!dynamic_cast<Imm*>(val1) && !val1->ignoreLA())
+        if(!val1->ignoreLA())
         {
           Live.insert(val1);
           if(dynamic_cast<PhyRegister*>(val1))
@@ -159,13 +159,13 @@ void GraphColor::CalInstLive(RISCVBasicBlock* block)
       {
         RISCVMOperand* val1 = inst->GetOperand(0);
         RISCVMOperand* val2 = inst->GetOperand(1);
-        if(!dynamic_cast<Imm*>(val1) && !val1->ignoreLA())
+        if(!val1->ignoreLA())
         {
           Live.insert(val1);
           if(dynamic_cast<PhyRegister*>(val1))
             Precolored.insert(val1);
         }
-        if(!dynamic_cast<Imm*>(val2) && !val2->ignoreLA())
+        if(!val2->ignoreLA())
         {
           Live.insert(val2);
           if(dynamic_cast<PhyRegister*>(val2))
@@ -174,7 +174,10 @@ void GraphColor::CalInstLive(RISCVBasicBlock* block)
       }
     }
     if(RISCVMOperand* DefValue = inst->GetDef())
-      Live.erase(DefValue);
+    {
+      if(!DefValue->ignoreLA())
+        Live.erase(DefValue);
+    } 
     liveinterval->blockinfo->InstLive[inst] = Live;
   }
 }
