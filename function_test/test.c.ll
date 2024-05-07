@@ -332,3 +332,15 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
+define i32 @main(){
+.1:
+  %.5 = alloca i32
+  %.2 = alloca i32
+  store i32 1, i32* %.2
+  store i32 98798779, i32* %.5
+  %.8 = load i32, i32* %.2
+  %.9 = load i32, i32* %.5
+  %.10 = add i32 %.8, %.9
+  store i32 %.10, i32* %.2
+  ret i32 989899898 
+}

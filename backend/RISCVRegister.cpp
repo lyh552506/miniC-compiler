@@ -10,7 +10,6 @@ PhyRegister* PhyRegister::GetPhyReg(PhyReg _regnum) {
         it=registry.emplace(_regnum, new PhyRegister(_regnum)).first;
     return it->second;
 }
-
 VirRegister::VirRegister(RISCVType tp):Register(tp){
     static int cnt=0;
     counter=cnt++;
@@ -36,13 +35,14 @@ void LARegister::print(){
     if(vreg!=nullptr) {
         std::cout << "(";
         vreg->print();
-        std::cout << ")" << std::endl;
+        std::cout << ")";
+        // std::cout << ")" << std::endl;
     }
 }
 
 StackRegister::StackRegister(PhyReg _regnum, int _offset)
     :PhyRegister(_regnum),offset(_offset){}
 void StackRegister::print(){
-    std::cout<<"("<<offset<<")" << magic_enum::enum_name(regenum);
+    std::cout << offset <<"(" << magic_enum::enum_name(regenum) <<")";
 }
 

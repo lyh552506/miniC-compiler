@@ -70,7 +70,6 @@ class GraphColor {
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
   GraphColor(RISCVFunction* func, int K) : m_func(func), colors(K) {
-    blockinfo = std::make_unique<BlockLiveInfo>(m_func);
     liveinterval = std::make_unique<LiveInterval>(m_func);
   }
   void RunOnFunc();
@@ -103,7 +102,6 @@ class GraphColor {
 
   class LiveInterval {
     RISCVFunction* func;
-
    protected:
     std::unordered_map<RISCVMIR*, int> instNum;
     std::unordered_map<RISCVBasicBlock*, BlockLiveInfo*> BlockInfo;
@@ -117,21 +115,20 @@ class GraphColor {
 
     bool verify(
         std::unordered_map<MOperand, std::vector<Interval>> Liveinterval);
-    std::unique_ptr<BlockLiveInfo> blockinfo;
 
    public:
-    LiveInterval(RISCVFunction* f) : func(f) {}
+    LiveInterval(RISCVFunction* f) : func(f) { blockinfo = std::make_unique<BlockLiveInfo>(f);}
     std::unordered_map<MOperand, std::vector<Interval>> GetRegLiveInterval(
         RISCVBasicBlock* block) {
       return RegLiveness[block];
     }
+    std::unique_ptr<BlockLiveInfo> blockinfo;
     void RunOnFunc();
     void PrintAnalysis();
   };
 
  private:
   RISCVFunction* m_func;
-  std::unique_ptr<BlockLiveInfo> blockinfo;
   std::unique_ptr<LiveInterval> liveinterval;
   //记录available的寄存器
   int colors;

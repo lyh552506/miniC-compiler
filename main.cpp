@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
       pass_manager->IncludePass(9);
       break;
     case 10:
-      pass_manager->IncludePass(9);
+      pass_manager->IncludePass(10);
       break;
     }
   }
@@ -88,10 +88,10 @@ int main(int argc, char **argv) {
   // freopen("dev/tty", "w", stdout);
   #endif
 
-  // freopen(asmoutput_path.c_str(), "w", stdout);
-  // AsmPrinter asmPrinter = AsmPrinter(filename, &Singleton<Module>());
-  // asmPrinter.printAsm();
-  // freopen("dev/tty", "w", stdout);
+  freopen(asmoutput_path.c_str(), "w", stdout);
+  RISCVModuleLowering RISCVASm;
+  RISCVASm.run(&Singleton<Module>());
 
+  freopen("dev/tty", "w", stdout);
   return 0;
 }
