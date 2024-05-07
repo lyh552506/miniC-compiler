@@ -10,10 +10,6 @@ void LoopSimplify::RunOnFunction() {
 }
 
 void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
-  if(loop->GetHeader()->GetName()==".64wc20")
-  {
-    int a=0;
-  }
   std::vector<LoopInfo *> WorkLists;
   WorkLists.push_back(loop);
   //将子循环递归的加入进来
@@ -35,7 +31,7 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       bool NeedToFormat = false;
       BasicBlock *bb = exit[index];
       for (auto rev : m_dom->GetNode(bb->num).rev) {
-        if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != L)
+        if (!loopAnlay->IsLoopIncludeBB(L,rev))
           NeedToFormat = true;
       }
       if (!NeedToFormat)
@@ -49,8 +45,8 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
     BasicBlock *header = L->GetHeader();
     std::vector<BasicBlock *> Latch;
     for (auto rev : m_dom->GetNode(header->num).rev) {
-      auto B=m_dom->GetNode(rev).thisBlock;
-      if (B != preheader&&loopAnlay->LookUp(B)==L)
+      auto B = m_dom->GetNode(rev).thisBlock;
+      if (B != preheader && loopAnlay->LookUp(B) == L)
         Latch.push_back(m_dom->GetNode(rev).thisBlock);
     }
     if (Latch.size() > 1) {
@@ -60,32 +56,6 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       // }
       FormatLatch(loop, preheader, Latch);
     }
-    // step 4: deal with existing block to the same block
-    // std::vector<BasicBlock *> exiting = loopAnlay->GetExitingBlock(loop);
-    // bool same = false;
-    // BasicBlock *target = nullptr;
-    // for (auto bb : exiting) {
-    //   for (auto des : m_dom->GetNode(bb->num).des) {
-    //     BasicBlock *dest = m_dom->GetNode(des).thisBlock;
-    //     if(loopAnlay->LookUp(dest)==loop)
-    //       continue;
-    //     if (target == nullptr) {
-    //       target = dest;
-    //       continue;
-    //     }
-    //     if (target != dest) {
-    //       same = false;
-    //       target = nullptr;
-    //       break;
-    //     }
-    //   }
-    //   if (!same)
-    //     break;
-    // }
-
-    // if(same){
-
-    // }
   }
 }
 
@@ -96,13 +66,13 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
   for (auto rev : m_dom->GetNode(Header->num).rev)
     if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != loop)
       OutSide.push_back(m_dom->GetNode(rev).thisBlock);
-  assert(OutSide.size() > 1);
+  //assert(OutSide.size() > 1);
   // phase 2: insert the preheader
   BasicBlock *preheader = new BasicBlock();
   preheader->SetName(preheader->GetName() + "_preheader");
   m_func->InsertBlock(Header, preheader);
   dominance::Node Node;
-  Node.thisBlock=preheader;
+  Node.thisBlock = preheader;
 #ifdef DEBUG
   std::cerr << "insert a preheader: " << preheader->GetName() << std::endl;
 #endif
@@ -141,9 +111,9 @@ void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
   BasicBlock *new_exit = new BasicBlock();
   new_exit->SetName(new_exit->GetName() + "_exit");
   m_func->InsertBlock(exit, new_exit);
-  //update the node info 
+  // update the node info
   dominance::Node Node;
-  Node.thisBlock=new_exit;
+  Node.thisBlock = new_exit;
   Node.des.push_front(exit->num);
 #ifdef DEBUG
   std::cerr << "insert a exit: " << new_exit->GetName() << std::endl;
@@ -212,7 +182,7 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
     pre_phi->updateIncoming(v.first, v.second);
     phi->Del_Incomes(i);
   }
-  phi->updateIncoming(pre_phi, target); 
+  phi->updateIncoming(pre_phi, target);
   phi->FormatPhi();
   return;
 }
@@ -223,7 +193,7 @@ void LoopSimplify::FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
   BasicBlock *new_latch = new BasicBlock();
   new_latch->SetName(new_latch->GetName() + "_latch");
   dominance::Node Node;
-  Node.thisBlock=new_latch;
+  Node.thisBlock = new_latch;
 #ifdef DEBUG
   std::cerr << "insert a latch: " << new_latch->GetName() << std::endl;
 #endif
@@ -245,6 +215,7 @@ void LoopSimplify::FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
       uncond->RSUW(0, new_latch);
     }
   }
+  m_dom->node.push_back(Node);
   UpdateInfo(latch, new_latch, head);
   loop->setLatch(new_latch);
 }
@@ -302,4 +273,5 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
     m_dom->GetNode(insert->num).rev.push_front(bb->num);
   }
   m_dom->GetNode(head->num).rev.push_front(insert->num);
+  m_dom->GetNode(insert->num).des.push_front(head->num);
 }

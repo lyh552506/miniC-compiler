@@ -67,9 +67,11 @@ public:
     setDest();
   }
   void Analysis();
+  bool IsLoopIncludeBB(LoopInfo *loop, int index);
+  bool IsLoopIncludeBB(LoopInfo *loop, BasicBlock *bb);
   BasicBlock *GetLatch();
   BasicBlock *GetPreHeader(LoopInfo *loopinfo);
-  std::vector<BasicBlock*> GetExitingBlock(LoopInfo* loopinfo);
+  std::vector<BasicBlock *> GetExitingBlock(LoopInfo *loopinfo);
   std::vector<BasicBlock *> GetExit(LoopInfo *loopinfo);
   void setBBs() { bbs = &(m_func->GetBasicBlock()); }
   void setDest() { Dest = &(m_dom->GetDest()); }
@@ -80,14 +82,15 @@ public:
   void CalculateLoopDepth(LoopInfo *loop, int depth);
   void LoopAnaly();
   void CloneToBB();
+  void ExpandSubLoops();
   // only for test
   void PrintPass();
   void RunOnFunction() {
     m_func->init_visited_block();
     BasicBlock *entry = m_func->front();
-    
     PostOrderDT(entry->num);
     Analysis();
+    ExpandSubLoops();
     LoopAnaly();
     CloneToBB();
     std::sort(LoopRecord.begin(), LoopRecord.end(),
@@ -95,7 +98,9 @@ public:
                 return a1->LoopDepth > a2->LoopDepth;
               });
     AlreadyGetInfo = true;
-    //PrintPass();
+#ifdef DEBUG
+    PrintPass();
+#endif DEBUG
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }
   iterator begin() { return LoopRecord.begin(); }

@@ -7,7 +7,7 @@ class ConstantFolding
 {
 public:
 Value* ConstantFoldInst(User* inst);
-
+static ConstantData* ConstFoldBinary(BinaryInst::Operation Opcode, ConstantData* LHS, ConstantData* RHS);
 private:
 // Handle PhiInst
 Value* ConstantFoldPhiInst(PhiInst* inst);

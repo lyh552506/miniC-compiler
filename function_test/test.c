@@ -1,4 +1,9 @@
-<<<<<<< HEAD
+
+int a;
+int main(int x){
+  
+  return a;
+}
 // int def_a=1;
 // float def_b=3.11;
 // int undef_a;
@@ -183,4 +188,4 @@ int main() {
   write_pgm();
   return 0;
 }
->>>>>>> 8426a32ab0abd15daba0cd31fccad1970714fc77
+

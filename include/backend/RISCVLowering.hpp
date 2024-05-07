@@ -5,6 +5,7 @@
 #include "RISCVAsmPrinter.hpp"
 #include "RISCVISel.hpp"
 #include "RISCVRegister.hpp"
+#include "RegAlloc.hpp"
 #include "BaseCFG.hpp"
 #include "PhiElimination.hpp"
 class RISCVModuleLowering:BackEndPass<Module>{

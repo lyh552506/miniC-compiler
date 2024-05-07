@@ -1,4 +1,6 @@
 #include "RISCVLowering.hpp"
+#include "PhiElimination.hpp"
+
 RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
     // need file name
@@ -41,12 +43,9 @@ bool RISCVFunctionLowering::run(Function* m){
     PhiElimination phi(ctx);
     phi.run(m);
     // Register Allocation
-<<<<<<< HEAD
     // funcseg->PrintFuncSegmentTail();
-=======
     RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
     regalloc.RunGCpass();
->>>>>>> 8426a32ab0abd15daba0cd31fccad1970714fc77
     return false;
 }
 
