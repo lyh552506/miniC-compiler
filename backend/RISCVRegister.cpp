@@ -40,3 +40,9 @@ void LARegister::print(){
     }
 }
 
+StackRegister::StackRegister(PhyReg _regnum, int _offset)
+    :PhyRegister(_regnum),offset(_offset){}
+void StackRegister::print(){
+    std::cout<<"("<<offset<<")" << magic_enum::enum_name(regenum);
+}
+

@@ -9,7 +9,9 @@
 class RISCVISel:public BackEndPass<Function>{
     RISCVLoweringContext& ctx;
     RISCVMIR* Builder(RISCVMIR::RISCVISA,User*);
+    RISCVMIR* Builder_withoutDef(RISCVMIR::RISCVISA,User*);
     RISCVMIR* Builder(RISCVMIR::RISCVISA,std::initializer_list<RISCVMOperand*>);
+    RISCVMIR* Builder_withoutDef(RISCVMIR::RISCVISA _isa,std::initializer_list<RISCVMOperand*> list);
     void InstLowering(User*);
     void InstLowering(AllocaInst*);
     void InstLowering(StoreInst*);

@@ -7,21 +7,28 @@ RISCVMOperand* RISCVLoweringContext::Create(Value* val){
             return frameobjs.back().get();
         }
         else if(auto store=dynamic_cast<StoreInst*>(inst))
-            assert("Can't be Used");
+            assert(0&&"Can't be Used");
         else if(auto cond=dynamic_cast<CondInst*>(inst))
-            assert("Can't be Used");
+            assert(0&&"Can't be Used");
         else if(auto uncond=dynamic_cast<UnCondInst*>(inst))
-            assert("Can't be Used");
+            assert(0&&"Can't be Used");
+        else if(auto ret=dynamic_cast<RetInst*>(inst))
+            assert(0&&"Can't be Used");
+        // else if(auto call=dynamic_cast<CallInst*>(inst))
+            // assert("Can't be Used");
         else{
             return createVReg(RISCVTyper(inst->GetType()));
         }
     }
     else if(auto bb=dynamic_cast<BasicBlock*>(val))
-        return new RISCVBasicBlock(bb->GetName());
+        return RISCVBasicBlock::CreateRISCVBasicBlock();
     else if(val->isConst())
         return Imm::GetImm(val->as<ConstantData>());
     else if(auto func=dynamic_cast<Function*>(val))
         return new RISCVFunction(func);
+    else if(auto buildin=dynamic_cast<BuildInFunction*>(val)){
+        return new RISCVFunction(buildin);
+    }
     assert(0&&"Can't be Used");
 }
 void RISCVLoweringContext::insert_val2mop(Value* val, RISCVMOperand* mop) {
