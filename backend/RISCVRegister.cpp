@@ -36,7 +36,8 @@ void LARegister::print(){
     if(vreg!=nullptr) {
         std::cout << "(";
         vreg->print();
-        std::cout << ")" << std::endl;
+        std::cout << ")";
+        // std::cout << ")" << std::endl;
     }
 }
 

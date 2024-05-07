@@ -20,6 +20,7 @@ class Imm:public RISCVMOperand{
     ConstantData* data;
     public:
     Imm(ConstantData*);
+    ConstantData* Getdata();
     static Imm* GetImm(ConstantData*);
     void print()final;
 };

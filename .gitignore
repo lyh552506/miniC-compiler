@@ -1,5 +1,5 @@
 build
-# .vscode/settings.json
+.vscode/settings.json
 RISCInst
 testcases/**/*.ll
 testcases/**/*.s

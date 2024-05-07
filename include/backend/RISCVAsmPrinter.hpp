@@ -6,6 +6,7 @@
 #include "RISCVMIR.hpp"
 #include "RISCVISel.hpp"
 #include "FloatToDex.hpp"
+#include "MagicEnum.hpp"
 class globlvar;
 class tempvar;
 class functionSegment;
@@ -44,7 +45,7 @@ class dataSegment {
     void GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx);
     void GenerateTempvarList(RISCVLoweringContext& ctx);
     std::vector<tempvar*> get_tempvar_list();
-    void Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, mylist<RISCVBasicBlock,RISCVMIR>::iterator it, RISCVMOperand* used);
+    void Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, mylist<RISCVBasicBlock,RISCVMIR>::iterator it, Imm* used);
     void PrintDataSegment_Globval();
     void PrintDataSegment_Tempvar();
 };

@@ -72,10 +72,18 @@ void RISCVISel::InstLowering(StoreInst* inst){
         }
     }
     else if(inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
-        auto minst=new RISCVMIR(RISCVMIR::_fsw);
-        for(int i=0;i<inst->Getuselist().size();i++)
-            minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
-        ctx(minst);
+        if(ConstIRFloat* Floatconst = dynamic_cast<ConstIRFloat*>(inst->GetOperand(0))) {
+            auto minst=new RISCVMIR(RISCVMIR::_fsw);
+            minst->AddOperand(new Imm(Floatconst));
+            minst->AddOperand(ctx.mapping(inst->GetOperand(1)));
+            ctx(minst);
+        }
+        else {
+            auto minst=new RISCVMIR(RISCVMIR::_fsw);
+            for(int i=0;i<inst->Getuselist().size();i++)
+                minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
+            ctx(minst);
+        }
     }
     else assert("invalid store type");
 }
