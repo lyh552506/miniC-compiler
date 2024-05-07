@@ -6,7 +6,6 @@ class Register:public RISCVMOperand{
     public:
     Register(RISCVType _tp):RISCVMOperand(_tp){};
     virtual bool isPhysical()=0;
-    bool ignoreLA();//Liveness Analysis
 };
 
 class PhyRegister:public Register{

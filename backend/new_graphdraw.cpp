@@ -99,7 +99,7 @@ void GraphColor::AddWorkList(MOperand v) {
 }
 
 void GraphColor::CaculateLiveness(RISCVBasicBlock *mbb) {
-  blockinfo->RunOnFunction();
+  liveinterval->blockinfo->RunOnFunction();
   //计算IG,并且添加precolored集合
   CalInstLive(mbb);
   CalcmoveList(mbb);
