@@ -11,7 +11,7 @@ void IDF::SetBBs(std::vector<BasicBlock*> &bbs) {
   this->bbs = &bbs;
 }
 
-// 论文的关键函数
+
 void IDF::caculateIDF(std::vector<BasicBlock *> &IDFBlocks) {
   caculateDTlevel(&m_dom.GetNode(0), 0);
 

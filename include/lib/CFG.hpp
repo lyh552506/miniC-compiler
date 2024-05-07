@@ -164,7 +164,7 @@ class GetElementPtrInst:public User
     GetElementPtrInst* clone(std::unordered_map<Operand,Operand>&)override;
     Type* GetType()final;
     void print()final;
-    Value* GetPtrVal();
+    std::vector<Operand>& GetIndexs();
 };
 //zext i1 to i32
 class ZextInst:public User
@@ -195,7 +195,10 @@ public:
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
   void Del_Incomes(int CurrentNum);
+  void FormatPhi();
   bool IsSame(PhiInst* phi);
+  BasicBlock* GetBlock(int index);
+  Value* GetVal(int index);
   std::vector<BasicBlock*> Blocks;
   int oprandNum;
   bool IsGetIncomings=false;
@@ -274,7 +277,10 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
+    //pred -> succ  ==>pred -> insert -> succ
     void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);
+    //curr ==>  insert -> curr
+    void InsertBlock(BasicBlock* curr,BasicBlock* insert);
     void init_visited_block();
     int bb_num=0;
 };
@@ -296,4 +302,5 @@ class Module:public SymbolTable
     std::vector<GlobalVariblePtr>& GetGlobalVariable();
     void Test();
     void EraseFunction(Function* func);
+    Function* GetMainFunction();
 };

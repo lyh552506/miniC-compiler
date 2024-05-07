@@ -37,7 +37,8 @@ bool RISCVFunctionLowering::run(Function* m){
     PhiElimination phi(ctx);
     phi.run(m);
     // Register Allocation
-
+    RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
+    regalloc.RunGCpass();
     return false;
 }
 

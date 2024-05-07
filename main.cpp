@@ -23,7 +23,7 @@ static struct option long_options[] = {
     {"adce", no_argument, 0, 4},     {"loopinfo",no_argument,0,5},
     {"help", no_argument, 0, 6},      {"simplifycfg",no_argument,0,7},
     {"ece", no_argument, 0, 8},      {"inline", no_argument, 0, 9},
-    {0, 0, 0, 0}};
+    {"global2local", no_argument, 0, 10}, {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
@@ -78,26 +78,20 @@ int main(int argc, char **argv) {
     case 9:
       pass_manager->IncludePass(9);
       break;
+    case 10:
+      pass_manager->IncludePass(9);
+      break;
     }
   }
   pass_manager->InitPass();
-  #endif
-  #ifdef SYSY_ENABLE_BACKEND
-  std::cout << std::endl;
-  AsmPrinter asmPrinter = AsmPrinter(argv[1], &Singleton<Module>());
-  asmPrinter.printAsm();
-  #else
-
   Singleton<Module>().Test();
-  freopen("dev/tty", "w", stdout);
+  // freopen("dev/tty", "w", stdout);
   #endif
 
-  freopen(asmoutput_path.c_str(), "w", stdout);
+  // freopen(asmoutput_path.c_str(), "w", stdout);
   // AsmPrinter asmPrinter = AsmPrinter(filename, &Singleton<Module>());
   // asmPrinter.printAsm();
-  RISCVModuleLowering RISCVasm;
-  RISCVasm.run(&Singleton<Module>());
-  freopen("dev/tty", "w", stdout);
+  // freopen("dev/tty", "w", stdout);
 
   return 0;
 }

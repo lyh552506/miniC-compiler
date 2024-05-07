@@ -6,6 +6,7 @@ set(CMAKE_BUILD_TYPE "Debug")
 
 project(SYSY-compiler VERSION 0.1.0 LANGUAGES C CXX)
 add_definitions(-DSYSY_ENABLE_MIDDLE_END)
+add_definitions(-DDEBUG)
 
 include(CTest)
 enable_testing()
