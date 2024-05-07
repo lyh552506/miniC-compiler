@@ -82,34 +82,11 @@ void Value::RAUW(Value* val){
     while(Head){
         if(auto phi=dynamic_cast<PhiInst*>(Head->fat))
           phi->Phiprop(Head->usee,val);
-        //@note避免未定义行为，此处只允许特殊情况的BB使用RAUW
-        // if(dynamic_cast<BasicBlock*>(val)&&dynamic_cast<BasicBlock*>(this)){
-        //   // BasicBlock* _1=dynamic_cast<BasicBlock*>(val);
-        //   BasicBlock* _2=dynamic_cast<BasicBlock*>(this);
-        //   Value* targ=_2->back()->Getuselist()[0]->GetValue();
-        //   Head->usee=targ;
-        //   Use* t=Head->nxt;
-        //   targ->userlist.push_front(Head);
-        //   Head=t;
-        //   continue;
-        // }
         Head->usee=val;
         Use* tmp=Head->nxt;
         val->userlist.push_front(Head);
         Head=tmp;
     }
-    //使用传入val替换this block-->即解决后继block中phi的问题
-    // if(dynamic_cast<BasicBlock*>(val) && dynamic_cast<BasicBlock*>(this))
-    //   for(int des dynamic_cast<BasicBlock*>(this))
-    //     for(auto iter=succ->begin();iter!=succ->end();++iter){
-    //       if(auto phi=dynamic_cast<PhiInst*>(*iter))
-    //         for(auto&[_1,x]:phi->PhiRecord){
-    //           if(x.second==dynamic_cast<BasicBlock*>(this))
-    //             x.second=dynamic_cast<BasicBlock*>(val);
-    //         }
-    //       else
-    //         break;   
-    //     }
 }
 std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
 {   

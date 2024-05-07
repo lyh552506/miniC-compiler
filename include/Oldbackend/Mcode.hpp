@@ -30,6 +30,7 @@ class MachineInst : public User {
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode, Operand rd);
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1);
     MachineInst(User* IR, MachineBasicBlock* mbb, std::string opcode, Operand rd, Operand rs1, Operand rs2);
+    void Add_UseDef();
     User* getIR();
     MachineBasicBlock* get_machinebasicblock();
     std::string GetOpcode();
@@ -37,12 +38,12 @@ class MachineInst : public User {
     Operand GetRd();
     Operand GetRs1();
     Operand GetRs2();
-    Operand GetDefs();
+    Operand GetDef();
     std::vector<Operand>& GetUses();
     void SetRd(Operand rd);
     void SetRs1(Operand rs1);
     void SetRs2(Operand rs2);
-    void SetDefs(Operand def);
+    void SetDef(Operand def);
     void print();
 };
 

@@ -2,6 +2,8 @@
 #include "BackendPass.hpp"
 #include "CFG.hpp"
 #include "RISCVContext.hpp"
+#include "RISCVRegister.hpp"
+#include <algorithm>
 
 
 class RISCVISel:public BackEndPass<Function>{
@@ -17,10 +19,15 @@ class RISCVISel:public BackEndPass<Function>{
     void InstLowering(UnCondInst*);
     void InstLowering(CondInst*);
     void InstLowering(BinaryInst*);
+    //
     void InstLowering(GetElementPtrInst*);
+    //
     void InstLowering(PhiInst*);
+    //
     void InstLowering(CallInst*);
     void InstLowering(RetInst*);
+ 
+    RISCVMOperand* Li_Intimm(ConstIRInt* Intconst);
     public:
     RISCVISel(RISCVLoweringContext&);
     bool run(Function*);

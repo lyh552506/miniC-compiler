@@ -1,16 +1,16 @@
 #include "RISCVLowering.hpp"
-#include "RISCVISel.hpp"
-
+#include "RISCVMIR.hpp"
+#include "RegAlloc.hpp"
+RISCVAsmPrinter* asmprinter;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
-    assert(0&&"Handled later");
-    // auto& var_vec=m->GetGlobalVariable();
-    // for(auto &i:var_vec){
-
-    // }
+    // need file name
+    asmprinter = new RISCVAsmPrinter("file", m, ctx);
+    asmprinter->printAsmGlobal();
+    // assert(0&&"Handled later");
 }
 
 bool RISCVModuleLowering::run(Module* m){
-    // LoweringGlobalValue(m);
+    LowerGlobalArgument(m);
     // start lowering function
     RISCVFunctionLowering funclower(ctx);
     auto& funcS=m->GetFuncTion();
@@ -20,6 +20,7 @@ bool RISCVModuleLowering::run(Module* m){
             std::cerr<<"FUNC Lowering failed\n";
         }
     }
+    
     ctx.print();
     return false;
 }
@@ -34,6 +35,7 @@ bool RISCVFunctionLowering::run(Function* m){
     isel.run(m);
 
     // Register Allocation
-
+    RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
+    regalloc.RunGCpass();
     return false;
 }

@@ -31,6 +31,7 @@ class Variable
     Variable(InnerDataType,std::string);
     void attach(Operand);
     std::string get_name();
+    // Value* GetValue();
     Type* GetType();
     Operand& GetInitializer();
     void print();
@@ -139,7 +140,7 @@ class BinaryInst:public User
     public:
     enum Operation
     {
-        Op_Add,Op_Sub,Op_Mul,Op_Div,Op_And,Op_Or,Op_Mod,
+        Op_Add,Op_Sub,Op_Mul,Op_Div,Op_Mod,Op_And,Op_Or,
         //what's below should be translate to cmp inst in llvm
         Op_E,Op_NE,Op_GE,Op_L,Op_LE,Op_G
     };//卧槽，原批
@@ -194,7 +195,10 @@ public:
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
   void Del_Incomes(int CurrentNum);
+  void FormatPhi();
   bool IsSame(PhiInst* phi);
+  BasicBlock* GetBlock(int index);
+  Value* GetVal(int index);
   std::vector<BasicBlock*> Blocks;
   int oprandNum;
   bool IsGetIncomings=false;
@@ -273,7 +277,10 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
+    //pred -> succ  ==>pred -> insert -> succ
     void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);
+    //curr ==>  insert -> curr
+    void InsertBlock(BasicBlock* curr,BasicBlock* insert);
     void init_visited_block();
     int bb_num=0;
 };

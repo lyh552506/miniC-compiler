@@ -1,6 +1,5 @@
-#include"AsmPrinter.hpp"
-#include "Mcode.hpp"
-#include "RegAlloc.hpp"
+#include "RISCVAsmPrinter.hpp"
+
 SegmentType __oldtype=TEXT;
 SegmentType* oldtype = &__oldtype;
 SegmentType ChangeSegmentType(SegmentType newtype) {
@@ -24,93 +23,13 @@ void PrintSegmentType(SegmentType newtype, SegmentType* oldtype) {
 }
 
 //AsmPrinter
-AsmPrinter::AsmPrinter(std::string filename, Module* unit) 
-    : filename(filename), unit(unit) {
-    
-    MachineUnit* Munit = GenerateMir(unit);
-    this->Machineunit = Munit;
-    /* 活跃性测试打印
-    for(MachineFunction* func : Machineunit->getMachineFunctions())
-    {
-        std::unique_ptr<LiveInterval> li;
-        li = std::make_unique<LiveInterval>(func);
-        li->RunOnFunc();
-    }
-    */
-    for( auto mf:Munit->getMachineFunctions())
-        RegAlloca(mf);
-    dataSegment* data = new dataSegment(Machineunit);
+RISCVAsmPrinter::RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweringContext& ctx) 
+    : filename(filename){ 
+    dataSegment* data = new dataSegment(unit,ctx);
     this->data = data;
-
-    textSegment* textseg = new textSegment(Machineunit);
-    this->text = textseg;
 }
 
-//寄存器分配 将剩余的虚拟寄存器分配到机器寄存器
-void AsmPrinter::RegAlloca(MachineFunction* m_function) {
-    regalloc=new RegAllocImpl(m_function);
-    regalloc->RunGCpass();
-}
-
-//生成机器指令
-MachineUnit* AsmPrinter::GenerateMir(Module* Unit) {
-    int func_num = 0;
-    MachineUnit* machineunit = new MachineUnit(Unit);
-
-    /*MachineFunction*/
-    for (auto& Func : Unit->GetFuncTion()) {
-        int block_num = 0;
-        MachineFunction* machinefunction = new MachineFunction(Func.get(), machineunit);
-        if (machinefunction == nullptr) {
-            std::cout << "machinefunction is nullptr" << std::endl;
-        }
-        machineunit->addMachineFunction(machinefunction);
-        
-        /*MachineBasicBlock*/
-        for (auto it = Func->begin(); it != Func->end(); ++it) {
-            BasicBlock* Block = *it;
-            MachineBasicBlock* machineblock = new MachineBasicBlock(Block, machinefunction);
-            machineblock->set_lable(func_num, block_num);
-            machinefunction->set_lable_map(Block->GetName(), machineblock->get_name());
-            machinefunction->addMachineBasicBlock(machineblock);
-            machinefunction->set_blockMap(Block, machineblock);
-            block_num++;
-        }
-        block_num = 0;
-        for (auto& machineblock : machinefunction->getMachineBasicBlocks()) {
-            
-            /*MachineInst*/
-            BasicBlock* block = machineblock->get_block();
-            for (auto it = block->begin(); it != block->end(); ++it) {
-                User* Inst = *it;
-                //生成机器指令 
-                MachineInst* machineinst = InstSelect(machineblock, *Inst);
-                add_inst(machineinst, machineblock, it);
-            } 
-            /*MachineBlock End*/
-            block_num++;
-        }
-        /*MachineFunction End*/
-        func_num++;
-    }
-    return machineunit; 
-}
-
-// void AsmPrinter::PrintInst(MachineUnit* unit) {
-//     for (auto& machinefunction : unit->getMachineFunctions()) {
-//         machinefunction->print_func_name();
-//         machinefunction->print_stack_frame();
-//         for (auto& machineblock : machinefunction->getMachineBasicBlocks()) {
-//             machineblock->print_block_lable();
-//             for (auto& machineinst : machineblock->getMachineInsts()) {
-//                 machineinst->print();
-//             }
-//         }
-//         machinefunction->print_func_end();
-//     }
-//     Singleton<Module>().Test();
-// }
-void AsmPrinter::printAsm() {
+void RISCVAsmPrinter::printAsmGlobal() {
     std::ofstream outputFile("output.a", std::ios::out); // 以追加模式打开文件
     if (outputFile.is_open()) {
         std::cout << "    .file  \"" << filename << "\"" << std::endl;
@@ -119,25 +38,19 @@ void AsmPrinter::printAsm() {
         std::cout << "    .attribute stack_align, 16" << std::endl;
         std::cout << "    .text" << std::endl;
         this->data->PrintDataSegment_Globval();
-        this->text->PrintTextSegment();
-        this->data->PrintDataSegment_Tempvar();
-
         outputFile.close();
     } else {
         std::cout << "Unable to open the file." << std::endl;
     }
-
-
 }
 
 //textSegment
-textSegment::textSegment(MachineUnit* Machineunit) 
-    : Machineunit(Machineunit) {
-    GenerateFuncList(Machineunit);
+textSegment::textSegment(Module* module) {
+    GenerateFuncList(module);
 }
-void textSegment::GenerateFuncList(MachineUnit* Machineunit) {
-    for (auto& machinefunction : Machineunit->getMachineFunctions()) {
-        functionSegment* funcSeg = new functionSegment(machinefunction);
+void textSegment::GenerateFuncList(Module* module) {
+    for (auto& function : module->GetFuncTion()) {
+        functionSegment* funcSeg = new functionSegment(function.get());
         function_list.push_back(funcSeg);
     }
 }
@@ -149,10 +62,9 @@ void textSegment::PrintTextSegment() {
 }
 
 //functionSegment
-functionSegment::functionSegment(MachineFunction* function)
-    : machinefunction(function) {
+functionSegment::functionSegment(Function* function) {
     align = 1;
-    name = function->get_function()->GetName();
+    name = function->GetName();
     size = -1;
 }
 void functionSegment::PrintFuncSegment() {
@@ -160,81 +72,84 @@ void functionSegment::PrintFuncSegment() {
     std::cout << "    .globl  " << name << std::endl;
     std::cout << "    .type  " << name << ", @" << ty << std::endl;
     // std::cout << name << ":" << std::endl;
-    machinefunction->print_func_name();
-    machinefunction->print_stack_frame();
-    for (auto& machineblock : machinefunction->getMachineBasicBlocks()) {
-        machineblock->print_block_lable();
-        for (auto& machineinst : machineblock->getMachineInsts()) {
-            machineinst->print();
-        }
-    }
+    // machinefunction->print_func_name();
+    // machinefunction->print_stack_frame();
+    // for (auto& machineblock : machinefunction->getMachineBasicBlocks()) {
+    //     machineblock->print_block_lable();
+    //     for (auto& machineinst : machineblock->getMachineInsts()) {
+    //         machineinst->print();
+    //     }
+    // }
     //machinefunction->print_func_end();
     if(size == -1)
         std::cout << "    .size " << name << ", " << "-" << name << std::endl;
 }
 
 //dataSegment
-dataSegment::dataSegment(MachineUnit* Machineunit) 
-    : Machineunit(Machineunit) {
-    GenerateGloblvarList(Machineunit);
-    GenerateTempvarList(Machineunit);
+dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
+    GenerateGloblvarList(module, ctx);
+    // GenerateTempvarList(module);
 }
-void dataSegment::GenerateGloblvarList(MachineUnit* Machineunit) {
-    for(auto& data : Machineunit->get_module()->GetGlobalVariable()) {
+void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx) {
+    for(auto& data : module->GetGlobalVariable()) {
         globlvar* gvar = new globlvar(data.get());
-            globlvar_list.push_back(gvar);
+        ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->get_name()), gvar);
+        globlvar_list.push_back(gvar);
     }
 }
-void dataSegment::GenerateTempvarList(MachineUnit* Machineunit) {
-    int num_lable=0; // 用于浮点常量计数
-    for (auto& machinefuntion : Machineunit->getMachineFunctions()) {
-        for (auto& machineblock : machinefuntion->getMachineBasicBlocks()) {
-            std::list<MachineInst*>& minsts = machineblock->getMachineInsts();
-            for (std::list<MachineInst*>::iterator it = minsts.begin(); it != minsts.end(); ++it) {
-                MachineInst* machineinst = *it;
-                if(machineinst->GetUses().empty()) {
-                    continue;
-                }
-                //生成需要放在只读数据段的内容， 应该只有浮点常量
-                for(auto& used : machineinst->GetUses()) {
-                    if (auto constfloat = dynamic_cast<ConstIRFloat*>(used)) {
-                        tempvar* tempfloat = new tempvar(num_lable, constfloat->GetVal());
-                        num_lable++;
-                        tempvar_list.push_back(tempfloat); 
-                        //在代码中修改加载方式；
-                        Change_LoadConstFloat(machineinst, tempfloat, it, used);
-                    }
-                }
-            }
-        }
-    }
+void dataSegment::GenerateTempvarList(Module* module) {
+    // int num_lable=0; // 用于浮点常量计数
+    // for (auto& funtion : module->GetFuncTion()) {
+    //     for (auto& block : funtion.get()->GetBasicBlock()) {
+    //         for () {
+
+    //         }
+    //         // std::list<MachineInst*>& minsts = block->();
+    //         for (std::list<MachineInst*>::iterator it = minsts.begin(); it != minsts.end(); ++it) {
+    //             MachineInst* machineinst = *it;
+    //             if(machineinst->GetUses().empty()) {
+    //                 continue;
+    //             }
+    //             //生成需要放在只读数据段的内容， 应该只有浮点常量
+    //             for(auto& used : machineinst->GetUses()) {
+    //                 if (auto constfloat = dynamic_cast<ConstIRFloat*>(used)) {
+    //                     tempvar* tempfloat = new tempvar(num_lable, constfloat->GetVal());
+    //                     num_lable++;
+    //                     tempvar_list.push_back(tempfloat); 
+    //                     //在代码中修改加载方式；
+    //                     Change_LoadConstFloat(machineinst, tempfloat, it, used);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 }
 std::vector<tempvar*> dataSegment::get_tempvar_list() {return tempvar_list;}
-void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat, std::list<MachineInst *>::iterator it, Operand used) {
-    std::string opcode = machineinst->GetOpcode();
-    MachineBasicBlock* block = machineinst->get_machinebasicblock();
-    std::list<MachineInst*>& insts = block->getMachineInsts();
-    Type* backendptr = new BackendPtr();
-    Operand rd = new Value(backendptr);
-    Operand rs1 = new Value(backendptr);
-    Operand rs2 = new Value(backendptr);
-    std::string nameHi = "\%hi(" + tempfloat->Getname() + ")";
-    rs1->SetName(nameHi);
-    std::string nameLo = "\%lo(" + tempfloat->Getname() + ")";
-    rs2->SetName(nameLo);
-    MachineInst* inst1 = new MachineInst(machineinst->get_machinebasicblock(), "lui", rd, rs1); // lui  a5, %hi(lable)
-    MachineInst* inst2 = new MachineInst(machineinst->get_machinebasicblock(), "addi", rd, rd, rs1);// addi  a5, a5, %lo(lable)
-    it = insts.insert(it, inst1);
-    ++it;
-    it = insts.insert(it, inst2); 
-    ++it;
-    used->SetName(rd->GetName());
-    // if(opcode == "sw")
-    //     machineinst->GetRd()->SetName(rd->GetName());
-    // else {
-    //     machineinst->GetRs1
-    // }
-}  
+// void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat, std::list<MachineInst *>::iterator it, Operand used) {
+//     std::string opcode = machineinst->GetOpcode();
+//     MachineBasicBlock* block = machineinst->get_machinebasicblock();
+//     std::list<MachineInst*>& insts = block->getMachineInsts();
+//     Type* backendptr = new BackendPtr();
+//     Operand rd = new Value(backendptr);
+//     Operand rs1 = new Value(backendptr);
+//     Operand rs2 = new Value(backendptr);
+//     std::string nameHi = "\%hi(" + tempfloat->Getname() + ")";
+//     rs1->SetName(nameHi);
+//     std::string nameLo = "\%lo(" + tempfloat->Getname() + ")";
+//     rs2->SetName(nameLo);
+//     MachineInst* inst1 = new MachineInst(machineinst->get_machinebasicblock(), "lui", rd, rs1); // lui  a5, %hi(lable)
+//     MachineInst* inst2 = new MachineInst(machineinst->get_machinebasicblock(), "addi", rd, rd, rs1);// addi  a5, a5, %lo(lable)
+//     it = insts.insert(it, inst1);
+//     ++it;
+//     it = insts.insert(it, inst2); 
+//     ++it;
+//     used->SetName(rd->GetName());
+//     // if(opcode == "sw")
+//     //     machineinst->GetRd()->SetName(rd->GetName());
+//     // else {
+//     //     machineinst->GetRs1
+//     // }
+// }  
 void dataSegment::PrintDataSegment_Globval() {
     for(auto& gvar : globlvar_list) {
         gvar->PrintGloblvar();
@@ -247,8 +162,7 @@ void dataSegment::PrintDataSegment_Tempvar() {
 }
 
 //globlvar
-globlvar::globlvar(Variable* data) {
-    name = data->get_name();
+globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->get_name()){
     InnerDataType tp = data->GetType()->GetTypeEnum();
     if(tp == InnerDataType::IR_Value_INT || tp == InnerDataType::IR_Value_Float) {
         align = 2;
@@ -374,21 +288,21 @@ void globlvar::generate_array_init(Initializer* arry_init, Type* basetype) {
 
 void globlvar::PrintGloblvar() {
     if (init_vector.empty()) {
-        std::cout << "    .globl  " << name << std::endl;
+        std::cout << "    .globl  " << this->GetName() << std::endl;
         PrintSegmentType(BSS, oldtype);
         std::cout << "    .align  " << align << std::endl;
-        std::cout << "    .type  " << name << ", @" << ty << std::endl;
-        std::cout << "    .size  " << name << ", " << size << std::endl;
-        std::cout << name << ":" << std::endl;
+        std::cout << "    .type  " << this->GetName() << ", @" << ty << std::endl;
+        std::cout << "    .size  " << this->GetName() << ", " << size << std::endl;
+        std::cout << this->GetName() << ":" << std::endl;
         std::cout << "    .zero  " << size << std::endl; 
     }
     else {
-        std::cout << "    .globl  " << name << std::endl;
+        std::cout << "    .globl  " << this->GetName() << std::endl;
         PrintSegmentType(DATA, oldtype);
         std::cout << "    .align  " << align << std::endl;
-        std::cout << "    .type  " << name << ", @" << ty << std::endl;
-        std::cout << "    .size  " << name << ", " << size << std::endl;
-        std::cout << name << ":" << std::endl;
+        std::cout << "    .type  " << this->GetName() << ", @" << ty << std::endl;
+        std::cout << "    .size  " << this->GetName() << ", " << size << std::endl;
+        std::cout << this->GetName() << ":" << std::endl;
         int zero_count=0;
         for(auto& init : init_vector) {
             bool is_zero = std::visit([](auto&& value){return value==0;}, init);
@@ -423,19 +337,19 @@ void globlvar::PrintGloblvar() {
 
 //tempvar
 tempvar::tempvar(int num_lable, float init) : 
-    num_lable(num_lable), align(2), init(init) {
-    name = ".LC"+ std::to_string(num_lable);
+    RISCVTempFloatObject("file"), num_lable(num_lable), align(2), init(init) {
+    this->GetName() = ".LC"+ std::to_string(num_lable);
 }
 std::string tempvar::Getname() {
-    return name;
+    return this->GetName();
 }
 void tempvar::PrintTempvar() {
-    PrintSegmentType(RODATA, oldtype);
-    std::cout << "    .align  " << align << std::endl;
-    std::cout << name << ":" << std::endl;
-    FloatBits bits;
-    bits.floatValue = init;
-    std::string binaryString = std::bitset<32>(bits.intBits).to_string();
-    int decNum = binaryToDecimal(binaryString);
-    std::cout << "    .word  " << decNum << std::endl;
+    // PrintSegmentType(RODATA, oldtype);
+    // std::cout << "    .align  " << align << std::endl;
+    // std::cout << this->GetName() << ":" << std::endl;
+    // FloatBits bits;
+    // bits.floatValue = init;
+    // std::string binaryString = std::bitset<32>(bits.intBits).to_string();
+    // int decNum = binaryToDecimal(binaryString);
+    // std::cout << "    .word  " << decNum << std::endl;
 }

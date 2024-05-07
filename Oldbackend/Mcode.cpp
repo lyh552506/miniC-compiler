@@ -3,22 +3,74 @@
 /*MachinInst*/
 //without IR
 MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode) 
-    : mbb(mbb), opcode(opcode), offset(0), def(NULL), used(NULL) {}    
+    : mbb(mbb), opcode(opcode), offset(0) {
+    Add_UseDef();
+}    
 MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd) 
-    : mbb(mbb), opcode(opcode), rd(rd), offset(0), def(NULL), used(NULL) {}
+    : mbb(mbb), opcode(opcode), rd(rd), offset(0) {
+    Add_UseDef();
+}    
 MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1) 
-    : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), offset(0), def(NULL), used(NULL) {}
+    : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), offset(0) {
+    Add_UseDef();
+}    
 MachineInst::MachineInst(MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1, Operand rs2) 
-    : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2), offset(0), def(NULL), used(NULL) {}
+    : mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2), offset(0) {
+    Add_UseDef();
+}    
 //with IR
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode) 
-    : IR(IR), mbb(mbb), opcode(opcode), offset(0), def(NULL), used(NULL) {}
+    : IR(IR), mbb(mbb), opcode(opcode), offset(0) {
+    Add_UseDef();
+}    
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd) 
-    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), offset(0), def(NULL), used(NULL) {}
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), offset(0) {
+    Add_UseDef();
+}    
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1) 
-    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), offset(0), def(NULL), used(NULL) {}
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), offset(0) {
+    Add_UseDef();
+}    
 MachineInst::MachineInst(User* IR, MachineBasicBlock* mbb,std::string opcode, Operand rd, Operand rs1, Operand rs2) 
-    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2), offset(0), def(NULL), used(NULL) {}
+    : IR(IR), mbb(mbb), opcode(opcode), rd(rd), rs1(rs1), rs2(rs2), offset(0) {
+    Add_UseDef();
+}    
+void MachineInst::Add_UseDef() {
+    if (opcode == "sw") {
+        this->SetDef(rs1);
+        this->used.push_back(rd);
+    }
+    else if (opcode == "lw" || opcode == "li") {
+        this->SetDef(rd);
+        this->used.push_back(rs1);
+    }
+    else if (opcode == "fcvt.s.w" || opcode == "fcvt.w.s") {
+        this->SetDef(rd);
+        this->used.push_back(rs1);
+    }
+    else if (opcode == "j") {
+        this->used.push_back(rd);
+    }
+    else if (opcode == "beqz") {
+        this->used.push_back(rd);
+        this->used.push_back(rs1);
+    }
+    else if (opcode == "call") {
+        int usednumber = this->IR->GetUserListSize()-1;
+        for (int i=1; i<usednumber; i++) {
+            this->used.push_back(this->IR->Getuselist()[i]->GetValue());
+        }
+    }
+    else if (opcode == "ret") {
+        //do nothing;
+    }
+    else {
+        this->SetDef(rd);
+        this->GetUses().push_back(rs1);
+        this->GetUses().push_back(rs2);
+    }
+}
+
 User* MachineInst::getIR() {return this->IR;}
 MachineBasicBlock* MachineInst::get_machinebasicblock() {return this->mbb;}
 std::string MachineInst::GetOpcode() {return opcode;}
@@ -26,7 +78,7 @@ void MachineInst::SetOpcode(std::string opcode) {this->opcode = opcode;}
 Operand MachineInst::GetRd() {return rd;}
 Operand MachineInst::GetRs1() {return rs1;}
 Operand MachineInst::GetRs2() {return rs2;}
-Operand MachineInst::GetDefs(){return def;}
+Operand MachineInst::GetDef(){return def;}
 std::vector<Operand>& MachineInst::GetUses() {return this->used;}
 // bool MachineInst::isVirtual(Operand Op) { 
 //     if (Op->GetName().find(".LBB")) {return 0;}
@@ -35,7 +87,7 @@ std::vector<Operand>& MachineInst::GetUses() {return this->used;}
 void MachineInst::SetRd(Operand rd) {this->rd = rd;}
 void MachineInst::SetRs1(Operand rs1) {this->rs1 = rs1;}
 void MachineInst::SetRs2(Operand rs2) {this->rs2 = rs2;}
-void MachineInst::SetDefs(Operand def) {this->def = def;}
+void MachineInst::SetDef(Operand def) {this->def = def;}
 
 void MachineInst::print() {
     if (opcode == "alloca") {
@@ -44,16 +96,10 @@ void MachineInst::print() {
     else if (opcode == "sw") {
         std::cout << "    " << opcode << " " << rd->GetName() << ", -"; 
         std::cout << mbb->get_parent()->get_offset(rs1->GetName()) << "(s0)" << std::endl;
-        // std::cout << mbb->get_parent()->get_offset(rs1->GetName()) << "(";
-        // std::cout << rs1->GetName() << ")" << std::endl;
-        // rs1->SetName("s0");
     }
     else if (opcode == "lw") {
         std::cout << "    " << opcode << " " << rd->GetName() << ", -"; 
         std::cout << mbb->get_parent()->get_offset(rs1->GetName()) << "(s0)" << std::endl;
-        // std::cout << mbb->get_parent()->get_offset(rs1->GetName()) << "(";
-        // std::cout << rs1->GetName() << ")" << std::endl;
-        // rs1->SetName("s0");
     }
     else if (opcode == "fcvt.s.w") {
         std::cout << "    " << opcode << " " << rd->GetName() << ", ";

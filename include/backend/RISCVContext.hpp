@@ -24,10 +24,14 @@ class RISCVLoweringContext{
     /// This works as a factory but is not responsible for delete yet 
     RISCVMOperand* Create(Value*);
     public:  
+    //
     void operator()(RISCVMIR*);
     void operator()(RISCVBasicBlock*);
     void operator()(RISCVFunction*);
+    void insert_val2mop(Value*, RISCVMOperand*);
     RISCVMOperand* mapping(Value*);
     VirRegister* createVReg(RISCVType);
+    std::vector<MFuncPtr>& GetFunctions();
+    // std::vector<MFuncPtr> Get;
     void print();
 };

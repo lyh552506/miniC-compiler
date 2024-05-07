@@ -1,5 +1,5 @@
 #include "RISCVFrameContext.hpp"
-
+std::string& NamedMOperand::GetName() {return name;}
 NamedMOperand::NamedMOperand(std::string _name):RISCVMOperand(),name(_name){}
 
 void NamedMOperand::print(){
@@ -17,7 +17,7 @@ void RISCVFrameObject::print(){
     tp->print();
     std::cout<<"FrameObject:";
     NamedMOperand::print();
-    std::cout<<"---\n";
+    std::cout<<"---";
 }
 
 RISCVGlobalObject::RISCVGlobalObject(Type* _tp,std::string _name):RISCVObject(_tp,_name){
@@ -31,3 +31,8 @@ void RISCVGlobalObject::print(){
     NamedMOperand::print();
     std::cout<<"***\n";
 }
+
+RISCVTempFloatObject::RISCVTempFloatObject(std::string _name):RISCVObject(FloatType::NewFloatTypeGet(), _name){
+    local=true;
+}
+void RISCVTempFloatObject::print() {}
