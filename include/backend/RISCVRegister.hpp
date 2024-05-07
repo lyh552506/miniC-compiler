@@ -30,6 +30,7 @@ class PhyRegister:public Register{
     PhyRegister(PhyReg);
     public:
     static PhyRegister* GetPhyReg(PhyReg);
+    PhyReg Getregenum(){return regenum;};
     void print();
     bool isPhysical()final{return true;};
 };

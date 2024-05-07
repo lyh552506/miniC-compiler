@@ -332,13 +332,15 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-<<<<<<< HEAD
-@.g.def_arrf = global [2 x [2 x [3 x [3 x float]]]]  [[2 x [3 x [3 x float]]]  [[3 x [3 x float]]  [[3 x float]  [float 0x4009c6a7e0000000, float zeroinitializer, float zeroinitializer], [3 x float] zeroinitializer, [3 x float] zeroinitializer], [3 x [3 x float]] zeroinitializer], [2 x [3 x [3 x float]]] zeroinitializer]
 define i32 @main(){
-.9:
-  %.15 = getelementptr inbounds [2 x [2 x [3 x [3 x float]]]], [2 x [2 x [3 x [3 x float]]]]* @.g.def_arrf, i32 0, i32 1, i32 1, i32 1, i32 1
-  store float 0x4009c28f60000000, float* %.15
-  ret i32 0 
+.1:
+  %.5 = alloca i32
+  %.2 = alloca i32
+  store i32 1, i32* %.2
+  store i32 98798779, i32* %.5
+  %.8 = load i32, i32* %.2
+  %.9 = load i32, i32* %.5
+  %.10 = add i32 %.8, %.9
+  store i32 %.10, i32* %.2
+  ret i32 989899898 
 }
-=======
->>>>>>> 8426a32ab0abd15daba0cd31fccad1970714fc77

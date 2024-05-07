@@ -408,8 +408,8 @@ void RISCVISel::InstLowering(CallInst* inst){
             regnum+=i;
             if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(i))) {
                 auto li = new RISCVMIR(RISCVMIR::li);
-                VirRegister* vreg = ctx.createVReg(RISCVTyper(inst->GetOperand(i)->GetType()));
-                li->SetDef(vreg);
+                PhyRegister* preg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum));
+                li->SetDef(preg);
                 Imm* imm = new Imm(constint);
                 li->AddOperand(imm);
                 ctx.insert_val2mop(constint, imm);
@@ -445,11 +445,11 @@ void RISCVISel::InstLowering(RetInst* inst){
         ctx(minst);
     }
     else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
-        ctx(Builder(RISCVMIR::_lw,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
+        ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
         ctx(Builder_withoutDef(RISCVMIR::ret,inst));
     }
     else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
-        ctx(Builder(RISCVMIR::_flw,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
+        ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0),M(inst->GetOperand(0))}));
         ctx(Builder_withoutDef(RISCVMIR::ret,inst));
     }
     else 

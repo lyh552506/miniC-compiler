@@ -10,7 +10,6 @@ PhyRegister* PhyRegister::GetPhyReg(PhyReg _regnum) {
         it=registry.emplace(_regnum, new PhyRegister(_regnum)).first;
     return it->second;
 }
-
 VirRegister::VirRegister(RISCVType tp):Register(tp){
     static int cnt=0;
     counter=cnt++;
