@@ -93,6 +93,5 @@ int main(int argc, char **argv) {
   RISCVASm.run(&Singleton<Module>());
 
   freopen("dev/tty", "w", stdout);
-
   return 0;
 }

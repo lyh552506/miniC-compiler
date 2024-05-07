@@ -1,4 +1,6 @@
 #include "RISCVLowering.hpp"
+#include "PhiElimination.hpp"
+
 RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
     // need file name
