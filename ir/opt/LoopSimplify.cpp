@@ -66,7 +66,7 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
   for (auto rev : m_dom->GetNode(Header->num).rev)
     if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != loop)
       OutSide.push_back(m_dom->GetNode(rev).thisBlock);
-  assert(OutSide.size() > 1);
+  //assert(OutSide.size() > 1);
   // phase 2: insert the preheader
   BasicBlock *preheader = new BasicBlock();
   preheader->SetName(preheader->GetName() + "_preheader");

@@ -139,10 +139,7 @@ BasicBlock *LoopAnalysis::GetPreHeader(LoopInfo *loopinfo) {
   BasicBlock *header = loopinfo->GetHeader();
   for (auto rev : m_dom->GetNode(header->num).rev) {
     //出现前驱不属于这个循环的情况
-    // auto iter =
-    //     std::find(loopinfo->ContainBlocks.begin(),
-    //               loopinfo->ContainBlocks.end(), GetCorrespondBlock(rev));
-    if (!IsLoopIncludeBB(loopinfo,rev)) {
+    if (!IsLoopIncludeBB(loopinfo, rev)) {
       if (preheader == nullptr) {
         preheader = GetCorrespondBlock(rev);
         continue;
@@ -152,6 +149,13 @@ BasicBlock *LoopAnalysis::GetPreHeader(LoopInfo *loopinfo) {
         return preheader;
       }
     }
+  }
+  if (preheader) {
+    for (auto des : m_dom->GetNode(preheader->num).des)
+      if (GetCorrespondBlock(des) != header) {
+        preheader = nullptr;
+        return preheader;
+      }
   }
   if (preheader != nullptr)
     loopinfo->setPreHeader(preheader);
@@ -165,7 +169,7 @@ std::vector<BasicBlock *> LoopAnalysis::GetExitingBlock(LoopInfo *loopinfo) {
       // auto iter =
       //     std::find(loopinfo->ContainBlocks.begin(),
       //               loopinfo->ContainBlocks.end(), GetCorrespondBlock(succ));
-      if (!IsLoopIncludeBB(loopinfo,succ))
+      if (!IsLoopIncludeBB(loopinfo, succ))
         PushVecSingleVal(exit, bb);
     }
   }
@@ -179,7 +183,7 @@ std::vector<BasicBlock *> LoopAnalysis::GetExit(LoopInfo *loopinfo) {
       BasicBlock *B = m_dom->GetNode(des).thisBlock;
       // auto iter = std::find(loopinfo->ContainBlocks.begin(),
       //                       loopinfo->ContainBlocks.end(), B);
-      if (!IsLoopIncludeBB(loopinfo,B))
+      if (!IsLoopIncludeBB(loopinfo, B))
         PushVecSingleVal(workList, B);
     }
   }
