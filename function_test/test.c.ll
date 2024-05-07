@@ -332,6 +332,7 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
+<<<<<<< HEAD
 @.g.def_arrf = global [2 x [2 x [3 x [3 x float]]]]  [[2 x [3 x [3 x float]]]  [[3 x [3 x float]]  [[3 x float]  [float 0x4009c6a7e0000000, float zeroinitializer, float zeroinitializer], [3 x float] zeroinitializer, [3 x float] zeroinitializer], [3 x [3 x float]] zeroinitializer], [2 x [3 x [3 x float]]] zeroinitializer]
 define i32 @main(){
 .9:
@@ -339,3 +340,5 @@ define i32 @main(){
   store float 0x4009c28f60000000, float* %.15
   ret i32 0 
 }
+=======
+>>>>>>> 8426a32ab0abd15daba0cd31fccad1970714fc77

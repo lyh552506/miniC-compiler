@@ -1,3 +1,4 @@
+<<<<<<< HEAD
     .file  "file"
     .attribute arch, "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0"
     .attribute unaligned_access, 0
@@ -23,3 +24,5 @@ main:
 	lw a0, 0
 	ret 
     .size main, -main
+=======
+>>>>>>> 8426a32ab0abd15daba0cd31fccad1970714fc77

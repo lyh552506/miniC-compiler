@@ -48,6 +48,15 @@ void dominance::RunOnFunction() {
   promoteMemoryToRegister(*thisFunc, *this);
 }
 
+void dominance::update(){
+  init();
+  for (int i = 1; i <= block_num; i++) {
+    dsu[i].ancestor = i;
+    dsu[i].min_sdom = i;
+  }
+  dom_begin();  //标志开始函数
+}
+
 void dominance::DFS(int pos) {
   node[pos].dfnum = count;
   node[pos].sdom = count;  // 每个节点的sdom先初始化为自己
