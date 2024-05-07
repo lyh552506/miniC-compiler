@@ -1,4 +1,5 @@
 #include "RISCVContext.hpp"
+#include "RISCVAsmPrinter.hpp"
 RISCVMOperand* RISCVLoweringContext::Create(Value* val){
     if(auto inst=dynamic_cast<User*>(val)){
         if(auto alloca=dynamic_cast<AllocaInst*>(inst)){
@@ -60,7 +61,7 @@ VirRegister* RISCVLoweringContext::createVReg(RISCVType type){
 }
 
 std::vector<std::unique_ptr<RISCVFunction>>& RISCVLoweringContext::GetFunctions() {return this->functions;}
-
+extern RISCVAsmPrinter* asmprinter;
 void RISCVLoweringContext::print(){
     /// @todo print global variables
     for(auto& mfunc:functions)

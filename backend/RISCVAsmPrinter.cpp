@@ -28,7 +28,8 @@ RISCVAsmPrinter::RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweri
     dataSegment* data = new dataSegment(unit,ctx);
     this->data = data;
 }
-
+void RISCVAsmPrinter::SetTextSegment(textSegment* _text) {text=_text;}
+dataSegment* &RISCVAsmPrinter::GetData(){return data;} 
 void RISCVAsmPrinter::printAsmGlobal() {
     std::cout << "    .file  \"" << filename << "\"" << std::endl;
     std::cout << "    .attribute arch, \"rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0\"" << std::endl;
@@ -41,15 +42,15 @@ void RISCVAsmPrinter::printAsmGlobal() {
 void RISCVAsmPrinter::printAsm() {
     this->printAsmGlobal();
     this->text->PrintTextSegment();
-    this->data->PrintDataSegment_Tempvar();
+    // this->data->PrintDataSegment_Tempvar();
 }
 
 //textSegment
-textSegment::textSegment(Module* module) {
-    GenerateFuncList(module);
+textSegment::textSegment(RISCVLoweringContext& ctx) {
+    GenerateFuncList(ctx);
 }
-void textSegment::GenerateFuncList(Module* module) {
-    for (auto& function : module->GetFuncTion()) {
+void textSegment::GenerateFuncList(RISCVLoweringContext& ctx) {
+    for (auto& function : ctx.GetFunctions()) {
         functionSegment* funcSeg = new functionSegment(function.get());
         function_list.push_back(funcSeg);
     }
@@ -62,7 +63,8 @@ void textSegment::PrintTextSegment() {
 }
 
 //functionSegment
-functionSegment::functionSegment(Function* function) {
+functionSegment::functionSegment(RISCVFunction* function) 
+    :func(function){
     align = 1;
     name = function->GetName();
     size = -1;
@@ -71,20 +73,10 @@ void functionSegment::PrintFuncSegment() {
     std::cout << "    .align  " << align << std::endl;
     std::cout << "    .globl  " << name << std::endl;
     std::cout << "    .type  " << name << ", @" << ty << std::endl;
-    // std::cout << name << ":" << std::endl;
-    // machinefunction->print_func_name();
-    // machinefunction->print_stack_frame();
-    // for (auto& machineblock : machinefunction->getMachineBasicBlocks()) {
-    //     machineblock->print_block_lable();
-    //     for (auto& machineinst : machineblock->getMachineInsts()) {
-    //         machineinst->print();
-    //     }
-    // }
-    // machinefunction->print_func_end();
+    func->printfull();
     if(size == -1)
         std::cout << "    .size " << name << ", " << "-" << name << std::endl;
 }
-
 //dataSegment
 dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
     GenerateGloblvarList(module, ctx);
@@ -97,59 +89,56 @@ void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx
         globlvar_list.push_back(gvar);
     }
 }
-void dataSegment::GenerateTempvarList(Module* module) {
-    // int num_lable=0; // 用于浮点常量计数
-    // for (auto& funtion : module->GetFuncTion()) {
-    //     for (auto& block : funtion.get()->GetBasicBlock()) {
-    //         for () {
-
-    //         }
-    //         // std::list<MachineInst*>& minsts = block->();
-    //         for (std::list<MachineInst*>::iterator it = minsts.begin(); it != minsts.end(); ++it) {
-    //             MachineInst* machineinst = *it;
-    //             if(machineinst->GetUses().empty()) {
-    //                 continue;
-    //             }
-    //             //生成需要放在只读数据段的内容， 应该只有浮点常量
-    //             for(auto& used : machineinst->GetUses()) {
-    //                 if (auto constfloat = dynamic_cast<ConstIRFloat*>(used)) {
-    //                     tempvar* tempfloat = new tempvar(num_lable, constfloat->GetVal());
-    //                     num_lable++;
-    //                     tempvar_list.push_back(tempfloat); 
-    //                     //在代码中修改加载方式；
-    //                     Change_LoadConstFloat(machineinst, tempfloat, it, used);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
+    int num_lable=0; // 用于浮点常量计数
+    for (auto& function : ctx.GetFunctions()) {
+        for (auto block : *function) {
+            for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
+                RISCVMIR* machineinst = *it;
+                if(machineinst->GetOperandSize()==0) {
+                    continue;
+                }
+                //生成需要放在只读数据段的内容， 应该只有浮点常量
+                for(int i=0; i<machineinst->GetOperandSize(); i++) {
+                    RISCVMOperand* used = machineinst->GetOperand(i);
+                    if (auto constfloat = dynamic_cast<ConstIRFloat*>(used)) {
+                        tempvar* tempfloat = new tempvar(num_lable, constfloat->GetVal());
+                        num_lable++;
+                        tempvar_list.push_back(tempfloat); 
+                        //在代码中修改加载方式；
+                        Change_LoadConstFloat(machineinst, tempfloat, it, used);
+                    }
+                }
+            }
+        }
+    }
 }
 std::vector<tempvar*> dataSegment::get_tempvar_list() {return tempvar_list;}
-// void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat, std::list<MachineInst *>::iterator it, Operand used) {
-//     std::string opcode = machineinst->GetOpcode();
-//     MachineBasicBlock* block = machineinst->get_machinebasicblock();
-//     std::list<MachineInst*>& insts = block->getMachineInsts();
-//     Type* backendptr = new BackendPtr();
-//     Operand rd = new Value(backendptr);
-//     Operand rs1 = new Value(backendptr);
-//     Operand rs2 = new Value(backendptr);
-//     std::string nameHi = "\%hi(" + tempfloat->Getname() + ")";
-//     rs1->SetName(nameHi);
-//     std::string nameLo = "\%lo(" + tempfloat->Getname() + ")";
-//     rs2->SetName(nameLo);
-//     MachineInst* inst1 = new MachineInst(machineinst->get_machinebasicblock(), "lui", rd, rs1); // lui  a5, %hi(lable)
-//     MachineInst* inst2 = new MachineInst(machineinst->get_machinebasicblock(), "addi", rd, rd, rs1);// addi  a5, a5, %lo(lable)
-//     it = insts.insert(it, inst1);
-//     ++it;
-//     it = insts.insert(it, inst2); 
-//     ++it;
-//     used->SetName(rd->GetName());
-//     // if(opcode == "sw")
-//     //     machineinst->GetRd()->SetName(rd->GetName());
-//     // else {
-//     //     machineinst->GetRs1
-//     // }
-// }  
+void dataSegment::Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, mylist<RISCVBasicBlock,RISCVMIR>::iterator it, RISCVMOperand* used) {
+    // std::string opcode = machineinst->GetOpcode();
+    // MachineBasicBlock* block = machineinst->get_machinebasicblock();
+    // std::list<MachineInst*>& insts = block->getMachineInsts();
+    // Type* backendptr = new BackendPtr();
+    // Operand rd = new Value(backendptr);
+    // Operand rs1 = new Value(backendptr);
+    // Operand rs2 = new Value(backendptr);
+    // std::string nameHi = "\%hi(" + tempfloat->Getname() + ")";
+    // rs1->SetName(nameHi);
+    // std::string nameLo = "\%lo(" + tempfloat->Getname() + ")";
+    // rs2->SetName(nameLo);
+    // MachineInst* inst1 = new MachineInst(machineinst->get_machinebasicblock(), "lui", rd, rs1); // lui  a5, %hi(lable)
+    // MachineInst* inst2 = new MachineInst(machineinst->get_machinebasicblock(), "addi", rd, rd, rs1);// addi  a5, a5, %lo(lable)
+    // it = insts.insert(it, inst1);
+    // ++it;
+    // it = insts.insert(it, inst2); 
+    // ++it;
+    // used->SetName(rd->GetName());
+    // // if(opcode == "sw")
+    // //     machineinst->GetRd()->SetName(rd->GetName());
+    // // else {
+    // //     machineinst->GetRs1
+    // // }
+}  
 void dataSegment::PrintDataSegment_Globval() {
     for(auto& gvar : globlvar_list) {
         gvar->PrintGloblvar();

@@ -34,9 +34,16 @@ RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,std::initializer_list<RISCV
 }
 
 bool RISCVISel::run(Function* m){
-    /// @todo create first Mbb;
-    RISCVLoweringContext& ctx=this->ctx;
-    LowerFormalArguments(m,ctx);
+    if(m->GetParams().size()!=0) {
+        RISCVBasicBlock* entry=RISCVBasicBlock::CreateRISCVBasicBlock();
+        RISCVLoweringContext& ctx=this->ctx;
+        ctx(entry);
+        LowerFormalArguments(m,ctx);
+        ctx.mapping(m->front())->as<RISCVBasicBlock>();
+        RISCVMIR* uncondinst = new RISCVMIR(RISCVMIR::RISCVISA::_j);
+        uncondinst->AddOperand(ctx.mapping(m->front())->as<RISCVBasicBlock>());
+        entry->push_back(uncondinst);
+    }
     for(auto i:*m){
         ctx(ctx.mapping(i)->as<RISCVBasicBlock>());
         for(auto inst:*i)
@@ -391,9 +398,6 @@ void RISCVISel::InstLowering(CallInst* inst){
         for (int i=1; i<std::min(paramnum, MAXnum); i++) {
             int regnum=PhyRegister::PhyReg::a0-1;
             regnum+=i;
-            if(inst->GetOperand(i)->GetType()==IntType::NewIntTypeGet()\
-            || inst->GetOperand(i)->GetType()==FloatType::NewFloatTypeGet())
-            ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i))}));
             if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(i))) {
                 auto li = new RISCVMIR(RISCVMIR::li);
                 VirRegister* vreg = ctx.createVReg(RISCVTyper(inst->GetOperand(i)->GetType()));
@@ -403,19 +407,23 @@ void RISCVISel::InstLowering(CallInst* inst){
                 ctx.insert_val2mop(constint, imm);
                 ctx(li);
             }
-            else if(ConstIRFloat* constfloat = dynamic_cast<ConstIRFloat*>(inst->GetOperand(i))) {
-                auto load = new RISCVMIR(RISCVMIR::_lw);
-                VirRegister* vreg = ctx.createVReg(RISCVTyper(inst->GetOperand(i)->GetType()));
-                load->SetDef(vreg);
-                Imm* imm = new Imm(constint);
-                load->AddOperand(imm);
-                ctx.insert_val2mop(constint, imm);
-                ctx(load);
-            }
+            /// @todo const float
+            // else if(ConstIRFloat* constfloat = dynamic_cast<ConstIRFloat*>(inst->GetOperand(i))) {
+            //     auto load = new RISCVMIR(RISCVMIR::_flw);
+            //     VirRegister* vreg = ctx.createVReg(RISCVTyper(inst->GetOperand(i)->GetType()));
+            //     load->SetDef(vreg);
+            //     Imm* imm = new Imm(constfloat);
+            //     load->AddOperand(imm);
+            //     ctx.insert_val2mop(constint, imm);
+            //     ctx(load);
+            // }
+            else if(inst->GetOperand(i)->GetType()==IntType::NewIntTypeGet()\
+            || inst->GetOperand(i)->GetType()==FloatType::NewFloatTypeGet())
+                ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i))}));
         }
     }
     if(!inst->GetUserlist().is_empty()){
-        ctx(Builder(RISCVMIR::call, inst));
+        ctx(Builder_withoutDef(RISCVMIR::call, inst));
         ctx(Builder(RISCVMIR::mv, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
     }
     else ctx(Builder_withoutDef(RISCVMIR::call, inst));
@@ -434,7 +442,7 @@ void RISCVISel::InstLowering(RetInst* inst){
     }
     else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
         ctx(Builder(RISCVMIR::_flw,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
-        ctx(Builder(RISCVMIR::ret,inst));
+        ctx(Builder_withoutDef(RISCVMIR::ret,inst));
     }
     else 
         assert(0&&"Invalid return type");
