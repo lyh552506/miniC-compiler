@@ -6,7 +6,7 @@ class Global2Local
     protected:
     std::unique_ptr<dominance> dom_info;
     int MaxNum = 5;
-    size_t MaxSize = 200000000;
+    size_t MaxSize = 2000000;
     std::map<Function*, std::set<Function*>> SuccFuncs;
     std::set<Function*> RecursiveFunctions;
     std::map<Variable*, std::set<Function*>> Global2Funcs;  // 哪些func 用了这个 globalvalue

@@ -183,12 +183,15 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
     if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY \ 
     || val->GetType()->GetTypeEnum() == InnerDataType::IR_PTR)
     {
-        size_t size;
         Type* tp = val->GetType();
-        if(auto subtp = dynamic_cast<HasSubType*>(tp)->GetSubType())
-            size = subtp->get_size();
-        else
-            size = tp->get_size();
+        
+        // if(auto subtp = dynamic_cast<HasSubType*>(tp)->GetSubType())
+        // {
+        //     size = subtp->get_size();
+        // }
+        size_t size = tp->get_size();
+        // else
+            // size = tp->get_size();
         if(size > MaxSize)
             return false;
     }
@@ -215,15 +218,16 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
                 return false;
             else
             {
-                dom_info = std::make_unique<dominance>(func, func->GetBasicBlock().size());
-                dom_info->RunOnFunction();
-                loopAnalysis = std::make_unique<LoopAnalysis>(func, dom_info.get());
-                loopAnalysis->RunOnFunction();
                 for(Use* use_ : func->GetUserlist())
                 {
                     if(auto call = dynamic_cast<CallInst*>(use_->GetUser()))
                     {
                         BasicBlock* block = call->GetParent();
+                        Function* func_ = block->GetParent();
+                        dom_info = std::make_unique<dominance>(func_, func_->GetBasicBlock().size());
+                        dom_info->RunOnFunction();
+                        loopAnalysis = std::make_unique<LoopAnalysis>(func_, dom_info.get());
+                        loopAnalysis->RunOnFunction();
                         if(block->LoopDepth != 0)
                             return false;
                     }
