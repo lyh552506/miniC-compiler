@@ -156,7 +156,8 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
     RISCVMOperand*& GetDef();
     RISCVMOperand*& GetOperand(int);
     const int GetOperandSize(){return operands.size();}
-    void SetDef(RISCVMOperand* def);
+    void SetDef(RISCVMOperand*);
+    void SetOperand(int, RISCVMOperand*);
     void AddOperand(RISCVMOperand*);
     void SetMopcode(RISCVISA);
     inline RISCVISA& GetOpcode(){return opcode;};

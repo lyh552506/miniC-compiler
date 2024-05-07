@@ -31,8 +31,6 @@ class RISCVAsmPrinter {
     void SetTextSegment(textSegment*);
     dataSegment*& GetData();
     void printAsmGlobal();
-    void printAsmText();
-    void printAsmTempFloat();
     void printAsm();
 };
 

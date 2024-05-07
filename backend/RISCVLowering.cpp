@@ -9,8 +9,6 @@ void RISCVModuleLowering::LowerGlobalArgument(Module* m){
 
 bool RISCVModuleLowering::run(Module* m){
     LowerGlobalArgument(m);
-    // start lowering function
-    // new textSegment()
     RISCVFunctionLowering funclower(ctx);
     auto& funcS=m->GetFuncTion();
     for(auto &func:funcS){
@@ -21,6 +19,8 @@ bool RISCVModuleLowering::run(Module* m){
     }
     asmprinter->SetTextSegment(new textSegment(ctx));
     asmprinter->GetData()->GenerateTempvarList(ctx);
+    LegalizeConstInt lcint(ctx);
+    lcint.run();
     asmprinter->printAsm();
     // ctx.print();
     return false;
@@ -31,8 +31,6 @@ bool RISCVFunctionLowering::run(Function* m){
     /// @todo deal with alloca and imm
     /// @todo a scheduler can be added here, before or when emitting code to 3-address code
     /// @note This is destory SSA form to 3-address code with mixture of phy and vir regs
-    // functionSegment* funcseg = new functionSegment(m);
-    // funcseg->PrintFuncSegmentHead();
     ctx(ctx.mapping(m)->as<RISCVFunction>());
 
     RISCVISel isel(ctx);
@@ -41,12 +39,9 @@ bool RISCVFunctionLowering::run(Function* m){
     PhiElimination phi(ctx);
     phi.run(m);
     // Register Allocation
-<<<<<<< HEAD
-    // funcseg->PrintFuncSegmentTail();
-=======
-    RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
-    regalloc.RunGCpass();
->>>>>>> 8426a32ab0abd15daba0cd31fccad1970714fc77
+
+    // RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
+    // regalloc.RunGCpass();
     return false;
 }
 

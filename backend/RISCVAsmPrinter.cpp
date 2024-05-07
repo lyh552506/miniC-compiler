@@ -42,7 +42,7 @@ void RISCVAsmPrinter::printAsmGlobal() {
 void RISCVAsmPrinter::printAsm() {
     this->printAsmGlobal();
     this->text->PrintTextSegment();
-    // this->data->PrintDataSegment_Tempvar();
+    this->data->PrintDataSegment_Tempvar();
 }
 
 //textSegment
@@ -135,7 +135,11 @@ void dataSegment::Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, myli
     it.insert_before(flw);
 
     /// @todo
-    // used->SetName(rd->GetName());
+    for (int i=0; i<inst->GetOperandSize(); i++) {
+        while(inst->GetOperand(i) == used) {
+            inst->SetOperand(i,flw_rd);
+        }
+    }
 }  
 void dataSegment::PrintDataSegment_Globval() {
     for(auto& gvar : globlvar_list) {
@@ -331,12 +335,12 @@ std::string tempvar::Getname() {
     return this->GetName();
 }
 void tempvar::PrintTempvar() {
-    // PrintSegmentType(RODATA, oldtype);
-    // std::cout << "    .align  " << align << std::endl;
-    // std::cout << this->GetName() << ":" << std::endl;
-    // FloatBits bits;
-    // bits.floatValue = init;
-    // std::string binaryString = std::bitset<32>(bits.intBits).to_string();
-    // int decNum = binaryToDecimal(binaryString);
-    // std::cout << "    .word  " << decNum << std::endl;
+    PrintSegmentType(RODATA, oldtype);
+    std::cout << "    .align  " << align << std::endl;
+    std::cout << this->GetName() << ":" << std::endl;
+    FloatBits bits;
+    bits.floatValue = init;
+    std::string binaryString = std::bitset<32>(bits.intBits).to_string();
+    int decNum = binaryToDecimal(binaryString);
+    std::cout << "    .word  " << decNum << std::endl;
 }
