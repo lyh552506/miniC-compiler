@@ -1,11 +1,11 @@
 #pragma once
 #include "RISCVMOperand.hpp"
-
+#include "RISCVRegister.hpp"
 class NamedMOperand:public RISCVMOperand{
     std::string name;
     public:
     std::string& GetName();
-    NamedMOperand(std::string);
+    NamedMOperand(std::string,RISCVType);
     void print()override;
 };
 
@@ -22,6 +22,7 @@ class RISCVObject:public NamedMOperand{
 class RISCVFrameObject:public RISCVObject{
     /// @brief set later after RA
     size_t begin_addr_offsets;
+    StackRegister* reg=nullptr;
     public:
     RISCVFrameObject(Type*,std::string);
     void print()override;

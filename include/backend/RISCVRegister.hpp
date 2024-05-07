@@ -3,9 +3,8 @@
 
 /// @brief 这个写成接口吧...
 class Register:public RISCVMOperand{
-    RISCVType tp;
     public:
-    Register(RISCVType _tp):RISCVMOperand(),tp(_tp){};
+    Register(RISCVType _tp):RISCVMOperand(_tp){};
     virtual bool isPhysical()=0;
 };
 
@@ -25,7 +24,7 @@ class PhyRegister:public Register{
     PhyRegister(PhyReg);
     public:
     static PhyRegister* GetPhyReg(PhyReg);
-    void print()final;
+    void print();
     bool isPhysical()final{return true;};
 };
 
@@ -49,5 +48,12 @@ class LARegister:public Register{
     LARegister(RISCVType, std::string);
     LARegister(RISCVType, std::string, VirRegister*);
     void print()final;
-    bool isPhysical()final{return false;};
+    bool isPhysical()final{return true;};
+};
+
+class StackRegister:public PhyRegister{
+    int offset;
+    public:
+    StackRegister(PhyReg, int);
+    void print()final;
 };

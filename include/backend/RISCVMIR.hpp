@@ -87,6 +87,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _lh,
         _lhu,
         _lw,
+        _ld,
 
         _sb,
         _sh,
@@ -134,6 +135,8 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _feq_s,
         _flt_s,
         _fle_s,
+        _fgt_s,
+        _fge_s,
 
         EndFloatArithmetic,
         EndFloat,
@@ -152,6 +155,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
     RISCVMIR(RISCVISA _isa):opcode(_isa){};
     RISCVMOperand*& GetDef();
     RISCVMOperand*& GetOperand(int);
+    const int GetOperandSize(){return operands.size();}
     void SetDef(RISCVMOperand* def);
     void AddOperand(RISCVMOperand*);
     void SetMopcode(RISCVISA);
@@ -165,21 +169,25 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMIR>,public list_node<RISCVFunction,RISCVBasicBlock>
 {    
     public:
+    // RISCVBasicBlock();
     RISCVBasicBlock(std::string);
+    static RISCVBasicBlock* CreateRISCVBasicBlock();
+    void push_before_branch(RISCVMIR*);
     void printfull();
+    void replace_succ(RISCVBasicBlock*,RISCVBasicBlock*);
 };
 
 /// should we save return type here? I suppose not.
 class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBasicBlock>{
     /// originally return type
     /// @todo some info like arguments doesn't need to store twice? 
-    Function* func;
+    Value* func;
     /// @todo FrameContext here
     RISCVBasicBlock* entry;
     using FOBJPTR=std::unique_ptr<RISCVFrameObject>;
     std::vector<FOBJPTR> frame;
     public:
-    RISCVFunction(Function*);
+    RISCVFunction(Value*);
     std::vector<FOBJPTR>& GetFrameObjects();
     void printfull();
 };
