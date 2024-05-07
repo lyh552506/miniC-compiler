@@ -12,7 +12,9 @@
 // RISCVMOperand::RISCVMOperand(){}
 
 bool RISCVMOperand::ignoreLA() {
-    if(PhyRegister* preg = dynamic_cast<PhyRegister*>(this)) {
+    if(dynamic_cast<Imm*>(this))
+        return true;
+    else if(PhyRegister* preg = dynamic_cast<PhyRegister*>(this)) {
         PhyRegister::PhyReg regenum = preg->Getregenum();
         using PhyReg=PhyRegister::PhyReg;
         if(regenum==PhyReg::zero || regenum==PhyReg::ra\
