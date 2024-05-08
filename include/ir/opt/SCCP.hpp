@@ -9,12 +9,81 @@ static inline bool getbool(Value* val) { return dynamic_cast<ConstIRBoolean*>(va
 class InstVisitor;
 struct ValueStatus
 {
-    enum Status { BOT, CONST, TOP};
+    enum Status { BOT = 0, CONST, TOP};
     Status status;
     Value* val;
     bool is_bot() const { return status == BOT; }
     bool is_const() const { return status == CONST; }
     bool is_top() const { return status == TOP; }
+
+    bool operator!=(ValueStatus& other) const
+    {
+        if(status != other.status)
+            return true;
+        if(status != CONST)
+            return false;
+        if(dynamic_cast<ConstIRInt*>(val))
+        {
+            int val1 = getint(val);
+            int val2 = getint(other.val);
+            return val1 != val2;
+        }
+        else if(dynamic_cast<ConstIRFloat*>(val))
+        {
+            float val1 = getfloat(val);
+            float val2 = getfloat(other.val);
+            return val1 != val2;
+        }
+        else if(dynamic_cast<ConstIRBoolean*>(val))
+        {
+            bool val1 = getbool(val);
+            bool val2 = getbool(other.val);
+            return val1 != val2;
+        }
+        else
+            return false;
+    }
+    void operator^=(ValueStatus& other)
+    {
+        if(other.status < status)
+        {
+            status = other.status;
+            val = other.val;
+        }
+        else if(status == other.status && status == CONST)
+        {
+            if(dynamic_cast<ConstIRInt*>(val))
+            {
+                int val1 = getint(val);
+                int val2 = getint(other.val);
+                if(val1 != val2)
+                {
+                    status = BOT;
+                    val = nullptr;
+                }
+            }
+            else if(dynamic_cast<ConstIRFloat*>(val))
+            {
+                float val1 = getfloat(val);
+                float val2 = getfloat(other.val);
+                if(val1 != val2)
+                {
+                    status = BOT;
+                    val = nullptr;
+                }
+            }
+            else if(dynamic_cast<ConstIRBoolean*>(val))
+            {
+                bool val1 = getbool(val);
+                bool val2 = getbool(other.val);
+                if(val1 != val2)
+                {
+                    status = BOT;
+                    val = nullptr;
+                }
+            }
+        }
+    }
 };
 
 class ValueMap
@@ -45,18 +114,19 @@ class SCCP
     private:
     Function* func;
     dominance* dom;
-    ConstantFolding* ConstFold;
 
     void ReplaceConst();
     public:
     SCCP(Function* func, dominance* dom): func(func), dom(dom) {}
     void RunOnFunction();
+    ConstantFolding* ConstFolding;
     std::set<std::pair<BasicBlock*, BasicBlock*>>& getmarked() { return marked; }
     ValueStatus getval_status(Value* val) { return val_map.get(val); }  //getmapped
     ValueMap& getvalue_map() { return val_map; } 
     std::vector<std::pair<BasicBlock*, BasicBlock*>>& getcfg_worklist() { return cfg_worklist; }
     std::vector<User*>& getSSA_worklist() { return SSA_worklist; }
     std::unique_ptr<InstVisitor> visitor;
+    ConstantData* ConstFold(User* inst);
 };
 
 class InstVisitor
