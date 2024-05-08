@@ -1,5 +1,6 @@
 #include "RISCVMOperand.hpp"
 #include "RISCVFrameContext.hpp"
+#include "RISCVMIR.hpp"
 #include "RISCVRegister.hpp"
 #include <map>
 // bool RISCVMOperand::isReg(){
@@ -30,7 +31,8 @@ bool RISCVMOperand::ignoreLA() {
     return true;
   else if (dynamic_cast<RISCVFrameObject *>(this))
     return true;
-  //
+  else if(dynamic_cast<RISCVBasicBlock*>(this))
+    return true;
   else
     return false;
 }
