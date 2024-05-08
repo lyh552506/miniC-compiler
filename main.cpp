@@ -3,6 +3,7 @@
 #include "passManager.hpp"
 #include "parser.hpp"
 #include <fstream>
+#include <iostream>
 #include <getopt.h>
 #include "RISCVLowering.hpp"
 
@@ -35,8 +36,8 @@ int main(int argc, char **argv) {
 
   std::string asmoutput_path = argv[1];
   asmoutput_path = asmoutput_path.substr(0, asmoutput_path.length()-2) + ".s";
-  copyFile("runtime.ll", output_path);
   freopen(output_path.c_str(), "a", stdout);
+  copyFile("runtime.ll", output_path);
   yyin = fopen(argv[1], "r");
   yy::parser parse;
   parse();
@@ -85,12 +86,15 @@ int main(int argc, char **argv) {
   }
   pass_manager->InitPass();
   Singleton<Module>().Test();
-  // freopen("dev/tty", "w", stdout);
+  fflush(stdout);
+  fclose(stdout);
   #endif
 
   freopen(asmoutput_path.c_str(), "w", stdout);
   RISCVModuleLowering RISCVASm;
   RISCVASm.run(&Singleton<Module>());
+  fflush(stdout);
+  fclose(stdout);
 
   freopen("dev/tty", "w", stdout);
   return 0;

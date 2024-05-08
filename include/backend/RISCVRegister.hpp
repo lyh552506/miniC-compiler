@@ -72,3 +72,21 @@ class StackRegister:public PhyRegister{
     std::string GetName(){return rname;}
     void print()final;
 };
+
+class RegisterList {
+    private:
+    // static RegisterList* reglist;
+    std::vector<PhyRegister*> reglist_param_int;
+    std::vector<PhyRegister*> reglist_temp_int;
+    std::vector<PhyRegister*> reglist_param_float;
+    std::vector<PhyRegister*> reglist_temp_float;
+    RegisterList();
+    RegisterList(const RegisterList&) = delete;
+    RegisterList& operator=(const RegisterList&) = delete;
+    public:
+    static RegisterList& GetPhyRegList();
+    std::vector<PhyRegister*>& GetReglistParamInt();
+    std::vector<PhyRegister*>& GetReglistTempInt();
+    std::vector<PhyRegister*>& GetReglistParamFloat();
+    std::vector<PhyRegister*>& GetReglistTempFloat();
+};
