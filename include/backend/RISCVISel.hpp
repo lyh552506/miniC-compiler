@@ -3,8 +3,10 @@
 #include "CFG.hpp"
 #include "RISCVContext.hpp"
 #include "RISCVRegister.hpp"
+#include "RISCVMIR.hpp"
 #include <algorithm>
 
+void LowerFormalArguments(Function* func, RISCVLoweringContext& ctx);
 
 class RISCVISel:public BackEndPass<Function>{
     RISCVLoweringContext& ctx;
@@ -34,3 +36,4 @@ class RISCVISel:public BackEndPass<Function>{
     RISCVISel(RISCVLoweringContext&);
     bool run(Function*);
 };
+

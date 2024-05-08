@@ -15,9 +15,13 @@ void PassManager::InitPass() {
     m_adce = std::make_unique<ADCE>(m_func);
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
-    m_loopAnlay = std::make_unique<LoopAnalysis>(m_func, m_dom.get());
     m_inline = std::make_unique<Inliner>(m_func, m_loopAnlay.get(), Singleton<Module>());
     RunOnFunction();
+  }
+  if(InitpassRecorder[10])
+  {
+    m_g2l = std::make_unique<Global2Local>(Singleton<Module>());
+    m_g2l->RunOnModule();
   }
 }
 
@@ -51,7 +55,7 @@ void PassManager::RunOnFunction() {
   }
   if (InitpassRecorder[1]) {
     dominance* d=new dominance(m_func, BList.size());
-    d->RunOnFunction();
+    d->update();
     m_pre = std::make_unique<PRE>(d, m_func);
     m_pre->RunOnFunction();
     // m_pre->PrintPass();
@@ -68,15 +72,19 @@ void PassManager::RunOnFunction() {
   }
   if (InitpassRecorder[3]) {
     m_dce->RunOnFunction();
-    m_dce->PrintPass();
+    // m_dce->PrintPass();
   }
   if (InitpassRecorder[4]) {
     m_adce->RunOnFunction();
-    m_adce->PrintPass();
+    // m_adce->PrintPass();
   }
   if (InitpassRecorder[5]) {
-    m_loopAnlay->RunOnFunction();
-    m_loopAnlay->PrintPass();
+    PreWork(func);
+    dominance* d=new dominance(m_func, BList.size());
+    d->update();
+    m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
+    m_loopsimple->RunOnFunction();
+    m_loopsimple->PrintPass();
   }
   if(InitpassRecorder[9]){
     m_inline->Run();

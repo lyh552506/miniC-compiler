@@ -237,30 +237,30 @@ void dataSegment::GenerateTempvarList(MachineUnit* Machineunit) {
     }
 }
 std::vector<tempvar*> dataSegment::get_tempvar_list() {return tempvar_list;}
-void dataSegment::Change_LoadConstFloat(MachineInst* machineinst, tempvar* tempfloat, std::list<MachineInst *>::iterator it, Operand used) {
-    std::string opcode = machineinst->GetOpcode();
-    MachineBasicBlock* block = machineinst->get_machinebasicblock();
-    std::list<MachineInst*>& insts = block->getMachineInsts();
-    Type* backendptr = new BackendPtr();
-    Operand rd = new Value(backendptr);
-    Operand rs1 = new Value(backendptr);
-    Operand rs2 = new Value(backendptr);
-    std::string nameHi = "\%hi(" + tempfloat->Getname() + ")";
-    rs1->SetName(nameHi);
-    std::string nameLo = "\%lo(" + tempfloat->Getname() + ")";
-    rs2->SetName(nameLo);
-    MachineInst* inst1 = new MachineInst(machineinst->get_machinebasicblock(), "lui", rd, rs1); // lui  a5, %hi(lable)
-    MachineInst* inst2 = new MachineInst(machineinst->get_machinebasicblock(), "addi", rd, rd, rs1);// addi  a5, a5, %lo(lable)
-    it = insts.insert(it, inst1);
-    ++it;
-    it = insts.insert(it, inst2); 
-    ++it;
-    used->SetName(rd->GetName());
-    // if(opcode == "sw")
-    //     machineinst->GetRd()->SetName(rd->GetName());
-    // else {
-    //     machineinst->GetRs1
-    // }
+void dataSegment::Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, mylist<RISCVBasicBlock,RISCVMIR>::iterator it, RISCVMOperand* used) {
+    // std::string opcode = machineinst->GetOpcode();
+    // MachineBasicBlock* block = machineinst->get_machinebasicblock();
+    // std::list<MachineInst*>& insts = block->getMachineInsts();
+    // Type* backendptr = new BackendPtr();
+    // Operand rd = new Value(backendptr);
+    // Operand rs1 = new Value(backendptr);
+    // Operand rs2 = new Value(backendptr);
+    // std::string nameHi = "\%hi(" + tempfloat->Getname() + ")";
+    // rs1->SetName(nameHi);
+    // std::string nameLo = "\%lo(" + tempfloat->Getname() + ")";
+    // rs2->SetName(nameLo);
+    // MachineInst* inst1 = new MachineInst(machineinst->get_machinebasicblock(), "lui", rd, rs1); // lui  a5, %hi(lable)
+    // MachineInst* inst2 = new MachineInst(machineinst->get_machinebasicblock(), "addi", rd, rd, rs1);// addi  a5, a5, %lo(lable)
+    // it = insts.insert(it, inst1);
+    // ++it;
+    // it = insts.insert(it, inst2); 
+    // ++it;
+    // used->SetName(rd->GetName());
+    // // if(opcode == "sw")
+    // //     machineinst->GetRd()->SetName(rd->GetName());
+    // // else {
+    // //     machineinst->GetRs1
+    // // }
 }  
 void dataSegment::PrintDataSegment_Globval() {
     for(auto& gvar : globlvar_list) {

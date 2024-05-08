@@ -332,30 +332,15 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.def_a = global i32 1
-@.g.def_b = global float 0x4008e147a0000000
-@.g.undef_a = global i32 zeroinitializer
-@.g.undef_b = global float zeroinitializer
-@.g.def_arr = global [3 x [2 x [2 x i32]]]  [[2 x [2 x i32]]  [[2 x i32]  [i32 1, i32 3], [2 x i32] zeroinitializer], [2 x [2 x i32]] zeroinitializer, [2 x [2 x i32]] zeroinitializer]
-@.g.def_arrf = global [2 x [2 x [3 x [3 x float]]]]  [[2 x [3 x [3 x float]]]  [[3 x [3 x float]]  [[3 x float]  [float 0x4009c6a7e0000000, float zeroinitializer, float zeroinitializer], [3 x float] zeroinitializer, [3 x float] zeroinitializer], [3 x [3 x float]] zeroinitializer], [2 x [3 x [3 x float]]] zeroinitializer]
 define i32 @main(){
-.19:
-  %.22 = load i32, i32* @.g.def_a
-  %.23 = load float, float* @.g.def_b
-  %.24 = sitofp i32 %.22 to float
-  %.25 = fcmp ult float %.24, %.23
-  br i1 %.25, label %.20, label %.21
-.20:
-  %.27 = load i32, i32* @.g.def_a
-  %.28 = add i32 %.27, 3
-  store i32 %.28, i32* @.g.def_a
-  br label %.30 
-.21:
-  %.33 = getelementptr inbounds [3 x [2 x [2 x i32]]], [3 x [2 x [2 x i32]]]* @.g.def_arr, i32 0, i32 2, i32 1, i32 1
-  store i32 5, i32* %.33
-  %.37 = getelementptr inbounds [2 x [2 x [3 x [3 x float]]]], [2 x [2 x [3 x [3 x float]]]]* @.g.def_arrf, i32 0, i32 1, i32 1, i32 1, i32 1
-  store float 0x400aa9fbe0000000, float* %.37
-  br label %.30 
-.30:
-  ret i32 0 
+.1:
+  %.5 = alloca i32
+  %.2 = alloca i32
+  store i32 1, i32* %.2
+  store i32 98798779, i32* %.5
+  %.8 = load i32, i32* %.2
+  %.9 = load i32, i32* %.5
+  %.10 = add i32 %.8, %.9
+  store i32 %.10, i32* %.2
+  ret i32 989899898 
 }

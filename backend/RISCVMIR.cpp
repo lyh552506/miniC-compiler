@@ -10,6 +10,10 @@ RISCVMOperand*& RISCVMIR::GetOperand(int ind){
 void RISCVMIR::SetDef(RISCVMOperand* def){
     this->def=def;
 }
+void RISCVMIR::SetOperand(int ind, RISCVMOperand* op){
+    assert(0<=ind&&ind<operands.size()&&"Range Assertion");
+    operands[ind]=op;
+}
 void RISCVMIR::AddOperand(RISCVMOperand* op){
     operands.push_back(op);
 }
@@ -25,11 +29,14 @@ void RISCVMIR::printfull(){
     std::cout<<"\t"<< name <<" ";
     
     if(name=="ret") {std::cout<<"\n";}
+    else if (name=="call") {
+        operands[0]->print();
+    }
     else {
         if(def!=nullptr) {
             def->print();
+            if(operands.size()>0) std::cout << ", ";
         }
-        if(operands.size()>0) std::cout << ", ";
         for(int i=0;i<operands.size();i++){
             operands[i]->print();
             if(i!=operands.size()-1)
@@ -47,7 +54,7 @@ RISCVBasicBlock::RISCVBasicBlock(std::string _name):NamedMOperand(_name,RISCVTyp
 
 RISCVBasicBlock* RISCVBasicBlock::CreateRISCVBasicBlock(){
     static int cnt=0;
-    return new RISCVBasicBlock("_BB"+std::to_string(cnt++));
+    return new RISCVBasicBlock(".LBB"+std::to_string(cnt++));
 }
 
 void RISCVBasicBlock::replace_succ(RISCVBasicBlock* from,RISCVBasicBlock* to){

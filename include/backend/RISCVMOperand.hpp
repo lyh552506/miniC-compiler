@@ -12,6 +12,7 @@ class RISCVMOperand{
     T* as(){
         return dynamic_cast<T*>(this);
     }
+    bool ignoreLA();
 };
 
 /// @note A wrapper for the constant data
@@ -20,6 +21,7 @@ class Imm:public RISCVMOperand{
     ConstantData* data;
     public:
     Imm(ConstantData*);
+    ConstantData* Getdata();
     static Imm* GetImm(ConstantData*);
     void print()final;
 };
