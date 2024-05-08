@@ -1,3 +1,4 @@
+      
 #include "RISCVMOperand.hpp"
 #include "RegAlloc.hpp"
 #include "my_stl.hpp"
@@ -141,9 +142,10 @@ void BlockInfo::RunOnFunc(RISCVFunction *func)
 
 void GraphColor::CalInstLive(RISCVBasicBlock* block)
 {
-  for(RISCVMIR* inst : *block)
+  std::set<RISCVMOperand*> Live = liveinterval->blockinfo->BlockLiveout[block];
+  for(auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_)
   {
-    std::set<RISCVMOperand*> Live = liveinterval->blockinfo->BlockLiveout[block];
+    RISCVMIR* inst = *inst_;
     {
       if(inst->GetOperandSize() == 1)
       {
@@ -210,11 +212,11 @@ void GraphColor::CalcIG(RISCVBasicBlock* block)
 }
 void BlockInfo::PrintPass()
 {
-  std::cerr << "--------BlockLiveInfo--------" << std::endl;
+  std::cout << "--------BlockLiveInfo--------" << std::endl;
   for(RISCVBasicBlock* _block : *F)
   {
-    std::cerr << "--------Block:"<< _block->GetName() << "--------" << std::endl;
-    std::cerr << "        Livein" << std::endl;
+    std::cout << "--------Block:"<< _block->GetName() << "--------" << std::endl;
+    std::cout << "        Livein" << std::endl;
     for(RISCVMOperand* _value:BlockLivein[_block])
     {
       if(dynamic_cast<VirRegister*>(_value))
@@ -222,8 +224,8 @@ void BlockInfo::PrintPass()
       else
         _value->print();
     }
-    std::cerr << std::endl;
-    std::cerr << "        Liveout" << std::endl;
+    std::cout << std::endl;
+    std::cout << "        Liveout" << std::endl;
     for(RISCVMOperand* _value:BlockLiveout[_block])
     {
       if(dynamic_cast<VirRegister*>(_value))
@@ -231,9 +233,36 @@ void BlockInfo::PrintPass()
       else
         _value->print();
     }
-    std::cerr << std::endl;
+    std::cout << std::endl;
   }
 }
+
+// void BlockInfo::PrintPass()
+// {
+//   std::cerr << "--------BlockLiveInfo--------" << std::endl;
+//   for(RISCVBasicBlock* _block : *F)
+//   {
+//     std::cerr << "--------Block:"<< _block->GetName() << "--------" << std::endl;
+//     std::cerr << "        Livein" << std::endl;
+//     for(RISCVMOperand* _value:BlockLivein[_block])
+//     {
+//       if(dynamic_cast<VirRegister*>(_value))
+//         _value->print();
+//       else
+//         _value->print();
+//     }
+//     std::cerr << std::endl;
+//     std::cerr << "        Liveout" << std::endl;
+//     for(RISCVMOperand* _value:BlockLiveout[_block])
+//     {
+//       if(dynamic_cast<VirRegister*>(_value))
+//         _value->print();
+//       else
+//         _value->print();
+//     }
+//     std::cerr << std::endl;
+//   }
+// }
 
 void InterVal::init()
 {
@@ -405,3 +434,5 @@ void InterVal::RunOnFunc()
   computeLiveIntervals();
   PrintAnalysis();
 }
+
+    
