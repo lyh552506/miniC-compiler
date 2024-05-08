@@ -94,6 +94,9 @@ void RISCVISel::InstLowering(LoadInst* inst){
     }
     else if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(FloatType::NewFloatTypeGet()))
         ctx(Builder(RISCVMIR::_flw,inst));
+    // else if(dynamic_cast<HasSubType*>(inst->GetOperand(0)->GetType())->GetSubType()){
+    //     printf("a load inst with pointer\n");
+    // }
     else assert(0&&"invalid load type");
 }
 
@@ -107,7 +110,7 @@ void RISCVISel::InstLowering(SITFP* inst){
 
 void RISCVISel::InstLowering(UnCondInst* inst){
     // ctx(Builder(RISCVMIR::_j,inst));
-    ctx(Builder(RISCVMIR::_j, {ctx.mapping(inst->GetOperand(0))}));
+    ctx(Builder_withoutDef(RISCVMIR::_j, {ctx.mapping(inst->GetOperand(0))}));
 }
 
 void RISCVISel::InstLowering(CondInst* inst){

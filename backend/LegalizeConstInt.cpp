@@ -6,6 +6,8 @@ LegalizeConstInt::LegalizeConstInt(RISCVLoweringContext& _ctx)
 
 void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBasicBlock,RISCVMIR>::iterator it) {
     if(inst->GetOpcode()==RISCVMIR::RISCVISA::ret) return;
+    else if(inst->GetOpcode()==RISCVMIR::RISCVISA::call) return;
+    
     int inttemp = dynamic_cast<ConstIRInt*>(constdata->Getdata())->GetVal();
     if(inttemp>=-2048 && inttemp<2048) {
         if(inst->GetOpcode()==RISCVMIR::RISCVISA::mv) inst->SetMopcode(RISCVMIR::RISCVISA::li); 
