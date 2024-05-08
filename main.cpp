@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
       pass_manager->IncludePass(9);
       break;
     case 10:
-      pass_manager->IncludePass(9);
+      pass_manager->IncludePass(10);
       break;
     }
   }

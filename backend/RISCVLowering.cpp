@@ -42,8 +42,8 @@ bool RISCVFunctionLowering::run(Function* m){
     phi.run(m);
     // Register Allocation
 
-    // RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
-    // regalloc.RunGCpass();
+    RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
+    regalloc.RunGCpass();
     return false;
 }
 

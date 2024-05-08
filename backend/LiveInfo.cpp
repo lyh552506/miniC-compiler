@@ -1,3 +1,4 @@
+#include "RISCVMOperand.hpp"
 #include "RegAlloc.hpp"
 #include "my_stl.hpp"
 #include <algorithm>
@@ -11,44 +12,64 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock* block)
     for(auto inst = block->rbegin();inst != block->rend(); ++inst)
     {
       OpType Opcode = (*inst)->GetOpcode();
-      if((*inst)->GetOpcode() == OpType::_j)
+      if(Opcode == OpType::_j)
         continue;
       else if(Opcode == OpType::_beq || Opcode == OpType::_bne || Opcode == OpType::_blt || \
       Opcode == OpType::_bge || Opcode == OpType::_bltu || Opcode == OpType::_bgeu)
       {
         RISCVMOperand* val1 = (*inst)->GetOperand(0);
         RISCVMOperand* val2 = (*inst)->GetOperand(1);
-        if(!dynamic_cast<Imm*>(val1))
+        if(!val1->ignoreLA())
         {
           BlockLivein[block].insert(val1); 
           Uses[block].insert(val1);
         }
-        if(!dynamic_cast<Imm*>(val2))
+        if(!val2->ignoreLA())
         {
           BlockLivein[block].insert(val2); 
           Uses[block].insert(val2);
         }
-        continue;
       }
-      else
+      else if(Opcode == OpType::ret)
       {
         RISCVMOperand* val1 = (*inst)->GetOperand(0);
-        RISCVMOperand* val2 = (*inst)->GetOperand(1);
-        if(dynamic_cast<Imm*>(val1))
+        if(!val1->ignoreLA())
         {
             BlockLivein[block].insert(val1); 
             Uses[block].insert(val1);
         }
-        if(!dynamic_cast<Imm*>(val2))
+      }
+      else if((*inst)->GetOperandSize() == 1)
+      {
+        RISCVMOperand* val = (*inst)->GetOperand(0);
+        if(!val->ignoreLA())
+        {
+            BlockLivein[block].insert(val); 
+            Uses[block].insert(val);
+        }
+      }
+      else if((*inst)->GetOperandSize() == 2)
+      {
+        RISCVMOperand* val1 = (*inst)->GetOperand(0);
+        RISCVMOperand* val2 = (*inst)->GetOperand(1);
+        if(!val1->ignoreLA())
+        {
+            BlockLivein[block].insert(val1); 
+            Uses[block].insert(val1);
+        }
+        if(!val2->ignoreLA())
         {
           BlockLivein[block].insert(val2); 
           Uses[block].insert(val2);
         }
         if(RISCVMOperand* DefValue = (*inst)->GetDef())
         {
+          if(!DefValue->ignoreLA())
+          {
             BlockLivein[block].erase(DefValue);
             Uses[block].erase(DefValue);
             Defs[block].insert(DefValue);
+          }
         }
       }
    }
@@ -122,26 +143,42 @@ void GraphColor::CalInstLive(RISCVBasicBlock* block)
 {
   for(RISCVMIR* inst : *block)
   {
-    std::set<RISCVMOperand*> Live = blockinfo->BlockLiveout[block];
+    std::set<RISCVMOperand*> Live = liveinterval->blockinfo->BlockLiveout[block];
     {
-      RISCVMOperand* val1 = inst->GetOperand(0);
-      RISCVMOperand* val2 = inst->GetOperand(1);
-      if(!dynamic_cast<Imm*>(val1))
+      if(inst->GetOperandSize() == 1)
       {
-        Live.insert(val1);
-        if(dynamic_cast<PhyRegister*>(val1))
-          Precolored.insert(val1);
+        RISCVMOperand* val1 = inst->GetOperand(0);
+        if(!val1->ignoreLA())
+        {
+          Live.insert(val1);
+          if(dynamic_cast<PhyRegister*>(val1))
+            Precolored.insert(val1);
+        }
       }
-      if(!dynamic_cast<Imm*>(val2))
+      else if(inst->GetOperandSize() == 2)
       {
-        Live.insert(val2);
-        if(dynamic_cast<PhyRegister*>(val2))
-          Precolored.insert(val2);
+        RISCVMOperand* val1 = inst->GetOperand(0);
+        RISCVMOperand* val2 = inst->GetOperand(1);
+        if(!val1->ignoreLA())
+        {
+          Live.insert(val1);
+          if(dynamic_cast<PhyRegister*>(val1))
+            Precolored.insert(val1);
+        }
+        if(!val2->ignoreLA())
+        {
+          Live.insert(val2);
+          if(dynamic_cast<PhyRegister*>(val2))
+            Precolored.insert(val2);
+        }
       }
     }
     if(RISCVMOperand* DefValue = inst->GetDef())
-      Live.erase(DefValue);
-    blockinfo->InstLive[inst] = Live;
+    {
+      if(!DefValue->ignoreLA())
+        Live.erase(DefValue);
+    } 
+    liveinterval->blockinfo->InstLive[inst] = Live;
   }
 }
 void GraphColor::CalcmoveList(RISCVBasicBlock* block)
@@ -152,7 +189,7 @@ void GraphColor::CalcmoveList(RISCVBasicBlock* block)
     if(Opcode == OpType::mv)
     {
         moveList[inst->GetOperand(0)].insert(inst);
-        moveList[inst->GetOperand(1)].insert(inst);
+        moveList[inst->GetDef()].insert(inst);
     }
   }
 }
@@ -161,9 +198,9 @@ void GraphColor::CalcIG(RISCVBasicBlock* block)
 {
   for(RISCVMIR* inst : *block)
   {
-    for(RISCVMOperand* Op1 : blockinfo->InstLive[inst])
+    for(RISCVMOperand* Op1 : liveinterval->blockinfo->InstLive[inst])
     {
-      for(RISCVMOperand* Op2: blockinfo->InstLive[inst])
+      for(RISCVMOperand* Op2: liveinterval->blockinfo->InstLive[inst])
       {
         if(Op2 != Op1)
           PushVecSingleVal(IG[Op1], Op2);
@@ -212,6 +249,7 @@ void InterVal::init()
 }
 
 void InterVal::computeLiveIntervals()
+
 {
   for (RISCVBasicBlock* block : *func)
   {
@@ -294,14 +332,48 @@ bool InterVal::verify(std::unordered_map<RISCVMOperand*, std::vector<Interval>> 
   return true;
 }
 
+// void InterVal::PrintAnalysis()
+// {
+//   std::cerr << "--------LiveInterval--------" << std::endl;
+//   for(RISCVBasicBlock* block : *func)
+//   {
+//     for(RISCVMIR* inst : *block)
+//     {
+//         std::cerr << "inst" << instNum[inst] << "Liveness:";
+//         for(RISCVMOperand* Op : blockinfo.get()->InstLive[inst])
+//         {
+//           if(dynamic_cast<VirRegister*>(Op))
+//             Op->print();
+//           else
+//             Op->print();
+//         }
+//         std::cerr<<std::endl;
+//     }
+//   }
+//   for(RISCVBasicBlock* block : *func)
+//   {
+//     std::cerr << "--------Block:" << block->GetName() << "--------" << std::endl;
+//     for(auto& [op, intervals] : RegLiveness[block])
+//     {
+//       if(dynamic_cast<VirRegister*>(op))
+//       op->print();
+//       else
+//         op->print();
+//       for(auto& i : intervals)
+//         std::cerr << "[" << i.start << "," << i.end << "]";
+//       std::cerr << std::endl;
+//     }
+//   }
+// }
+
 void InterVal::PrintAnalysis()
 {
-  std::cerr << "--------LiveInterval--------" << std::endl;
+  std::cout << "--------LiveInterval--------" << std::endl;
   for(RISCVBasicBlock* block : *func)
   {
     for(RISCVMIR* inst : *block)
     {
-        std::cerr << "inst" << instNum[inst] << "Liveness:";
+        std::cout << "inst" << instNum[inst] << "Liveness:";
         for(RISCVMOperand* Op : blockinfo.get()->InstLive[inst])
         {
           if(dynamic_cast<VirRegister*>(Op))
@@ -309,12 +381,12 @@ void InterVal::PrintAnalysis()
           else
             Op->print();
         }
-        std::cerr<<std::endl;
+        std::cout<<std::endl;
     }
   }
   for(RISCVBasicBlock* block : *func)
   {
-    std::cerr << "--------Block:" << block->GetName() << "--------" << std::endl;
+    std::cout << "--------Block:" << block->GetName() << "--------" << std::endl;
     for(auto& [op, intervals] : RegLiveness[block])
     {
       if(dynamic_cast<VirRegister*>(op))
@@ -322,14 +394,14 @@ void InterVal::PrintAnalysis()
       else
         op->print();
       for(auto& i : intervals)
-        std::cerr << "[" << i.start << "," << i.end << "]";
-      std::cerr << std::endl;
+        std::cout << "[" << i.start << "," << i.end << "]";
+      std::cout << std::endl;
     }
   }
 }
-
 void InterVal::RunOnFunc()
 {
   init();
   computeLiveIntervals();
+  PrintAnalysis();
 }

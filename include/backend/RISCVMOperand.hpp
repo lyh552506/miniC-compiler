@@ -12,6 +12,7 @@ class RISCVMOperand{
     T* as(){
         return dynamic_cast<T*>(this);
     }
+    bool ignoreLA();
 };
 
 /// @note A wrapper for the constant data
