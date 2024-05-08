@@ -23,7 +23,8 @@ static struct option long_options[] = {
     {"adce", no_argument, 0, 4},     {"loopinfo",no_argument,0,5},
     {"help", no_argument, 0, 6},      {"simplifycfg",no_argument,0,7},
     {"ece", no_argument, 0, 8},      {"inline", no_argument, 0, 9},
-    {"global2local", no_argument, 0, 10}, {0, 0, 0, 0}};
+    {"global2local", no_argument, 0, 10}, {"sccp", no_argument, 0, 11}, 
+    {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
@@ -41,7 +42,7 @@ int main(int argc, char **argv) {
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
-  #ifdef SYSY_ENABLE_MIDDLE_END
+  // #ifdef SYSY_ENABLE_MIDDLE_END
   std::unique_ptr<PassManager> pass_manager(new PassManager);
   int optionIndex, option;
   // 目前处于调试阶段，最终会换成-O1 -O2 -O3
@@ -81,17 +82,20 @@ int main(int argc, char **argv) {
     case 10:
       pass_manager->IncludePass(10);
       break;
+    case 11:
+      pass_manager->IncludePass(11);
+      break;
     }
   }
   pass_manager->InitPass();
   Singleton<Module>().Test();
+  // // freopen("dev/tty", "w", stdout);
+  // #endif
+
+  // freopen(asmoutput_path.c_str(), "w", stdout);
+  // RISCVModuleLowering RISCVASm;
+  // RISCVASm.run(&Singleton<Module>());
+
   // freopen("dev/tty", "w", stdout);
-  #endif
-
-  freopen(asmoutput_path.c_str(), "w", stdout);
-  RISCVModuleLowering RISCVASm;
-  RISCVASm.run(&Singleton<Module>());
-
-  freopen("dev/tty", "w", stdout);
   return 0;
 }

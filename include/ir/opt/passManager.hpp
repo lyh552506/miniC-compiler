@@ -17,6 +17,7 @@
 #include "Inline.hpp"
 #include "Global2Local.hpp"
 #include "LoopSimplify.hpp"
+#include "SCCP.hpp"
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {
@@ -50,4 +51,5 @@ private:
   std::unique_ptr<cfgSimplify> m_cfgsimple;
   std::unique_ptr<Inliner> m_inline;
   std::unique_ptr<Global2Local> m_g2l;
+  std::unique_ptr<SCCP> m_sccp;
 };
