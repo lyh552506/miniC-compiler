@@ -150,6 +150,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock* block)
   std::set<MOperand> Live = liveinterval->blockinfo->BlockLiveout[block];
   for(auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_)
   {
+
     RISCVMIR* inst = *inst_;
     {
       if(inst->GetOperandSize() == 1)

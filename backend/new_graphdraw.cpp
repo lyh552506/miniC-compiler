@@ -10,22 +10,22 @@ void GraphColor::RunOnFunc() {
       condition = false;
       CaculateLiveness(mbb);
       MakeWorklist();
-      do {
-        if (!simplifyWorkList.empty())
-          simplify();
-        else if (!worklistMoves.empty())
-          coalesce();
-        else if (!freezeWorkList.empty())
-          freeze();
-        else if (!spillWorkList.empty())
-          spill();
-      } while (simplifyWorkList.empty() && worklistMoves.empty() &&
-               freezeWorkList.empty() && spillWorkList.empty());
-      AssignColors();
-      if (!spilledNodes.empty()) {
-        RewriteProgram();
-        condition = true;
-      }
+      // do {
+      //   if (!simplifyWorkList.empty())
+      //     simplify();
+      //   else if (!worklistMoves.empty())
+      //     coalesce();
+      //   else if (!freezeWorkList.empty())
+      //     freeze();
+      //   else if (!spillWorkList.empty())
+      //     spill();
+      // } while (simplifyWorkList.empty() && worklistMoves.empty() &&
+      //          freezeWorkList.empty() && spillWorkList.empty());
+      // AssignColors();
+      // if (!spilledNodes.empty()) {
+      //   RewriteProgram();
+      //   condition = true;
+      // }
     }
   }
   liveinterval->blockinfo->PrintPass();

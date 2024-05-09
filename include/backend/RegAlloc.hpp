@@ -42,7 +42,7 @@ class GraphColor {
   friend class BlockLiveInfo;
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
-  GraphColor(RISCVFunction* func, int K) : m_func(func), colors(K) {
+  GraphColor(RISCVFunction* func) : m_func(func),reglist(RegisterList::GetPhyRegList()) {
     liveinterval = std::make_unique<LiveInterval>(m_func);
   }
   void RunOnFunc();
@@ -169,6 +169,7 @@ class GraphColor {
   std::unordered_map<MOperand, MOperand> alias;
   //算法最后为每一个operand选择的颜色
   std::unordered_map<MOperand, PhyRegister*> color;
+  RegisterList& reglist;
   int LoopWeight = 1;
   int livenessWeight = 1;
   int DegreeWeight = 1;
