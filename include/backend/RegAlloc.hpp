@@ -55,7 +55,7 @@ class GraphColor {
     std::map<RISCVBasicBlock*, bool> UnChanged;
     bool isChanged = false;
     RISCVFunction* F;
-
+    
    public:
     std::map<RISCVBasicBlock*, std::unordered_set<MOperand>>
         Uses;  // block uses
@@ -121,10 +121,10 @@ class GraphColor {
   void RewriteProgram();
   MOperand HeuristicFreeze();
   MOperand HeuristicSpill();
-  bool GeorgeCheck(MOperand dst, MOperand src);
-  bool BriggsCheck(std::unordered_set<MOperand> target);
+  bool GeorgeCheck(MOperand dst, MOperand src,RISCVType ty);
+  bool BriggsCheck(std::unordered_set<MOperand> target,RISCVType ty);
   void AddWorkList(MOperand v);
-  void combine(MOperand rd, MOperand rs);
+  void combine(MOperand rd, MOperand rs, RISCVType ty);
   MOperand GetAlias(MOperand v);
   void FreezeMoves(MOperand freeze);
   //保证Interval vector的顺序
