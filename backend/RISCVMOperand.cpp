@@ -10,7 +10,6 @@
 // }
 
 // RISCVMOperand::RISCVMOperand(){}
-
 bool RISCVMOperand::ignoreLA() {
     if(dynamic_cast<Imm*>(this))
         return true;

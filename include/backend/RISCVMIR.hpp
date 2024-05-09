@@ -1,6 +1,7 @@
 #pragma once
 #include "CFG.hpp"
 #include "RISCVFrameContext.hpp"
+#include "MagicEnum.hpp"
 class RISCVFunction;
 class RISCVBasicBlock;
 class RISCVMIR;
@@ -185,10 +186,13 @@ class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBa
     Value* func;
     /// @todo FrameContext here
     RISCVBasicBlock* entry;
-    using FOBJPTR=std::unique_ptr<RISCVFrameObject>;
-    std::vector<FOBJPTR> frame;
+    using RISCVframe = std::unique_ptr<RISCVFrame>;
+    RISCVframe frame;
+    // using FOBJPTR=std::unique_ptr<RISCVFrameObject>;
+    // std::vector<FOBJPTR> frame;
     public:
     RISCVFunction(Value*);
-    std::vector<FOBJPTR>& GetFrameObjects();
+    // std::vector<FOBJPTR>& GetFrameObjects();
+    RISCVframe& GetFrame();
     void printfull();
 };
