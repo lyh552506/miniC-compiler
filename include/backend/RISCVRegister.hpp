@@ -3,9 +3,13 @@
 
 /// @brief 这个写成接口吧...
 class Register:public RISCVMOperand{
+    protected:
+    std::string rname;
     public:
     Register(RISCVType _tp):RISCVMOperand(_tp){};
+    Register(RISCVType _tp,std::string_view _name):RISCVMOperand(_tp),rname(_name){};
     virtual bool isPhysical()=0;
+    virtual std::string GetName()=0;
 };
 
 class PhyRegister:public Register{
@@ -32,6 +36,7 @@ class PhyRegister:public Register{
     static PhyRegister* GetPhyReg(PhyReg);
     PhyReg Getregenum(){return regenum;};
     void print();
+    std::string GetName();
     bool isPhysical()final{return true;};
 };
 
@@ -41,6 +46,7 @@ class VirRegister:public Register{
     VirRegister(RISCVType);
     std::string Getname();
     void print()final;
+    std::string GetName();
     bool isPhysical()final{return false;};
 };
 
@@ -50,12 +56,13 @@ class LARegister:public Register{
     enum LAReg {
         hi,lo
     } regnum;
-    std::string name;
+    // std::string name;
     VirRegister* vreg=nullptr;
     public:
     LARegister(RISCVType, std::string);
     LARegister(RISCVType, std::string, VirRegister*);
     void print()final;
+    std::string GetName(){return rname;}
     bool isPhysical()final{return true;};
 };
 
@@ -63,6 +70,7 @@ class StackRegister:public PhyRegister{
     int offset;
     public:
     StackRegister(PhyReg, int);
+    std::string GetName(){return rname;}
     void print()final;
 };
 

@@ -17,34 +17,6 @@
 #include"RISCVRegister.hpp"
 
 class GraphColor;
-class RegInfo {
- public:
-  enum REG {
-    r0,
-    r1,
-    r2,
-    r3,
-    r4,
-    r5,
-    r6,
-    r7,
-    r8,
-    r9,
-    r10,
-    r11,
-    r12,
-    r13,
-    r14,
-    r15,
-    r16,
-    r17,
-    r18,
-    r19,
-    r20,
-    r21,
-  };
-  REG name;
-};
 
 class RegAllocImpl {
  public:
@@ -58,18 +30,19 @@ class RegAllocImpl {
     }
   };
  protected:
-  std::vector<RegInfo> avail;
+  std::vector<PhyRegister*> float_available;
+  std::vector<PhyRegister*> int_available;
   RISCVFunction* m_func;
   GraphColor* gc;
   int availble;
 };
-using MOperand=RISCVMOperand*;
+using MOperand=Register*;
 class GraphColor {
  public:
   friend class BlockLiveInfo;
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
-  GraphColor(RISCVFunction* func, int K) : m_func(func), colors(K) {
+  GraphColor(RISCVFunction* func) : m_func(func),reglist(RegisterList::GetPhyRegList()) {
     liveinterval = std::make_unique<LiveInterval>(m_func);
   }
   void RunOnFunc();
@@ -195,7 +168,8 @@ class GraphColor {
   //合并后的别名管理
   std::unordered_map<MOperand, MOperand> alias;
   //算法最后为每一个operand选择的颜色
-  std::unordered_map<MOperand, RegInfo> color;
+  std::unordered_map<MOperand, PhyRegister*> color;
+  RegisterList& reglist;
   int LoopWeight = 1;
   int livenessWeight = 1;
   int DegreeWeight = 1;

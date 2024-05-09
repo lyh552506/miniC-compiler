@@ -1,32 +1,35 @@
 #include "RISCVMIR.hpp"
+#include "RISCVRegister.hpp"
 #include "RegAlloc.hpp"
 
 void GraphColor::RunOnFunc() {
   bool condition = true;
   for (auto mbb : *m_func) {
     CaculateLiveness(mbb);
-    // while (condition) {
-    //   condition = false;
-    //   CaculateLiveness(mbb);
-    //   MakeWorklist();
-    //   do {
-    //     if (!simplifyWorkList.empty())
-    //       simplify();
-    //     else if (!worklistMoves.empty())
-    //       coalesce();
-    //     else if (!freezeWorkList.empty())
-    //       freeze();
-    //     else if (!spillWorkList.empty())
-    //       spill();
-    //   } while (simplifyWorkList.empty() && worklistMoves.empty() &&
-    //            freezeWorkList.empty() && spillWorkList.empty());
-    //   AssignColors();
-    //   if (!spilledNodes.empty()) {
-    //     RewriteProgram();
-    //     condition = true;
-    //   }
-    // }
+    while (condition) {
+      condition = false;
+      CaculateLiveness(mbb);
+      MakeWorklist();
+      // do {
+      //   if (!simplifyWorkList.empty())
+      //     simplify();
+      //   else if (!worklistMoves.empty())
+      //     coalesce();
+      //   else if (!freezeWorkList.empty())
+      //     freeze();
+      //   else if (!spillWorkList.empty())
+      //     spill();
+      // } while (simplifyWorkList.empty() && worklistMoves.empty() &&
+      //          freezeWorkList.empty() && spillWorkList.empty());
+      // AssignColors();
+      // if (!spilledNodes.empty()) {
+      //   RewriteProgram();
+      //   condition = true;
+      // }
+    }
   }
+  liveinterval->blockinfo->PrintPass();
+  liveinterval->PrintAnalysis();
 }
 
 void GraphColor::MakeWorklist() {
@@ -168,7 +171,8 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
     //减去边后度数恰好不是高度数
     if (IG[neighbor].size() == colors - 1) {
       spillWorkList.erase(neighbor);
-      std::unordered_set<MOperand> tmp(IG[neighbor].begin(), IG[neighbor].end());
+      std::unordered_set<MOperand> tmp(IG[neighbor].begin(),
+                                       IG[neighbor].end());
       tmp.insert(neighbor);
       for (auto node : tmp)
         for (auto mov : MoveRelated(node)) {
@@ -194,8 +198,8 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
 void GraphColor::FreezeMoves(MOperand freeze) {
   for (auto mov : MoveRelated(freeze)) {
     // mov: dst<-src
-    MOperand dst = mov->GetDef();
-    MOperand src =nullptr;
+    MOperand dst = dynamic_cast<MOperand>(mov->GetDef());
+    MOperand src = nullptr;
     MOperand value;
     //找到除了freeze的另外一个操作数
     if (GetAlias(src) == GetAlias(freeze)) {
@@ -255,8 +259,8 @@ void GraphColor::coalesce() {
   for (int i = 0; i < worklistMoves.size(); i++) {
     RISCVMIR *mv = worklistMoves[i];
     // rd <- rs
-    MOperand rd = mv->GetDef();
-    MOperand rs = mv->GetOperand(0);
+    MOperand rd =dynamic_cast<MOperand>(mv->GetDef());
+    MOperand rs = dynamic_cast<MOperand>(mv->GetOperand(0));
     rd = GetAlias(rd);
     rs = GetAlias(rs);
     if (Precolored.find(rs) != Precolored.end()) {
@@ -313,7 +317,7 @@ void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     MOperand select = selectstack.back();
     selectstack.pop_back();
-    std::vector<RegInfo::REG> assist(colors);
+    std::vector<PhyRegister *> assist(colors);
     //遍历所有的冲突点，查看他们分配的颜色，保证我们分配的颜色一定是不同的
     for (auto adj : IG[select])
       if (coloredNode.find(GetAlias(adj)) != coloredNode.end() ||
