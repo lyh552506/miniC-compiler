@@ -35,11 +35,14 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock* block)
       else if(Opcode == OpType::ret)
       {
         RISCVMOperand* val1 = (*inst)->GetOperand(0);
-        if(!val1->ignoreLA())
+        if(val1)
         {
-            BlockLivein[block].insert(dynamic_cast<MOperand>(val1)); 
-            Uses[block].insert(dynamic_cast<MOperand>(val1));
+            PhyRegister* Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
+            BlockLivein[block].insert(Phy); 
+            Uses[block].insert(Phy);
         }
+        else
+          continue;
       }
       else if((*inst)->GetOperandSize() == 1)
       {
@@ -48,6 +51,15 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock* block)
         {
             BlockLivein[block].insert(dynamic_cast<MOperand>(val)); 
             Uses[block].insert(dynamic_cast<MOperand>(val));
+        }
+        if(RISCVMOperand* DefValue = (*inst)->GetDef())
+        {
+          if(!DefValue->ignoreLA())
+          {
+            BlockLivein[block].erase(dynamic_cast<MOperand>(DefValue));
+            Uses[block].erase(dynamic_cast<MOperand>(DefValue));
+            Defs[block].insert(dynamic_cast<MOperand>(DefValue));
+          }
         }
       }
       else if((*inst)->GetOperandSize() == 2)
@@ -150,17 +162,31 @@ void GraphColor::CalInstLive(RISCVBasicBlock* block)
   std::set<MOperand> Live = liveinterval->blockinfo->BlockLiveout[block];
   for(auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_)
   {
-
     RISCVMIR* inst = *inst_;
     {
       if(inst->GetOperandSize() == 1)
-      {
-        RISCVMOperand* val1 = inst->GetOperand(0);
-        if(!val1->ignoreLA())
+      { 
+        if(inst->GetOpcode() == OpType::ret)
         {
-          Live.insert(dynamic_cast<MOperand>(val1));
-          if(dynamic_cast<PhyRegister*>(dynamic_cast<MOperand>(val1)))
-            Precolored.insert(dynamic_cast<MOperand>(val1));
+          RISCVMOperand* val1 = inst->GetOperand(0);
+          if(val1)
+          {
+            PhyRegister* Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
+            Live.insert(Phy);
+            Precolored.insert(Phy);
+            liveinterval->blockinfo->InstLive[inst] = Live;
+            continue;
+          }
+        }
+        else
+        {
+          RISCVMOperand* val1 = inst->GetOperand(0);
+          if(!val1->ignoreLA())
+          {
+            Live.insert(dynamic_cast<MOperand>(val1));
+            if(dynamic_cast<PhyRegister*>(dynamic_cast<MOperand>(val1)))
+              Precolored.insert(dynamic_cast<MOperand>(val1));
+          }
         }
       }
       else if(inst->GetOperandSize() == 2)
@@ -321,12 +347,14 @@ void InterVal::computeLiveIntervals()
       }
       for(auto& [Op, intervals] : CurrentRegLiveinterval)
       {
-        if(intervals.back().end == -1 && inst == block->back())
-            CurrentRegLiveinterval[Op].back().end = Curr;
+        if(intervals.back().end == -1 && inst == block->back() && !blockinfo.get()->count(Op, inst))
+          CurrentRegLiveinterval[Op].back().end = Curr - 1;
+        else if(intervals.back().end == -1 && inst == block->back())
+          CurrentRegLiveinterval[Op].back().end = Curr;
         else if(intervals.back().end == -1 && !blockinfo.get()->count(Op, inst))
-            intervals.back().end = Curr - 1;
+          intervals.back().end = Curr - 1;
         else if(intervals.back().end == -1 && blockinfo.get()->count(Op, inst))
-            continue;
+          continue;
       }
     }
     if(verify(CurrentRegLiveinterval))
