@@ -104,7 +104,7 @@ class GraphColor {
   RISCVFunction* m_func;
   std::unique_ptr<LiveInterval> liveinterval;
   //记录available的寄存器
-  int colors;
+  //int colors;
   /// @brief 初始化各个工作表
   void MakeWorklist();
   //返回vector为0则不是move相关

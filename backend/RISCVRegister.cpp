@@ -30,23 +30,20 @@ std::string PhyRegister::GetName() {
   std::string str(x);
   return str;
 }
-<<<<<<< HEAD
 std::string VirRegister::Getname() {
     return "."+std::to_string(counter);
 }
 void VirRegister::print(){
     std::cout<<"%"<<counter;
-=======
-
-std::string VirRegister::GetName() {
-  std::ostringstream oss;
-  oss << "%" << counter;
-  std::string str= oss.str();
-  return str;
->>>>>>> b5d7a12af93d61de8bdce8c667da6ee8d9c43895
 }
+// std::string VirRegister::GetName() {
+//   std::ostringstream oss;
+//   oss << "%" << counter;
+//   std::string str= oss.str();
+//   return str;
+// }
 
-void VirRegister::print() { std::cout << "%" << counter; }
+// void VirRegister::print() { std::cout << "%" << counter; }
 
 LARegister::LARegister(RISCVType _type, std::string _name)
     : Register(_type,_name), regnum(LAReg::hi) {}
