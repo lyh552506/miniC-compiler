@@ -44,6 +44,7 @@ class VirRegister:public Register{
     int counter;
     public:
     VirRegister(RISCVType);
+    std::string Getname();
     void print()final;
     std::string GetName();
     bool isPhysical()final{return false;};
@@ -76,17 +77,23 @@ class StackRegister:public PhyRegister{
 class RegisterList {
     private:
     // static RegisterList* reglist;
-    std::vector<PhyRegister*> reglist_param_int;
-    std::vector<PhyRegister*> reglist_temp_int;
-    std::vector<PhyRegister*> reglist_param_float;
-    std::vector<PhyRegister*> reglist_temp_float;
+    std::vector<PhyRegister*> reglist_int;
+    std::vector<PhyRegister*> reglist_float;
+
+    // std::vector<PhyRegister*> reglist_param_int;
+    // std::vector<PhyRegister*> reglist_temp_int;
+    // std::vector<PhyRegister*> reglist_param_float;
+    // std::vector<PhyRegister*> reglist_temp_float;
     RegisterList();
     RegisterList(const RegisterList&) = delete;
     RegisterList& operator=(const RegisterList&) = delete;
     public:
     static RegisterList& GetPhyRegList();
-    std::vector<PhyRegister*>& GetReglistParamInt();
-    std::vector<PhyRegister*>& GetReglistTempInt();
-    std::vector<PhyRegister*>& GetReglistParamFloat();
-    std::vector<PhyRegister*>& GetReglistTempFloat();
+    std::vector<PhyRegister*>& GetReglistInt();
+    std::vector<PhyRegister*>& GetReglistFloat();
+
+    // std::vector<PhyRegister*>& GetReglistParamInt();
+    // std::vector<PhyRegister*>& GetReglistTempInt();
+    // std::vector<PhyRegister*>& GetReglistParamFloat();
+    // std::vector<PhyRegister*>& GetReglistTempFloat();
 };

@@ -97,5 +97,6 @@ int main(int argc, char **argv) {
   fclose(stdout);
 
   freopen("dev/tty", "w", stdout);
+
   return 0;
 }

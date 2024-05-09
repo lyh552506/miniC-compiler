@@ -30,12 +30,20 @@ std::string PhyRegister::GetName() {
   std::string str(x);
   return str;
 }
+<<<<<<< HEAD
+std::string VirRegister::Getname() {
+    return "."+std::to_string(counter);
+}
+void VirRegister::print(){
+    std::cout<<"%"<<counter;
+=======
 
 std::string VirRegister::GetName() {
   std::ostringstream oss;
   oss << "%" << counter;
   std::string str= oss.str();
   return str;
+>>>>>>> b5d7a12af93d61de8bdce8c667da6ee8d9c43895
 }
 
 void VirRegister::print() { std::cout << "%" << counter; }
@@ -65,54 +73,80 @@ void StackRegister::print() {
 
 RegisterList::RegisterList() {
     using PhyReg=PhyRegister::PhyReg;
-    // reglist_param_int
-    PhyReg regenum = PhyReg::a0;
-    while(regenum<=PhyReg::a7) {
-        PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
-        reglist_param_int.push_back(preg);
-        regenum = PhyReg(regenum + 1);
-    }
-    // reglist_temp_int
-    regenum = PhyReg::t0;
+    // reglist_int
+    PhyReg regenum = PhyReg::t0;
     while(regenum<=PhyReg::t2) {
         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
-        reglist_temp_int.push_back(preg);
+        reglist_int.push_back(preg);
         regenum = PhyReg(regenum + 1);
     }
-    regenum = PhyReg::t3;
+    regenum = PhyReg::s1;
     while(regenum<=PhyReg::t6) {
         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
-        reglist_temp_int.push_back(preg);
+        reglist_int.push_back(preg);
         regenum = PhyReg(regenum + 1);
     }
-    // reglist_param_float
-    regenum = PhyReg::fa0;
-    while(regenum<=PhyReg::fa7) {
-        PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
-        reglist_param_float.push_back(preg);
-        regenum = PhyReg(regenum + 1);
-    }
-    // reglist_temp_float
+    // reglist_float
     regenum = PhyReg::ft0;
-    while(regenum<=PhyReg::ft7) {
-        PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
-        reglist_temp_float.push_back(preg);
-        regenum = PhyReg(regenum + 1);
-    }
-    regenum = PhyReg::ft8;
     while(regenum<=PhyReg::ft11) {
         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
-        reglist_temp_float.push_back(preg);
+        reglist_float.push_back(preg);
         regenum = PhyReg(regenum + 1);
     }
-
 }
+
+// RegisterList::RegisterList() {
+//     using PhyReg=PhyRegister::PhyReg;
+//     // reglist_param_int
+//     PhyReg regenum = PhyReg::a0;
+//     while(regenum<=PhyReg::a7) {
+//         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+//         reglist_param_int.push_back(preg);
+//         regenum = PhyReg(regenum + 1);
+//     }
+//     // reglist_temp_int
+//     regenum = PhyReg::t0;
+//     while(regenum<=PhyReg::t2) {
+//         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+//         reglist_temp_int.push_back(preg);
+//         regenum = PhyReg(regenum + 1);
+//     }
+//     regenum = PhyReg::t3;
+//     while(regenum<=PhyReg::t6) {
+//         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+//         reglist_temp_int.push_back(preg);
+//         regenum = PhyReg(regenum + 1);
+//     }
+//     // reglist_param_float
+//     regenum = PhyReg::fa0;
+//     while(regenum<=PhyReg::fa7) {
+//         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+//         reglist_param_float.push_back(preg);
+//         regenum = PhyReg(regenum + 1);
+//     }
+//     // reglist_temp_float
+//     regenum = PhyReg::ft0;
+//     while(regenum<=PhyReg::ft7) {
+//         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+//         reglist_temp_float.push_back(preg);
+//         regenum = PhyReg(regenum + 1);
+//     }
+//     regenum = PhyReg::ft8;
+//     while(regenum<=PhyReg::ft11) {
+//         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+//         reglist_temp_float.push_back(preg);
+//         regenum = PhyReg(regenum + 1);
+//     }
+
+// }
 
 RegisterList& RegisterList::GetPhyRegList() {
     static RegisterList reglist;
     return reglist;
 }
-std::vector<PhyRegister*>& RegisterList::GetReglistParamInt() {return reglist_param_int;}
-std::vector<PhyRegister*>& RegisterList::GetReglistTempInt() {return reglist_temp_int;}
-std::vector<PhyRegister*>& RegisterList::GetReglistParamFloat() {return reglist_param_float;}
-std::vector<PhyRegister*>& RegisterList::GetReglistTempFloat() {return reglist_temp_float;}
+std::vector<PhyRegister*>& RegisterList::GetReglistInt() {return reglist_int;}
+std::vector<PhyRegister*>& RegisterList::GetReglistFloat() {return reglist_float;}
+// std::vector<PhyRegister*>& RegisterList::GetReglistParamInt() {return reglist_param_int;}
+// std::vector<PhyRegister*>& RegisterList::GetReglistTempInt() {return reglist_temp_int;}
+// std::vector<PhyRegister*>& RegisterList::GetReglistParamFloat() {return reglist_param_float;}
+// std::vector<PhyRegister*>& RegisterList::GetReglistTempFloat() {return reglist_temp_float;}

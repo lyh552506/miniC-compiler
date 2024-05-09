@@ -1,6 +1,8 @@
 #pragma once
 #include "RISCVMIR.hpp"
-#include "RISCVRegister.hpp"
+// #include "RISCVRegister.hpp"
+class RISCVFunction;
+
 /// @note This class intend to store the context of the lowering process
 /// maybe Singleton is a good choice
 /// Should this be responsible for managing memories for operands?
@@ -32,5 +34,6 @@ class RISCVLoweringContext{
     RISCVMOperand* mapping(Value*);
     VirRegister* createVReg(RISCVType);
     std::vector<MFuncPtr>& GetFunctions();
+    Value* GetValue(RISCVMOperand*);
     void print();
 };

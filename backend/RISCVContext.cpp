@@ -3,9 +3,12 @@
 RISCVMOperand* RISCVLoweringContext::Create(Value* val){
     if(auto inst=dynamic_cast<User*>(val)){
         if(auto alloca=dynamic_cast<AllocaInst*>(inst)){
-            auto& frameobjs=cur_func->GetFrameObjects();
-            frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(alloca->GetType(),alloca->GetName()));
-            return frameobjs.back().get();
+            this->insert_val2mop(inst, new VirRegister(RISCVTyper(inst->GetType())));
+            auto& frameobjs=cur_func->GetFrame()->GetFrameObjs();
+            frameobjs.emplace_back(new RISCVFrameObject(inst));
+            // frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(inst));
+            // frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(alloca->GetType(),alloca->GetName()));
+            return frameobjs.back().get(); 
         }
         else if(auto store=dynamic_cast<StoreInst*>(inst))
             assert(0&&"Can't be Used");
@@ -58,6 +61,15 @@ void RISCVLoweringContext::operator()(RISCVFunction* mfunc){
 
 VirRegister* RISCVLoweringContext::createVReg(RISCVType type){
     return new VirRegister(type);
+}
+
+Value* RISCVLoweringContext::GetValue(RISCVMOperand* mop) {
+    for(const auto& pair : val2mop) {
+        if(pair.second==mop) {
+            return pair.first;
+        }
+    }
+    return nullptr;
 }
 
 std::vector<std::unique_ptr<RISCVFunction>>& RISCVLoweringContext::GetFunctions() {return this->functions;}

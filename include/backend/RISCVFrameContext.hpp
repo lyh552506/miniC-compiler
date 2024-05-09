@@ -1,6 +1,9 @@
 #pragma once
 #include "RISCVMOperand.hpp"
 #include "RISCVRegister.hpp"
+// #include "RISCVMIR.hpp"
+class RISCVFunction;
+
 class NamedMOperand:public RISCVMOperand{
     std::string name;
     public:
@@ -16,16 +19,7 @@ class RISCVObject:public NamedMOperand{
     bool local;
     public:
     RISCVObject(Type*,std::string);
-};
-
-/// @brief A local variable's pointer
-class RISCVFrameObject:public RISCVObject{
-    /// @brief set later after RA
-    size_t begin_addr_offsets;
-    StackRegister* reg=nullptr;
-    public:
-    RISCVFrameObject(Type*,std::string);
-    void print()override;
+    RISCVObject(std::string);
 };
 
 /// @brief pointer to machine function or a machine global value
@@ -41,3 +35,31 @@ class RISCVTempFloatObject:public RISCVObject{
     void print()override;
 };
 
+
+/// @brief A local variable's pointer
+class RISCVFrameObject:public RISCVMOperand{
+    /// @brief set later after RA
+    size_t begin_addr_offsets;
+    StackRegister* reg=nullptr;
+    size_t size;
+    std::string name;
+    public:
+    RISCVFrameObject(Value*);
+    RISCVFrameObject(VirRegister*);
+    void GenerateStackRegister();
+    // RISCVFrameObject(Type*,std::string);
+    void print()override;
+};
+
+class RISCVFrame{
+    private:
+    RISCVFunction* parent;
+    std::vector<std::unique_ptr<RISCVFrameObject>> frameobjs;
+    public:
+    RISCVFrame(RISCVFunction*);
+    // RISCVFrame();
+    void spill(VirRegister*);
+    void spill(Value*);
+    std::vector<std::unique_ptr<RISCVFrameObject>>& GetFrameObjs();
+    void GenerateFrame();
+};
