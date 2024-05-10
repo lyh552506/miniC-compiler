@@ -30,7 +30,7 @@ std::string PhyRegister::GetName() {
   std::string str(x);
   return str;
 }
-std::string VirRegister::Getname() {
+std::string VirRegister::GetName() {
     return "."+std::to_string(counter);
 }
 void VirRegister::print(){

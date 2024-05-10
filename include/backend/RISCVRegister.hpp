@@ -44,9 +44,8 @@ class VirRegister:public Register{
     int counter;
     public:
     VirRegister(RISCVType);
-    std::string Getname();
-    void print()final;
     std::string GetName();
+    void print()final;
     bool isPhysical()final{return false;};
 };
 

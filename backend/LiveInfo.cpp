@@ -188,7 +188,6 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           if(Count(val1))
           {
             Live.insert(color[val1]);
-            initial.insert(color[val1]);
           }
           else
           {
@@ -210,7 +209,6 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           if(Count(val1))
           {
             Live.insert(color[val1]);
-            initial.insert(color[val1]);
           }
           else{
         Live.insert(dynamic_cast<MOperand>(val1));
@@ -224,7 +222,6 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
                   if(Count(val2))
           {
             Live.insert(color[val2]);
-            initial.insert(color[val2]);
           }
           else{
         Live.insert(val2);
@@ -237,7 +234,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
     }
     if (RISCVMOperand *_DefValue = inst->GetDef()) {
       auto DefValue = dynamic_cast<MOperand>(_DefValue);
-      if(!Count(DefValue))
+      if(!Count(DefValue)&&dynamic_cast<VirRegister*>(DefValue))
         initial.insert(DefValue);
       else
       {
