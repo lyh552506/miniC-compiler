@@ -9,13 +9,10 @@
 using BlockInfo = BlockLiveInfo;
 using InterVal = LiveInterval;
 using OpType = RISCVMIR::RISCVISA;
-bool BlockInfo::Count(RISCVMOperand* op)
-{
-  if(!op->ignoreLA())
-  {
-    if(auto reg = dynamic_cast<Register*>(op))
-    {
-      if(color.count(reg))
+bool BlockInfo::Count(RISCVMOperand *op) {
+  if (!op->ignoreLA()) {
+    if (auto reg = dynamic_cast<Register *>(op)) {
+      if (color.count(reg))
         return true;
       else
         return false;
@@ -24,21 +21,16 @@ bool BlockInfo::Count(RISCVMOperand* op)
   }
   return false;
 }
-void BlockInfo::UpdateInfo(RISCVMOperand* val, RISCVBasicBlock* block)
-{
+void BlockInfo::UpdateInfo(RISCVMOperand *val, RISCVBasicBlock *block) {
   auto reg = dynamic_cast<MOperand>(val);
-  if(reg && !reg->ignoreLA())
-  {
-      if(Count(reg))
-      {
-        BlockLivein[block].insert(color[reg]);
-        Uses[block].insert(color[reg]);
-      }
-      else
-      {
-        BlockLivein[block].insert(reg);
-        Uses[block].insert(reg);
-      }
+  if (reg && !reg->ignoreLA()) {
+    if (Count(reg)) {
+      BlockLivein[block].insert(color[reg]);
+      Uses[block].insert(color[reg]);
+    } else {
+      BlockLivein[block].insert(reg);
+      Uses[block].insert(reg);
+    }
   }
 }
 void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
@@ -67,14 +59,11 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
       if (RISCVMOperand *_DefValue = (*inst)->GetDef()) {
         auto DefValue = dynamic_cast<MOperand>(_DefValue);
         if (DefValue && !DefValue->ignoreLA()) {
-          if(Count(DefValue))
-          {
+          if (Count(DefValue)) {
             BlockLivein[block].erase(color[DefValue]);
             Uses[block].erase(color[DefValue]);
             Defs[block].insert(color[DefValue]);
-          }
-          else
-          {
+          } else {
             BlockLivein[block].erase(DefValue);
             Uses[block].erase(DefValue);
             Defs[block].insert(DefValue);
@@ -88,14 +77,11 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
       UpdateInfo(_val2, block);
       if (auto DefValue = dynamic_cast<MOperand>((*inst)->GetDef())) {
         if (!DefValue->ignoreLA()) {
-          if(Count(DefValue))
-          {
+          if (Count(DefValue)) {
             BlockLivein[block].erase(color[DefValue]);
             Uses[block].erase(color[DefValue]);
             Defs[block].insert(color[DefValue]);
-          }
-          else
-          {
+          } else {
             BlockLivein[block].erase(DefValue);
             Uses[block].erase(DefValue);
             Defs[block].insert(DefValue);
@@ -107,7 +93,7 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
 }
 
 void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block) {
-  
+
   for (RISCVMIR *inst : *block) {
     OpType Opcode = inst->GetOpcode();
     if (Opcode == OpType::_j) {
@@ -183,19 +169,15 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
         }
       } else {
         RISCVMOperand *_val1 = inst->GetOperand(0);
-        auto val1 = dynamic_cast<MOperand>(_val1);
-        if (val1 && !val1->ignoreLA()) {
-          if(Count(val1))
-          {
-            Live.insert(color[val1]);
-          }
-          else
-          {
-            Live.insert(dynamic_cast<MOperand>(val1));
-            initial.insert(val1);
-            if (dynamic_cast<PhyRegister *>(dynamic_cast<MOperand>(val1))) {
-              Precolored.insert(dynamic_cast<MOperand>(val1));
-              initial.erase(val1);
+        if (!_val1->ignoreLA()) {
+          if (Count(_val1)) {
+            Live.insert(color[dynamic_cast<Register *>(_val1)]);
+          } else {
+            Live.insert(dynamic_cast<MOperand>(_val1));
+            initial.insert(dynamic_cast<MOperand>(_val1));
+            if (dynamic_cast<PhyRegister *>(dynamic_cast<MOperand>(_val1))) {
+              Precolored.insert(dynamic_cast<MOperand>(_val1));
+              initial.erase(dynamic_cast<MOperand>(_val1));
             }
           }
         }
@@ -205,42 +187,39 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
       RISCVMOperand *_val2 = inst->GetOperand(1);
       auto val1 = dynamic_cast<MOperand>(_val1);
       auto val2 = dynamic_cast<MOperand>(_val2);
-      if (!val1->ignoreLA() && val1) {
-          if(Count(val1))
-          {
-            Live.insert(color[val1]);
+      if (val1 && !val1->ignoreLA()) {
+        if (Count(val1)) {
+          Live.insert(color[val1]);
+        } else {
+          Live.insert(val1);
+          initial.insert(val1);
+          if (dynamic_cast<PhyRegister *>(val1)) {
+            Precolored.insert(dynamic_cast<MOperand>(val1));
+            initial.erase(val1);
           }
-          else{
-        Live.insert(dynamic_cast<MOperand>(val1));
-        initial.insert(val1);
-        if (dynamic_cast<PhyRegister *>(val1)) {
-          Precolored.insert(dynamic_cast<MOperand>(val1));
-          initial.erase(val1);
-        }}
+        }
       }
       if (!val2->ignoreLA() && val2) {
-                  if(Count(val2))
-          {
-            Live.insert(color[val2]);
+        if (Count(val2)) {
+          Live.insert(color[val2]);
+        } else {
+          Live.insert(val2);
+          initial.insert(val2);
+          if (dynamic_cast<PhyRegister *>(val2)) {
+            Precolored.insert(val2);
+            initial.erase(val2);
           }
-          else{
-        Live.insert(val2);
-        initial.insert(val2);
-        if (dynamic_cast<PhyRegister *>(val2)) {
-          Precolored.insert(val2);
-          initial.erase(val2);
-        }}
+        }
       }
     }
     if (RISCVMOperand *_DefValue = inst->GetDef()) {
       auto DefValue = dynamic_cast<MOperand>(_DefValue);
-      if(!Count(DefValue)&&dynamic_cast<VirRegister*>(DefValue))
+      if(dynamic_cast<VirRegister *>(DefValue) && !Count(DefValue))
         initial.insert(DefValue);
-      else
-      {
-        if(color[DefValue] && color[DefValue]->ignoreLA())
-          Live.erase(color[DefValue]);
-      }
+      if(Count(DefValue) && !DefValue->ignoreLA())
+        Live.erase(color[DefValue]);
+      else if(!Count(DefValue) && !DefValue->ignoreLA())
+        Live.erase(DefValue);
     }
     InstLive[inst] = Live;
   }
@@ -251,15 +230,15 @@ void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
     auto op1 = dynamic_cast<MOperand>(inst->GetOperand(0));
     auto def = dynamic_cast<MOperand>(inst->GetDef());
     if (Opcode == OpType::mv && op1 && def) {
-      if(Count(op1))
+      if (Count(op1))
         moveList[color[op1]].insert(inst);
       else
         moveList[op1].insert(inst);
-      if(Count(def))
+      if (Count(def))
         moveList[color[def]].insert(inst);
       else
         moveList[def].insert(inst);
-      PushVecSingleVal(worklistMoves,inst);
+      PushVecSingleVal(worklistMoves, inst);
     }
   }
 }
@@ -374,8 +353,7 @@ void InterVal::computeLiveIntervals()
           CurrentRegLiveinterval[Op].back().end = Curr - 1;
         else if (intervals.back().end == -1 && inst == block->back())
           CurrentRegLiveinterval[Op].back().end = Curr;
-        else if (intervals.back().end == -1 &&
-                 !count(Op, inst))
+        else if (intervals.back().end == -1 && !count(Op, inst))
           intervals.back().end = Curr - 1;
         else if (intervals.back().end == -1 && count(Op, inst))
           continue;

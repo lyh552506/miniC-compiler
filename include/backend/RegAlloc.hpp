@@ -91,7 +91,7 @@ class BlockLiveInfo {
 
    public:
     LiveInterval(RISCVFunction* f) : func(f), BlockLiveInfo(f) {}
-    std::unordered_map<MOperand, std::vector<Interval>> GetRegLiveInterval(
+    std::unordered_map<MOperand, std::vector<Interval>>& GetRegLiveInterval(
         RISCVBasicBlock* block) {
       return RegLiveness[block];
     }

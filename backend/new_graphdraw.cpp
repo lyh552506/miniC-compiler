@@ -9,27 +9,27 @@ void GraphColor::RunOnFunc() {
   bool condition = true;
   for (auto mbb : *m_func) {
     CaculateLiveness(mbb);
-    while (condition) {
-      condition = false;
-      CaculateLiveness(mbb);
-      MakeWorklist();
-      do {
-        if (!simplifyWorkList.empty())
-          simplify();
-        else if (!worklistMoves.empty())
-          coalesce();
-        else if (!freezeWorkList.empty())
-          freeze();
-        else if (!spillWorkList.empty())
-          spill();
-      } while (!simplifyWorkList.empty() && !worklistMoves.empty() &&
-               !freezeWorkList.empty() && !spillWorkList.empty());
-      AssignColors();
-      if (!spilledNodes.empty()) {
-        RewriteProgram();
-        condition = true;
-      }
-    }
+    // while (condition) {
+    //   condition = false;
+    //   CaculateLiveness(mbb);
+    //   MakeWorklist();
+    //   do {
+    //     if (!simplifyWorkList.empty())
+    //       simplify();
+    //     else if (!worklistMoves.empty())
+    //       coalesce();
+    //     else if (!freezeWorkList.empty())
+    //       freeze();
+    //     else if (!spillWorkList.empty())
+    //       spill();
+    //   } while (!simplifyWorkList.empty() && !worklistMoves.empty() &&
+    //            !freezeWorkList.empty() && !spillWorkList.empty());
+    //   AssignColors();
+    //   if (!spilledNodes.empty()) {
+    //     RewriteProgram();
+    //     condition = true;
+    //   }
+    // }
   }
   PrintPass();
   PrintAnalysis();
@@ -165,7 +165,7 @@ void GraphColor::CaculateLiveness(RISCVBasicBlock *mbb) {
   CalcIG(mbb);
   RunOnFunc_();
   //计算区间并存入
-  auto IntervInfo = GetRegLiveInterval(mbb);
+  auto& IntervInfo = GetRegLiveInterval(mbb);
   for (auto &[val, vec] : IntervInfo) {
     unsigned int length = 0;
     for (auto v : vec)
