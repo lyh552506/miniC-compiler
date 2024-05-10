@@ -4,129 +4,83 @@
         .attribute unaligned_access, 0
         .attribute stack_align, 16
         .text
+        .globl  arr_global
+        .bss
+        .align  3
+        .type   arr_global, @object
+        .size   arr_global, 40000
+arr_global:
+        .zero   40000
+        .text
         .align  1
-        .globl  func1
-        .type   func1, @function
-func1:
-        addi    sp,sp,-48
-        sd      s0,40(sp)
-        addi    s0,sp,48
-        mv      t4,a0
-        mv      t3,a1
-        mv      t1,a2
-        mv      a0,a3
-        mv      a1,a4
-        mv      a2,a5
-        mv      a3,a6
-        mv      a4,a7
-        mv      a5,t4
-        sw      a5,-20(s0)
-        mv      a5,t3
-        sw      a5,-24(s0)
-        mv      a5,t1
-        sw      a5,-28(s0)
+        .globl  func
+        .type   func, @function
+func:
+        addi    sp,sp,-32
+        sd      s0,24(sp)
+        addi    s0,sp,32
         mv      a5,a0
-        sw      a5,-32(s0)
-        mv      a5,a1
-        sw      a5,-36(s0)
-        mv      a5,a2
-        sw      a5,-40(s0)
-        mv      a5,a3
-        sw      a5,-44(s0)
-        mv      a5,a4
-        sw      a5,-48(s0)
-        lw      a5,-20(s0)
-        mv      a4,a5
-        lw      a5,-24(s0)
-        addw    a5,a4,a5
-        sext.w  a5,a5
-        mv      a0,a5
-        ld      s0,40(sp)
-        addi    sp,sp,48
-        jr      ra
-        .size   func1, .-func1
-        .align  1
-        .globl  func2
-        .type   func2, @function
-func2:
-        addi    sp,sp,-48
-        sd      s0,40(sp)
-        addi    s0,sp,48
-        mv      t4,a0
-        mv      t3,a1
-        mv      t1,a2
-        mv      a0,a3
-        mv      a1,a4
-        mv      a2,a5
-        mv      a3,a6
-        mv      a4,a7
-        mv      a5,t4
+        mv      a3,a1
+        mv      a4,a2
         sw      a5,-20(s0)
-        mv      a5,t3
-        sw      a5,-24(s0)
-        mv      a5,t1
-        sw      a5,-28(s0)
-        mv      a5,a0
-        sw      a5,-32(s0)
-        mv      a5,a1
-        sw      a5,-36(s0)
-        mv      a5,a2
-        sw      a5,-40(s0)
         mv      a5,a3
-        sw      a5,-44(s0)
+        sw      a5,-24(s0)
         mv      a5,a4
-        sw      a5,-48(s0)
-        lw      a5,-20(s0)
-        mv      a4,a5
+        sw      a5,-28(s0)
+        lui     a5,%hi(arr_global)
+        addi    a4,a5,%lo(arr_global)
         lw      a5,-24(s0)
-        addw    a5,a4,a5
-        sext.w  a5,a5
-        mv      a0,a5
-        ld      s0,40(sp)
-        addi    sp,sp,48
+        lw      a2,-20(s0)
+        li      a3,100
+        mul     a3,a2,a3
+        add     a5,a3,a5
+        slli    a5,a5,2
+        add     a5,a4,a5
+        lw      a4,-28(s0)
+        sw      a4,0(a5)
+        nop
+        ld      s0,24(sp)
+        addi    sp,sp,32
         jr      ra
-        .size   func2, .-func2
+        .size   func, .-func
         .align  1
         .globl  main
         .type   main, @function
 main:
-        addi    sp,sp,-48
-        sd      ra,40(sp)
-        sd      s0,32(sp)
-        addi    s0,sp,48
-        li      a5,8
-        sd      a5,0(sp)
-        li      a7,7
-        li      a6,6
-        li      a5,5
-        li      a4,4
-        li      a3,3
-        li      a2,2
-        li      a1,1
-        li      a0,0
-        call    func1
-        li      a5,11
-        sd      a5,24(sp)
-        li      a5,10
-        sd      a5,16(sp)
-        li      a5,9
-        sd      a5,8(sp)
-        li      a5,8
-        sd      a5,0(sp)
-        li      a7,7
-        li      a6,6
-        li      a5,5
-        li      a4,4
-        li      a3,3
-        li      a2,2
-        li      a1,1
-        li      a0,0
-        call    func2
+        addi    sp,sp,-432
+        sd      ra,424(sp)
+        sd      s0,416(sp)
+        addi    s0,sp,432
+        li      a5,1
+        sw      a5,-20(s0)
+        li      a5,1
+        sw      a5,-24(s0)
+        lw      a3,-24(s0)
+        lw      a4,-20(s0)
+        mv      a5,a4
+        slli    a5,a5,2
+        add     a5,a5,a4
+        slli    a5,a5,1
+        add     a5,a5,a3
+        slli    a5,a5,2
+        addi    a5,a5,-16
+        add     a5,a5,s0
+        li      a4,1
+        sw      a4,-416(a5)
+        li      a5,2
+        sw      a5,-28(s0)
+        lw      a3,-28(s0)
+        lw      a4,-24(s0)
+        lw      a5,-20(s0)
+        mv      a2,a3
+        mv      a1,a4
+        mv      a0,a5
+        call    func
         li      a5,0
         mv      a0,a5
-        ld      ra,40(sp)
-        ld      s0,32(sp)
-        addi    sp,sp,48
+        ld      ra,424(sp)
+        ld      s0,416(sp)
+        addi    sp,sp,432
         jr      ra
         .size   main, .-main
         .ident  "GCC: (gc891d8dc23e) 13.2.0"

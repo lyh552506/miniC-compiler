@@ -1,5 +1,5 @@
 #include "RISCVMIR.hpp"
-#include "MagicEnum.hpp"
+
 
 RISCVMOperand*& RISCVMIR:: GetDef() {return def;}
 RISCVMOperand*& RISCVMIR::GetOperand(int ind){
@@ -46,9 +46,13 @@ void RISCVMIR::printfull(){
     }
 }
 
-std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects(){
+std::unique_ptr<RISCVFrame>& RISCVFunction::GetFrame() {
     return frame;
 }
+
+// std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects(){
+//     return frame;
+// }
 
 RISCVBasicBlock::RISCVBasicBlock(std::string _name):NamedMOperand(_name,RISCVType::riscv_none){}
 
@@ -89,7 +93,9 @@ void RISCVBasicBlock::push_before_branch(RISCVMIR* minst) {
     this->push_front(minst);
 }
 
-RISCVFunction::RISCVFunction(Value* _func):RISCVGlobalObject(_func->GetType(),_func->GetName()),func(_func){}
+RISCVFunction::RISCVFunction(Value* _func):RISCVGlobalObject(_func->GetType(),_func->GetName()),func(_func){
+    frame.reset(new RISCVFrame(this));
+}
 
 
 void RISCVBasicBlock::printfull(){

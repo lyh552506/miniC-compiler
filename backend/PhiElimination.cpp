@@ -70,9 +70,9 @@ void PhiElimination::runOnGraph(BasicBlock* pred,BasicBlock* succ,std::vector<st
             if(stagedRegister.find(src)!=stagedRegister.end())
                 src=stagedRegister[src];
 
-            if(graph[i].indo!=0){
+            if(graph[ind].indo!=0){
                 /// @note stage register
-                assert(graph[i].indo==1&&"Unexpected Degree");
+                assert(graph[ind].indo==1&&"Unexpected Degree");
                 auto stageR=cxt.createVReg(src->GetType());
                 emitMBB->push_before_branch(RISCVTrival::CopyFrom(stageR,dst));
                 stagedRegister[dst]=stageR;

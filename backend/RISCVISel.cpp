@@ -54,6 +54,7 @@ bool RISCVISel::run(Function* m){
 
 void RISCVISel::InstLowering(AllocaInst* inst){
     ctx.mapping(inst);
+    
 }
 
 void RISCVISel::InstLowering(StoreInst* inst){
@@ -94,6 +95,10 @@ void RISCVISel::InstLowering(LoadInst* inst){
     }
     else if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(FloatType::NewFloatTypeGet()))
         ctx(Builder(RISCVMIR::_flw,inst));
+    
+    // else if(dynamic_cast<HasSubType*>(inst->GetOperand(0)->GetType())->GetSubType()){
+    //     printf("a load inst with pointer\n");
+    // }
     else assert(0&&"invalid load type");
 }
 
@@ -106,8 +111,7 @@ void RISCVISel::InstLowering(SITFP* inst){
 }
 
 void RISCVISel::InstLowering(UnCondInst* inst){
-    // ctx(Builder(RISCVMIR::_j,inst));
-    ctx(Builder(RISCVMIR::_j, {ctx.mapping(inst->GetOperand(0))}));
+    ctx(Builder_withoutDef(RISCVMIR::_j, {ctx.mapping(inst->GetOperand(0))}));
 }
 
 void RISCVISel::InstLowering(CondInst* inst){
@@ -373,7 +377,9 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
             else assert("?Impossible Here");
         }
         else{
-            // auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index),M(ConstSize_t::GetNewConstant(size))});
+            /// @todo
+            // ConstIRInt* _size = ConstIRInt::GetNewConstant(int(size)); 
+            // auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index), Imm::GetImm(_size)});
             // ctx(mul);
             // auto temp=ctx.createVReg(riscv_ptr);
             // ctx(Builder(RISCVMIR::_addw,{temp,baseptr,mul->GetOperand(0)}));
@@ -382,7 +388,9 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
         hasSubtype=dynamic_cast<HasSubType*>(hasSubtype->GetSubType());
     }
     if(offset!=0) {}
-        // ctx(Builder(RISCVMIR::_addw,{baseptr,M(ConstSize_t::GetNewConstant(offset))}));
+    /// @todo
+        // ConstIRInt* _offset = ConstIRInt::GetNewConstant(int(0)); 
+        // ctx(Builder(RISCVMIR::_addw,{baseptr,Imm::GetImm(_offset)}));
     #undef M
 }
 
