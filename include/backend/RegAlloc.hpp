@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <vector>
 #include "RISCVMOperand.hpp"
+#include "RISCVType.hpp"
 #include"my_stl.hpp"
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
@@ -126,12 +127,17 @@ class GraphColor : public LiveInterval{
   void RewriteProgram();
   MOperand HeuristicFreeze();
   MOperand HeuristicSpill();
+  PhyRegister* SelectPhyReg(RISCVType ty);
   bool GeorgeCheck(MOperand dst, MOperand src,RISCVType ty);
   bool BriggsCheck(std::unordered_set<MOperand> target,RISCVType ty);
   void AddWorkList(MOperand v);
-  void combine(MOperand rd, MOperand rs, RISCVType ty);
+  void combine(MOperand rd, MOperand rs);
   MOperand GetAlias(MOperand v);
   void FreezeMoves(MOperand freeze);
+  void SetRegState(PhyRegister* reg,RISCVType ty);
+  int GetRegNums(MOperand v);
+  int GetRegNums(RISCVType ty);
+  void Print();
   //保证Interval vector的顺序
   std::unordered_map<MOperand, IntervalLength> ValsInterval;
   enum MoveState { coalesced, constrained, frozen, worklist, active };
@@ -145,6 +151,8 @@ class GraphColor : public LiveInterval{
   std::unordered_set<MOperand> spillWorkList;
   // 本轮中要溢出的节点集合
   std::unordered_set<MOperand> spilledNodes;
+  std::unordered_set<PhyRegister*> allocaedIntReg;
+  std::unordered_set<PhyRegister*> allocaedFloatReg;
   // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
   std::unordered_set<MOperand> initial;
   // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
@@ -165,6 +173,7 @@ class GraphColor : public LiveInterval{
   std::unordered_set<RISCVMIR*> activeMoves;
   //合并后的别名管理
   std::unordered_map<MOperand, MOperand> alias;
+  std::unordered_map<PhyRegister*,RISCVType> RegType;
   RegisterList& reglist;
   int LoopWeight = 1;
   int livenessWeight = 1;
