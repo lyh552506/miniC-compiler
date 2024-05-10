@@ -31,8 +31,8 @@ void GraphColor::RunOnFunc() {
       }
     }
   }
-  liveinterval->blockinfo->PrintPass();
-  liveinterval->PrintAnalysis();
+  PrintPass();
+  PrintAnalysis();
 }
 
 void GraphColor::MakeWorklist() {
@@ -158,14 +158,14 @@ void GraphColor::AddWorkList(MOperand v) {
 }
 
 void GraphColor::CaculateLiveness(RISCVBasicBlock *mbb) {
-  liveinterval->blockinfo->RunOnFunction();
+  RunOnFunction();
   //计算IG,并且添加precolored集合
   CalInstLive(mbb);
   CalcmoveList(mbb);
   CalcIG(mbb);
-  liveinterval->RunOnFunc();
+  RunOnFunc_();
   //计算区间并存入
-  auto IntervInfo = liveinterval->GetRegLiveInterval(mbb);
+  auto IntervInfo = GetRegLiveInterval(mbb);
   for (auto &[val, vec] : IntervInfo) {
     unsigned int length = 0;
     for (auto v : vec)
