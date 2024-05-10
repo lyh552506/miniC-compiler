@@ -6,32 +6,30 @@
 #include <utility>
 
 void GraphColor::RunOnFunc() {
-  for (auto mbb : *m_func) {
-    bool condition = true;
-    CaculateLiveness(mbb);
-    while (condition) {
-      condition = false;
-      CaculateLiveness(mbb);
-      MakeWorklist();
-      do {
-        if (!simplifyWorkList.empty())
-          simplify();
-        else if (!worklistMoves.empty())
-          coalesce();
-        else if (!freezeWorkList.empty())
-          freeze();
-        else if (!spillWorkList.empty())
-          spill();
-      } while (!simplifyWorkList.empty() || !worklistMoves.empty() ||
-               !freezeWorkList.empty() || !spillWorkList.empty());
-      AssignColors();
-      if (!spilledNodes.empty()) {
-        RewriteProgram();
-        condition = true;
-      }
+  bool condition = true;
+  CaculateLiveness();
+  while (condition) {
+    condition = false;
+    CaculateLiveness();
+    MakeWorklist();
+    do {
+      if (!simplifyWorkList.empty())
+        simplify();
+      else if (!worklistMoves.empty())
+        coalesce();
+      else if (!freezeWorkList.empty())
+        freeze();
+      else if (!spillWorkList.empty())
+        spill();
+    } while (!simplifyWorkList.empty() || !worklistMoves.empty() ||
+             !freezeWorkList.empty() || !spillWorkList.empty());
+    AssignColors();
+    if (!spilledNodes.empty()) {
+      RewriteProgram();
+      condition = true;
     }
-    Print();
   }
+  Print();
   PrintPass();
   PrintAnalysis();
 }
@@ -135,14 +133,19 @@ void GraphColor::AddWorkList(MOperand v) {
   }
 }
 
-void GraphColor::CaculateLiveness(RISCVBasicBlock *mbb) {
+void GraphColor::CaculateLiveness() {
   RunOnFunction();
   //计算IG,并且添加precolored集合
-  CalInstLive(mbb);
-  CalcmoveList(mbb);
-  CalcIG(mbb);
-  RunOnFunc_();
+  for (auto b : *m_func) {
+    CalInstLive(b);
+    CalcmoveList(b);
+    CalcIG(b);
+  }
+}
+
+void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
   //计算区间并存入
+  RunOnFunc_();
   auto &IntervInfo = GetRegLiveInterval(mbb);
   for (auto &[val, vec] : IntervInfo) {
     unsigned int length = 0;
@@ -178,7 +181,9 @@ MOperand GraphColor::HeuristicSpill() {
 // TODO选择freeze node的启发式函数
 /*
  */
-MOperand GraphColor::HeuristicFreeze() {}
+MOperand GraphColor::HeuristicFreeze() {
+  return *(freezeWorkList.begin());
+}
 
 void GraphColor::SetRegState(PhyRegister *reg, RISCVType ty) {
   RegType[reg] = ty;
@@ -200,9 +205,11 @@ int GraphColor::GetRegNums(MOperand v) {
   }
 }
 
-int GraphColor::GetRegNums(RISCVType ty){
-  if(ty==riscv_i32)  return reglist.GetReglistInt().size();
-  if(ty==riscv_float32) return reglist.GetReglistFloat().size();
+int GraphColor::GetRegNums(RISCVType ty) {
+  if (ty == riscv_i32||ty==riscv_ptr)
+    return reglist.GetReglistInt().size();
+  if (ty == riscv_float32)
+    return reglist.GetReglistFloat().size();
   assert(0);
 }
 
@@ -302,7 +309,7 @@ void GraphColor::simplify() {
       IG[target].erase(iter);
       vec_pop(IG[val], i);
       //这里注意需要检查一下更新后的相邻边是否只有color-1
-      if (target->GetType() == riscv_i32||target->GetType() == riscv_ptr) {
+      if (target->GetType() == riscv_i32 || target->GetType() == riscv_ptr) {
         if (IG[target].size() == GetRegNums(riscv_i32) - 1) {
           spillWorkList.erase(target);
           std::unordered_set<MOperand> tmp(IG[target].begin(),
@@ -343,7 +350,7 @@ void GraphColor::simplify() {
           }
         }
       } else {
-        //assert(0 && "appear riscv_none");
+        // assert(0 && "appear riscv_none");
       }
     }
   }
@@ -422,14 +429,14 @@ void GraphColor::AssignColors() {
     for (auto adj : IG[select])
       if (coloredNode.find(GetAlias(adj)) != coloredNode.end() ||
           Precolored.find(GetAlias(adj)) != Precolored.end()) {
-        if (ty == riscv_i32)
+        if (ty == riscv_i32 ||ty==riscv_ptr)
           int_assist.push_back(adj);
         else if (ty == riscv_float32)
           float_assist.push_back(adj);
       }
     bool flag = false;
-    if (ty == riscv_i32) {
-      if (int_assist.size() ==GetRegNums(ty))
+    if (ty == riscv_i32||ty==riscv_ptr) {
+      if (int_assist.size() == GetRegNums(ty))
         spilledNodes.insert(select);
       else {
         coloredNode.insert(select);
@@ -446,20 +453,19 @@ void GraphColor::AssignColors() {
       }
     }
   }
-  for(auto caols:coalescedNodes)
-    color[caols]=color[GetAlias(caols)];
+  for (auto caols : coalescedNodes)
+    color[caols] = color[GetAlias(caols)];
 }
 
 void GraphColor::RewriteProgram() {
   for (auto spilled : spilledNodes) {
     // TODO 创建临时变量寄存器的接口
   }
-  
 }
 
 //单独抽离成一个函数，后续有调用规约修改的时候我们再更改
 PhyRegister *GraphColor::SelectPhyReg(RISCVType ty) {
-  if (ty == riscv_i32) {
+  if (ty == riscv_i32||ty==riscv_ptr) {
     for (auto reg : reglist.GetReglistInt()) {
       if (Precolored.find(reg) == Precolored.end() &&
           allocaedIntReg.find(reg) == allocaedIntReg.end())
@@ -476,9 +482,10 @@ PhyRegister *GraphColor::SelectPhyReg(RISCVType ty) {
   }
 }
 
-void GraphColor::Print(){
-  for(auto v:color){
-    if(dynamic_cast<VirRegister*>(v.first))
-      std::cerr<<"Replace "<<v.first->GetName()<<"  with  "<<v.second->GetName()<<std::endl;
+void GraphColor::Print() {
+  for (auto v : color) {
+    if (dynamic_cast<VirRegister *>(v.first))
+      std::cerr << "Replace " << v.first->GetName() << "  with  "
+                << v.second->GetName() << std::endl;
   }
 }

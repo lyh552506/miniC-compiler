@@ -118,7 +118,8 @@ class GraphColor : public LiveInterval{
   void CalcmoveList(RISCVBasicBlock* block);
   void CalcIG(RISCVBasicBlock* block);
   void CalInstLive(RISCVBasicBlock* block);
-  void CaculateLiveness(RISCVBasicBlock* mbb);
+  void CaculateLiveness();
+  void CaculateLiveInterval(RISCVBasicBlock* mbb);
   void simplify();
   void coalesce();
   void freeze();
