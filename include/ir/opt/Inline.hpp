@@ -11,7 +11,10 @@ public:
     const int Not_Inline_Multilevel_Loop_Nest = 5;
     const bool SSALevel = true;
 public:
-    Inliner(Function* f, LoopAnalysis* loopAnalysis_, Module& module) : func(f), m(module), loopAnalysis(loopAnalysis_) {}
+    Inliner(Function* f, Module& module, dominance* dom) : func(f), m(module) {
+       loopAnalysis = new LoopAnalysis(f, dom);
+       loopAnalysis->RunOnFunction();
+    }
     void Run();
     void PrintPass();
     void Inline();

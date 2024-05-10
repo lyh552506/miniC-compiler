@@ -1,6 +1,6 @@
 #include "AST_NODE.hpp"
 #include "TypeTrans.hpp"
-
+#include <algorithm>
 LocType::LocType():begin(0),end(0){
 }
 

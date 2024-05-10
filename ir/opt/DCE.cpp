@@ -1,5 +1,5 @@
 #include "DCE.hpp"
-
+#include <algorithm>
 void DCE::PrintPass()
 {
     std::cout << "--------DCE--------" << std::endl;
