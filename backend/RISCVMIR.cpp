@@ -50,6 +50,12 @@ std::unique_ptr<RISCVFrame>& RISCVFunction::GetFrame() {
     return frame;
 }
 
+size_t RISCVFunction::GetMaxParamSize() {
+    return max_param_size;
+}
+void RISCVFunction::SetMaxParamSize(size_t size) {
+    max_param_size=size;
+}
 // std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects(){
 //     return frame;
 // }
@@ -115,4 +121,77 @@ void RISCVFunction::printfull(){
         // if(mbb!=this->back())
         //     std::cout<<"\n";
     }
+}
+
+// RISCVFrame::RISCVFrame() {}
+RISCVFrame::RISCVFrame(RISCVFunction* func) : parent(func) {}
+// void RISCVFrame::spill(VirRegister* mop) {
+//     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
+// }
+// void RISCVFrame::spill(Value* val) {
+//     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
+// }
+
+StackRegister* RISCVFrame::spill(VirRegister* mop) {
+    for (auto& obj : frameobjs) {
+        // if (obj->GetName() == mop->GetName()) {
+        //     return obj->Get;
+        // }
+    }
+    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
+}
+StackRegister* RISCVFrame::spill(Value* val) {
+    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
+}
+
+std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFrame::GetFrameObjs() {return frameobjs;}
+
+void RISCVFrame::GenerateFrame() {
+    /// @todo
+    using FramObj = std::vector<std::unique_ptr<RISCVFrameObject>>;
+    frame_size = 16;
+    for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
+        std::unique_ptr<RISCVFrameObject>& obj = *it;
+        frame_size += obj->GetFrameObjSize();
+        obj->SetBeginAddOff(frame_size);
+    }
+    frame_size += parent->GetMaxParamSize();
+    int mod = frame_size % 16;
+    if (mod!=0) {
+        frame_size = frame_size + (16 - mod);
+    }
+
+    for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
+        std::unique_ptr<RISCVFrameObject>& obj = *it;
+        obj->GenerateStackRegister(0 - obj->GetBeginAddOff());
+    }
+}
+
+void RISCVFrame::GenerateFrameHead() {
+    using PhyReg=PhyRegister::PhyReg;
+    PhyRegister* sp = PhyRegister::GetPhyReg(PhyReg::sp);
+    PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
+    using ISA=RISCVMIR::RISCVISA;
+    // addi sp, sp, -framesize
+    RISCVMIR* inst1 = new RISCVMIR(ISA::_addi);
+    Imm* imm1 = new Imm(ConstIRInt::GetNewConstant(0-frame_size));
+    inst1->SetDef(sp);
+    inst1->AddOperand(sp);
+    inst1->AddOperand(imm1);
+    // sd s0, framsize(sp)
+    RISCVMIR* inst2 = new RISCVMIR(ISA::_sd);
+    StackRegister* sp_stack = new StackRegister(PhyReg::sp, frame_size-8);
+    inst2->SetDef(s0);
+    inst2->AddOperand(sp_stack);
+    // addi s0, sp, framesize
+    RISCVMIR* inst3 = new RISCVMIR(ISA::_addi);
+    Imm* imm3 = new Imm(ConstIRInt::GetNewConstant(frame_size));
+    inst3->SetDef(s0);
+    inst3->AddOperand(sp);
+    inst3->AddOperand(imm3);
+
+    parent->front()->begin().insert_before(inst3);
+    parent->front()->begin().insert_before(inst2);
+    parent->front()->begin().insert_before(inst1);
+
 }

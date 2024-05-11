@@ -1,8 +1,6 @@
 #pragma once
 #include "RISCVMOperand.hpp"
 #include "RISCVRegister.hpp"
-// #include "RISCVMIR.hpp"
-class RISCVFunction;
 
 class NamedMOperand:public RISCVMOperand{
     std::string name;
@@ -39,27 +37,17 @@ class RISCVTempFloatObject:public RISCVObject{
 /// @brief A local variable's pointer
 class RISCVFrameObject:public RISCVMOperand{
     /// @brief set later after RA
-    size_t begin_addr_offsets;
-    StackRegister* reg=nullptr;
-    size_t size;
+    size_t begin_addr_offsets=0;
+    StackRegister* reg;
+    size_t size=0;
     std::string name;
     public:
     RISCVFrameObject(Value*);
     RISCVFrameObject(VirRegister*);
-    void GenerateStackRegister();
+    void GenerateStackRegister(int);
+    size_t GetFrameObjSize();
+    size_t GetBeginAddOff();
+    void SetBeginAddOff(size_t);
     // RISCVFrameObject(Type*,std::string);
     void print()override;
-};
-
-class RISCVFrame{
-    private:
-    RISCVFunction* parent;
-    std::vector<std::unique_ptr<RISCVFrameObject>> frameobjs;
-    public:
-    RISCVFrame(RISCVFunction*);
-    // RISCVFrame();
-    void spill(VirRegister*);
-    void spill(Value*);
-    std::vector<std::unique_ptr<RISCVFrameObject>>& GetFrameObjs();
-    void GenerateFrame();
 };

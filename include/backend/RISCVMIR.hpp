@@ -1,11 +1,11 @@
 #pragma once
 #include "CFG.hpp"
-#include "RISCVFrameContext.hpp"
 #include "MagicEnum.hpp"
+#include "RISCVFrameContext.hpp"
+class RISCVFrame;
 class RISCVFunction;
 class RISCVBasicBlock;
 class RISCVMIR;
-
 /// @note RISCVMIR no longer is an MOperand for SSA is destructed
 class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 {
@@ -93,6 +93,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _sb,
         _sh,
         _sw,
+        _sd,
         EndMem,
 
         BeginFloat,
@@ -188,11 +189,34 @@ class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBa
     RISCVBasicBlock* entry;
     using RISCVframe = std::unique_ptr<RISCVFrame>;
     RISCVframe frame;
+    size_t max_param_size=0;
     // using FOBJPTR=std::unique_ptr<RISCVFrameObject>;
     // std::vector<FOBJPTR> frame;
     public:
     RISCVFunction(Value*);
     // std::vector<FOBJPTR>& GetFrameObjects();
     RISCVframe& GetFrame();
+    size_t GetMaxParamSize();
+    void SetMaxParamSize(size_t);
     void printfull();
 };
+
+
+class RISCVFrame{
+    private:
+    RISCVFunction* parent;
+    std::vector<std::unique_ptr<RISCVFrameObject>> frameobjs;
+    size_t frame_size;
+    public:
+    RISCVFrame(RISCVFunction*);
+    // RISCVFrame();
+
+    // Or return StackRegister* ?
+    StackRegister* spill(VirRegister*);
+    StackRegister* spill(Value*);
+    std::vector<std::unique_ptr<RISCVFrameObject>>& GetFrameObjs();
+    void GenerateFrame();
+    void GenerateFrameHead();
+    void GenerateFrameTail(); 
+};
+

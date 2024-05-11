@@ -23,6 +23,8 @@ void GraphColor::RunOnFunc() {
       //          freezeWorkList.empty() && spillWorkList.empty());
       // AssignColors();
       // if (!spilledNodes.empty()) {
+      //   /// @todo Generate Frame
+      //   m_func->GetFrame()->GenerateFrame();
       //   RewriteProgram();
       //   condition = true;
       // }

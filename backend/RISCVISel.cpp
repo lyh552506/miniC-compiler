@@ -437,6 +437,14 @@ void RISCVISel::InstLowering(CallInst* inst){
             || inst->GetOperand(i)->GetType()==FloatType::NewFloatTypeGet())
                 ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i))}));
         }
+        size_t local_param_size=0;
+        for (int i=1; i<paramnum; i++) {
+            local_param_size += inst->GetOperand(i)->GetType()->get_size();
+        }
+        if (local_param_size > ctx.GetCurFunction()->GetMaxParamSize()) {
+            ctx.GetCurFunction()->SetMaxParamSize(local_param_size);
+        }
+
     }
     if(!inst->GetUserlist().is_empty()){
         ctx(Builder_withoutDef(RISCVMIR::call, inst));

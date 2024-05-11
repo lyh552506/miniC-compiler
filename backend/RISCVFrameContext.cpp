@@ -29,33 +29,33 @@ void RISCVTempFloatObject::print() {}
 // }
 
 RISCVFrameObject::RISCVFrameObject(Value* val) : RISCVMOperand(RISCVTyper(val->GetType())) {
-    size=val->GetType()->get_size();
+    name = val->GetName();
+    reg = new StackRegister(PhyRegister::PhyReg::s0, begin_addr_offsets);
+    if (PointerType* pointtype = dynamic_cast<PointerType*>(val->GetType())) {
+        size=pointtype->GetSubType()->get_size();
+    }
+    // will we meet arraytype here?
+    else if (ArrayType* arrtype = dynamic_cast<ArrayType*>(val->GetType())) {
+        size=arrtype->get_size();
+    }
+    else size=val->GetType()->get_size();
 }
 RISCVFrameObject::RISCVFrameObject(VirRegister* val) : RISCVMOperand(val->GetType()) {
+    reg = new StackRegister(PhyRegister::PhyReg::s0, begin_addr_offsets);
+    name = val->GetName();
     size = 8;
 }
 
-void RISCVFrameObject::GenerateStackRegister() {
+void RISCVFrameObject::GenerateStackRegister(int offset) {
     /// @todo
+    reg->SetOffset(offset);
 }
-
+size_t RISCVFrameObject::GetFrameObjSize() {return size;}
+size_t RISCVFrameObject::GetBeginAddOff() {return begin_addr_offsets;}
+void RISCVFrameObject::SetBeginAddOff(size_t add) {begin_addr_offsets = add;}
 void RISCVFrameObject::print(){
-    std::cout<<"---";
-    std::cout<<"FrameObject";
-    std::cout<<"---";
-}
-
-// RISCVFrame::RISCVFrame() {}
-RISCVFrame::RISCVFrame(RISCVFunction* func) : parent(func) {}
-void RISCVFrame::spill(VirRegister* mop) {
-    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
-}
-void RISCVFrame::spill(Value* val) {
-    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
-}
-
-std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFrame::GetFrameObjs() {return frameobjs;}
-
-void RISCVFrame::GenerateFrame() {
-    /// @todo
+    // std::cout<<"---";
+    // std::cout<<"FrameObject";
+    // std::cout<<"---";
+    reg->print();
 }

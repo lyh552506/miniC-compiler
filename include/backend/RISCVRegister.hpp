@@ -71,6 +71,7 @@ class StackRegister:public PhyRegister{
     public:
     StackRegister(PhyReg, int);
     std::string GetName(){return rname;}
+    void SetOffset(int);
     void print()final;
 };
 
