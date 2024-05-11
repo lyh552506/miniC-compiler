@@ -23,7 +23,10 @@ bool RISCVModuleLowering::run(Module* m){
     asmprinter->GetData()->GenerateTempvarList(ctx);
     LegalizeConstInt lcint(ctx);
     lcint.run();
+<<<<<<< HEAD
     
+=======
+>>>>>>> 0a0acbb61e7659091d8b0eeeba455342d80a5c7c
     asmprinter->printAsm();
     // ctx.print();
     return false;
@@ -41,10 +44,15 @@ bool RISCVFunctionLowering::run(Function* m){
 
     PhiElimination phi(ctx);
     phi.run(m);
+<<<<<<< HEAD
 
     LegalizeConstInt lcint(ctx);
     lcint.run();
 
+=======
+    LegalizeConstInt lcint(ctx);
+    lcint.run();
+>>>>>>> 0a0acbb61e7659091d8b0eeeba455342d80a5c7c
     // Register Allocation
     RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
     regalloc.RunGCpass();

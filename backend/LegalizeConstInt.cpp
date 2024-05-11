@@ -97,5 +97,6 @@ bool LegalizeConstInt::run() {
             }
         }
     }
+    return false;
 }
 
