@@ -30,20 +30,11 @@ std::string PhyRegister::GetName() {
   std::string str(x);
   return str;
 }
-<<<<<<< HEAD
-
-std::string VirRegister::GetName() {
-  std::ostringstream oss;
-  oss << "%" << counter;
-  std::string str= oss.str();
-  return str;
-=======
 std::string VirRegister::GetName() {
     return "."+std::to_string(counter);
 }
 void VirRegister::print(){
     std::cout<<"%"<<counter;
->>>>>>> 0a0acbb61e7659091d8b0eeeba455342d80a5c7c
 }
 // std::string VirRegister::GetName() {
 //   std::ostringstream oss;

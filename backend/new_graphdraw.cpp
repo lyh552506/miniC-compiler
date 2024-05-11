@@ -3,36 +3,11 @@
 #include "RISCVType.hpp"
 #include "RegAlloc.hpp"
 #include <cassert>
+#include <unordered_set>
 #include <utility>
 
 void GraphColor::RunOnFunc() {
   bool condition = true;
-<<<<<<< HEAD
-  for (auto mbb : *m_func) {
-    CaculateLiveness(mbb);
-    while (condition) {
-      condition = false;
-      CaculateLiveness(mbb);
-      MakeWorklist();
-      // do {
-      //   if (!simplifyWorkList.empty())
-      //     simplify();
-      //   else if (!worklistMoves.empty())
-      //     coalesce();
-      //   else if (!freezeWorkList.empty())
-      //     freeze();
-      //   else if (!spillWorkList.empty())
-      //     spill();
-      // } while (simplifyWorkList.empty() && worklistMoves.empty() &&
-      //          freezeWorkList.empty() && spillWorkList.empty());
-      // AssignColors();
-      // if (!spilledNodes.empty()) {
-      //   /// @todo Generate Frame
-      //   m_func->GetFrame()->GenerateFrame();
-      //   RewriteProgram();
-      //   condition = true;
-      // }
-=======
   CaculateLiveness();
   while (condition) {
     condition = false;
@@ -53,7 +28,6 @@ void GraphColor::RunOnFunc() {
     if (!spilledNodes.empty()) {
       RewriteProgram();
       condition = true;
->>>>>>> 0a0acbb61e7659091d8b0eeeba455342d80a5c7c
     }
   }
   Print();
@@ -208,9 +182,7 @@ MOperand GraphColor::HeuristicSpill() {
 // TODO选择freeze node的启发式函数
 /*
  */
-MOperand GraphColor::HeuristicFreeze() {
-  return *(freezeWorkList.begin());
-}
+MOperand GraphColor::HeuristicFreeze() { return *(freezeWorkList.begin()); }
 
 void GraphColor::SetRegState(PhyRegister *reg, RISCVType ty) {
   RegType[reg] = ty;
@@ -233,7 +205,7 @@ int GraphColor::GetRegNums(MOperand v) {
 }
 
 int GraphColor::GetRegNums(RISCVType ty) {
-  if (ty == riscv_i32||ty==riscv_ptr)
+  if (ty == riscv_i32 || ty == riscv_ptr)
     return reglist.GetReglistInt().size();
   if (ty == riscv_float32)
     return reglist.GetReglistFloat().size();
@@ -450,33 +422,33 @@ void GraphColor::AssignColors() {
     MOperand select = selectstack.back();
     RISCVType ty = select->GetType();
     selectstack.pop_back();
-    std::vector<MOperand> int_assist;
-    std::vector<MOperand> float_assist;
+    std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),
+                                            reglist.GetReglistInt().end()};
+    std::unordered_set<MOperand> float_assist{reglist.GetReglistFloat().begin(),
+                                              reglist.GetReglistFloat().end()};
     //遍历所有的冲突点，查看他们分配的颜色，保证我们分配的颜色一定是不同的
     for (auto adj : IG[select])
       if (coloredNode.find(GetAlias(adj)) != coloredNode.end() ||
           Precolored.find(GetAlias(adj)) != Precolored.end()) {
-        if (ty == riscv_i32 ||ty==riscv_ptr)
-          int_assist.push_back(adj);
+        if (ty == riscv_i32 || ty == riscv_ptr)
+          int_assist.erase(adj);
         else if (ty == riscv_float32)
-          float_assist.push_back(adj);
+          float_assist.erase(adj);
       }
     bool flag = false;
-    if (ty == riscv_i32||ty==riscv_ptr) {
-      if (int_assist.size() == GetRegNums(ty))
+    if (ty == riscv_i32 || ty == riscv_ptr) {
+      if (int_assist.size() == 0)
         spilledNodes.insert(select);
       else {
         coloredNode.insert(select);
-        color[select] = SelectPhyReg(ty);
-        allocaedIntReg.insert(color[select]);
+        color[select] = SelectPhyReg(ty, int_assist);
       }
     } else if (ty == riscv_float32) {
-      if (float_assist.size() == reglist.GetReglistFloat().size())
+      if (float_assist.size() == 0)
         spillWorkList.insert(select);
       else {
         coalescedNodes.insert(select);
-        color[select] = SelectPhyReg(ty);
-        allocaedFloatReg.insert(color[select]);
+        color[select] = SelectPhyReg(ty, float_assist);
       }
     }
   }
@@ -491,17 +463,16 @@ void GraphColor::RewriteProgram() {
 }
 
 //单独抽离成一个函数，后续有调用规约修改的时候我们再更改
-PhyRegister *GraphColor::SelectPhyReg(RISCVType ty) {
-  if (ty == riscv_i32||ty==riscv_ptr) {
+PhyRegister *GraphColor::SelectPhyReg(RISCVType ty,
+                                      std::unordered_set<MOperand> &assist) {
+  if (ty == riscv_i32 || ty == riscv_ptr) {
     for (auto reg : reglist.GetReglistInt()) {
-      if (Precolored.find(reg) == Precolored.end() &&
-          allocaedIntReg.find(reg) == allocaedIntReg.end())
+      if (assist.find(reg) != assist.end())
         return reg;
     }
   } else if (ty == riscv_float32) {
     for (auto reg : reglist.GetReglistFloat()) {
-      if (Precolored.find(reg) == Precolored.end() &&
-          allocaedFloatReg.find(reg) == allocaedFloatReg.end())
+      if (assist.find(reg) != assist.end())
         return reg;
     }
   } else {

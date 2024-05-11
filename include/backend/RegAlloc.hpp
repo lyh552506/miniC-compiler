@@ -128,7 +128,7 @@ class GraphColor : public LiveInterval{
   void RewriteProgram();
   MOperand HeuristicFreeze();
   MOperand HeuristicSpill();
-  PhyRegister* SelectPhyReg(RISCVType ty);
+  PhyRegister* SelectPhyReg(RISCVType ty,std::unordered_set<MOperand>& assist);
   bool GeorgeCheck(MOperand dst, MOperand src,RISCVType ty);
   bool BriggsCheck(std::unordered_set<MOperand> target,RISCVType ty);
   void AddWorkList(MOperand v);
@@ -152,8 +152,6 @@ class GraphColor : public LiveInterval{
   std::unordered_set<MOperand> spillWorkList;
   // 本轮中要溢出的节点集合
   std::unordered_set<MOperand> spilledNodes;
-  std::unordered_set<PhyRegister*> allocaedIntReg;
-  std::unordered_set<PhyRegister*> allocaedFloatReg;
   // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
   std::unordered_set<MOperand> initial;
   // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)

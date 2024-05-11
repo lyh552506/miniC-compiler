@@ -1,7 +1,11 @@
 #include"reassociate.hpp"
+#include "CFG.hpp"
 
 
 void Reassociate::RunOnFunction(){
+    //first should caculate RPO
+    BasicBlock* EntryBB=m_func->front();
+    PostOrderCFG(EntryBB);
     //phase 1: build the rank map
     BuildRankMap();
 }
@@ -11,6 +15,11 @@ void Reassociate::BuildRankMap(){
     for(auto &param:m_func->GetParams()){
         ValueRank[param.get()]=rank++;
     }
+}
+
+void Reassociate::OptimizeInst(Value* I){
+  if(!dynamic_cast<BinaryInst*>(I))
+    return;
 }
 
 void Reassociate::PostOrderCFG(BasicBlock *root) {
