@@ -13,6 +13,7 @@ private:
   void BuildRankMap();
   void PostOrderCFG(BasicBlock *root);
   void OptimizeInst(Value* I);
+  bool IsCommutative(User* I);
   std::map<Value *, int>
       ValueRank; // RankMap, arguement's rank is 3,const rank is 0
   std::vector<BasicBlock*> PostOrder;    

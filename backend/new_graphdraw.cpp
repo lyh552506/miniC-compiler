@@ -2,13 +2,13 @@
 #include "RISCVRegister.hpp"
 #include "RISCVType.hpp"
 #include "RegAlloc.hpp"
-#include <cassert>
-#include <unordered_set>
-#include <utility>
 
 void GraphColor::RunOnFunc() {
   bool condition = true;
   CaculateLiveness();
+  for(auto &[key,val]:IG){
+    AdjList[key].insert(val.begin(),val.end());
+  }
   while (condition) {
     condition = false;
     CaculateLiveness();
@@ -49,14 +49,11 @@ void GraphColor::MakeWorklist() {
 
 std::unordered_set<RISCVMIR *> GraphColor::MoveRelated(MOperand v) {
   std::unordered_set<RISCVMIR *> tmp;
-  for (auto t : moveList) {
-    auto move = t.second;
-    for (auto inst : move) {
-      auto iter = std::find(worklistMoves.begin(), worklistMoves.end(), inst);
-      if (activeMoves.find(inst) != activeMoves.end() ||
-          iter != worklistMoves.end())
-        tmp.insert(inst);
-    }
+  for (auto inst : moveList[v]) {
+    auto iter = std::find(worklistMoves.begin(), worklistMoves.end(), inst);
+    if (activeMoves.find(inst) != activeMoves.end() ||
+        iter != worklistMoves.end())
+      tmp.insert(inst);
   }
   return tmp;
 }
@@ -142,6 +139,7 @@ void GraphColor::CaculateLiveness() {
     CalcmoveList(b);
     CalcIG(b);
   }
+  RunOnFunc_();
 }
 
 void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
@@ -427,13 +425,13 @@ void GraphColor::AssignColors() {
     std::unordered_set<MOperand> float_assist{reglist.GetReglistFloat().begin(),
                                               reglist.GetReglistFloat().end()};
     //遍历所有的冲突点，查看他们分配的颜色，保证我们分配的颜色一定是不同的
-    for (auto adj : IG[select])
+    for (auto adj : AdjList[select])
       if (coloredNode.find(GetAlias(adj)) != coloredNode.end() ||
           Precolored.find(GetAlias(adj)) != Precolored.end()) {
         if (ty == riscv_i32 || ty == riscv_ptr)
-          int_assist.erase(adj);
+          int_assist.erase(color[adj]);
         else if (ty == riscv_float32)
-          float_assist.erase(adj);
+          float_assist.erase(color[adj]);
       }
     bool flag = false;
     if (ty == riscv_i32 || ty == riscv_ptr) {

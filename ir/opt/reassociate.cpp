@@ -30,3 +30,7 @@ void Reassociate::PostOrderCFG(BasicBlock *root) {
   }
   PostOrder.push_back(root);
 }
+
+bool Reassociate::IsCommutative(User* I){
+  
+}

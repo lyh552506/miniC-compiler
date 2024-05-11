@@ -164,6 +164,7 @@ class GraphColor : public LiveInterval{
   std::unordered_set<RISCVMIR*> frozenMoves;
   //已成功着色的结点集合
   std::unordered_set<MOperand> coloredNode;
+  std::unordered_map<MOperand,std::unordered_set<MOperand>> AdjList;
   // 从图中删除的临时变量的栈
   std::vector<MOperand> selectstack;
   //查询每个传送指令属于哪一个集合
