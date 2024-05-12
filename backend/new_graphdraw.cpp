@@ -457,6 +457,7 @@ void GraphColor::AssignColors() {
 void GraphColor::RewriteProgram() {
   for (auto spilled : spilledNodes) {
     // TODO 创建临时变量寄存器的接口
+    
   }
 }
 
