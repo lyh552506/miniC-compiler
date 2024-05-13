@@ -2,12 +2,13 @@
 #include "RISCVRegister.hpp"
 #include "RISCVType.hpp"
 #include "RegAlloc.hpp"
+#include <cassert>
 
 void GraphColor::RunOnFunc() {
   bool condition = true;
   CaculateLiveness();
-  for(auto &[key,val]:IG){
-    AdjList[key].insert(val.begin(),val.end());
+  for (auto &[key, val] : IG) {
+    AdjList[key].insert(val.begin(), val.end());
   }
   while (condition) {
     condition = false;
@@ -454,12 +455,77 @@ void GraphColor::AssignColors() {
     color[caols] = color[GetAlias(caols)];
 }
 
-void GraphColor::RewriteProgram() {
-  for (auto spilled : spilledNodes) {
-    // TODO 创建临时变量寄存器的接口
-    
+void GraphColor::SpillNodeInMir() {
+  for (auto mbb : *m_func) {
+    for (auto mir_begin = mbb->begin(), mir_end = mbb->end();
+         mir_begin != mir_end;) {
+      auto mir = *mir_begin;
+      if (mir->GetDef() != nullptr && dynamic_cast<MOperand>(mir->GetDef()) &&
+          (spilledNodes.find(dynamic_cast<MOperand>(mir->GetDef())) !=
+           spilledNodes.end()) &&
+          AlreadySpill.find(dynamic_cast<MOperand>(mir->GetDef())) ==
+              AlreadySpill.end()) {
+        //存在def并且def是一个准备spill节点
+        RISCVMIR *sd = CreateSpillMir(mir->GetDef());
+        mir_begin.insert_after(sd);
+      } else if (mir->GetDef() != nullptr &&
+                 dynamic_cast<MOperand>(mir->GetDef()) &&
+                 (spilledNodes.find(dynamic_cast<MOperand>(mir->GetDef())) !=
+                  spilledNodes.end())) {
+        //存在def并且def是一个已经spill节点
+        RISCVMIR *ld = CreateLoadMir(dynamic_cast<MOperand>(mir->GetDef()));
+        mir_begin.insert_before(ld);
+        mir->SetDef(ld->GetDef());
+      } else {
+        for (int i = 0; i < mir->GetOperandSize(); i++) {
+          if (mir->GetOperand(i) != nullptr &&
+              dynamic_cast<MOperand>(mir->GetOperand(i)) &&
+              (spilledNodes.find(dynamic_cast<MOperand>(mir->GetOperand(i))) !=
+               spilledNodes.end()) &&
+              AlreadySpill.find(dynamic_cast<MOperand>(mir->GetOperand(i))) ==
+                  AlreadySpill.end()) {
+            RISCVMIR *sd = CreateSpillMir(mir->GetOperand(i));
+            mir_begin.insert_after(sd);
+          } else if (mir->GetOperand(i) != nullptr &&
+                     dynamic_cast<MOperand>(mir->GetOperand(i)) &&
+                     (spilledNodes.find(dynamic_cast<MOperand>(
+                          mir->GetOperand(i))) != spilledNodes.end())) {
+            RISCVMIR *ld = CreateLoadMir(mir->GetOperand(i));
+            mir_begin.insert_before(ld);
+            mir->SetOperand(i, ld->GetDef());
+          }
+        }
+      }
+      ++mir_begin;
+    }
   }
 }
+
+RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill) {
+  auto vreg = dynamic_cast<VirRegister *>(spill);
+  assert(vreg && "the chosen operand must be a vreg");
+  assert(AlreadySpill.find(vreg) == AlreadySpill.end() && "no spill before");
+  RISCVMIR *sd = new RISCVMIR(RISCVMIR::RISCVISA::_sd);
+  auto spillnode = m_func->GetFrame()->spill(vreg);
+  sd->AddOperand(spillnode);
+  sd->AddOperand(vreg);
+  AlreadySpill[vreg] = sd;
+  return sd;
+}
+
+RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load) {
+  auto vreg = dynamic_cast<VirRegister *>(load);
+  assert(vreg && "the chosen operand must be a vreg");
+  assert(AlreadySpill.find(vreg) == AlreadySpill.end() && "no spill before");
+  VirRegister *reg = new VirRegister(vreg->GetType());
+  RISCVMIR *lw = new RISCVMIR(RISCVMIR::RISCVISA::_ld);
+  auto loadnode = AlreadySpill[vreg]->GetOperand(0);
+  lw->SetDef(reg);
+  lw->AddOperand(loadnode);
+  return lw;
+}
+
+void GraphColor::RewriteProgram() {}
 
 //单独抽离成一个函数，后续有调用规约修改的时候我们再更改
 PhyRegister *GraphColor::SelectPhyReg(RISCVType ty,

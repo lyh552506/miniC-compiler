@@ -125,6 +125,7 @@ class GraphColor : public LiveInterval{
   void freeze();
   void spill();
   void AssignColors();
+  void SpillNodeInMir();
   void RewriteProgram();
   MOperand HeuristicFreeze();
   MOperand HeuristicSpill();
@@ -138,6 +139,8 @@ class GraphColor : public LiveInterval{
   void SetRegState(PhyRegister* reg,RISCVType ty);
   int GetRegNums(MOperand v);
   int GetRegNums(RISCVType ty);
+  RISCVMIR* CreateSpillMir(RISCVMOperand* spill);
+  RISCVMIR* CreateLoadMir(RISCVMOperand* load);
   void Print();
   //保证Interval vector的顺序
   std::unordered_map<MOperand, IntervalLength> ValsInterval;
@@ -174,6 +177,8 @@ class GraphColor : public LiveInterval{
   //合并后的别名管理
   std::unordered_map<MOperand, MOperand> alias;
   std::unordered_map<PhyRegister*,RISCVType> RegType;
+  //记录已经重写的spill node
+  std::unordered_map<MOperand,RISCVMIR*> AlreadySpill;
   RegisterList& reglist;
   int LoopWeight = 1;
   int livenessWeight = 1;
