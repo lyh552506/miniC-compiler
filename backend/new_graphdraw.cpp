@@ -4,7 +4,7 @@
 #include "RegAlloc.hpp"
 #include <cassert>
 #include <unordered_set>
-
+#include <LegalizeConstInt.hpp>
 void GraphColor::RunOnFunc() {
   bool condition = true;
   CaculateLiveness();
@@ -32,6 +32,16 @@ void GraphColor::RunOnFunc() {
       condition = true;
     }
   }
+  // Generate Frame of current Function
+  // And generate the head of frame here
+  RISCVFrame& frame = *m_func->GetFrame();
+  frame.GenerateFrame();
+  frame.GenerateFrameHead();
+  frame.GenerateFrameTail();
+
+  LegalizeConstInt lcint(ctx);
+  lcint.run();
+
   RewriteProgram();
   PrintPass();
   PrintAnalysis();

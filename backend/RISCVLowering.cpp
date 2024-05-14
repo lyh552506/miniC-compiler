@@ -19,10 +19,9 @@ bool RISCVModuleLowering::run(Module* m){
             std::cerr<<"FUNC Lowering failed\n";
         }
     }
-    asmprinter->SetTextSegment(new textSegment(ctx));
-    asmprinter->GetData()->GenerateTempvarList(ctx);
-    LegalizeConstInt lcint(ctx);
-    lcint.run();
+    // LegalizeConstInt lcint(ctx);
+    // lcint.run();
+
     asmprinter->printAsm();
     // ctx.print();
     return false;
@@ -40,15 +39,20 @@ bool RISCVFunctionLowering::run(Function* m){
 
     PhiElimination phi(ctx);
     phi.run(m);
+
+    asmprinter->SetTextSegment(new textSegment(ctx));
+    asmprinter->GetData()->GenerateTempvarList(ctx);
+
     LegalizeConstInt lcint(ctx);
     lcint.run();
+
     // Register Allocation
-    RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>());
+    RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>(), ctx);
     regalloc.RunGCpass();
 
-    RISCVFrame& frame = *(ctx.GetCurFunction())->GetFrame();
-    frame.GenerateFrame();
-    frame.GenerateFrameHead();
+    // RISCVFrame& frame = *(ctx.GetCurFunction())->GetFrame();
+    // frame.GenerateFrame();
+    // frame.GenerateFrameHead();
     // frame.GenerateFrameTail();
     
     return false;

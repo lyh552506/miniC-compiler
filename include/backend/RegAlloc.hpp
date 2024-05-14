@@ -16,11 +16,13 @@
 #include "CFG.hpp"
 #include "RISCVMIR.hpp"
 #include"RISCVRegister.hpp"
+#include "RISCVContext.hpp"
 
 class GraphColor;
 class RegAllocImpl {
+  RISCVLoweringContext& ctx;
  public:
-  RegAllocImpl(RISCVFunction* func) : m_func(func) {}
+  RegAllocImpl(RISCVFunction* func, RISCVLoweringContext& _ctx) : m_func(func), ctx(_ctx) {}
   void RunGCpass();
   struct RegLiveInterval {
     int start;
@@ -101,10 +103,12 @@ class BlockLiveInfo {
   };
 class GraphColor : public LiveInterval{
  public:
+  RISCVLoweringContext& ctx;
   RISCVFunction* m_func;
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
-  GraphColor(RISCVFunction* func) : LiveInterval(func), m_func(func),reglist(RegisterList::GetPhyRegList()) {
+  GraphColor(RISCVFunction* func, RISCVLoweringContext& _ctx) 
+  : LiveInterval(func), ctx(_ctx), m_func(func),reglist(RegisterList::GetPhyRegList()) {
   }
   void RunOnFunc();
 
