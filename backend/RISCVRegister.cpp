@@ -30,20 +30,11 @@ std::string PhyRegister::GetName() {
   std::string str(x);
   return str;
 }
-<<<<<<< HEAD
-
-std::string VirRegister::GetName() {
-  std::ostringstream oss;
-  oss << "%" << counter;
-  std::string str= oss.str();
-  return str;
-=======
 std::string VirRegister::GetName() {
     return "."+std::to_string(counter);
 }
 void VirRegister::print(){
     std::cout<<"%"<<counter;
->>>>>>> 0a0acbb61e7659091d8b0eeeba455342d80a5c7c
 }
 // std::string VirRegister::GetName() {
 //   std::ostringstream oss;
@@ -100,6 +91,13 @@ RegisterList::RegisterList() {
         reglist_float.push_back(preg);
         regenum = PhyReg(regenum + 1);
     }
+    // reglist_test
+    regenum = PhyReg::a0;
+    while(regenum<=PhyReg::a7) {
+      PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+      reglist_test.push_back(preg);
+      regenum = PhyReg(regenum + 1);
+    }
 }
 
 // RegisterList::RegisterList() {
@@ -153,6 +151,7 @@ RegisterList& RegisterList::GetPhyRegList() {
 }
 std::vector<PhyRegister*>& RegisterList::GetReglistInt() {return reglist_int;}
 std::vector<PhyRegister*>& RegisterList::GetReglistFloat() {return reglist_float;}
+std::vector<PhyRegister*>& RegisterList::GetReglistTest() {return reglist_test;}
 // std::vector<PhyRegister*>& RegisterList::GetReglistParamInt() {return reglist_param_int;}
 // std::vector<PhyRegister*>& RegisterList::GetReglistTempInt() {return reglist_temp_int;}
 // std::vector<PhyRegister*>& RegisterList::GetReglistParamFloat() {return reglist_param_float;}

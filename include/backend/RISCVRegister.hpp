@@ -79,7 +79,7 @@ class RegisterList {
     // static RegisterList* reglist;
     std::vector<PhyRegister*> reglist_int;
     std::vector<PhyRegister*> reglist_float;
-
+    std::vector<PhyRegister*> reglist_test;
     // std::vector<PhyRegister*> reglist_param_int;
     // std::vector<PhyRegister*> reglist_temp_int;
     // std::vector<PhyRegister*> reglist_param_float;
@@ -91,7 +91,7 @@ class RegisterList {
     static RegisterList& GetPhyRegList();
     std::vector<PhyRegister*>& GetReglistInt();
     std::vector<PhyRegister*>& GetReglistFloat();
-
+    std::vector<PhyRegister*>& GetReglistTest();
     // std::vector<PhyRegister*>& GetReglistParamInt();
     // std::vector<PhyRegister*>& GetReglistTempInt();
     // std::vector<PhyRegister*>& GetReglistParamFloat();
