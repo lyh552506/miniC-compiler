@@ -374,4 +374,5 @@ private:
         #endif
         markAnythingOverdefined(&inst);   // Just in case
     }
+    void visit(BasicBlock* BB);
 };

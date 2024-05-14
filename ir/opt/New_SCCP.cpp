@@ -317,7 +317,197 @@ void SCCPSolver::visitGetElementPtrInst(GetElementPtrInst& inst)
 
 void SCCPSolver::visitStoreInst(StoreInst& inst)
 {
-
+    if(TrackedGlobals.empty() || !dynamic_cast<Variable*>(inst.Getuselist()[1]->usee))
+        return;
+    
+    Variable* val = dynamic_cast<Variable*>(inst.Getuselist()[1]->usee);
+    std::map<Variable*, LatticeVal>::iterator iter = TrackedGlobals.find(val);
+    if(iter == TrackedGlobals.end() || iter->second.isOverdefined())
+        return;
+    
+    // Get the value we are storing into the global, then merge it.
+    mergeInValue(iter->second, Singleton<Module>().GetValueByName(val->get_name()), getValueState(inst.Getuselist()[0]->usee));
+    if(iter->second.isOverdefined())
+        TrackedGlobals.erase(iter); // No need to keep tracking this!
 }
+
+// Handle LoadInst. If the operand is a constant pointer to a constant global
+// we can replace the load with the loaded constant value.
+void SCCPSolver::visitLoadInst(LoadInst& inst)
+{
+    LatticeVal PtrVal = getValueState(inst.Getuselist()[0]->usee);
+    if(PtrVal.isUnknown()) return;
+
+    LatticeVal& LV = ValueState[&inst];
+    if(LV.isOverdefined()) return;
+
+    if(!PtrVal.isConstant())
+        return markOverdefined(LV, &inst);
+    
+    ConstantData* Ptr = PtrVal.getConstantInt();
+
+    // load null is undefined
+    if(!dynamic_cast<ConstPtr*>(Ptr)) return;
+
+    // Transform load (Constant Global) into the value loaded.
+    // TODO
+    // if(Variable* val = dynamic_cast<Variable*>(dynamic_cast<ConstPtr*>(Ptr)->GetVal()))
+    // {
+    //     if(!TrackedGlobals.empty())
+    //     {
+    //         // If we are tracking this global, merge in the known value for it.
+    //         std::map<Variable*, LatticeVal>::iterator iter = TrackedGlobals.find(val);
+    //         if(iter != TrackedGlobals.end())
+    //         {
+    //             mergeInValue(LV, &inst, iter->second);
+    //             return;
+    //         }
+    //     }
+    // }
+
+    // Transform load from a constant into a constant if possible.
+    if(ConstantData* C = ConstantFolding::ConstantFoldLoadFromConstPtr(Ptr, Ptr->GetType()))
+    {
+        if(dynamic_cast<UndefValue*>(C))
+            return;
+        return markConstant(LV, &inst, C);
+    }
+
+    // otherwise we cannot say for certain what value this load will produce.
+    // Bail out.
+    markOverdefined(LV, &inst);
+}
+
+void SCCPSolver::visitCallSite(CallInst* inst)
+{
+    Function* func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
+
+    // If this is a local function that doesn't have its address taken, mark its
+    // entry block executable and merge in the actual arguments to the call into
+    // the formal arguments of the function.
+    if(!TrackingIncomingArguments.empty() && TrackingIncomingArguments.count(func))
+    {
+        MarkBlockExecutabel(func->front());
+        if(func->GetParams().size() != 0)
+        {
+            for(int i = 1, j = 0; i < inst->Getuselist().size(); i++, j++)  
+            // i -> callinst arg ; j -> func param
+            {
+                Value* arg = inst->Getuselist()[i]->usee;
+                Value* param = func->GetParams()[j].get();
+                mergeInValue(arg, getValueState(param));
+            }
+        }
+    }
+    // If this is a single/zero retval case, see if we're tracking the function.
+    std::map<Function*, LatticeVal>::iterator iter = TrackedRetVals.find(func);
+    if(iter == TrackedRetVals.end())  // Not tracking this callee
+    {
+        // Void return and not tracking callee, just bail.
+        if(inst->GetType()->GetTypeEnum() == InnerDataType::IR_Value_VOID)
+            return;
+        
+        // Otherwise, if we have a single return value case, maybe we can constant fold it.
+        // if(func)
+        // TODO -> SCCP.cpp line 1041-1068
+        return markAnythingOverdefined(inst);
+    }
+
+    mergeInValue(inst, iter->second);
+}
+
+void SCCPSolver::Solve()
+{
+    // Process the work lists until they are empty!
+    while(!BBWorkList.empty() || InstWorkList.empty() ||
+    !OverdefinedInstWorkList.empty())
+    {
+        // Process the overdefined instruction's work list first, which drives other
+        // things to overdefined more quickly.
+        while(!OverdefinedInstWorkList.empty())
+        {
+            Value* inst = ::std::move(OverdefinedInstWorkList.back());
+            OverdefinedInstWorkList.pop_back();
+            // "inst" got into the work list because it either made the transition from
+            // bottom to constant, or to overdefined.
+            //
+            // Anything on this worklist that is overdefined need not be visited
+            // since all of its users will have already been marked as overdefined
+            // Update all of the users of this instruction's value.
+            for(Use* Use_ : inst->GetUserlist())
+            {
+                User* user = Use_->GetUser();
+                OperandChangedState(user);
+            }
+        }
+
+        // Process the instruction work list.
+        while(!InstWorkList.empty())
+        {
+            Value* inst = ::std::move(InstWorkList.back());
+            InstWorkList.pop_back();
+
+            // "inst" got into the work list because it made the transition from undef to
+            // constant.
+            //
+            // Anything on this worklist that is overdefined need not be visited
+            // since all of its users will have already been marked as overdefined.
+            // Update all of the users of this instruction's value.
+            if(!getValueState(inst).isOverdefined())
+            {
+                for(Use* Use_ : inst->GetUserlist())
+                {
+                    User* user = Use_->GetUser();
+                    OperandChangedState(user);
+                }
+            }
+        }
+
+        // Process the basic block work list.
+        while(!BBWorkList.empty())
+        {
+            BasicBlock* Block = ::std::move(BBWorkList.back());
+            BBWorkList.pop_back();
+
+            // Notify all instructions in this BasicBlock that they 
+            // are newly executable.
+            visit(Block);
+        }
+    }
+}
+
+/// ResolvedUndefsIn - While solving the dataflow for a function, we assume
+/// that branches on undef values cannot reach any of their successors.
+/// However, this is not a safe assumption.  After we solve dataflow, this
+/// method should be use to handle this.  If this returns true, the solver
+/// should be rerun.
+///
+/// This method handles this by finding an unresolved branch and marking it one
+/// of the edges from the block as being feasible, even though the condition
+/// doesn't say it would otherwise be.  This allows SCCP to find the rest of the
+/// CFG and only slightly pessimizes the analysis results (by marking one,
+/// potentially infeasible, edge feasible).  This cannot usefully modify the
+/// constraints on the condition of the branch, as that would impact other users
+/// of the value.
+///
+/// This scan also checks for values that use undefs, whose results are actually
+/// defined.  For example, 'zext i8 undef to i32' should produce all zeros
+/// conservatively, as "(zext i8 X -> i32) & 0xFF00" must always return zero,
+/// even if X isn't defined.
+bool SCCPSolver::ResolvedUndefsIn(Function& func)
+{
+    for(BasicBlock* block : func)
+    {
+        if(!BBExecutable.count(block)) continue;
+        for(User* inst : *block)
+        {
+            // Look for instructions which produce undef values.
+            if(inst->GetType()->GetTypeEnum() == InnerDataType::IR_Value_VOID)
+                continue;
+            
+        }
+    }
+}
+
 
 
