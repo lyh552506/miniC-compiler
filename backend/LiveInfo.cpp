@@ -253,14 +253,25 @@ void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
 
 void GraphColor::CalcIG(RISCVBasicBlock *block) {
   for (RISCVMIR *inst : *block) {
+    if(InstLive[inst].size() > 1)
+    {
     for (RISCVMOperand *Op1 : InstLive[inst]) {
       for (RISCVMOperand *Op2 : InstLive[inst]) {
         auto op1 = dynamic_cast<MOperand>(Op1);
         auto op2 = dynamic_cast<MOperand>(Op2);
         if (op1 && op2 && Op2 != Op1)
           PushVecSingleVal(IG[op1], op2);
+        }
       }
     }
+    else if(InstLive[inst].size() == 1)
+    {
+      auto op1 = dynamic_cast<MOperand>(*InstLive[inst].begin());
+      if(op1)
+        IG[op1];
+    }
+    else
+      continue;
   }
 }
 void BlockInfo::PrintPass() {

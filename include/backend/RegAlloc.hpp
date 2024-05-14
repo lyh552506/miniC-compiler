@@ -125,10 +125,11 @@ class GraphColor : public LiveInterval{
   void freeze();
   void spill();
   void AssignColors();
+  void SpillNodeInMir();
   void RewriteProgram();
   MOperand HeuristicFreeze();
   MOperand HeuristicSpill();
-  PhyRegister* SelectPhyReg(RISCVType ty);
+  PhyRegister* SelectPhyReg(RISCVType ty,std::unordered_set<MOperand>& assist);
   bool GeorgeCheck(MOperand dst, MOperand src,RISCVType ty);
   bool BriggsCheck(std::unordered_set<MOperand> target,RISCVType ty);
   void AddWorkList(MOperand v);
@@ -138,6 +139,8 @@ class GraphColor : public LiveInterval{
   void SetRegState(PhyRegister* reg,RISCVType ty);
   int GetRegNums(MOperand v);
   int GetRegNums(RISCVType ty);
+  RISCVMIR* CreateSpillMir(RISCVMOperand* spill);
+  RISCVMIR* CreateLoadMir(RISCVMOperand* load);
   void Print();
   //保证Interval vector的顺序
   std::unordered_map<MOperand, IntervalLength> ValsInterval;
@@ -152,8 +155,6 @@ class GraphColor : public LiveInterval{
   std::unordered_set<MOperand> spillWorkList;
   // 本轮中要溢出的节点集合
   std::unordered_set<MOperand> spilledNodes;
-  std::unordered_set<PhyRegister*> allocaedIntReg;
-  std::unordered_set<PhyRegister*> allocaedFloatReg;
   // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
   std::unordered_set<MOperand> initial;
   // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
@@ -166,6 +167,7 @@ class GraphColor : public LiveInterval{
   std::unordered_set<RISCVMIR*> frozenMoves;
   //已成功着色的结点集合
   std::unordered_set<MOperand> coloredNode;
+  std::unordered_map<MOperand,std::unordered_set<MOperand>> AdjList;
   // 从图中删除的临时变量的栈
   std::vector<MOperand> selectstack;
   //查询每个传送指令属于哪一个集合
@@ -175,6 +177,8 @@ class GraphColor : public LiveInterval{
   //合并后的别名管理
   std::unordered_map<MOperand, MOperand> alias;
   std::unordered_map<PhyRegister*,RISCVType> RegType;
+  //记录已经重写的spill node
+  std::unordered_map<MOperand,RISCVMIR*> AlreadySpill;
   RegisterList& reglist;
   int LoopWeight = 1;
   int livenessWeight = 1;

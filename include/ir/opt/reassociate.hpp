@@ -12,9 +12,14 @@ public:
 private:
   void BuildRankMap();
   void PostOrderCFG(BasicBlock *root);
+  void OptimizeInst(Value* I);
+  int GetRank(Value* val);
+  //判断是否是可交换的
+  bool IsCommutative(BinaryInst::Operation opcode);
+  void FormalBinaryInst(User*I);
   std::map<Value *, int>
       ValueRank; // RankMap, arguement's rank is 3,const rank is 0
-  std::vector<BasicBlock*> PostOrder;    
+  std::vector<BasicBlock*> RPO;    
   Function *m_func;
   dominance *m_dom;
 };
