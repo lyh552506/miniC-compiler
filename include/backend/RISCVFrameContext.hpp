@@ -48,6 +48,7 @@ class RISCVFrameObject:public RISCVMOperand{
     size_t GetFrameObjSize();
     size_t GetBeginAddOff();
     void SetBeginAddOff(size_t);
+    StackRegister*& GetStackReg();
     // RISCVFrameObject(Type*,std::string);
     void print()override;
 };

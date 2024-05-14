@@ -139,9 +139,11 @@ StackRegister* RISCVFrame::spill(VirRegister* mop) {
         // }
     }
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
+    return frameobjs.back().get()->GetStackReg();
 }
 StackRegister* RISCVFrame::spill(Value* val) {
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
+    return frameobjs.back().get()->GetStackReg();
 }
 
 std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFrame::GetFrameObjs() {return frameobjs;}

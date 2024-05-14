@@ -53,6 +53,7 @@ void RISCVFrameObject::GenerateStackRegister(int offset) {
 size_t RISCVFrameObject::GetFrameObjSize() {return size;}
 size_t RISCVFrameObject::GetBeginAddOff() {return begin_addr_offsets;}
 void RISCVFrameObject::SetBeginAddOff(size_t add) {begin_addr_offsets = add;}
+StackRegister*& RISCVFrameObject::GetStackReg() {return reg;}
 void RISCVFrameObject::print(){
     // std::cout<<"---";
     // std::cout<<"FrameObject";

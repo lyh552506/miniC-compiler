@@ -43,8 +43,6 @@ void VirRegister::print(){
 //   return str;
 // }
 
-// void VirRegister::print() { std::cout << "%" << counter; }
-
 LARegister::LARegister(RISCVType _type, std::string _name)
     : Register(_type,_name), regnum(LAReg::hi) {}
 LARegister::LARegister(RISCVType _type, std::string _name, VirRegister *_vreg)
@@ -93,7 +91,7 @@ RegisterList::RegisterList() {
     }
     // reglist_test
     regenum = PhyReg::a0;
-    while(regenum<=PhyReg::a7) {
+    while(regenum<=PhyReg::a3) {
       PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
       reglist_test.push_back(preg);
       regenum = PhyReg(regenum + 1);
