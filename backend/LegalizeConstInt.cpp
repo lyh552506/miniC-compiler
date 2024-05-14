@@ -3,7 +3,6 @@
 
 LegalizeConstInt::LegalizeConstInt(RISCVLoweringContext& _ctx)
     :ctx(_ctx) {}
-
 void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBasicBlock,RISCVMIR>::iterator it) {
     if(inst->GetOpcode()==RISCVMIR::RISCVISA::ret) return;
     else if(inst->GetOpcode()==RISCVMIR::RISCVISA::call) return;
@@ -16,9 +15,21 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
     else {
         int mod = inttemp % 4096;
         if(mod==0) {
-            if(inst->GetOpcode() == RISCVMIR::RISCVISA::li\
-            || inst->GetOpcode() == RISCVMIR::RISCVISA::_addiw) {
+            if(inst->GetOpcode() == RISCVMIR::RISCVISA::li) {
                 return;
+            }
+            else if(inst->GetOpcode() == RISCVMIR::RISCVISA::_addi ||\
+                    inst->GetOpcode() == RISCVMIR::RISCVISA::_addiw) {
+                RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
+                VirRegister* vreg = new VirRegister(RISCVType::riscv_i32);
+                li->SetDef(vreg);
+                li->AddOperand(constdata);
+                it.insert_before(li);
+                for(int i=0; i<inst->GetOperandSize(); i++) {
+                    while(dynamic_cast<Imm*>(inst->GetOperand(i))->Getdata()==constdata->Getdata()) {
+                        inst->SetOperand(i,vreg);
+                    }
+                }
             }
             else {
                 inst->SetMopcode(RISCVMIR::RISCVISA::li);
