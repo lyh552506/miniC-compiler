@@ -103,6 +103,221 @@ void SCCPSolver::visitPHINode(PhiInst& inst)
     // constant.  If they are constant and don't agree, the PHI is overdefined.
     // If there are no executable operands, the PHI remains unknown.
     ConstantData* OperandVal = nullptr;
+    for(unsigned i = 0, e = inst.oprandNum; i != e; ++i)
+    {
+        LatticeVal LV = getValueState(inst.GetVal(i));
+        if(LV.isUnknown()) continue; // Doesn't influence PhiNode.
+
+        if(!isEdgeFeasible(inst.GetBlock(i), inst.GetParent()))
+            continue;
+
+        if(LV.isOverdefined()) // PhiNode becomes overdefined !
+            return markOverdefined(&inst);
+        
+        if(!OperandVal) // Grab the first value.
+        {
+            OperandVal = LV.getConstantInt();
+            continue;
+        }
+        // There is already a reachable operand.  If we conflict with it,
+        // then the PHI node becomes overdefined.  If we agree with it, we
+        // can continue on.
+
+        // Check to see if there are two different constants merging, if so, the PHI
+        // node is overdefined.
+        if(LV.getConstantInt() != OperandVal)
+            return markOverdefined(&inst);
+    }
+
+    // If we exited the loop, this means that the PHI node only has constant
+    // arguments that agree with each other(and OperandVal is the constant) or
+    // OperandVal is null because there are no defined incoming arguments.  If
+    // this is the case, the PHI remains unknown.
+    if(OperandVal)
+        markConstant(&inst, OperandVal);  // Acquire operand value
+}
+
+void SCCPSolver::visitReturnInst(RetInst& inst)
+{
+    if(inst.Getuselist().size() == 0)  // return void
+        return;
+    
+    Function* func = inst.GetParent()->GetParent();
+    Value* ResultOp = inst.Getuselist()[0]->usee;
+
+    // If we tracking the return value of this function, merge it in.
+    if(!TrackedRetVals.empty())
+    {
+        std::map<Function*, LatticeVal>::iterator iter = TrackedRetVals.find(func);
+        if(iter != TrackedRetVals.end())
+        {
+            mergeInValue(iter->second, func, getValueState(ResultOp));
+            return;
+        }
+    }
+
+    // Handle functions that return multiple values.
+    if(!TrackedMultipleRetVals.empty())
+    {
+        std::vector<Value*> RetVals;
+        for(BasicBlock* block : *(inst.GetParent()->GetParent()))
+        {
+            User* inst_ = block->back();
+            if(dynamic_cast<RetInst*>(inst_))
+            {
+                if(!inst_->Getuselist().empty())
+                    RetVals.push_back(inst_->Getuselist()[0]->usee);
+            }
+        }
+        for(int i = 0; i < RetVals.size(); i++)
+        {
+            mergeInValue(TrackedMultipleRetVals[std::make_pair(func, i)], 
+            func, getValueState(RetVals[i]));
+        }
+    }
+}
+
+void SCCPSolver::visitTerminatorInst(CondInst& inst)
+{
+    std::vector<bool> SuccFeasible;
+    getFeasibleSuccessors(inst, SuccFeasible);
+
+    BasicBlock* block = inst.GetParent();
+
+    // Mark all feasible successors executable.
+    for(int i = 0; i < SuccFeasible.size(); i++)
+    {
+        if(SuccFeasible[i])
+            markEdgeExcutable(block, dynamic_cast<BasicBlock*>(inst.Getuselist()[i + 1]->usee));
+    }
+}
+
+void SCCPSolver::visitBinaryOperator(BinaryInst& inst)
+{
+    LatticeVal Val1State = getValueState(inst.Getuselist()[0]->usee);
+    LatticeVal Val2State = getValueState(inst.Getuselist()[1]->usee);
+
+    LatticeVal& LV = ValueState[&inst];
+    if(LV.isOverdefined()) return;
+
+    if(Val1State.isConstant() && Val2State.isConstant())
+    {
+        ConstantData* C = ConstantFolding::ConstFoldBinary(inst.getopration(), Val1State.getConstantInt(), Val2State.getConstantInt()); 
+
+        // X op Y -> undef
+        if(dynamic_cast<UndefValue*>(C))
+            return;
+        return markConstant(LV, &inst, C);
+    }
+    
+    // If something is undef, wait for it to resolve.
+    if(!Val1State.isOverdefined() && !Val2State.isOverdefined())
+        return;
+    
+    // Otherwise, one of our operands is overdefined.  Try to produce something
+    // better than overdefined with some tricks.
+
+    // If this is an AND or OR with 0 or -1, it doesn't matter that the other
+    // operand is overdefined.
+    // may be to delete, because no such operation in sysy
+    if(inst.getopration() == BinaryInst::Operation::Op_And
+    || inst.getopration() == BinaryInst::Operation::Op_Or)
+    {
+        LatticeVal* NonOverdefVal = nullptr;
+        if(!Val1State.isOverdefined())
+            NonOverdefVal = &Val1State;
+        else if(!Val2State.isOverdefined())
+            NonOverdefVal = &Val2State;
+        
+        if(NonOverdefVal)
+        {
+            if(NonOverdefVal->isUnknown())
+            {
+                // Counld annihilate value.
+                if(inst.getopration() == BinaryInst::Operation::Op_And)
+                    markConstant(LV, &inst, ConstIRBoolean::GetNewConstant(false));
+                else
+                    markConstant(LV, &inst, ConstIRBoolean::GetNewConstant(true));
+                return;
+            }
+
+            if(inst.getopration() == BinaryInst::Operation::Op_And)
+            {
+                // X and 0 = 0
+                if(!dynamic_cast<ConstIRBoolean*>(NonOverdefVal->getConstantInt())->GetVal())
+                    return markConstant(LV, &inst, ConstIRBoolean::GetNewConstant(false));
+            }
+            else  // X or 1 = 1
+            {
+                if(dynamic_cast<ConstIRBoolean*>(NonOverdefVal->getConstantInt())->GetVal())
+                    return markConstant(LV, &inst, ConstIRBoolean::GetNewConstant(true));
+            }
+        }
+    }
+
+    markOverdefined(&inst);
+}
+
+// Handle CmpInst 
+void SCCPSolver::visitCmpInst(BinaryInst& inst)
+{
+    LatticeVal Val1State = getValueState(inst.Getuselist()[0]->usee);
+    LatticeVal Val2State = getValueState(inst.Getuselist()[1]->usee);
+
+    LatticeVal& LV = ValueState[&inst];
+    if(LV.isOverdefined()) return;
+
+    if(Val1State.isConstant() && Val2State.isConstant())
+    {
+        ConstantData* C = ConstantFolding::ConstFoldBinary(inst.getopration(), Val1State.getConstantInt(), Val2State.getConstantInt()); 
+
+        // X op Y -> undef
+        if(dynamic_cast<UndefValue*>(C))
+            return;
+        return markConstant(LV, &inst, C);
+    }
+
+    // If operands are still unknown, wait for it to resolve.
+    if(!Val1State.isOverdefined() && !Val2State.isOverdefined())
+        return;
+    
+    markOverdefined(&inst);
+}
+
+// Handle getelementptr instructions.  If all operands are constants then we
+// can turn this into a getelementptr ConstantExpr.
+
+void SCCPSolver::visitGetElementPtrInst(GetElementPtrInst& inst)
+{
+    if(ValueState[&inst].isOverdefined()) return;
+
+    std::vector<Value*> Operands;
+    Operands.reserve(inst.Getuselist().size());
+
+    for(int i = 0; i < inst.Getuselist().size(); ++i)
+    {
+        LatticeVal State = getValueState(inst.Getuselist()[i + 1]->usee);
+        if(State.isUnknown())
+            return;  // Operands are not resolved yet.
+        
+        if(State.isOverdefined())
+            return markOverdefined(&inst);
+        
+        assert(State.isConstant() && "Unknown state!");
+        Operands.push_back(State.getConstantInt());
+    }
+
+    // TODO : Support for GEP ConstantExpr
+    // ConstantData* C = ConstantFolding::ConstantFoldInst(&inst);
+    // if(dynamic_cast<UndefValue*>(C))
+        // return;
+    // markConstant(&inst, C);
     
 }
+
+void SCCPSolver::visitStoreInst(StoreInst& inst)
+{
+
+}
+
 
