@@ -3,6 +3,7 @@
 #include "RISCVType.hpp"
 #include "RegAlloc.hpp"
 #include <cassert>
+#include <iostream>
 #include <unordered_set>
 
 void GraphColor::RunOnFunc() {
@@ -29,12 +30,14 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
+      CaculateLiveness();
+      PrintPass();
+      PrintAnalysis();
+      return;
       condition = true;
     }
   }
   RewriteProgram();
-  PrintPass();
-  PrintAnalysis();
 }
 
 void GraphColor::MakeWorklist() {
@@ -71,10 +74,10 @@ MOperand GraphColor::GetAlias(MOperand v) {
 
 //实行George的启发式合并
 bool GraphColor::GeorgeCheck(MOperand dst, MOperand src, RISCVType ty) {
-  if (ty == riscv_i32) {
+  if (ty == riscv_i32 || ty == riscv_ptr) {
     for (auto tmp : IG[src]) {
       bool ok = false;
-      if (IG[tmp].size() < reglist.GetReglistInt().size())
+      if (IG[tmp].size() < reglist.GetReglistTest().size())
         ok |= true;
       if (Precolored.find(tmp) != Precolored.end())
         ok |= true;
@@ -110,10 +113,10 @@ bool GraphColor::BriggsCheck(std::unordered_set<MOperand> target,
   if (ty == riscv_i32) {
     int num = 0;
     for (auto node : target) {
-      if (IG[node].size() >= reglist.GetReglistInt().size())
+      if (IG[node].size() >= reglist.GetReglistTest().size())
         num++;
     }
-    return (num < reglist.GetReglistInt().size());
+    return (num < reglist.GetReglistTest().size());
   } else if (ty == riscv_float32) {
     int num = 0;
     for (auto node : target) {
@@ -190,14 +193,14 @@ void GraphColor::SetRegState(PhyRegister *reg, RISCVType ty) {
 
 int GraphColor::GetRegNums(MOperand v) {
   if (v->GetType() == riscv_i32 || v->GetType() == riscv_ptr)
-    return reglist.GetReglistInt().size();
+    return reglist.GetReglistTest().size();
   else if (v->GetType() == riscv_float32)
     return reglist.GetReglistFloat().size();
   else if (v->GetType() == riscv_none) {
     auto preg = dynamic_cast<PhyRegister *>(v);
     auto tp = RegType[preg];
     assert(tp == 0 && "error");
-    return tp == riscv_i32 ? reglist.GetReglistInt().size()
+    return tp == riscv_i32 ? reglist.GetReglistTest().size()
                            : reglist.GetReglistFloat().size();
   } else {
     assert("excetion case");
@@ -206,7 +209,7 @@ int GraphColor::GetRegNums(MOperand v) {
 
 int GraphColor::GetRegNums(RISCVType ty) {
   if (ty == riscv_i32 || ty == riscv_ptr)
-    return reglist.GetReglistInt().size();
+    return reglist.GetReglistTest().size();
   if (ty == riscv_float32)
     return reglist.GetReglistFloat().size();
   assert(0);
@@ -280,7 +283,7 @@ void GraphColor::FreezeMoves(MOperand freeze) {
     frozenMoves.insert(mov);
     if (MoveRelated(value).size() == 0) {
       if (value->GetType() == riscv_i32 &&
-              IG[value].size() < reglist.GetReglistInt().size() ||
+              IG[value].size() < reglist.GetReglistTest().size() ||
           value->GetType() == riscv_float32 &&
               IG[value].size() < reglist.GetReglistFloat().size()) {
         freezeWorkList.erase(value);
@@ -422,8 +425,8 @@ void GraphColor::AssignColors() {
     MOperand select = selectstack.back();
     RISCVType ty = select->GetType();
     selectstack.pop_back();
-    std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),
-                                            reglist.GetReglistInt().end()};
+    std::unordered_set<MOperand> int_assist{reglist.GetReglistTest().begin(),
+                                            reglist.GetReglistTest().end()};
     std::unordered_set<MOperand> float_assist{reglist.GetReglistFloat().begin(),
                                               reglist.GetReglistFloat().end()};
     //遍历所有的冲突点，查看他们分配的颜色，保证我们分配的颜色一定是不同的
@@ -457,50 +460,94 @@ void GraphColor::AssignColors() {
 }
 
 void GraphColor::SpillNodeInMir() {
-  std::unordered_set<MOperand> temps;
+  std::unordered_set<VirRegister *> temps;
   AlreadySpill.clear();
   for (auto mbb : *m_func) {
     for (auto mir_begin = mbb->begin(), mir_end = mbb->end();
          mir_begin != mir_end;) {
       auto mir = *mir_begin;
-      if (mir->GetDef() != nullptr && dynamic_cast<MOperand>(mir->GetDef()) &&
-          (spilledNodes.find(dynamic_cast<MOperand>(mir->GetDef())) !=
+      if (mir->GetDef() != nullptr &&
+          dynamic_cast<VirRegister *>(mir->GetDef()) &&
+          (spilledNodes.find(dynamic_cast<VirRegister *>(mir->GetDef())) !=
            spilledNodes.end()) &&
-          AlreadySpill.find(dynamic_cast<MOperand>(mir->GetDef())) ==
+          AlreadySpill.find(dynamic_cast<VirRegister *>(mir->GetDef())) ==
               AlreadySpill.end()) {
         //存在def并且def是一个准备spill节点
-        RISCVMIR *sd = CreateSpillMir(mir->GetDef());
+        RISCVMIR *sd = CreateSpillMir(mir->GetDef(), temps);
         mir_begin.insert_after(sd);
-        temps.insert(dynamic_cast<MOperand>(sd->GetOperand(1)));
-      } else if (mir->GetDef() != nullptr &&
-                 dynamic_cast<MOperand>(mir->GetDef()) &&
-                 (spilledNodes.find(dynamic_cast<MOperand>(mir->GetDef())) !=
-                  spilledNodes.end())) {
+        if (dynamic_cast<VirRegister *>(mir->GetDef())->GetName() == ".17") {
+          int a = 0;
+        }
+#ifdef DEBUG
+        std::cerr << "Spilling "
+                  << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+                  << ", Use Vreg "
+                  << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
+                  << " To Replace" << std::endl;
+#endif
+        mir->SetDef(sd->GetOperand(0));
+        // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
+      } else if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd &&
+                 mir->GetDef() != nullptr &&
+                 dynamic_cast<VirRegister *>(mir->GetDef()) &&
+                 (spilledNodes.find(dynamic_cast<VirRegister *>(
+                      mir->GetDef())) != spilledNodes.end())) {
         //存在def并且def是一个已经spill节点
-        RISCVMIR *ld = CreateLoadMir(dynamic_cast<MOperand>(mir->GetDef()));
+        RISCVMIR *ld =
+            CreateLoadMir(dynamic_cast<VirRegister *>(mir->GetDef()), temps);
         mir_begin.insert_before(ld);
+#ifdef DEBUG
+        std::cerr << "Find a Spilled Node "
+                  << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+                  << ", Use Vreg "
+                  << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
+                  << " To Replace" << std::endl;
+#endif
         mir->SetDef(ld->GetDef());
-        temps.insert(dynamic_cast<MOperand>(ld->GetDef()));
-      } else {
-        for (int i = 0; i < mir->GetOperandSize(); i++) {
-          if (mir->GetOperand(i) != nullptr &&
-              dynamic_cast<MOperand>(mir->GetOperand(i)) &&
-              (spilledNodes.find(dynamic_cast<MOperand>(mir->GetOperand(i))) !=
-               spilledNodes.end()) &&
-              AlreadySpill.find(dynamic_cast<MOperand>(mir->GetOperand(i))) ==
-                  AlreadySpill.end()) {
-            RISCVMIR *sd = CreateSpillMir(mir->GetOperand(i));
-            mir_begin.insert_after(sd);
-            temps.insert(dynamic_cast<MOperand>(sd->GetOperand(1)));
-          } else if (mir->GetOperand(i) != nullptr &&
-                     dynamic_cast<MOperand>(mir->GetOperand(i)) &&
-                     (spilledNodes.find(dynamic_cast<MOperand>(
-                          mir->GetOperand(i))) != spilledNodes.end())) {
-            RISCVMIR *ld = CreateLoadMir(mir->GetOperand(i));
-            mir_begin.insert_before(ld);
-            mir->SetOperand(i, ld->GetDef());
-            temps.insert(dynamic_cast<MOperand>(ld->GetDef()));
+      }
+      for (int i = 0; i < mir->GetOperandSize(); i++) {
+        auto operand = mir->GetOperand(i);
+        if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd && operand != nullptr &&
+            dynamic_cast<VirRegister *>(operand) &&
+            (spilledNodes.find(dynamic_cast<VirRegister *>(operand)) !=
+             spilledNodes.end()) &&
+            AlreadySpill.find(dynamic_cast<VirRegister *>(operand)) ==
+                AlreadySpill.end()) {
+          //存在operand(i)并且operand(i)是一个准备spill节点
+          RISCVMIR *sd = CreateSpillMir(operand, temps);
+          mir_begin.insert_after(sd);
+          if (dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName() ==
+              ".17") {
+            int a = 0;
           }
+#ifdef DEBUG
+          std::cerr
+              << "Spilling "
+              << dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName()
+              << ", Use Vreg "
+              << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
+              << " To Replace" << std::endl;
+#endif
+          mir->SetOperand(i, sd->GetOperand(0));
+          // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
+        } else if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd &&
+                   mir->GetOperand(i) != nullptr &&
+                   dynamic_cast<VirRegister *>(mir->GetOperand(i)) &&
+                   (spilledNodes.find(dynamic_cast<VirRegister *>(
+                        mir->GetOperand(i))) != spilledNodes.end())) {
+          //存在operand(i)并且operand(i)是一个已经spill节点
+          RISCVMIR *ld = CreateLoadMir(mir->GetOperand(i), temps);
+          mir_begin.insert_before(ld);
+#ifdef DEBUG
+          std::cerr
+              << "Find a Spilled Node "
+              << dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName()
+              << ", Use Vreg "
+              << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
+              << " To Replace" << std::endl;
+#endif
+          mir->SetOperand(i, ld->GetDef());
+          // temps.insert(dynamic_cast<VirRegister *>(ld->GetDef()));
         }
       }
       ++mir_begin;
@@ -515,25 +562,30 @@ void GraphColor::SpillNodeInMir() {
   coloredNode.clear();
 }
 
-RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill) {
+RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
+                                     std::unordered_set<VirRegister *> &temps) {
   auto vreg = dynamic_cast<VirRegister *>(spill);
   assert(vreg && "the chosen operand must be a vreg");
   assert(AlreadySpill.find(vreg) == AlreadySpill.end() && "no spill before");
+  VirRegister *reg = new VirRegister(vreg->GetType());
+  temps.insert(reg);
   RISCVMIR *sd = new RISCVMIR(RISCVMIR::RISCVISA::_sd);
+  sd->AddOperand(reg);
   auto spillnode = m_func->GetFrame()->spill(vreg);
   sd->AddOperand(spillnode);
-  sd->AddOperand(vreg);
   AlreadySpill[vreg] = sd;
   return sd;
 }
 
-RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load) {
+RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
+                                    std::unordered_set<VirRegister *> &temps) {
   auto vreg = dynamic_cast<VirRegister *>(load);
   assert(vreg && "the chosen operand must be a vreg");
-  assert(AlreadySpill.find(vreg) == AlreadySpill.end() && "no spill before");
+  assert(AlreadySpill.find(vreg) != AlreadySpill.end() && "no spill before");
   VirRegister *reg = new VirRegister(vreg->GetType());
+  temps.insert(reg);
   RISCVMIR *lw = new RISCVMIR(RISCVMIR::RISCVISA::_ld);
-  auto loadnode = AlreadySpill[vreg]->GetOperand(0);
+  auto loadnode = AlreadySpill[vreg]->GetOperand(1);
   lw->SetDef(reg);
   lw->AddOperand(loadnode);
   return lw;
@@ -572,7 +624,7 @@ void GraphColor::RewriteProgram() {
 PhyRegister *GraphColor::SelectPhyReg(RISCVType ty,
                                       std::unordered_set<MOperand> &assist) {
   if (ty == riscv_i32 || ty == riscv_ptr) {
-    for (auto reg : reglist.GetReglistInt()) {
+    for (auto reg : reglist.GetReglistTest()) {
       if (assist.find(reg) != assist.end())
         return reg;
     }

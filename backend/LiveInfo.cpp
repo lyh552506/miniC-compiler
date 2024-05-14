@@ -46,11 +46,13 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
       UpdateInfo(val1, block);
       UpdateInfo(val2, block);
     } else if (Opcode == OpType::ret) {
-      RISCVMOperand *val1 = (*inst)->GetOperand(0);
-      if (val1) {
-        PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
-        BlockLivein[block].insert(Phy);
-        Uses[block].insert(Phy);
+      if ((*inst)->GetOperandSize() != 0) {
+        RISCVMOperand *val1 = (*inst)->GetOperand(0);
+        if (val1) {
+          PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
+          BlockLivein[block].insert(Phy);
+          Uses[block].insert(Phy);
+        }
       } else
         continue;
     } else if ((*inst)->GetOperandSize() == 1) {
@@ -164,14 +166,14 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
           Live.insert(Phy);
           Precolored.insert(Phy);
-          color[Phy]=Phy;
+          color[Phy] = Phy;
           InstLive[inst] = Live;
           continue;
         }
       } else {
         RISCVMOperand *_val1 = inst->GetOperand(0);
         if (!_val1->ignoreLA()) {
-          auto val1=dynamic_cast<MOperand>(_val1);
+          auto val1 = dynamic_cast<MOperand>(_val1);
           if (Count(_val1)) {
             Precolored.insert(color[dynamic_cast<Register *>(_val1)]);
             Live.insert(color[dynamic_cast<Register *>(_val1)]);
@@ -180,7 +182,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
             initial.insert(dynamic_cast<MOperand>(_val1));
             if (dynamic_cast<PhyRegister *>(dynamic_cast<MOperand>(_val1))) {
               Precolored.insert(dynamic_cast<MOperand>(_val1));
-              color[val1]=dynamic_cast<PhyRegister*>(_val1);
+              color[val1] = dynamic_cast<PhyRegister *>(_val1);
               initial.erase(dynamic_cast<MOperand>(_val1));
             }
           }
@@ -199,7 +201,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           Live.insert(val1);
           initial.insert(val1);
           if (dynamic_cast<PhyRegister *>(val1)) {
-            color[val1]=dynamic_cast<PhyRegister *>(val1);
+            color[val1] = dynamic_cast<PhyRegister *>(val1);
             Precolored.insert(dynamic_cast<MOperand>(val1));
             initial.erase(val1);
           }
@@ -213,7 +215,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           Live.insert(val2);
           initial.insert(val2);
           if (dynamic_cast<PhyRegister *>(val2)) {
-            color[val2]=dynamic_cast<PhyRegister *>(val2);
+            color[val2] = dynamic_cast<PhyRegister *>(val2);
             Precolored.insert(val2);
             initial.erase(val2);
           }
@@ -235,42 +237,40 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
 void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
   for (RISCVMIR *inst : *block) {
     OpType Opcode = inst->GetOpcode();
-    auto op1 = dynamic_cast<MOperand>(inst->GetOperand(0));
-    auto def = dynamic_cast<MOperand>(inst->GetDef());
-    if (Opcode == OpType::mv && op1 && def) {
-      if (Count(op1))
-        moveList[color[op1]].insert(inst);
-      else
-        moveList[op1].insert(inst);
-      if (Count(def))
-        moveList[color[def]].insert(inst);
-      else
-        moveList[def].insert(inst);
-      PushVecSingleVal(worklistMoves, inst);
+    if (Opcode == OpType::mv) {
+      auto op1 = dynamic_cast<MOperand>(inst->GetOperand(0));
+      auto def = dynamic_cast<MOperand>(inst->GetDef());
+      if (op1 && def) {
+        if (Count(op1))
+          moveList[color[op1]].insert(inst);
+        else
+          moveList[op1].insert(inst);
+        if (Count(def))
+          moveList[color[def]].insert(inst);
+        else
+          moveList[def].insert(inst);
+        PushVecSingleVal(worklistMoves, inst);
+      }
     }
   }
 }
 
 void GraphColor::CalcIG(RISCVBasicBlock *block) {
   for (RISCVMIR *inst : *block) {
-    if(InstLive[inst].size() > 1)
-    {
-    for (RISCVMOperand *Op1 : InstLive[inst]) {
-      for (RISCVMOperand *Op2 : InstLive[inst]) {
-        auto op1 = dynamic_cast<MOperand>(Op1);
-        auto op2 = dynamic_cast<MOperand>(Op2);
-        if (op1 && op2 && Op2 != Op1)
-          PushVecSingleVal(IG[op1], op2);
+    if (InstLive[inst].size() > 1) {
+      for (RISCVMOperand *Op1 : InstLive[inst]) {
+        for (RISCVMOperand *Op2 : InstLive[inst]) {
+          auto op1 = dynamic_cast<MOperand>(Op1);
+          auto op2 = dynamic_cast<MOperand>(Op2);
+          if (op1 && op2 && Op2 != Op1)
+            PushVecSingleVal(IG[op1], op2);
         }
       }
-    }
-    else if(InstLive[inst].size() == 1)
-    {
+    } else if (InstLive[inst].size() == 1) {
       auto op1 = dynamic_cast<MOperand>(*InstLive[inst].begin());
-      if(op1)
+      if (op1)
         IG[op1];
-    }
-    else
+    } else
       continue;
   }
 }

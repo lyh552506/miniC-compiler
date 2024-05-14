@@ -4,6 +4,7 @@
 #include "my_stl.hpp"
 #include <algorithm>
 #include <cassert>
+#include <variant>
 
 void Reassociate::RunOnFunction() {
   // first should caculate RPO
@@ -28,10 +29,11 @@ void Reassociate::BuildRankMap() {
 void Reassociate::OptimizeInst(Value *I) {
   if (dynamic_cast<BinaryInst *>(I))
     return;
-  auto bin=dynamic_cast<BinaryInst *>(I);
+  auto bin = dynamic_cast<BinaryInst *>(I);
   //如果是可交换（可重组）指令，尝试将含有const的操作数移动到右边
-  if(IsCommutative(bin->getopration()))
+  if (IsCommutative(bin->getopration()))
     FormalBinaryInst(bin);
+  
 }
 
 void Reassociate::PostOrderCFG(BasicBlock *root) {
@@ -58,11 +60,14 @@ bool Reassociate::IsCommutative(BinaryInst::Operation opcode) {
 }
 
 void Reassociate::FormalBinaryInst(User *I) {
-  auto bin=dynamic_cast<BinaryInst*>(I);
-  assert(bin&&"must be a binaryinst");
-  auto LHS=GetOperand(bin,1);
-  auto RHS=GetOperand(bin,2);
-  if(dynamic_cast<ConstantData*>(RHS))
+  auto bin = dynamic_cast<BinaryInst *>(I);
+  assert(bin && "must be a binaryinst");
+  auto LHS = GetOperand(bin, 1);
+  auto RHS = GetOperand(bin, 2);
+  //TODO GetRank ，但是目前并不清楚这个对后续的作用
+  if (dynamic_cast<ConstantData *>(RHS))
     return;
-  
+  if(dynamic_cast<ConstantData*>(LHS)){
+    std::swap(LHS,RHS);
+  }
 }
