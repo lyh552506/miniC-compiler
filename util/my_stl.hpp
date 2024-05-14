@@ -50,3 +50,9 @@ void PushVecSingleVal(std::vector<T>&vec,T v){
   if(iter!=vec.end()) return;
   vec.push_back(v);
 }
+
+#ifdef DEBUG
+  #define _DEBUG(x) x
+#else
+  #define _DEBUG(x)
+#endif

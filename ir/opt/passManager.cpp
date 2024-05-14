@@ -2,6 +2,7 @@
 #include "CFG.hpp"
 #include "Singleton.hpp"
 #include "dominant.hpp"
+#include <memory>
 
 void PassManager::InitPass() {
   for (int i = 0; i < Singleton<Module>().GetFuncTion().size(); i++) {
@@ -16,6 +17,7 @@ void PassManager::InitPass() {
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
     m_inline = std::make_unique<Inliner>(m_func, m_loopAnlay.get(), Singleton<Module>());
+    m_reassociate=std::make_unique<Reassociate>(m_func,m_dom.get());
     RunOnFunction();
   }
   if(InitpassRecorder[10])
@@ -89,6 +91,9 @@ void PassManager::RunOnFunction() {
   if(InitpassRecorder[9]){
     m_inline->Run();
     // m_inline->PrintPass();
+  }
+  if(InitpassRecorder[11]){
+    m_reassociate->RunOnFunction();
   }
 }
 

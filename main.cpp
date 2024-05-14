@@ -1,11 +1,11 @@
 // #include "AsmPrinter.hpp"
-#include "dominant.hpp"
-#include "passManager.hpp"
-#include "parser.hpp"
-#include <fstream>
-#include <iostream>
-#include <getopt.h>
 #include "RISCVLowering.hpp"
+#include "dominant.hpp"
+#include "parser.hpp"
+#include "passManager.hpp"
+#include <fstream>
+#include <getopt.h>
+#include <iostream>
 
 extern FILE *yyin;
 extern int optind, opterr, optopt;
@@ -18,13 +18,19 @@ void copyFile(const std::string &sourcePath,
   destination << source.rdbuf();
 }
 
-static struct option long_options[] = {
-    {"mem2reg", no_argument, 0, 0},   {"pre", no_argument, 0, 1},
-    {"constprop", no_argument, 0, 2}, {"dce", no_argument, 0, 3},
-    {"adce", no_argument, 0, 4},     {"loopinfo",no_argument,0,5},
-    {"help", no_argument, 0, 6},      {"simplifycfg",no_argument,0,7},
-    {"ece", no_argument, 0, 8},      {"inline", no_argument, 0, 9},
-    {"global2local", no_argument, 0, 10}, {0, 0, 0, 0}};
+static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
+                                       {"pre", no_argument, 0, 1},
+                                       {"constprop", no_argument, 0, 2},
+                                       {"dce", no_argument, 0, 3},
+                                       {"adce", no_argument, 0, 4},
+                                       {"loopinfo", no_argument, 0, 5},
+                                       {"help", no_argument, 0, 6},
+                                       {"simplifycfg", no_argument, 0, 7},
+                                       {"ece", no_argument, 0, 8},
+                                       {"inline", no_argument, 0, 9},
+                                       {"global2local", no_argument, 0, 10},
+                                       {"reassociate", no_argument, 0, 11},
+                                       {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
@@ -35,14 +41,14 @@ int main(int argc, char **argv) {
   filename = filename.substr(lastSlashPos);
 
   std::string asmoutput_path = argv[1];
-  asmoutput_path = asmoutput_path.substr(0, asmoutput_path.length()-2) + ".s";
+  asmoutput_path = asmoutput_path.substr(0, asmoutput_path.length() - 2) + ".s";
   freopen(output_path.c_str(), "a", stdout);
   copyFile("runtime.ll", output_path);
   yyin = fopen(argv[1], "r");
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
-  #ifdef SYSY_ENABLE_MIDDLE_END
+#ifdef SYSY_ENABLE_MIDDLE_END
   std::unique_ptr<PassManager> pass_manager(new PassManager);
   int optionIndex, option;
   // 目前处于调试阶段，最终会换成-O1 -O2 -O3
@@ -82,14 +88,16 @@ int main(int argc, char **argv) {
     case 10:
       pass_manager->IncludePass(10);
       break;
+    case 11:
+      pass_manager->IncludePass(11);
     }
   }
   pass_manager->InitPass();
   Singleton<Module>().Test();
   fflush(stdout);
   fclose(stdout);
-  #endif
-
+#endif
+#ifdef SYSY_ENABLE_BACKEND
   freopen(asmoutput_path.c_str(), "w", stdout);
   RISCVModuleLowering RISCVASm;
   RISCVASm.run(&Singleton<Module>());
@@ -97,6 +105,6 @@ int main(int argc, char **argv) {
   fclose(stdout);
 
   freopen("dev/tty", "w", stdout);
-
+#endif
   return 0;
 }
