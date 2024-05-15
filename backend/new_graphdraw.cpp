@@ -625,6 +625,9 @@ void GraphColor::RewriteProgram() {
                     << " To Preg " << replace->GetName() << std::endl;
 #endif
           mir->SetOperand(i, replace);
+        }else if(auto lareg=dynamic_cast<LARegister*>(operand)){
+          auto replace = color[dynamic_cast<MOperand>(operand)];
+          //TODO
         }
       }
     }
