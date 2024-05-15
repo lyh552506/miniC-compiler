@@ -32,6 +32,8 @@ bool RISCVMOperand::ignoreLA() {
     return true;
   else if(dynamic_cast<RISCVBasicBlock*>(this))
     return true;
+  else if(dynamic_cast<RISCVGlobalObject*>(this))
+    return true;
   else
     return false;
 }

@@ -55,6 +55,14 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
         }
       } else
         continue;
+    } else if (Opcode == OpType::call) {
+      for (int i = 0; i < (*inst)->GetOperandSize(); i++) {
+        RISCVMOperand *val = (*inst)->GetOperand(i);
+        if (!val->ignoreLA()) {
+          auto New_Val = dynamic_cast<MOperand>(val);
+          UpdateInfo(New_Val, block);
+        }
+      }
     } else if ((*inst)->GetOperandSize() == 1) {
       RISCVMOperand *_val = (*inst)->GetOperand(0);
       UpdateInfo(_val, block);
@@ -159,7 +167,23 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
   std::set<MOperand> Live = BlockLiveout[block];
   for (auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_) {
     RISCVMIR *inst = *inst_;
-    if (inst->GetOperandSize() == 1) {
+    if (inst->GetOpcode() == OpType::call) {
+      for (int i = 1; i < inst->GetOperandSize(); i++) {
+        RISCVMOperand *val = inst->GetOperand(i);
+        if (val && !val->ignoreLA()) {
+          auto reg = dynamic_cast<MOperand>(val);
+          if (reg) {
+            if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
+              Precolored.insert(reg);
+              color[reg] = phy;
+            }
+            Live.insert(reg);
+            InstLive[inst] = Live;
+          }
+        }
+      }
+      continue;
+    } else if (inst->GetOperandSize() == 1) {
       if (inst->GetOpcode() == OpType::ret) {
         RISCVMOperand *val1 = inst->GetOperand(0);
         if (val1) {
