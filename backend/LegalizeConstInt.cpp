@@ -3,7 +3,6 @@
 
 LegalizeConstInt::LegalizeConstInt(RISCVLoweringContext& _ctx)
     :ctx(_ctx) {}
-
 void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBasicBlock,RISCVMIR>::iterator it) {
     if(inst->GetOpcode()==RISCVMIR::RISCVISA::ret) return;
     else if(inst->GetOpcode()==RISCVMIR::RISCVISA::call) return;
@@ -16,9 +15,24 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
     else {
         int mod = inttemp % 4096;
         if(mod==0) {
-            if(inst->GetOpcode() == RISCVMIR::RISCVISA::li\
-            || inst->GetOpcode() == RISCVMIR::RISCVISA::_addiw) {
+            if(inst->GetOpcode() == RISCVMIR::RISCVISA::li) {
                 return;
+            }
+            else if(inst->GetOpcode() == RISCVMIR::RISCVISA::_addi ||\
+                    inst->GetOpcode() == RISCVMIR::RISCVISA::_addiw) {
+                RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
+                VirRegister* vreg = new VirRegister(RISCVType::riscv_i32);
+                li->SetDef(vreg);
+                li->AddOperand(constdata);
+                it.insert_before(li);
+                for(int i=0; i<inst->GetOperandSize(); i++) {
+                    if(Imm* imm = dynamic_cast<Imm*>(inst->GetOperand(i))) {
+                        if(imm->Getdata()==constdata->Getdata()) {
+                            inst->SetOperand(i,vreg);
+                            break;
+                        }
+                    } 
+                }
             }
             else {
                 inst->SetMopcode(RISCVMIR::RISCVISA::li);
@@ -91,8 +105,8 @@ bool LegalizeConstInt::run() {
                     if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
                         if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(constdata->Getdata())) {
                             LegConstInt(inst, constdata, it);
-                        } else break;
-                    } else break;
+                        }
+                    }
                 }
             }
         }

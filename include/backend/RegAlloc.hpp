@@ -16,11 +16,13 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include "RISCVContext.hpp"
 
 class GraphColor;
 class RegAllocImpl {
-public:
-  RegAllocImpl(RISCVFunction *func) : m_func(func) {}
+  RISCVLoweringContext& ctx;
+ public:
+  RegAllocImpl(RISCVFunction* func, RISCVLoweringContext& _ctx) : m_func(func), ctx(_ctx) {}
   void RunGCpass();
   struct RegLiveInterval {
     int start;
@@ -88,23 +90,24 @@ private:
 
   bool verify(std::unordered_map<MOperand, std::vector<Interval>> Liveinterval);
 
-public:
-  LiveInterval(RISCVFunction *f) : func(f), BlockLiveInfo(f) {}
-  std::unordered_map<MOperand, std::vector<Interval>> &
-  GetRegLiveInterval(RISCVBasicBlock *block) {
-    return RegLiveness[block];
-  }
-  void RunOnFunc_();
-  void PrintAnalysis();
-};
-class GraphColor : public LiveInterval {
-public:
-  RISCVFunction *m_func;
+   public:
+    LiveInterval(RISCVFunction* f) : func(f), BlockLiveInfo(f) {}
+    std::unordered_map<MOperand, std::vector<Interval>>& GetRegLiveInterval(
+        RISCVBasicBlock* block) {
+      return RegLiveness[block];
+    }
+    void RunOnFunc_();
+    void PrintAnalysis();
+  };
+class GraphColor : public LiveInterval{
+ public:
+  RISCVLoweringContext& ctx;
+  RISCVFunction* m_func;
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
-  GraphColor(RISCVFunction *func)
-      : LiveInterval(func), m_func(func),
-        reglist(RegisterList::GetPhyRegList()) {}
+  GraphColor(RISCVFunction* func, RISCVLoweringContext& _ctx) 
+  : LiveInterval(func), ctx(_ctx), m_func(func),reglist(RegisterList::GetPhyRegList()) {
+  }
   void RunOnFunc();
 
 private:
