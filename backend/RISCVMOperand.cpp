@@ -63,7 +63,9 @@ Register* RISCVMOperand::ignoreLA() {
     return nullptr;
   else if(dynamic_cast<RISCVGlobalObject*>(this))
     return nullptr;
-  else
+  else if(auto reg = dynamic_cast<Register*>(this))
+    return reg;
+  else 
     return nullptr;
 }
 Imm::Imm(ConstantData *_data)
