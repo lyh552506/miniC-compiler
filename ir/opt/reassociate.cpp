@@ -1,18 +1,9 @@
 #include "reassociate.hpp"
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
-#include "Type.hpp"
-#include "my_stl.hpp"
+#include "ConstantFold.hpp"
 #include <algorithm>
-#include <cassert>
-#include <iostream>
-#include <map>
-#include <ostream>
-#include <set>
-#include <stdexcept>
 #include <utility>
-#include <variant>
-#include <vector>
 
 void Reassociate::RunOnFunction() {
   // first should caculate RPO
@@ -31,6 +22,11 @@ void Reassociate::BuildRankMap() {
   int rank = 2;
   for (auto &param : m_func->GetParams()) {
     ValueRank[param.get()] = rank++;
+  }
+}
+
+int Reassociate::GetRank(Value *val) {
+  if (!dynamic_cast<User *>(val)) {
   }
 }
 
@@ -56,8 +52,9 @@ void Reassociate::OptimizeInst(Value *I) {
   ReassciateExp(bin);
 }
 
-void Reassociate::ReassciateExp(BinaryInst *I) {
+Value *Reassociate::ReassciateExp(BinaryInst *I) {
   std::vector<std::pair<Value *, int>> Leaf;
+  std::vector<std::pair<Value *, int>> ValueToRank;
   //对表达式进行线性化分解
   LinearizeExp(I, Leaf);
   _DEBUG(std::cerr << "Linear set befor reassociate "
@@ -67,7 +64,33 @@ void Reassociate::ReassciateExp(BinaryInst *I) {
                                                 << " , " << ele.second << " ]";
                                     })
                    << std::endl;)
-  
+  for (auto &[val, times] : Leaf)
+    for (int i = 0; i < times; i++) {
+      ValueToRank.push_back({val, GetRank(val)});
+    }
+  std::stable_sort(
+      ValueToRank.begin(), ValueToRank.end(),
+      [](const auto &v1, const auto &v2) { return v1.second < v2.second; });
+
+  //通过rank的方式，常数/global会排在最右边，这样更有利于优化
+  ConstantData *C = nullptr;
+  while (!ValueToRank.empty() &&
+         dynamic_cast<ConstantData *>(ValueToRank.back().first)) {
+    ConstantData *temp = dynamic_cast<ConstantData *>(ValueToRank.back().first);
+    ValueToRank.pop_back();
+    if (C == nullptr)
+      C = temp;
+    else
+      C = ConstantFolding::ConstFoldBinary(I->getopration(), C, temp);
+  }
+  //按理说做完常量折叠后，不会出现这种情况了
+  if (ValueToRank.empty())
+    return C;
+  //判断C的特殊情况：
+  // eg: x+0、x*0
+  if (C != nullptr && !ShouldIgnoreConst(I->getopration(),C)) {
+
+  }
 }
 
 bool Reassociate::IsOperandAssociate(Value *op, BinaryInst::Operation opcode) {
@@ -156,6 +179,32 @@ void Reassociate::FormalBinaryInst(User *I) {
   if (dynamic_cast<ConstantData *>(LHS)) {
     std::swap(bin->Getuselist()[0], bin->Getuselist()[1]);
   }
+}
+
+bool Reassociate::ShouldIgnoreConst(BinaryInst::Operation Op,
+                                    ConstantData *constdata) {
+  switch (Op) {
+  case BinaryInst::Op_Add:
+  case BinaryInst::Op_And:
+    if (auto I = dynamic_cast<ConstIRInt *>(constdata)) {
+      if (I->GetVal() == 0)
+        return true;
+    }
+    if (auto F = dynamic_cast<ConstIRFloat *>(constdata)) {
+      if (F->GetVal() == 0)
+        return true;
+    }
+    break;
+  case BinaryInst::Op_Mul:
+    if (auto I = dynamic_cast<ConstIRInt *>(constdata))
+      if (I->GetVal() == 1)
+        return true;
+    if (auto F = dynamic_cast<ConstIRFloat *>(constdata))
+      if (F->GetVal() == 1)
+        return true;
+    break;
+  }
+  return false;
 }
 
 bool Reassociate::IsBinaryFloatType(BinaryInst *I) {

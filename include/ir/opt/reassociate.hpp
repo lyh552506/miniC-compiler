@@ -16,11 +16,12 @@ private:
   int GetRank(Value *val);
   bool IsBinaryFloatType(BinaryInst *I);
   void LinearizeExp(BinaryInst *I, std::vector<std::pair<Value *, int>> &Leaf);
-  void ReassciateExp(BinaryInst *I);
+  Value* ReassciateExp(BinaryInst *I);
   //判断是否是可交换的
   bool IsCommutative(BinaryInst::Operation opcode);
   bool IsOperandAssociate(Value *op, BinaryInst::Operation opcode);
   void FormalBinaryInst(User *I);
+  bool ShouldIgnoreConst(BinaryInst::Operation Op,ConstantData* constdata);
   std::map<Value *, int>
       ValueRank; // RankMap, arguement's rank is 3,const rank is 0
   std::vector<BasicBlock *> RPO;

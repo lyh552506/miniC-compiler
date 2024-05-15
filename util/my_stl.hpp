@@ -8,6 +8,12 @@
 #define MIN_SDOM(x) dsu[x].min_sdom //获取结点最近的sdom的index
 #define IDOM(x) node[x].idom        //获取结点的idom
 
+#ifdef DEBUG
+  #define _DEBUG(x) x
+#else
+  #define _DEBUG(x)
+#endif
+
 /// @brief 遍历一个function,每个bb是一个智能指针BasicBlockPtr
 #define For_bb_In(function)                                                    \
   assert(dynamic_cast<Function *>(function) &&                                 \
@@ -50,9 +56,3 @@ void PushVecSingleVal(std::vector<T>&vec,T v){
   if(iter!=vec.end()) return;
   vec.push_back(v);
 }
-
-#ifdef DEBUG
-  #define _DEBUG(x) x
-#else
-  #define _DEBUG(x)
-#endif

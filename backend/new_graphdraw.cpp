@@ -112,7 +112,7 @@ bool GraphColor::GeorgeCheck(MOperand dst, MOperand src, RISCVType ty) {
 //实行Briggs的启发合并
 bool GraphColor::BriggsCheck(std::unordered_set<MOperand> target,
                              RISCVType ty) {
-  if (ty == riscv_i32) {
+  if (ty == riscv_i32 | ty==riscv_ptr) {
     int num = 0;
     for (auto node : target) {
       if (IG[node].size() >= reglist.GetReglistTest().size())
