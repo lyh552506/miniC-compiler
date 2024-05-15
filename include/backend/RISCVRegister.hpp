@@ -61,7 +61,7 @@ class LARegister:public Register{
     LARegister(RISCVType, std::string);
     LARegister(RISCVType, std::string, VirRegister*);
     void print()final;
-    VirRegister*& GetVreg();
+    Register*& GetVreg();
     void SetReg(PhyRegister*&);
     std::string GetName(){return rname;}
     bool isPhysical()final{return true;};
@@ -74,7 +74,7 @@ class StackRegister:public PhyRegister{
     StackRegister(PhyReg, int);
     StackRegister(VirRegister*, int);
     std::string GetName(){return rname;}
-    VirRegister*& GetVreg();
+    Register*& GetVreg();
     void SetVreg(PhyRegister*&);
     void SetOffset(int);
     void print()final;
