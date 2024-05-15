@@ -56,24 +56,26 @@ class LARegister:public Register{
         hi,lo
     } regnum;
     // std::string name;
-    VirRegister* vreg=nullptr;
+    Register* vreg=nullptr;
     public:
     LARegister(RISCVType, std::string);
     LARegister(RISCVType, std::string, VirRegister*);
     void print()final;
     VirRegister*& GetVreg();
+    void SetReg(PhyRegister*&);
     std::string GetName(){return rname;}
     bool isPhysical()final{return true;};
 };
 
 class StackRegister:public PhyRegister{
     int offset;
-    VirRegister* vreg=nullptr;
+    Register* vreg=nullptr;
     public:
     StackRegister(PhyReg, int);
     StackRegister(VirRegister*, int);
     std::string GetName(){return rname;}
     VirRegister*& GetVreg();
+    void SetVreg(PhyRegister*&);
     void SetOffset(int);
     void print()final;
 };
