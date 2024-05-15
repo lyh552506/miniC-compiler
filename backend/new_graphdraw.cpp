@@ -31,9 +31,9 @@ void GraphColor::RunOnFunc() {
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
       CaculateLiveness();
-      PrintPass();
-      PrintAnalysis();
-      return;
+      // PrintPass();
+      // PrintAnalysis();
+      // return;
       condition = true;
     }
   }
@@ -47,8 +47,8 @@ void GraphColor::RunOnFunc() {
   // lcint.run();
 
   RewriteProgram();
-  PrintPass();
-  PrintAnalysis();
+  // PrintPass();
+  // PrintAnalysis();
 }
 
 void GraphColor::MakeWorklist() {
