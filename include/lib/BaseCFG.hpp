@@ -137,6 +137,7 @@ class ConstantData:public Value
     ConstantData(Type* tp);
     static ConstantData* getNullValue(Type* tp);
     bool isConst()final{return true;}
+    bool isZero();
 };
 
 class ConstIRBoolean:public ConstantData

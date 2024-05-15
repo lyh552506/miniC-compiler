@@ -279,9 +279,6 @@ ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst::Operation Opcode,
   Value *Simplify = SimplifyBinOp(Opcode, LHS, RHS);
   ConstantData *Simplify_ = static_cast<ConstantData *>(Simplify);
   if (Simplify_) {
-    if (dynamic_cast<UndefValue *>(Simplify_))
-      return nullptr;
-    else
       return Simplify_;
   }
   ConstantData *retval;

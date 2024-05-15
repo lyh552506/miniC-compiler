@@ -15,6 +15,7 @@ void SCCPSolver::getFeasibleSuccessors(UnCondInst& inst, std::vector<bool>& Succ
 
 void SCCPSolver::getFeasibleSuccessors(CondInst& inst, std::vector<bool>& Succs)
 {
+    Succs.resize(2);
     LatticeVal BCValue = getValueState(inst.Getuselist()[0]->usee);
     ConstantData* C = BCValue.getConstantInt();
     if(!C)
@@ -25,6 +26,9 @@ void SCCPSolver::getFeasibleSuccessors(CondInst& inst, std::vector<bool>& Succs)
             Succs[0] = Succs[1] = true;
         return;
     }
+    // Constant condition variables mean the branch can only go a single way.
+    Succs[C->isZero()] = true;
+    return;
     #ifdef SYSY_ENABLE_MIDDLE_END
         // dbgs() << "Unknown terminator instruction: " << inst->GetName() << '\n';
     #endif
@@ -205,7 +209,7 @@ void SCCPSolver::visitTerminatorInst(UnCondInst& inst)
     for(int i = 0; i < SuccFeasible.size(); i++)
     {
         if(SuccFeasible[i])
-            markEdgeExcutable(block, dynamic_cast<BasicBlock*>(inst.Getuselist()[i + 1]->usee));
+            markEdgeExcutable(block, dynamic_cast<BasicBlock*>(inst.Getuselist()[i]->usee));
     }
 }
 
@@ -438,7 +442,7 @@ void SCCPSolver::visit(User& inst)
     else if(auto Cond = dynamic_cast<CondInst*>(&inst))
         visitTerminatorInst(*Cond);
     else if(auto UnCond = dynamic_cast<UnCondInst*>(&inst))
-        return;
+        visitTerminatorInst(*UnCond);
     else if(auto Ret = dynamic_cast<RetInst*>(&inst))
         visitReturnInst(*Ret);
     else if(auto Binary = dynamic_cast<BinaryInst*>(&inst))
@@ -518,7 +522,7 @@ void SCCPSolver::Solve()
                 }
             }
         }
-
+            int a = 0;
         // Process the basic block work list.
         while(!BBWorkList.empty())
         {
@@ -528,7 +532,10 @@ void SCCPSolver::Solve()
             // Notify all instructions in this BasicBlock that they 
             // are newly executable.
             visit_Block(Block);
+
+            a++;
         }
+        int b;
     }
 }
 
