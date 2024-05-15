@@ -1,6 +1,7 @@
 #pragma once
 #include "RISCVType.hpp"
 #include "BaseCFG.hpp"
+class Register;
 /// @brief  Just need a type currently
 class RISCVMOperand{
     RISCVType tp;
@@ -12,8 +13,8 @@ class RISCVMOperand{
     T* as(){
         return dynamic_cast<T*>(this);
     }
-    bool ignoreLA();
-    // Register* ignoreLA();
+    // bool ignoreLA();
+    Register* ignoreLA();
 };
 
 /// @note A wrapper for the constant data

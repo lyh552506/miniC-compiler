@@ -69,7 +69,7 @@ public:
   void RunOnFunction();
   void PrintPass();
   bool count(MOperand Op, RISCVMIR *inst) { return InstLive[inst].count(Op); }
-  bool Count(RISCVMOperand *op);
+  bool Count(Register *op);
   BlockLiveInfo(RISCVFunction *f)
       : m_func(f), BlockLivein{}, BlockLiveout{}, InstLive{} {}
 };
