@@ -90,17 +90,17 @@ int main(int argc, char **argv) {
   }
   pass_manager->InitPass();
   Singleton<Module>().Test();
-  fflush(stdout);
-  fclose(stdout);
-  #endif
+  // fflush(stdout);
+  // fclose(stdout);
+  // // #endif
 
-  freopen(asmoutput_path.c_str(), "w", stdout);
-  RISCVModuleLowering RISCVASm;
-  RISCVASm.run(&Singleton<Module>());
-  fflush(stdout);
-  fclose(stdout);
+  // freopen(asmoutput_path.c_str(), "w", stdout);
+  // RISCVModuleLowering RISCVASm;
+  // RISCVASm.run(&Singleton<Module>());
+  // fflush(stdout);
+  // fclose(stdout);
 
-  freopen("dev/tty", "w", stdout);
+  // freopen("dev/tty", "w", stdout);
 
   return 0;
 }

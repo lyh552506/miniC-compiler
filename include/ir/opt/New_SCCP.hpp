@@ -1,7 +1,6 @@
 #include "CFG.hpp"
 #include "dominant.hpp"
 #include "ConstantFold.hpp"
-
 class LatticeVal
 {
     enum LatticeValueTy
@@ -68,7 +67,7 @@ public:
     ConstantData* getConstantInt() const
     {
         if(isConstant())
-            return dynamic_cast<ConstantData*>(Getval());
+            return static_cast<ConstantData*>(Getval());
         return nullptr;
     }
 
@@ -82,6 +81,9 @@ public:
 
 class SCCPSolver
 {
+public:
+    static bool runSCCP(Function& func);
+private:
     std::set<BasicBlock*> BBExecutable;  // The BBs that are executable.
     std::map<Value*, LatticeVal> ValueState; // The state each value is in.
     
@@ -133,7 +135,7 @@ public:
         if(!BBExecutable.insert(block).second)
             return false;
         #ifdef SYSY_ENABLE_MIDDLE_END
-        DEBUG(dbgs() << "Marking Block Executable: " << block->GetName() << '\n');
+        // DEBUG(dbgs() << "Marking Block Executable: " << block->GetName() << '\n');
         #endif
         BBWorkList.push_back(block); // Add the block to the work list!
         return true;
@@ -230,7 +232,7 @@ private:
     {
         if(!LV.markConstant(C)) return;
         #ifdef SYSY_ENABLE_MIDDLE_END
-        DEBUG(dbgs() << "markConstant: " << *C << ": " << *val << '\n');
+        // DEBUG(dbgs() << "markConstant: " << *C << ": " << *val << '\n');
         #endif
         pushToWorkList(LV, val); 
     }
@@ -245,7 +247,7 @@ private:
         LatticeVal& LV = ValueState[val];
         LV.markForcedConstant(C);
         #ifdef SYSY_ENABLE_MIDDLE_END
-        DEBUG(dbgs() << "markForcedConstant: " << *C << ": " << *val << '\n');
+        // DEBUG(dbgs() << "markForcedConstant: " << *C << ": " << *val << '\n');
         #endif
         pushToWorkList(LV, val);
     }
@@ -258,11 +260,11 @@ private:
         if(!LV.markOverdefined())
             return;
         #ifdef SYSY_ENABLE_MIDDLE_END
-        DEBUG(dbgs() << "markOverdefined: ";
-            if(Function* func = dynamic_cast<Function>(val))
-                dbgs() << "Function '" << func->GetName() << "'\n";
-            else
-                dbgs() << *val << '\n');
+        // DEBUG(dbgs() << "markOverdefined: ";
+        //     if(Function* func = dynamic_cast<Function>(val))
+        //         dbgs() << "Function '" << func->GetName() << "'\n";
+        //     else
+        //         dbgs() << *val << '\n');
         #endif
         OverdefinedInstWorkList.push_back(val);
     }
@@ -313,8 +315,8 @@ private:
         // feasible that wasn't before.  Revisit the PHI nodes in the block
         // because they have potentially new operands.
             #ifdef SYSY_ENABLE_MIDDLE_END
-            DEBUG(dbgs() << "Marking Edge Executable: " << Source->GetName()
-                << " -> " << Dest->GetName() << '\n');
+            // DEBUG(dbgs() << "Marking Edge Executable: " << Source->GetName()
+            //     << " -> " << Dest->GetName() << '\n');
             #endif
             PhiInst* PN;
             for(auto iter = Dest->begin();
@@ -362,17 +364,17 @@ private:
     void visitCallInst(CallInst& inst)
     {
         visitCallSite(&inst);
-    } // TODO
+    } 
     void visitCallSite(CallInst* inst);
     void visitAllocaInst(AllocaInst& inst) { markOverdefined(&inst); }
-    void visitVAArgInst(User &inst) { markAnythingOverdefined(&inst); }
     void visitInstruction(User &inst) 
     {
         // If a new instruction is added to LLVM that we don't handle.
         #ifdef SYSY_ENABLE_MIDDLE_END
-        dbgs() << "SCCP: Don't know how to handle: " << I << '\n';
+        // dbgs() << "SCCP: Don't know how to handle: " << I << '\n';
         #endif
         markAnythingOverdefined(&inst);   // Just in case
     }
-    void visit(BasicBlock* BB);
+    void visit(User& inst);
+    void visit_Block(BasicBlock* BB);
 };

@@ -18,6 +18,7 @@ void PassManager::InitPass() {
     m_inline = std::make_unique<Inliner>(m_func, Singleton<Module>(), m_dom.get());
     m_sccp = std::make_unique<SCCP>(m_func, m_dom.get());
     RunOnFunction();
+    // SCCPSolver::runSCCP(*m_func);
   }
   if(InitpassRecorder[10])
   {

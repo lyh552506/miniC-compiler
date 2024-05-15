@@ -18,6 +18,7 @@
 #include "Global2Local.hpp"
 #include "LoopSimplify.hpp"
 #include "SCCP.hpp"
+#include "New_SCCP.hpp"
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {

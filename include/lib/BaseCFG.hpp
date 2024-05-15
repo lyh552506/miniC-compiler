@@ -135,6 +135,7 @@ class ConstantData:public Value
     virtual ConstantData* clone(std::unordered_map<Operand,Operand>&)override;
     ConstantData()=delete;
     ConstantData(Type* tp);
+    static ConstantData* getNullValue(Type* tp);
     bool isConst()final{return true;}
 };
 

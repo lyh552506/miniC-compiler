@@ -262,6 +262,17 @@ ConstantData* ConstantData::clone(std::unordered_map<Operand,Operand>& mapping){
   return this;
 }
 
+ConstantData* ConstantData::getNullValue(Type* tp)
+{
+  InnerDataType type = tp->GetTypeEnum();
+  if(type == InnerDataType::IR_Value_INT)
+    return ConstIRInt::GetNewConstant(0);
+  else if(type == InnerDataType::IR_Value_Float)
+    return ConstIRFloat::GetNewConstant(0);
+  else
+    return nullptr;
+}
+
 ConstIRBoolean::ConstIRBoolean(bool _val)
     : ConstantData(BoolType::NewBoolTypeGet()), val(_val) {
   if (val)

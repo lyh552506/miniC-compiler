@@ -1,5 +1,8 @@
 #include "New_SCCP.hpp"
+#include "DCE.hpp"
 
+
+int RemoveAllNonTerminatorInst(BasicBlock* block);
 
 // getFeasibleSuccessors - Return a vector of booleans to indicate which
 // successors are reachable from a given terminator instruction.
@@ -23,7 +26,7 @@ void SCCPSolver::getFeasibleSuccessors(CondInst& inst, std::vector<bool>& Succs)
         return;
     }
     #ifdef SYSY_ENABLE_MIDDLE_END
-        dbgs() << "Unknown terminator instruction: " << inst->GetName() << '\n';
+        // dbgs() << "Unknown terminator instruction: " << inst->GetName() << '\n';
     #endif
 }
 
@@ -66,7 +69,7 @@ bool SCCPSolver::isEdgeFeasible(BasicBlock* From, BasicBlock* To)
         }
     }
     #ifdef SYSY_ENABLE_MIDDLE_END
-        dbgs() << "Unknown terminator instruction: " << inst->GetName() << '\n';
+        // dbgs() << "Unknown terminator instruction: " << inst->GetName() << '\n';
     #endif
 }
 
@@ -191,6 +194,20 @@ void SCCPSolver::visitTerminatorInst(CondInst& inst)
             markEdgeExcutable(block, dynamic_cast<BasicBlock*>(inst.Getuselist()[i + 1]->usee));
     }
 }
+void SCCPSolver::visitTerminatorInst(UnCondInst& inst)
+{
+    std::vector<bool> SuccFeasible;
+    getFeasibleSuccessors(inst, SuccFeasible);
+
+    BasicBlock* block = inst.GetParent();
+
+    // Mark all feasible successors executable.
+    for(int i = 0; i < SuccFeasible.size(); i++)
+    {
+        if(SuccFeasible[i])
+            markEdgeExcutable(block, dynamic_cast<BasicBlock*>(inst.Getuselist()[i + 1]->usee));
+    }
+}
 
 void SCCPSolver::visitBinaryOperator(BinaryInst& inst)
 {
@@ -233,7 +250,7 @@ void SCCPSolver::visitBinaryOperator(BinaryInst& inst)
         {
             if(NonOverdefVal->isUnknown())
             {
-                // Counld annihilate value.
+                // Could annihilate value.
                 if(inst.getopration() == BinaryInst::Operation::Op_And)
                     markConstant(LV, &inst, ConstIRBoolean::GetNewConstant(false));
                 else
@@ -270,11 +287,8 @@ void SCCPSolver::visitCmpInst(BinaryInst& inst)
     if(Val1State.isConstant() && Val2State.isConstant())
     {
         ConstantData* C = ConstantFolding::ConstFoldBinary(inst.getopration(), Val1State.getConstantInt(), Val2State.getConstantInt()); 
-
-        // X op Y -> undef
-        if(dynamic_cast<UndefValue*>(C))
-            return;
-        return markConstant(LV, &inst, C);
+        if(C)
+            return markConstant(LV, &inst, C);
     }
 
     // If operands are still unknown, wait for it to resolve.
@@ -365,13 +379,14 @@ void SCCPSolver::visitLoadInst(LoadInst& inst)
     //     }
     // }
 
+    // TODO
     // Transform load from a constant into a constant if possible.
-    if(ConstantData* C = ConstantFolding::ConstantFoldLoadFromConstPtr(Ptr, Ptr->GetType()))
-    {
-        if(dynamic_cast<UndefValue*>(C))
-            return;
-        return markConstant(LV, &inst, C);
-    }
+    // if(ConstantData* C = ConstantFolding::ConstantFoldLoadFromConstPtr(Ptr, Ptr->GetType()))
+    // {
+    //     if(dynamic_cast<UndefValue*>(C))
+    //         return;
+    //     return markConstant(LV, &inst, C);
+    // }
 
     // otherwise we cannot say for certain what value this load will produce.
     // Bail out.
@@ -414,6 +429,47 @@ void SCCPSolver::visitCallSite(CallInst* inst)
     }
 
     mergeInValue(inst, iter->second);
+}
+
+void SCCPSolver::visit(User& inst)
+{
+    if(auto Phi = dynamic_cast<PhiInst*>(&inst))
+        visitPHINode(*Phi);
+    else if(auto Cond = dynamic_cast<CondInst*>(&inst))
+        visitTerminatorInst(*Cond);
+    else if(auto UnCond = dynamic_cast<UnCondInst*>(&inst))
+        return;
+    else if(auto Ret = dynamic_cast<RetInst*>(&inst))
+        visitReturnInst(*Ret);
+    else if(auto Binary = dynamic_cast<BinaryInst*>(&inst))
+    {
+        BinaryInst::Operation Op = Binary->getopration();
+        if(Op == BinaryInst::Operation::Op_Add || Op == BinaryInst::Operation::Op_Sub ||
+        Op == BinaryInst::Operation::Op_Mul || Op == BinaryInst::Operation::Op_Div ||
+        Op == BinaryInst::Operation::Op_Mod || Op == BinaryInst::Operation::Op_And ||
+        Op == BinaryInst::Operation::Op_Or)
+            visitBinaryOperator(*Binary);
+        else
+            visitCmpInst(*Binary);
+    }
+    else if(auto Store = dynamic_cast<StoreInst*>(&inst))
+        visitStoreInst(*Store);
+    else if(auto Load = dynamic_cast<LoadInst*>(&inst))
+        visitLoadInst(*Load);
+    else if(auto GEP = dynamic_cast<GetElementPtrInst*>(&inst))
+        visitGetElementPtrInst(*GEP);
+    else if(auto Call = dynamic_cast<CallInst*>(&inst))
+        visitCallInst(*Call);
+    else if(auto Alloca = dynamic_cast<AllocaInst*>(&inst))
+        visitAllocaInst(*Alloca);
+    else
+        visitInstruction(inst);
+}
+
+void SCCPSolver::visit_Block(BasicBlock* BB)
+{
+    for(User* inst : *BB)
+        visit(*inst);
 }
 
 void SCCPSolver::Solve()
@@ -471,7 +527,7 @@ void SCCPSolver::Solve()
 
             // Notify all instructions in this BasicBlock that they 
             // are newly executable.
-            visit(Block);
+            visit_Block(Block);
         }
     }
 }
@@ -505,9 +561,345 @@ bool SCCPSolver::ResolvedUndefsIn(Function& func)
             if(inst->GetType()->GetTypeEnum() == InnerDataType::IR_Value_VOID)
                 continue;
             
+            LatticeVal& LV = getValueState(inst);
+            if(!LV.isUnknown()) continue;
+
+            // Compute the operand LatticeVals, for convenience below.
+
+            LatticeVal Val1State = getValueState(inst->Getuselist()[0]->usee);
+            LatticeVal Val2State;
+            if(inst->Getuselist().size() == 2)
+                Val2State = getValueState(inst->Getuselist()[1]->usee);
+
+            // If this is an instructions whose result is defined even if the input is
+            // not fully defined, propagate the information.
+            InnerDataType tp = inst->GetType()->GetTypeEnum();
+            if(auto Binary = dynamic_cast<BinaryInst*>(inst))
+            {
+                switch(Binary->getopration())
+                {
+                    case BinaryInst::Operation::Op_Add:
+                        if(tp == InnerDataType::IR_Value_INT)
+                            break;
+                        // Floating-opint birany operation : be conservative
+                        if(tp == InnerDataType::IR_Value_Float)
+                        {
+                            if(Val1State.isUnknown() && Val2State.isUnknown())
+                                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                            else
+                                markOverdefined(inst);
+                            return true;
+                        }
+                    case BinaryInst::Operation::Op_Sub:
+                        if(tp == InnerDataType::IR_Value_INT)
+                            break;
+                        if(tp == InnerDataType::IR_Value_Float)
+                        {
+                            if(Val1State.isUnknown() && Val2State.isUnknown())
+                                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                            else
+                                markOverdefined(inst);
+                            return true;
+                        }
+                    case BinaryInst::Operation::Op_Mul:
+                        if(tp == InnerDataType::IR_Value_Float)
+                        {
+                            if(Val1State.isUnknown() && Val2State.isUnknown())
+                                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                            else
+                                markOverdefined(inst);
+                            return true;
+                        }
+                        if(tp == InnerDataType::IR_Value_INT)
+                        {
+                            // Both operands undef -> undef
+                            if(Val1State.isUnknown() && Val2State.isUnknown())
+                                break;
+                            // undef * X -> 0. X could be zero.
+                            // undef & X -> 0. X could be zero.
+                            if(Val1State.isUnknown() || Val2State.isUnknown())
+                                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                            return true;
+                        }
+                    case BinaryInst::Operation::Op_Div:
+                        if(tp == InnerDataType::IR_Value_INT)
+                        {
+                            // X / undef -> undef. No change
+                            if(Val1State.isUnknown())
+                                break;
+                            // X / 0 -> undef. No change
+                            if(Val1State.isConstant() && dynamic_cast<ConstIRInt*>(Val1State.getConstantInt())->GetVal() == 0)
+                                break;
+                            // undef / X -> 0. X could be maxint.
+                            if(Val1State.isUnknown() && !Val2State.isUnknown())
+                                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                            return true;
+                        }
+                        if(tp == InnerDataType::IR_Value_Float)
+                        {
+                            if(Val1State.isUnknown() && Val2State.isUnknown())
+                                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                            else
+                                markOverdefined(inst);
+                            return true;
+                            /*
+                            // X / undef -> undef
+                            if(Val2State.isUnknown())
+                                break;
+                            // undef / X -> 0. X could be zero.
+                            if(Val1State.isUnknown())
+                                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                            return true;
+                            */
+                        }
+                    case BinaryInst::Operation::Op_Mod:
+                        if(tp == InnerDataType::IR_Value_INT)
+                        {
+                            // X % undef -> undef. No change
+                            if(Val1State.isUnknown())
+                                break;
+                            // X % 0 -> undef. No change
+                            if(Val1State.isConstant() && dynamic_cast<ConstIRInt*>(Val1State.getConstantInt())->GetVal() == 0)
+                                break;
+                            // undef % X -> 0. X could be 1.
+                            if(Val1State.isUnknown() && !Val2State.isUnknown())
+                                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                            return true;
+                        }
+                    case BinaryInst::Operation::Op_And:
+                        // Both operands undef -> undef
+                        if(Val1State.isUnknown() && Val2State.isUnknown())
+                            break;
+                        // undef & X -> 0. X could be zero.
+                        if(Val1State.isUnknown() || Val2State.isUnknown())
+                            markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                        return true;
+                    case BinaryInst::Operation::Op_Or:
+                        // Both operands undef -> undef
+                        if(Val1State.isUnknown() && Val2State.isUnknown())
+                            break;
+                        // undef | X -> true.
+                        markForcedConstant(inst, ConstIRBoolean::GetNewConstant(true));
+                        return true;
+                    case BinaryInst::Operation::Op_E:
+                        // X == undef -> undef. Other comparisons get more compilcated.
+                        if(Val1State.isUnknown() || Val2State.isUnknown())
+                            break;
+                        markOverdefined(inst);
+                        return true;
+                    case BinaryInst::Operation::Op_G:
+                    case BinaryInst::Operation::Op_GE:
+                    case BinaryInst::Operation::Op_L:
+                    case BinaryInst::Operation::Op_LE:
+                    case BinaryInst::Operation::Op_NE:
+                        markOverdefined(inst);
+                        return true;
+                }
+            }
+            else if(auto zext = dynamic_cast<ZextInst*>(inst))
+            {
+                // undef -> 0; some outputs are impossible.
+                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                return true;
+            }
+            else if(auto fptsi = dynamic_cast<FPTSI*>(inst))
+            {
+                // undef -> 0; some outputs are impossible.
+                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                return true;
+            }
+            else if(auto sitfp = dynamic_cast<SITFP*>(inst))
+            {
+                // undef -> 0; some outputs are impossible.
+                markForcedConstant(inst, ConstantData::getNullValue(inst->GetType()));
+                return true;
+            }
+            else if(auto Call = dynamic_cast<CallInst*>(inst))
+            {
+                // There are two reasons a call can have an undef result
+                // 1. It could be tracked.
+                // 2. It could be constant-foldable.
+                // Because of the way we solve return values, tracked calls must
+                // never be marked overdefined in ResolvedUndefsIn.
+                if(Function* func = dynamic_cast<Function*>(Call->Getuselist()[0]->usee))
+                {
+                    if(TrackedRetVals.count(func))
+                        break;
+                    // If the call is constant-foldable, we mark it overdefined because
+                    // we do not know what return values are valid.
+                    markOverdefined(inst);
+                    return true;
+                }
+            }
+            else
+            {
+                // If we don't know what should happen here, conservatively mark it
+                // overdefined.
+                markOverdefined(inst);
+                return true;
+            }
+        }
+        // Check to see if we have a branch on an undefined value.  If so
+        // we force the branch to go one way or the other to make the successor
+        // values live.  It doesn't really matter which way we force it.
+        User* inst = block->back();
+        if(dynamic_cast<CondInst*>(inst))
+        {
+            if(!getValueState(inst->Getuselist()[0]->usee).isUnknown())
+                continue;
+            // If the input to SCCP is actually branch on undef, fix the undef to
+            // false.
+            if(dynamic_cast<UndefValue*>(inst->Getuselist()[0]->usee))
+            {
+                inst->Getuselist()[0]->usee = ConstIRBoolean::GetNewConstant(false);
+                markEdgeExcutable(block, dynamic_cast<BasicBlock*>(inst->Getuselist()[2]->usee));
+                return true;
+            }
+            // Otherwise, it is a branch on a symbolic value which is currently
+            // considered to be undef.  Handle this by forcing the input value to the
+            // branch to false.
+            markConstant(inst->Getuselist()[0]->usee, ConstIRBoolean::GetNewConstant(false));
+            return true;
         }
     }
+    return false;
+}
+
+static bool tryToReplaceWithConstant(SCCPSolver& Solver, Value* val)
+{
+    ConstantData* Const = nullptr;
+    LatticeVal LV = Solver.getLatticeValueFor(val);
+    if(LV.isOverdefined())
+        return false;
+    Const = LV.isConstant() ? LV.getConstantInt() : UndefValue::get(val->GetType());
+    assert(Const && "Constant is nullptr here!");
+    #ifdef SYSY_ENABLE_MIDDLE_END
+        // DEBUG(dbgs() << "  Constant: " << *Const << " = " << *V << '\n');
+    #endif
+    // Replaces all of the uses of a variable with uses of the constant.
+    val->RAUW(Const);
+    return true;
+}
+/*
+void SCCPSolver::OperandChangedState(User* inst)
+{
+    // If the instruction is overdefined, there is no need to do anything.
+    if(getValueState(inst).isOverdefined())
+        return;
+    
+    // If the instruction is not overdefined, we need to check if it is a constant
+    // or not. If it is a constant, we need to update the value state of the instruction.
+    if(inst->isConst())
+    {
+        if(tryToReplaceWithConstant(*this, inst))
+            return;
+    }
+    // If the instruction is not a constant, we need to check if it is a user or not.
+    // If it is a user, we need to update the value state of the instruction.
+    if(dynamic_cast<User*>(inst))
+    {
+        if(tryToReplaceWithConstant(*this, inst))
+            return;
+    }
+    // If the instruction is not a user, we need to check if it is a constant data or not.
+    // If it is a constant data, we need to update the value state of the instruction.
+    if(dynamic_cast<ConstantData*>(inst))
+    {
+        if(tryToReplaceWithConstant(*this, inst))
+            return;
+    }
+}
+*/
+
+// runSCCP() - Run the Sparse Conditional Constant Propagation algorithm, 
+// and return true if the program was modified.
+bool SCCPSolver::runSCCP(Function& func)
+{
+    #ifdef SYSY_ENABLE_MIDDLE_END
+    // DEBUG(dbgs() << "SCCP on function '" << func.GetName() << "'\n");
+    #endif
+    SCCPSolver Solver;
+    int NumDeadBlocks = 0;
+    int NumInstRemoved = 0;
+    // Mark the first block of the function as being executable.
+    Solver.MarkBlockExecutabel(func.front());
+
+    // Mark all arguments to the function as being overdefined.
+    for(auto& param_ : func.GetParams())
+        Solver.markAnythingOverdefined(param_.get());
+    
+    //Solve for constants.
+    bool ResolvedUndefs = true;
+    while(ResolvedUndefs)
+    {
+        Solver.Solve();
+        #ifdef SysY_ENABLE_MIDDLE_END
+        DEBUG(dbgs() << "RESOLVING UNDEFs\n");
+        #endif
+        ResolvedUndefs = Solver.ResolvedUndefsIn(func);
+    }
+    
+    bool MadeChanges = false;
+
+    // If we decided that there are basic blocks that are dead in this function,
+    // delete their contents now.  Note that we cannot actually delete the blocks,
+    // as we cannot modify the CFG of the function.
+
+    for(BasicBlock* block : func)
+    {
+        if(!Solver.isBlockExcutable(block))
+        {
+            #ifdef SysY_ENABLE_MIDDLE_END
+            DEBUG(dbgs() << "  BasicBlock Dead:" << block->GetName());
+            #endif
+
+            ++NumDeadBlocks;
+
+            NumInstRemoved += RemoveAllNonTerminatorInst(block);
+
+            MadeChanges = true;
+            continue;
+        }
+
+        // Iterate over all of the instructions in a function, replacing them with
+        // constants if we have found them to be of constant values.
+        for(User* inst : *block)
+        {
+            if(inst->GetType()->GetTypeEnum() == IR_Value_VOID || inst == block->back())
+                continue;
+            
+            if(tryToReplaceWithConstant(Solver, inst))
+            {
+                if(DCE::isDeadInst(inst))
+                {
+                    inst->ClearRelation();
+                    inst->EraseFromParent();
+
+                    MadeChanges = true;
+                    ++NumInstRemoved;
+                }
+            }
+        }
+    }
+    return MadeChanges;
 }
 
 
-
+int RemoveAllNonTerminatorInst(BasicBlock* block)
+{
+    int NumDeadInst = 0;
+    // Delete the instructions backwards, as it has a reduced likelihood of
+    // having to update as many def-use and use-def chains.
+    for(auto iter = block->rbegin(); iter != block->rend(); ++iter)
+    {
+        User* inst = *iter;
+        if(!inst->GetUserlist().is_empty())
+        {
+            inst->RAUW(UndefValue::get(inst->GetType()));
+            ++NumDeadInst;
+            inst->ClearRelation();
+            inst->EraseFromParent();
+        }
+    }
+    return NumDeadInst;
+}
