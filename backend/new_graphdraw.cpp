@@ -38,6 +38,8 @@ void GraphColor::RunOnFunc() {
     }
   }
   RewriteProgram();
+  PrintPass();
+  PrintAnalysis();
 }
 
 void GraphColor::MakeWorklist() {
@@ -450,7 +452,7 @@ void GraphColor::AssignColors() {
       if (float_assist.size() == 0)
         spillWorkList.insert(select);
       else {
-        coalescedNodes.insert(select);
+        coloredNode.insert(select);
         color[select] = SelectPhyReg(ty, float_assist);
       }
     }
