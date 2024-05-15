@@ -2,6 +2,7 @@
 #include "CFG.hpp"
 #include "Singleton.hpp"
 #include "dominant.hpp"
+#include <memory>
 
 void PassManager::InitPass() {
   for (int i = 0; i < Singleton<Module>().GetFuncTion().size(); i++) {
@@ -17,6 +18,7 @@ void PassManager::InitPass() {
     m_constprop = std::make_unique<ConstantProp>(m_func);
     m_inline = std::make_unique<Inliner>(m_func, Singleton<Module>(), m_dom.get());
     m_sccp = std::make_unique<SCCP>(m_func, m_dom.get());
+    m_reassociate=std::make_unique<Reassociate>(m_func,m_dom.get());
     RunOnFunction();
     SCCPSolver::runSCCP(*m_func);
   }
@@ -100,6 +102,9 @@ void PassManager::RunOnFunction() {
   }
   if(InitpassRecorder[11]){
     m_sccp->RunOnFunction();
+  }
+  if(InitpassRecorder[11]){
+    m_reassociate->RunOnFunction();
   }
 }
 

@@ -43,8 +43,6 @@ void VirRegister::print(){
 //   return str;
 // }
 
-// void VirRegister::print() { std::cout << "%" << counter; }
-
 LARegister::LARegister(RISCVType _type, std::string _name)
     : Register(_type,_name), regnum(LAReg::hi) {}
 LARegister::LARegister(RISCVType _type, std::string _name, VirRegister *_vreg)
@@ -64,6 +62,7 @@ void LARegister::print() {
 
 StackRegister::StackRegister(PhyReg _regnum, int _offset)
     : PhyRegister(_regnum), offset(_offset) {}
+void StackRegister::SetOffset(int _offset) { offset = _offset; }
 void StackRegister::print() {
   std::cout << offset << "(" << magic_enum::enum_name(regenum) << ")";
 }
@@ -89,6 +88,13 @@ RegisterList::RegisterList() {
         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
         reglist_float.push_back(preg);
         regenum = PhyReg(regenum + 1);
+    }
+    // reglist_test
+    regenum = PhyReg::a0;
+    while(regenum<=PhyReg::a3) {
+      PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+      reglist_test.push_back(preg);
+      regenum = PhyReg(regenum + 1);
     }
 }
 
@@ -143,6 +149,7 @@ RegisterList& RegisterList::GetPhyRegList() {
 }
 std::vector<PhyRegister*>& RegisterList::GetReglistInt() {return reglist_int;}
 std::vector<PhyRegister*>& RegisterList::GetReglistFloat() {return reglist_float;}
+std::vector<PhyRegister*>& RegisterList::GetReglistTest() {return reglist_test;}
 // std::vector<PhyRegister*>& RegisterList::GetReglistParamInt() {return reglist_param_int;}
 // std::vector<PhyRegister*>& RegisterList::GetReglistTempInt() {return reglist_temp_int;}
 // std::vector<PhyRegister*>& RegisterList::GetReglistParamFloat() {return reglist_param_float;}

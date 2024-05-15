@@ -34,6 +34,8 @@ class RISCVLoweringContext{
     RISCVMOperand* mapping(Value*);
     VirRegister* createVReg(RISCVType);
     std::vector<MFuncPtr>& GetFunctions();
+    RISCVFunction*& GetCurFunction();
+    RISCVBasicBlock*& GetCurBasicBlock();
     Value* GetValue(RISCVMOperand*);
     void print();
 };

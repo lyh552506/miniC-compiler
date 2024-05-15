@@ -54,7 +54,6 @@ bool RISCVISel::run(Function* m){
 
 void RISCVISel::InstLowering(AllocaInst* inst){
     ctx.mapping(inst);
-    
 }
 
 void RISCVISel::InstLowering(StoreInst* inst){
@@ -378,12 +377,12 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
         }
         else{
             /// @todo
-            // ConstIRInt* _size = ConstIRInt::GetNewConstant(int(size)); 
-            // auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index), Imm::GetImm(_size)});
-            // ctx(mul);
-            // auto temp=ctx.createVReg(riscv_ptr);
-            // ctx(Builder(RISCVMIR::_addw,{temp,baseptr,mul->GetOperand(0)}));
-            // baseptr=temp;
+            ConstIRInt* _size = ConstIRInt::GetNewConstant(int(size)); 
+            auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index), Imm::GetImm(_size)});
+            ctx(mul);
+            auto temp=ctx.createVReg(riscv_ptr);
+            ctx(Builder(RISCVMIR::_addw,{temp,baseptr,mul->GetDef()}));
+            baseptr=temp;
         }
         hasSubtype=dynamic_cast<HasSubType*>(hasSubtype->GetSubType());
     }
@@ -437,6 +436,14 @@ void RISCVISel::InstLowering(CallInst* inst){
             || inst->GetOperand(i)->GetType()==FloatType::NewFloatTypeGet())
                 ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i))}));
         }
+        size_t local_param_size=0;
+        for (int i=1; i<paramnum; i++) {
+            local_param_size += inst->GetOperand(i)->GetType()->get_size();
+        }
+        if (local_param_size > ctx.GetCurFunction()->GetMaxParamSize()) {
+            ctx.GetCurFunction()->SetMaxParamSize(local_param_size);
+        }
+
     }
     if(!inst->GetUserlist().is_empty()){
         ctx(Builder_withoutDef(RISCVMIR::call, inst));

@@ -50,6 +50,12 @@ std::unique_ptr<RISCVFrame>& RISCVFunction::GetFrame() {
     return frame;
 }
 
+size_t RISCVFunction::GetMaxParamSize() {
+    return max_param_size;
+}
+void RISCVFunction::SetMaxParamSize(size_t size) {
+    max_param_size=size;
+}
 // std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects(){
 //     return frame;
 // }
@@ -114,5 +120,167 @@ void RISCVFunction::printfull(){
         mbb->printfull();
         // if(mbb!=this->back())
         //     std::cout<<"\n";
+    }
+}
+
+// RISCVFrame::RISCVFrame() {}
+RISCVFrame::RISCVFrame(RISCVFunction* func) : parent(func) {}
+// void RISCVFrame::spill(VirRegister* mop) {
+//     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
+// }
+// void RISCVFrame::spill(Value* val) {
+//     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
+// }
+
+StackRegister* RISCVFrame::spill(VirRegister* mop) {
+    for (auto& obj : frameobjs) {
+        // if (obj->GetName() == mop->GetName()) {
+        //     return obj->Get;
+        // }
+    }
+    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
+    return frameobjs.back().get()->GetStackReg();
+}
+StackRegister* RISCVFrame::spill(Value* val) {
+    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
+    return frameobjs.back().get()->GetStackReg();
+}
+
+std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFrame::GetFrameObjs() {return frameobjs;}
+
+void RISCVFrame::GenerateFrame() {
+    /// @todo
+    using FramObj = std::vector<std::unique_ptr<RISCVFrameObject>>;
+    frame_size = 16;
+    for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
+        std::unique_ptr<RISCVFrameObject>& obj = *it;
+        frame_size += obj->GetFrameObjSize();
+        obj->SetBeginAddOff(frame_size);
+    }
+    frame_size += parent->GetMaxParamSize();
+    int mod = frame_size % 16;
+    if (mod!=0) {
+        frame_size = frame_size + (16 - mod);
+    }
+
+    for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
+        std::unique_ptr<RISCVFrameObject>& obj = *it;
+        obj->GenerateStackRegister(0 - obj->GetBeginAddOff());
+    }
+}
+
+void RISCVFrame::GenerateFrameHead() {
+    using PhyReg=PhyRegister::PhyReg;
+    using ISA=RISCVMIR::RISCVISA;
+    PhyRegister* sp = PhyRegister::GetPhyReg(PhyReg::sp);
+    PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
+    PhyRegister* ra = PhyRegister::GetPhyReg(PhyReg::ra);
+    int temp_frame_size = frame_size;
+    if( frame_size>2047) {
+        // 以合法方式保存sp.s0
+        temp_frame_size = frame_size % 4096;
+    }
+    
+    // addi sp, sp, -temp_frame_size
+    RISCVMIR* inst1 = new RISCVMIR(ISA::_addi);
+    Imm* imm1 = new Imm(ConstIRInt::GetNewConstant(0-temp_frame_size));
+    inst1->SetDef(sp);
+    inst1->AddOperand(sp);
+    inst1->AddOperand(imm1);
+    //sd ra, temp_frame_size-8(sp)
+    RISCVMIR* inst2 = new RISCVMIR(ISA::_sd);
+    StackRegister* sp_stack2 = new StackRegister(PhyReg::sp, temp_frame_size-8);
+    inst2->AddOperand(ra);
+    inst2->AddOperand(sp_stack2);
+    //sd s0, temp_frame_size-16(sp)
+    RISCVMIR* inst3 = new RISCVMIR(ISA::_sd);
+    StackRegister* sp_stack3 = new StackRegister(PhyReg::sp, temp_frame_size-16);
+    inst3->AddOperand(s0);
+    inst3->AddOperand(sp_stack3);
+
+    //addi s0, sp, temp_frame_size
+    RISCVMIR* inst4 = new RISCVMIR(ISA::_addi);
+    Imm* imm4 = new Imm(ConstIRInt::GetNewConstant(temp_frame_size));
+    inst4->SetDef(s0);
+    inst4->AddOperand(sp);
+    inst4->AddOperand(imm4);
+
+    //addi sp, sp, framesize-temp_frame_size
+    RISCVMIR* inst5 = new RISCVMIR(ISA::_addi);
+    Imm* imm5 = new Imm(ConstIRInt::GetNewConstant(frame_size - temp_frame_size));
+    inst5->SetDef(sp);
+    inst5->AddOperand(sp);
+    inst5->AddOperand(imm5);
+
+    parent->front()->begin().insert_before(inst5);
+    parent->front()->begin().insert_before(inst4);
+    parent->front()->begin().insert_before(inst3);
+    parent->front()->begin().insert_before(inst2);
+    parent->front()->begin().insert_before(inst1);
+
+
+
+    // // addi sp, sp, -framesize
+    // RISCVMIR* inst1 = new RISCVMIR(ISA::_addi);
+    // Imm* imm1 = new Imm(ConstIRInt::GetNewConstant(0-frame_size));
+    // inst1->SetDef(sp);
+    // inst1->AddOperand(sp);
+    // inst1->AddOperand(imm1);
+    // // sd ra, framesize-8(sp)
+    // RISCVMIR* inst2 = new RISCVMIR(ISA::_sd);
+    // StackRegister* sp_stack2 = new StackRegister(PhyReg::sp, frame_size-8);
+    // inst2->AddOperand(ra);
+    // inst2->AddOperand(sp_stack2);
+    // // sd s0, framsize-16(sp)
+    // RISCVMIR* inst3 = new RISCVMIR(ISA::_sd);
+    // StackRegister* sp_stack3 = new StackRegister(PhyReg::sp, frame_size-16);
+    // inst3->AddOperand(s0);
+    // inst3->AddOperand(sp_stack3);
+
+    // // addi s0, sp, framesize
+    // RISCVMIR* inst4 = new RISCVMIR(ISA::_addi);
+    // Imm* imm3 = new Imm(ConstIRInt::GetNewConstant(frame_size));
+    // inst4->SetDef(s0);
+    // inst4->AddOperand(sp);
+    // inst4->AddOperand(imm3);
+
+    // parent->front()->begin().insert_before(inst4);
+    // parent->front()->begin().insert_before(inst3);
+    // parent->front()->begin().insert_before(inst2);
+    // parent->front()->begin().insert_before(inst1);
+}
+
+void RISCVFrame::GenerateFrameTail() {
+    using PhyReg=PhyRegister::PhyReg;
+    using ISA=RISCVMIR::RISCVISA;
+    PhyRegister* sp = PhyRegister::GetPhyReg(PhyReg::sp);
+    PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
+    PhyRegister* ra = PhyRegister::GetPhyReg(PhyReg::ra);
+    // ld ra, framesize-8(sp)
+    RISCVMIR* inst1 = new RISCVMIR(ISA::_ld);
+    StackRegister* sp_stack1 = new StackRegister(PhyReg::sp, frame_size-8);
+    inst1->SetDef(ra);
+    inst1->AddOperand(sp_stack1);
+    // ld s0, framesize-16(sp)
+    RISCVMIR* inst2 = new RISCVMIR(ISA::_ld);
+    StackRegister* sp_stack2 = new StackRegister(PhyReg::sp, frame_size-16);
+    inst2->SetDef(s0);
+    inst2->AddOperand(sp_stack2);
+    // addi sp, sp, framesize
+    RISCVMIR* inst3 = new RISCVMIR(ISA::_addi);
+    Imm* imm3 = new Imm(ConstIRInt::GetNewConstant(frame_size));
+    inst3->SetDef(sp);
+    inst3->AddOperand(sp);
+    inst3->AddOperand(imm3);
+
+    for(auto block : *parent) {
+        for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
+            RISCVMIR* inst = *it;
+            if (inst->GetOpcode() == ISA::ret) {
+                it.insert_before(inst1);
+                it.insert_before(inst2);
+                it.insert_before(inst3);
+            }
+        } 
     }
 }
