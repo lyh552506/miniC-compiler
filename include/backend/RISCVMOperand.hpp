@@ -12,8 +12,8 @@ class RISCVMOperand{
     T* as(){
         return dynamic_cast<T*>(this);
     }
-    // bool ignoreLA();
-    Register* ignoreLA();
+    bool ignoreLA();
+    // Register* ignoreLA();
 };
 
 /// @note A wrapper for the constant data

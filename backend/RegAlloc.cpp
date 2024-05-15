@@ -16,5 +16,6 @@ void RegAllocImpl::RunGCpass(){
     frame.GenerateFrameTail();
     LegalizeConstInt lcint(ctx);
     lcint.run();
+
     gc->RunOnFunc();
 }
