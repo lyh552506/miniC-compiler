@@ -37,15 +37,14 @@ void GraphColor::RunOnFunc() {
       condition = true;
     }
   }
-  // Generate Frame of current Function
-  // And generate the head of frame here
-  RISCVFrame& frame = *m_func->GetFrame();
-  frame.GenerateFrame();
-  frame.GenerateFrameHead();
-  frame.GenerateFrameTail();
-
-  LegalizeConstInt lcint(ctx);
-  lcint.run();
+  // // Generate Frame of current Function
+  // // And generate the head and tail of frame here
+  // RISCVFrame& frame = *m_func->GetFrame();
+  // frame.GenerateFrame();
+  // frame.GenerateFrameHead();
+  // frame.GenerateFrameTail();
+  // LegalizeConstInt lcint(ctx);
+  // lcint.run();
 
   RewriteProgram();
 }
@@ -460,7 +459,8 @@ void GraphColor::AssignColors() {
       if (float_assist.size() == 0)
         spillWorkList.insert(select);
       else {
-        coalescedNodes.insert(select);
+        // coalescedNodes.insert(select);
+        coloredNode.insert(select);
         color[select] = SelectPhyReg(ty, float_assist);
       }
     }

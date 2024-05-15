@@ -26,9 +26,12 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
                 li->AddOperand(constdata);
                 it.insert_before(li);
                 for(int i=0; i<inst->GetOperandSize(); i++) {
-                    while(dynamic_cast<Imm*>(inst->GetOperand(i))->Getdata()==constdata->Getdata()) {
-                        inst->SetOperand(i,vreg);
-                    }
+                    if(Imm* imm = dynamic_cast<Imm*>(inst->GetOperand(i))) {
+                        if(imm->Getdata()==constdata->Getdata()) {
+                            inst->SetOperand(i,vreg);
+                            break;
+                        }
+                    } 
                 }
             }
             else {
@@ -102,8 +105,8 @@ bool LegalizeConstInt::run() {
                     if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
                         if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(constdata->Getdata())) {
                             LegConstInt(inst, constdata, it);
-                        } else break;
-                    } else break;
+                        }
+                    }
                 }
             }
         }

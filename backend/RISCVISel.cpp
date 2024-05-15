@@ -54,7 +54,6 @@ bool RISCVISel::run(Function* m){
 
 void RISCVISel::InstLowering(AllocaInst* inst){
     ctx.mapping(inst);
-    
 }
 
 void RISCVISel::InstLowering(StoreInst* inst){
@@ -378,12 +377,12 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
         }
         else{
             /// @todo
-            // ConstIRInt* _size = ConstIRInt::GetNewConstant(int(size)); 
-            // auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index), Imm::GetImm(_size)});
-            // ctx(mul);
-            // auto temp=ctx.createVReg(riscv_ptr);
-            // ctx(Builder(RISCVMIR::_addw,{temp,baseptr,mul->GetOperand(0)}));
-            // baseptr=temp;
+            ConstIRInt* _size = ConstIRInt::GetNewConstant(int(size)); 
+            auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index), Imm::GetImm(_size)});
+            ctx(mul);
+            auto temp=ctx.createVReg(riscv_ptr);
+            ctx(Builder(RISCVMIR::_addw,{temp,baseptr,mul->GetDef()}));
+            baseptr=temp;
         }
         hasSubtype=dynamic_cast<HasSubType*>(hasSubtype->GetSubType());
     }

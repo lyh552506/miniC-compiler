@@ -3,7 +3,7 @@
 RISCVMOperand* RISCVLoweringContext::Create(Value* val){
     if(auto inst=dynamic_cast<User*>(val)){
         if(auto alloca=dynamic_cast<AllocaInst*>(inst)){
-            this->insert_val2mop(inst, new VirRegister(RISCVTyper(inst->GetType())));
+            // this->insert_val2mop(inst, new VirRegister(RISCVTyper(inst->GetType())));
             auto& frameobjs=cur_func->GetFrame()->GetFrameObjs();
             frameobjs.emplace_back(new RISCVFrameObject(inst));
             // frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(inst));

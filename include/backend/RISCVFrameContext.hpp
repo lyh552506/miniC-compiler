@@ -40,7 +40,7 @@ class RISCVFrameObject:public RISCVMOperand{
     size_t begin_addr_offsets=0;
     StackRegister* reg;
     size_t size=0;
-    std::string name;
+    std::string name; 
     public:
     RISCVFrameObject(Value*);
     RISCVFrameObject(VirRegister*);
