@@ -1,6 +1,7 @@
 #pragma once
 #include "RISCVType.hpp"
 #include "BaseCFG.hpp"
+class Register;
 /// @brief  Just need a type currently
 class RISCVMOperand{
     RISCVType tp;
