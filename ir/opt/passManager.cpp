@@ -20,7 +20,6 @@ void PassManager::InitPass() {
     m_sccp = std::make_unique<SCCP>(m_func, m_dom.get());
     m_reassociate=std::make_unique<Reassociate>(m_func,m_dom.get());
     RunOnFunction();
-    SCCPSolver::runSCCP(*m_func);
   }
   if(InitpassRecorder[10])
   {
@@ -100,8 +99,8 @@ void PassManager::RunOnFunction() {
     m_inline->Run();
     // m_inline->PrintPass();
   }
-  if(InitpassRecorder[11]){
-    m_sccp->RunOnFunction();
+  if(InitpassRecorder[12]){
+    SCCPSolver::runSCCP(*m_func);
   }
   if(InitpassRecorder[11]){
     m_reassociate->RunOnFunction();

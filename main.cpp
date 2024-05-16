@@ -28,7 +28,7 @@ static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"simplifycfg", no_argument, 0, 7},
                                        {"ece", no_argument, 0, 8},
                                        {"inline", no_argument, 0, 9},
-                                       {"global2local", no_argument, 0, 10}, {"sccp", no_argument, 0, 11}, 
+                                       {"global2local", no_argument, 0, 10}, {"sccp", no_argument, 0, 12}, 
    
                                        {"reassociate", no_argument, 0, 11},
                                        {0, 0, 0, 0}};
