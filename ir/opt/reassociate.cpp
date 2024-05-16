@@ -3,6 +3,7 @@
 #include "CFG.hpp"
 #include "ConstantFold.hpp"
 #include <algorithm>
+#include <iostream>
 #include <utility>
 
 void Reassociate::RunOnFunction() {
@@ -27,13 +28,31 @@ void Reassociate::BuildRankMap() {
 
 int Reassociate::GetRank(Value *val) {
   if (!dynamic_cast<User *>(val)) {
+    auto it =
+        std::find_if(m_func->GetParams().begin(), m_func->GetParams().end(),
+                     [val](auto &ele) { return ele.get() == val; });
+    if (it != m_func->GetParams().end())
+      return ValueRank[val];
+    else //对于global和常量
+      return 0;
   }
+  if (ValueRank.find(val) != ValueRank.end())
+    return ValueRank[val];
+  //对于一个新的val，需要为它获取到一个rank
+  int ra = 0;
+  User *inst = dynamic_cast<User *>(val);
+  for (auto &u : inst->Getuselist()) {
+    ra = std::max(ra, GetRank(u->GetValue()));
+  }
+  assert(ra == 0 && "Rank cant be 0");
+  ValueRank[val] = ra;
+  return ra;
 }
 
 void Reassociate::OptimizeInst(Value *I) {
-  if (!dynamic_cast<BinaryInst *>(I))
-    return;
   auto bin = dynamic_cast<BinaryInst *>(I);
+  if (!bin || bin->IsCmpInst())
+    return;
   //如果是可交换（可重组）指令，尝试将含有const的操作数移动到右边
   if (IsCommutative(bin->getopration()))
     FormalBinaryInst(bin);
@@ -42,10 +61,11 @@ void Reassociate::OptimizeInst(Value *I) {
   if (IsBinaryFloatType(bin))
     return;
   if (bin->GetUserlist().GetSize() == 1) {
-    if (auto bin_user = dynamic_cast<BinaryInst *>(
-            bin->GetUserlist().Front()->GetValue())) {
+    if (auto bin_user =
+            dynamic_cast<BinaryInst *>(bin->GetUserlist().Front()->GetUser())) {
       if (bin->GetOperation() == bin_user->GetOperation()) {
         RedoInst.push_back(bin);
+        return;
       }
     }
   }
@@ -57,21 +77,21 @@ Value *Reassociate::ReassciateExp(BinaryInst *I) {
   std::vector<std::pair<Value *, int>> ValueToRank;
   //对表达式进行线性化分解
   LinearizeExp(I, Leaf);
-  _DEBUG(std::cerr << "Linear set befor reassociate "
-                   << std::for_each(Leaf.begin(), Leaf.end(),
-                                    [](std::pair<Value *, int> &ele) {
-                                      std::cerr << "[" << ele.first->GetName()
-                                                << " , " << ele.second << " ]";
-                                    })
-                   << std::endl;)
   for (auto &[val, times] : Leaf)
     for (int i = 0; i < times; i++) {
       ValueToRank.push_back({val, GetRank(val)});
     }
   std::stable_sort(
       ValueToRank.begin(), ValueToRank.end(),
-      [](const auto &v1, const auto &v2) { return v1.second < v2.second; });
-
+      [](const auto &v1, const auto &v2) { return v1.second > v2.second; });
+    
+    _DEBUG(std::cerr << "Linear set befor reassociate ";
+         std::for_each(ValueToRank.begin(), ValueToRank.end(),
+                       [](std::pair<Value *, int> &ele) {
+                         std::cerr << "[" << ele.first->GetName() << " , "
+                                   << ele.second << " ]";
+                       });
+         std::cerr << std::endl;)
   //通过rank的方式，常数/global会排在最右边，这样更有利于优化
   ConstantData *C = nullptr;
   while (!ValueToRank.empty() &&
@@ -88,8 +108,9 @@ Value *Reassociate::ReassciateExp(BinaryInst *I) {
     return C;
   //判断C的特殊情况：
   // eg: x+0、x*0
-  if (C != nullptr && !ShouldIgnoreConst(I->getopration(),C)) {
-    
+  if (C != nullptr && !ShouldIgnoreConst(I->getopration(), C)) {
+    if (AbsorbConst(I->getopration(), C))
+      return C;
   }
 }
 
@@ -110,15 +131,17 @@ void Reassociate::LinearizeExp(BinaryInst *I,
   std::vector<std::pair<Value *, int>> Worklist{std::make_pair(I, 1)};
   auto opcode = I->getopration();
   while (!Worklist.empty()) {
-    auto &[target, Weight] = Worklist.back();
+    auto &back_val = Worklist.back();
+    auto target = back_val.first;
+    auto Weight = back_val.second;
     Worklist.pop_back();
     for (int i = 0; i < 2; i++) {
       auto operand = GetOperand(target, i);
-      _DEBUG(std::cerr << "OPERAND " << i << operand->GetName() << std::endl;)
-      if (IsOperandAssociate(target, opcode)) {
-        _DEBUG(std::cerr << "Find SubExp " << i << operand->GetName()
-                         << std::endl;)
-        Worklist.push_back(std::make_pair(target, Weight));
+      _DEBUG(std::cerr << "OPERAND " << i << "  " << operand->GetName()
+                       << std::endl;)
+      if (IsOperandAssociate(operand, opcode)) {
+        _DEBUG(std::cerr << "Find SubExp " << operand->GetName() << std::endl;)
+        Worklist.push_back(std::make_pair(operand, Weight));
         continue;
       }
       //不满足第一种情况
@@ -137,11 +160,11 @@ void Reassociate::LinearizeExp(BinaryInst *I,
     }
   }
   for (auto val : Leafs) {
-    assert(LeafToWeight.find(val) == LeafToWeight.end() &&
+    assert(LeafToWeight.find(val) != LeafToWeight.end() &&
            "no way we only have this value in one set");
     Leaf.push_back(std::make_pair(val, LeafToWeight[val]));
   }
-  assert(Leaf.size() == 0);
+  assert(Leaf.size() != 0);
   return;
 }
 
@@ -203,13 +226,33 @@ bool Reassociate::ShouldIgnoreConst(BinaryInst::Operation Op,
       if (F->GetVal() == 1)
         return true;
     break;
+  default:
+    break;
   }
   return false;
 }
 
-bool Reassociate::IsBinaryFloatType(BinaryInst *I) {
-  if (I->GetType()->GetTypeEnum() == IR_Value_Float) {
+bool Reassociate::AbsorbConst(BinaryInst::Operation Op,
+                              ConstantData *constdata) {
+  switch (Op) {
+  case BinaryInst::Op_Mul:
+    if (auto I = dynamic_cast<ConstIRInt *>(constdata)) {
+      if (I->GetVal() == 0)
+        return true;
+    }
+    if (auto F = dynamic_cast<ConstIRFloat *>(constdata)) {
+      if (F->GetVal() == 0)
+        return true;
+    }
+    break;
+  default:
     return false;
   }
-  return true;
+}
+
+bool Reassociate::IsBinaryFloatType(BinaryInst *I) {
+  if (I->GetType()->GetTypeEnum() == IR_Value_Float) {
+    return true;
+  }
+  return false;
 }

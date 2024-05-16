@@ -22,6 +22,9 @@ private:
   bool IsOperandAssociate(Value *op, BinaryInst::Operation opcode);
   void FormalBinaryInst(User *I);
   bool ShouldIgnoreConst(BinaryInst::Operation Op,ConstantData* constdata);
+  //判断常数和对应的opcode是否是可吸收的，即判断是否是x*0这一类
+  bool AbsorbConst(BinaryInst::Operation Op,ConstantData* constdata);
+  void PrintDebugInfo(std::pair<Value *, int> &ele);
   std::map<Value *, int>
       ValueRank; // RankMap, arguement's rank is 3,const rank is 0
   std::vector<BasicBlock *> RPO;

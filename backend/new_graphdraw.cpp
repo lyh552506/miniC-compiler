@@ -2,10 +2,10 @@
 #include "RISCVRegister.hpp"
 #include "RISCVType.hpp"
 #include "RegAlloc.hpp"
+#include <LegalizeConstInt.hpp>
 #include <cassert>
 #include <iostream>
 #include <unordered_set>
-#include <LegalizeConstInt.hpp>
 void GraphColor::RunOnFunc() {
   bool condition = true;
   CaculateLiveness();
@@ -121,7 +121,7 @@ bool GraphColor::GeorgeCheck(MOperand dst, MOperand src, RISCVType ty) {
 //实行Briggs的启发合并
 bool GraphColor::BriggsCheck(std::unordered_set<MOperand> target,
                              RISCVType ty) {
-  if (ty == riscv_i32 | ty==riscv_ptr) {
+  if (ty == riscv_i32 | ty == riscv_ptr) {
     int num = 0;
     for (auto node : target) {
       if (IG[node].size() >= reglist.GetReglistTest().size())
@@ -625,8 +625,15 @@ void GraphColor::RewriteProgram() {
                     << " To Preg " << replace->GetName() << std::endl;
 #endif
           mir->SetOperand(i, replace);
-        }else if(auto lareg=dynamic_cast<LARegister*>(operand)){
-          auto replace = color[dynamic_cast<MOperand>(operand)];
+        } else if (auto lareg = dynamic_cast<LARegister *>(operand)) {
+          if (lareg->GetVreg() == nullptr)
+            continue;
+          auto replace = color[dynamic_cast<MOperand>(lareg->GetVreg())];
+          lareg->SetReg(replace);
+        } else if(auto stackreg=dynamic_cast<StackRegister *>(operand)){
+          if(stackreg->GetVreg()==nullptr)
+            continue;
+          auto replace=color[dynamic_cast<MOperand>(operand)];
           //TODO
         }
       }
