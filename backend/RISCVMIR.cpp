@@ -178,7 +178,8 @@ void RISCVFrame::GenerateFrameHead() {
     int temp_frame_size = frame_size;
     if( frame_size>2047) {
         // 以合法方式保存sp.s0
-        temp_frame_size = frame_size % 4096;
+        // temp_frame_size = frame_size % 4096;
+        temp_frame_size = frame_size % 2048;
     }
     
     // addi sp, sp, -temp_frame_size

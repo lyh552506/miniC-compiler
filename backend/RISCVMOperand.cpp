@@ -12,30 +12,62 @@
 // }
 
 // RISCVMOperand::RISCVMOperand(){}
-bool RISCVMOperand::ignoreLA() {
+
+// bool RISCVMOperand::ignoreLA() {
+//   if (dynamic_cast<Imm *>(this))
+//     return true;
+//     // reutrn nullptr;
+//   else if (PhyRegister *preg = dynamic_cast<PhyRegister *>(this)) {
+//     PhyRegister::PhyReg regenum = preg->Getregenum();
+//     using PhyReg = PhyRegister::PhyReg;
+//     if (regenum == PhyReg::zero || regenum == PhyReg::ra ||
+//         regenum == PhyReg::sp || regenum == PhyReg::gp ||
+//         regenum == PhyReg::tp || regenum == PhyReg::s0)
+//       return true;
+//     else
+//       return false;
+//   } else if (LARegister *lareg = dynamic_cast<LARegister *>(this))
+//     return true;
+//   else if (StackRegister *sreg = dynamic_cast<StackRegister *>(this))
+//     return true;
+//   else if (dynamic_cast<RISCVFrameObject *>(this))
+//     return true;
+//   else if(dynamic_cast<RISCVBasicBlock*>(this))
+//     return true;
+//   else if(dynamic_cast<RISCVGlobalObject*>(this))
+//     return true;
+//   else
+//     return false;
+// }
+
+Register* RISCVMOperand::ignoreLA() {
   if (dynamic_cast<Imm *>(this))
-    return true;
+    return nullptr;
   else if (PhyRegister *preg = dynamic_cast<PhyRegister *>(this)) {
     PhyRegister::PhyReg regenum = preg->Getregenum();
     using PhyReg = PhyRegister::PhyReg;
     if (regenum == PhyReg::zero || regenum == PhyReg::ra ||
         regenum == PhyReg::sp || regenum == PhyReg::gp ||
-        regenum == PhyReg::tp || regenum == PhyReg::s0)
-      return true;
+        regenum == PhyReg::tp || regenum == PhyReg::s0 ||
+        regenum == PhyReg::_NULL)
+      return nullptr;
     else
-      return false;
-  } else if (LARegister *lareg = dynamic_cast<LARegister *>(this))
-    return true;
+      return preg;
+  } else if (LARegister *lareg = dynamic_cast<LARegister *>(this)) {
+    return lareg->GetVreg();
+  }
   else if (StackRegister *sreg = dynamic_cast<StackRegister *>(this))
-    return true;
+    return sreg->GetVreg();
   else if (dynamic_cast<RISCVFrameObject *>(this))
-    return true;
+    return nullptr;
   else if(dynamic_cast<RISCVBasicBlock*>(this))
-    return true;
+    return nullptr;
   else if(dynamic_cast<RISCVGlobalObject*>(this))
-    return true;
-  else
-    return false;
+    return nullptr;
+  else if(auto reg = dynamic_cast<Register*>(this))
+    return reg;
+  else 
+    return nullptr;
 }
 Imm::Imm(ConstantData *_data)
     : RISCVMOperand(RISCVTyper(_data->GetType())), data(_data) {

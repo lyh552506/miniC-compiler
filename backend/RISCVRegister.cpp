@@ -48,6 +48,8 @@ LARegister::LARegister(RISCVType _type, std::string _name)
 LARegister::LARegister(RISCVType _type, std::string _name, VirRegister *_vreg)
     : Register(_type,_name), regnum(LAReg::lo), vreg(_vreg) {}
 
+Register*& LARegister::GetVreg() { return vreg; }
+void LARegister::SetReg(PhyRegister* &_reg) { vreg = _reg; }
 void LARegister::print() {
   // todo
   std::cout << "%" << magic_enum::enum_name(regnum);
@@ -62,7 +64,11 @@ void LARegister::print() {
 
 StackRegister::StackRegister(PhyReg _regnum, int _offset)
     : PhyRegister(_regnum), offset(_offset) {}
+StackRegister::StackRegister(VirRegister* _vreg, int _offset)
+    : PhyRegister(PhyReg::_NULL), offset(_offset), vreg(_vreg) {}
 void StackRegister::SetOffset(int _offset) { offset = _offset; }
+Register*& StackRegister::GetVreg() { return vreg; }
+void StackRegister::SetVreg(PhyRegister* &_reg) { vreg = _reg; }
 void StackRegister::print() {
   std::cout << offset << "(" << magic_enum::enum_name(regenum) << ")";
 }

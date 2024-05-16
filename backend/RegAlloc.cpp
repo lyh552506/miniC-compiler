@@ -1,4 +1,5 @@
 #include "RegAlloc.hpp"
+#include "LegalizeConstInt.hpp"
 void spill_reg(Operand vreg);
 void get_frameObj(Operand vreg);
 
@@ -8,10 +9,13 @@ void RegAllocImpl::RunGCpass(){
 
     // Generate Frame of current Function
     // And generate the head and tail of frame here
-    
-    // RISCVFrame& frame = *m_func->GetFrame();
-    // frame.GenerateFrame();
-    // frame.GenerateFrameHead();
-    // frame.GenerateFrameTail();
-    // gc->RunOnFunc();
+
+    RISCVFrame& frame = *m_func->GetFrame();
+    frame.GenerateFrame();
+    frame.GenerateFrameHead();
+    frame.GenerateFrameTail();
+    LegalizeConstInt lcint(ctx);
+    lcint.run();
+
+    gc->RunOnFunc();
 }

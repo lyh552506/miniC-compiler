@@ -24,7 +24,7 @@ class PhyRegister:public Register{
         fa2,fa3,fa4,fa5,fa6,fa7,
         fs2,fs3,fs4,fs5,fs6,fs7,fs8,fs9,fs10,fs11,
         ft8,ft9,ft10,ft11,
-
+        _NULL,
         x0=zero,x1=ra,x2=sp,x3=gp,x4=tp,x5=t0,x6=t1,x7=t2,x8=s0,x9=s1,
         x10=a0,x11=a1,x12=a2,x13=a3,x14=a4,x15=a5,x16=a6,x17=a7,
         x18=s2,x19=s3,x20=s4,x21=s5,x22=s6,x23=s7,x24=s8,x25=s9,x26=s10,x27=s11,
@@ -56,20 +56,26 @@ class LARegister:public Register{
         hi,lo
     } regnum;
     // std::string name;
-    VirRegister* vreg=nullptr;
+    Register* vreg=nullptr;
     public:
     LARegister(RISCVType, std::string);
     LARegister(RISCVType, std::string, VirRegister*);
     void print()final;
+    Register*& GetVreg();
+    void SetReg(PhyRegister*&);
     std::string GetName(){return rname;}
     bool isPhysical()final{return true;};
 };
 
 class StackRegister:public PhyRegister{
     int offset;
+    Register* vreg=nullptr;
     public:
     StackRegister(PhyReg, int);
+    StackRegister(VirRegister*, int);
     std::string GetName(){return rname;}
+    Register*& GetVreg();
+    void SetVreg(PhyRegister*&);
     void SetOffset(int);
     void print()final;
 };

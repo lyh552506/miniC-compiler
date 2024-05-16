@@ -31,14 +31,14 @@ void GraphColor::RunOnFunc() {
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
       CaculateLiveness();
-      PrintPass();
-      PrintAnalysis();
-      return;
+      // PrintPass();
+      // PrintAnalysis();
+      // return;
       condition = true;
     }
   }
-  // // Generate Frame of current Function
-  // // And generate the head and tail of frame here
+  // Generate Frame of current Function
+  // And generate the head and tail of frame here
   // RISCVFrame& frame = *m_func->GetFrame();
   // frame.GenerateFrame();
   // frame.GenerateFrameHead();
@@ -47,8 +47,8 @@ void GraphColor::RunOnFunc() {
   // lcint.run();
 
   RewriteProgram();
-  PrintPass();
-  PrintAnalysis();
+  // PrintPass();
+  // PrintAnalysis();
 }
 
 void GraphColor::MakeWorklist() {
