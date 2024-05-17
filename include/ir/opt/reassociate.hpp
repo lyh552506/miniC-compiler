@@ -16,15 +16,23 @@ private:
   int GetRank(Value *val);
   bool IsBinaryFloatType(BinaryInst *I);
   void LinearizeExp(BinaryInst *I, std::vector<std::pair<Value *, int>> &Leaf);
-  Value* ReassciateExp(BinaryInst *I);
+  void ReassciateExp(BinaryInst *I);
   //判断是否是可交换的
   bool IsCommutative(BinaryInst::Operation opcode);
   bool IsOperandAssociate(Value *op, BinaryInst::Operation opcode);
   void FormalBinaryInst(User *I);
-  bool ShouldIgnoreConst(BinaryInst::Operation Op,ConstantData* constdata);
+  void ReWriteExp(BinaryInst *exp,
+                std::vector<std::pair<Value *, int>> &LinerizedOp);
+  bool ShouldIgnoreConst(BinaryInst::Operation Op, ConstantData *constdata);
   //判断常数和对应的opcode是否是可吸收的，即判断是否是x*0这一类
-  bool AbsorbConst(BinaryInst::Operation Op,ConstantData* constdata);
-  void PrintDebugInfo(std::pair<Value *, int> &ele);
+  bool AbsorbConst(BinaryInst::Operation Op, ConstantData *constdata);
+  void KillDeadInst(User* I);
+  Value *OptExp(BinaryInst *exp,
+                std::vector<std::pair<Value *, int>> &LinerizedOp);
+  Value* OptAdd(BinaryInst *AddInst,
+              std::vector<std::pair<Value *, int>> &LinerizedOp);
+  Value* OptMul(BinaryInst *MulInst,
+              std::vector<std::pair<Value *, int>> &LinerizedOp);
   std::map<Value *, int>
       ValueRank; // RankMap, arguement's rank is 3,const rank is 0
   std::vector<BasicBlock *> RPO;

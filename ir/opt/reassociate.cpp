@@ -1,10 +1,15 @@
 #include "reassociate.hpp"
+#include "AST_NODE.hpp"
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "ConstantFold.hpp"
+#include "my_stl.hpp"
 #include <algorithm>
+#include <cassert>
 #include <iostream>
+#include <ostream>
 #include <utility>
+#include <vector>
 
 void Reassociate::RunOnFunction() {
   // first should caculate RPO
@@ -72,47 +77,148 @@ void Reassociate::OptimizeInst(Value *I) {
   ReassciateExp(bin);
 }
 
-Value *Reassociate::ReassciateExp(BinaryInst *I) {
+void Reassociate::ReassciateExp(BinaryInst *I) {
   std::vector<std::pair<Value *, int>> Leaf;
   std::vector<std::pair<Value *, int>> ValueToRank;
   //对表达式进行线性化分解
   LinearizeExp(I, Leaf);
   for (auto &[val, times] : Leaf)
-    for (int i = 0; i < times; i++) {
+    for (int i = 0; i < times; i++)
       ValueToRank.push_back({val, GetRank(val)});
-    }
+
   std::stable_sort(
       ValueToRank.begin(), ValueToRank.end(),
       [](const auto &v1, const auto &v2) { return v1.second > v2.second; });
-    
-    _DEBUG(std::cerr << "Linear set befor reassociate ";
+
+  _DEBUG(std::cerr << "Linear set befor reassociate ";
          std::for_each(ValueToRank.begin(), ValueToRank.end(),
                        [](std::pair<Value *, int> &ele) {
                          std::cerr << "[" << ele.first->GetName() << " , "
                                    << ele.second << " ]";
                        });
          std::cerr << std::endl;)
+  if (Value *new_val = OptExp(I, ValueToRank)) {
+    // TODO
+  }
+  _DEBUG(std::cerr << "Linear set after reassociate ";
+         std::for_each(ValueToRank.begin(), ValueToRank.end(),
+                       [](std::pair<Value *, int> &ele) {
+                         std::cerr << "[" << ele.first->GetName() << " , "
+                                   << ele.second << " ]";
+                       });
+         std::cerr << std::endl;)
+  ReWriteExp(I, ValueToRank);
+}
+
+void Reassociate::ReWriteExp(
+    BinaryInst *exp, std::vector<std::pair<Value *, int>> &LinerizedOp) {
+  std::set<Value *> NotWritable;
+  std::vector<Value *> ReWrite;
+  BinaryInst *curr = exp;
+  std::for_each(LinerizedOp.begin(), LinerizedOp.end(),
+                [&](auto &ele) { NotWritable.insert(ele.first); });
+  _DEBUG(std::cerr << "Begin To Rewrite: " << exp->GetName() << std::endl;)
+  for (int i = 0; i < LinerizedOp.size(); i++) {
+    if (i + 2 == LinerizedOp.size()) {
+      auto val_1 = LinerizedOp[i].first;
+      auto val_2 = LinerizedOp[i + 1].first;
+      auto old_val1 = GetOperand(curr, 0);
+      auto old_val2 = GetOperand(curr, 1);
+      if (val_1 == old_val1 && val_2 == old_val2)
+        break;
+      if (val_1 == old_val1 && val_2 == old_val2) {
+        std::swap(curr->Getuselist()[0], curr->Getuselist()[1]);
+        break;
+      }
+      if (val_1 != old_val1) {
+        if (!NotWritable.count(old_val1) &&
+            IsOperandAssociate(old_val1, curr->getopration())) {
+          ReWrite.push_back(old_val1);
+        }
+        curr->SetOperand(0, val_1);
+      }
+      if (val_2 != old_val2) {
+        if (!NotWritable.count(old_val2) &&
+            IsOperandAssociate(old_val2, curr->getopration())) {
+          ReWrite.push_back(old_val2);
+        }
+        curr->SetOperand(1, val_2);
+      }
+      break;
+    }
+    auto val_1 = LinerizedOp[i].first;
+    auto Old_val1 = GetOperand(curr, 0);
+    if (val_1 != Old_val1) {
+      if (val_1 == GetOperand(curr, 1)) {
+        std::swap(curr->Getuselist()[0], curr->Getuselist()[1]);
+      } else {
+        if (IsOperandAssociate(Old_val1, exp->getopration()))
+          ReWrite.push_back(Old_val1);
+        curr->SetOperand(0, val_1);
+      }
+    }
+
+    if (IsOperandAssociate(GetOperand(curr, 1), exp->getopration()) &&
+        !NotWritable.count(GetOperand(curr, 1))) {
+      _DEBUG(std::cerr << "Directly Have Two Rewritable Operand" << std::endl;)
+      curr = dynamic_cast<BinaryInst *>(GetOperand(curr, 1));
+      continue;
+    }
+
+    Value *new_val = nullptr;
+    if (ReWrite.empty()) {
+      assert("Why this happen??");
+    } else {
+      new_val = ReWrite.back();
+      ReWrite.pop_back();
+    }
+    curr->SetOperand(1, new_val);
+    curr = dynamic_cast<BinaryInst *>(new_val);
+  }
+}
+
+Value *Reassociate::OptExp(BinaryInst *exp,
+                           std::vector<std::pair<Value *, int>> &LinerizedOp) {
   //通过rank的方式，常数/global会排在最右边，这样更有利于优化
   ConstantData *C = nullptr;
-  while (!ValueToRank.empty() &&
-         dynamic_cast<ConstantData *>(ValueToRank.back().first)) {
-    ConstantData *temp = dynamic_cast<ConstantData *>(ValueToRank.back().first);
-    ValueToRank.pop_back();
+  while (!LinerizedOp.empty() &&
+         dynamic_cast<ConstantData *>(LinerizedOp.back().first)) {
+    ConstantData *temp = dynamic_cast<ConstantData *>(LinerizedOp.back().first);
+    LinerizedOp.pop_back();
     if (C == nullptr)
       C = temp;
     else
-      C = ConstantFolding::ConstFoldBinary(I->getopration(), C, temp);
+      C = ConstantFolding::ConstFoldBinary(exp->getopration(), C, temp);
   }
   //按理说做完常量折叠后，不会出现这种情况了
-  if (ValueToRank.empty())
-    return C;
-  //判断C的特殊情况：
+  if (LinerizedOp.empty())
+    exp->RAUW(C);
+
+  //判断C的特殊情况,正常情况下常量折叠应该做完了
   // eg: x+0、x*0
-  if (C != nullptr && !ShouldIgnoreConst(I->getopration(), C)) {
-    if (AbsorbConst(I->getopration(), C))
-      return C;
+  if (C != nullptr && !ShouldIgnoreConst(exp->getopration(), C)) {
+    if (AbsorbConst(exp->getopration(), C))
+      exp->RAUW(C);
+    LinerizedOp.push_back(std::make_pair(C, 0));
   }
+  if (LinerizedOp.size() == 1)
+    exp->RAUW(LinerizedOp[0].first);
+  int size = LinerizedOp.size();
+  switch (exp->getopration()) {
+  case BinaryInst::Op_Add:
+    OptAdd(exp, LinerizedOp);
+  case BinaryInst::Op_Mul:
+    OptMul(exp, LinerizedOp);
+  default:
+    break;
+  }
+  if (size != LinerizedOp.size())
+    return OptExp(exp, LinerizedOp);
+  return nullptr;
 }
+
+Value *Reassociate::OptMul(BinaryInst *MulInst,
+                           std::vector<std::pair<Value *, int>> &LinerizedOp) {}
 
 bool Reassociate::IsOperandAssociate(Value *op, BinaryInst::Operation opcode) {
   auto bin = dynamic_cast<BinaryInst *>(op);
@@ -255,4 +361,22 @@ bool Reassociate::IsBinaryFloatType(BinaryInst *I) {
     return true;
   }
   return false;
+}
+
+Value *Reassociate::OptAdd(BinaryInst *AddInst,
+                           std::vector<std::pair<Value *, int>> &LinerizedOp) {
+  // 对于X+X+X+Y，尝试优化成3*X+Y
+  for (int i = 0; i < LinerizedOp.size(); i++) {
+    if (i + 1 < LinerizedOp.size() && LinerizedOp[i + 1] == LinerizedOp[i]) {
+      int same = 2;
+      if (LinerizedOp[same] == LinerizedOp[i])
+        same++;
+      // TODO
+    }
+  }
+}
+
+void Reassociate::KillDeadInst(User* I){
+  if(I->GetUserListSize()==0){}
+    //TODO
 }
