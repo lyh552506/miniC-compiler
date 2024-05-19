@@ -177,13 +177,410 @@ void SCCP::GetExcutableSuccs(CondInst* inst, std::vector<bool>& Succs)
     return;
 }
 
-void SCCP::GetExcutalbeSuccs(UnCondInst* inst, std::vector<bool>& Succs)
+void SCCP::GetExcutableSuccs(UnCondInst* inst, std::vector<bool>& Succs)
 {
     Succs.resize(1);
     Succs[0] = true;
     return;
 }
 
+bool SCCP::SolveUndefs(Function* func)
+{
+    bool Changed = false;
+    for(BasicBlock* block : *func)
+    {
+        if(!ExecutableBlocks.count(block))
+            continue;
+        
+        for(User* inst : *block)
+        {
+            Changed |= ReSolvedUndef(inst);
+        }
+    }
+    return Changed;
+}
+
+bool SCCP::ReSolvedUndef(User* inst)
+{
+    if(inst->GetType()->GetTypeEnum() == InnerDataType::IR_Value_VOID)
+        return false;
+
+    Lattice& L = GetValueStatus(inst);
+    if(L.isUnknown())
+        return false;
+    
+    if(auto Call = dynamic_cast<CallInst*>(inst))
+    {
+        if(auto F = dynamic_cast<Function*>(inst->Getuselist()[0]->usee))
+        {
+            if(RetValTrack.count(F))
+                return false;
+            for(auto iter = MultipleRetValsTrack.begin();
+            iter != MultipleRetValsTrack.end(); ++iter)
+            {
+                if(((*iter).first).first == F)
+                    return false;
+            }
+        }
+    }
+    
+    if(dynamic_cast<LoadInst*>(inst))
+        return false;
+    
+    MarkOverDefined(L, inst);
+    return true;
+}
+
+void SCCP::Visit(User* inst)
+{
+    if(auto Phi = dynamic_cast<PhiInst*>(inst))
+        VisitPhiInst(Phi);
+    else if(auto Call = dynamic_cast<CallInst*>(inst))
+        VisitCallInst(Call);
+    else if(auto Cond = dynamic_cast<CondInst*>(inst))
+        VisitCondInst(Cond);
+    else if(auto UnCond = dynamic_cast<UnCondInst*>(inst))
+        VisitUnCondInst(UnCond);
+    else if(auto Store = dynamic_cast<StoreInst*>(inst))
+        VisitStoreInst(Store);
+    else if(auto Load = dynamic_cast<LoadInst*>(inst))
+        VisitLoadInst(Load);
+    else if(auto Ret = dynamic_cast<RetInst*>(inst))
+        VisitReturnInst(Ret);
+    else if(auto GEP = dynamic_cast<GetElementPtrInst*>(inst))
+        VisitGetElementPtrInst(GEP);
+    else if(auto Alloca = dynamic_cast<AllocaInst*>(inst))
+        VisitAllocaInst(Alloca);
+    else if(auto Binary = dynamic_cast<BinaryInst*>(inst))
+    {
+        BinaryInst::Operation Op = Binary->getopration();
+        if(Op == BinaryInst::Operation::Op_Add || Op == BinaryInst::Operation::Op_Sub ||
+        Op == BinaryInst::Operation::Op_Mul || Op == BinaryInst::Operation::Op_Div ||
+        Op == BinaryInst::Operation::Op_Mod || Op == BinaryInst::Operation::Op_And ||
+        Op == BinaryInst::Operation::Op_Or)
+            VisitBinaryOperator(Binary);
+        else
+            VisitCmpInst(Binary);
+    }
+    else
+        MarkOverDefined(GetValueStatus(inst), inst);
+}
+
+void SCCP::VisitPhiInst(PhiInst* inst)
+{
+    if(GetValueStatus(inst).isOverDefined())
+        return;
+    // 多个Operand不大可能是常量, 会大大降低速度, 直接标记为OverDefined
+    if(inst->oprandNum > 64)
+        return MarkOverDefined(GetValueStatus(inst), inst);
+    
+    ConstantData* C = nullptr;
+
+    for(int i = 0; i < inst->oprandNum; i++)
+    {
+        Lattice& L = GetValueStatus(inst->GetVal(i));
+        if(L.isUnknown())
+            continue;
+        
+        if(!isEdgeExcutable(inst->GetBlock(i), inst->GetParent()))
+            continue;
+        
+        if(L.isOverDefined())
+            return MarkOverDefined(L, inst);
+        
+        if(!C)
+        {
+            C = L.GetConstData();
+            continue;
+        }
+
+        if(L.GetConstData() != C)
+            return MarkOverDefined(L, inst);
+    }
+
+    if(C)
+        MarkConstant(GetValueStatus(inst), inst, C);
+}
+
+void SCCP::VisitReturnInst(RetInst* inst)
+{
+    if(inst->Getuselist().size() == 0)
+        return;
+    
+    Function* func = inst->GetParent()->GetParent();
+    Value* Result = inst->Getuselist()[0]->usee;
+
+    if(!RetValTrack.empty())
+    {
+        if(RetValTrack.count(func))
+        {
+            MergeInValue(RetValTrack[func], func, GetValueStatus(Result));
+            return;
+        }
+    }
+
+    if(!MultipleRetValsTrack.empty())
+    {
+        std::vector<Value*> RetVals;
+        for(BasicBlock* block : *(inst->GetParent()->GetParent()))
+        {
+            User* inst_ = block->back();
+            if(dynamic_cast<RetInst*>(inst_))
+            {
+                if(!inst_->Getuselist().empty())
+                    RetVals.push_back(inst_->Getuselist()[0]->usee);
+            }
+        }
+        for(int i = 0; i < RetVals.size(); i++)
+        {
+            MergeInValue(MultipleRetValsTrack[std::make_pair(func, i)],
+            func, GetValueStatus(RetVals[i]));
+        }
+    }
+}
+
+void SCCP::VisitCondInst(CondInst* inst)
+{
+    std::vector<bool> SuccFeasible;
+    GetExcutableSuccs(inst, SuccFeasible);
+
+    BasicBlock* block = inst->GetParent();
+
+    for(int i = 0; i < SuccFeasible.size(); i++)
+    {
+        if(SuccFeasible[i])
+            MarkEdgeExcutable(block, dynamic_cast<BasicBlock*>
+            (inst->Getuselist()[i + 1]->usee));
+    }
+}
+
+void SCCP::VisitUnCondInst(UnCondInst* inst)
+{
+    std::vector<bool> SuccFeasible;
+    GetExcutableSuccs(inst, SuccFeasible);
+
+    BasicBlock* block = inst->GetParent();
+
+    // Mark all feasible successors executable.
+    for(int i = 0; i < SuccFeasible.size(); i++)
+    {
+        if(SuccFeasible[i])
+            MarkEdgeExcutable(block, dynamic_cast<BasicBlock*>
+            (inst->Getuselist()[i]->usee));
+    }
+}
+
+void SCCP::VisitBinaryOperator(BinaryInst* inst)
+{
+    Lattice Val1Statu = GetValueStatus(inst->Getuselist()[0]->usee);
+    Lattice Val2Statu = GetValueStatus(inst->Getuselist()[1]->usee);
+
+    Lattice& L = ValueStatusMap[inst];
+    if(L.isOverDefined()) return;
+
+    if(Val1Statu.isConstant() && Val2Statu.isConstant())
+    {
+        ConstantData* C = ConstantFolding::ConstFoldBinary(inst->getopration(),
+        Val1Statu.GetConstData(), Val2Statu.GetConstData()); 
+
+        // X op Y -> undef
+        if(dynamic_cast<UndefValue*>(C))
+            return;
+        return MarkConstant(L, inst, C);
+    }
+    
+    if(!Val1Statu.isOverDefined() && !Val2Statu.isOverDefined())
+        return;
+    
+    if(inst->getopration() == BinaryInst::Operation::Op_And
+    || inst->getopration() == BinaryInst::Operation::Op_Or)
+    {
+        Lattice* NonOverdefVal = nullptr;
+        if(!Val1Statu.isOverDefined())
+            NonOverdefVal = &Val1Statu;
+        else if(!Val2Statu.isOverDefined())
+            NonOverdefVal = &Val2Statu;
+        
+        if(NonOverdefVal)
+        {
+            if(NonOverdefVal->isUnknown())
+            {
+                if(inst->getopration() == BinaryInst::Operation::Op_And)
+                    MarkConstant(L, inst, ConstIRBoolean::GetNewConstant(false));
+                else
+                    MarkConstant(L, inst, ConstIRBoolean::GetNewConstant(true));
+                return;
+            }
+
+            if(inst->getopration() == BinaryInst::Operation::Op_And)
+            {
+                // X and 0 = 0
+                if(!dynamic_cast<ConstIRBoolean*>
+                (NonOverdefVal->GetConstData())->GetVal())
+                    return MarkConstant(L, inst, ConstIRBoolean::GetNewConstant(false));
+            }
+            else  // X or 1 = 1
+            {
+                if(dynamic_cast<ConstIRBoolean*>(NonOverdefVal->GetConstData())->GetVal())
+                    return MarkConstant(L, inst, ConstIRBoolean::GetNewConstant(true));
+            }
+        }
+    }
+
+    MarkOverDefined(GetValueStatus(inst), inst);
+}
+
+void SCCP::VisitCmpInst(BinaryInst* inst)
+{
+    Lattice Val1Statu = GetValueStatus(inst->Getuselist()[0]->usee);
+    Lattice Val2Statu = GetValueStatus(inst->Getuselist()[1]->usee);
+
+    Lattice& L = ValueStatusMap[inst];
+    if(L.isOverDefined()) return;
+
+    if(Val1Statu.isConstant() && Val2Statu.isConstant())
+    {
+        ConstantData* C = ConstantFolding::ConstFoldBinary
+        (inst->getopration(), Val1Statu.GetConstData(), Val2Statu.GetConstData()); 
+        if(C)
+            return MarkConstant(L, inst, C);
+    }
+
+    if(!Val1Statu.isOverDefined() && !Val2Statu.isOverDefined())
+        return;
+    
+    MarkOverDefined(GetValueStatus(inst), inst);
+}
+
+void SCCP::VisitGetElementPtrInst(GetElementPtrInst* inst)
+{
+    if(GetValueStatus(inst).isOverDefined()) return;
+
+    std::vector<Value*> Operands;
+    Operands.reserve(inst->Getuselist().size());
+
+    for(int i = 0; i < inst->Getuselist().size(); ++i)
+    {
+        Lattice Statu = GetValueStatus(inst->Getuselist()[i + 1]->usee);
+        if(Statu.isUnknown())
+            return;
+        
+        if(Statu.isOverDefined())
+            return MarkOverDefined(GetValueStatus(inst), inst);
+        
+        Operands.push_back(Statu.GetConstData());
+    }
+
+    // TODO : Support for GEP ConstantExpr
+    // ConstantData* C = ConstantFolding::ConstantFoldInst(&inst);
+    // if(dynamic_cast<UndefValue*>(C))
+        // return;
+    // markConstant(&inst, C);
+    
+}
+
+void SCCP::VisitStoreInst(StoreInst* inst)
+{
+    if(GlobalTrack.empty() || !dynamic_cast<Variable*>(inst->Getuselist()[1]->usee))
+        return;
+    
+    Variable* val = dynamic_cast<Variable*>(inst->Getuselist()[1]->usee);
+    if(!GlobalTrack.count(val))
+        return;
+    else
+    {
+        if(GlobalTrack[val].isOverDefined())
+            return;
+        
+        MergeInValue(GlobalTrack[val], Singleton<Module>().GetValueByName(val->get_name())
+        , GetValueStatus(inst->Getuselist()[0]->usee));
+
+        if(GlobalTrack[val].isOverDefined())
+            GlobalTrack.erase(val);
+    }
+
+}
+
+void SCCP::VisitLoadInst(LoadInst* inst)
+{
+    Lattice PtrVal = GetValueStatus(inst->Getuselist()[0]->usee);
+    if(PtrVal.isUnknown()) return;
+
+    Lattice& L = ValueStatusMap[inst];
+    if(L.isOverDefined()) return;
+
+    if(!PtrVal.isConstant())
+        return MarkOverDefined(L, inst);
+    
+    ConstantData* Ptr = PtrVal.GetConstData();
+
+    // load null is undefined
+    if(!dynamic_cast<ConstPtr*>(Ptr)) return;
+
+    // Transform load (Constant Global) into the value loaded.
+    // TODO
+    // if(Variable* val = dynamic_cast<Variable*>(dynamic_cast<ConstPtr*>(Ptr)->GetVal()))
+    // {
+    //     if(!TrackedGlobals.empty())
+    //     {
+    //         // If we are tracking this global, merge in the known value for it.
+    //         std::map<Variable*, LatticeVal>::iterator iter = TrackedGlobals.find(val);
+    //         if(iter != TrackedGlobals.end())
+    //         {
+    //             mergeInValue(LV, &inst, iter->second);
+    //             return;
+    //         }
+    //     }
+    // }
+
+    // TODO
+    // Transform load from a constant into a constant if possible.
+    // if(ConstantData* C = ConstantFolding::ConstantFoldLoadFromConstPtr(Ptr, Ptr->GetType()))
+    // {
+    //     if(dynamic_cast<UndefValue*>(C))
+    //         return;
+    //     return markConstant(LV, &inst, C);
+    // }
+
+    // otherwise we cannot say for certain what value this load will produce.
+    // Bail out.
+    MarkOverDefined(L, inst);
+}
+
+void SCCP::VisitCallInst(CallInst* inst)
+{
+    Function* func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
+
+    // If this is a local function that doesn't have its address taken, mark its
+    // entry block executable and merge in the actual arguments to the call into
+    // the formal arguments of the function.
+    if(!IncomeArgsTrack.empty() && IncomeArgsTrack.count(func))
+    {
+        BasicBlock* EntryBlock = func->front();
+        if(!ExecutableBlocks.count(EntryBlock))
+            BlockWorkList.push_back(EntryBlock);
+        if(func->GetParams().size() != 0)
+        {
+            for(int i = 1, j = 0; i < inst->Getuselist().size(); i++, j++)  
+            // i -> callinst arg ; j -> func param
+            {
+                Value* arg = inst->Getuselist()[i]->usee;
+                Value* param = func->GetParams()[j].get();
+                MergeInValue(ValueStatusMap[arg], arg, GetValueStatus(param));
+            }
+        }
+    }
+
+    if(!RetValTrack.count(func))
+    {
+        if(inst->GetType()->GetTypeEnum() == InnerDataType::IR_Value_VOID)
+            return;
+        // TODO -> SCCP.cpp line 1041-1068
+        return MarkOverDefined(GetValueStatus(inst), inst);
+    }
+
+    MergeInValue(ValueStatusMap[inst], inst, RetValTrack[func]);
+}
 
 void SCCP::Solve()
 {
@@ -304,95 +701,3 @@ bool SCCP::RunOnFunction(Function* func)
     }
     return Changed;
 }
-
-bool SCCP::SolveUndefs(Function* func)
-{
-    bool Changed = false;
-    for(BasicBlock* block : *func)
-    {
-        if(!ExecutableBlocks.count(block))
-            continue;
-        
-        for(User* inst : *block)
-        {
-            Changed |= ReSolvedUndef(inst);
-        }
-    }
-}
-
-bool SCCP::ReSolvedUndef(User* inst)
-{
-    if(inst->GetType()->GetTypeEnum() == InnerDataType::IR_Value_VOID)
-        return false;
-    
-    
-}
-// bool SCCPInstVisitor::resolvedUndef(Instruction &I) {
-//   // Look for instructions which produce undef values.
-//   if (I.getType()->isVoidTy())
-//     return false;
-
-//   if (auto *STy = dyn_cast<StructType>(I.getType())) {
-//     // Only a few things that can be structs matter for undef.
-
-//     // Tracked calls must never be marked overdefined in resolvedUndefsIn.
-//     if (auto *CB = dyn_cast<CallBase>(&I))
-//       if (Function *F = CB->getCalledFunction())
-//         if (MRVFunctionsTracked.count(F))
-//           return false;
-
-//     // extractvalue and insertvalue don't need to be marked; they are
-//     // tracked as precisely as their operands.
-//     if (isa<ExtractValueInst>(I) || isa<InsertValueInst>(I))
-//       return false;
-//     // Send the results of everything else to overdefined.  We could be
-//     // more precise than this but it isn't worth bothering.
-//     for (unsigned i = 0, e = STy->getNumElements(); i != e; ++i) {
-//       ValueLatticeElement &LV = getStructValueState(&I, i);
-//       if (LV.isUnknown()) {
-//         markOverdefined(LV, &I);
-//         return true;
-//       }
-//     }
-//     return false;
-//   }
-
-//   ValueLatticeElement &LV = getValueState(&I);
-//   if (!LV.isUnknown())
-//     return false;
-
-//   // There are two reasons a call can have an undef result
-//   // 1. It could be tracked.
-//   // 2. It could be constant-foldable.
-//   // Because of the way we solve return values, tracked calls must
-//   // never be marked overdefined in resolvedUndefsIn.
-//   if (auto *CB = dyn_cast<CallBase>(&I))
-//     if (Function *F = CB->getCalledFunction())
-//       if (TrackedRetVals.count(F))
-//         return false;
-
-//   if (isa<LoadInst>(I)) {
-//     // A load here means one of two things: a load of undef from a global,
-//     // a load from an unknown pointer.  Either way, having it return undef
-//     // is okay.
-//     return false;
-//   }
-
-//   markOverdefined(&I);
-//   return true;
-// }
-// bool SCCPInstVisitor::resolvedUndefsIn(Function &F) {
-//   bool MadeChange = false;
-//   for (BasicBlock &BB : F) {
-//     if (!BBExecutable.count(&BB))
-//       continue;
-
-//     for (Instruction &I : BB)
-//       MadeChange |= resolvedUndef(I);
-//   }
-
-//   LLVM_DEBUG(if (MadeChange) dbgs()
-//              << "\nResolved undefs in " << F.getName() << '\n');
-
-//   return MadeChange;
-// }

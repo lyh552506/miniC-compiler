@@ -67,7 +67,7 @@ protected:
 
     // MultipleRetValsTrack - 与 RetValTrack 相同，\
     但用于返回多个值的函数。
-    std::map<Function*, Lattice> MultipleRetValsTrack;
+    std::map<std::pair<Function*, int>, Lattice> MultipleRetValsTrack;
 
     // IncomeArgsTrack - 如果我们要跟踪一个函数的参数输入，\
     我们对其参数做出乐观假设，并试图将其证明为常数。 
@@ -111,9 +111,6 @@ private:
     bool ReSolve_UndefBlock(Function* func);
 
     Lattice GetLattice(Value* val) const;
-    std::map<Function*, Lattice>& GetRetValTrack() { return RetValTrack; }
-    std::map<Variable*, Lattice>& GetGlobalTrack() { return GlobalTrack; }
-    std::map<Function*, Lattice>& GetMultipleRetValsTrack() { return MultipleRetValsTrack; }
 
     // MarkConstant / MarkForcedConstant - 将一个值标记为 Constant / ForcedConstant。\
     如果该值还不是常量, 则将其添加到ValueWorkList中, 以便稍后更新指令 的 user。
@@ -137,10 +134,27 @@ private:
 
     void MarkEdgeExcutable(BasicBlock* Src, BasicBlock* Dst);
 
+    bool isEdgeExcutable(BasicBlock* Src, BasicBlock* Dst);
     void GetExcutableSuccs(CondInst* inst, std::vector<bool>& Succs);
-    void GetExcutalbeSuccs(UnCondInst* inst, std::vector<bool>& Succs);
+    void GetExcutableSuccs(UnCondInst* inst, std::vector<bool>& Succs);
 
 
 private:
     void VisitPhiInst(PhiInst* inst);
+    //Terminators
+    void VisitCondInst(CondInst* inst);
+    void VisitUnCondInst(UnCondInst* inst);
+    void VisitReturnInst(RetInst* inst);
+
+    void VisitBinaryOperator(BinaryInst* inst);
+    void VisitCmpInst(BinaryInst* inst);
+
+    // Instructions that cannot be folded away.
+    void VisitStoreInst(StoreInst* inst);
+    void VisitLoadInst(LoadInst* inst);
+    void VisitGetElementPtrInst(GetElementPtrInst* inst);
+    void VisitCallInst(CallInst* inst);
+    void VisitAllocaInst(AllocaInst* inst) { MarkOverDefined(GetValueStatus(inst), inst); }
+
+    void Visit(User* inst);
 };
