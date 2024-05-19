@@ -22,6 +22,10 @@ void Reassociate::RunOnFunction() {
     for (User *I : *bb)
       OptimizeInst(I);
   }
+  for(auto I:RedoInst){
+    KillDeadInst(I);
+  }
+  
 }
 
 void Reassociate::BuildRankMap() {
@@ -252,10 +256,12 @@ void Reassociate::LinearizeExp(BinaryInst *I,
       }
       //不满足第一种情况
       if (Leafs.find(operand) == Leafs.end()) {
+        if(dynamic_cast<User*>(operand)->Getuselist().size()!=1){
         //找到了一个实际存在的leaf，并且之前没有添加过
         _DEBUG(std::cerr << "Find a Leaf " << operand->GetName() << std::endl;)
         Leafs.insert(operand);
         LeafToWeight[operand] = Weight;
+        }
       } else {
         //找到一个添加过的Leaf，更新他的Weight
         _DEBUG(std::cerr << "Find a Used Leaf " << operand->GetName()
@@ -377,6 +383,8 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
 }
 
 void Reassociate::KillDeadInst(User* I){
-  if(I->GetUserListSize()==0){}
-    //TODO
+  if(I->GetUserListSize()==0){
+    _DEBUG(std::cerr<<"Killing Inst: "<<I->GetName()<<std::endl;)
+    I->EraseFromParent();
+  }
 }
