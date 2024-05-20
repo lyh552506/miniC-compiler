@@ -281,7 +281,7 @@ ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst::Operation Opcode,
   if (Simplify_) {
       return Simplify_;
   }
-  ConstantData *retval;
+  ConstantData *retval=nullptr;
   if (dynamic_cast<ConstIRBoolean *>(LHS) &&
       dynamic_cast<ConstIRBoolean *>(RHS)) {
     bool LVal = dynamic_cast<ConstIRBoolean *>(LHS)->GetVal();

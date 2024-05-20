@@ -64,7 +64,8 @@ void SCCP::TrackGlobal(Variable* val)
     val->GetType()->GetTypeEnum() == InnerDataType::IR_Value_Float ||
     val->GetType()->GetTypeEnum() == InnerDataType::IR_PTR)
     {
-        Lattice& L = GlobalTrack[val];
+        Value* Val = Singleton<Module>().GetValueByName(val->get_name());
+        Lattice& L = GlobalTrack[Val];
         if(val->GetInitializer())
         {
             if(auto Constant = dynamic_cast<ConstantData*>(val->GetInitializer()))
@@ -245,7 +246,7 @@ bool SCCP::ReSolvedUndef(User* inst)
         return false;
 
     Lattice& L = GetValueStatus(inst);
-    if(L.isUnknown())
+    if(!L.isUnknown())
         return false;
     
     if(auto Call = dynamic_cast<CallInst*>(inst))
@@ -520,10 +521,11 @@ void SCCP::VisitGetElementPtrInst(GetElementPtrInst* inst)
 
 void SCCP::VisitStoreInst(StoreInst* inst)
 {
-    if(GlobalTrack.empty() || !dynamic_cast<Variable*>(inst->Getuselist()[1]->usee))
+    if(GlobalTrack.empty() || !dynamic_cast<User*>(inst->Getuselist()[1]->usee))
         return;
     
-    Variable* val = dynamic_cast<Variable*>(inst->Getuselist()[1]->usee);
+    Value* val = inst->Getuselist()[1]->usee;
+
     if(!GlobalTrack.count(val))
         return;
     else
@@ -531,8 +533,7 @@ void SCCP::VisitStoreInst(StoreInst* inst)
         if(GlobalTrack[val].isOverDefined())
             return;
         
-        MergeInValue(GlobalTrack[val], Singleton<Module>().GetValueByName(val->get_name())
-        , GetValueStatus(inst->Getuselist()[0]->usee));
+        MergeInValue(GlobalTrack[val], val, GetValueStatus(inst->Getuselist()[0]->usee));
 
         if(GlobalTrack[val].isOverDefined())
             GlobalTrack.erase(val);
@@ -542,31 +543,44 @@ void SCCP::VisitStoreInst(StoreInst* inst)
 
 void SCCP::VisitLoadInst(LoadInst* inst)
 {
-    Lattice PtrVal = GetValueStatus(inst->Getuselist()[0]->usee);
-    if(PtrVal.isUnknown()) return;
+    if(!GlobalTrack.empty() || !dynamic_cast<User*>(inst->Getuselist()[1]->usee))
+    {
+        Value* val = inst->Getuselist()[0]->usee;
+        if(GlobalTrack.count(val))
+        {
+            if(GlobalTrack[val].isOverDefined())
+                return MarkOverDefined(GetValueStatus(inst), inst);
+            
+            MergeInValue(GetValueStatus(inst), inst, GlobalTrack[val]);
+            return;
+        }
+    }
+
+    Lattice Val = GetValueStatus(inst->Getuselist()[0]->usee);
+    if(Val.isUnknown()) return;
 
     Lattice& L = ValueStatusMap[inst];
+
     if(L.isOverDefined()) return;
 
-    if(!PtrVal.isConstant())
+    if(!Val.isConstant())
         return MarkOverDefined(L, inst);
     
-    ConstantData* Ptr = PtrVal.GetConstData();
+    // ConstantData* Ptr = Val.GetConstData();
 
     // load null is undefined
-    if(!dynamic_cast<ConstPtr*>(Ptr)) return;
+    // if(!dynamic_cast<ConstPtr*>(Ptr)) return;
 
     // Transform load (Constant Global) into the value loaded.
     // TODO
-    // if(Variable* val = dynamic_cast<Variable*>(dynamic_cast<ConstPtr*>(Ptr)->GetVal()))
+    // if(!dynamic_cast<User*>(Ptr))
     // {
-    //     if(!TrackedGlobals.empty())
+    //     if(!GlobalTrack.empty())
     //     {
-    //         // If we are tracking this global, merge in the known value for it.
-    //         std::map<Variable*, LatticeVal>::iterator iter = TrackedGlobals.find(val);
-    //         if(iter != TrackedGlobals.end())
+    //         std::map<Value*, Lattice>::iterator iter = GlobalTrack.find(Ptr);
+    //         if(iter != GlobalTrack.end())
     //         {
-    //             mergeInValue(LV, &inst, iter->second);
+    //             MergeInValue(L, inst, iter->second);
     //             return;
     //         }
     //     }
@@ -583,7 +597,7 @@ void SCCP::VisitLoadInst(LoadInst* inst)
 
     // otherwise we cannot say for certain what value this load will produce.
     // Bail out.
-    MarkOverDefined(L, inst);
+    // MarkOverDefined(L, inst);
 }
 
 void SCCP::VisitCallInst(CallInst* inst)
@@ -721,6 +735,21 @@ bool SCCP::RunOnFunction(Function* func)
         MarkOverDefined(ValueStatusMap[val], val);
     }
 
+    // 标志函数的全局变量为Overdefined
+    for(auto& global : Singleton<Module>().GetGlobalVariable())
+    {
+        Value* val = Singleton<Module>().GetValueByName(global->get_name());
+        if(global->GetInitializer())
+        {
+            if(auto Constant = dynamic_cast<ConstantData*>(global->GetInitializer()))
+                MarkConstant(GlobalTrack[val], val, Constant);
+            else
+                MarkOverDefined(GlobalTrack[val], val);
+        }
+        else
+            MarkOverDefined(GlobalTrack[val], val);
+    }
+
     bool Solved = true;
     while(Solved)
     {
@@ -760,7 +789,6 @@ bool SCCP::RunOnFunction(Function* func)
             if(inst->GetType()->GetTypeEnum() == InnerDataType::IR_Value_VOID ||
             inst == block->back())
                 continue;
-            
             if(TryReplace(inst))
             {
                 if(DCE::isDeadInst(inst))
@@ -770,7 +798,15 @@ bool SCCP::RunOnFunction(Function* func)
 
                     Changed = true;
                     ++RemovedInstNum;
+                    continue;
                 }
+            }
+            if(DCE::isDeadInst(inst))
+            {
+                inst->ClearRelation();
+                inst->EraseFromParent();
+                Changed = true;
+                ++RemovedInstNum;
             }
         }
     }

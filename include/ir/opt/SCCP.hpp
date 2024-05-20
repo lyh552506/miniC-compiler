@@ -58,7 +58,7 @@ protected:
     // GlobalTrack - 如果我们要跟踪全局变量内容的任何值, \
     我们会保留一个从常量访问器到全局元素的映射，再到当前已知值的映射。\
     如果值变为OverDefined, 就会从该映射中删除其条目。
-    std::map<Variable*, Lattice> GlobalTrack;
+    std::map<Value*, Lattice> GlobalTrack;
 
     // RetValTrack - 如果我们要跟踪一个函数的参数输入和返回值输出，\
     那么这个映射表中就会有一个条目，说明函数的已知返回值是多少。

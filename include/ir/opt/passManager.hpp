@@ -18,7 +18,6 @@
 #include "Global2Local.hpp"
 #include "LoopSimplify.hpp"
 #include "SCCP.hpp"
-#include "New_SCCP.hpp"
 #include "reassociate.hpp"
 class PassManager : public PassManagerBase {
 public:

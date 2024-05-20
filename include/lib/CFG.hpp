@@ -3,6 +3,7 @@
 #include "Singleton.hpp"
 #include "BaseCFG.hpp"
 #include <set>
+#include <algorithm>
 class BasicBlock;
 class Function;
 
