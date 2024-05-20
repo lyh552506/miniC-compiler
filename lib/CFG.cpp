@@ -476,11 +476,9 @@ void BinaryInst::print() {
 
 void BinaryInst::SetOperand(int index, Value *val) {
   assert(index < this->uselist.size());
-  uselist[index].reset(new Use(this, val));
-  // auto &target = uselist[index];
-  // uselist.erase(std::remove(uselist.begin(), uselist.end(), target),
-  //               uselist.end());
-  // add_use(val);
+  uselist[index].reset();
+  uselist.erase(uselist.begin()+index);
+  uselist.insert(uselist.begin()+index,std::make_unique<Use>(this,val));
 }
 
 void Variable::attach(Operand _init) { attached_initializer = _init; }

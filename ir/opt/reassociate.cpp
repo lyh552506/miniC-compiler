@@ -3,6 +3,7 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "ConstantFold.hpp"
+#include "Type.hpp"
 #include "my_stl.hpp"
 #include <algorithm>
 #include <cassert>
@@ -22,10 +23,15 @@ void Reassociate::RunOnFunction() {
     for (User *I : *bb)
       OptimizeInst(I);
   }
-  for(auto I:RedoInst){
-    KillDeadInst(I);
+  for (int i = 0; i < RedoInst.size(); i++) {
+    KillDeadInst(RedoInst[i],i);
   }
-  
+  for (int i = 0; i < RedoInst.size(); i++) {
+    if (KillDeadInst(RedoInst[i],i)) {
+      continue;
+    } else
+      OptimizeInst(RedoInst[i]);
+  }
 }
 
 void Reassociate::BuildRankMap() {
@@ -53,7 +59,7 @@ int Reassociate::GetRank(Value *val) {
   for (auto &u : inst->Getuselist()) {
     ra = std::max(ra, GetRank(u->GetValue()));
   }
-  assert(ra == 0 && "Rank cant be 0");
+  assert(ra != 0 && "Rank cant be 0");
   ValueRank[val] = ra;
   return ra;
 }
@@ -73,7 +79,7 @@ void Reassociate::OptimizeInst(Value *I) {
     if (auto bin_user =
             dynamic_cast<BinaryInst *>(bin->GetUserlist().Front()->GetUser())) {
       if (bin->GetOperation() == bin_user->GetOperation()) {
-        RedoInst.push_back(bin);
+        PushVecSingleVal(RedoInst,dynamic_cast<User*>(bin));
         return;
       }
     }
@@ -104,6 +110,9 @@ void Reassociate::ReassciateExp(BinaryInst *I) {
   if (Value *new_val = OptExp(I, ValueToRank)) {
     // TODO
   }
+  std::stable_sort(
+      ValueToRank.begin(), ValueToRank.end(),
+      [](const auto &v1, const auto &v2) { return v1.second > v2.second; });
   _DEBUG(std::cerr << "Linear set after reassociate ";
          std::for_each(ValueToRank.begin(), ValueToRank.end(),
                        [](std::pair<Value *, int> &ele) {
@@ -118,7 +127,7 @@ void Reassociate::ReWriteExp(
     BinaryInst *exp, std::vector<std::pair<Value *, int>> &LinerizedOp) {
   std::set<Value *> NotWritable;
   std::vector<Value *> ReWrite;
-  BinaryInst *curr = exp;
+  BinaryInst *curr = exp,*Changed=nullptr;
   std::for_each(LinerizedOp.begin(), LinerizedOp.end(),
                 [&](auto &ele) { NotWritable.insert(ele.first); });
   _DEBUG(std::cerr << "Begin To Rewrite: " << exp->GetName() << std::endl;)
@@ -148,6 +157,7 @@ void Reassociate::ReWriteExp(
         }
         curr->SetOperand(1, val_2);
       }
+      Changed=curr;
       break;
     }
     auto val_1 = LinerizedOp[i].first;
@@ -178,6 +188,15 @@ void Reassociate::ReWriteExp(
     }
     curr->SetOperand(1, new_val);
     curr = dynamic_cast<BinaryInst *>(new_val);
+    Changed=curr;
+  }
+  if(Changed){
+    //TODO
+  }
+  for (auto redo : ReWrite) {
+    auto tmp = dynamic_cast<User *>(redo);
+    assert(tmp);
+    PushVecSingleVal(RedoInst,dynamic_cast<User*>(tmp));
   }
 }
 
@@ -256,12 +275,13 @@ void Reassociate::LinearizeExp(BinaryInst *I,
       }
       //不满足第一种情况
       if (Leafs.find(operand) == Leafs.end()) {
-        if(dynamic_cast<User*>(operand)->Getuselist().size()!=1){
+        // if (dynamic_cast<User *>(operand) &&
+        //     dynamic_cast<User *>(operand)->Getuselist().size() != 1) {
         //找到了一个实际存在的leaf，并且之前没有添加过
         _DEBUG(std::cerr << "Find a Leaf " << operand->GetName() << std::endl;)
         Leafs.insert(operand);
         LeafToWeight[operand] = Weight;
-        }
+        // }
       } else {
         //找到一个添加过的Leaf，更新他的Weight
         _DEBUG(std::cerr << "Find a Used Leaf " << operand->GetName()
@@ -375,16 +395,44 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
   for (int i = 0; i < LinerizedOp.size(); i++) {
     if (i + 1 < LinerizedOp.size() && LinerizedOp[i + 1] == LinerizedOp[i]) {
       int same = 2;
-      if (LinerizedOp[same] == LinerizedOp[i])
+      Value *src = LinerizedOp[i].first;
+      while (LinerizedOp[same] == LinerizedOp[i])
         same++;
-      // TODO
+      for (int tmp = 0; tmp < same; tmp++) {
+        LinerizedOp[tmp] = LinerizedOp[LinerizedOp.size() - 1];
+        LinerizedOp.pop_back();
+      }
+      BinaryInst *Mul = nullptr;
+      if (AddInst->Getuselist()[0]->GetValue()->GetTypeEnum() ==
+          IR_Value_Float) {
+        Mul = BinaryInst::CreateInst(src, BinaryInst::Op_Mul,
+                                     ConstIRFloat::GetNewConstant((float)same));
+      } else if (AddInst->Getuselist()[0]->GetValue()->GetTypeEnum() ==
+                 IR_Value_INT) {
+        Mul = BinaryInst::CreateInst(src, BinaryInst::Op_Mul,
+                                     ConstIRInt::GetNewConstant(same));
+      } else {
+        assert(0);
+      }
+      LinerizedOp.emplace_back(Mul, GetRank(Mul));
+      for (auto it = AddInst->GetParent()->begin();
+           it != AddInst->GetParent()->end(); ++it) {
+        if ((*it) != AddInst)
+          continue;
+        it.insert_before(Mul);
+        break;
+      }
+      PushVecSingleVal(RedoInst,dynamic_cast<User*>(Mul));
     }
   }
 }
 
-void Reassociate::KillDeadInst(User* I){
-  if(I->GetUserListSize()==0){
-    _DEBUG(std::cerr<<"Killing Inst: "<<I->GetName()<<std::endl;)
-    I->EraseFromParent();
+bool Reassociate::KillDeadInst(User *I,int i) {
+  if (I->GetUserListSize() == 0) {
+    _DEBUG(std::cerr << "Killing Inst: " << I->GetName() << std::endl;)
+    vec_pop(RedoInst, i);
+    delete I;
+    return true;
   }
+  return false;
 }
