@@ -3,9 +3,11 @@
 #include "MagicEnum.hpp"
 #include "my_stl.hpp"
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <map>
 #include <memory>
+#include <pstl/glue_algorithm_defs.h>
 #include <string>
 #include <vector>
 template <typename T>
@@ -472,6 +474,13 @@ void BinaryInst::print() {
   std::cout << '\n';
 }
 
+void BinaryInst::SetOperand(int index, Value *val) {
+  assert(index < this->uselist.size());
+  uselist[index].reset();
+  uselist.erase(uselist.begin()+index);
+  uselist.insert(uselist.begin()+index,std::make_unique<Use>(this,val));
+}
+
 void Variable::attach(Operand _init) { attached_initializer = _init; }
 
 Variable::Variable(std::string _id) : name(_id) {
@@ -521,24 +530,25 @@ Type *GetElementPtrInst::GetType() {
   return tp = PointerType::NewPointerTypeGet(tp);
 }
 
-void GetElementPtrInst::print(){
-    Value::print();
-    std::cout<<" = getelementptr inbounds ";
-    dynamic_cast<HasSubType*>(uselist[0]->GetValue()->GetType())->GetSubType()->print();
-    for(int i=0;i<uselist.size();i++){
-        std::cout<<", ";
-        uselist[i]->GetValue()->GetType()->print();
-        std::cout<<" ";
-        uselist[i]->GetValue()->print();
-    }
-    std::cout<<'\n';
+void GetElementPtrInst::print() {
+  Value::print();
+  std::cout << " = getelementptr inbounds ";
+  dynamic_cast<HasSubType *>(uselist[0]->GetValue()->GetType())
+      ->GetSubType()
+      ->print();
+  for (int i = 0; i < uselist.size(); i++) {
+    std::cout << ", ";
+    uselist[i]->GetValue()->GetType()->print();
+    std::cout << " ";
+    uselist[i]->GetValue()->print();
+  }
+  std::cout << '\n';
 }
-std::vector<Operand>& GetElementPtrInst::GetIndexs()
-{
-    std::vector<Operand> indexs;
-    for(int i = 1; i < uselist.size(); i++)
-        indexs.push_back(uselist[i]->GetValue());
-    return indexs;
+std::vector<Operand> &GetElementPtrInst::GetIndexs() {
+  std::vector<Operand> indexs;
+  for (int i = 1; i < uselist.size(); i++)
+    indexs.push_back(uselist[i]->GetValue());
+  return indexs;
 }
 
 ZextInst::ZextInst(Operand ptr) : User(IntType::NewIntTypeGet()) {
@@ -1144,19 +1154,19 @@ void PhiInst::Del_Incomes(int CurrentNum) {
     std::cerr << "No such PhiRecord" << std::endl;
 }
 
-void PhiInst::FormatPhi(){
-  int CurrentNum=0;
-  std::vector<std::pair<int,std::pair<Value*,BasicBlock*>>> Defend;
-    for(auto& [_1,v]:PhiRecord)
-      if(_1>CurrentNum)
-        Defend.push_back(std::make_pair(_1,v));
-      else
-       CurrentNum++;
-    for(const auto& item:Defend)
-      PhiRecord.erase(item.first);
-    for(const auto& item:Defend)
-      PhiRecord.insert(std::make_pair(PhiRecord.size(),item.second));
-    oprandNum=PhiRecord.size();
+void PhiInst::FormatPhi() {
+  int CurrentNum = 0;
+  std::vector<std::pair<int, std::pair<Value *, BasicBlock *>>> Defend;
+  for (auto &[_1, v] : PhiRecord)
+    if (_1 > CurrentNum)
+      Defend.push_back(std::make_pair(_1, v));
+    else
+      CurrentNum++;
+  for (const auto &item : Defend)
+    PhiRecord.erase(item.first);
+  for (const auto &item : Defend)
+    PhiRecord.insert(std::make_pair(PhiRecord.size(), item.second));
+  oprandNum = PhiRecord.size();
 }
 
 bool PhiInst::IsSame(PhiInst *phi) {
@@ -1249,19 +1259,15 @@ void Module::EraseFunction(Function *func) {
   }
 }
 
-Function* Module::GetMainFunction()
-{
-    for(auto &i : ls)
-    {
-        if(i->GetName() == "main")
-            return i.get();
-    }
-    return nullptr;
+Function *Module::GetMainFunction() {
+  for (auto &i : ls) {
+    if (i->GetName() == "main")
+      return i.get();
+  }
+  return nullptr;
 }
 
-std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() {
-    return ls;
-}
+std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() { return ls; }
 
 std::vector<std::unique_ptr<Variable>> &Module::GetGlobalVariable() {
   return globalvaribleptr;
@@ -1290,12 +1296,12 @@ void UndefValue::print() {
 }
 
 void PhiInst::print() {
-  int cnt=0;
+  int cnt = 0;
   dynamic_cast<Value *>(this)->print();
   std::cout << " = phi ";
   this->GetType()->print();
   std::cout << " ";
-  for (auto& [_1,val]:PhiRecord) {
+  for (auto &[_1, val] : PhiRecord) {
     std::cout << "[";
     val.first->print();
     std::cout << ", ";

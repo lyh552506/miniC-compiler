@@ -150,7 +150,9 @@ class BinaryInst:public User
     BinaryInst(Type* _tp):User(_tp){};
     BinaryInst(Operand _A,Operation __op,Operand _B);
     BinaryInst* clone(std::unordered_map<Operand,Operand>&)override;
+    bool IsCmpInst(){return  (op-Op_Add) > 6;}
     void print()final;
+    void SetOperand(int index,Value* val);
     std::string GetOperation();
     Operation getopration();
     static BinaryInst* CreateInst(Operand _A,Operation __op,Operand _B,User* place=nullptr);

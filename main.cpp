@@ -1,4 +1,3 @@
-// #include "AsmPrinter.hpp"
 #include "RISCVLowering.hpp"
 #include "dominant.hpp"
 #include "parser.hpp"
@@ -106,7 +105,7 @@ int main(int argc, char **argv) {
   fflush(stdout);
   fclose(stdout);
 
-  freopen("dev/tty", "w", stdout);
+  // freopen("dev/tty", "w", stdout);
 
   return 0;
 }
