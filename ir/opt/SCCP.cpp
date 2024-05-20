@@ -198,7 +198,7 @@ void SCCP::GetExcutableSuccs(CondInst* inst, std::vector<bool>& Succs)
     // 如果是OverDefined, 则所有的分支都是可执行的
     if(!C)
     {
-        if(!L.isUnknown())
+        if(!L.isUnknown())  // TODO: if(L.isOverDefined())
         {
             Succs[0] = true;
             Succs[1] = true;
@@ -385,13 +385,10 @@ void SCCP::VisitCondInst(CondInst* inst)
     GetExcutableSuccs(inst, SuccFeasible);
 
     BasicBlock* block = inst->GetParent();
-
-    for(int i = 0; i < SuccFeasible.size(); i++)
-    {
-        if(SuccFeasible[i])
-            MarkEdgeExcutable(block, dynamic_cast<BasicBlock*>
-            (inst->Getuselist()[i + 1]->usee));
-    }
+    if(SuccFeasible[0])
+        MarkEdgeExcutable(block, dynamic_cast<BasicBlock*>(inst->Getuselist()[1]->usee));
+    if(SuccFeasible[1])
+        MarkEdgeExcutable(block, dynamic_cast<BasicBlock*>(inst->Getuselist()[2]->usee));
 }
 
 void SCCP::VisitUnCondInst(UnCondInst* inst)
@@ -402,12 +399,8 @@ void SCCP::VisitUnCondInst(UnCondInst* inst)
     BasicBlock* block = inst->GetParent();
 
     // Mark all feasible successors executable.
-    for(int i = 0; i < SuccFeasible.size(); i++)
-    {
-        if(SuccFeasible[i])
-            MarkEdgeExcutable(block, dynamic_cast<BasicBlock*>
-            (inst->Getuselist()[i]->usee));
-    }
+    if(SuccFeasible[0])
+        MarkEdgeExcutable(block, dynamic_cast<BasicBlock*>(inst->Getuselist()[0]->usee));
 }
 
 void SCCP::VisitBinaryOperator(BinaryInst* inst)
@@ -543,7 +536,7 @@ void SCCP::VisitStoreInst(StoreInst* inst)
 
 void SCCP::VisitLoadInst(LoadInst* inst)
 {
-    if(!GlobalTrack.empty() || !dynamic_cast<User*>(inst->Getuselist()[1]->usee))
+    if(!GlobalTrack.empty() || !dynamic_cast<User*>(inst->Getuselist()[0]->usee))
     {
         Value* val = inst->Getuselist()[0]->usee;
         if(GlobalTrack.count(val))
@@ -677,7 +670,7 @@ void SCCP::Solve()
     !OverDefinedWorkList.empty())
     {
         while(!OverDefinedWorkList.empty())
-        {
+        { 
             Value* inst = std::move(OverDefinedWorkList.back());
             OverDefinedWorkList.pop_back();
 
