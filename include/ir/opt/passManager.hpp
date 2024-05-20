@@ -17,6 +17,8 @@
 #include "Inline.hpp"
 #include "Global2Local.hpp"
 #include "LoopSimplify.hpp"
+#include "SCCP.hpp"
+#include "New_SCCP.hpp"
 #include "reassociate.hpp"
 class PassManager : public PassManagerBase {
 public:
@@ -51,5 +53,6 @@ private:
   std::unique_ptr<cfgSimplify> m_cfgsimple;
   std::unique_ptr<Inliner> m_inline;
   std::unique_ptr<Global2Local> m_g2l;
+  std::unique_ptr<SCCP> m_sccp;
   std::unique_ptr<Reassociate> m_reassociate;
 };

@@ -277,14 +277,11 @@ ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst::Operation Opcode,
                                                ConstantData *LHS,
                                                ConstantData *RHS) {
   Value *Simplify = SimplifyBinOp(Opcode, LHS, RHS);
-  ConstantData *Simplify_ = dynamic_cast<ConstantData *>(Simplify);
+  ConstantData *Simplify_ = static_cast<ConstantData *>(Simplify);
   if (Simplify_) {
-    if (dynamic_cast<UndefValue *>(Simplify_))
-      return nullptr;
-    else
       return Simplify_;
   }
-  Value *retval;
+  ConstantData *retval;
   if (dynamic_cast<ConstIRBoolean *>(LHS) &&
       dynamic_cast<ConstIRBoolean *>(RHS)) {
     bool LVal = dynamic_cast<ConstIRBoolean *>(LHS)->GetVal();
@@ -318,7 +315,7 @@ ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst::Operation Opcode,
     }
   }
   if (retval)
-    return dynamic_cast<ConstantData *>(retval);
+    return retval;
   if (LHS->GetType()->GetTypeEnum() == InnerDataType::IR_Value_INT) {
     int LVal = dynamic_cast<ConstIRInt *>(LHS)->GetVal();
     int RVal = dynamic_cast<ConstIRInt *>(RHS)->GetVal();
@@ -372,7 +369,7 @@ ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst::Operation Opcode,
     }
   }
   if (retval)
-    return dynamic_cast<ConstantData *>(retval);
+    return retval;
   if (LHS->GetType()->GetTypeEnum() == InnerDataType::IR_Value_Float) {
     float LVal = dynamic_cast<ConstIRFloat *>(LHS)->GetVal();
     float RVal = dynamic_cast<ConstIRFloat *>(RHS)->GetVal();
@@ -422,6 +419,6 @@ ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst::Operation Opcode,
     }
   }
   if (retval)
-    return dynamic_cast<ConstantData *>(retval);
+    return retval;
   return nullptr;
 }

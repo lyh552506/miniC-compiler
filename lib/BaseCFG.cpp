@@ -262,6 +262,27 @@ ConstantData* ConstantData::clone(std::unordered_map<Operand,Operand>& mapping){
   return this;
 }
 
+ConstantData* ConstantData::getNullValue(Type* tp)
+{
+  InnerDataType type = tp->GetTypeEnum();
+  if(type == InnerDataType::IR_Value_INT)
+    return ConstIRInt::GetNewConstant(0);
+  else if(type == InnerDataType::IR_Value_Float)
+    return ConstIRFloat::GetNewConstant(0);
+  else
+    return nullptr;
+}
+bool ConstantData::isZero()
+{
+  if(auto Int = dynamic_cast<ConstIRInt*>(this))
+    return Int->GetVal() == 0;
+  else if(auto Float = dynamic_cast<ConstIRFloat*>(this))
+    return Float->GetVal() == 0;
+  else if(auto Bool = dynamic_cast<ConstIRBoolean*>(this))
+    return Bool->GetVal() == false;
+  else
+    return false;
+}
 ConstIRBoolean::ConstIRBoolean(bool _val)
     : ConstantData(BoolType::NewBoolTypeGet()), val(_val) {
   if (val)
