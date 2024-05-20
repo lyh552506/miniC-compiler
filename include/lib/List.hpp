@@ -2,6 +2,7 @@
 #include <list>
 #include <memory>
 #include <vector>
+#include <algorithm>
 /// @brief 设计的先发劣势，要写什么自己加，最简单的一集
 /// @tparam T 
 template<typename T>
@@ -75,6 +76,11 @@ class mylist
     }
     class iterator
     {
+        using iterator_category = std::bidirectional_iterator_tag;
+        using value_type = derived_list_node*;
+        using difference_type = std::ptrdiff_t;
+        using pointer = derived_list_node**;
+        using reference = derived_list_node*&;
         derived_list_node* ptr;
         public:
         iterator(derived_list_node* _ptr):ptr(_ptr){}
@@ -86,7 +92,7 @@ class mylist
             ptr=ptr->prev;
             return *this;
         }
-        derived_list_node* operator*(){return ptr;}
+        value_type operator*(){return ptr;}
         iterator insert_before(derived_list_node* data){
             assert(ptr!=nullptr&&ptr->fat!=nullptr&&data!=nullptr&&"Invalid Iterator");
             if(ptr==ptr->fat->head)
@@ -113,9 +119,7 @@ class mylist
             }
             return iterator(data);
         }
-        //指定迭代器后插入bb的所有inst
-        void splice(derived_list_node* data){
-        }
+
         bool operator==(const iterator& other){return ptr==other.ptr;}
         bool operator!=(const iterator& other){return ptr!=other.ptr;}
     };

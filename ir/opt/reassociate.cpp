@@ -24,10 +24,10 @@ void Reassociate::RunOnFunction() {
       OptimizeInst(I);
   }
   for (int i = 0; i < RedoInst.size(); i++) {
-    KillDeadInst(RedoInst[i],i);
+    KillDeadInst(RedoInst[i], i);
   }
   for (int i = 0; i < RedoInst.size(); i++) {
-    if (KillDeadInst(RedoInst[i],i)) {
+    if (KillDeadInst(RedoInst[i], i)) {
       continue;
     } else
       OptimizeInst(RedoInst[i]);
@@ -79,7 +79,7 @@ void Reassociate::OptimizeInst(Value *I) {
     if (auto bin_user =
             dynamic_cast<BinaryInst *>(bin->GetUserlist().Front()->GetUser())) {
       if (bin->GetOperation() == bin_user->GetOperation()) {
-        PushVecSingleVal(RedoInst,dynamic_cast<User*>(bin));
+        PushVecSingleVal(RedoInst, dynamic_cast<User *>(bin));
         return;
       }
     }
@@ -127,7 +127,8 @@ void Reassociate::ReWriteExp(
     BinaryInst *exp, std::vector<std::pair<Value *, int>> &LinerizedOp) {
   std::set<Value *> NotWritable;
   std::vector<Value *> ReWrite;
-  BinaryInst *curr = exp,*Changed=nullptr;
+  BinaryInst *curr = exp;
+  User *Changed = nullptr;
   std::for_each(LinerizedOp.begin(), LinerizedOp.end(),
                 [&](auto &ele) { NotWritable.insert(ele.first); });
   _DEBUG(std::cerr << "Begin To Rewrite: " << exp->GetName() << std::endl;)
@@ -157,7 +158,7 @@ void Reassociate::ReWriteExp(
         }
         curr->SetOperand(1, val_2);
       }
-      Changed=curr;
+      Changed = curr;
       break;
     }
     auto val_1 = LinerizedOp[i].first;
@@ -188,15 +189,21 @@ void Reassociate::ReWriteExp(
     }
     curr->SetOperand(1, new_val);
     curr = dynamic_cast<BinaryInst *>(new_val);
-    Changed=curr;
+    Changed = curr;
   }
-  if(Changed){
-    //TODO
+  if (Changed) {
+    for (auto iter = exp->GetParent()->begin(); iter != exp->GetParent()->end();
+         ++iter) {
+      if(*iter)
+      Changed->EraseFromParent();
+      iter.insert_before(Changed);
+      Changed = Changed->GetUserlist().Front()->GetUser();
+    }
   }
   for (auto redo : ReWrite) {
     auto tmp = dynamic_cast<User *>(redo);
     assert(tmp);
-    PushVecSingleVal(RedoInst,dynamic_cast<User*>(tmp));
+    PushVecSingleVal(RedoInst, dynamic_cast<User *>(tmp));
   }
 }
 
@@ -422,12 +429,12 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
         it.insert_before(Mul);
         break;
       }
-      PushVecSingleVal(RedoInst,dynamic_cast<User*>(Mul));
+      PushVecSingleVal(RedoInst, dynamic_cast<User *>(Mul));
     }
   }
 }
 
-bool Reassociate::KillDeadInst(User *I,int i) {
+bool Reassociate::KillDeadInst(User *I, int i) {
   if (I->GetUserListSize() == 0) {
     _DEBUG(std::cerr << "Killing Inst: " << I->GetName() << std::endl;)
     vec_pop(RedoInst, i);
