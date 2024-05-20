@@ -45,6 +45,10 @@ bool RISCVFunctionLowering::run(Function* m){
 
     LegalizeConstInt lcint(ctx);
     lcint.run();
+    
+    // Generate Frame only depend on alloca frameobjs.
+    RISCVFrame& frame = *(ctx.GetCurFunction())->GetFrame();
+    frame.GenerateFrame();
 
     // temp
     // asmprinter->printAsm();
