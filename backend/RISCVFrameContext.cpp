@@ -52,7 +52,9 @@ void RISCVFrameObject::GenerateStackRegister(int offset) {
 }
 size_t RISCVFrameObject::GetFrameObjSize() {return size;}
 size_t RISCVFrameObject::GetBeginAddOff() {return begin_addr_offsets;}
+size_t RISCVFrameObject::GetEndAddOff() {return end_addr_offsets;}
 void RISCVFrameObject::SetBeginAddOff(size_t add) {begin_addr_offsets = add;}
+void RISCVFrameObject::SetEndAddOff(size_t add) {end_addr_offsets = add;}
 StackRegister*& RISCVFrameObject::GetStackReg() {return reg;}
 void RISCVFrameObject::print(){
     // std::cout<<"---";
@@ -64,5 +66,6 @@ void RISCVFrameObject::print(){
 BegAddrRegister::BegAddrRegister(RISCVFrameObject* _frameobj)
     : Register(riscv_i32), frameobj(_frameobj) {}
 void BegAddrRegister::print() {
-  std::cout << frameobj->GetBeginAddOff();
+    // should be the minus of the begin address
+  std::cout << "-" << frameobj->GetBeginAddOff();
 }

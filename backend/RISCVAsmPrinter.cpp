@@ -102,9 +102,18 @@ void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
                 for(int i=0; i<machineinst->GetOperandSize(); i++) {
                     if(Imm* used = dynamic_cast<Imm*>(machineinst->GetOperand(i))) {
                         if (auto constfloat = dynamic_cast<ConstIRFloat*>(used->Getdata())) {
-                            tempvar* tempfloat = new tempvar(num_lable, constfloat->GetVal());
-                            num_lable++;
-                            tempvar_list.push_back(tempfloat); 
+                            tempvar* tempfloat = nullptr;
+                            for(int i=0; i<tempvar_list.size(); i++) {
+                                if(tempvar_list[i]->GetInit() == constfloat->GetVal()) {
+                                    tempfloat = tempvar_list[i];
+                                    break;
+                                }
+                            }
+                            if(tempfloat==nullptr) {
+                                tempfloat = new tempvar(num_lable, constfloat->GetVal());
+                                num_lable++;
+                                tempvar_list.push_back(tempfloat); 
+                            }
                             //在代码中修改加载方式；
                             Change_LoadConstFloat(machineinst, tempfloat, it, used);
                         }
@@ -149,6 +158,30 @@ void dataSegment::PrintDataSegment_Globval() {
 void dataSegment::PrintDataSegment_Tempvar() {
     for(auto& gvar : tempvar_list) {
         gvar->PrintTempvar();
+    }
+}
+
+void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
+    RISCVFunction* cur_func = ctx.GetCurFunction();
+    for(auto block: *cur_func) {
+        for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
+            auto inst = *it;
+            for(int i=0; i<inst->GetOperandSize(); i++) {
+                if(globlvar* gvar = dynamic_cast<globlvar*>(inst->GetOperand(i))) {
+                    // lui .1, %hi(name)
+                    // opcode .2, %lo(name)(.1)
+                    RISCVMIR* hi = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
+                    VirRegister* hi_vreg = ctx.createVReg(RISCVType::riscv_ptr); 
+                    LARegister* hi_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName());
+                    hi->SetDef(hi_vreg);
+                    hi->AddOperand(hi_lareg);
+                    it.insert_before(hi);
+
+                    LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(),dynamic_cast<VirRegister*>(hi->GetDef()));
+                    inst->SetOperand(i, lo_lareg);
+                }   
+            }
+        }
     }
 }
 

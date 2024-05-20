@@ -66,17 +66,18 @@ class LARegister:public Register{
     bool isPhysical()final{return true;};
 };
 
-class StackRegister:public PhyRegister{
-    size_t offset;
-    Register* vreg=nullptr;
+class StackRegister:public Register{
+    int offset;
+    Register* reg=nullptr;
     public:
-    StackRegister(PhyReg, size_t);
-    StackRegister(VirRegister*, size_t);
-    std::string GetName(){return rname;};
-    Register*& GetVreg();
-    void SetVreg(PhyRegister*&);
+    StackRegister(PhyRegister::PhyReg, int);
+    StackRegister(VirRegister*, int);
+    std::string GetName(){return rname;}
+    VirRegister* GetVreg();
+    void SetPreg(PhyRegister*&);
     void SetOffset(int);
     void print()final;
+    bool isPhysical()final;
 };
 
 class RegisterList {

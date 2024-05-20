@@ -152,10 +152,16 @@ void RISCVFrame::GenerateFrame() {
     /// @todo
     using FramObj = std::vector<std::unique_ptr<RISCVFrameObject>>;
     frame_size = 16;
+    std::sort(frameobjs.begin(), frameobjs.end(),
+              [](const std::unique_ptr<RISCVFrameObject>& lhs,
+                 const std::unique_ptr<RISCVFrameObject>& rhs) {
+                    return lhs->GetFrameObjSize() < rhs->GetFrameObjSize();
+              });
     for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
         std::unique_ptr<RISCVFrameObject>& obj = *it;
-        obj->SetBeginAddOff(frame_size);
+        obj->SetEndAddOff(frame_size);
         frame_size += obj->GetFrameObjSize();
+        obj->SetBeginAddOff(frame_size);
     }
     frame_size += parent->GetMaxParamSize();
     int mod = frame_size % 16;
@@ -165,7 +171,21 @@ void RISCVFrame::GenerateFrame() {
 
     for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
         std::unique_ptr<RISCVFrameObject>& obj = *it;
-        obj->GenerateStackRegister(0 - (obj->GetBeginAddOff()+obj->GetFrameObjSize()));
+        int off = 0 - static_cast<int>(obj->GetBeginAddOff()+obj->GetFrameObjSize());
+        obj->GenerateStackRegister(off);
+    }
+
+    // Replace BegAddrRegister to Imm for the LegalConst pass is useful.
+    for(auto block: *parent) {
+        for(auto inst: *block) {
+            if(inst->GetOperandSize()==2) {
+                if(BegAddrRegister* breg = dynamic_cast<BegAddrRegister*>(inst->GetOperand(1))) {
+                    int bregin_address = static_cast<int>(breg->GetFrameObj()->GetBeginAddOff()); 
+                    Imm* imm = new Imm(ConstIRInt::GetNewConstant(0-bregin_address));
+                    inst->SetOperand(1,imm);
+                }
+            }
+        }
     }
 }
 
