@@ -152,6 +152,42 @@ void SCCP::MarkEdgeExcutable(BasicBlock* Src, BasicBlock* Dst)
     }
 }
 
+bool SCCP::isEdgeExcutable(BasicBlock* Src, BasicBlock* Dst)
+{
+    // LLVM 18.1.6
+    return KnownFeasibleEdges.count(Edge(Src, Dst));
+
+    // LLVM 3.9.0
+    // if(!isExcutableBlock(Src))
+    //     return false;
+    
+    // User* inst = Src->back();
+    // auto UnCond = dynamic_cast<UnCondInst*>(inst);
+    // auto Cond = dynamic_cast<CondInst*>(inst);
+    // if(UnCond || Cond)
+    // {
+    //     if(UnCond)
+    //         return true;
+    //     Lattice L = GetValueStatus(inst->Getuselist()[0]->usee);
+
+    //     ConstantData* C = L.GetConstData();
+    //     if(!C)
+    //         return !L.isUnknown();
+        
+    //     auto val = dynamic_cast<ConstIRBoolean*>(Cond->GetOperand(0));
+    //     if(val->GetVal())
+    //     {
+    //         BasicBlock* TrueSucc = dynamic_cast<BasicBlock*>(Cond->Getuselist()[1]->usee);
+    //         return TrueSucc == Dst;
+    //     }
+    //     else
+    //     {
+    //         BasicBlock* FalseSucc = dynamic_cast<BasicBlock*>(Cond->Getuselist()[2]->usee);
+    //         return FalseSucc == Dst;
+    //     }
+    // }
+}
+
 void SCCP::GetExcutableSuccs(CondInst* inst, std::vector<bool>& Succs)
 {
     Succs.resize(2);
@@ -183,7 +219,10 @@ void SCCP::GetExcutableSuccs(UnCondInst* inst, std::vector<bool>& Succs)
     Succs[0] = true;
     return;
 }
-
+// SolveUndefs - 在求解函数的数据流时，\
+我们假定 undef 值上的分支无法到达其任何后继分支。\
+然而，这种假设并不安全。在求解数据流后，应使用此方法来处理这个问题。\
+如果返回 true, 则应重新运行求解器。
 bool SCCP::SolveUndefs(Function* func)
 {
     bool Changed = false;
@@ -459,9 +498,9 @@ void SCCP::VisitGetElementPtrInst(GetElementPtrInst* inst)
     std::vector<Value*> Operands;
     Operands.reserve(inst->Getuselist().size());
 
-    for(int i = 0; i < inst->Getuselist().size(); ++i)
+    for(int i = 1; i < inst->Getuselist().size(); ++i)
     {
-        Lattice Statu = GetValueStatus(inst->Getuselist()[i + 1]->usee);
+        Lattice Statu = GetValueStatus(inst->Getuselist()[i]->usee);
         if(Statu.isUnknown())
             return;
         
@@ -575,13 +614,49 @@ void SCCP::VisitCallInst(CallInst* inst)
     {
         if(inst->GetType()->GetTypeEnum() == InnerDataType::IR_Value_VOID)
             return;
-        // TODO -> SCCP.cpp line 1041-1068
+        // TODO -> 查看所有testcases中的数学函数 比如 sin/cos/tan/abs
+        // if(CanFoldCall)
+        // {
+        //     std::vector<ConstantData*> Operands;
+        //     for(int i = 1; i < inst->Getuselist().size(); i++)
+        //     {
+        //         Lattice Statu = GetValueStatus(inst->Getuselist()[i]->usee);
+        //         if(Statu.isUnknown())
+        //             return;
+                
+        //         if(Statu.isOverDefined())
+        //             return MarkOverDefined(GetValueStatus(inst), inst);
+                
+        //         Operands.push_back(Statu.GetConstData());
+        //     }
+
+        //     if(GetValueStatus(inst).isOverDefined())
+        //         return;
+            
+        //     if(ConstantData* C = ConstantFolding::ConstFoldCall(func, Operands))
+        //     {
+        //         if(!dynamic_cast<UndefValue*>(C))
+        //             return;
+        //         return MarkConstant(GetValueStatus(inst), inst, C);
+        //     }
+        // }
         return MarkOverDefined(GetValueStatus(inst), inst);
     }
 
     MergeInValue(ValueStatusMap[inst], inst, RetValTrack[func]);
 }
 
+bool SCCP::TryReplace(Value* val)
+{
+    ConstantData* C = nullptr;
+    Lattice L = GetLattice(val);
+    if(L.isOverDefined())
+        return false;
+    C = L.isConstant() ? L.GetConstData() : UndefValue::get(val->GetType());
+
+    val->RAUW(C);
+    return true;
+}
 void SCCP::Solve()
 {
     while(!BlockWorkList.empty() || !ValueWorkList.empty() ||

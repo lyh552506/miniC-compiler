@@ -51,7 +51,6 @@ class SCCP
 public:
     bool RunOnFunction(Function* func);
     SCCP() = default;
-
 protected:
     std::set<BasicBlock*> ExecutableBlocks; // 可以执行的Block
     std::map<Value*, Lattice> ValueStatusMap; // Value -> Lattice
@@ -93,7 +92,7 @@ private:
     bool ReSolvedUndef(User* inst);
     // Solve - 求解常量和可执行块
     void Solve();
-    bool isExcutableBlock(BasicBlock* block);
+    bool isExcutableBlock(BasicBlock* block){ return ExecutableBlocks.count(block); }
 
     bool TryReplace(Value* val);
 
@@ -103,12 +102,6 @@ private:
 
     // TrackGlobal - 跟踪加载和存储到指定的全局变量.
     void TrackGlobal(Variable* val);
-
-    // ReSolve_UndefBlock - 在求解函数的数据流时，\
-    我们假定 undef 值上的分支无法到达其任何后继分支。\
-    然而，这种假设并不安全。在求解数据流后，应使用此方法来处理这个问题。\
-    如果返回 true, 则应重新运行求解器。
-    bool ReSolve_UndefBlock(Function* func);
 
     Lattice GetLattice(Value* val) const;
 
@@ -155,6 +148,4 @@ private:
     void VisitGetElementPtrInst(GetElementPtrInst* inst);
     void VisitCallInst(CallInst* inst);
     void VisitAllocaInst(AllocaInst* inst) { MarkOverDefined(GetValueStatus(inst), inst); }
-
-    void Visit(User* inst);
 };
