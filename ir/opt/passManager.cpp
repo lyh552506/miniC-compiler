@@ -100,7 +100,7 @@ void PassManager::RunOnFunction() {
     // m_inline->PrintPass();
   }
   if(InitpassRecorder[12]){
-    SCCPSolver::runSCCP(*m_func);
+    // SCCPSolver::runSCCP(*m_func);
   }
   if(InitpassRecorder[11]){
     m_reassociate->RunOnFunction();

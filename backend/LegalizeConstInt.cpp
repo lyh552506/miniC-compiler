@@ -33,10 +33,12 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
                         }
                     } 
                 }
+                LegalizeMOpcode(inst);
             }
             else {
                 inst->SetMopcode(RISCVMIR::RISCVISA::li);
             }
+            return;
         } else if((mod>0&&mod<2048)||(mod>=-2048&&mod<0)) {
             VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
             Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod));
@@ -47,8 +49,10 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod));
             RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addiw);
             addi->SetDef(vreg);
+            addi->AddOperand(vreg);
             addi->AddOperand(mod_imm);
             it.insert_before(addi);
+            LegalizeMOpcode(inst);
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 while(inst->GetOperand(i)==constdata) {
                     inst->SetOperand(i,vreg);
@@ -65,8 +69,10 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod-4096));
             RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addiw);
             addi->SetDef(vreg);
+            addi->AddOperand(vreg);
             addi->AddOperand(mod_imm);
             it.insert_before(addi);
+            LegalizeMOpcode(inst);
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 while(inst->GetOperand(i)==constdata) {
                     inst->SetOperand(i,vreg);
@@ -85,6 +91,7 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
             addi->SetDef(vreg);
             addi->AddOperand(mod_imm);
             it.insert_before(addi);
+            LegalizeMOpcode(inst);
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 while(inst->GetOperand(i)==constdata) {
                     inst->SetOperand(i,vreg);
@@ -93,7 +100,6 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
             }
         } else assert(0&&"error imm");
     }
-    return;
 }
 
 bool LegalizeConstInt::run() {
@@ -114,3 +120,18 @@ bool LegalizeConstInt::run() {
     return false;
 }
 
+void LegalizeConstInt::LegalizeMOpcode(RISCVMIR* inst) {
+    using ISA = RISCVMIR::RISCVISA;
+    ISA& opcode = inst->GetOpcode();
+    if(opcode == ISA::_slli) inst->SetMopcode(ISA::_sll);
+    else if(opcode == ISA::_srli) inst->SetMopcode(ISA::_srl);
+    else if(opcode == ISA::_srai) inst->SetMopcode(ISA::_sra);
+    else if(opcode == ISA::_addi) inst->SetMopcode(ISA::_add);
+    else if(opcode == ISA::_addiw) inst->SetMopcode(ISA::_addw);
+    else if(opcode == ISA::_xori) inst->SetMopcode(ISA::_xor);
+    else if(opcode == ISA::_ori) inst->SetMopcode(ISA::_or);
+    else if(opcode == ISA::_andi) inst->SetMopcode(ISA::_and);
+    else if(opcode == ISA::_slti) inst->SetMopcode(ISA::_slt);
+    else if(opcode == ISA::_sltiu) inst->SetMopcode(ISA::_sltu);
+    else assert(0&&"Invalid MOpcode type");
+}

@@ -5,8 +5,6 @@ RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
     // need file name
     asmprinter = new RISCVAsmPrinter("file", m, ctx);
-    // asmprinter->printAsmGlobal();
-    // assert(0&&"Handled later");
 }
 
 bool RISCVModuleLowering::run(Module* m){
@@ -19,8 +17,8 @@ bool RISCVModuleLowering::run(Module* m){
             std::cerr<<"FUNC Lowering failed\n";
         }
     }
-    // LegalizeConstInt lcint(ctx);
-    // lcint.run();
+    LegalizeConstInt lcint(ctx);
+    lcint.run();
 
     asmprinter->printAsm();
     // ctx.print();
@@ -45,10 +43,6 @@ bool RISCVFunctionLowering::run(Function* m){
 
     LegalizeConstInt lcint(ctx);
     lcint.run();
-    
-    // Generate Frame only depend on alloca frameobjs.
-    RISCVFrame& frame = *(ctx.GetCurFunction())->GetFrame();
-    frame.GenerateFrame();
 
     // temp
     // asmprinter->printAsm();
@@ -57,11 +51,12 @@ bool RISCVFunctionLowering::run(Function* m){
     RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>(), ctx);
     regalloc.RunGCpass();
 
-    // RISCVFrame& frame = *(ctx.GetCurFunction())->GetFrame();
-    // frame.GenerateFrame();
-    // frame.GenerateFrameHead();
-    // frame.GenerateFrameTail();
-    // lcint.run();
+    // Generate Frame
+    RISCVFrame& frame = *(ctx.GetCurFunction())->GetFrame();
+    frame.GenerateFrame();
+    frame.GenerateFrameHead();
+    frame.GenerateFrameTail();
+    lcint.run();
 
     return false;
 }

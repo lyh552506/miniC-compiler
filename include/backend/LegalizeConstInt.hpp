@@ -5,5 +5,6 @@ class LegalizeConstInt {
     public:
     LegalizeConstInt(RISCVLoweringContext&);
     void LegConstInt(RISCVMIR*, Imm*, mylist<RISCVBasicBlock,RISCVMIR>::iterator);
+    void LegalizeMOpcode(RISCVMIR*);
     bool run();
 };

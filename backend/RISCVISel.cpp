@@ -365,6 +365,19 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     auto baseptr=M(inst->GetOperand(0));
     auto hasSubtype=dynamic_cast<HasSubType*>(inst->GetOperand(0)->GetType());
     size_t offset=0;
+    using PhyReg=PhyRegister::PhyReg;
+    using ISA = RISCVMIR::RISCVISA;
+    PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
+    RISCVMIR* inst1 = new RISCVMIR(ISA::_addiw);
+    // addiw .1 s0 beginaddregister
+    RISCVFrameObject* frameobj = dynamic_cast<RISCVFrameObject*>(baseptr);
+    VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_i32);
+    BegAddrRegister* breg1 = new BegAddrRegister(frameobj);
+    inst1->SetDef(vreg1);
+    inst1->AddOperand(s0);
+    inst1->AddOperand(breg1);
+    ctx(inst1);
+
     for(int i=1;i<limi;i++){
         // just make sure
         assert(hasSubtype!=nullptr&&"Impossible Here");
@@ -376,21 +389,38 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
             else assert("?Impossible Here");
         }
         else{
-            /// @todo
+            // mul and add inst to compute to offset.
+            // li .1 imm
+            // mul .2 .x .1
             ConstIRInt* _size = ConstIRInt::GetNewConstant(int(size)); 
-            auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index), Imm::GetImm(_size)});
+            auto li=Builder(RISCVMIR::li,{ctx.createVReg(RISCVType::riscv_i32), Imm::GetImm(_size)});
+            ctx(li);
+            auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index), li->GetDef()});
             ctx(mul);
-            auto temp=ctx.createVReg(riscv_ptr);
-            ctx(Builder(RISCVMIR::_addw,{temp,baseptr,mul->GetDef()}));
-            baseptr=temp;
+            // addw .base .base .2
+            ctx(Builder(RISCVMIR::_addw,{inst1->GetDef(),inst1->GetDef(),mul->GetDef()}));
         }
         hasSubtype=dynamic_cast<HasSubType*>(hasSubtype->GetSubType());
     }
-    if(offset!=0) {}
-    /// @todo
-        // ConstIRInt* _offset = ConstIRInt::GetNewConstant(int(0)); 
-        // ctx(Builder(RISCVMIR::_addw,{baseptr,Imm::GetImm(_offset)}));
     #undef M
+
+    StackRegister* stackreg = nullptr;
+    if(offset < 2048) {
+        stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
+    }
+    else if(offset >=2047) {
+        int mod = offset % 2047;
+        offset-=mod;
+        VirRegister* vreg2 = ctx.createVReg(riscv_i32);
+        Imm* imm2 = new Imm(ConstIRInt::GetNewConstant(mod));
+        auto inst2=Builder(ISA::_addi, {vreg2,vreg2, imm2});
+        ctx(inst2);
+
+        stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), mod);
+    }
+    else assert(0&&"error offset in GetElement inst");
+    // replace the GetElementptr inst with stackreg (off(.1))
+    ctx.change_mapping(ctx.mapping(inst->GetDef()), stackreg);
 }
 
 void RISCVISel::InstLowering(PhiInst* inst){

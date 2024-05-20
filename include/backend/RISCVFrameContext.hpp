@@ -52,3 +52,12 @@ class RISCVFrameObject:public RISCVMOperand{
     // RISCVFrameObject(Type*,std::string);
     void print()override;
 };
+
+class BegAddrRegister:public Register{
+    RISCVFrameObject* frameobj;
+    public:
+    BegAddrRegister(RISCVFrameObject*);
+    void print()final;
+    std::string GetName() {return rname;}
+    bool isPhysical()final{return true;}
+};

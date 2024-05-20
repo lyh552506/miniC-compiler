@@ -62,15 +62,21 @@ void LARegister::print() {
   }
 }
 
-StackRegister::StackRegister(PhyReg _regnum, int _offset)
-    : PhyRegister(_regnum), offset(_offset) {}
-StackRegister::StackRegister(VirRegister* _vreg, int _offset)
+StackRegister::StackRegister(PhyReg _regenum, size_t _offset)
+    : PhyRegister(_regenum), offset(_offset) {}
+StackRegister::StackRegister(VirRegister* _vreg, size_t _offset)
     : PhyRegister(PhyReg::_NULL), offset(_offset), vreg(_vreg) {}
 void StackRegister::SetOffset(int _offset) { offset = _offset; }
 Register*& StackRegister::GetVreg() { return vreg; }
 void StackRegister::SetVreg(PhyRegister* &_reg) { vreg = _reg; }
 void StackRegister::print() {
-  std::cout << offset << "(" << magic_enum::enum_name(regenum) << ")";
+  if(regenum == _NULL)  {
+    std::cout << offset << "(";
+    vreg->print();
+    std::cout << ")";
+  } else {
+    std::cout << offset << "(" << magic_enum::enum_name(regenum) << ")";
+  }
 }
 
 RegisterList::RegisterList() {

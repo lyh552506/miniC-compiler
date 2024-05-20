@@ -60,3 +60,9 @@ void RISCVFrameObject::print(){
     // std::cout<<"---";
     reg->print();
 }
+
+BegAddrRegister::BegAddrRegister(RISCVFrameObject* _frameobj)
+    : Register(riscv_i32), frameobj(_frameobj) {}
+void BegAddrRegister::print() {
+  std::cout << frameobj->GetBeginAddOff();
+}
