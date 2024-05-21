@@ -2,9 +2,11 @@
 #include "RISCVRegister.hpp"
 #include "RISCVType.hpp"
 #include "RegAlloc.hpp"
+#include "my_stl.hpp"
 #include <LegalizeConstInt.hpp>
 #include <cassert>
 #include <iostream>
+#include <ostream>
 #include <unordered_set>
 void GraphColor::RunOnFunc() {
   bool condition = true;
@@ -31,8 +33,8 @@ void GraphColor::RunOnFunc() {
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
       CaculateLiveness();
-      // PrintPass();
-      // PrintAnalysis();
+      PrintPass();
+      PrintAnalysis();
       // return;
       condition = true;
     }
@@ -58,8 +60,11 @@ void GraphColor::MakeWorklist() {
       spilledNodes.insert(node);
     else if (MoveRelated(node).size() != 0)
       freezeWorkList.insert(node);
-    else
+    else {
+      _DEBUG(std::cerr << "simplifyWorkList insert element: " << node->GetName()
+                       << std::endl;)
       simplifyWorkList.push_back(node);
+    }
   }
 }
 
@@ -143,6 +148,8 @@ void GraphColor::AddWorkList(MOperand v) {
   if (Precolored.find(v) == Precolored.end() && IG[v].size() < GetRegNums(v) &&
       MoveRelated(v).size() == 0) {
     freezeWorkList.erase(v);
+    _DEBUG(std::cerr << "simplifyWorkList insert element: " << v->GetName()
+                     << std::endl;)
     PushVecSingleVal(simplifyWorkList, v);
   }
 }
@@ -180,6 +187,7 @@ void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
 MOperand GraphColor::HeuristicSpill() {
   int max = 0;
   for (auto spill : spillWorkList) {
+    return spill;
     float weight = 0;
     //考虑degree
     int degree = IG[spill].size();
@@ -245,7 +253,12 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
   //更新已合并点的所有临边(DecrementDegree)
   for (int i = 0; i != IG[rs].size(); i++) {
     MOperand neighbor = IG[rs][i];
+    _DEBUG(std::cerr << "Push " << neighbor->GetName() << " Into IG["
+                     << rd->GetName() << "]" << std::endl;)
+    _DEBUG(std::cerr << "Push " << rd->GetName() << " Into IG["
+                     << neighbor->GetName() << "]" << std::endl;)
     PushVecSingleVal(IG[rd], neighbor);
+    PushVecSingleVal(IG[neighbor], rd);
     auto iter = std::find(IG[neighbor].begin(), IG[neighbor].end(), rs);
     if (iter == IG[neighbor].end())
       assert(0 && "wrong with ig");
@@ -267,6 +280,8 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
       if (!MoveRelated(neighbor).empty()) {
         freezeWorkList.insert(neighbor);
       } else {
+        _DEBUG(std::cerr << "simplifyWorkList insert element: "
+                         << neighbor->GetName() << std::endl;)
         PushVecSingleVal(simplifyWorkList, neighbor);
       }
     }
@@ -298,6 +313,8 @@ void GraphColor::FreezeMoves(MOperand freeze) {
           value->GetType() == riscv_float32 &&
               IG[value].size() < reglist.GetReglistFloat().size()) {
         freezeWorkList.erase(value);
+        _DEBUG(std::cerr << "simplifyWorkList insert element: "
+                         << value->GetName() << std::endl;)
         PushVecSingleVal(simplifyWorkList, value);
       } else {
         assert(0 && "appear riscv_none");
@@ -339,6 +356,8 @@ void GraphColor::simplify() {
           if (MoveRelated(target).size() != 0) {
             freezeWorkList.insert(target);
           } else {
+            _DEBUG(std::cerr << "simplifyWorkList insert element: "
+                             << target->GetName() << std::endl;)
             simplifyWorkList.push_back(target);
           }
         }
@@ -359,6 +378,8 @@ void GraphColor::simplify() {
           if (MoveRelated(target).size() != 0) {
             freezeWorkList.insert(target);
           } else {
+            _DEBUG(std::cerr << "simplifyWorkList insert element: "
+                             << target->GetName() << std::endl;)
             simplifyWorkList.push_back(target);
           }
         }
@@ -419,6 +440,8 @@ void GraphColor::coalesce() {
 void GraphColor::freeze() {
   auto freeze = HeuristicFreeze();
   freezeWorkList.erase(freeze);
+  _DEBUG(std::cerr << "simplifyWorkList insert element: " << freeze->GetName()
+                   << std::endl;)
   PushVecSingleVal(simplifyWorkList, freeze);
   //放弃对这个freeze节点合并的希望，将他看成是传送无关节点
   FreezeMoves(freeze);
@@ -427,6 +450,8 @@ void GraphColor::freeze() {
 void GraphColor::spill() {
   auto spill = HeuristicSpill();
   spillWorkList.erase(spill);
+  _DEBUG(std::cerr << "simplifyWorkList insert element: " << spill->GetName()
+                   << std::endl;)
   PushVecSingleVal(simplifyWorkList, spill);
   FreezeMoves(spill);
 }
@@ -489,13 +514,12 @@ void GraphColor::SpillNodeInMir() {
         if (dynamic_cast<VirRegister *>(mir->GetDef())->GetName() == ".17") {
           int a = 0;
         }
-#ifdef DEBUG
-        std::cerr << "Spilling "
-                  << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
-                  << ", Use Vreg "
-                  << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
-                  << " To Replace" << std::endl;
-#endif
+        _DEBUG(std::cerr
+                   << "Spilling "
+                   << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+                   << ", Use Vreg "
+                   << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
+                   << " To Replace" << std::endl;)
         mir->SetDef(sd->GetOperand(0));
         // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
       } else if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd &&
@@ -507,13 +531,12 @@ void GraphColor::SpillNodeInMir() {
         RISCVMIR *ld =
             CreateLoadMir(dynamic_cast<VirRegister *>(mir->GetDef()), temps);
         mir_begin.insert_before(ld);
-#ifdef DEBUG
-        std::cerr << "Find a Spilled Node "
-                  << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
-                  << ", Use Vreg "
-                  << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
-                  << " To Replace" << std::endl;
-#endif
+        _DEBUG(
+            std::cerr << "Find a Spilled Node "
+                      << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+                      << ", Use Vreg "
+                      << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
+                      << " To Replace" << std::endl;)
         mir->SetDef(ld->GetDef());
       }
       for (int i = 0; i < mir->GetOperandSize(); i++) {
@@ -531,14 +554,13 @@ void GraphColor::SpillNodeInMir() {
               ".17") {
             int a = 0;
           }
-#ifdef DEBUG
-          std::cerr
-              << "Spilling "
-              << dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName()
-              << ", Use Vreg "
-              << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
-              << " To Replace" << std::endl;
-#endif
+          _DEBUG(
+              std::cerr
+                  << "Spilling "
+                  << dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName()
+                  << ", Use Vreg "
+                  << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
+                  << " To Replace" << std::endl;)
           mir->SetOperand(i, sd->GetOperand(0));
           // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
         } else if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd &&
@@ -549,14 +571,13 @@ void GraphColor::SpillNodeInMir() {
           //存在operand(i)并且operand(i)是一个已经spill节点
           RISCVMIR *ld = CreateLoadMir(mir->GetOperand(i), temps);
           mir_begin.insert_before(ld);
-#ifdef DEBUG
-          std::cerr
-              << "Find a Spilled Node "
-              << dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName()
-              << ", Use Vreg "
-              << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
-              << " To Replace" << std::endl;
-#endif
+          _DEBUG(
+              std::cerr
+                  << "Find a Spilled Node "
+                  << dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName()
+                  << ", Use Vreg "
+                  << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
+                  << " To Replace" << std::endl;)
           mir->SetOperand(i, ld->GetDef());
           // temps.insert(dynamic_cast<VirRegister *>(ld->GetDef()));
         }
@@ -608,32 +629,29 @@ void GraphColor::RewriteProgram() {
       if (mir->GetDef() != nullptr &&
           dynamic_cast<VirRegister *>(mir->GetDef())) {
         auto replace = color[dynamic_cast<MOperand>(mir->GetDef())];
-#ifdef DEBUG
-        std::cerr << "REPLACE Vreg "
-                  << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
-                  << " To Preg " << replace->GetName() << std::endl;
-#endif
+        _DEBUG(
+            std::cerr << "REPLACE Vreg "
+                      << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+                      << " To Preg " << replace->GetName() << std::endl;)
         mir->SetDef(replace);
       }
       for (int i = 0; i < mir->GetOperandSize(); i++) {
         auto operand = mir->GetOperand(i);
         if (dynamic_cast<VirRegister *>(operand)) {
           auto replace = color[dynamic_cast<MOperand>(operand)];
-#ifdef DEBUG
-          std::cerr << "REPLACE Vreg "
-                    << dynamic_cast<VirRegister *>(operand)->GetName()
-                    << " To Preg " << replace->GetName() << std::endl;
-#endif
+          _DEBUG(std::cerr << "REPLACE Vreg "
+                           << dynamic_cast<VirRegister *>(operand)->GetName()
+                           << " To Preg " << replace->GetName() << std::endl;)
           mir->SetOperand(i, replace);
         } else if (auto lareg = dynamic_cast<LARegister *>(operand)) {
           if (lareg->GetVreg() == nullptr)
             continue;
           auto replace = color[dynamic_cast<MOperand>(lareg->GetVreg())];
           lareg->SetReg(replace);
-        } else if(auto stackreg=dynamic_cast<StackRegister *>(operand)){
-          if(stackreg->GetVreg()==nullptr)
+        } else if (auto stackreg = dynamic_cast<StackRegister *>(operand)) {
+          if (stackreg->GetVreg() == nullptr)
             continue;
-          auto replace=color[dynamic_cast<MOperand>(stackreg->GetVreg())];
+          auto replace = color[dynamic_cast<MOperand>(stackreg->GetVreg())];
           stackreg->SetPreg(replace);
         }
       }
