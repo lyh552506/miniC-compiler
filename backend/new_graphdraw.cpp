@@ -34,16 +34,16 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     // if (!spilledNodes.empty()) {
     //   SpillNodeInMir();
-      CaculateLiveness();
-      PrintPass();
-      // PrintAnalysis();
+    // CaculateLiveness();
+    // PrintPass();
+    // PrintAnalysis();
     //   // return;
     //   condition = true;
     // }
   }
   CaculateLiveness();
-  // PrintPass();
-  // // PrintAnalysis();
+  PrintPass();
+  PrintAnalysis();
   // RewriteProgram();
   // PrintPass();
   // PrintAnalysis();
@@ -468,6 +468,8 @@ void GraphColor::AssignColors() {
     for (auto adj : AdjList[select])
       if (coloredNode.find(GetAlias(adj)) != coloredNode.end() ||
           Precolored.find(GetAlias(adj)) != Precolored.end()) {
+        if (color.find(dynamic_cast<MOperand>(adj)) == color.end())
+          assert(0);
         if (ty == riscv_i32 || ty == riscv_ptr)
           int_assist.erase(color[adj]);
         else if (ty == riscv_float32)
@@ -479,10 +481,9 @@ void GraphColor::AssignColors() {
         spilledNodes.insert(select);
       else {
         coloredNode.insert(select);
-        if (select->GetName() == "%13") {
-          int a = 1;
-        }
         color[select] = SelectPhyReg(ty, int_assist);
+        if (color[select] == nullptr)
+          int y = 0;
       }
     } else if (ty == riscv_float32) {
       if (float_assist.size() == 0)
@@ -490,6 +491,8 @@ void GraphColor::AssignColors() {
       else {
         coloredNode.insert(select);
         color[select] = SelectPhyReg(ty, float_assist);
+        if (color[select] == nullptr)
+          int y = 0;
       }
     }
   }
@@ -498,6 +501,8 @@ void GraphColor::AssignColors() {
       int a = 90;
     }
     color[caols] = color[GetAlias(caols)];
+    if (color[caols] == nullptr)
+      int y = 0;
   }
 }
 
@@ -639,6 +644,8 @@ void GraphColor::RewriteProgram() {
         continue;
       if (mir->GetDef() != nullptr &&
           dynamic_cast<VirRegister *>(mir->GetDef())) {
+        if (color.find(dynamic_cast<MOperand>(mir->GetDef())) != color.end())
+          assert(0);
         auto replace = color[dynamic_cast<MOperand>(mir->GetDef())];
         _DEBUG(
             std::cerr << "REPLACE Vreg "
@@ -649,17 +656,23 @@ void GraphColor::RewriteProgram() {
       for (int i = 0; i < mir->GetOperandSize(); i++) {
         auto operand = mir->GetOperand(i);
         if (dynamic_cast<VirRegister *>(operand)) {
+          if (color.find(dynamic_cast<MOperand>(operand)) != color.end())
+            assert(0);
           auto replace = color[dynamic_cast<MOperand>(operand)];
           _DEBUG(std::cerr << "REPLACE Vreg "
                            << dynamic_cast<VirRegister *>(operand)->GetName()
                            << " To Preg " << replace->GetName() << std::endl;)
           mir->SetOperand(i, replace);
         } else if (auto lareg = dynamic_cast<LARegister *>(operand)) {
+          if (color.find(dynamic_cast<MOperand>(operand)) != color.end())
+            assert(0);
           if (lareg->GetVreg() == nullptr)
             continue;
           auto replace = color[dynamic_cast<MOperand>(lareg->GetVreg())];
           lareg->SetReg(replace);
         } else if (auto stackreg = dynamic_cast<StackRegister *>(operand)) {
+          if (color.find(dynamic_cast<MOperand>(operand)) != color.end())
+            assert(0);
           if (stackreg->GetVreg() == nullptr)
             continue;
           auto replace = color[dynamic_cast<MOperand>(stackreg->GetVreg())];
@@ -675,8 +688,8 @@ PhyRegister *GraphColor::SelectPhyReg(RISCVType ty,
                                       std::unordered_set<MOperand> &assist) {
   if (ty == riscv_i32 || ty == riscv_ptr) {
     for (auto reg : reglist.GetReglistTest()) {
-      if (assist.find(reg) != assist.end()){
-        _DEBUG(std::cerr<<"Size= "<<color.size()<<std::endl;)
+      if (assist.find(reg) != assist.end()) {
+        _DEBUG(std::cerr << "Size= " << color.size() << std::endl;)
         return reg;
       }
     }
