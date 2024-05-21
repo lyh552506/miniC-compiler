@@ -37,12 +37,14 @@ void RISCVMIR::printfull(){
             def->print();
             if(operands.size()>0) std::cout << ", ";
         }
+        
         for(int i=0;i<operands.size();i++){
             operands[i]->print();
             if(i!=operands.size()-1)
                 std::cout<<", ";
         }
-        std::cout<<"\n";
+        // std::cout << std::endl;
+        std::cout <<'\n';
     }
 }
 
@@ -291,16 +293,17 @@ void RISCVFrame::GenerateFrameTail() {
     }
 }
 
-void RISCVFrame::AddCantBeSpill(Register* reg) {
-    auto it=std::find(cantbespill->begin(), cantbespill->end(), reg);
-    if(it != cantbespill->end()) {
+void RISCVFrame::AddCantBeSpill(RISCVMOperand* reg) {
+    auto it=std::find(cantbespill.begin(), cantbespill.end(), reg);
+    if(it != cantbespill.end()) {
         return;
-    } else cantbespill->push_back(reg);
+    } 
+    cantbespill.push_back(reg);
 }
 
-bool RISCVFrame::CantBeSpill(Register* reg) {
-    auto it=std::find(cantbespill->begin(), cantbespill->end(), reg);
-    if(it == cantbespill->end()) {
+bool RISCVFrame::CantBeSpill(RISCVMOperand* reg) {
+    auto it=std::find(cantbespill.begin(), cantbespill.end(), reg);
+    if(it == cantbespill.end()) {
         return false;
     } else return true;
 } 
