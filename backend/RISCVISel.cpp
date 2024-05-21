@@ -374,9 +374,10 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     using PhyReg=PhyRegister::PhyReg;
     using ISA = RISCVMIR::RISCVISA;
     PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
-    RISCVMIR* inst1 = new RISCVMIR(ISA::_addiw);
+    RISCVMIR* inst1 = nullptr;
     if(RISCVFrameObject* frameobj = dynamic_cast<RISCVFrameObject*>(baseptr)) {
         // addiw .1 s0 beginaddregister
+        inst1 = new RISCVMIR(ISA::_addiw);
         VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_ptr);
         BegAddrRegister* breg1 = new BegAddrRegister(frameobj);
         inst1->SetDef(vreg1);
@@ -386,6 +387,7 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     } 
     else {
         // addiw .1 s0, .x
+        inst1 = new RISCVMIR(ISA::_addw);
         VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_ptr);
         inst1->SetDef(vreg1);
         inst1->AddOperand(s0);

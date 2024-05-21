@@ -95,8 +95,8 @@ int main(int argc, char **argv) {
 #endif
 #ifdef SYSY_ENABLE_BACKEND
   freopen(asmoutput_path.c_str(), "w", stdout);
-  RISCVModuleLowering RISCVASm;
-  RISCVASm.run(&Singleton<Module>());
+  RISCVModuleLowering RISCVAsm;
+  RISCVAsm.run(&Singleton<Module>());
   fflush(stdout);
   fclose(stdout);
 #endif

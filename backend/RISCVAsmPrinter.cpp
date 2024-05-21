@@ -75,7 +75,7 @@ void functionSegment::PrintFuncSegment() {
     std::cout << "    .type  " << name << ", @" << ty << std::endl;
     func->printfull();
     if(size == -1)
-        std::cout << "    .size " << name << ", " << "-" << name << std::endl;
+        std::cout << "    .size " << name << ", " << ".-" << name << std::endl;
 }
 //dataSegment
 dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
