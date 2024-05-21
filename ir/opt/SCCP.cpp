@@ -765,13 +765,13 @@ bool SCCP::RunOnFunction(Function* func)
                 if(!inst->GetUserlist().is_empty())
                 {
                     inst->RAUW(UndefValue::get(inst->GetType()));
-                    inst->ClearRelation();
-                    inst->EraseFromParent();
+                    delete inst;
                 }
                 else
-                    inst->EraseFromParent();
+                    delete inst;
             }
             //TODO: 删除基本块
+            
             ++DeadBlocksNum;
             Changed = true;
             continue;
@@ -786,8 +786,7 @@ bool SCCP::RunOnFunction(Function* func)
             {
                 if(DCE::isDeadInst(inst))
                 {
-                    inst->ClearRelation();
-                    inst->EraseFromParent();
+                    delete inst;
 
                     Changed = true;
                     ++RemovedInstNum;
@@ -796,8 +795,7 @@ bool SCCP::RunOnFunction(Function* func)
             }
             if(DCE::isDeadInst(inst))
             {
-                inst->ClearRelation();
-                inst->EraseFromParent();
+                delete inst;
                 Changed = true;
                 ++RemovedInstNum;
             }

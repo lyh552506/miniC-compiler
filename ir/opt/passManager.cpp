@@ -74,6 +74,9 @@ void PassManager::RunOnFunction() {
     m_constprop->RunOnFunction();
     // m_constprop->PrintPass();
   }
+  if(InitpassRecorder[12]){
+    m_sccp->RunOnFunction(m_func);
+  }
   if (InitpassRecorder[7]) {
     m_cfgsimple->RunOnFunction();
     PreWork(func);
@@ -100,9 +103,7 @@ void PassManager::RunOnFunction() {
     m_inline->Run();
     // m_inline->PrintPass();
   }
-  if(InitpassRecorder[12]){
-    m_sccp->RunOnFunction(m_func);
-  }
+
   if(InitpassRecorder[11]){
     m_reassociate->RunOnFunction();
   }
