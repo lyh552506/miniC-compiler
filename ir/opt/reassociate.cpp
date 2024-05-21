@@ -209,6 +209,8 @@ void Reassociate::ReWriteExp(
          ++iter) {
       if ((*iter) != exp)
         continue;
+      if(Changed==exp)
+        break;
       Changed->EraseFromParent();
       iter.insert_before(Changed);
       Changed = Changed->GetUserlist().Front()->GetUser();
