@@ -11,9 +11,11 @@
 void GraphColor::RunOnFunc() {
   bool condition = true;
   CaculateLiveness();
+  // PrintPass();
   for (auto &[key, val] : IG) {
     AdjList[key].insert(val.begin(), val.end());
   }
+  int a = 1;
   while (condition) {
     condition = false;
     CaculateLiveness();
@@ -30,19 +32,19 @@ void GraphColor::RunOnFunc() {
     } while (!simplifyWorkList.empty() || !worklistMoves.empty() ||
              !freezeWorkList.empty() || !spillWorkList.empty());
     AssignColors();
-    if (!spilledNodes.empty()) {
-      SpillNodeInMir();
+    // if (!spilledNodes.empty()) {
+    //   SpillNodeInMir();
       CaculateLiveness();
       PrintPass();
-      PrintAnalysis();
-      return;
-      condition = true;
-    }
+      // PrintAnalysis();
+    //   // return;
+    //   condition = true;
+    // }
   }
-  // //CaculateLiveness();
+  CaculateLiveness();
   // PrintPass();
-  // PrintAnalysis();
-  RewriteProgram();
+  // // PrintAnalysis();
+  // RewriteProgram();
   // PrintPass();
   // PrintAnalysis();
 }
@@ -673,8 +675,10 @@ PhyRegister *GraphColor::SelectPhyReg(RISCVType ty,
                                       std::unordered_set<MOperand> &assist) {
   if (ty == riscv_i32 || ty == riscv_ptr) {
     for (auto reg : reglist.GetReglistTest()) {
-      if (assist.find(reg) != assist.end())
+      if (assist.find(reg) != assist.end()){
+        _DEBUG(std::cerr<<"Size= "<<color.size()<<std::endl;)
         return reg;
+      }
     }
   } else if (ty == riscv_float32) {
     for (auto reg : reglist.GetReglistFloat()) {

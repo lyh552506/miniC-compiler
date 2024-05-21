@@ -71,7 +71,7 @@ public:
   bool count(MOperand Op, RISCVMIR *inst) { return InstLive[inst].count(Op); }
   bool Count(Register *op);
   BlockLiveInfo(RISCVFunction *f)
-      : m_func(f), BlockLivein{}, BlockLiveout{}, InstLive{} {}
+      : m_func(f), BlockLivein{}, BlockLiveout{}, InstLive{}, color{}, moveList{}, IG{} {}
 };
 class LiveInterval : public BlockLiveInfo {
   using Interval = RegAllocImpl::RegLiveInterval;

@@ -11,7 +11,9 @@ using InterVal = LiveInterval;
 using OpType = RISCVMIR::RISCVISA;
 bool BlockInfo::Count(Register *op) {
   if (op) {
-    if (color.count(op))
+    if(color.find(op) != color.end() && color[op] == nullptr)
+      int b =1;
+    if(color.find(op) != color.end())
       return true;
     else
       return false;

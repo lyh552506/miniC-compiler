@@ -45,7 +45,7 @@ bool RISCVFunctionLowering::run(Function* m){
     lcint.run();
 
     // temp print asm
-    // asmprinter->printAsm();
+    asmprinter->printAsm();
 
     // Register Allocation
     RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>(), ctx);

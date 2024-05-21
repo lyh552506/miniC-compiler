@@ -7,7 +7,6 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <pstl/glue_algorithm_defs.h>
 #include <string>
 #include <vector>
 template <typename T>
