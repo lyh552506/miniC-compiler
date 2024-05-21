@@ -52,6 +52,7 @@ private:
   RISCVFunction *m_func;
 
 public:
+  std::set<Register*> HasSpill;  // 添加已经Spill的寄存器
   std::map<RISCVBasicBlock *, std::unordered_set<MOperand>> Uses; // block uses
   std::map<RISCVBasicBlock *, std::unordered_set<MOperand>> Defs; // block defs
   std::map<RISCVBasicBlock *, std::set<MOperand>> BlockLivein;

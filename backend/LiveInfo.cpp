@@ -277,7 +277,17 @@ void GraphColor::CalcIG(RISCVBasicBlock *block) {
   for (RISCVMIR *inst : *block) {
     if (InstLive[inst].size() > 1) {
       for (auto *Op1 : InstLive[inst]) {
+        if(HasSpill.count(Op1))
+        {
+          IG[Op1];
+          continue;
+        }
         for (auto *Op2 : InstLive[inst]) {
+          if(HasSpill.count(Op2))
+          {
+            IG[Op2];
+            continue;
+          }
           if (Op1 && Op2 && Op2 != Op1)
             PushVecSingleVal(IG[Op1], Op2);
         }
@@ -408,6 +418,8 @@ void InterVal::computeLiveIntervals()
         }
         intervals.erase(std::next(curr), intervals.end());
       }
+      for(Register* op : HasSpill)
+        CurrentRegLiveinterval.erase(op);
       RegLiveness[block] = CurrentRegLiveinterval;
     }
   }
