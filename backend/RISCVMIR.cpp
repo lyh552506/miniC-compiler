@@ -77,7 +77,7 @@ void RISCVBasicBlock::replace_succ(RISCVBasicBlock* from,RISCVBasicBlock* to){
             bool flag=false;
             for(int i=0;i<inst->GetOperandSize();i++){
                 if(inst->GetOperand(i)==from){
-                    inst->SetDef(to);
+                    inst->SetOperand(i, to);
                     flag=true;
                 }
             }
