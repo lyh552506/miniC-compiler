@@ -32,9 +32,9 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
-      CaculateLiveness();
-      PrintPass();
-      PrintAnalysis();
+      // CaculateLiveness();
+      // PrintPass();
+      // PrintAnalysis();
       // return;
       condition = true;
     }
@@ -57,7 +57,7 @@ void GraphColor::MakeWorklist() {
   for (auto node : initial) {
     //添加溢出节点
     if (IG[node].size() > GetRegNums(node))
-      spilledNodes.insert(node);
+      spillWorkList.insert(node);
     else if (MoveRelated(node).size() != 0)
       freezeWorkList.insert(node);
     else {
@@ -187,6 +187,9 @@ void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
 MOperand GraphColor::HeuristicSpill() {
   int max = 0;
   for (auto spill : spillWorkList) {
+    auto vspill = dynamic_cast<VirRegister *>(spill);
+    if (AlreadySpill.find(vspill) != AlreadySpill.end())
+      continue;
     return spill;
     float weight = 0;
     //考虑degree
@@ -265,7 +268,8 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
     IG[neighbor].erase(iter);
     vec_pop(IG[rs], i);
     //减去边后度数恰好不是高度数
-    if (IG[neighbor].size() == GetRegNums(rs) - 1) {
+    if (Precolored.find(neighbor) == Precolored.end() &&
+        IG[neighbor].size() == GetRegNums(rs) - 1) {
       spillWorkList.erase(neighbor);
       std::unordered_set<MOperand> tmp(IG[neighbor].begin(),
                                        IG[neighbor].end());
@@ -287,7 +291,7 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
     }
   }
   if (IG[rd].size() >= GetRegNums(rs) &&
-      freezeWorkList.find(rd) != freezeWorkList.end()) {
+      (freezeWorkList.find(rd) != freezeWorkList.end())) {
     freezeWorkList.erase(rd);
     spillWorkList.insert(rd);
   }
@@ -497,7 +501,7 @@ void GraphColor::AssignColors() {
 
 void GraphColor::SpillNodeInMir() {
   std::unordered_set<VirRegister *> temps;
-  AlreadySpill.clear();
+  // AlreadySpill.clear();
   for (auto mbb : *m_func) {
     for (auto mir_begin = mbb->begin(), mir_end = mbb->end();
          mir_begin != mir_end;) {
