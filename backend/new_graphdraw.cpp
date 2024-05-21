@@ -32,10 +32,12 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
-      // CaculateLiveness();
-      // PrintPass();
-      // PrintAnalysis();
-      // return;
+      // if (m_func->GetName() == "radixSort") {
+      //   CaculateLiveness();
+      //   PrintPass();
+      //   PrintAnalysis();
+      //  // return;
+      // }
       condition = true;
     }
   }
@@ -193,6 +195,7 @@ MOperand GraphColor::HeuristicSpill() {
     int loopdepth; // TODO
     // weight /= std::pow(LoopWeight, loopdepth);
   }
+  return nullptr;
 }
 
 // TODO选择freeze node的启发式函数
@@ -319,68 +322,62 @@ void GraphColor::FreezeMoves(MOperand freeze) {
 }
 
 void GraphColor::simplify() {
-  for (int i = 0; i < simplifyWorkList.size(); i++) {
-    auto val = simplifyWorkList[i];
-    int size = simplifyWorkList.size();
-    simplifyWorkList[i] = simplifyWorkList[size - 1];
-    simplifyWorkList.pop_back();
-    selectstack.push_back(val);
-    //此时需要更新冲突图上和当前val相邻的边(DecrementDegree)
-    for (int i = 0; i < IG[val].size(); i++) {
-      auto target = IG[val][i];
-      auto iter = std::find(IG[target].begin(), IG[target].end(), val);
-      if (iter == IG[target].end())
-        assert(0 && "wrong with ig");
-      IG[target].erase(iter);
-      vec_pop(IG[val], i);
-      //这里注意需要检查一下更新后的相邻边是否只有color-1
-      if (target->GetType() == riscv_i32 || target->GetType() == riscv_ptr) {
-        if (IG[target].size() == GetRegNums(riscv_i32) - 1) {
-          spillWorkList.erase(target);
-          std::unordered_set<MOperand> tmp(IG[target].begin(),
-                                           IG[target].end());
-          tmp.insert(target);
-          // EnableMove
-          for (auto node : tmp)
-            for (auto mov : MoveRelated(node)) {
-              if (activeMoves.find(mov) != activeMoves.end()) {
-                activeMoves.erase(mov);
-                PushVecSingleVal(worklistMoves, mov);
-              }
+  auto val = simplifyWorkList.back();
+  simplifyWorkList.pop_back();
+  selectstack.push_back(val);
+  //此时需要更新冲突图上和当前val相邻的边(DecrementDegree)
+  for (int i = 0; i < IG[val].size(); i++) {
+    auto target = IG[val][i];
+    auto iter = std::find(IG[target].begin(), IG[target].end(), val);
+    if (iter == IG[target].end())
+      assert(0 && "wrong with ig");
+    IG[target].erase(iter);
+    vec_pop(IG[val], i);
+    //这里注意需要检查一下更新后的相邻边是否只有color-1
+    if (target->GetType() == riscv_i32 || target->GetType() == riscv_ptr) {
+      if (IG[target].size() == GetRegNums(riscv_i32) - 1) {
+        spillWorkList.erase(target);
+        std::unordered_set<MOperand> tmp(IG[target].begin(), IG[target].end());
+        tmp.insert(target);
+        // EnableMove
+        for (auto node : tmp)
+          for (auto mov : MoveRelated(node)) {
+            if (activeMoves.find(mov) != activeMoves.end()) {
+              activeMoves.erase(mov);
+              PushVecSingleVal(worklistMoves, mov);
             }
-          if (MoveRelated(target).size() != 0) {
-            freezeWorkList.insert(target);
-          } else {
-            _DEBUG(std::cerr << "simplifyWorkList insert element: "
-                             << target->GetName() << std::endl;)
-            simplifyWorkList.push_back(target);
           }
+        if (MoveRelated(target).size() != 0) {
+          freezeWorkList.insert(target);
+        } else {
+          _DEBUG(std::cerr << "simplifyWorkList insert element: "
+                           << target->GetName() << std::endl;)
+          simplifyWorkList.push_back(target);
         }
-      } else if (target->GetType() == riscv_float32) {
-        if (IG[target].size() == reglist.GetReglistFloat().size() - 1) {
-          spillWorkList.erase(target);
-          std::unordered_set<MOperand> tmp(IG[target].begin(),
-                                           IG[target].end());
-          tmp.insert(target);
-          // EnableMove
-          for (auto node : tmp)
-            for (auto mov : MoveRelated(node)) {
-              if (activeMoves.find(mov) != activeMoves.end()) {
-                activeMoves.erase(mov);
-                PushVecSingleVal(worklistMoves, mov);
-              }
-            }
-          if (MoveRelated(target).size() != 0) {
-            freezeWorkList.insert(target);
-          } else {
-            _DEBUG(std::cerr << "simplifyWorkList insert element: "
-                             << target->GetName() << std::endl;)
-            simplifyWorkList.push_back(target);
-          }
-        }
-      } else {
-        // assert(0 && "appear riscv_none");
       }
+    } else if (target->GetType() == riscv_float32) {
+      if (IG[target].size() == reglist.GetReglistFloat().size() - 1) {
+        spillWorkList.erase(target);
+        std::unordered_set<MOperand> tmp(IG[target].begin(), IG[target].end());
+        tmp.insert(target);
+        // EnableMove
+        for (auto node : tmp)
+          for (auto mov : MoveRelated(node)) {
+            if (activeMoves.find(mov) != activeMoves.end()) {
+              activeMoves.erase(mov);
+              PushVecSingleVal(worklistMoves, mov);
+            }
+          }
+        if (MoveRelated(target).size() != 0) {
+          freezeWorkList.insert(target);
+        } else {
+          _DEBUG(std::cerr << "simplifyWorkList insert element: "
+                           << target->GetName() << std::endl;)
+          simplifyWorkList.push_back(target);
+        }
+      }
+    } else {
+      // assert(0 && "appear riscv_none");
     }
   }
 }
@@ -444,6 +441,8 @@ void GraphColor::freeze() {
 
 void GraphColor::spill() {
   auto spill = HeuristicSpill();
+  if (spill == nullptr)
+    return;
   spillWorkList.erase(spill);
   _DEBUG(std::cerr << "simplifyWorkList insert element: " << spill->GetName()
                    << std::endl;)
@@ -620,7 +619,12 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
 
 void GraphColor::RewriteProgram() {
   for (auto mbb : *m_func) {
+    if(mbb->GetName()==".LBB6"){
+      int a=0;
+    }
     for (auto mir : *mbb) {
+      if (mir->GetOpcode() == RISCVMIR::call)
+        continue;
       if (mir->GetDef() != nullptr &&
           dynamic_cast<VirRegister *>(mir->GetDef())) {
         auto replace = color[dynamic_cast<MOperand>(mir->GetDef())];
