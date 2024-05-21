@@ -32,15 +32,16 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
-      // if (m_func->GetName() == "radixSort") {
-      //  // return;
-      // }
+      CaculateLiveness();
+      PrintPass();
+      PrintAnalysis();
+      return;
       condition = true;
     }
   }
-  CaculateLiveness();
-  PrintPass();
-  PrintAnalysis();
+  // //CaculateLiveness();
+  // PrintPass();
+  // PrintAnalysis();
   RewriteProgram();
   // PrintPass();
   // PrintAnalysis();
@@ -196,7 +197,8 @@ MOperand GraphColor::HeuristicSpill() {
     int loopdepth; // TODO
     // weight /= std::pow(LoopWeight, loopdepth);
   }
-  return nullptr;
+  for (auto spill : spillWorkList)
+    return spill;
 }
 
 // TODO选择freeze node的启发式函数

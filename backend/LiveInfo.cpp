@@ -11,10 +11,10 @@ using InterVal = LiveInterval;
 using OpType = RISCVMIR::RISCVISA;
 bool BlockInfo::Count(Register *op) {
   if (op) {
-      if (color.count(op))
-        return true;
-      else
-        return false;
+    if (color.count(op))
+      return true;
+    else
+      return false;
   }
   return false;
 }
@@ -236,17 +236,19 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
       }
     }
     if (RISCVMOperand *_DefValue = inst->GetDef()) {
-      if(auto DefValue = _DefValue->ignoreLA())
-      {
-        if(dynamic_cast<VirRegister*>(DefValue))
-        {
-          if(!Count(DefValue))
+      if (auto DefValue = _DefValue->ignoreLA()) {
+        if (dynamic_cast<VirRegister *>(DefValue)) {
+          if (!Count(DefValue))
             initial.insert(DefValue);
         }
-        if(Count(DefValue))
+
+        if (Count(DefValue)) {
           Live.erase(color[DefValue]);
-        else
+          Precolored.insert(color[DefValue]);
+        } else {
+          Precolored.insert(DefValue);
           Live.erase(DefValue);
+        }
       }
     }
     InstLive[inst] = Live;
