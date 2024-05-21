@@ -1,6 +1,5 @@
 #pragma once
 #include "RISCVMIR.hpp"
-// #include "RISCVRegister.hpp"
 class RISCVFunction;
 
 /// @note This class intend to store the context of the lowering process
@@ -31,6 +30,7 @@ class RISCVLoweringContext{
     void operator()(RISCVBasicBlock*);
     void operator()(RISCVFunction*);
     void insert_val2mop(Value*, RISCVMOperand*);
+    void change_mapping(RISCVMOperand*, RISCVMOperand*);
     RISCVMOperand* mapping(Value*);
     VirRegister* createVReg(RISCVType);
     std::vector<MFuncPtr>& GetFunctions();

@@ -152,8 +152,14 @@ void RISCVFrame::GenerateFrame() {
     /// @todo
     using FramObj = std::vector<std::unique_ptr<RISCVFrameObject>>;
     frame_size = 16;
+    std::sort(frameobjs.begin(), frameobjs.end(),
+              [](const std::unique_ptr<RISCVFrameObject>& lhs,
+                 const std::unique_ptr<RISCVFrameObject>& rhs) {
+                    return lhs->GetFrameObjSize() < rhs->GetFrameObjSize();
+              });
     for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
         std::unique_ptr<RISCVFrameObject>& obj = *it;
+        obj->SetEndAddOff(frame_size);
         frame_size += obj->GetFrameObjSize();
         obj->SetBeginAddOff(frame_size);
     }
@@ -165,7 +171,21 @@ void RISCVFrame::GenerateFrame() {
 
     for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
         std::unique_ptr<RISCVFrameObject>& obj = *it;
-        obj->GenerateStackRegister(0 - obj->GetBeginAddOff());
+        int off = 0 - static_cast<int>(obj->GetBeginAddOff()+obj->GetFrameObjSize());
+        obj->GenerateStackRegister(off);
+    }
+
+    // Replace BegAddrRegister to Imm for the LegalConst pass is useful.
+    for(auto block: *parent) {
+        for(auto inst: *block) {
+            if(inst->GetOperandSize()==2) {
+                if(BegAddrRegister* breg = dynamic_cast<BegAddrRegister*>(inst->GetOperand(1))) {
+                    int bregin_address = static_cast<int>(breg->GetFrameObj()->GetBeginAddOff()); 
+                    Imm* imm = new Imm(ConstIRInt::GetNewConstant(0-bregin_address));
+                    inst->SetOperand(1,imm);
+                }
+            }
+        }
     }
 }
 
@@ -207,48 +227,20 @@ void RISCVFrame::GenerateFrameHead() {
     inst4->AddOperand(imm4);
 
     //addi sp, sp, framesize-temp_frame_size
-    RISCVMIR* inst5 = new RISCVMIR(ISA::_addi);
-    Imm* imm5 = new Imm(ConstIRInt::GetNewConstant(frame_size - temp_frame_size));
-    inst5->SetDef(sp);
-    inst5->AddOperand(sp);
-    inst5->AddOperand(imm5);
+    if(frame_size != temp_frame_size) {
+        RISCVMIR* inst5 = new RISCVMIR(ISA::_addi);
+        Imm* imm5 = new Imm(ConstIRInt::GetNewConstant(frame_size - temp_frame_size));
+        inst5->SetDef(sp);
+        inst5->AddOperand(sp);
+        inst5->AddOperand(imm5);
 
-    parent->front()->begin().insert_before(inst5);
+        parent->front()->begin().insert_before(inst5);
+    }
+
     parent->front()->begin().insert_before(inst4);
     parent->front()->begin().insert_before(inst3);
     parent->front()->begin().insert_before(inst2);
     parent->front()->begin().insert_before(inst1);
-
-
-
-    // // addi sp, sp, -framesize
-    // RISCVMIR* inst1 = new RISCVMIR(ISA::_addi);
-    // Imm* imm1 = new Imm(ConstIRInt::GetNewConstant(0-frame_size));
-    // inst1->SetDef(sp);
-    // inst1->AddOperand(sp);
-    // inst1->AddOperand(imm1);
-    // // sd ra, framesize-8(sp)
-    // RISCVMIR* inst2 = new RISCVMIR(ISA::_sd);
-    // StackRegister* sp_stack2 = new StackRegister(PhyReg::sp, frame_size-8);
-    // inst2->AddOperand(ra);
-    // inst2->AddOperand(sp_stack2);
-    // // sd s0, framsize-16(sp)
-    // RISCVMIR* inst3 = new RISCVMIR(ISA::_sd);
-    // StackRegister* sp_stack3 = new StackRegister(PhyReg::sp, frame_size-16);
-    // inst3->AddOperand(s0);
-    // inst3->AddOperand(sp_stack3);
-
-    // // addi s0, sp, framesize
-    // RISCVMIR* inst4 = new RISCVMIR(ISA::_addi);
-    // Imm* imm3 = new Imm(ConstIRInt::GetNewConstant(frame_size));
-    // inst4->SetDef(s0);
-    // inst4->AddOperand(sp);
-    // inst4->AddOperand(imm3);
-
-    // parent->front()->begin().insert_before(inst4);
-    // parent->front()->begin().insert_before(inst3);
-    // parent->front()->begin().insert_before(inst2);
-    // parent->front()->begin().insert_before(inst1);
 }
 
 void RISCVFrame::GenerateFrameTail() {
@@ -257,19 +249,34 @@ void RISCVFrame::GenerateFrameTail() {
     PhyRegister* sp = PhyRegister::GetPhyReg(PhyReg::sp);
     PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
     PhyRegister* ra = PhyRegister::GetPhyReg(PhyReg::ra);
-    // ld ra, framesize-8(sp)
+
+    int temp_frame_size = frame_size;
+    if( frame_size>2047) {
+        // 以合法方式保存sp.s0
+        // temp_frame_size = frame_size % 4096;
+        temp_frame_size = frame_size % 2048;
+    }
+    // addi sp, sp, framesize-temp_frame_size
+    RISCVMIR* inst0 = new RISCVMIR(ISA::_addi);
+    if(temp_frame_size != frame_size) {
+        Imm* imm0 = new Imm(ConstIRInt::GetNewConstant(frame_size - temp_frame_size));
+        inst0->SetDef(sp);
+        inst0->AddOperand(sp);
+        inst0->AddOperand(imm0);
+    }
+    // ld ra, temp_frame_size-8(sp)
     RISCVMIR* inst1 = new RISCVMIR(ISA::_ld);
-    StackRegister* sp_stack1 = new StackRegister(PhyReg::sp, frame_size-8);
+    StackRegister* sp_stack1 = new StackRegister(PhyReg::sp, temp_frame_size-8);
     inst1->SetDef(ra);
     inst1->AddOperand(sp_stack1);
-    // ld s0, framesize-16(sp)
+    // ld s0, temp_frame_size-16(sp)
     RISCVMIR* inst2 = new RISCVMIR(ISA::_ld);
-    StackRegister* sp_stack2 = new StackRegister(PhyReg::sp, frame_size-16);
+    StackRegister* sp_stack2 = new StackRegister(PhyReg::sp, temp_frame_size-16);
     inst2->SetDef(s0);
     inst2->AddOperand(sp_stack2);
-    // addi sp, sp, framesize
+    // addi sp, sp, temp_frame_size
     RISCVMIR* inst3 = new RISCVMIR(ISA::_addi);
-    Imm* imm3 = new Imm(ConstIRInt::GetNewConstant(frame_size));
+    Imm* imm3 = new Imm(ConstIRInt::GetNewConstant(temp_frame_size));
     inst3->SetDef(sp);
     inst3->AddOperand(sp);
     inst3->AddOperand(imm3);
@@ -278,6 +285,9 @@ void RISCVFrame::GenerateFrameTail() {
         for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
             RISCVMIR* inst = *it;
             if (inst->GetOpcode() == ISA::ret) {
+                if(temp_frame_size != frame_size) {
+                    it.insert_before(inst0);
+                }
                 it.insert_before(inst1);
                 it.insert_before(inst2);
                 it.insert_before(inst3);

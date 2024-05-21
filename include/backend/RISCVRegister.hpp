@@ -1,6 +1,5 @@
 #pragma once
 #include "RISCVMOperand.hpp"
-
 /// @brief 这个写成接口吧...
 class Register:public RISCVMOperand{
     protected:
@@ -67,17 +66,18 @@ class LARegister:public Register{
     bool isPhysical()final{return true;};
 };
 
-class StackRegister:public PhyRegister{
+class StackRegister:public Register{
     int offset;
-    Register* vreg=nullptr;
+    Register* reg=nullptr;
     public:
-    StackRegister(PhyReg, int);
+    StackRegister(PhyRegister::PhyReg, int);
     StackRegister(VirRegister*, int);
     std::string GetName(){return rname;}
-    Register*& GetVreg();
-    void SetVreg(PhyRegister*&);
+    VirRegister* GetVreg();
+    void SetPreg(PhyRegister*&);
     void SetOffset(int);
     void print()final;
+    bool isPhysical()final;
 };
 
 class RegisterList {
@@ -103,3 +103,5 @@ class RegisterList {
     // std::vector<PhyRegister*>& GetReglistParamFloat();
     // std::vector<PhyRegister*>& GetReglistTempFloat();
 };
+
+

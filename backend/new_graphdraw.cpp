@@ -633,8 +633,8 @@ void GraphColor::RewriteProgram() {
         } else if(auto stackreg=dynamic_cast<StackRegister *>(operand)){
           if(stackreg->GetVreg()==nullptr)
             continue;
-          auto replace=color[dynamic_cast<MOperand>(operand)];
-          //TODO
+          auto replace=color[dynamic_cast<MOperand>(stackreg->GetVreg())];
+          stackreg->SetPreg(replace);
         }
       }
     }

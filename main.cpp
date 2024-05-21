@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
-  #ifdef SYSY_ENABLE_MIDDLE_END
+  // #ifdef SYSY_ENABLE_MIDDLE_END
   std::unique_ptr<PassManager> pass_manager(new PassManager);
   int optionIndex, option;
   // 目前处于调试阶段，最终会换成-O1 -O2 -O3
@@ -97,15 +97,15 @@ int main(int argc, char **argv) {
   Singleton<Module>().Test();
   fflush(stdout);
   fclose(stdout);
-#endif
-#ifdef SYSY_ENABLE_BACKEND
+  // #endif
+
   freopen(asmoutput_path.c_str(), "w", stdout);
   RISCVModuleLowering RISCVASm;
   RISCVASm.run(&Singleton<Module>());
   fflush(stdout);
   fclose(stdout);
 
-  freopen("dev/tty", "w", stdout);
-#endif
+  // freopen("dev/tty", "w", stdout);
+
   return 0;
 }

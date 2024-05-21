@@ -5,8 +5,6 @@ RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
     // need file name
     asmprinter = new RISCVAsmPrinter("file", m, ctx);
-    // asmprinter->printAsmGlobal();
-    // assert(0&&"Handled later");
 }
 
 bool RISCVModuleLowering::run(Module* m){
@@ -19,8 +17,8 @@ bool RISCVModuleLowering::run(Module* m){
             std::cerr<<"FUNC Lowering failed\n";
         }
     }
-    // LegalizeConstInt lcint(ctx);
-    // lcint.run();
+    LegalizeConstInt lcint(ctx);
+    lcint.run();
 
     asmprinter->printAsm();
     // ctx.print();
@@ -42,22 +40,13 @@ bool RISCVFunctionLowering::run(Function* m){
 
     asmprinter->SetTextSegment(new textSegment(ctx));
     asmprinter->GetData()->GenerateTempvarList(ctx);
-
+    asmprinter->GetData()->LegalizeGloablVar(ctx);
     LegalizeConstInt lcint(ctx);
     lcint.run();
-
-    // temp
-    // asmprinter->printAsm();
 
     // Register Allocation
     RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>(), ctx);
     regalloc.RunGCpass();
-
-    // RISCVFrame& frame = *(ctx.GetCurFunction())->GetFrame();
-    // frame.GenerateFrame();
-    // frame.GenerateFrameHead();
-    // frame.GenerateFrameTail();
-    // lcint.run();
 
     return false;
 }

@@ -46,6 +46,7 @@ class dataSegment {
     void Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, mylist<RISCVBasicBlock,RISCVMIR>::iterator it, Imm* used);
     void PrintDataSegment_Globval();
     void PrintDataSegment_Tempvar();
+    void LegalizeGloablVar(RISCVLoweringContext&);
 };
 
 class globlvar: public RISCVGlobalObject{
@@ -72,6 +73,7 @@ class tempvar: public RISCVTempFloatObject{
     tempvar(int num_lable, float init);
     ~tempvar() = default;
     std::string Getname();
+    float GetInit() {return init;}
     void PrintTempvar();
 };
 
