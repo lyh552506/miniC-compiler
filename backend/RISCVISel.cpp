@@ -95,9 +95,15 @@ void RISCVISel::InstLowering(LoadInst* inst){
     else if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(FloatType::NewFloatTypeGet()))
         ctx(Builder(RISCVMIR::_flw,inst));
     
-    // else if(dynamic_cast<HasSubType*>(inst->GetOperand(0)->GetType())->GetSubType()){
-    //     printf("a load inst with pointer\n");
-    // }
+    else if(HasSubType* subtype = dynamic_cast<HasSubType*>(inst->GetOperand(0)->GetType())){
+        if(subtype->get_baseType()==IntType::NewIntTypeGet()) {
+            ctx(Builder(RISCVMIR::_lw,inst));
+        }
+        else if(subtype->get_baseType()==FloatType::NewFloatTypeGet()) {
+            ctx(Builder(RISCVMIR::_flw,inst));
+        }
+        else assert(0&&"invalid load type in subtype");
+    }
     else assert(0&&"invalid load type");
 }
 
@@ -369,14 +375,23 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     using ISA = RISCVMIR::RISCVISA;
     PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
     RISCVMIR* inst1 = new RISCVMIR(ISA::_addiw);
-    // addiw .1 s0 beginaddregister
-    RISCVFrameObject* frameobj = dynamic_cast<RISCVFrameObject*>(baseptr);
-    VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_i32);
-    BegAddrRegister* breg1 = new BegAddrRegister(frameobj);
-    inst1->SetDef(vreg1);
-    inst1->AddOperand(s0);
-    inst1->AddOperand(breg1);
-    ctx(inst1);
+    if(RISCVFrameObject* frameobj = dynamic_cast<RISCVFrameObject*>(baseptr)) {
+        // addiw .1 s0 beginaddregister
+        VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_ptr);
+        BegAddrRegister* breg1 = new BegAddrRegister(frameobj);
+        inst1->SetDef(vreg1);
+        inst1->AddOperand(s0);
+        inst1->AddOperand(breg1);
+        ctx(inst1);
+    } 
+    else {
+        // addiw .1 s0, .x
+        VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_ptr);
+        inst1->SetDef(vreg1);
+        inst1->AddOperand(s0);
+        inst1->AddOperand(baseptr);
+        ctx(inst1);
+    }
 
     for(int i=1;i<limi;i++){
         // just make sure

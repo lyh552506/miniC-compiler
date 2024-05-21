@@ -37,12 +37,14 @@ void RISCVMIR::printfull(){
             def->print();
             if(operands.size()>0) std::cout << ", ";
         }
+        
         for(int i=0;i<operands.size();i++){
             operands[i]->print();
             if(i!=operands.size()-1)
                 std::cout<<", ";
         }
-        std::cout<<"\n";
+        // std::cout << std::endl;
+        std::cout <<'\n';
     }
 }
 
@@ -125,19 +127,14 @@ void RISCVFunction::printfull(){
 
 // RISCVFrame::RISCVFrame() {}
 RISCVFrame::RISCVFrame(RISCVFunction* func) : parent(func) {}
-// void RISCVFrame::spill(VirRegister* mop) {
-//     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
-// }
-// void RISCVFrame::spill(Value* val) {
-//     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
-// }
-
 StackRegister* RISCVFrame::spill(VirRegister* mop) {
-    for (auto& obj : frameobjs) {
-        // if (obj->GetName() == mop->GetName()) {
-        //     return obj->Get;
-        // }
-    }
+    /// @todo 
+    // put the spilled element to the same block in the stack
+    // for (auto& obj : frameobjs) {
+    //     // if (obj->GetName() == mop->GetName()) {
+    //     //     return obj->Get;
+    //     // }
+    // }
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
     return frameobjs.back().get()->GetStackReg();
 }
@@ -295,3 +292,18 @@ void RISCVFrame::GenerateFrameTail() {
         } 
     }
 }
+
+void RISCVFrame::AddCantBeSpill(RISCVMOperand* reg) {
+    auto it=std::find(cantbespill.begin(), cantbespill.end(), reg);
+    if(it != cantbespill.end()) {
+        return;
+    } 
+    cantbespill.push_back(reg);
+}
+
+bool RISCVFrame::CantBeSpill(RISCVMOperand* reg) {
+    auto it=std::find(cantbespill.begin(), cantbespill.end(), reg);
+    if(it == cantbespill.end()) {
+        return false;
+    } else return true;
+} 

@@ -44,6 +44,8 @@ bool RISCVFunctionLowering::run(Function* m){
     LegalizeConstInt lcint(ctx);
     lcint.run();
 
+    // temp print asm
+    // asmprinter->printAsm();
     // Register Allocation
     RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>(), ctx);
     regalloc.RunGCpass();

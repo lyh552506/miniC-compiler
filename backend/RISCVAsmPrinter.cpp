@@ -127,6 +127,7 @@ std::vector<tempvar*> dataSegment::get_tempvar_list() {return tempvar_list;}
 void dataSegment::Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, mylist<RISCVBasicBlock,RISCVMIR>::iterator it, Imm* used) {
     std::string opcode(magic_enum::enum_name(inst->GetOpcode()));
     RISCVBasicBlock* block = inst->GetParent();
+    std::unique_ptr<RISCVFrame>& frame = block->GetParent()->GetFrame();
 
     std::string name = tempfloat->Getname();
     VirRegister* lui_rd = new VirRegister(RISCVType::riscv_ptr);
@@ -137,6 +138,8 @@ void dataSegment::Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, myli
     RISCVMIR* lui = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
     lui->SetDef(lui_rd);
     lui->AddOperand(lui_rs);
+    frame->AddCantBeSpill(lui_rd);
+
     RISCVMIR* flw = new RISCVMIR(RISCVMIR::RISCVISA::_flw);
     flw->SetDef(flw_rd);
     flw->AddOperand(flw_rs);
@@ -168,10 +171,12 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
             auto inst = *it;
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 if(globlvar* gvar = dynamic_cast<globlvar*>(inst->GetOperand(i))) {
+                    std::unique_ptr<RISCVFrame>& frame = cur_func->GetFrame();
                     // lui .1, %hi(name)
                     // opcode .2, %lo(name)(.1)
                     RISCVMIR* hi = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
                     VirRegister* hi_vreg = ctx.createVReg(RISCVType::riscv_ptr); 
+                    frame->AddCantBeSpill(hi_vreg);
                     LARegister* hi_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName());
                     hi->SetDef(hi_vreg);
                     hi->AddOperand(hi_lareg);
