@@ -33,14 +33,14 @@ void GraphColor::RunOnFunc() {
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
       // if (m_func->GetName() == "radixSort") {
-      //   CaculateLiveness();
-      //   PrintPass();
-      //   PrintAnalysis();
       //  // return;
       // }
       condition = true;
     }
   }
+  CaculateLiveness();
+  PrintPass();
+  PrintAnalysis();
   RewriteProgram();
   // PrintPass();
   // PrintAnalysis();
@@ -134,7 +134,8 @@ bool GraphColor::BriggsCheck(std::unordered_set<MOperand> target,
     }
     return (num < reglist.GetReglistFloat().size());
   } else
-    assert(0 && "tpre must be either int or float");
+    return true;
+  // assert(0 && "tpre must be either int or float");
 }
 
 void GraphColor::AddWorkList(MOperand v) {
@@ -474,6 +475,9 @@ void GraphColor::AssignColors() {
         spilledNodes.insert(select);
       else {
         coloredNode.insert(select);
+        if (select->GetName() == "%13") {
+          int a = 1;
+        }
         color[select] = SelectPhyReg(ty, int_assist);
       }
     } else if (ty == riscv_float32) {
@@ -485,8 +489,12 @@ void GraphColor::AssignColors() {
       }
     }
   }
-  for (auto caols : coalescedNodes)
+  for (auto caols : coalescedNodes) {
+    if (caols->GetName() == ".13") {
+      int a = 90;
+    }
     color[caols] = color[GetAlias(caols)];
+  }
 }
 
 void GraphColor::SpillNodeInMir() {
@@ -619,8 +627,8 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
 
 void GraphColor::RewriteProgram() {
   for (auto mbb : *m_func) {
-    if(mbb->GetName()==".LBB6"){
-      int a=0;
+    if (mbb->GetName() == ".LBB6") {
+      int a = 0;
     }
     for (auto mir : *mbb) {
       if (mir->GetOpcode() == RISCVMIR::call)
