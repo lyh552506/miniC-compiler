@@ -110,8 +110,10 @@ bool LegalizeConstInt::run() {
                 for(int i=0; i<inst->GetOperandSize(); i++) {
                     if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
                         if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(constdata->Getdata())) {
+                            
                             LegConstInt(inst, constdata, it);
                         }
+
                     }
                 }
             }

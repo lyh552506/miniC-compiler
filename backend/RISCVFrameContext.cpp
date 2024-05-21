@@ -12,11 +12,12 @@ RISCVGlobalObject::RISCVGlobalObject(Type* _tp,std::string _name):RISCVObject(_t
     local=false;
 }
 void RISCVGlobalObject::print(){
-    std::cout<<"***";
-    tp->print();
-    std::cout<<"GlobalObject:";
+    // std::cout<<"***";
+    // tp->print();
+    // std::cout<<"GlobalObject:";
     NamedMOperand::print();
-    std::cout<<"***\n";
+    // std::cout<<"***\n";
+    std::cout<<"\n";
 }
 
 RISCVTempFloatObject::RISCVTempFloatObject(std::string _name):RISCVObject(FloatType::NewFloatTypeGet(), _name){

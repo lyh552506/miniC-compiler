@@ -374,9 +374,10 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     using PhyReg=PhyRegister::PhyReg;
     using ISA = RISCVMIR::RISCVISA;
     PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
-    RISCVMIR* inst1 = new RISCVMIR(ISA::_addiw);
+    RISCVMIR* inst1 = nullptr;
     if(RISCVFrameObject* frameobj = dynamic_cast<RISCVFrameObject*>(baseptr)) {
         // addiw .1 s0 beginaddregister
+        inst1 = new RISCVMIR(ISA::_addiw);
         VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_ptr);
         BegAddrRegister* breg1 = new BegAddrRegister(frameobj);
         inst1->SetDef(vreg1);
@@ -386,6 +387,7 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     } 
     else {
         // addiw .1 s0, .x
+        inst1 = new RISCVMIR(ISA::_addw);
         VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_ptr);
         inst1->SetDef(vreg1);
         inst1->AddOperand(s0);
@@ -447,13 +449,16 @@ void RISCVISel::InstLowering(CallInst* inst){
     // 把VReg Copy到PhyReg
     // 如果溢出则按照规约store
     // 如果有返回值则copy a0 到 VReg
+    std::unique_ptr<RISCVFrame>& frame = ctx.GetCurFunction()->GetFrame();
     #define M(x) ctx.mapping(x)
     if(!inst->Getuselist().empty()) {
         int MAXnum = 9, paramnum=inst->Getuselist().size();
         if (paramnum > MAXnum) {
-        // to do 
-        // spill to stack
-        // 
+            // spill to stack
+            for(int i=paramnum; i>MAXnum; i--) {
+                StackRegister* stackreg = frame->spill(inst->GetOperand(i));
+                ctx.insert_val2mop(inst->GetOperand(i), stackreg);
+            }
         }
         for (int i=1; i<std::min(paramnum, MAXnum); i++) {
             int regnum=PhyRegister::PhyReg::a0-1;
@@ -488,7 +493,6 @@ void RISCVISel::InstLowering(CallInst* inst){
         if (local_param_size > ctx.GetCurFunction()->GetMaxParamSize()) {
             ctx.GetCurFunction()->SetMaxParamSize(local_param_size);
         }
-
     }
     if(!inst->GetUserlist().is_empty()){
         ctx(Builder_withoutDef(RISCVMIR::call, inst));

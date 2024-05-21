@@ -248,40 +248,42 @@ void RISCVFrame::GenerateFrameTail() {
     PhyRegister* ra = PhyRegister::GetPhyReg(PhyReg::ra);
 
     int temp_frame_size = frame_size;
-    if( frame_size>2047) {
-        // 以合法方式保存sp.s0
-        // temp_frame_size = frame_size % 4096;
-        temp_frame_size = frame_size % 2048;
-    }
-    // addi sp, sp, framesize-temp_frame_size
-    RISCVMIR* inst0 = new RISCVMIR(ISA::_addi);
-    if(temp_frame_size != frame_size) {
-        Imm* imm0 = new Imm(ConstIRInt::GetNewConstant(frame_size - temp_frame_size));
-        inst0->SetDef(sp);
-        inst0->AddOperand(sp);
-        inst0->AddOperand(imm0);
-    }
-    // ld ra, temp_frame_size-8(sp)
-    RISCVMIR* inst1 = new RISCVMIR(ISA::_ld);
-    StackRegister* sp_stack1 = new StackRegister(PhyReg::sp, temp_frame_size-8);
-    inst1->SetDef(ra);
-    inst1->AddOperand(sp_stack1);
-    // ld s0, temp_frame_size-16(sp)
-    RISCVMIR* inst2 = new RISCVMIR(ISA::_ld);
-    StackRegister* sp_stack2 = new StackRegister(PhyReg::sp, temp_frame_size-16);
-    inst2->SetDef(s0);
-    inst2->AddOperand(sp_stack2);
-    // addi sp, sp, temp_frame_size
-    RISCVMIR* inst3 = new RISCVMIR(ISA::_addi);
-    Imm* imm3 = new Imm(ConstIRInt::GetNewConstant(temp_frame_size));
-    inst3->SetDef(sp);
-    inst3->AddOperand(sp);
-    inst3->AddOperand(imm3);
 
     for(auto block : *parent) {
         for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
             RISCVMIR* inst = *it;
             if (inst->GetOpcode() == ISA::ret) {
+                
+                if( frame_size>2047) {
+                    // 以合法方式保存sp.s0
+                    // temp_frame_size = frame_size % 4096;
+                    temp_frame_size = frame_size % 2048;
+                }
+                // addi sp, sp, framesize-temp_frame_size
+                RISCVMIR* inst0 = new RISCVMIR(ISA::_addi);
+                if(temp_frame_size != frame_size) {
+                    Imm* imm0 = new Imm(ConstIRInt::GetNewConstant(frame_size - temp_frame_size));
+                    inst0->SetDef(sp);
+                    inst0->AddOperand(sp);
+                    inst0->AddOperand(imm0);
+                }
+                // ld ra, temp_frame_size-8(sp)
+                RISCVMIR* inst1 = new RISCVMIR(ISA::_ld);
+                StackRegister* sp_stack1 = new StackRegister(PhyReg::sp, temp_frame_size-8);
+                inst1->SetDef(ra);
+                inst1->AddOperand(sp_stack1);
+                // ld s0, temp_frame_size-16(sp)
+                RISCVMIR* inst2 = new RISCVMIR(ISA::_ld);
+                StackRegister* sp_stack2 = new StackRegister(PhyReg::sp, temp_frame_size-16);
+                inst2->SetDef(s0);
+                inst2->AddOperand(sp_stack2);
+                // addi sp, sp, temp_frame_size
+                RISCVMIR* inst3 = new RISCVMIR(ISA::_addi);
+                Imm* imm3 = new Imm(ConstIRInt::GetNewConstant(temp_frame_size));
+                inst3->SetDef(sp);
+                inst3->AddOperand(sp);
+                inst3->AddOperand(imm3);
+                
                 if(temp_frame_size != frame_size) {
                     it.insert_before(inst0);
                 }
