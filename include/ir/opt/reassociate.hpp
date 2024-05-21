@@ -27,6 +27,7 @@ private:
   //判断常数和对应的opcode是否是可吸收的，即判断是否是x*0这一类
   bool AbsorbConst(BinaryInst::Operation Op, ConstantData *constdata);
   bool KillDeadInst(User* I,int i);
+  bool KillDeadInst(User* I,std::vector<User *>& kill);
   Value *OptExp(BinaryInst *exp,
                 std::vector<std::pair<Value *, int>> &LinerizedOp);
   Value* OptAdd(BinaryInst *AddInst,

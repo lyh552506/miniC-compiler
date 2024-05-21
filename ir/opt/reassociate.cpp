@@ -23,8 +23,11 @@ void Reassociate::RunOnFunction() {
     for (User *I : *bb)
       OptimizeInst(I);
   }
-  for (int i = 0; i < RedoInst.size(); i++) {
-    KillDeadInst(RedoInst[i], i);
+  std::vector<User *> Kill{RedoInst.begin(), RedoInst.end()};
+  while (!Kill.empty()) {
+    auto val = Kill.back();
+    Kill.pop_back();
+    KillDeadInst(val, Kill);
   }
   for (int i = 0; i < RedoInst.size(); i++) {
     if (KillDeadInst(RedoInst[i], i)) {
@@ -38,6 +41,14 @@ void Reassociate::BuildRankMap() {
   int rank = 2;
   for (auto &param : m_func->GetParams()) {
     ValueRank[param.get()] = rank++;
+  }
+  for (auto bb : RPO) {
+    for (auto inst : *bb) {
+      if (dynamic_cast<PhiInst *>(inst) || dynamic_cast<CallInst *>(inst) ||
+          dynamic_cast<LoadInst *>(inst) || dynamic_cast<StoreInst *>(inst) ||
+          dynamic_cast<RetInst *>(inst))
+        ValueRank[inst] = 99999;
+    }
   }
 }
 
@@ -57,10 +68,12 @@ int Reassociate::GetRank(Value *val) {
   int ra = 0;
   User *inst = dynamic_cast<User *>(val);
   for (auto &u : inst->Getuselist()) {
+    if (ra > 10000)
+      break;
     ra = std::max(ra, GetRank(u->GetValue()));
   }
   assert(ra != 0 && "Rank cant be 0");
-  ValueRank[val] = ra;
+  ValueRank[val] = ++ra;
   return ra;
 }
 
@@ -194,7 +207,8 @@ void Reassociate::ReWriteExp(
   if (Changed) {
     for (auto iter = exp->GetParent()->begin(); iter != exp->GetParent()->end();
          ++iter) {
-      if(*iter)
+      if ((*iter) != exp)
+        continue;
       Changed->EraseFromParent();
       iter.insert_before(Changed);
       Changed = Changed->GetUserlist().Front()->GetUser();
@@ -405,10 +419,10 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
       Value *src = LinerizedOp[i].first;
       while (LinerizedOp[same] == LinerizedOp[i])
         same++;
-      for (int tmp = 0; tmp < same; tmp++) {
-        LinerizedOp[tmp] = LinerizedOp[LinerizedOp.size() - 1];
-        LinerizedOp.pop_back();
-      }
+      // for (int tmp = 0; tmp < same; tmp++) {
+      //   LinerizedOp[tmp] = LinerizedOp[LinerizedOp.size() - 1];
+      //   LinerizedOp.pop_back();
+      // }
       BinaryInst *Mul = nullptr;
       if (AddInst->Getuselist()[0]->GetValue()->GetTypeEnum() ==
           IR_Value_Float) {
@@ -429,6 +443,9 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
         it.insert_before(Mul);
         break;
       }
+      LinerizedOp.erase(LinerizedOp.begin() + i,
+                        LinerizedOp.begin() + i + same);
+      i--;
       PushVecSingleVal(RedoInst, dynamic_cast<User *>(Mul));
     }
   }
@@ -442,4 +459,18 @@ bool Reassociate::KillDeadInst(User *I, int i) {
     return true;
   }
   return false;
+}
+
+bool Reassociate::KillDeadInst(User *I, std::vector<User *> &kill) {
+  if (I->GetUserListSize() == 0) {
+    _DEBUG(std::cerr << "Killing Inst: " << I->GetName() << std::endl;)
+    auto it = std::find(RedoInst.begin(), RedoInst.end(), I);
+    assert(it != RedoInst.end());
+    RedoInst.erase(it);
+    for (auto &op : I->Getuselist()) {
+      if (auto tmp = dynamic_cast<User *>(op->GetValue()))
+        PushVecSingleVal(kill, tmp);
+    }
+    delete I;
+  }
 }
