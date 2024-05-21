@@ -125,19 +125,14 @@ void RISCVFunction::printfull(){
 
 // RISCVFrame::RISCVFrame() {}
 RISCVFrame::RISCVFrame(RISCVFunction* func) : parent(func) {}
-// void RISCVFrame::spill(VirRegister* mop) {
-//     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
-// }
-// void RISCVFrame::spill(Value* val) {
-//     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
-// }
-
 StackRegister* RISCVFrame::spill(VirRegister* mop) {
-    for (auto& obj : frameobjs) {
-        // if (obj->GetName() == mop->GetName()) {
-        //     return obj->Get;
-        // }
-    }
+    /// @todo 
+    // put the spilled element to the same block in the stack
+    // for (auto& obj : frameobjs) {
+    //     // if (obj->GetName() == mop->GetName()) {
+    //     //     return obj->Get;
+    //     // }
+    // }
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
     return frameobjs.back().get()->GetStackReg();
 }
@@ -295,3 +290,17 @@ void RISCVFrame::GenerateFrameTail() {
         } 
     }
 }
+
+void RISCVFrame::AddCantBeSpill(Register* reg) {
+    auto it=std::find(cantbespill->begin(), cantbespill->end(), reg);
+    if(it != cantbespill->end()) {
+        return;
+    } else cantbespill->push_back(reg);
+}
+
+bool RISCVFrame::CantBeSpill(Register* reg) {
+    auto it=std::find(cantbespill->begin(), cantbespill->end(), reg);
+    if(it == cantbespill->end()) {
+        return false;
+    } else return true;
+} 

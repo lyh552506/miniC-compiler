@@ -207,6 +207,7 @@ class RISCVFrame{
     RISCVFunction* parent;
     std::vector<std::unique_ptr<RISCVFrameObject>> frameobjs;
     size_t frame_size;
+    std::vector<RISCVMOperand*>* cantbespill;
     public:
     RISCVFrame(RISCVFunction*);
     // RISCVFrame();
@@ -218,5 +219,7 @@ class RISCVFrame{
     void GenerateFrame();
     void GenerateFrameHead();
     void GenerateFrameTail(); 
+    void AddCantBeSpill(Register*);
+    bool CantBeSpill(Register*);
 };
 
