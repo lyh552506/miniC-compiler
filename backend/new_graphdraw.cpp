@@ -468,12 +468,12 @@ void GraphColor::AssignColors() {
     for (auto adj : AdjList[select])
       if (coloredNode.find(GetAlias(adj)) != coloredNode.end() ||
           Precolored.find(GetAlias(adj)) != Precolored.end()) {
-        if (color.find(dynamic_cast<MOperand>(adj)) == color.end())
+        if (color.find(dynamic_cast<MOperand>(GetAlias(adj))) == color.end())
           assert(0);
         if (ty == riscv_i32 || ty == riscv_ptr)
-          int_assist.erase(color[adj]);
+          int_assist.erase(color[GetAlias(adj)]);
         else if (ty == riscv_float32)
-          float_assist.erase(color[adj]);
+          float_assist.erase(color[GetAlias(adj)]);
       }
     bool flag = false;
     if (ty == riscv_i32 || ty == riscv_ptr) {

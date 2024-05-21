@@ -11,8 +11,8 @@ using InterVal = LiveInterval;
 using OpType = RISCVMIR::RISCVISA;
 bool BlockInfo::Count(Register *op) {
   if (op) {
-    if(color.find(op) != color.end() && color[op] == nullptr)
-      int b =1;
+    // if(color.find(op) != color.end() && color[op] == nullptr)
+    //   int b =1;
     if(color.find(op) != color.end())
       return true;
     else
@@ -168,7 +168,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
         if (auto reg = val->ignoreLA()) {
           if (reg) {
             if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
-              Precolored.insert(reg);
+              Precolored.insert(phy);
               color[phy] = phy;
             }
             Live.insert(reg);
@@ -198,7 +198,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
             Live.insert(val1);
             initial.insert(val1);
             if (auto phy = dynamic_cast<PhyRegister *>(val1)) {
-              Precolored.insert(val1);
+              Precolored.insert(phy);
               color[phy] = phy;
               initial.erase(val1);
             }
@@ -217,7 +217,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           initial.insert(val1);
           if (auto phy = dynamic_cast<PhyRegister *>(val1)) {
             color[phy] = phy;
-            Precolored.insert(val1);
+            Precolored.insert(phy);
             initial.erase(val1);
           }
         }
@@ -231,7 +231,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           initial.insert(val2);
           if (auto phy = dynamic_cast<PhyRegister *>(val2)) {
             color[phy] = phy;
-            Precolored.insert(val2);
+            Precolored.insert(phy);
             initial.erase(val2);
           }
         }
@@ -248,8 +248,13 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           Live.erase(color[DefValue]);
           Precolored.insert(color[DefValue]);
         } else {
-          Precolored.insert(DefValue);
-          Live.erase(DefValue);
+          if(auto phy = dynamic_cast<PhyRegister*>(DefValue))
+          {
+            Precolored.insert(phy);
+            Live.erase(DefValue);
+          }
+          else
+            Live.erase(DefValue);
         }
       }
     }
