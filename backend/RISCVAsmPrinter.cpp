@@ -165,6 +165,7 @@ void dataSegment::PrintDataSegment_Tempvar() {
 }
 
 void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
+    using ISA = RISCVMIR::RISCVISA;
     RISCVFunction* cur_func = ctx.GetCurFunction();
     for(auto block: *cur_func) {
         for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
@@ -173,7 +174,7 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
                 if(globlvar* gvar = dynamic_cast<globlvar*>(inst->GetOperand(i))) {
                     std::unique_ptr<RISCVFrame>& frame = cur_func->GetFrame();
                     // lui .1, %hi(name)
-                    // opcode .2, %lo(name)(.1)
+                    // ld/sd .2, %lo(name)(.1)
                     RISCVMIR* hi = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
                     VirRegister* hi_vreg = ctx.createVReg(RISCVType::riscv_ptr); 
                     frame->AddCantBeSpill(hi_vreg);
@@ -181,9 +182,21 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
                     hi->SetDef(hi_vreg);
                     hi->AddOperand(hi_lareg);
                     it.insert_before(hi);
-
-                    LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(),dynamic_cast<VirRegister*>(hi->GetDef()));
-                    inst->SetOperand(i, lo_lareg);
+                    if(inst->GetOpcode()>ISA::BeginMem&&inst->GetOpcode()<ISA::EndMem) {
+                        LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(),dynamic_cast<VirRegister*>(hi->GetDef()));
+                        inst->SetOperand(i, lo_lareg);
+                    }
+                    else {
+                        RISCVMIR* lo = new RISCVMIR(ISA::_addi);
+                        VirRegister* lo_vreg = ctx.createVReg(RISCVType::riscv_ptr);
+                        frame->AddCantBeSpill(lo_vreg);
+                        LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(), LARegister::LAReg::lo);
+                        lo->SetDef(lo_vreg);
+                        lo->AddOperand(hi->GetDef());
+                        lo->AddOperand(lo_lareg);
+                        it.insert_before(lo);
+                        inst->SetOperand(i, lo_vreg);
+                    }
                 }   
             }
         }

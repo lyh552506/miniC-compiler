@@ -72,7 +72,7 @@ int Reassociate::GetRank(Value *val) {
       break;
     ra = std::max(ra, GetRank(u->GetValue()));
   }
-  assert(ra != 0 && "Rank cant be 0");
+  // assert(ra != 0 && "Rank cant be 0");
   ValueRank[val] = ++ra;
   return ra;
 }
@@ -84,10 +84,12 @@ void Reassociate::OptimizeInst(Value *I) {
   //如果是可交换（可重组）指令，尝试将含有const的操作数移动到右边
   if (IsCommutative(bin->getopration()))
     FormalBinaryInst(bin);
-
+  else
+    return;
   // Float的代码重组有丢失精度的风险，暂时不对其进行处理
   if (IsBinaryFloatType(bin))
     return;
+
   if (bin->GetUserlist().GetSize() == 1) {
     if (auto bin_user =
             dynamic_cast<BinaryInst *>(bin->GetUserlist().Front()->GetUser())) {
@@ -108,11 +110,7 @@ void Reassociate::ReassciateExp(BinaryInst *I) {
   for (auto &[val, times] : Leaf)
     for (int i = 0; i < times; i++)
       ValueToRank.push_back({val, GetRank(val)});
-
-  std::stable_sort(
-      ValueToRank.begin(), ValueToRank.end(),
-      [](const auto &v1, const auto &v2) { return v1.second > v2.second; });
-
+  int Size = ValueToRank.size();
   _DEBUG(std::cerr << "Linear set befor reassociate ";
          std::for_each(ValueToRank.begin(), ValueToRank.end(),
                        [](std::pair<Value *, int> &ele) {
@@ -120,8 +118,16 @@ void Reassociate::ReassciateExp(BinaryInst *I) {
                                    << ele.second << " ]";
                        });
          std::cerr << std::endl;)
+  std::stable_sort(
+      ValueToRank.begin(), ValueToRank.end(),
+      [](const auto &v1, const auto &v2) { return v1.second > v2.second; });
   if (Value *new_val = OptExp(I, ValueToRank)) {
     // TODO
+    if (new_val != I) {
+      I->RAUW(new_val);
+      delete I;
+    }
+    return;
   }
   std::stable_sort(
       ValueToRank.begin(), ValueToRank.end(),
@@ -133,6 +139,8 @@ void Reassociate::ReassciateExp(BinaryInst *I) {
                                    << ele.second << " ]";
                        });
          std::cerr << std::endl;)
+  if (Size == ValueToRank.size())
+    return;
   ReWriteExp(I, ValueToRank);
 }
 
@@ -209,7 +217,7 @@ void Reassociate::ReWriteExp(
          ++iter) {
       if ((*iter) != exp)
         continue;
-      if(Changed==exp)
+      if (Changed == exp)
         break;
       Changed->EraseFromParent();
       iter.insert_before(Changed);
@@ -237,9 +245,9 @@ Value *Reassociate::OptExp(BinaryInst *exp,
       C = ConstantFolding::ConstFoldBinary(exp->getopration(), C, temp);
   }
   //按理说做完常量折叠后，不会出现这种情况了
-  if (LinerizedOp.empty())
-    exp->RAUW(C);
-
+  if (LinerizedOp.empty()) {
+    return C;
+  }
   //判断C的特殊情况,正常情况下常量折叠应该做完了
   // eg: x+0、x*0
   if (C != nullptr && !ShouldIgnoreConst(exp->getopration(), C)) {
@@ -248,7 +256,9 @@ Value *Reassociate::OptExp(BinaryInst *exp,
     LinerizedOp.push_back(std::make_pair(C, 0));
   }
   if (LinerizedOp.size() == 1)
-    exp->RAUW(LinerizedOp[0].first);
+    return LinerizedOp[0].first;
+  // if (LinerizedOp.size() == 1)
+  //   exp->RAUW(LinerizedOp[0].first);
   int size = LinerizedOp.size();
   switch (exp->getopration()) {
   case BinaryInst::Op_Add:
@@ -352,9 +362,11 @@ void Reassociate::FormalBinaryInst(User *I) {
   auto LHS = GetOperand(bin, 0);
   auto RHS = GetOperand(bin, 1);
   // TODO GetRank ，但是目前并不清楚这个对后续的作用
+  auto LHSRank=GetRank(LHS);
+  auto RHSRank=GetRank(RHS);
   if (dynamic_cast<ConstantData *>(RHS))
     return;
-  if (dynamic_cast<ConstantData *>(LHS)) {
+  if (dynamic_cast<ConstantData *>(LHS)||LHSRank<RHSRank) {
     std::swap(bin->Getuselist()[0], bin->Getuselist()[1]);
   }
 }
@@ -449,8 +461,12 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
                         LinerizedOp.begin() + i + same);
       i--;
       PushVecSingleVal(RedoInst, dynamic_cast<User *>(Mul));
+      if (LinerizedOp.size() == 0) {
+        return Mul;
+      }
     }
   }
+  return nullptr;
 }
 
 bool Reassociate::KillDeadInst(User *I, int i) {

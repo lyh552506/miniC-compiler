@@ -1,5 +1,5 @@
 #include "RegAlloc.hpp"
-#include "LegalizeConstInt.hpp"
+#include "LegalizePass.hpp"
 void spill_reg(Operand vreg);
 void get_frameObj(Operand vreg);
 

@@ -1,5 +1,6 @@
 {
     "files.associations": {
+      "*.ll": "plaintext",
       "iostream": "cpp",
       "array": "cpp",
       "atomic": "cpp",
@@ -113,7 +114,8 @@
       "__functional_base": "cpp",
       "filesystem": "cpp",
       "version": "cpp",
-      "execution": "cpp"
+      "execution": "cpp",
+      "stdio.h": "c"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true,
