@@ -14,6 +14,13 @@
   #define _DEBUG(x)
 #endif
 
+#ifdef __GNUC__
+#define TO_STRING(x) #x
+#define WARN_LOCATION(msg) _Pragma(TO_STRING(GCC warning msg))
+#else
+#define WARN_LOCATION(msg) 
+#endif
+
 /// @brief 遍历一个function,每个bb是一个智能指针BasicBlockPtr
 #define For_bb_In(function)                                                    \
   assert(dynamic_cast<Function *>(function) &&                                 \
