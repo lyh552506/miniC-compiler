@@ -1,5 +1,6 @@
 #pragma once
 #include "RISCVMOperand.hpp"
+
 /// @brief 这个写成接口吧...
 class Register:public RISCVMOperand{
     protected:
@@ -51,33 +52,19 @@ class VirRegister:public Register{
 /// @brief 用于加载地址的特殊寄存器，形如%hi(L0) %lo(L0)
 /// Not finished
 class LARegister:public Register{
+    Register* vreg=nullptr;
+    public:
     enum LAReg {
         hi,lo
     } regnum;
-    // std::string name;
-    Register* vreg=nullptr;
-    public:
     LARegister(RISCVType, std::string);
+    LARegister(RISCVType, std::string, LAReg);
     LARegister(RISCVType, std::string, VirRegister*);
     void print()final;
     Register*& GetVreg();
     void SetReg(PhyRegister*&);
     std::string GetName(){return rname;}
     bool isPhysical()final{return true;};
-};
-
-class StackRegister:public Register{
-    int offset;
-    Register* reg=nullptr;
-    public:
-    StackRegister(PhyRegister::PhyReg, int);
-    StackRegister(VirRegister*, int);
-    std::string GetName(){return rname;}
-    VirRegister* GetVreg();
-    void SetPreg(PhyRegister*&);
-    void SetOffset(int);
-    void print()final;
-    bool isPhysical()final;
 };
 
 class RegisterList {

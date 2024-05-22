@@ -17,8 +17,8 @@ bool RISCVModuleLowering::run(Module* m){
             std::cerr<<"FUNC Lowering failed\n";
         }
     }
-    LegalizeConstInt lcint(ctx);
-    lcint.run();
+    Legalize legal(ctx);
+    legal.run();
 
     asmprinter->printAsm();
     // ctx.print();
@@ -41,8 +41,8 @@ bool RISCVFunctionLowering::run(Function* m){
     asmprinter->SetTextSegment(new textSegment(ctx));
     asmprinter->GetData()->GenerateTempvarList(ctx);
     asmprinter->GetData()->LegalizeGloablVar(ctx);
-    LegalizeConstInt lcint(ctx);
-    lcint.run();
+    Legalize legal(ctx);
+    legal.run();
 
     // temp print asm
     //asmprinter->printAsm();
