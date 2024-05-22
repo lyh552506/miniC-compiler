@@ -111,10 +111,7 @@ public:
       : LiveInterval(func), ctx(_ctx), m_func(func),
         reglist(RegisterList::GetPhyRegList()) {}
   void RunOnFunc();
-
 private:
-  //记录available的寄存器
-  // int colors;
   /// @brief 初始化各个工作表
   void MakeWorklist();
   //返回vector为0则不是move相关
@@ -143,35 +140,8 @@ private:
   void SetRegState(PhyRegister *reg, RISCVType ty);
   int GetRegNums(MOperand v);
   int GetRegNums(RISCVType ty);
-  void GC_init() {
-    ValsInterval.clear();
-    freezeWorkList.clear();
-    worklistMoves.clear();
-    simplifyWorkList.clear();
-    spillWorkList.clear();
-    spillWorkList.clear();
-    spilledNodes.clear();
-    initial.clear();
-    coalescedNodes.clear();
-    constrainedMoves.clear();
-    coalescedMoves.clear();
-    frozenMoves.clear();
-    coloredNode.clear();
-    AdjList.clear();
-    selectstack.clear();
-    belongs.clear();
-    activeMoves.clear();
-    alias.clear();
-    RegType.clear();
-    AlreadySpill.clear();
-    InstLive.clear();
-    Precolored.clear();
-    color.clear();
-    moveList.clear();
-    IG.clear();
-    instNum.clear();
-    RegLiveness.clear();
-  }
+  void GC_init();
+  void SimplifyMv();
   RISCVMIR *CreateSpillMir(RISCVMOperand *spill,
                            std::unordered_set<VirRegister *> &temps);
   RISCVMIR *CreateLoadMir(RISCVMOperand *load,

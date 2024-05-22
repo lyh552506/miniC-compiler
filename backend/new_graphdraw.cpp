@@ -638,18 +638,25 @@ void GraphColor::RewriteProgram() {
         } else if (auto lareg = dynamic_cast<LARegister *>(operand)) {
           if (lareg->GetVreg() == nullptr)
             continue;
-          if (color.find(dynamic_cast<MOperand>(lareg->GetVreg())) == color.end())
+          if (color.find(dynamic_cast<MOperand>(lareg->GetVreg())) ==
+              color.end())
             assert(0);
           auto replace = color[dynamic_cast<MOperand>(lareg->GetVreg())];
           lareg->SetReg(replace);
         } else if (auto stackreg = dynamic_cast<StackRegister *>(operand)) {
           if (stackreg->GetVreg() == nullptr)
             continue;
-          if (color.find(dynamic_cast<MOperand>(stackreg->GetVreg())) == color.end())
+          if (color.find(dynamic_cast<MOperand>(stackreg->GetVreg())) ==
+              color.end())
             assert(0);
           auto replace = color[dynamic_cast<MOperand>(stackreg->GetVreg())];
           stackreg->SetPreg(replace);
         }
+      }
+      if (mir->GetOpcode() == RISCVMIR::mv &&
+          mir->GetDef() == mir->GetOperand(0)) {
+        // TODO
+        WARN_LOCATION("this is warning: remember to add mir delete function");
       }
     }
   }
@@ -669,9 +676,8 @@ PhyRegister *GraphColor::SelectPhyReg(RISCVType ty,
       if (assist.find(reg) != assist.end())
         return reg;
     }
-  } else {
-    assert(0);
   }
+  assert(0);
 }
 
 void GraphColor::Print() {
@@ -680,4 +686,34 @@ void GraphColor::Print() {
       std::cerr << "Replace " << v.first->GetName() << "  with  "
                 << v.second->GetName() << std::endl;
   }
+}
+
+void GraphColor::GC_init() {
+  ValsInterval.clear();
+  freezeWorkList.clear();
+  worklistMoves.clear();
+  simplifyWorkList.clear();
+  spillWorkList.clear();
+  spillWorkList.clear();
+  spilledNodes.clear();
+  initial.clear();
+  coalescedNodes.clear();
+  constrainedMoves.clear();
+  coalescedMoves.clear();
+  frozenMoves.clear();
+  coloredNode.clear();
+  AdjList.clear();
+  selectstack.clear();
+  belongs.clear();
+  activeMoves.clear();
+  alias.clear();
+  RegType.clear();
+  AlreadySpill.clear();
+  InstLive.clear();
+  Precolored.clear();
+  color.clear();
+  moveList.clear();
+  IG.clear();
+  instNum.clear();
+  RegLiveness.clear();
 }
