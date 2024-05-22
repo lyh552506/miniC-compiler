@@ -44,7 +44,7 @@ void Legalize::mvLegalize(mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
             }
         }
         else vreg = ctx.createVReg(riscv_ptr);
-        
+
         ld->SetDef(vreg);
         ld->AddOperand(inst->GetOperand(0));
         it.insert_before(ld);
@@ -172,15 +172,11 @@ bool LegalizeConstInt::run() {
                 for(int i=0; i<inst->GetOperandSize(); i++) {
                     if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
                         if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(constdata->Getdata())) {
-                            // real legalize
-                            LegConstInt(inst, constdata, it);
-
                             if(constint->GetVal() == 0 && inst->GetOpcode()!=ISA::li && inst->GetOpcode()!=ISA::mv) {
                                 PhyRegister* zero = PhyRegister::GetPhyReg(PhyReg::zero);
                                 inst->SetOperand(i,zero);
                                 break;
                             }
-
                             if(inst->GetOpcode()>ISA::BeginBranch && inst->GetOpcode()<ISA::EndBranch) {
                                 RISCVMIR* li = new RISCVMIR(ISA::li);
                                 VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
@@ -190,6 +186,8 @@ bool LegalizeConstInt::run() {
                                 inst->SetOperand(i, li->GetDef());
                                 break;
                             }
+                            // real legalize
+                            LegConstInt(inst, constdata, it);
                         }
 
                     }
