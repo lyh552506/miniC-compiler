@@ -32,6 +32,10 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
+      // CaculateLiveness();
+      // PrintPass();
+      // PrintAnalysis();
+      // return;
       condition = true;
     }
   }
@@ -78,7 +82,7 @@ bool GraphColor::GeorgeCheck(MOperand dst, MOperand src, RISCVType ty) {
   if (ty == riscv_i32 || ty == riscv_ptr) {
     for (auto tmp : IG[src]) {
       bool ok = false;
-      if (IG[tmp].size() < reglist.GetReglistTest().size())
+      if (IG[tmp].size() < reglist.GetReglistInt().size())
         ok |= true;
       if (Precolored.find(tmp) != Precolored.end())
         ok |= true;
@@ -114,10 +118,10 @@ bool GraphColor::BriggsCheck(std::unordered_set<MOperand> target,
   if (ty == riscv_i32 | ty == riscv_ptr) {
     int num = 0;
     for (auto node : target) {
-      if (IG[node].size() >= reglist.GetReglistTest().size())
+      if (IG[node].size() >= reglist.GetReglistInt().size())
         num++;
     }
-    return (num < reglist.GetReglistTest().size());
+    return (num < reglist.GetReglistInt().size());
   } else if (ty == riscv_float32) {
     int num = 0;
     for (auto node : target) {
@@ -191,6 +195,7 @@ MOperand GraphColor::HeuristicSpill() {
   }
   for (auto spill : spillWorkList)
     return spill;
+  assert(0);
 }
 
 // TODO选择freeze node的启发式函数
@@ -204,14 +209,14 @@ void GraphColor::SetRegState(PhyRegister *reg, RISCVType ty) {
 
 int GraphColor::GetRegNums(MOperand v) {
   if (v->GetType() == riscv_i32 || v->GetType() == riscv_ptr)
-    return reglist.GetReglistTest().size();
+    return reglist.GetReglistInt().size();
   else if (v->GetType() == riscv_float32)
     return reglist.GetReglistFloat().size();
   else if (v->GetType() == riscv_none) {
     auto preg = dynamic_cast<PhyRegister *>(v);
     auto tp = RegType[preg];
     assert(tp == 0 && "error");
-    return tp == riscv_i32 ? reglist.GetReglistTest().size()
+    return tp == riscv_i32 ? reglist.GetReglistInt().size()
                            : reglist.GetReglistFloat().size();
   } else {
     assert("excetion case");
@@ -220,7 +225,7 @@ int GraphColor::GetRegNums(MOperand v) {
 
 int GraphColor::GetRegNums(RISCVType ty) {
   if (ty == riscv_i32 || ty == riscv_ptr)
-    return reglist.GetReglistTest().size();
+    return reglist.GetReglistInt().size();
   if (ty == riscv_float32)
     return reglist.GetReglistFloat().size();
   assert(0);
@@ -302,7 +307,7 @@ void GraphColor::FreezeMoves(MOperand freeze) {
     frozenMoves.insert(mov);
     if (MoveRelated(value).size() == 0) {
       if (value->GetType() == riscv_i32 &&
-              IG[value].size() < reglist.GetReglistTest().size() ||
+              IG[value].size() < reglist.GetReglistInt().size() ||
           value->GetType() == riscv_float32 &&
               IG[value].size() < reglist.GetReglistFloat().size()) {
         freezeWorkList.erase(value);
@@ -450,8 +455,8 @@ void GraphColor::AssignColors() {
     MOperand select = selectstack.back();
     RISCVType ty = select->GetType();
     selectstack.pop_back();
-    std::unordered_set<MOperand> int_assist{reglist.GetReglistTest().begin(),
-                                            reglist.GetReglistTest().end()};
+    std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),
+                                            reglist.GetReglistInt().end()};
     std::unordered_set<MOperand> float_assist{reglist.GetReglistFloat().begin(),
                                               reglist.GetReglistFloat().end()};
     //遍历所有的冲突点，查看他们分配的颜色，保证我们分配的颜色一定是不同的
@@ -665,7 +670,7 @@ void GraphColor::RewriteProgram() {
 PhyRegister *GraphColor::SelectPhyReg(RISCVType ty,
                                       std::unordered_set<MOperand> &assist) {
   if (ty == riscv_i32 || ty == riscv_ptr) {
-    for (auto reg : reglist.GetReglistTest()) {
+    for (auto reg : reglist.GetReglistInt()) {
       if (assist.find(reg) != assist.end()) {
         return reg;
       }
