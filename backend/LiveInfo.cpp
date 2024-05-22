@@ -11,8 +11,6 @@ using InterVal = LiveInterval;
 using OpType = RISCVMIR::RISCVISA;
 bool BlockInfo::Count(Register *op) {
   if (op) {
-    // if(color.find(op) != color.end() && color[op] == nullptr)
-    //   int b =1;
     if(color.find(op) != color.end())
       return true;
     else
@@ -193,6 +191,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
         if (auto val1 = _val1->ignoreLA()) {
           if (Count(val1)) {
             Precolored.insert(color[val1]);
+            color[color[val1]] = color[val1];
             Live.insert(color[val1]);
           } else {
             Live.insert(val1);
@@ -211,6 +210,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
       if (auto val1 = _val1->ignoreLA()) {
         if (Count(val1)) {
           Precolored.insert(color[val1]);
+          color[color[val1]] = color[val1];
           Live.insert(color[val1]);
         } else {
           Live.insert(val1);
@@ -225,6 +225,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
       if (auto val2 = _val2->ignoreLA()) {
         if (Count(val2)) {
           Precolored.insert(color[val2]);
+          color[color[val2]] = color[val2];
           Live.insert(color[val2]);
         } else {
           Live.insert(val2);
@@ -246,11 +247,13 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
 
         if (Count(DefValue)) {
           Live.erase(color[DefValue]);
+          color[color[DefValue]] = color[DefValue];
           Precolored.insert(color[DefValue]);
         } else {
           if(auto phy = dynamic_cast<PhyRegister*>(DefValue))
           {
             Precolored.insert(phy);
+            color[phy] = phy;
             Live.erase(DefValue);
           }
           else

@@ -10,12 +10,11 @@
 #include <unordered_set>
 void GraphColor::RunOnFunc() {
   bool condition = true;
+  GC_init();
   CaculateLiveness();
-  // PrintPass();
   for (auto &[key, val] : IG) {
     AdjList[key].insert(val.begin(), val.end());
   }
-  int a = 1;
   while (condition) {
     condition = false;
     CaculateLiveness();
@@ -32,21 +31,12 @@ void GraphColor::RunOnFunc() {
     } while (!simplifyWorkList.empty() || !worklistMoves.empty() ||
              !freezeWorkList.empty() || !spillWorkList.empty());
     AssignColors();
-    // if (!spilledNodes.empty()) {
-    //   SpillNodeInMir();
-    // CaculateLiveness();
-    // PrintPass();
-    // PrintAnalysis();
-    //   // return;
-    //   condition = true;
-    // }
+    if (!spilledNodes.empty()) {
+      SpillNodeInMir();
+      condition = true;
+    }
   }
-  CaculateLiveness();
-  PrintPass();
-  PrintAnalysis();
-  // RewriteProgram();
-  // PrintPass();
-  // PrintAnalysis();
+  RewriteProgram();
 }
 
 void GraphColor::MakeWorklist() {
@@ -154,6 +144,7 @@ void GraphColor::AddWorkList(MOperand v) {
 void GraphColor::CaculateLiveness() {
   RunOnFunction();
   //计算IG,并且添加precolored集合
+  IG.clear();
   for (auto b : *m_func) {
     CalInstLive(b);
     CalcmoveList(b);
@@ -482,8 +473,6 @@ void GraphColor::AssignColors() {
       else {
         coloredNode.insert(select);
         color[select] = SelectPhyReg(ty, int_assist);
-        if (color[select] == nullptr)
-          int y = 0;
       }
     } else if (ty == riscv_float32) {
       if (float_assist.size() == 0)
@@ -491,18 +480,11 @@ void GraphColor::AssignColors() {
       else {
         coloredNode.insert(select);
         color[select] = SelectPhyReg(ty, float_assist);
-        if (color[select] == nullptr)
-          int y = 0;
       }
     }
   }
   for (auto caols : coalescedNodes) {
-    if (caols->GetName() == ".13") {
-      int a = 90;
-    }
     color[caols] = color[GetAlias(caols)];
-    if (color[caols] == nullptr)
-      int y = 0;
   }
 }
 
@@ -522,9 +504,6 @@ void GraphColor::SpillNodeInMir() {
         //存在def并且def是一个准备spill节点
         RISCVMIR *sd = CreateSpillMir(mir->GetDef(), temps);
         mir_begin.insert_after(sd);
-        if (dynamic_cast<VirRegister *>(mir->GetDef())->GetName() == ".17") {
-          int a = 0;
-        }
         _DEBUG(std::cerr
                    << "Spilling "
                    << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
@@ -561,10 +540,6 @@ void GraphColor::SpillNodeInMir() {
           //存在operand(i)并且operand(i)是一个准备spill节点
           RISCVMIR *sd = CreateSpillMir(operand, temps);
           mir_begin.insert_after(sd);
-          if (dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName() ==
-              ".17") {
-            int a = 0;
-          }
           _DEBUG(
               std::cerr
                   << "Spilling "
@@ -636,15 +611,12 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
 
 void GraphColor::RewriteProgram() {
   for (auto mbb : *m_func) {
-    if (mbb->GetName() == ".LBB6") {
-      int a = 0;
-    }
     for (auto mir : *mbb) {
       if (mir->GetOpcode() == RISCVMIR::call)
         continue;
       if (mir->GetDef() != nullptr &&
           dynamic_cast<VirRegister *>(mir->GetDef())) {
-        if (color.find(dynamic_cast<MOperand>(mir->GetDef())) != color.end())
+        if (color.find(dynamic_cast<MOperand>(mir->GetDef())) == color.end())
           assert(0);
         auto replace = color[dynamic_cast<MOperand>(mir->GetDef())];
         _DEBUG(
@@ -656,7 +628,7 @@ void GraphColor::RewriteProgram() {
       for (int i = 0; i < mir->GetOperandSize(); i++) {
         auto operand = mir->GetOperand(i);
         if (dynamic_cast<VirRegister *>(operand)) {
-          if (color.find(dynamic_cast<MOperand>(operand)) != color.end())
+          if (color.find(dynamic_cast<MOperand>(operand)) == color.end())
             assert(0);
           auto replace = color[dynamic_cast<MOperand>(operand)];
           _DEBUG(std::cerr << "REPLACE Vreg "
@@ -664,17 +636,17 @@ void GraphColor::RewriteProgram() {
                            << " To Preg " << replace->GetName() << std::endl;)
           mir->SetOperand(i, replace);
         } else if (auto lareg = dynamic_cast<LARegister *>(operand)) {
-          if (color.find(dynamic_cast<MOperand>(operand)) != color.end())
-            assert(0);
           if (lareg->GetVreg() == nullptr)
             continue;
+          if (color.find(dynamic_cast<MOperand>(lareg->GetVreg())) == color.end())
+            assert(0);
           auto replace = color[dynamic_cast<MOperand>(lareg->GetVreg())];
           lareg->SetReg(replace);
         } else if (auto stackreg = dynamic_cast<StackRegister *>(operand)) {
-          if (color.find(dynamic_cast<MOperand>(operand)) != color.end())
-            assert(0);
           if (stackreg->GetVreg() == nullptr)
             continue;
+          if (color.find(dynamic_cast<MOperand>(stackreg->GetVreg())) == color.end())
+            assert(0);
           auto replace = color[dynamic_cast<MOperand>(stackreg->GetVreg())];
           stackreg->SetPreg(replace);
         }
@@ -689,7 +661,6 @@ PhyRegister *GraphColor::SelectPhyReg(RISCVType ty,
   if (ty == riscv_i32 || ty == riscv_ptr) {
     for (auto reg : reglist.GetReglistTest()) {
       if (assist.find(reg) != assist.end()) {
-        _DEBUG(std::cerr << "Size= " << color.size() << std::endl;)
         return reg;
       }
     }
