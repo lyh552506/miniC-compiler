@@ -33,7 +33,7 @@ void GraphColor::RunOnFunc() {
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
       // if (m_func->GetName() == "radixSort") {
-      //   CaculateLiveness();
+        CaculateLiveness();
       //   PrintPass();
       //   PrintAnalysis();
       //  // return;

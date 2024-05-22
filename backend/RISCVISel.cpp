@@ -273,6 +273,7 @@ void RISCVISel::InstLowering(CondInst* inst){
 }
 
 void RISCVISel::InstLowering(BinaryInst* inst){
+    Operand temp = inst->GetOperand(0);
     if(inst->getopration()<BinaryInst::Op_And){
         RISCVMIR* result;
         switch (inst->getopration())
@@ -283,7 +284,7 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                 if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
                     int inttemp = constint->GetVal();
                     if(inttemp<2048)
-                        ctx(Builder(RISCVMIR::_addi,inst));
+                        ctx(Builder(RISCVMIR::_addiw,inst));
                     else if(inttemp>=2048) {
                         auto minst=new RISCVMIR(RISCVMIR::_addw);
                         minst->SetDef(ctx.mapping(inst->GetDef()));
@@ -483,8 +484,10 @@ void RISCVISel::InstLowering(CallInst* inst){
             //     ctx(load);
             // }
             else if(inst->GetOperand(i)->GetType()==IntType::NewIntTypeGet()\
-            || inst->GetOperand(i)->GetType()==FloatType::NewFloatTypeGet())
+            || inst->GetOperand(i)->GetType()==FloatType::NewFloatTypeGet()\
+            || dynamic_cast<PointerType*>(inst->GetOperand(i)->GetType()))
                 ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i))}));
+            else std::cout << "Error!";
         }
         size_t local_param_size=0;
         for (int i=1; i<paramnum; i++) {

@@ -103,6 +103,8 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
 }
 
 bool LegalizeConstInt::run() {
+    using PhyReg = PhyRegister::PhyReg;
+    using ISA = RISCVMIR::RISCVISA;
     for(auto& func : ctx.GetFunctions()) {
         for(auto block : *func) {
             for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
@@ -110,8 +112,24 @@ bool LegalizeConstInt::run() {
                 for(int i=0; i<inst->GetOperandSize(); i++) {
                     if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
                         if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(constdata->Getdata())) {
-                            
+                            // real legalize
                             LegConstInt(inst, constdata, it);
+
+                            if(constint->GetVal() == 0 && inst->GetOpcode()!=ISA::li && inst->GetOpcode()!=ISA::mv) {
+                                PhyRegister* zero = PhyRegister::GetPhyReg(PhyReg::zero);
+                                inst->SetOperand(i,zero);
+                                break;
+                            }
+
+                            if(inst->GetOpcode()>ISA::BeginBranch && inst->GetOpcode()<ISA::EndBranch) {
+                                RISCVMIR* li = new RISCVMIR(ISA::li);
+                                VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+                                li->SetDef(vreg);
+                                li->AddOperand(constdata);
+                                it.insert_before(li);
+                                inst->SetOperand(i, li->GetDef());
+                                break;
+                            }
                         }
 
                     }
