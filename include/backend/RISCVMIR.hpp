@@ -210,9 +210,6 @@ class RISCVFrame{
     std::vector<RISCVMOperand*> cantbespill;
     public:
     RISCVFrame(RISCVFunction*);
-    // RISCVFrame();
-
-    // Or return StackRegister* ?
     StackRegister* spill(VirRegister*);
     StackRegister* spill(Value*);
     std::vector<std::unique_ptr<RISCVFrameObject>>& GetFrameObjs();
@@ -222,4 +219,5 @@ class RISCVFrame{
     void AddCantBeSpill(RISCVMOperand*);
     bool CantBeSpill(RISCVMOperand*);
 };
+
 

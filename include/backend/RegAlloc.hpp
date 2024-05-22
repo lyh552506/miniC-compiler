@@ -1,6 +1,7 @@
 #pragma once
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
+#include "RISCVContext.hpp"
 #include "RISCVMIR.hpp"
 #include "RISCVMOperand.hpp"
 #include "RISCVRegister.hpp"
@@ -16,13 +17,14 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include "RISCVContext.hpp"
 
 class GraphColor;
 class RegAllocImpl {
-  RISCVLoweringContext& ctx;
- public:
-  RegAllocImpl(RISCVFunction* func, RISCVLoweringContext& _ctx) : m_func(func), ctx(_ctx) {}
+  RISCVLoweringContext &ctx;
+
+public:
+  RegAllocImpl(RISCVFunction *func, RISCVLoweringContext &_ctx)
+      : m_func(func), ctx(_ctx) {}
   void RunGCpass();
   struct RegLiveInterval {
     int start;
@@ -90,24 +92,24 @@ private:
 
   bool verify(std::unordered_map<MOperand, std::vector<Interval>> Liveinterval);
 
-   public:
-    LiveInterval(RISCVFunction* f) : func(f), BlockLiveInfo(f) {}
-    std::unordered_map<MOperand, std::vector<Interval>>& GetRegLiveInterval(
-        RISCVBasicBlock* block) {
-      return RegLiveness[block];
-    }
-    void RunOnFunc_();
-    void PrintAnalysis();
-  };
-class GraphColor : public LiveInterval{
- public:
-  RISCVLoweringContext& ctx;
-  RISCVFunction* m_func;
+public:
+  LiveInterval(RISCVFunction *f) : func(f), BlockLiveInfo(f) {}
+  std::unordered_map<MOperand, std::vector<Interval>> &
+  GetRegLiveInterval(RISCVBasicBlock *block) {
+    return RegLiveness[block];
+  }
+  void RunOnFunc_();
+  void PrintAnalysis();
+};
+class GraphColor : public LiveInterval {
+public:
+  RISCVLoweringContext &ctx;
+  RISCVFunction *m_func;
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
-  GraphColor(RISCVFunction* func, RISCVLoweringContext& _ctx) 
-  : LiveInterval(func), ctx(_ctx), m_func(func),reglist(RegisterList::GetPhyRegList()) {
-  }
+  GraphColor(RISCVFunction *func, RISCVLoweringContext &_ctx)
+      : LiveInterval(func), ctx(_ctx), m_func(func),
+        reglist(RegisterList::GetPhyRegList()) {}
   void RunOnFunc();
 
 private:
@@ -141,6 +143,35 @@ private:
   void SetRegState(PhyRegister *reg, RISCVType ty);
   int GetRegNums(MOperand v);
   int GetRegNums(RISCVType ty);
+  void GC_init() {
+    ValsInterval.clear();
+    freezeWorkList.clear();
+    worklistMoves.clear();
+    simplifyWorkList.clear();
+    spillWorkList.clear();
+    spillWorkList.clear();
+    spilledNodes.clear();
+    initial.clear();
+    coalescedNodes.clear();
+    constrainedMoves.clear();
+    coalescedMoves.clear();
+    frozenMoves.clear();
+    coloredNode.clear();
+    AdjList.clear();
+    selectstack.clear();
+    belongs.clear();
+    activeMoves.clear();
+    alias.clear();
+    RegType.clear();
+    AlreadySpill.clear();
+    InstLive.clear();
+    Precolored.clear();
+    color.clear();
+    moveList.clear();
+    IG.clear();
+    instNum.clear();
+    RegLiveness.clear();
+  }
   RISCVMIR *CreateSpillMir(RISCVMOperand *spill,
                            std::unordered_set<VirRegister *> &temps);
   RISCVMIR *CreateLoadMir(RISCVMOperand *load,

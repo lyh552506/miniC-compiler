@@ -3,7 +3,6 @@
 #include "RISCVType.hpp"
 #include "RegAlloc.hpp"
 #include "my_stl.hpp"
-#include <LegalizeConstInt.hpp>
 #include <cassert>
 #include <iostream>
 #include <ostream>
