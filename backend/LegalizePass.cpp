@@ -172,8 +172,7 @@ bool LegalizeConstInt::run() {
                 for(int i=0; i<inst->GetOperandSize(); i++) {
                     if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
                         if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(constdata->Getdata())) {
-                            // real legalize
-                            LegConstInt(inst, constdata, it);
+                    
 
                             if(constint->GetVal() == 0 && inst->GetOpcode()!=ISA::li && inst->GetOpcode()!=ISA::mv) {
                                 PhyRegister* zero = PhyRegister::GetPhyReg(PhyReg::zero);
@@ -190,6 +189,8 @@ bool LegalizeConstInt::run() {
                                 inst->SetOperand(i, li->GetDef());
                                 break;
                             }
+                            // real legalize
+                            LegConstInt(inst, constdata, it);
                         }
 
                     }
