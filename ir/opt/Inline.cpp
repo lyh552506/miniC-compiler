@@ -12,33 +12,33 @@ void Inliner::Run()
 
 void Inliner::init()
 {
-    if(func->GetBasicBlock().empty())
-        NotInlineFunc.insert(func);
-    if(Only_Inline_Small_Function)
-    {
-        if(func->GetBasicBlock().size() > Inline_Block_Num)
-            NotInlineFunc.insert(func);
-    }
-    if(Not_Inline_Multilevel_Loop_Func)
-    {
-        for(BasicBlock* block : *func)
-        {
-            int nested = 0;
-            LoopInfo* lf = loopAnalysis->LookUp(block);
-            if(lf)
-                nested = lf->GetLoopDepth();
-            if(nested > Not_Inline_Multilevel_Loop_Nest)
-            {
-                if(NotInlineFunc.find(func) != NotInlineFunc.end())
-                    break;
-                NotInlineFunc.insert(func);
-            }
-        }
-    }
-    if(func->GetName() == "main")
-        NotInlineFunc.insert(func);
-    if(NotInlineFunc.find(func) == NotInlineFunc.end())
-    {
+    // if(func->GetBasicBlock().empty())
+    //     NotInlineFunc.insert(func);
+    // if(Only_Inline_Small_Function)
+    // {
+    //     if(func->GetBasicBlock().size() > Inline_Block_Num)
+    //         NotInlineFunc.insert(func);
+    // }
+    // if(Not_Inline_Multilevel_Loop_Func)
+    // {
+    //     for(BasicBlock* block : *func)
+    //     {
+    //         int nested = 0;
+    //         LoopInfo* lf = loopAnalysis->LookUp(block);
+    //         if(lf)
+    //             nested = lf->GetLoopDepth();
+    //         if(nested > Not_Inline_Multilevel_Loop_Nest)
+    //         {
+    //             if(NotInlineFunc.find(func) != NotInlineFunc.end())
+    //                 break;
+    //             NotInlineFunc.insert(func);
+    //         }
+    //     }
+    // }
+    // if(func->GetName() == "main")
+    //     NotInlineFunc.insert(func);
+    // if(NotInlineFunc.find(func) == NotInlineFunc.end())
+    // {
         for(BasicBlock* block : *func)
         {
             for(User* inst : *block)
@@ -47,11 +47,12 @@ void Inliner::init()
                     NeedInlineCall.push_back(inst);
             }
         }
-    }
+    // }
 }
 
 void Inliner::CreateCallMap()
 {
+    // create call map 直接从 Singleton<Module> 要，虽然有点...不太合理
     for(Use* user_ : func->GetUserlist())
     {
         User* user = user_->GetUser();
@@ -197,31 +198,12 @@ bool Inliner::CanBeInlined(User *inst)
         || name == "llvm.memcpy.p0.p0.i32")
             return false;
         Function* Func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
-        if(Func->GetUserlist().GetSize() > 2)
-            return false;
-        if(Only_Inline_Small_Function && !NotInline(Func))
-        {
-            if(Func->GetBasicBlock().size() <= Inline_Block_Num)
-            {
-                int Size = 0;
-                for(BasicBlock* block : Func->GetBasicBlock())
-                    Size += block->Size();
-                if(Size <= 5)
-                    return true;
-                else
-                    return false;
-            }
-            return false; 
+        // func 的 size 加到 Func 后仍然算合理的
+        // Func 不是递归的
+        // 总的inline产生的code size 不能太离谱
+        if(Func){
+            return true;
         }
-        else if(isRecursive(Func) && Inline_Recursive)
-        {
-            // int nest = CalRecursiveDepth(func); //TODO
-            // if(nest < Nest_Max)
-                // return true;
-            return false;
-        }
-        else
-            return false;
     }
     return false;
 }

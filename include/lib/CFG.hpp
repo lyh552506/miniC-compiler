@@ -264,7 +264,9 @@ class Function:public Value,public mylist<Function,BasicBlock>
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
     std::vector<BasicBlock*> bbs;
+    std::pair<size_t,size_t> inlineinfo;
     public:
+    std::pair<size_t,size_t>& GetInlineInfo(){return inlineinfo;}
     std::set<Function*> CalleeFuncs; // The Function who calls this
     std::set<Function*> CallingFuncs; // The Function that the func calls
     void InsertAlloca(AllocaInst* ptr);
