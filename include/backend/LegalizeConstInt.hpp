@@ -8,3 +8,12 @@ class LegalizeConstInt {
     void LegalizeMOpcode(RISCVMIR*);
     bool run();
 };
+
+class Legalize {
+    RISCVLoweringContext& ctx;
+    public:
+    Legalize(RISCVLoweringContext&);
+    void LegalizePass();
+    void mvLegalize(mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
+    void run();
+};

@@ -453,7 +453,7 @@ void RISCVISel::InstLowering(CallInst* inst){
     std::unique_ptr<RISCVFrame>& frame = ctx.GetCurFunction()->GetFrame();
     #define M(x) ctx.mapping(x)
     if(!inst->Getuselist().empty()) {
-        int MAXnum = 9, paramnum=inst->Getuselist().size();
+        int MAXnum = 8, paramnum=inst->Getuselist().size()-1;
         if (paramnum > MAXnum) {
             // spill to stack
             for(int i=paramnum; i>MAXnum; i--) {
@@ -461,7 +461,7 @@ void RISCVISel::InstLowering(CallInst* inst){
                 ctx.insert_val2mop(inst->GetOperand(i), stackreg);
             }
         }
-        for (int i=1; i<std::min(paramnum, MAXnum); i++) {
+        for (int i=1; i<=std::min(paramnum, MAXnum); i++) {
             int regnum=PhyRegister::PhyReg::a0-1;
             regnum+=i;
             if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(i))) {
@@ -487,7 +487,10 @@ void RISCVISel::InstLowering(CallInst* inst){
             || inst->GetOperand(i)->GetType()==FloatType::NewFloatTypeGet()\
             || dynamic_cast<PointerType*>(inst->GetOperand(i)->GetType()))
                 ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i))}));
-            else std::cout << "Error!";
+            else if(dynamic_cast<BoolType*>(inst->GetOperand(i)->GetType())) {
+                break;
+            }
+            else assert(0&&"Error!");
         }
         size_t local_param_size=0;
         for (int i=1; i<paramnum; i++) {

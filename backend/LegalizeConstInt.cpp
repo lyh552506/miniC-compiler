@@ -155,3 +155,36 @@ void LegalizeConstInt::LegalizeMOpcode(RISCVMIR* inst) {
     else if(opcode == ISA::_sltiu) inst->SetMopcode(ISA::_sltu);
     else assert(0&&"Invalid MOpcode type");
 }
+
+Legalize::Legalize(RISCVLoweringContext& _ctx) :ctx(_ctx) {}
+
+void Legalize::run() {
+    LegalizeConstInt lcint(ctx);
+    lcint.run();
+
+
+}
+
+void Legalize::LegalizePass() {
+    using ISA = RISCVMIR::RISCVISA;
+    for(auto& func: ctx.GetFunctions()) {
+        for(auto block : *func) {
+            for(mylist<RISCVBasicBlock, RISCVMIR>::iterator it=block->begin(); it!=block->end(); ++it) {
+                RISCVMIR* inst = *it;
+                if(inst->GetOpcode()=ISA::mv) {
+                    mvLegalize(it);
+                }
+
+            }
+        }
+    } 
+}
+void Legalize::mvLegalize(mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
+    RISCVMIR* inst = *it;
+    if(StackRegister* reg = dynamic_cast<StackRegister*>(inst->GetOperand(0))) {
+
+    }
+    else if (LARegister* reg = dynamic_cast<LARegister*>(inst->GetOperand(0))) {
+        
+    }
+}
