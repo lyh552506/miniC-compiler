@@ -59,10 +59,15 @@ void RISCVISel::InstLowering(AllocaInst* inst){
 void RISCVISel::InstLowering(StoreInst* inst){
     if(inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
         if(ConstIRInt* Intconst = dynamic_cast<ConstIRInt*>(inst->GetOperand(0))) {
-            auto minst=new RISCVMIR(RISCVMIR::_sw);
+            auto li = new RISCVMIR(RISCVMIR::li);
+            VirRegister* vreg = new VirRegister(RISCVTyper(inst->GetOperand(0)->GetType()));
+            li->SetDef(vreg);
             Imm* imm = new Imm(Intconst);
-            minst->AddOperand(imm);
-            // minst->AddOperand(Li_Intimm(Intconst));
+            li->AddOperand(imm);
+            ctx(li);
+
+            auto minst=new RISCVMIR(RISCVMIR::_sw);
+            minst->AddOperand(li->GetDef());
             minst->AddOperand(ctx.mapping(inst->GetOperand(1)));
             ctx(minst);
         }
@@ -458,20 +463,24 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     #undef M
 
     StackRegister* stackreg = nullptr;
-    if(offset < 2048) {
-        stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
-    }
-    else if(offset >=2047) {
-        int mod = offset % 2047;
-        offset-=mod;
-        VirRegister* vreg2 = ctx.createVReg(riscv_i32);
-        Imm* imm2 = new Imm(ConstIRInt::GetNewConstant(mod));
-        auto inst2=Builder(ISA::_addi, {vreg2,vreg2, imm2});
-        ctx(inst2);
+    stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
 
-        stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), mod);
-    }
-    else assert(0&&"error offset in GetElement inst");
+    /// @details Legalize StackRegister's offset togeter in LegalizePass
+    // if(offset <= 2047) {
+    //     stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
+    // }
+    // else if(offset >2047) {
+    //     int mod = offset % 2047;
+    //     offset-=mod;
+    //     VirRegister* vreg2 = ctx.createVReg(riscv_i32);
+    //     Imm* imm2 = new Imm(ConstIRInt::GetNewConstant(offset));
+    //     auto inst2=Builder(ISA::_addi, {vreg2,vreg2, imm2});
+    //     ctx(inst2);
+
+    //     stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), mod);
+    // }
+    // else assert(0&&"error offset in GetElement inst");
+
     // replace the GetElementptr inst with stackreg (off(.1))
     ctx.change_mapping(ctx.mapping(inst->GetDef()), stackreg);
 }
@@ -493,6 +502,7 @@ void RISCVISel::InstLowering(CallInst* inst){
             // spill to stack
             for(int i=paramnum; i>MAXnum; i--) {
                 StackRegister* stackreg = frame->spill(inst->GetOperand(i));
+                // ctx(Builder(RISCVMIR::_sd, {M(inst->GetOperand(i)), stackreg}));
                 ctx.insert_val2mop(inst->GetOperand(i), stackreg);
             }
         }
@@ -528,7 +538,7 @@ void RISCVISel::InstLowering(CallInst* inst){
             else assert(0&&"Error!");
         }
         size_t local_param_size=0;
-        for (int i=1; i<paramnum; i++) {
+        for (int i=MAXnum; i<paramnum; i++) {
             local_param_size += inst->GetOperand(i)->GetType()->get_size();
         }
         if (local_param_size > ctx.GetCurFunction()->GetMaxParamSize()) {
