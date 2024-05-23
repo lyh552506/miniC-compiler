@@ -16,7 +16,7 @@ void RegAllocImpl::RunGCpass(){
     // LegalizeConstInt lcint(ctx);
     // lcint.run();
     Legalize legal(ctx);
-    legal.run();
+    // legal.run();
 
     gc->RunOnFunc();
 }
