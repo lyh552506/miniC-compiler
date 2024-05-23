@@ -79,9 +79,12 @@ class StackRegister:public Register{
     StackRegister(PhyRegister::PhyReg, int);
     StackRegister(VirRegister*, int);
     std::string GetName(){return rname;}
+    int GetOffset(){return offset;}
     RISCVFrameObject*& GetParent();
     VirRegister* GetVreg();
+    Register*& GetReg();
     void SetPreg(PhyRegister*&);
+    void SetReg(Register*);
     void SetOffset(int);
     void print()final;
     bool isPhysical()final;

@@ -70,7 +70,7 @@ RISCVBasicBlock* RISCVBasicBlock::CreateRISCVBasicBlock(){
 }
 
 void RISCVBasicBlock::replace_succ(RISCVBasicBlock* from,RISCVBasicBlock* to){
-    for(auto it=rbegin();it!=rend();++it){
+    for(auto it=rbegin();it!=rend();--it){
         RISCVMIR* inst=*it;
         RISCVMIR::RISCVISA opcode = inst->GetOpcode();
         if(opcode<RISCVMIR::EndBranch&&opcode>RISCVMIR::BeginBranch){

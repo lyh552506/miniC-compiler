@@ -8,6 +8,8 @@ class Legalize {
     public:
     Legalize(RISCVLoweringContext&);
     void mvLegalize(mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
+    void freamobjLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
+    void stackOffsetLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
     void run();
 };
 

@@ -309,7 +309,10 @@ void GraphColor::FreezeMoves(MOperand freeze) {
       if (value->GetType() == riscv_i32 &&
               IG[value].size() < reglist.GetReglistInt().size() ||
           value->GetType() == riscv_float32 &&
-              IG[value].size() < reglist.GetReglistFloat().size()) {
+              IG[value].size() < reglist.GetReglistFloat().size() ||
+          /// @test
+          value->GetType() == riscv_ptr &&
+              IG[value].size() < reglist.GetReglistInt().size()) {
         freezeWorkList.erase(value);
         _DEBUG(std::cerr << "simplifyWorkList insert element: "
                          << value->GetName() << std::endl;)
