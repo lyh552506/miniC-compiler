@@ -28,7 +28,7 @@ void Legalize::mvLegalize(mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
         // mv .1 off(s0) =>
         // ld .2 off(s0)
         // mv .1 .2
-        RISCVMIR* ld = new RISCVMIR(ISA::_ld);
+        ld = new RISCVMIR(ISA::_ld);
         if(reg->GetParent()!=nullptr) {
             switch(reg->GetParent()->GetContextType()){
                 case RISCVType::riscv_i32:

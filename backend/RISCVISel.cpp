@@ -59,10 +59,15 @@ void RISCVISel::InstLowering(AllocaInst* inst){
 void RISCVISel::InstLowering(StoreInst* inst){
     if(inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
         if(ConstIRInt* Intconst = dynamic_cast<ConstIRInt*>(inst->GetOperand(0))) {
-            auto minst=new RISCVMIR(RISCVMIR::_sw);
+            auto li = new RISCVMIR(RISCVMIR::li);
+            VirRegister* vreg = new VirRegister(RISCVTyper(inst->GetOperand(0)->GetType()));
+            li->SetDef(vreg);
             Imm* imm = new Imm(Intconst);
-            minst->AddOperand(imm);
-            // minst->AddOperand(Li_Intimm(Intconst));
+            li->AddOperand(imm);
+            ctx(li);
+
+            auto minst=new RISCVMIR(RISCVMIR::_sw);
+            minst->AddOperand(li->GetDef());
             minst->AddOperand(ctx.mapping(inst->GetOperand(1)));
             ctx(minst);
         }
@@ -493,6 +498,7 @@ void RISCVISel::InstLowering(CallInst* inst){
             // spill to stack
             for(int i=paramnum; i>MAXnum; i--) {
                 StackRegister* stackreg = frame->spill(inst->GetOperand(i));
+                // ctx(Builder(RISCVMIR::_sd, {M(inst->GetOperand(i)), stackreg}));
                 ctx.insert_val2mop(inst->GetOperand(i), stackreg);
             }
         }
