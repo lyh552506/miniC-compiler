@@ -1,6 +1,8 @@
 #pragma once
 #include "RISCVMOperand.hpp"
 #include "RISCVRegister.hpp"
+#include "MagicEnum.hpp"
+class StackRegister;
 
 class NamedMOperand:public RISCVMOperand{
     std::string name;
@@ -38,17 +40,49 @@ class RISCVTempFloatObject:public RISCVObject{
 class RISCVFrameObject:public RISCVMOperand{
     /// @brief set later after RA
     size_t begin_addr_offsets=0;
+    size_t end_addr_offsets=0;
     StackRegister* reg;
     size_t size=0;
     std::string name; 
+    RISCVType contextype;
     public:
     RISCVFrameObject(Value*);
     RISCVFrameObject(VirRegister*);
     void GenerateStackRegister(int);
     size_t GetFrameObjSize();
     size_t GetBeginAddOff();
+    size_t GetEndAddOff();
+    RISCVType GetContextType();
     void SetBeginAddOff(size_t);
+    void SetEndAddOff(size_t);
     StackRegister*& GetStackReg();
-    // RISCVFrameObject(Type*,std::string);
     void print()override;
+};
+
+class BegAddrRegister:public Register{
+    RISCVFrameObject* frameobj;
+    public:
+    BegAddrRegister(RISCVFrameObject*);
+    void print()final;
+    RISCVFrameObject*& GetFrameObj() {return frameobj;}
+    std::string GetName() {return rname;}
+    bool isPhysical()final{return true;}
+};
+
+class StackRegister:public Register{
+    int offset;
+    Register* reg=nullptr;
+    RISCVFrameObject* parent=nullptr;
+    public:
+    StackRegister(RISCVFrameObject*, PhyRegister::PhyReg, int);
+    StackRegister(RISCVFrameObject*, VirRegister*, int);
+    StackRegister(PhyRegister::PhyReg, int);
+    StackRegister(VirRegister*, int);
+    std::string GetName(){return rname;}
+    RISCVFrameObject*& GetParent();
+    VirRegister* GetVreg();
+    void SetPreg(PhyRegister*&);
+    void SetOffset(int);
+    void print()final;
+    bool isPhysical()final;
 };

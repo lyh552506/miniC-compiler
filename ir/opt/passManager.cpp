@@ -103,7 +103,6 @@ void PassManager::RunOnFunction() {
     m_inline->Run();
     // m_inline->PrintPass();
   }
-
   if(InitpassRecorder[11]){
     m_reassociate->RunOnFunction();
   }

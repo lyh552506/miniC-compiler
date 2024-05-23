@@ -56,11 +56,14 @@ Register* RISCVMOperand::ignoreLA() {
   } else if (LARegister *lareg = dynamic_cast<LARegister *>(this)) {
     return lareg->GetVreg();
   }
-  else if (StackRegister *sreg = dynamic_cast<StackRegister *>(this))
+  else if (StackRegister *sreg = dynamic_cast<StackRegister *>(this)) {
     return sreg->GetVreg();
+  }
   else if (dynamic_cast<RISCVFrameObject *>(this))
     return nullptr;
   else if(dynamic_cast<RISCVBasicBlock*>(this))
+    return nullptr;
+  else if(dynamic_cast<RISCVMIR*>(this))
     return nullptr;
   else if(dynamic_cast<RISCVGlobalObject*>(this))
     return nullptr;

@@ -45,6 +45,8 @@ void VirRegister::print(){
 
 LARegister::LARegister(RISCVType _type, std::string _name)
     : Register(_type,_name), regnum(LAReg::hi) {}
+LARegister::LARegister(RISCVType _type, std::string _name, LAReg _regenum)
+    : Register(_type,_name), regnum(_regenum) {}
 LARegister::LARegister(RISCVType _type, std::string _name, VirRegister *_vreg)
     : Register(_type,_name), regnum(LAReg::lo), vreg(_vreg) {}
 
@@ -60,17 +62,6 @@ void LARegister::print() {
     std::cout << ")";
     // std::cout << ")" << std::endl;
   }
-}
-
-StackRegister::StackRegister(PhyReg _regnum, int _offset)
-    : PhyRegister(_regnum), offset(_offset) {}
-StackRegister::StackRegister(VirRegister* _vreg, int _offset)
-    : PhyRegister(PhyReg::_NULL), offset(_offset), vreg(_vreg) {}
-void StackRegister::SetOffset(int _offset) { offset = _offset; }
-Register*& StackRegister::GetVreg() { return vreg; }
-void StackRegister::SetVreg(PhyRegister* &_reg) { vreg = _reg; }
-void StackRegister::print() {
-  std::cout << offset << "(" << magic_enum::enum_name(regenum) << ")";
 }
 
 RegisterList::RegisterList() {

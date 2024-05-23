@@ -7,13 +7,13 @@ if [ "$option" == "-run" ]; then
     echo "running: $file"
     #./SYSY-compiler $output_dir/$file
 
-elif [ "$option" == "-testall" ]; then
-    for file in $input_dir/*.c; do
-        base=$(basename $file)
-        base=${base%.*}
-        riscv64-unknown-elf-gcc -S -o $output_dir/$base.s $input_dir/$file
-        echo $base.s
-    done
+# elif [ "$option" == "-testall" ]; then
+#     for file in $input_dir/*.c; do
+#         base=$(basename $file)
+#         base=${base%.*}
+#         riscv64-unknown-elf-gcc -S -o $output_dir/$base.s $input_dir/$file
+#         echo $base.s
+#     done
 
 elif [ "$option" == "-test" ]; then 
     file="../function_test/test.c"
@@ -29,6 +29,16 @@ elif [ "$option" == "-test" ]; then
     cat $output_dir/$base.s
     echo "------------------------------------------"
     echo "Test finished"
+
+# elif [ "$option" == "-testall" ]; then
+#     for file in $input_dir/*.sy; do
+#         base=$(basename $file)
+#         base=${base%.*}
+
+#         riscv64-unknown-elf-gcc -S -o $output_dir/$base.s $input_dir/$file
+#         echo $base.s
+#     done
+
 else 
     echo "No used!"
 fi

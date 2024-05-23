@@ -75,7 +75,7 @@ void functionSegment::PrintFuncSegment() {
     std::cout << "    .type  " << name << ", @" << ty << std::endl;
     func->printfull();
     if(size == -1)
-        std::cout << "    .size " << name << ", " << "-" << name << std::endl;
+        std::cout << "    .size " << name << ", " << ".-" << name << std::endl;
 }
 //dataSegment
 dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
@@ -102,9 +102,18 @@ void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
                 for(int i=0; i<machineinst->GetOperandSize(); i++) {
                     if(Imm* used = dynamic_cast<Imm*>(machineinst->GetOperand(i))) {
                         if (auto constfloat = dynamic_cast<ConstIRFloat*>(used->Getdata())) {
-                            tempvar* tempfloat = new tempvar(num_lable, constfloat->GetVal());
-                            num_lable++;
-                            tempvar_list.push_back(tempfloat); 
+                            tempvar* tempfloat = nullptr;
+                            for(int i=0; i<tempvar_list.size(); i++) {
+                                if(tempvar_list[i]->GetInit() == constfloat->GetVal()) {
+                                    tempfloat = tempvar_list[i];
+                                    break;
+                                }
+                            }
+                            if(tempfloat==nullptr) {
+                                tempfloat = new tempvar(num_lable, constfloat->GetVal());
+                                num_lable++;
+                                tempvar_list.push_back(tempfloat); 
+                            }
                             //在代码中修改加载方式；
                             Change_LoadConstFloat(machineinst, tempfloat, it, used);
                         }
@@ -118,6 +127,7 @@ std::vector<tempvar*> dataSegment::get_tempvar_list() {return tempvar_list;}
 void dataSegment::Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, mylist<RISCVBasicBlock,RISCVMIR>::iterator it, Imm* used) {
     std::string opcode(magic_enum::enum_name(inst->GetOpcode()));
     RISCVBasicBlock* block = inst->GetParent();
+    std::unique_ptr<RISCVFrame>& frame = block->GetParent()->GetFrame();
 
     std::string name = tempfloat->Getname();
     VirRegister* lui_rd = new VirRegister(RISCVType::riscv_ptr);
@@ -128,6 +138,8 @@ void dataSegment::Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, myli
     RISCVMIR* lui = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
     lui->SetDef(lui_rd);
     lui->AddOperand(lui_rs);
+    frame->AddCantBeSpill(lui_rd);
+
     RISCVMIR* flw = new RISCVMIR(RISCVMIR::RISCVISA::_flw);
     flw->SetDef(flw_rd);
     flw->AddOperand(flw_rs);
@@ -149,6 +161,45 @@ void dataSegment::PrintDataSegment_Globval() {
 void dataSegment::PrintDataSegment_Tempvar() {
     for(auto& gvar : tempvar_list) {
         gvar->PrintTempvar();
+    }
+}
+
+void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
+    using ISA = RISCVMIR::RISCVISA;
+    RISCVFunction* cur_func = ctx.GetCurFunction();
+    for(auto block: *cur_func) {
+        for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
+            auto inst = *it;
+            for(int i=0; i<inst->GetOperandSize(); i++) {
+                if(globlvar* gvar = dynamic_cast<globlvar*>(inst->GetOperand(i))) {
+                    std::unique_ptr<RISCVFrame>& frame = cur_func->GetFrame();
+                    // lui .1, %hi(name)
+                    // ld/sd .2, %lo(name)(.1)
+                    RISCVMIR* hi = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
+                    VirRegister* hi_vreg = ctx.createVReg(RISCVType::riscv_ptr); 
+                    frame->AddCantBeSpill(hi_vreg);
+                    LARegister* hi_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName());
+                    hi->SetDef(hi_vreg);
+                    hi->AddOperand(hi_lareg);
+                    it.insert_before(hi);
+                    if(inst->GetOpcode()>ISA::BeginMem&&inst->GetOpcode()<ISA::EndMem) {
+                        LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(),dynamic_cast<VirRegister*>(hi->GetDef()));
+                        inst->SetOperand(i, lo_lareg);
+                    }
+                    else {
+                        RISCVMIR* lo = new RISCVMIR(ISA::_addi);
+                        VirRegister* lo_vreg = ctx.createVReg(RISCVType::riscv_ptr);
+                        frame->AddCantBeSpill(lo_vreg);
+                        LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(), LARegister::LAReg::lo);
+                        lo->SetDef(lo_vreg);
+                        lo->AddOperand(hi->GetDef());
+                        lo->AddOperand(lo_lareg);
+                        it.insert_before(lo);
+                        inst->SetOperand(i, lo_vreg);
+                    }
+                }   
+            }
+        }
     }
 }
 

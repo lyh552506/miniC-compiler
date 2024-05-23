@@ -3,11 +3,8 @@
 RISCVMOperand* RISCVLoweringContext::Create(Value* val){
     if(auto inst=dynamic_cast<User*>(val)){
         if(auto alloca=dynamic_cast<AllocaInst*>(inst)){
-            // this->insert_val2mop(inst, new VirRegister(RISCVTyper(inst->GetType())));
             auto& frameobjs=cur_func->GetFrame()->GetFrameObjs();
             frameobjs.emplace_back(new RISCVFrameObject(inst));
-            // frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(inst));
-            // frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(alloca->GetType(),alloca->GetName()));
             return frameobjs.back().get(); 
         }
         else if(auto store=dynamic_cast<StoreInst*>(inst))
@@ -37,6 +34,14 @@ RISCVMOperand* RISCVLoweringContext::Create(Value* val){
 }
 void RISCVLoweringContext::insert_val2mop(Value* val, RISCVMOperand* mop) {
     val2mop.insert(std::make_pair(val, mop));
+}
+
+void RISCVLoweringContext::change_mapping(RISCVMOperand* old, RISCVMOperand* new_mop ) {
+    for(auto it=val2mop.begin();it!=val2mop.end();it++){
+        if(it->second==old){
+            it->second=new_mop;
+        }
+    }
 }
 
 RISCVMOperand* RISCVLoweringContext::mapping(Value* val){

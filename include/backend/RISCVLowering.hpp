@@ -8,7 +8,7 @@
 #include "RegAlloc.hpp"
 #include "BaseCFG.hpp"
 #include "PhiElimination.hpp"
-#include "LegalizeConstInt.hpp"
+#include "LegalizePass.hpp"
 class RISCVModuleLowering:BackEndPass<Module>{
     // bool LoweringGlobalValue(Module*);
     RISCVLoweringContext ctx;
