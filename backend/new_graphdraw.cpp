@@ -314,7 +314,7 @@ void GraphColor::FreezeMoves(MOperand freeze) {
         _DEBUG(std::cerr << "simplifyWorkList insert element: "
                          << value->GetName() << std::endl;)
         PushVecSingleVal(simplifyWorkList, value);
-      } else {
+      } else if(value->GetType() == riscv_none) {
         assert(0 && "appear riscv_none");
       }
     }

@@ -152,8 +152,7 @@ void Reassociate::ReWriteExp(
   User *Changed = nullptr;
   std::for_each(LinerizedOp.begin(), LinerizedOp.end(),
                 [&](auto &ele) { NotWritable.insert(ele.first); });
-  _DEBUG(std::cerr << "Begin To Rewrite: " << exp->GetName() << std::endl;)
-  for (int i = 0; i < LinerizedOp.size(); i++) {
+  _DEBUG(std::cerr << "Begin To Rewrite: " << exp->GetName() << std::endl;)  for (int i = 0; i < LinerizedOp.size(); i++) {
     if (i + 2 == LinerizedOp.size()) {
       auto val_1 = LinerizedOp[i].first;
       auto val_2 = LinerizedOp[i + 1].first;
@@ -183,21 +182,21 @@ void Reassociate::ReWriteExp(
       break;
     }
     auto val_1 = LinerizedOp[i].first;
-    auto Old_val1 = GetOperand(curr, 0);
+    auto Old_val1 = GetOperand(curr, 1);
     if (val_1 != Old_val1) {
-      if (val_1 == GetOperand(curr, 1)) {
+      if (val_1 == GetOperand(curr, 0)) {
         std::swap(curr->Getuselist()[0], curr->Getuselist()[1]);
       } else {
         if (IsOperandAssociate(Old_val1, exp->getopration()))
           ReWrite.push_back(Old_val1);
-        curr->SetOperand(0, val_1);
+        curr->SetOperand(1, val_1);
       }
     }
 
-    if (IsOperandAssociate(GetOperand(curr, 1), exp->getopration()) &&
-        !NotWritable.count(GetOperand(curr, 1))) {
+    if (IsOperandAssociate(GetOperand(curr, 0), exp->getopration()) &&
+        !NotWritable.count(GetOperand(curr, 0))) {
       _DEBUG(std::cerr << "Directly Have Two Rewritable Operand" << std::endl;)
-      curr = dynamic_cast<BinaryInst *>(GetOperand(curr, 1));
+      curr = dynamic_cast<BinaryInst *>(GetOperand(curr, 0));
       continue;
     }
 
@@ -208,15 +207,17 @@ void Reassociate::ReWriteExp(
       new_val = ReWrite.back();
       ReWrite.pop_back();
     }
-    curr->SetOperand(1, new_val);
+    curr->SetOperand(0, new_val);
     curr = dynamic_cast<BinaryInst *>(new_val);
     Changed = curr;
   }
   if (Changed) {
-    for (auto iter = exp->GetParent()->begin(); iter != exp->GetParent()->end();
-         ++iter) {
-      if ((*iter) != exp)
+    for (auto iter = exp->GetParent()->begin();
+         iter != exp->GetParent()->end();) {
+      if ((*iter) != exp) {
+        ++iter;
         continue;
+      }
       if (Changed == exp)
         break;
       Changed->EraseFromParent();
@@ -361,12 +362,11 @@ void Reassociate::FormalBinaryInst(User *I) {
   assert(bin && "must be a binaryinst");
   auto LHS = GetOperand(bin, 0);
   auto RHS = GetOperand(bin, 1);
-  // TODO GetRank ，但是目前并不清楚这个对后续的作用
-  auto LHSRank=GetRank(LHS);
-  auto RHSRank=GetRank(RHS);
+  auto LHSRank = GetRank(LHS);
+  auto RHSRank = GetRank(RHS);
   if (dynamic_cast<ConstantData *>(RHS))
     return;
-  if (dynamic_cast<ConstantData *>(LHS)||LHSRank<RHSRank) {
+  if (dynamic_cast<ConstantData *>(LHS) || LHSRank > RHSRank) {
     std::swap(bin->Getuselist()[0], bin->Getuselist()[1]);
   }
 }
@@ -426,17 +426,14 @@ bool Reassociate::IsBinaryFloatType(BinaryInst *I) {
 
 Value *Reassociate::OptAdd(BinaryInst *AddInst,
                            std::vector<std::pair<Value *, int>> &LinerizedOp) {
-  // 对于X+X+X+Y，尝试优化成3*X+Y
   for (int i = 0; i < LinerizedOp.size(); i++) {
     if (i + 1 < LinerizedOp.size() && LinerizedOp[i + 1] == LinerizedOp[i]) {
       int same = 2;
       Value *src = LinerizedOp[i].first;
       while (LinerizedOp[same] == LinerizedOp[i])
         same++;
-      // for (int tmp = 0; tmp < same; tmp++) {
-      //   LinerizedOp[tmp] = LinerizedOp[LinerizedOp.size() - 1];
-      //   LinerizedOp.pop_back();
-      // }
+      if (same < 3)
+        return nullptr;
       BinaryInst *Mul = nullptr;
       if (AddInst->Getuselist()[0]->GetValue()->GetTypeEnum() ==
           IR_Value_Float) {
@@ -466,6 +463,9 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
       }
     }
   }
+
+  //尝试进行分配率
+
   return nullptr;
 }
 
