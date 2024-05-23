@@ -106,6 +106,42 @@ using Operand=Value*;
 // {};
 class User:public Value,public list_node<BasicBlock,User>
 {
+  public:
+    enum OpID
+    {
+        None,
+        // Terminators
+        UnCond,
+        Cond,
+        Ret,
+        // Memory
+        Alloca,
+        Load,
+        Store,
+        Memcpy,
+        // Binary
+        Add,
+        Sub,
+        Mul,
+        Div,
+        Mod,
+        And,
+        Or,
+        Eq,
+        Ne,
+        Ge,
+        L,
+        Le,
+        G,
+        // Other
+        Gep,
+        Phi,
+        Call,
+        Zext,
+        FP2SI,
+        SI2FP
+    };
+    OpID id;
     using UsePtr=std::unique_ptr<Use>;
     protected:
     std::vector<UsePtr> uselist;

@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#define BaseEnumNum 8
 template <typename T>
 T *normal_clone(T *from, std::unordered_map<Operand, Operand> &mapping) {
   if (mapping.find(from) != mapping.end())
@@ -330,6 +331,8 @@ BinaryInst::BinaryInst(Operand _A, Operation __op, Operand _B)
     : User(check_binary_boolean(__op) ? BoolType::NewBoolTypeGet()
                                       : _B->GetType()) {
   op = __op;
+  // 与User中的OpID对应
+  id =  static_cast<User::OpID>(__op + BaseEnumNum);
   add_use(_A);
   add_use(_B);
 }
