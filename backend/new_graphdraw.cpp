@@ -499,6 +499,11 @@ void GraphColor::SpillNodeInMir() {
     for (auto mir_begin = mbb->begin(), mir_end = mbb->end();
          mir_begin != mir_end;) {
       auto mir = *mir_begin;
+      if (mir->GetOpcode() == RISCVMIR::call ||
+          mir->GetOpcode() == RISCVMIR::ret) {
+        ++mir_begin;
+        continue;
+      }
       if (mir->GetDef() != nullptr &&
           dynamic_cast<VirRegister *>(mir->GetDef()) &&
           (spilledNodes.find(dynamic_cast<VirRegister *>(mir->GetDef())) !=
@@ -660,6 +665,7 @@ void GraphColor::RewriteProgram() {
       if (mir->GetOpcode() == RISCVMIR::mv &&
           mir->GetDef() == mir->GetOperand(0)) {
         // TODO
+        // mir->EraseFromParent();
         WARN_LOCATION("this is warning: remember to add mir delete function");
       }
     }
