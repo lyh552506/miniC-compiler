@@ -3,6 +3,7 @@
 #include "Singleton.hpp"
 #include "BaseCFG.hpp"
 #include <set>
+#include <unordered_set>
 class BasicBlock;
 class Function;
 
@@ -266,9 +267,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     std::vector<BasicBlock*> bbs;
     std::pair<size_t,size_t> inlineinfo;
     public:
-    std::pair<size_t,size_t>& GetInlineInfo(){return inlineinfo;}
-    std::set<Function*> CalleeFuncs; // The Function who calls this
-    std::set<Function*> CallingFuncs; // The Function that the func calls
+    std::pair<size_t,size_t>& GetInlineInfo();
     void InsertAlloca(AllocaInst* ptr);
     public:
     virtual Function* clone(std::unordered_map<Operand,Operand>&) override{return this;};
@@ -296,8 +295,8 @@ class Module:public SymbolTable
     std::vector<GlobalVariblePtr> globalvaribleptr;
     std::vector<MemcpyHandle*> constants_handle;
     public:
-    std::set<Function*> hasInlinedFunc; // Func that has done inlined pass
-    std::set<Function*> inlinedFunc; // Func who is inlined by pass
+    // this is shit...
+    std::unordered_set<Value*> globalvalue;
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);

@@ -1,41 +1,52 @@
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
 #include "dominant.hpp"
+
+class InlineHeuristic{
+    public:
+    virtual bool CanBeInlined(CallInst*)=0;
+    //everytime we call get we'll reanalyze the whole module again to see which can be inlined
+    static std::unique_ptr<InlineHeuristic> get(Module&);
+};
+
+class InlineHeuristicManager:public InlineHeuristic,public std::vector<std::unique_ptr<InlineHeuristic>>{
+    public:
+    virtual bool CanBeInlined(CallInst*)override;
+    InlineHeuristicManager();
+};
+
+/// @note this should be placed at the end of the InlineHeuristic get
+class SizeLimit:public InlineHeuristic{
+    // if we use inline, we should consider some optimization effect, for maybe the size will shrink dramatically
+    const size_t maxframesize=7864320;// 7.5MB
+    const size_t maxsize=10000;
+    public:
+    bool CanBeInlined(CallInst*)override;
+    SizeLimit();
+};
+class NoRecursive:public InlineHeuristic{
+    Module& m;
+    std::unordered_set<Function*> recursive;
+    public:
+    bool CanBeInlined(CallInst*)override;
+    NoRecursive(Module&);
+};
+
 class Inliner
 {
 public:
-    const bool Only_Inline_Small_Function = true;
-    const int Inline_Block_Num = 4;
-    const bool Inline_Recursive = false;
-    const bool Not_Inline_Multilevel_Loop_Func = true;
-    const int Not_Inline_Multilevel_Loop_Nest = 5;
-    const bool SSALevel = true;
-public:
-    Inliner(Function* f, Module& module, dominance* dom) : func(f), m(module) {
-       loopAnalysis = new LoopAnalysis(f, dom);
-       loopAnalysis->RunOnFunction();
-    }
+    Inliner(Module& module):m(module){}
     void Run();
     void PrintPass();
     void Inline();
 private:
-    // void InlineRecursive(Function* entry);
-    bool NotInline(Function *f) { return NotInlineFunc.find(f) != NotInlineFunc.end(); }
-    bool isRecursive(Function *f) { return RecursiveFunc.find(f) != RecursiveFunc.end(); }
-    void CreateCallMap();
-    void DetectRecursive();
     std::vector<BasicBlock*> CopyBlocks(User* inst);
     bool CanBeInlined(User* inst);
-    void VisitFunc(Function* entry, std::set<Function*>& visited);
-    void removeInlinedFunc();
     void HandleVoidRet(BasicBlock* spiltBlock, std::vector<BasicBlock*>& blocks);
     void HandleRetPhi(BasicBlock* RetBlock, PhiInst* phi, std::vector<BasicBlock*>& blocks);
 private:
     Module& m;
-    LoopAnalysis* loopAnalysis;
+    // LoopAnalysis* loopAnalysis;
     void init();
-    Function* func;
     std::vector<User*> NeedInlineCall;
-    std::set<Function*> NotInlineFunc; // Func not inline
-    std::set<Function*> RecursiveFunc;
 };

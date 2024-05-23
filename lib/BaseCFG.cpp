@@ -39,10 +39,14 @@ Value::Value(Type *_tp) : tp(_tp) {
 }
 
 Value* Value::clone(std::unordered_map<Operand,Operand>& mapping){
-  // if this is called it must be a param or global variable
-  // param will be RAUW with input args, while global variable:no need for them to change
-  mapping[this]=this;
-  return this;
+  // if this is called it must be a param or Global
+  if(Singleton<Module>().globalvalue.find(this)!=Singleton<Module>().globalvalue.end())
+    return this;
+  if(mapping.find(this)!=mapping.end())
+    return mapping[this];
+  Value* newval=new Value(this->GetType());
+  mapping[this]=newval;
+  return newval;
 }
 
 Value::~Value(){
