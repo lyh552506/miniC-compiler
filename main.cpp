@@ -30,6 +30,7 @@ static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"global2local", no_argument, 0, 10},
                                        {"sccp", no_argument, 0, 12},
                                        {"reassociate", no_argument, 0, 11},
+                                       {"cse", no_argument, 0, 13},
                                        {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
@@ -93,6 +94,9 @@ int main(int argc, char **argv) {
       break;
     case 12:
       pass_manager->IncludePass(12);
+      break;
+    case 13:
+      pass_manager->IncludePass(13);
       break;
     }
   }
