@@ -8,8 +8,12 @@ void DCE::PrintPass()
 
 void DCE::RunOnFunction()
 {
+    CreateCallMap();
+    DetectRecursive();
+    CreateSideEffectFunc();
     bool flag = FuncHasSideEffect(func);
-    if(dynamic_cast<UndefValue*>(RVACC(func)) && !flag)
+    Value* C = RVACC(func);
+    if(dynamic_cast<UndefValue*>(C) && !flag)
     {
         for(auto iter = func->rbegin(); iter != func->rend(); --iter)
         {
@@ -122,28 +126,104 @@ Value* DCE::RVACC(Function* func)
 
 bool DCE::FuncHasSideEffect(Function* func)
 {
+    if(Recursive_Funcs.count(func))
+        return true;
     auto &Params = func->GetParams();
     for(auto &_param : Params)
     {
         if(_param->GetTypeEnum() == InnerDataType::IR_PTR)
-            return true;
+        {
+            for(Use* Use_ : _param->GetUserlist())
+            {
+                if(dynamic_cast<StoreInst*>(Use_->usee))
+                    return true;
+            }
+        }
     }
     for(BasicBlock* block : *func)
     {
         for(User* inst : *block)
         {
             if(dynamic_cast<CallInst*>(inst))
-                return true;
-            if(!dynamic_cast<UnCondInst*>(inst) && !dynamic_cast<CondInst*>(inst))
             {
-                auto &vac = inst->Getuselist();
-                for(auto &_val : vac)
+                std::string name = inst->Getuselist()[0]->usee->GetName();
+                if(name =="getint" || name == "getch" || name == "getfloat" \
+                || name == "getfarray" || name == "putint" || name == "putfloat" \
+                || name == "putarray" || name == "putfarray" || name == "putf" || name == "getarray" \
+                || name == "putch" || name == "_sysy_starttime" || name == "_sysy_stoptime" \
+                || name == "llvm.memcpy.p0.p0.i32")
+                  return true;
+                Function* Func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
+                if(Func && Singleton<Module>().Side_Effect_Funcs.count(Func))
+                    return true;
+            }
+            if(dynamic_cast<StoreInst*>(inst))
+            {
+                if(inst->Getuselist()[1]->usee->isGlobVal())
+                    return true;
+                if(auto gep = dynamic_cast<GetElementPtrInst*>(inst->Getuselist()[1]->usee))
                 {
-                    if(_val->GetValue()->isGlobVal())
+                    if(gep->Getuselist()[0]->usee->isGlobVal())
                         return true;
                 }
             }
         }
     }
     return false;
+}
+
+void DCE::DetectRecursive()
+{
+    std::set<Function*> visited;
+    VisitFunc(func, visited);
+}
+
+
+void DCE::VisitFunc(Function* entry, std::set<Function*>& visited)
+{
+    visited.insert(entry);
+    if(!entry->CallingFuncs.empty()){
+    for(Function* Succ : entry->CallingFuncs)
+    {
+        if(visited.find(Succ) != visited.end())
+            Recursive_Funcs.insert(Succ);
+        else
+            VisitFunc(Succ, visited);
+    }}
+    visited.erase(entry);
+}
+
+void DCE::CreateCallMap()
+{
+    for(Use* user_ : func->GetUserlist())
+    {
+        User* user = user_->GetUser();
+        if(dynamic_cast<CallInst*>(user))
+        {
+            Function* CallFunc = user->GetParent()->GetParent();
+            if(CallFunc)
+                func->CalleeFuncs.insert(CallFunc);
+        }
+    }
+    for(BasicBlock* block : *func)
+    {
+        for(User* inst : *block)
+        {
+            if(CallInst* call = dynamic_cast<CallInst*>(inst))
+            {
+                Function* Func = dynamic_cast<Function*>(call->Getuselist()[0]->usee);
+                if(Func)
+                    func->CallingFuncs.insert(Func);
+            }
+        }
+    }
+}
+
+void DCE::CreateSideEffectFunc()
+{
+    for(auto& func_ : Singleton<Module>().GetFuncTion())
+    {
+        if(FuncHasSideEffect(func_.get()))
+            Singleton<Module>().Side_Effect_Funcs.insert(func_.get());
+    }
 }

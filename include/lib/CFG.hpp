@@ -297,6 +297,7 @@ class Module:public SymbolTable
     public:
     std::set<Function*> hasInlinedFunc; // Func that has done inlined pass
     std::set<Function*> inlinedFunc; // Func who is inlined by pass
+    std::set<Function*> Side_Effect_Funcs; // Func that has side effect
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);

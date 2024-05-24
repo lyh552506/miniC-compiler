@@ -202,26 +202,22 @@ bool User::HasSideEffect()
       return true;
     Function* func = dynamic_cast<Function*>(this->Getuselist()[0]->GetValue());
     if(func){
-    auto& params = func->GetParams();
-    for(auto& param : params)
-    {
-      if(param->GetTypeEnum() == InnerDataType::IR_PTR)
-        return true;
-    }
+    if(Singleton<Module>().Side_Effect_Funcs.count(func))
+      return true;
     for(auto it = func->begin(); it != func->end(); ++it)
     {
       BasicBlock* block = *it;
       for(auto iter = block->begin(); iter != block->end(); ++iter)
       {
         if(dynamic_cast<CallInst*>(*iter))
-          return true;
-        else
         {
-          if((*iter)->HasSideEffect())
+          Function* Func = dynamic_cast<Function*>((*iter)->Getuselist()[0]->usee);
+          if(Func && Singleton<Module>().Side_Effect_Funcs.count(Func))
             return true;
         }
       }
-    }}
+    }
+    }
   }
   if(dynamic_cast<GetElementPtrInst*>(this))
   {
