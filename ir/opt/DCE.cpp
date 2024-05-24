@@ -1,4 +1,5 @@
 #include "DCE.hpp"
+#include "my_stl.hpp"
 #include <algorithm>
 void DCE::PrintPass()
 {
@@ -30,6 +31,36 @@ void DCE::RunOnFunction()
             }
             if(!NDelBlock)
                 (*iter)->EraseFromParent();
+        }
+        return;
+    }
+    if(C && !flag)
+    {
+        // for(auto iter = func->rbegin(); iter != func->rend(); --iter)
+        // {
+        //     bool NDelBlock = false;
+        //     for(auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1)
+        //     {
+        //         if(!dynamic_cast<RetInst*>(*iter1))
+        //         {
+        //             (*iter1)->ClearRelation();
+        //             (*iter1)->EraseFromParent();
+        //         }
+        //         else
+        //             NDelBlock = true;
+        //     }
+        //     if(!NDelBlock)
+        //         (*iter)->EraseFromParent();
+        // }
+        for(auto user : func->GetUserlist())
+        {
+            User* inst = user->GetUser();
+            if(dynamic_cast<CallInst*>(inst))
+            {
+                inst->RAUW(C);
+                _DEBUG(std::cerr<< "Delete Inst:" << inst->GetName() << "In Func:" << inst->GetParent()->GetParent()->GetName() <<std::endl;)
+                delete inst;
+            }
         }
         return;
     }
@@ -79,7 +110,9 @@ bool DCE::isDeadInst(User* inst)
 
 Value* DCE::RVACC(Function* func)
 {
+    Value* RetVal = nullptr;
     for(BasicBlock* block : *func)
+    {
         for(User* inst : *block)
         {
             if(auto PHiInst = dynamic_cast<PhiInst*>(inst))
@@ -95,32 +128,25 @@ Value* DCE::RVACC(Function* func)
                 }
                 if(CommonValue)
                     inst->RAUW(CommonValue);
-                else
-                    return nullptr;
             }
+        
             if(auto REtInst = dynamic_cast<RetInst*>(inst))
             {
-                if(inst->GetTypeEnum() == IR_Value_VOID)
-                    return nullptr;
+                if(inst->Getuselist().size() == 0)
+                    RetVal = nullptr;
                 else
                 {
-                    Value* REtVal = inst->Getuselist()[0]->usee;
-                    if(REtVal->isConst())
-                    {
-                        if(auto INt = dynamic_cast<ConstIRInt*>(REtVal))
-                            return ConstIRInt::GetNewConstant(INt->GetVal());
-                        if(auto FLoat = dynamic_cast<ConstIRFloat*>(REtVal))
-                            return ConstIRFloat::GetNewConstant(FLoat->GetVal());
-                        if(auto BOol = dynamic_cast<ConstIRBoolean*>(REtVal))
-                            return ConstIRBoolean::GetNewConstant(BOol->GetVal());
-                    }
-                    else if(dynamic_cast<UndefValue*>(REtVal))
-                        return UndefValue::get(REtVal->GetType());
-                    else
+                    Value* Val = inst->Getuselist()[0]->usee;
+                    if(RetVal && RetVal != Val)
                         return nullptr;
+                    RetVal = Val;
                 }
             }
+
         }
+    }
+    if(RetVal && dynamic_cast<ConstantData*>(RetVal))
+        return RetVal;
     return nullptr;
 }
 

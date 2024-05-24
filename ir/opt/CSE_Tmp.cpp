@@ -1,5 +1,5 @@
 #include "CSE_Tmp.hpp"
-
+#include "my_stl.hpp"
 void CSE::RunOnFunction()
 {
     init();
@@ -46,6 +46,13 @@ void CSE::RunOnBlock(BasicBlock* block)
                 ToBeDeleted.push_back(inst);
             }
         }
+    }
+    while(!ToBeDeleted.empty())
+    {
+        auto inst = ToBeDeleted.back(); 
+        ToBeDeleted.pop_back();
+        _DEBUG(std::cerr << "Del Inst " << inst->GetName() << std::endl;)
+        delete inst;
     }
 }
 
