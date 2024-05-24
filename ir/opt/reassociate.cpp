@@ -152,7 +152,8 @@ void Reassociate::ReWriteExp(
   User *Changed = nullptr;
   std::for_each(LinerizedOp.begin(), LinerizedOp.end(),
                 [&](auto &ele) { NotWritable.insert(ele.first); });
-  _DEBUG(std::cerr << "Begin To Rewrite: " << exp->GetName() << std::endl;)  for (int i = 0; i < LinerizedOp.size(); i++) {
+  _DEBUG(std::cerr << "Begin To Rewrite: " << exp->GetName() << std::endl;)
+  for (int i = 0; i < LinerizedOp.size(); i++) {
     if (i + 2 == LinerizedOp.size()) {
       auto val_1 = LinerizedOp[i].first;
       auto val_2 = LinerizedOp[i + 1].first;
@@ -309,8 +310,6 @@ void Reassociate::LinearizeExp(BinaryInst *I,
       }
       //不满足第一种情况
       if (Leafs.find(operand) == Leafs.end()) {
-        // if (dynamic_cast<User *>(operand) &&
-        //     dynamic_cast<User *>(operand)->Getuselist().size() != 1) {
         //找到了一个实际存在的leaf，并且之前没有添加过
         _DEBUG(std::cerr << "Find a Leaf " << operand->GetName() << std::endl;)
         Leafs.insert(operand);
@@ -465,8 +464,53 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
   }
 
   //尝试进行分配率
+  int Max = 0;
+  Value *val = nullptr;
+  std::map<Value *, int> RecordAccurance;
+  for (int i = 0; i < LinerizedOp.size(); i++) {
+    if (IsOperandAssociate(LinerizedOp[i].first, BinaryInst::Op_Mul)) {
+      std::vector<Value *> op;
+      RecursionSplitOp(LinerizedOp[i].first, op);
+      std::set<Value *> visited;
+      for (auto _val : op) {
+        if (visited.insert(_val).second) {
+          int occ = ++RecordAccurance[_val];
+          if (occ > Max) {
+            Max = occ;
+            val = _val;
+          }
+        }
+      }
+    }
+  }
+  if (Max > 1) {
+    //获得公因式val
+    for (int i = 0; i < LinerizedOp.size(); i++) {
+      if (!IsOperandAssociate(LinerizedOp[i].first, BinaryInst::Op_Mul))
+        continue;
+      if(RemoveOp(LinerizedOp[i].first)){
 
+      }
+    }
+  }
   return nullptr;
+}
+
+Value *Reassociate::RemoveOp(Value *I) {
+  std::vector<std::pair<Value *, int>> Leaf;
+  auto bin=dynamic_cast<BinaryInst*>(I);
+  assert(bin);
+  LinearizeExp(bin,Leaf);
+  //TODO
+}
+
+void Reassociate::RecursionSplitOp(Value *I, std::vector<Value *> &ops) {
+  if (!IsOperandAssociate(I, BinaryInst::Op_Mul)) {
+    ops.push_back(I);
+    return;
+  }
+  RecursionSplitOp(GetOperand(I, 0), ops);
+  RecursionSplitOp(GetOperand(I, 1), ops);
 }
 
 bool Reassociate::KillDeadInst(User *I, int i) {
