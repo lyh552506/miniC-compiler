@@ -39,87 +39,87 @@ bool SizeLimit::CanBeInlined(CallInst* call)
 }
 
 NoRecursive::NoRecursive(Module& _m):m(_m){
-    struct Node{
-        std::unordered_set<int> sons;
-        int dfn=0;
-        int low=0;
-        int belongSCC=-1;
-        bool ins=false;
-        int size=0;
-    };
-    int top=0;
-    int dfn=0;
-    std::vector<int> sta(m.GetFuncTion().size());
-    auto graph=std::vector<Node>(m.GetFuncTion().size());
-    std::unordered_map<Function*,int> function2index;
-    auto add_edge=[&](int from,int to){
-        graph[from].sons.insert(to);
-    };
-    const auto dfs = [&](auto&& self, int poi) -> void {
-        graph[poi].dfn=graph[poi].low=++dfn;
-        graph[poi].ins=true;
-        sta[top++]=poi;
-        for(auto des:graph[poi].sons){
-            if(!graph[des].dfn){
-                self(self,des);
-                graph[poi].low=std::min(graph[poi].low,graph[des].low);
-            }else if(graph[des].ins)
-                graph[poi].low=std::min(graph[poi].low,graph[des].dfn);
-        }
-        if(graph[poi].dfn==graph[poi].low){
-            int tmp;
-            do{
-                tmp=sta[--top];
-                graph[tmp].ins=false;
-                graph[tmp].belongSCC=poi;
-                graph[poi].size++;
-            }while(tmp!=poi);
-        }
-    };
+    // struct Node{
+    //     std::unordered_set<int> sons;
+    //     int dfn=0;
+    //     int low=0;
+    //     int belongSCC=-1;
+    //     bool ins=false;
+    //     int size=0;
+    // };
+    // int top=0;
+    // int dfn=0;
+    // std::vector<int> sta(m.GetFuncTion().size());
+    // auto graph=std::vector<Node>(m.GetFuncTion().size());
+    // std::unordered_map<Function*,int> function2index;
+    // auto add_edge=[&](int from,int to){
+    //     graph[from].sons.insert(to);
+    // };
+    // const auto dfs = [&](auto&& self, int poi) -> void {
+    //     graph[poi].dfn=graph[poi].low=++dfn;
+    //     graph[poi].ins=true;
+    //     sta[top++]=poi;
+    //     for(auto des:graph[poi].sons){
+    //         if(!graph[des].dfn){
+    //             self(self,des);
+    //             graph[poi].low=std::min(graph[poi].low,graph[des].low);
+    //         }else if(graph[des].ins)
+    //             graph[poi].low=std::min(graph[poi].low,graph[des].dfn);
+    //     }
+    //     if(graph[poi].dfn==graph[poi].low){
+    //         int tmp;
+    //         do{
+    //             tmp=sta[--top];
+    //             graph[tmp].ins=false;
+    //             graph[tmp].belongSCC=poi;
+    //             graph[poi].size++;
+    //         }while(tmp!=poi);
+    //     }
+    // };
 
-    int num=0;
-    for(auto& func:m.GetFuncTion())
-        function2index[func.get()]=num++;
+    // int num=0;
+    // for(auto& func:m.GetFuncTion())
+    //     function2index[func.get()]=num++;
 
-    int entry_index=-1;
-    for(auto& func:m.GetFuncTion()){
-        if(func->GetName()=="main")
-            entry_index=function2index[func.get()];
-        auto& calllists=func->GetUserlist();
-        for(auto callinst:calllists){
-            auto call=callinst->GetUser()->as<CallInst>();
-            assert(call!=nullptr);
-            auto master=call->GetParent()->GetParent();
-            if(master==func.get()){
-                recursive.insert(func.get());
-                continue;
-            }
-            add_edge(function2index[master],function2index[func.get()]);
-        }
-    }
-    assert(entry_index!=-1);
-    dfs(dfs,entry_index);
+    // int entry_index=-1;
+    // for(auto& func:m.GetFuncTion()){
+    //     if(func->GetName()=="main")
+    //         entry_index=function2index[func.get()];
+    //     auto& calllists=func->GetUserlist();
+    //     for(auto callinst:calllists){
+    //         auto call=callinst->GetUser()->as<CallInst>();
+    //         assert(call!=nullptr);
+    //         auto master=call->GetParent()->GetParent();
+    //         if(master==func.get()){
+    //             recursive.insert(func.get());
+    //             continue;
+    //         }
+    //         add_edge(function2index[master],function2index[func.get()]);
+    //     }
+    // }
+    // assert(entry_index!=-1);
+    // dfs(dfs,entry_index);
 
     // 遍历function的顺序好像很有意思
     // 因为没有函数声明 所以我们访问(inline)的顺序就是拓扑序
     // 毕竟能inline(去掉递归)一定inline到这个函数后边才定义的函数
-    auto &&functions=m.GetFuncTion();
-    for(auto it=functions.begin();it!=functions.end();){
-        auto func=it->get();
-        auto&& index=function2index[func];
-        if(graph[graph[index].belongSCC].size>1)
-            recursive.insert(func);
-        if(graph[index].belongSCC==-1)//can'be referred to, delete
-            it=functions.erase(it);
-        else
-            it++;
-    }
+    // auto &&functions=m.GetFuncTion();
+    // for(auto it=functions.begin();it!=functions.end();){
+    //     auto func=it->get();
+    //     auto&& index=function2index[func];
+    //     if(graph[graph[index].belongSCC].size>1)
+    //         recursive.insert(func);
+    //     if(graph[index].belongSCC==-1)//can'be referred to, delete
+    //         it=functions.erase(it);
+    //     else
+    //         it++;
+    // }
 }
 
 bool NoRecursive::CanBeInlined(CallInst* call){
     auto&& slave=call->GetOperand(0)->as<Function>();
     auto&& master=call->GetParent()->GetParent();
-    if(recursive.find(slave)==recursive.end()&&recursive.find(master)==recursive.end())return true;
+    if(master!=slave)return true;
     return false;
 }
 
@@ -242,28 +242,6 @@ std::vector<BasicBlock*> Inliner::CopyBlocks(User* inst)
 // {
 //          TODO
 // }
-
-bool Inliner::CanBeInlined(User *inst)
-{
-    if(dynamic_cast<CallInst*>(inst))
-    {    
-        std::string name = inst->Getuselist()[0]->usee->GetName();
-        if(name =="getint" || name == "getch" || name == "getfloat" \
-        || name == "getfarray" || name == "putint" || name == "putfloat" \
-        || name == "putarray" || name == "putfarray" || name == "putf" || name == "getarray" \
-        || name == "putch" || name == "_sysy_starttime" || name == "_sysy_stoptime" \
-        || name == "llvm.memcpy.p0.p0.i32")
-            return false;
-        Function* Func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
-        // func 的 size 加到 Func 后仍然算合理的
-        // Func 不是递归的
-        // 总的inline产生的code size 不能太离谱
-        if(Func){
-            return true;
-        }
-    }
-    return false;
-}
 
 void Inliner::HandleVoidRet(BasicBlock* spiltBlock, std::vector<BasicBlock*>& blocks)
 {

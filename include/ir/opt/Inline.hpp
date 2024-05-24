@@ -26,7 +26,7 @@ class SizeLimit:public InlineHeuristic{
 };
 class NoRecursive:public InlineHeuristic{
     Module& m;
-    std::unordered_set<Function*> recursive;
+    // std::unordered_set<Function*> recursive;
     public:
     bool CanBeInlined(CallInst*)override;
     NoRecursive(Module&);
@@ -41,7 +41,6 @@ public:
     void Inline();
 private:
     std::vector<BasicBlock*> CopyBlocks(User* inst);
-    bool CanBeInlined(User* inst);
     void HandleVoidRet(BasicBlock* spiltBlock, std::vector<BasicBlock*>& blocks);
     void HandleRetPhi(BasicBlock* RetBlock, PhiInst* phi, std::vector<BasicBlock*>& blocks);
 private:

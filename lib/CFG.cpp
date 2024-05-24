@@ -727,6 +727,31 @@ BasicBlock *BasicBlock::SplitAt(User *inst) {
   auto call_inst = dynamic_cast<CallInst *>(inst);
   assert(call_inst != nullptr && "CallInst Is Expected Here");
   auto tmp = new BasicBlock();
+  
+  // other block:
+  // %xx= phi [%??, this block]
+  // should be transferred to
+  // %xx=phi [%??, tmp]
+  std::vector<BasicBlock*> succ;
+  if(auto cond=back()->as<CondInst>()){
+    for(int i=1;i<3;i++)
+      succ.push_back(cond->GetOperand(i)->as<BasicBlock>());
+  }
+  else if(auto uncond=back()->as<UnCondInst>()){
+    succ.push_back(uncond->GetOperand(0)->as<BasicBlock>());
+  }
+  for(auto bb:succ){
+    for(auto inst:*bb){
+      if(auto phi=inst->as<PhiInst>()){
+        for(auto& [ind,rec]:phi->PhiRecord){
+          if(rec.second==this)
+            rec.second=tmp;
+        }
+      }
+      else break;
+    }
+  }
+  
   auto [left, right] = split(inst, back());
   tmp->collect(left, right);
   return tmp;
