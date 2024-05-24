@@ -120,6 +120,8 @@ bool Value::isConstZero()
         return num->GetVal() == 0;
     else if(auto num = dynamic_cast<ConstIRFloat*>(this))
         return num->GetVal() == 0;
+    else if(auto num = dynamic_cast<ConstIRBoolean*>(this))
+        return num->GetVal() == false;
     else
         return false;
 }
