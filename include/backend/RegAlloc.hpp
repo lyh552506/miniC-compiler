@@ -12,6 +12,7 @@
 #include <list>
 #include <map>
 #include <queue>
+#include <set>
 #include <stack>
 #include <string>
 #include <unordered_map>
@@ -128,6 +129,7 @@ private:
   void AssignColors();
   void SpillNodeInMir();
   void RewriteProgram();
+  void CaculateTopu(RISCVBasicBlock* mbb);
   MOperand HeuristicFreeze();
   MOperand HeuristicSpill();
   PhyRegister *SelectPhyReg(RISCVType ty, std::unordered_set<MOperand> &assist);
@@ -184,6 +186,8 @@ private:
   std::unordered_map<PhyRegister *, RISCVType> RegType;
   //记录已经重写的spill node
   std::unordered_map<VirRegister *, RISCVMIR *> AlreadySpill;
+  std::vector<RISCVBasicBlock*> topu;
+  std::set<RISCVBasicBlock*> assist;
   RegisterList &reglist;
   int LoopWeight = 1;
   int livenessWeight = 1;

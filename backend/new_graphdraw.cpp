@@ -4,6 +4,7 @@
 #include "RegAlloc.hpp"
 #include "my_stl.hpp"
 #include <cassert>
+#include <cstddef>
 #include <iostream>
 #include <ostream>
 #include <unordered_set>
@@ -11,6 +12,7 @@ void GraphColor::RunOnFunc() {
   bool condition = true;
   GC_init();
   CaculateLiveness();
+  CaculateTopu(m_func->front());
   for (auto &[key, val] : IG) {
     AdjList[key].insert(val.begin(), val.end());
   }
@@ -492,8 +494,8 @@ void GraphColor::AssignColors() {
   }
 }
 
-void GraphColor::SpillNodeInMir() {
   std::unordered_set<VirRegister *> temps;
+void GraphColor::SpillNodeInMir() {
   // AlreadySpill.clear();
   for (auto mbb : *m_func) {
     for (auto mir_begin = mbb->begin(), mir_end = mbb->end();
@@ -697,6 +699,11 @@ void GraphColor::Print() {
                 << v.second->GetName() << std::endl;
   }
 }
+
+void GraphColor::CaculateTopu(RISCVBasicBlock* mbb){
+  //TODO
+}
+
 
 void GraphColor::GC_init() {
   ValsInterval.clear();
