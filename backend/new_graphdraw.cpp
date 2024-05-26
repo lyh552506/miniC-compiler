@@ -145,6 +145,7 @@ void GraphColor::AddWorkList(MOperand v) {
 }
 
 void GraphColor::CaculateLiveness() {
+  LiveInfoInit();
   RunOnFunction();
   //计算IG,并且添加precolored集合
   IG.clear();
