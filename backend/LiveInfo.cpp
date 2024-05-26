@@ -506,3 +506,16 @@ void InterVal::RunOnFunc_() {
   init();
   computeLiveIntervals();
 }
+
+
+void InterVal::LiveInfoInit()
+{
+  BlockLivein.clear();
+  BlockLiveout.clear();
+  BlockInfo.clear();
+  RegLiveness.clear();
+  instNum.clear();
+  Uses.clear();
+  Defs.clear();
+  InstLive.clear();
+}
