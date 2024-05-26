@@ -99,7 +99,6 @@ public:
   GetRegLiveInterval(RISCVBasicBlock *block) {
     return RegLiveness[block];
   }
-  void LiveInfoInit();
   void RunOnFunc_();
   void PrintAnalysis();
 };
@@ -144,6 +143,7 @@ private:
   int GetRegNums(MOperand v);
   int GetRegNums(RISCVType ty);
   void GC_init();
+  void LiveInfoInit();
   void SimplifyMv();
   RISCVMIR *CreateSpillMir(RISCVMOperand *spill,
                            std::unordered_set<VirRegister *> &temps);

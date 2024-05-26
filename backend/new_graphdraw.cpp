@@ -3,6 +3,7 @@
 #include "RISCVType.hpp"
 #include "RegAlloc.hpp"
 #include "my_stl.hpp"
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <iostream>
@@ -13,9 +14,11 @@ void GraphColor::RunOnFunc() {
   GC_init();
   CaculateLiveness();
   CaculateTopu(m_func->front());
+  std::reverse(topu.begin(), topu.end());
   for (auto &[key, val] : IG) {
     AdjList[key].insert(val.begin(), val.end());
   }
+  // PrintAnalysis();
   while (condition) {
     condition = false;
     CaculateLiveness();
@@ -34,10 +37,6 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
-      CaculateLiveness();
-      PrintPass();
-      PrintAnalysis();
-      return;
       condition = true;
     }
   }
@@ -151,7 +150,7 @@ void GraphColor::CaculateLiveness() {
   RunOnFunction();
   //计算IG,并且添加precolored集合
   IG.clear();
-  for (auto b : *m_func) {
+  for (const auto b : *m_func) {
     CalInstLive(b);
     CalcmoveList(b);
     CalcIG(b);
@@ -320,7 +319,7 @@ void GraphColor::FreezeMoves(MOperand freeze) {
         _DEBUG(std::cerr << "simplifyWorkList insert element: "
                          << value->GetName() << std::endl;)
         PushVecSingleVal(simplifyWorkList, value);
-      } else if(value->GetType() == riscv_none) {
+      } else if (value->GetType() == riscv_none) {
         assert(0 && "appear riscv_none");
       }
     }
@@ -331,6 +330,7 @@ void GraphColor::simplify() {
   auto val = simplifyWorkList.back();
   simplifyWorkList.pop_back();
   selectstack.push_back(val);
+  _DEBUG(std::cerr << "SelectStack Insert: " << val->GetName() << std::endl;)
   //此时需要更新冲突图上和当前val相邻的边(DecrementDegree)
   for (int i = 0; i < IG[val].size(); i++) {
     auto target = IG[val][i];
@@ -450,7 +450,7 @@ void GraphColor::spill() {
   if (spill == nullptr)
     return;
   spillWorkList.erase(spill);
-  _DEBUG(std::cerr << "simplifyWorkList insert element: " << spill->GetName()
+  _DEBUG(std::cerr << "Choose To Spill element: " << spill->GetName()
                    << std::endl;)
   PushVecSingleVal(simplifyWorkList, spill);
   FreezeMoves(spill);
@@ -459,6 +459,9 @@ void GraphColor::spill() {
 void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     MOperand select = selectstack.back();
+    if (select->GetName() == ".0" || select->GetName() == ".1" ||
+        select->GetName() == ".2")
+      int a = 0;
     RISCVType ty = select->GetType();
     selectstack.pop_back();
     std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),
@@ -486,7 +489,7 @@ void GraphColor::AssignColors() {
       }
     } else if (ty == riscv_float32) {
       if (float_assist.size() == 0)
-        spillWorkList.insert(select);
+        spilledNodes.insert(select);
       else {
         coloredNode.insert(select);
         color[select] = SelectPhyReg(ty, float_assist);
@@ -498,10 +501,10 @@ void GraphColor::AssignColors() {
   }
 }
 
-  std::unordered_set<VirRegister *> temps;
+std::unordered_set<VirRegister *> temps;
 void GraphColor::SpillNodeInMir() {
   // AlreadySpill.clear();
-  for (auto mbb : *m_func) {
+  for (const auto mbb : topu) {
     for (auto mir_begin = mbb->begin(), mir_end = mbb->end();
          mir_begin != mir_end;) {
       auto mir = *mir_begin;
@@ -625,7 +628,7 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
 }
 
 void GraphColor::RewriteProgram() {
-  for (auto mbb : *m_func) {
+  for (const auto mbb : topu) {
     for (auto mir : *mbb) {
       if (mir->GetOpcode() == RISCVMIR::call)
         continue;
@@ -704,10 +707,14 @@ void GraphColor::Print() {
   }
 }
 
-void GraphColor::CaculateTopu(RISCVBasicBlock* mbb){
-  //TODO
+void GraphColor::CaculateTopu(RISCVBasicBlock *mbb) {
+  if (!assist.insert(mbb).second)
+    return;
+  for (auto des : SuccBlocks[mbb]) {
+    CaculateTopu(des);
+  }
+  topu.push_back(mbb);
 }
-
 
 void GraphColor::GC_init() {
   ValsInterval.clear();
@@ -737,4 +744,6 @@ void GraphColor::GC_init() {
   IG.clear();
   instNum.clear();
   RegLiveness.clear();
+  assist.clear();
+  topu.clear();
 }

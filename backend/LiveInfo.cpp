@@ -478,6 +478,7 @@ bool InterVal::verify(
 void InterVal::PrintAnalysis() {
   std::cout << "--------InstLive--------" << std::endl;
   for (RISCVBasicBlock *block : *func) {
+    std::cout<<"-----Block "<<block->GetName()<<"-----"<<std::endl;
     for (RISCVMIR *inst : *block) {
       std::cout << "inst" << instNum[inst] << "Liveness:";
       for (RISCVMOperand *Op : InstLive[inst]) {
@@ -510,7 +511,7 @@ void InterVal::RunOnFunc_() {
 }
 
 
-void InterVal::LiveInfoInit()
+void GraphColor::LiveInfoInit()
 {
   BlockLivein.clear();
   BlockLiveout.clear();
