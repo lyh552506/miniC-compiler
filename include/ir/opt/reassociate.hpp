@@ -22,18 +22,20 @@ private:
   bool IsOperandAssociate(Value *op, BinaryInst::Operation opcode);
   void FormalBinaryInst(User *I);
   void ReWriteExp(BinaryInst *exp,
-                std::vector<std::pair<Value *, int>> &LinerizedOp);
+                  std::vector<std::pair<Value *, int>> &LinerizedOp);
   bool ShouldIgnoreConst(BinaryInst::Operation Op, ConstantData *constdata);
   //判断常数和对应的opcode是否是可吸收的，即判断是否是x*0这一类
   bool AbsorbConst(BinaryInst::Operation Op, ConstantData *constdata);
-  bool KillDeadInst(User* I,int i);
-  bool KillDeadInst(User* I,std::vector<User *>& kill);
+  bool KillDeadInst(User *I, int i);
+  bool KillDeadInst(User *I, std::vector<User *> &kill);
+  void RecursionSplitOp(Value *I, std::vector<Value *>& ops);
+  Value* RemoveOp(Value* I);
   Value *OptExp(BinaryInst *exp,
                 std::vector<std::pair<Value *, int>> &LinerizedOp);
-  Value* OptAdd(BinaryInst *AddInst,
-              std::vector<std::pair<Value *, int>> &LinerizedOp);
-  Value* OptMul(BinaryInst *MulInst,
-              std::vector<std::pair<Value *, int>> &LinerizedOp);
+  Value *OptAdd(BinaryInst *AddInst,
+                std::vector<std::pair<Value *, int>> &LinerizedOp);
+  Value *OptMul(BinaryInst *MulInst,
+                std::vector<std::pair<Value *, int>> &LinerizedOp);
   std::map<Value *, int>
       ValueRank; // RankMap, arguement's rank is 3,const rank is 0
   std::vector<BasicBlock *> RPO;

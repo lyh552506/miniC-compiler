@@ -50,18 +50,15 @@ void PRE::CleanMemory() {
 
 void PRE::init_pass() {
   BuildSets();
-  // if (m_func->GetName() == "main") Singleton<Module>().Test();
+
   Insert();
 
   Elimination();
-  // if (m_func->GetName() == "main") {
-  //   Singleton<Module>().Test();
-  //   exit(0);
-  // }
+
   CleanMemory();
 }
 
-//论文的第一步：构建AnticOut/AnticIn/AvailIn/AvailOut
+
 void PRE::BuildSets() {
   std::map<BasicBlock *, ValueNumberedSet> GeneratedExps;
   // First-Part---topdown traversal of the dominator tree
@@ -71,10 +68,7 @@ void PRE::BuildSets() {
     auto &genExps = GeneratedExps[bb];
     auto &genTemp = GeneratedTemp[bb];
     auto node = m_dom->GetNode(bb->num);
-    //  Since the value leader set for the dominator
-    //  will have already been determined, we can conveniently build the leader
-    //  set for the current block by initializing it to the leader set of the
-    //  dominator
+
     BasicBlock *idomBB = m_dom->GetNode(node.idom).thisBlock;
     if (idomBB != bb)  //当前BB在支配树上没有父亲
       availout = AvailOut[idomBB];
@@ -118,7 +112,7 @@ void PRE::BuildSets() {
   }
 }
 
-//论文第二部：insert
+
 void PRE::Insert() {
   bool changed = true;
   while (changed) {
