@@ -17,9 +17,11 @@ void PassManager::InitPass() {
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
     m_inline = std::make_unique<Inliner>(m_func, Singleton<Module>(), m_dom.get());
-    m_sccp = std::make_unique<SCCP>(m_func, m_dom.get());
+    m_sccp = std::make_unique<SCCP>();
     m_reassociate=std::make_unique<Reassociate>(m_func,m_dom.get());
+    m_cse = std::make_unique<CSE>(m_func);
     RunOnFunction();
+    // SCCPSolver::runSCCP(*m_func);
   }
   if(InitpassRecorder[10])
   {
@@ -73,6 +75,9 @@ void PassManager::RunOnFunction() {
     m_constprop->RunOnFunction();
     // m_constprop->PrintPass();
   }
+  if(InitpassRecorder[12]){
+    m_sccp->RunOnFunction(m_func);
+  }
   if (InitpassRecorder[7]) {
     m_cfgsimple->RunOnFunction();
     PreWork(func);
@@ -99,11 +104,11 @@ void PassManager::RunOnFunction() {
     m_inline->Run();
     // m_inline->PrintPass();
   }
-  if(InitpassRecorder[12]){
-    // SCCPSolver::runSCCP(*m_func);
-  }
   if(InitpassRecorder[11]){
     m_reassociate->RunOnFunction();
+  }
+  if(InitpassRecorder[13]){
+    m_cse->RunOnFunction();
   }
 }
 
