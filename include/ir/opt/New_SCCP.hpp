@@ -329,7 +329,6 @@ private:
     // successors are reachable from a given terminator instruction.
     void getFeasibleSuccessors(CondInst& inst, std::vector<bool>& Succs);
     void getFeasibleSuccessors(UnCondInst& inst, std::vector<bool>& Succs);
-    void getFeasibleSuccessors(RetInst& inst, std::vector<bool>& Succs);
 
     // isEdgeFeasible - Return true if the control flow edge from the 'From' basic
     // block to the 'To' basic block is currently feasible.

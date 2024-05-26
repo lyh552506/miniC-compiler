@@ -73,6 +73,7 @@ void PhiElimination::runOnGraph(BasicBlock* pred,BasicBlock* succ,std::vector<st
             if(graph[ind].indo!=0){
                 /// @note stage register
                 assert(graph[ind].indo==1&&"Unexpected Degree");
+                graph[ind].indo=0;//手动拆环，防止后面ind再入队
                 auto stageR=cxt.createVReg(src->GetType());
                 emitMBB->push_before_branch(RISCVTrival::CopyFrom(stageR,dst));
                 stagedRegister[dst]=stageR;
@@ -91,6 +92,10 @@ void PhiElimination::runOnGraph(BasicBlock* pred,BasicBlock* succ,std::vector<st
         while(!que.empty()){
             int cur=que.front();que.pop();
             visit(cur);
+        }
+        if(i>=limi){
+            assert(i==limi);
+            break;
         }
         for(;j<limi;j++){
             if(graph[j].indo){

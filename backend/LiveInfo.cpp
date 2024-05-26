@@ -107,6 +107,7 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block) {
         _block_Succ = dynamic_cast<RISCVBasicBlock *>(inst->GetOperand(0));
       BlockLiveout[block].insert(BlockLivein[_block_Succ].begin(),
                                  BlockLivein[_block_Succ].end());
+      SuccBlocks[block].push_front(_block_Succ);
     } else if (Opcode == OpType::_beq || Opcode == OpType::_bne ||
                Opcode == OpType::_blt || Opcode == OpType::_bge ||
                Opcode == OpType::_bltu || Opcode == OpType::_bgeu) {
@@ -114,6 +115,7 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block) {
           dynamic_cast<RISCVBasicBlock *>(inst->GetOperand(2));
       BlockLiveout[block].insert(BlockLivein[_block_Succ1].begin(),
                                  BlockLivein[_block_Succ1].end());
+      SuccBlocks[block].push_front(_block_Succ1);
     }
   }
 }
@@ -505,4 +507,18 @@ void InterVal::PrintAnalysis() {
 void InterVal::RunOnFunc_() {
   init();
   computeLiveIntervals();
+}
+
+
+void InterVal::LiveInfoInit()
+{
+  BlockLivein.clear();
+  BlockLiveout.clear();
+  BlockInfo.clear();
+  RegLiveness.clear();
+  instNum.clear();
+  Uses.clear();
+  Defs.clear();
+  InstLive.clear();
+  IG.clear();
 }

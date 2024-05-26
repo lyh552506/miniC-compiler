@@ -55,6 +55,7 @@ private:
   RISCVFunction *m_func;
 
 public:
+  std::map<RISCVBasicBlock*, std::list<RISCVBasicBlock*>> SuccBlocks;
   std::map<RISCVBasicBlock *, std::unordered_set<MOperand>> Uses; // block uses
   std::map<RISCVBasicBlock *, std::unordered_set<MOperand>> Defs; // block defs
   std::map<RISCVBasicBlock *, std::set<MOperand>> BlockLivein;
@@ -79,8 +80,7 @@ public:
 class LiveInterval : public BlockLiveInfo {
   using Interval = RegAllocImpl::RegLiveInterval;
   RISCVFunction *func;
-
-protected:
+public:
   std::unordered_map<RISCVMIR *, int> instNum;
   std::unordered_map<RISCVBasicBlock *, BlockLiveInfo *> BlockInfo;
   std::map<RISCVBasicBlock *,
@@ -99,6 +99,7 @@ public:
   GetRegLiveInterval(RISCVBasicBlock *block) {
     return RegLiveness[block];
   }
+  void LiveInfoInit();
   void RunOnFunc_();
   void PrintAnalysis();
 };

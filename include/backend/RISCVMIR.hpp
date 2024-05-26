@@ -190,11 +190,8 @@ class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBa
     using RISCVframe = std::unique_ptr<RISCVFrame>;
     RISCVframe frame;
     size_t max_param_size=0;
-    // using FOBJPTR=std::unique_ptr<RISCVFrameObject>;
-    // std::vector<FOBJPTR> frame;
     public:
     RISCVFunction(Value*);
-    // std::vector<FOBJPTR>& GetFrameObjects();
     RISCVframe& GetFrame();
     size_t GetMaxParamSize();
     void SetMaxParamSize(size_t);

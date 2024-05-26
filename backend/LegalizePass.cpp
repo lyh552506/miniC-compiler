@@ -2,73 +2,149 @@
 Legalize::Legalize(RISCVLoweringContext& _ctx) :ctx(_ctx) {}
 
 void Legalize::run() {
+    // Legalize StackReg and StackReg in FrameObj outof memory inst
+    // Offset Legalize of StackReg and StackReg in FrameObj
+
+    // Legalize const int => zero Legalize 
+    //                    => branch Legalize
+    //                    => const int Legalize
     using PhyReg = PhyRegister::PhyReg;
     using ISA = RISCVMIR::RISCVISA;
-
-    LegalizeConstInt lcint(ctx);
-    lcint.run();
-    for(auto& func: ctx.GetFunctions()) {
-        for(auto block : *func) {
+    int legalizetime=2, time = 0;
+    while(time < legalizetime) {
+        for(auto block : *(ctx.GetCurFunction())) {
             for(mylist<RISCVBasicBlock, RISCVMIR>::iterator it=block->begin(); it!=block->end(); ++it) {
                 RISCVMIR* inst = *it;
-                if(inst->GetOpcode()==ISA::mv) {
-                    mvLegalize(it);
-                }
-            }
+                ISA opcode = inst->GetOpcode();
+                if(opcode==ISA::call||opcode==ISA::ret) continue;
+
+                for(int i=0; i<inst->GetOperandSize(); i++){
+                    RISCVMOperand* oprand = inst->GetOperand(i);
+                    // StackReg and Frameobj out memory inst
+                    RISCVFrameObject* framobj = dynamic_cast<RISCVFrameObject*>(oprand);
+                    StackRegister* sreg = dynamic_cast<StackRegister*>(oprand);
+                    if(framobj||sreg) {
+                        if(!((opcode>ISA::BeginMem&&opcode<ISA::EndMem) || (opcode>ISA::BeginFloatMem&&opcode<ISA::EndFloatMem))) {
+                            StackAndFrameLegalize(i, it);
+                        }
+                        else {
+                            OffsetLegalize(i, it);
+                        }
+                    } 
+
+                    // Imm
+                    if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
+                        // const int 
+                        if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(constdata->Getdata())) {
+                            // const int 0
+                            if(constdata->Getdata()->isZero() && !isImminst(opcode)) { 
+                                zeroLegalize(i, it);
+                                continue;
+                            }
+                            // branch inst with const int
+                            if(opcode>ISA::BeginBranch && opcode<ISA::EndBranch) {
+                                branchLegalize(i, it);
+                                continue;
+                            }
+                            if(!isImminst(opcode)) {
+                                noImminstLegalize(i, it);
+                                continue;
+                            }
+                            constintLegalize(i, it);
+                        }
+                    }
+                } // End Operand For Loop
+            } // End Inst For Loop
         }
+        time++;
+    }
+}
+void Legalize::StackAndFrameLegalize(int i,mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
+    RISCVMIR* inst = *it;
+    StackRegister* sreg = nullptr;
+    if(sreg = dynamic_cast<StackRegister*>(inst->GetOperand(i))) {}
+    else if(RISCVFrameObject* obj = dynamic_cast<RISCVFrameObject*>(inst->GetOperand(i))) {
+        sreg = dynamic_cast<RISCVFrameObject*>(obj)->GetStackReg();
+    }
+    RISCVMIR* addiw = new RISCVMIR(RISCVMIR::_addiw);
+    VirRegister* vreg = ctx.createVReg(riscv_ptr);
+    addiw->SetDef(vreg);
+    addiw->AddOperand(sreg->GetReg());
+    Imm* imm = new Imm(ConstIRInt::GetNewConstant(sreg->GetOffset()));
+    addiw->AddOperand(imm);
+    it.insert_before(addiw);
+    inst->SetOperand(i, addiw->GetDef());
+}
+
+void Legalize::OffsetLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
+    RISCVMIR* inst = *it;
+    StackRegister* sreg = nullptr;
+    if(sreg = dynamic_cast<StackRegister*>(inst->GetOperand(i))) {}
+    else if(RISCVFrameObject* obj = dynamic_cast<RISCVFrameObject*>(inst->GetOperand(i))) {
+        sreg = dynamic_cast<RISCVFrameObject*>(obj)->GetStackReg();
+    }
+    int offset = sreg->GetOffset();
+    if(offset>=-2048&&offset<=2047) {
+        return;
+    }
+    else {
+        int mod = offset%2047;
+        offset = offset - mod;
+        RISCVMIR* addiw = new RISCVMIR(RISCVMIR::_addiw);
+        VirRegister* vreg = ctx.createVReg(riscv_ptr);
+        Imm* imm = new Imm(ConstIRInt::GetNewConstant(offset));
+        addiw->SetDef(vreg);
+        addiw->AddOperand(sreg->GetReg());
+        addiw->AddOperand(imm);
+        it.insert_before(addiw);
+        sreg->SetOffset(mod);
+        sreg->SetReg(dynamic_cast<Register*>(addiw->GetDef()));
     } 
 }
-void Legalize::mvLegalize(mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
-    using PhyReg = PhyRegister::PhyReg;
-    using ISA = RISCVMIR::RISCVISA;
-    RISCVMIR* inst = *it;
-    RISCVMIR* ld = nullptr;
-    VirRegister* vreg = nullptr;
-    if(StackRegister* reg = dynamic_cast<StackRegister*>(inst->GetOperand(0))) {
-        // mv .1 off(s0) =>
-        // ld .2 off(s0)
-        // mv .1 .2
-        RISCVMIR* ld = new RISCVMIR(ISA::_ld);
-        if(reg->GetParent()!=nullptr) {
-            switch(reg->GetParent()->GetContextType()){
-                case RISCVType::riscv_i32:
-                    vreg = ctx.createVReg(riscv_i32);
-                    break;
-                case RISCVType::riscv_float32:
-                    vreg = ctx.createVReg(riscv_float32);
-                    break;
-                case RISCVType::riscv_ptr:
-                    vreg = ctx.createVReg(riscv_ptr);
-                default:
-                    assert(false);
-            }
-        }
-        else vreg = ctx.createVReg(riscv_ptr);
 
-        ld->SetDef(vreg);
-        ld->AddOperand(inst->GetOperand(0));
-        it.insert_before(ld);
-        inst->SetOperand(0, ld->GetDef());
-    }
-    else if (LARegister* reg = dynamic_cast<LARegister*>(inst->GetOperand(0))) {
-        ld = new RISCVMIR(ISA::_ld);
-        vreg = ctx.createVReg(riscv_ptr);
-        ld->SetDef(vreg);
-        ld->AddOperand(inst->GetOperand(0));
-        inst->SetOperand(0, ld->GetDef());
-    }
-    
+void Legalize::zeroLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
+    RISCVMIR* inst = *it;
+    PhyRegister* zero = PhyRegister::GetPhyReg(PhyRegister::zero);
+    inst->SetOperand(i,zero);
 }
 
-LegalizeConstInt::LegalizeConstInt(RISCVLoweringContext& _ctx)
-    :ctx(_ctx) {}
-void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBasicBlock,RISCVMIR>::iterator it) {
-    if(inst->GetOpcode()==RISCVMIR::RISCVISA::ret) return;
-    else if(inst->GetOpcode()==RISCVMIR::RISCVISA::call) return;
+void Legalize::branchLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
+    RISCVMIR* inst = *it;
+    RISCVMIR* li = new RISCVMIR(RISCVMIR::li);
+    VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+    Imm* imm = dynamic_cast<Imm*>(inst->GetOperand(i));
+    li->SetDef(vreg);
+    li->AddOperand(imm);
+    it.insert_before(li);
+    inst->SetOperand(i, li->GetDef());
+}
+
+void Legalize::noImminstLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
+    RISCVMIR* inst = *it;
+    Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i));
+    int val = dynamic_cast<ConstIRInt*>(constdata->Getdata())->GetVal();
+    if(val>=-2048 && val<2048) {
+        if(inst->GetOpcode() == RISCVMIR::mv) {
+            inst->SetMopcode(RISCVMIR::RISCVISA::li); 
+            return;
+        }
+    }
+    RISCVMIR* li = new RISCVMIR(RISCVMIR::li);
+    VirRegister* vreg = ctx.createVReg(riscv_i32);
+    li->SetDef(vreg);
+    li->AddOperand(constdata);
+    it.insert_before(li);
+    inst->SetOperand(i, li->GetDef());
+}
+
+void Legalize::constintLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
+    RISCVMIR* inst = *it;
+    Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i));
     
     int inttemp = dynamic_cast<ConstIRInt*>(constdata->Getdata())->GetVal();
     if(inttemp>=-2048 && inttemp<2048) {
-        if(inst->GetOpcode()==RISCVMIR::RISCVISA::mv) inst->SetMopcode(RISCVMIR::RISCVISA::li); 
+        // if(inst->GetOpcode()==RISCVMIR::RISCVISA::mv) 
+        // inst->SetMopcode(RISCVMIR::RISCVISA::li); 
         return;
     }
     else {
@@ -92,7 +168,7 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
                         }
                     } 
                 }
-                LegalizeMOpcode(inst);
+                MOpcodeLegalize(inst);
             }
             else {
                 inst->SetMopcode(RISCVMIR::RISCVISA::li);
@@ -112,7 +188,7 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
             addi->AddOperand(vreg);
             addi->AddOperand(mod_imm);
             it.insert_before(addi);
-            LegalizeMOpcode(inst);
+            MOpcodeLegalize(inst);
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 while(inst->GetOperand(i)==constdata) {
                     inst->SetOperand(i,vreg);
@@ -132,7 +208,7 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
             addi->AddOperand(vreg);
             addi->AddOperand(mod_imm);
             it.insert_before(addi);
-            LegalizeMOpcode(inst);
+            MOpcodeLegalize(inst);
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 while(inst->GetOperand(i)==constdata) {
                     inst->SetOperand(i,vreg);
@@ -149,9 +225,10 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod+4096));
             RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addiw);
             addi->SetDef(vreg);
+            addi->AddOperand(vreg);
             addi->AddOperand(mod_imm);
             it.insert_before(addi);
-            LegalizeMOpcode(inst);
+            MOpcodeLegalize(inst);
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 while(inst->GetOperand(i)==constdata) {
                     inst->SetOperand(i,vreg);
@@ -162,43 +239,7 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
     }
 }
 
-bool LegalizeConstInt::run() {
-    using PhyReg = PhyRegister::PhyReg;
-    using ISA = RISCVMIR::RISCVISA;
-    for(auto& func : ctx.GetFunctions()) {
-        for(auto block : *func) {
-            for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
-                RISCVMIR* inst = *it;
-                for(int i=0; i<inst->GetOperandSize(); i++) {
-                    if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
-                        if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(constdata->Getdata())) {
-                            if(constint->GetVal() == 0 && inst->GetOpcode()!=ISA::li && inst->GetOpcode()!=ISA::mv) {
-                                PhyRegister* zero = PhyRegister::GetPhyReg(PhyReg::zero);
-                                inst->SetOperand(i,zero);
-                                break;
-                            }
-                            if(inst->GetOpcode()>ISA::BeginBranch && inst->GetOpcode()<ISA::EndBranch) {
-                                RISCVMIR* li = new RISCVMIR(ISA::li);
-                                VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
-                                li->SetDef(vreg);
-                                li->AddOperand(constdata);
-                                it.insert_before(li);
-                                inst->SetOperand(i, li->GetDef());
-                                break;
-                            }
-                            // real legalize
-                            LegConstInt(inst, constdata, it);
-                        }
-
-                    }
-                }
-            }
-        }
-    }
-    return false;
-}
-
-void LegalizeConstInt::LegalizeMOpcode(RISCVMIR* inst) {
+void Legalize::MOpcodeLegalize(RISCVMIR* inst) {
     using ISA = RISCVMIR::RISCVISA;
     ISA& opcode = inst->GetOpcode();
     if(opcode == ISA::_slli) inst->SetMopcode(ISA::_sll);
@@ -216,3 +257,19 @@ void LegalizeConstInt::LegalizeMOpcode(RISCVMIR* inst) {
     else assert(0&&"Invalid MOpcode type");
 }
 
+bool Legalize::isImminst(RISCVMIR::RISCVISA opcode)
+{
+    if(opcode == RISCVMIR::_slli ||
+       opcode == RISCVMIR::_srli ||
+       opcode == RISCVMIR::_srai ||
+       opcode == RISCVMIR::_addi ||
+       opcode == RISCVMIR::_addiw ||
+       opcode == RISCVMIR::_xori ||
+       opcode == RISCVMIR::_ori ||
+       opcode == RISCVMIR::_andi ||
+       opcode == RISCVMIR::_slti ||
+       opcode == RISCVMIR::_sltiu ||
+       opcode == RISCVMIR::li) 
+    return true;
+    else return false;
+}

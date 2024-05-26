@@ -17,15 +17,21 @@ void copyFile(const std::string &sourcePath,
   destination << source.rdbuf();
 }
 
-static struct option long_options[] = {
-    {"mem2reg", no_argument, 0, 0},       {"pre", no_argument, 0, 1},
-    {"constprop", no_argument, 0, 2},     {"dce", no_argument, 0, 3},
-    {"adce", no_argument, 0, 4},          {"loopinfo", no_argument, 0, 5},
-    {"help", no_argument, 0, 6},          {"simplifycfg", no_argument, 0, 7},
-    {"ece", no_argument, 0, 8},           {"inline", no_argument, 0, 9},
-    {"global2local", no_argument, 0, 10}, {"sccp", no_argument, 0, 12},
-
-    {"reassociate", no_argument, 0, 11},  {0, 0, 0, 0}};
+static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
+                                       {"pre", no_argument, 0, 1},
+                                       {"constprop", no_argument, 0, 2},
+                                       {"dce", no_argument, 0, 3},
+                                       {"adce", no_argument, 0, 4},
+                                       {"loopinfo", no_argument, 0, 5},
+                                       {"help", no_argument, 0, 6},
+                                       {"simplifycfg", no_argument, 0, 7},
+                                       {"ece", no_argument, 0, 8},
+                                       {"inline", no_argument, 0, 9},
+                                       {"global2local", no_argument, 0, 10},
+                                       {"sccp", no_argument, 0, 12},
+                                       {"reassociate", no_argument, 0, 11},
+                                       {"cse", no_argument, 0, 13},
+                                       {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
@@ -85,6 +91,12 @@ int main(int argc, char **argv) {
       break;
     case 11:
       pass_manager->IncludePass(11);
+      break;
+    case 12:
+      pass_manager->IncludePass(12);
+      break;
+    case 13:
+      pass_manager->IncludePass(13);
       break;
     }
   }

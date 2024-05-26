@@ -9,12 +9,12 @@ void RegAllocImpl::RunGCpass(){
 
     // Generate Frame of current Function
     // And generate the head and tail of frame here
-    // RISCVFrame& frame = *m_func->GetFrame();
-    // frame.GenerateFrame();
-    // frame.GenerateFrameHead();
-    // frame.GenerateFrameTail();
-    // LegalizeConstInt lcint(ctx);
-    // lcint.run();
+    RISCVFrame& frame = *m_func->GetFrame();
+    frame.GenerateFrame();
+    frame.GenerateFrameHead();
+    frame.GenerateFrameTail();
+    Legalize legal(ctx);
+    legal.run();
 
-    // gc->RunOnFunc();
+    gc->RunOnFunc();
 }
