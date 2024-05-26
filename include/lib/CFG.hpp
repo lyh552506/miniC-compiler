@@ -3,6 +3,7 @@
 #include "Singleton.hpp"
 #include "BaseCFG.hpp"
 #include <set>
+#include <algorithm>
 class BasicBlock;
 class Function;
 
@@ -56,7 +57,7 @@ class MemcpyHandle:public User{
 class AllocaInst:public User
 {
     public:
-    AllocaInst(Type* _tp):User(_tp){};
+    AllocaInst(Type* _tp):User(_tp){id = OpID::Alloca;};
     AllocaInst(std::string,Type*);
     AllocaInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
@@ -66,7 +67,7 @@ class AllocaInst:public User
 class StoreInst:public User
 {
     public:
-    StoreInst(Type* _tp):User(_tp){};
+    StoreInst(Type* _tp):User(_tp){id = OpID::Store;};
     StoreInst(Operand,Operand);
     StoreInst* clone(std::unordered_map<Operand,Operand>&)override;
     Operand GetDef()final;
@@ -75,7 +76,7 @@ class StoreInst:public User
 class LoadInst:public User
 {
     public:
-    LoadInst(Type* _tp):User(_tp){};
+    LoadInst(Type* _tp):User(_tp){id = OpID::Load;};
     LoadInst(Operand __src);
     LoadInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
@@ -85,7 +86,7 @@ class LoadInst:public User
 class FPTSI:public User
 {
     public:
-    FPTSI(Type* _tp):User(_tp){};
+    FPTSI(Type* _tp):User(_tp){id = OpID::FP2SI;};
     FPTSI(Operand __src);
     FPTSI* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
@@ -94,7 +95,7 @@ class FPTSI:public User
 class SITFP:public User
 {
     public:
-    SITFP(Type* _tp):User(_tp){};
+    SITFP(Type* _tp):User(_tp){id = OpID::SI2FP;};
     SITFP(Operand __src);
     SITFP* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
@@ -102,7 +103,7 @@ class SITFP:public User
 class UnCondInst:public User
 {
     public:
-    UnCondInst(Type* _tp):User(_tp){};
+    UnCondInst(Type* _tp):User(_tp){id = OpID::UnCond;};
     UnCondInst(BasicBlock*);
     UnCondInst* clone(std::unordered_map<Operand,Operand>&)override;
     Operand GetDef()final;
@@ -111,7 +112,7 @@ class UnCondInst:public User
 class CondInst:public User
 {
     public:
-    CondInst(Type* _tp):User(_tp){};
+    CondInst(Type* _tp):User(_tp){id = OpID::Cond;};
     CondInst(Operand,BasicBlock*,BasicBlock*);
     CondInst* clone(std::unordered_map<Operand,Operand>&)override;
     Operand GetDef()final;
@@ -120,7 +121,7 @@ class CondInst:public User
 class CallInst:public User
 {
     public:
-    CallInst(Type* _tp):User(_tp){};
+    CallInst(Type* _tp):User(_tp){id = OpID::Call;};
     CallInst(Value*,std::vector<Operand>&,std::string);
     CallInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
@@ -129,7 +130,7 @@ class RetInst:public User
 {
     public:
     RetInst();
-    RetInst(Type* _tp):User(_tp){};
+    RetInst(Type* _tp):User(_tp){id = OpID::Ret;};
     RetInst(Operand);
     RetInst* clone(std::unordered_map<Operand,Operand>&)override;
     Operand GetDef()final;
@@ -160,7 +161,7 @@ class BinaryInst:public User
 class GetElementPtrInst:public User
 {
     public:
-    GetElementPtrInst(Type* _tp):User(_tp){};
+    GetElementPtrInst(Type* _tp):User(_tp){id = OpID::Gep;};
     GetElementPtrInst(Operand);
     GetElementPtrInst(Operand,std::vector<Operand>&);
     GetElementPtrInst* clone(std::unordered_map<Operand,Operand>&)override;
@@ -172,7 +173,7 @@ class GetElementPtrInst:public User
 class ZextInst:public User
 {
     public:
-    ZextInst(Type* _tp):User(_tp){};
+    ZextInst(Type* _tp):User(_tp){id = OpID::Zext;};
     ZextInst(Operand);
     ZextInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
@@ -181,7 +182,7 @@ class ZextInst:public User
 class PhiInst : public User {
 public:
   PhiInst(Type *ty) : User{ty} {}
-  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {}
+  PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {id = OpID::Phi;}
 
   PhiInst(User *BeforeInst):oprandNum(0) {}
 
@@ -296,6 +297,7 @@ class Module:public SymbolTable
     public:
     std::set<Function*> hasInlinedFunc; // Func that has done inlined pass
     std::set<Function*> inlinedFunc; // Func who is inlined by pass
+    std::set<Function*> Side_Effect_Funcs; // Func that has side effect
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
     void GenerateGlobalVariable(Variable* ptr);
