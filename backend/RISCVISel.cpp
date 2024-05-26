@@ -501,9 +501,21 @@ void RISCVISel::InstLowering(CallInst* inst){
         if (paramnum > MAXnum) {
             // spill to stack
             for(int i=paramnum; i>MAXnum; i--) {
-                StackRegister* stackreg = frame->spill(inst->GetOperand(i));
+                /// @todo load params to end of the frame
+                Value* operand = inst->GetOperand(i);
+                RISCVMIR* store = nullptr;
+                switch(RISCVTyper(operand->GetType())) {
+                    case riscv_i32:
+                    case riscv_float32:
+
+                    case riscv_ptr:
+
+                    default:
+                        assert(0&&"Error param type");
+                }
+                // StackRegister* stackreg = frame->spill(inst->GetOperand(i));
+                // ctx.insert_val2mop(inst->GetOperand(i), stackreg);
                 // ctx(Builder(RISCVMIR::_sd, {M(inst->GetOperand(i)), stackreg}));
-                ctx.insert_val2mop(inst->GetOperand(i), stackreg);
             }
         }
         for (int i=1; i<=std::min(paramnum, MAXnum); i++) {

@@ -173,6 +173,7 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 if(globlvar* gvar = dynamic_cast<globlvar*>(inst->GetOperand(i))) {
                     std::unique_ptr<RISCVFrame>& frame = cur_func->GetFrame();
+                    ISA opcode = inst->GetOpcode();
                     // lui .1, %hi(name)
                     // ld/sd .2, %lo(name)(.1)
                     RISCVMIR* hi = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
@@ -182,7 +183,7 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
                     hi->SetDef(hi_vreg);
                     hi->AddOperand(hi_lareg);
                     it.insert_before(hi);
-                    if(inst->GetOpcode()>ISA::BeginMem&&inst->GetOpcode()<ISA::EndMem) {
+                    if((opcode>ISA::BeginMem&&opcode<ISA::EndMem) || (opcode>ISA::BeginFloatMem&&opcode<ISA::EndFloatMem)) {
                         LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(),dynamic_cast<VirRegister*>(hi->GetDef()));
                         inst->SetOperand(i, lo_lareg);
                     }
