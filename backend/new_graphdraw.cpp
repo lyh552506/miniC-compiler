@@ -33,8 +33,8 @@ void GraphColor::RunOnFunc() {
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
       CaculateLiveness();
-      PrintPass();
-      PrintAnalysis();
+      // PrintPass();
+      // PrintAnalysis();
       return;
       condition = true;
     }
