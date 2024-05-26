@@ -84,10 +84,6 @@ void PassManager::RunOnFunction() {
     m_dom->update();
     // m_cfgsimple->PrintPass();
   }
-  if (InitpassRecorder[3]) {
-    m_dce->RunOnFunction();
-    // m_dce->PrintPass();
-  }
   if (InitpassRecorder[4]) {
     m_adce->RunOnFunction();
     // m_adce->PrintPass();
@@ -109,6 +105,10 @@ void PassManager::RunOnFunction() {
   }
   if(InitpassRecorder[13]){
     m_cse->RunOnFunction();
+  }
+  if (InitpassRecorder[3]) {
+    m_dce->RunOnFunction();
+    // m_dce->PrintPass();
   }
 }
 

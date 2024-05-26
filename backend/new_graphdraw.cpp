@@ -32,10 +32,10 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
-      // CaculateLiveness();
-      // PrintPass();
-      // PrintAnalysis();
-      // return;
+      CaculateLiveness();
+      PrintPass();
+      PrintAnalysis();
+      return;
       condition = true;
     }
   }
@@ -145,6 +145,7 @@ void GraphColor::AddWorkList(MOperand v) {
 }
 
 void GraphColor::CaculateLiveness() {
+  LiveInfoInit();
   RunOnFunction();
   //计算IG,并且添加precolored集合
   IG.clear();
@@ -317,7 +318,7 @@ void GraphColor::FreezeMoves(MOperand freeze) {
         _DEBUG(std::cerr << "simplifyWorkList insert element: "
                          << value->GetName() << std::endl;)
         PushVecSingleVal(simplifyWorkList, value);
-      } else if(value->GetType() == riscv_none){
+      } else if(value->GetType() == riscv_none) {
         assert(0 && "appear riscv_none");
       }
     }

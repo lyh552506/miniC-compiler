@@ -18,10 +18,6 @@ void Legalize::run() {
                 ISA opcode = inst->GetOpcode();
                 if(opcode==ISA::call||opcode==ISA::ret) continue;
 
-                // if(time == 0)
-                //     if(opcode<ISA::BeginMem||opcode>ISA::EndMem)                    
-                        // Legalize(it);
-
                 for(int i=0; i<inst->GetOperandSize(); i++){
                     RISCVMOperand* oprand = inst->GetOperand(i);
                     // StackReg and Frameobj out memory inst
@@ -34,12 +30,6 @@ void Legalize::run() {
                         else {
                             OffsetLegalize(i, it);
                         }
-                    }
-                    else if(dynamic_cast<StackRegister*>(oprand)) {
-                        if(opcode<ISA::BeginMem||opcode>ISA::EndMem) {}
-                            // StackRegLegalize(i, it);
-                        
-                        // stackOffsetLegalize(i, it);
                     } 
 
                     // Imm

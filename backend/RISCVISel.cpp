@@ -128,8 +128,16 @@ void RISCVISel::InstLowering(UnCondInst* inst){
 
 void RISCVISel::InstLowering(CondInst* inst){
     #define M(x) ctx.mapping(x)
+    // if (auto cond=inst->GetOperand(0)->as<ConstIRBoolean>()) {
+    //     bool condition = cond->GetVal();
+
+    // }
+    // else if(auto cond=inst->GetOperand(0)->as<BinaryInst>()) {
+
+    // }
+    // else assert(0&&"Error in CondInst Lowering");
     auto cond=inst->GetOperand(0)->as<BinaryInst>();
-    assert(cond!=nullptr&&"Invalid Condition");
+    // assert(cond!=nullptr&&"Invalid Condition");
     // assert((cond->GetOperand(0)->GetType()==BoolType::NewBoolTypeGet())&&"Invalid Condition Type");
     assert((cond->GetDef()->GetType()==BoolType::NewBoolTypeGet())&&"Invalid Condition Type");
     if(cond->GetOperand(0)->GetType()==IntType::NewIntTypeGet()){
