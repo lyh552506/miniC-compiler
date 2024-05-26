@@ -2,26 +2,38 @@
 Legalize::Legalize(RISCVLoweringContext& _ctx) :ctx(_ctx) {}
 
 void Legalize::run() {
+    // Legalize StackReg and StackReg in FrameObj outof memory inst
+    // Offset Legalize of StackReg and StackReg in FrameObj
+    // Legalize const int
     using PhyReg = PhyRegister::PhyReg;
     using ISA = RISCVMIR::RISCVISA;
-    for(auto& func: ctx.GetFunctions()) {
-        for(auto block : *func) {
+    int legalizetime=2, time = 0;
+    while(time < legalizetime) {
+        for(auto block : *(ctx.GetCurFunction())) {
             for(mylist<RISCVBasicBlock, RISCVMIR>::iterator it=block->begin(); it!=block->end(); ++it) {
                 RISCVMIR* inst = *it;
                 ISA opcode = inst->GetOpcode();
-                if(opcode==ISA::mv) mvLegalize(it);
-                else if(opcode==ISA::call||opcode==ISA::ret) break;
 
+                if(time == 0)
+                    if(opcode<ISA::BeginMem||opcode>ISA::EndMem)                    
+                        // Legalize(it);
+
+                if(opcode==ISA::call||opcode==ISA::ret) break;
                 for(int i=0; i<inst->GetOperandSize(); i++){
                     RISCVMOperand* oprand = inst->GetOperand(i);
                     if(dynamic_cast<RISCVFrameObject*>(oprand)) 
                         freamobjLegalize(i, it);
-                    else if(dynamic_cast<StackRegister*>(oprand)) 
+                    else if(dynamic_cast<StackRegister*>(oprand)) {
+                        if(opcode<ISA::BeginMem||opcode>ISA::EndMem)
+                            StackRegLegalize(i, it);
+                        
                         stackOffsetLegalize(i, it);
+                    } 
                 }
             }
         }
-    } 
+        time++;
+    }
     LegalizeConstInt lcint(ctx);
     lcint.run();
 }
@@ -32,61 +44,79 @@ void Legalize::mvLegalize(mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
     RISCVMIR* ld = nullptr;
     VirRegister* vreg = nullptr;
     if(StackRegister* reg = dynamic_cast<StackRegister*>(inst->GetOperand(0))) {
+        RISCVMIR* inst = *it;
+        StackRegister* sreg = dynamic_cast<StackRegister*>(inst->GetOperand(0));
+        RISCVMIR* addiw = new RISCVMIR(RISCVMIR::_addiw);
+        VirRegister* vreg = ctx.createVReg(riscv_ptr);
+        addiw->SetDef(vreg);
+        addiw->AddOperand(sreg->GetReg());
+        Imm* imm = new Imm(ConstIRInt::GetNewConstant(sreg->GetOffset()));
+        addiw->AddOperand(imm);
+        it.insert_before(addiw);
+        // inst->SetOperand(i, vreg);
         // mv .1 off(s0) =>
         // ld .2 off(s0)
         // mv .1 .2
-        ld = new RISCVMIR(ISA::_ld);
-        if(reg->GetParent()!=nullptr) {
-            switch(reg->GetParent()->GetContextType()){
-                case RISCVType::riscv_i32:
-                    vreg = ctx.createVReg(riscv_i32);
-                    break;
-                case RISCVType::riscv_float32:
-                    vreg = ctx.createVReg(riscv_float32);
-                    break;
-                case RISCVType::riscv_ptr:
-                    vreg = ctx.createVReg(riscv_ptr);
-                    break;
-                default:
-                    assert(false);
-            }
-        } 
-        else vreg = ctx.createVReg(riscv_ptr);
-
-        ld->SetDef(vreg);
-        ld->AddOperand(inst->GetOperand(0));
-        it.insert_before(ld);
-        inst->SetOperand(0, ld->GetDef());
+        // ld = new RISCVMIR(ISA::_ld);
+        // if(reg->GetParent()!=nullptr) {
+        //     switch(reg->GetParent()->GetContextType()){
+        //         case RISCVType::riscv_i32:
+        //             vreg = ctx.createVReg(riscv_i32);
+        //             break;
+        //         case RISCVType::riscv_float32:
+        //             vreg = ctx.createVReg(riscv_float32);
+        //             break;
+        //         case RISCVType::riscv_ptr:
+        //             vreg = ctx.createVReg(riscv_ptr);
+        //             break;
+        //         default:
+        //             assert(false);
+        //     }
+        // } 
+        // else vreg = ctx.createVReg(riscv_ptr);
+        // ld->SetDef(vreg);
+        // ld->AddOperand(inst->GetOperand(0));
+        // it.insert_before(ld);
+        // inst->SetOperand(0, ld->GetDef());
     }
     else if(RISCVFrameObject* obj = dynamic_cast<RISCVFrameObject*>(inst->GetOperand(0))) {
-        ld = new RISCVMIR(ISA::_ld);
-        switch(obj->GetType()){
-            case RISCVType::riscv_i32:
-                vreg = ctx.createVReg(riscv_i32);
-                break;
-            case RISCVType::riscv_float32:
-                vreg = ctx.createVReg(riscv_float32);
-                break;
-            case RISCVType::riscv_ptr:
-                vreg = ctx.createVReg(riscv_ptr);
-                break;
-            default:
-                assert(false);
-        }
-        ld->SetDef(vreg);
-        ld->AddOperand(inst->GetOperand(0));
-        it.insert_before(ld);
-        inst->SetOperand(0, ld->GetDef());
+        RISCVMIR* inst = *it;
+        StackRegister* sreg = dynamic_cast<RISCVFrameObject*>(obj)->GetStackReg();
+        RISCVMIR* addiw = new RISCVMIR(RISCVMIR::_addiw);
+        VirRegister* vreg = ctx.createVReg(riscv_ptr);
+        addiw->SetDef(vreg);
+        addiw->AddOperand(sreg->GetReg());
+        Imm* imm = new Imm(ConstIRInt::GetNewConstant(sreg->GetOffset()));
+        addiw->AddOperand(imm);
+        it.insert_before(addiw);
+        // inst->SetOperand(i, vreg);
+        // ld = new RISCVMIR(ISA::_ld);
+        // switch(obj->GetType()){
+        //     case RISCVType::riscv_i32:
+        //         vreg = ctx.createVReg(riscv_i32);
+        //         break;
+        //     case RISCVType::riscv_float32:
+        //         vreg = ctx.createVReg(riscv_float32);
+        //         break;
+        //     case RISCVType::riscv_ptr:
+        //         vreg = ctx.createVReg(riscv_ptr);
+        //         break;
+        //     default:
+        //         assert(false);
+        // }
+        // ld->SetDef(vreg);
+        // ld->AddOperand(inst->GetOperand(0));
+        // it.insert_before(ld);
+        // inst->SetOperand(0, ld->GetDef());
     }
     else if (LARegister* reg = dynamic_cast<LARegister*>(inst->GetOperand(0))) {
-        ld = new RISCVMIR(ISA::_ld);
-        vreg = ctx.createVReg(riscv_ptr);
-        ld->SetDef(vreg);
-        ld->AddOperand(inst->GetOperand(0));
-        it.insert_before(ld);
-        inst->SetOperand(0, ld->GetDef());
+        // ld = new RISCVMIR(ISA::_ld);
+        // vreg = ctx.createVReg(riscv_ptr);
+        // ld->SetDef(vreg);
+        // ld->AddOperand(inst->GetOperand(0));
+        // it.insert_before(ld);
+        // inst->SetOperand(0, ld->GetDef());
     }
-    
 }
 void Legalize::freamobjLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
     RISCVMIR* inst = *it;
@@ -109,6 +139,18 @@ void Legalize::freamobjLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterat
         sreg->SetReg(dynamic_cast<Register*>(addiw->GetDef()));
         inst->SetOperand(i, sreg);
     } 
+}
+void Legalize::StackRegLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
+    RISCVMIR* inst = *it;
+    StackRegister* sreg = dynamic_cast<StackRegister*>(inst->GetOperand(i));
+    RISCVMIR* addiw = new RISCVMIR(RISCVMIR::_addiw);
+    VirRegister* vreg = ctx.createVReg(riscv_ptr);
+    addiw->SetDef(vreg);
+    addiw->AddOperand(sreg->GetReg());
+    Imm* imm = new Imm(ConstIRInt::GetNewConstant(sreg->GetOffset()));
+    addiw->AddOperand(imm);
+    it.insert_before(addiw);
+    inst->SetOperand(i, vreg);
 }
 void Legalize::stackOffsetLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
     RISCVMIR* inst = *it;
@@ -238,31 +280,28 @@ void LegalizeConstInt::LegConstInt(RISCVMIR* inst, Imm* constdata,mylist<RISCVBa
 bool LegalizeConstInt::run() {
     using PhyReg = PhyRegister::PhyReg;
     using ISA = RISCVMIR::RISCVISA;
-    for(auto& func : ctx.GetFunctions()) {
-        for(auto block : *func) {
-            for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
-                RISCVMIR* inst = *it;
-                for(int i=0; i<inst->GetOperandSize(); i++) {
-                    if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
-                        if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(constdata->Getdata())) {
-                            if(constint->GetVal() == 0 && inst->GetOpcode()!=ISA::li && inst->GetOpcode()!=ISA::mv) {
-                                PhyRegister* zero = PhyRegister::GetPhyReg(PhyReg::zero);
-                                inst->SetOperand(i,zero);
-                                break;
-                            }
-                            if(inst->GetOpcode()>ISA::BeginBranch && inst->GetOpcode()<ISA::EndBranch) {
-                                RISCVMIR* li = new RISCVMIR(ISA::li);
-                                VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
-                                li->SetDef(vreg);
-                                li->AddOperand(constdata);
-                                it.insert_before(li);
-                                inst->SetOperand(i, li->GetDef());
-                                break;
-                            }
-                            // real legalize
-                            LegConstInt(inst, constdata, it);
+    for(auto block : *(ctx.GetCurFunction())) {
+        for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
+            RISCVMIR* inst = *it;
+            for(int i=0; i<inst->GetOperandSize(); i++) {
+                if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
+                    if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(constdata->Getdata())) {
+                        if(constint->GetVal() == 0 && inst->GetOpcode()!=ISA::li && inst->GetOpcode()!=ISA::mv) {
+                            PhyRegister* zero = PhyRegister::GetPhyReg(PhyReg::zero);
+                            inst->SetOperand(i,zero);
+                            break;
                         }
-
+                        if(inst->GetOpcode()>ISA::BeginBranch && inst->GetOpcode()<ISA::EndBranch) {
+                            RISCVMIR* li = new RISCVMIR(ISA::li);
+                            VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+                            li->SetDef(vreg);
+                            li->AddOperand(constdata);
+                            it.insert_before(li);
+                            inst->SetOperand(i, li->GetDef());
+                            break;
+                        }
+                        // real legalize
+                        LegConstInt(inst, constdata, it);
                     }
                 }
             }
