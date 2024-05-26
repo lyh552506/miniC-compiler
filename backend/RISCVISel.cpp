@@ -517,7 +517,7 @@ void RISCVISel::InstLowering(CallInst* inst){
                     case riscv_float32:
 
                     case riscv_ptr:
-
+                        break;
                     default:
                         assert(0&&"Error param type");
                 }
