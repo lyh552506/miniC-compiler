@@ -73,7 +73,7 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
           }
         }
       }
-    } else if ((*inst)->GetOperandSize() == 2) {
+    } else if ((*inst)->GetOperandSize() > 1) {
       RISCVMOperand *_val1 = (*inst)->GetOperand(0);
       RISCVMOperand *_val2 = (*inst)->GetOperand(1);
       UpdateInfo(_val1, block);
@@ -204,7 +204,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           }
         }
       }
-    } else if (inst->GetOperandSize() == 2) {
+    } else if (inst->GetOperandSize() > 1) {
       RISCVMOperand *_val1 = inst->GetOperand(0);
       RISCVMOperand *_val2 = inst->GetOperand(1);
       if (auto val1 = _val1->ignoreLA()) {
