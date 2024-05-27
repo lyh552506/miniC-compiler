@@ -529,6 +529,7 @@ void RISCVISel::InstLowering(CallInst* inst){
                 StackRegister* sreg = new StackRegister(PhyRegister::sp, offset);
                 store->AddOperand(M(inst->GetOperand(i)));
                 store->AddOperand(sreg);
+                ctx(store);
             }
         }
         for (int i=1; i<=std::min(paramnum, MAXnum); i++) {
