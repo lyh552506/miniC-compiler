@@ -520,4 +520,5 @@ void InterVal::LiveInfoInit()
   Uses.clear();
   Defs.clear();
   InstLive.clear();
+  IG.clear();
 }

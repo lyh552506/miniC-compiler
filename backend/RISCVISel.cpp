@@ -513,20 +513,22 @@ void RISCVISel::InstLowering(CallInst* inst){
                 /// @todo load params to end of the frame
                 Value* operand = inst->GetOperand(i);
                 RISCVMIR* store = nullptr;
+                StackRegister* sreg = nullptr;
                 switch(RISCVTyper(operand->GetType())) {
                     case riscv_i32:
                     case riscv_float32:
-                        offset-=4;
+                        sreg = new StackRegister(PhyRegister::sp, offset);
                         store = new RISCVMIR(RISCVMIR::_sw);
+                        offset += 4;
                         break;
                     case riscv_ptr:
-                        offset-=8;
+                        sreg = new StackRegister(PhyRegister::sp, offset);
                         store = new RISCVMIR(RISCVMIR::_sd);
+                        offset += 8;
                         break;
                     default:
                         assert(0&&"Error param type");
                 }
-                StackRegister* sreg = new StackRegister(PhyRegister::sp, offset);
                 store->AddOperand(M(inst->GetOperand(i)));
                 store->AddOperand(sreg);
                 ctx(store);
