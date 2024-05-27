@@ -187,16 +187,18 @@ public:
   PhiInst(User *BeforeInst):oprandNum(0) {}
 
   void print() final;
-  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB);
-  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty);
+  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,std::string Name="");
+  static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty,std::string Name="");
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
   std::vector<Value*>& GetAllPhiVal();
   Value* ReturnValIn(BasicBlock* bb);
+  BasicBlock* ReturnBBIn(Use* use);
   void Phiprop(Value* origin,Value* newval);
 public:
   PhiInst* clone(std::unordered_map<Operand,Operand>&)override;
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
   std::vector<Value*> Incomings;
+  std::map<int,Use*> IndexToUse;
   void Del_Incomes(int CurrentNum);
   void FormatPhi();
   bool IsSame(PhiInst* phi);

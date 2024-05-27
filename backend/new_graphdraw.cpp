@@ -459,7 +459,7 @@ void GraphColor::spill() {
 void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     MOperand select = selectstack.back();
-    if (select->GetName() == ".0" || select->GetName() == ".1" ||
+    if (select->GetName() == ".182" || select->GetName() == ".1" ||
         select->GetName() == ".2")
       int a = 0;
     RISCVType ty = select->GetType();
@@ -486,6 +486,8 @@ void GraphColor::AssignColors() {
       else {
         coloredNode.insert(select);
         color[select] = SelectPhyReg(ty, int_assist);
+        _DEBUG(std::cerr << "Assign reg(int): " << color[select]->GetName()
+                         << " To " << select->GetName() << std::endl;)
       }
     } else if (ty == riscv_float32) {
       if (float_assist.size() == 0)
@@ -493,6 +495,8 @@ void GraphColor::AssignColors() {
       else {
         coloredNode.insert(select);
         color[select] = SelectPhyReg(ty, float_assist);
+        _DEBUG(std::cerr << "Assign reg(float): " << color[select]->GetName()
+                         << " To " << select->GetName() << std::endl;)
       }
     }
   }
