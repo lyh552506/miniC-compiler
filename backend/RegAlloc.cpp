@@ -13,10 +13,8 @@ void RegAllocImpl::RunGCpass(){
     frame.GenerateFrame();
     frame.GenerateFrameHead();
     frame.GenerateFrameTail();
-    // LegalizeConstInt lcint(ctx);
-    // lcint.run();
     Legalize legal(ctx);
-    // legal.run();
+    legal.run();
 
     gc->RunOnFunc();
 }

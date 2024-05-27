@@ -98,9 +98,7 @@ public:
                 return a1->LoopDepth > a2->LoopDepth;
               });
     AlreadyGetInfo = true;
-#ifdef DEBUG
-    PrintPass();
-#endif DEBUG
+    _DEBUG(PrintPass();)
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }
   iterator begin() { return LoopRecord.begin(); }

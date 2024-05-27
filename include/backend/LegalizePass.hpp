@@ -7,18 +7,16 @@ class Legalize {
     RISCVLoweringContext& ctx;
     public:
     Legalize(RISCVLoweringContext&);
-    void mvLegalize(mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
-    void freamobjLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
-    void StackRegLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
-    void stackOffsetLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
-    void run();
-};
+    // 
+    void StackAndFrameLegalize(int ,mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
+    void OffsetLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
 
-class LegalizeConstInt {
-    RISCVLoweringContext& ctx;
-    public:
-    LegalizeConstInt(RISCVLoweringContext&);
-    void LegConstInt(RISCVMIR*, Imm*, mylist<RISCVBasicBlock,RISCVMIR>::iterator);
-    void LegalizeMOpcode(RISCVMIR*);
-    bool run();
+    // Legalize const int
+    void zeroLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
+    void branchLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
+    void noImminstLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
+    void constintLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
+    void MOpcodeLegalize(RISCVMIR*);
+    bool isImminst(RISCVMIR::RISCVISA);
+    void run();
 };
