@@ -194,16 +194,16 @@ std::vector<BasicBlock *> LoopAnalysis::GetExit(LoopInfo *loopinfo) {
 // num of loops
 // each loop nodes
 void LoopAnalysis::PrintPass() {
-  // std::cout << "---------------------Loop Analysis-----------------------\n";
-  // std::cout << "Num Of Loops:" << LoopRecord.size() << "\n";
-  // for (int i = 0; i < LoopRecord.size(); i++) {
-  //   auto tmp = LoopRecord[i];
-  //   std::cout << "Loop Depth:" << tmp->GetLoopDepth() << "\n";
-  //   std::cout << "Loop Head:" << tmp->GetHeader()->GetName() << "\n";
-  //   std::cout << "Loop Body:";
-  //   for (auto x : tmp->GetLoopBody())
-  //     if (x != tmp->GetHeader())
-  //       std::cout << x->GetName() << " ";
-  //   std::cout << "\n\r";
-  // }
+  std::cout << "---------------------Loop Analysis-----------------------\n";
+  std::cout << "Num Of Loops:" << LoopRecord.size() << "\n";
+  for (int i = 0; i < LoopRecord.size(); i++) {
+    auto tmp = LoopRecord[i];
+    std::cout << "Loop Depth:" << tmp->GetLoopDepth() << "\n";
+    std::cout << "Loop Head:" << tmp->GetHeader()->GetName() << "\n";
+    std::cout << "Loop Body:";
+    for (auto x : tmp->GetLoopBody())
+      if (x != tmp->GetHeader())
+        std::cout << x->GetName() << " ";
+    std::cout << "\n\r";
+  }
 }

@@ -15,6 +15,7 @@
 void Reassociate::RunOnFunction() {
   // first should caculate RPO
   BasicBlock *EntryBB = m_func->front();
+  m_func->init_visited_block();
   PostOrderCFG(EntryBB);
   std::reverse(RPO.begin(), RPO.end());
   BuildRankMap();
@@ -51,16 +52,19 @@ void Reassociate::BuildRankMap() {
     }
   }
 }
-
 int Reassociate::GetRank(Value *val) {
   if (!dynamic_cast<User *>(val)) {
     auto it =
         std::find_if(m_func->GetParams().begin(), m_func->GetParams().end(),
-                     [val](auto &ele) { return ele.get() == val; });
+                     [val](const auto &ele) { return ele.get() == val; });
+    // for (auto &x : m_func->GetParams()) {
+    //   if (x.get() == val)
+    //     return ValueRank[val];
+    // }
     if (it != m_func->GetParams().end())
       return ValueRank[val];
     else //对于global和常量
-      return 0;
+    return 0;
   }
   if (ValueRank.find(val) != ValueRank.end())
     return ValueRank[val];
@@ -488,8 +492,7 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
     for (int i = 0; i < LinerizedOp.size(); i++) {
       if (!IsOperandAssociate(LinerizedOp[i].first, BinaryInst::Op_Mul))
         continue;
-      if(RemoveOp(LinerizedOp[i].first)){
-
+      if (RemoveOp(LinerizedOp[i].first)) {
       }
     }
   }
@@ -498,10 +501,10 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
 
 Value *Reassociate::RemoveOp(Value *I) {
   std::vector<std::pair<Value *, int>> Leaf;
-  auto bin=dynamic_cast<BinaryInst*>(I);
+  auto bin = dynamic_cast<BinaryInst *>(I);
   assert(bin);
-  LinearizeExp(bin,Leaf);
-  //TODO
+  LinearizeExp(bin, Leaf);
+  // TODO
 }
 
 void Reassociate::RecursionSplitOp(Value *I, std::vector<Value *> &ops) {
