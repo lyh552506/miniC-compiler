@@ -163,19 +163,19 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
   for (auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_) {
     RISCVMIR *inst = *inst_;
     if (inst->GetOpcode() == OpType::call) {
-      for (int i = 0; i < inst->GetOperandSize(); i++) {
-        RISCVMOperand *val = inst->GetOperand(i);
-        if (auto reg = val->ignoreLA()) {
-          if (reg) {
-            if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
-              Precolored.insert(phy);
-              color[phy] = phy;
-            }
-            Live.insert(reg);
-            InstLive[inst] = Live;
-          }
-        }
-      }
+      // for (int i = 0; i < inst->GetOperandSize(); i++) {
+      //   RISCVMOperand *val = inst->GetOperand(i);
+      //   if (auto reg = val->ignoreLA()) {
+      //     if (reg) {
+      //       if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
+      //         Precolored.insert(phy);
+      //         color[phy] = phy;
+      //       }
+      //       Live.insert(reg);
+      //       InstLive[inst] = Live;
+      //     }
+      //   }
+      // }
       continue;
     } else if (inst->GetOperandSize() == 1) {
       if (inst->GetOpcode() == OpType::ret) {
