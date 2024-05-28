@@ -27,3 +27,7 @@ void CSE::RunOnFunction()
     }
 }
 
+bool CSE::RunOnBlock(BasicBlock* block)
+{
+    
+}
