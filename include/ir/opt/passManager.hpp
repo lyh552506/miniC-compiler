@@ -20,6 +20,7 @@
 #include "SCCP.hpp"
 #include "reassociate.hpp"
 #include "CSE_Tmp.hpp"
+#include "lcssa.hpp"
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {
@@ -56,4 +57,5 @@ private:
   std::unique_ptr<SCCP> m_sccp;
   std::unique_ptr<Reassociate> m_reassociate;
   std::unique_ptr<CSE> m_cse;
+  std::unique_ptr<LcSSA> m_lcssa;
 };

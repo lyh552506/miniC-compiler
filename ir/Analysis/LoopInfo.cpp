@@ -1,4 +1,5 @@
 #include "LoopInfo.hpp"
+#include <set>
 #include <vector>
 
 #include "CFG.hpp"
@@ -58,9 +59,12 @@ void LoopAnalysis::ExpandSubLoops() {
 }
 
 bool LoopAnalysis::IsLoopIncludeBB(LoopInfo *loop, int index) {
-  auto iter = std::find(loop->ContainBlocks.begin(), loop->ContainBlocks.end(),
-                        GetCorrespondBlock(index));
-  if (iter == loop->ContainBlocks.end())
+  std::set<BasicBlock *> contain{loop->ContainBlocks.begin(),
+                                 loop->ContainBlocks.end()};
+  contain.insert(loop->GetHeader());
+  auto iter =
+      std::find(contain.begin(), contain.end(), GetCorrespondBlock(index));
+  if (iter == contain.end())
     return false;
   return true;
 }
@@ -170,7 +174,7 @@ std::vector<BasicBlock *> LoopAnalysis::GetExitingBlock(LoopInfo *loopinfo) {
       //     std::find(loopinfo->ContainBlocks.begin(),
       //               loopinfo->ContainBlocks.end(), GetCorrespondBlock(succ));
       if (!IsLoopIncludeBB(loopinfo, succ))
-        PushVecSingleVal(exit, bb);
+        PushVecSingleVal(exit, m_dom->GetNode(succ).thisBlock);
     }
   }
   return exit;
