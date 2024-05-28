@@ -36,22 +36,6 @@ void DCE::RunOnFunction()
     }
     if(C && !flag)
     {
-        // for(auto iter = func->rbegin(); iter != func->rend(); --iter)
-        // {
-        //     bool NDelBlock = false;
-        //     for(auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1)
-        //     {
-        //         if(!dynamic_cast<RetInst*>(*iter1))
-        //         {
-        //             (*iter1)->ClearRelation();
-        //             (*iter1)->EraseFromParent();
-        //         }
-        //         else
-        //             NDelBlock = true;
-        //     }
-        //     if(!NDelBlock)
-        //         (*iter)->EraseFromParent();
-        // }
         for(auto user : func->GetUserlist())
         {
             User* inst = user->GetUser();
@@ -61,6 +45,19 @@ void DCE::RunOnFunction()
                 _DEBUG(std::cerr<< "Delete Inst:" << inst->GetName() << "In Func:" << inst->GetParent()->GetParent()->GetName() <<std::endl;)
                 delete inst;
             }
+        }
+        if(func->GetUserlist().is_empty())
+        {
+            // for(auto iter = func->rbegin(); iter != func->rend(); --iter)
+            // {
+            //     auto block = (*iter);
+            //     delete block;
+            // }
+            func->clear();
+            auto Block = new BasicBlock;
+            auto ret = new RetInst(C);
+            Block->push_back(ret);
+            func->add_block(Block);
         }
         return;
     }
