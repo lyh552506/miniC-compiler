@@ -101,6 +101,7 @@ int main(int argc, char **argv) {
     }
   }
   pass_manager->InitPass();
+  
   Singleton<Module>().Test();
   fflush(stdout);
   fclose(stdout);

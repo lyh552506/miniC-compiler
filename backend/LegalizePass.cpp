@@ -18,18 +18,26 @@ void Legalize::run() {
                 ISA opcode = inst->GetOpcode();
                 if(opcode==ISA::call||opcode==ISA::ret) continue;
 
+                // Def
+
+                // Use
                 for(int i=0; i<inst->GetOperandSize(); i++){
                     RISCVMOperand* oprand = inst->GetOperand(i);
                     // StackReg and Frameobj out memory inst
                     RISCVFrameObject* framobj = dynamic_cast<RISCVFrameObject*>(oprand);
                     StackRegister* sreg = dynamic_cast<StackRegister*>(oprand);
                     if(framobj||sreg) {
-                        if(!((opcode>ISA::BeginMem&&opcode<ISA::EndMem) || (opcode>ISA::BeginFloatMem&&opcode<ISA::EndFloatMem))) {
-                            StackAndFrameLegalize(i, it);
-                        }
-                        else {
+                        // load .1 offset(s0)
+                        //             ^
+                        if(i==0&&((opcode>ISA::BeginLoadMem&&opcode<ISA::EndLoadMem)||(opcode==ISA::_flw))) {
                             OffsetLegalize(i, it);
                         }
+                        // store .1 offset(s0)
+                        //             ^
+                        else if(i==1&&((opcode>ISA::BeginStoreMem&&opcode<ISA::EndStoreMem)||(opcode==ISA::_fsw))) {
+                            OffsetLegalize(i, it);
+                        }
+                        else StackAndFrameLegalize(i, it);
                     } 
 
                     // Imm
@@ -81,7 +89,7 @@ void Legalize::OffsetLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator
     StackRegister* sreg = nullptr;
     if(sreg = dynamic_cast<StackRegister*>(inst->GetOperand(i))) {}
     else if(RISCVFrameObject* obj = dynamic_cast<RISCVFrameObject*>(inst->GetOperand(i))) {
-        sreg = dynamic_cast<RISCVFrameObject*>(obj)->GetStackReg();
+        sreg = obj->GetStackReg();
     }
     int offset = sreg->GetOffset();
     if(offset>=-2048&&offset<=2047) {

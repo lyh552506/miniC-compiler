@@ -83,17 +83,23 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         EndJumpAndLink,
 
         BeginMem,
+
+        BeginLoadMem,
         _lb,
         _lbu,
         _lh,
         _lhu,
         _lw,
         _ld,
+        EndLoadMem,
 
+        BeginStoreMem,
         _sb,
         _sh,
         _sw,
         _sd,
+        EndStoreMem,
+
         EndMem,
 
         BeginFloat,
@@ -111,8 +117,15 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         EndFloatConvert,
         
         BeginFloatMem,
+
+        BeginFloatLoadMem,
         _flw,
+        EndFloatLoadMem,
+        
+        BeginFloatStoreMem,
         _fsw,
+        EndFloatStoreMem,
+        
         EndFloatMem,
 
         BeginFloatArithmetic,
