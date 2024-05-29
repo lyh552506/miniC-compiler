@@ -70,6 +70,62 @@ template <typename AllocatorTy>
         this->~ScopedHashTableVal();
         Allocator.Deallocate(this);
     }
-    
+
 };
 
+template <typename Key, typename Val, typename AllocatorTy>
+class HashScope_Scope
+{
+friend class HashScope<Key, Val, AllocatorTy>;
+    HashScope<Key, Val, AllocatorTy>& HashTable;
+
+    HashScope_Scope* PrevScope;
+    // 作用域最后插入的值，如果尚未插入，则为空。
+    HashScopeVal<Key, Val>* LastVal;
+
+    void operator=(HashScope_Scope&) = delete;
+    HashScope_Scope(HashScope_Scope&) = delete;
+
+public:
+    HashScope_Scope(HashScope<Key, Val, AllocatorTy>& HashTable)
+        : HashTable(HashTable), PrevScope(HashTable.CurScope), LastVal(nullptr)
+    {
+        HashTable.CurScope = this;
+    }
+    
+    HashScope_Scope *GetPrevScope() { return PrevScope; }
+    const HashScope_Scope *GetPrevScope() const { return PrevScope; }
+
+    HashScopeVal<Key, Val>* GetLastVal() { return LastVal; }
+    
+    void SetLastVal(HashScopeVal(Key, Val)* Val) { LastVal = Val; }
+};
+
+template <typename Key, typename Val>
+class HashScopeIterator
+{
+    HashScopeVal<Key, Val>* Ptr;
+public:
+    HashScopeIterator(HashScopeVal<Key, Val>* ptr) : Ptr(ptr) {}
+
+    Val& operator->() const { return &Ptr->GetVal(); }
+    Val& operator*() const { return Ptr->GetVal(); }
+    HashScopeIterator operator++() { Ptr = Ptr->GetNextForKey(); return *this; }
+    bool operator==(const HashScopeIterator& RHS) const { return Ptr == RHS.Ptr; }
+    bool operator!=(const HashScopeIterator& RHS) const { return Ptr != RHS.Ptr; }
+};
+
+template <typename Key, typename Val, typename AllocatorTy>
+class HashScope
+{
+    typedef HashScope_Scope<Key, Val, AllocatorTy> Scope;
+    typedef unsigned size_t;
+    typedef HashScopeVal<Key, Val> Val_Ptr;
+    // TODO: Restruct a unordered_map
+    std::unordered_map<Key, Val_Ptr*> Mapping;
+    Scope* CurScope;
+
+    AllocatorTy Allocator;
+
+    
+};
