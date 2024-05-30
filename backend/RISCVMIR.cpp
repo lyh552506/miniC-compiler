@@ -3,7 +3,14 @@
 
 RISCVMOperand*& RISCVMIR:: GetDef() {return def;}
 RISCVMOperand*& RISCVMIR::GetOperand(int ind){
-    assert(0<=ind&&ind<operands.size()&&"Range Assertion");
+    // if(def==nullptr)
+    //     assert((0<=ind&&ind<operands.size())&&"Range Assertion");
+    // else assert((-1<=ind&&ind<operands.size())&&"Range Assertion");
+
+    // if(ind==-1&&def!=nullptr) {
+    //     return def;
+    // }
+    assert((0<=ind&&ind<operands.size())&&"Range Assertion");
     return operands[ind];
 }
 
