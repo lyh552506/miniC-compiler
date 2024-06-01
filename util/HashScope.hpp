@@ -3,7 +3,7 @@
 #include <vector>
 #include "CFG.hpp"
 
-struct HashValue
+struct InstHashTable
 {
     size_t operator()(User* inst) const
     {
@@ -30,6 +30,9 @@ struct Same
         auto& RHSUseList = RHS->Getuselist();
         if(LHSUseList.size() != RHSUseList.size())
             return false;
+        if((LHS->GetInstId() > 7 && LHS->GetInstId() < 11) ||  (LHS->GetInstId() > 12 && LHS->GetInstId() < 17))
+            return std::is_permutation(LHSUseList.begin(), LHSUseList.end(), RHSUseList.begin(), []
+                (std::unique_ptr<Use>& lhs, std::unique_ptr<Use>& rhs){ return lhs->usee == rhs->usee; });
         return std::equal(LHSUseList.begin(), LHSUseList.end(), RHSUseList.begin(), []
         (std::unique_ptr<Use>& lhs, std::unique_ptr<Use>& rhs){ return lhs->usee == rhs->usee; });
     }

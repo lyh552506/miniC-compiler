@@ -2,44 +2,13 @@
 #include "CFG.hpp"
 #include "my_stl.hpp"
 #include <unordered_set>
-struct InstHashTable
-{
-    size_t operator()(User* inst) const
-    {
-        size_t HashValue;
-        HashValue += std::hash<User::OpID>{}(inst->GetInstId());
-        for(auto& Use_ : inst->Getuselist())
-        {
-            Value* val = Use_->usee;
-            HashValue = HashValue * 111 + std::hash<Value*>{}(val);
-        }
-        return HashValue;
-    }
-};
-
-struct Same
-{
-    bool operator()(User* LHS, User* RHS) const
-    {
-        if(LHS->GetInstId() != RHS->GetInstId())
-            return false;
-        if(LHS->GetType() != RHS->GetType())
-            return false;
-        auto& LHSUseList = LHS->Getuselist();
-        auto& RHSUseList = RHS->Getuselist();
-        if(LHSUseList.size() != RHSUseList.size())
-            return false;
-        return std::equal(LHSUseList.begin(), LHSUseList.end(), RHSUseList.begin(), []
-        (std::unique_ptr<Use>& lhs, std::unique_ptr<Use>& rhs){ return lhs->usee == rhs->usee; });
-    }
-};
 
 struct ValueTable
 {
     User* inst;
     ValueTable(User* inst) : inst(inst) 
     {
-        
+        assert(CanHandle(inst) && "Inst can't be handled!");
     }
 
     static bool CanHandle(User* inst)
@@ -50,6 +19,16 @@ struct ValueTable
             return true;
     }
 };
+
+struct LoadValue
+{
+    User* DefInst;
+    size_t Version;
+    int Id;
+    bool IsAtomic;
+    bool Variant;
+};
+
 class CSE
 {
 private:
