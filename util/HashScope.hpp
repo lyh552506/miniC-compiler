@@ -87,12 +87,34 @@ friend class HashScope<Key, Val, AllocatorTy>;
     HashScope_Scope(HashScope_Scope&) = delete;
 
 public:
-    HashScope_Scope(HashScope<Key, Val, AllocatorTy>& HashTable)
-        : HashTable(HashTable), PrevScope(HashTable.CurScope), LastVal(nullptr)
+    HashScope_Scope(HashScope<Key, Val, AllocatorTy>& HashTable) : HashTable(HashTable)
     {
+        PrevScope = HashTable.CurScope;
         HashTable.CurScope = this;
+        LastVal = nullptr;
     }
-    
+    ~HashScope_Scope()
+    {
+        assert(HashTable.CurScope == this && "Scope is not the current scope!");
+        HashTable.CurScope = PrevScope;
+        while(HashScopeVal<Key, Val>* thisval = LastVal)
+        {
+            if(!thisval->GetNextForScope())
+            {
+                assert(HashTable.Mapping[thisval->GetKey()] == thisval && "imbalance!");
+                HashTable.Mapping.erase(thisval->GetKey());
+            }
+            else
+            {
+                HashScopeVal<Key, Val>*& thiskey = HashTable.Mapping[thisval->GetKey()];
+                assert(thiskey == thisval && "imbalance!");
+                thiskey = thisval->GetNextForKey();
+            }
+
+            LastVal = thisval->GetNextForScope();
+            thisval->Delete(HashTable.Allocator);
+        }
+    }
     HashScope_Scope *GetPrevScope() { return PrevScope; }
     const HashScope_Scope *GetPrevScope() const { return PrevScope; }
 
@@ -127,5 +149,35 @@ class HashScope
 
     AllocatorTy Allocator;
 
-    
+    HashScope(const HashScope& );
+    void operator=(const HashScope& );
+    friend class HashScope_Scope<Key, Val, AllocatorTy>;
+
+public:
+    HashScope() : CurScope(nullptr) {}
+    HashScope(AllocatorTy Allocator_) : CurScope(0), Allocator(Allocator_) {}
+    ~HashScope() { assert(!CurScope && Mapping.empty() && "Scope is not empty!"); } 
+
+    size_t count(const Key& key) const { return Mapping.count(key); }
+    Val lookup(const Key& key) { if(Mapping.find(key) != Mapping.end()) return Mapping[key]->GetVal(); return Val(); }
+
+    void Insert(const Key& key, const Val& val) { InsertIntoScope(CurScope, key, val); }
+    void InsertIntoScope(Scope* scope, const Key& key, const Val& val)
+    {
+        assert(scope && "No scope!");
+        HashScopeVal<Key, Val>*& entry = Mapping[key];
+        entry = Val_Ptr::Create(entry, scope->GetLastVal(), key, val, Allocator);
+        scope->SetLastVal(entry);
+    }
+
+    HashScopeIterator end() { return HashScopeIterator(nullptr); }
+    HashScopeIterator begin(const Key& key)
+    {
+        if(Mapping.find(key) != Mapping.end())
+            return HashScopeIterator(Mapping[key]);
+        return end();
+    }
+
+    Scope* GetCurScope() { return CurScope; }
+    const Scope* GetCurScope() const { return CurScope; }
 };

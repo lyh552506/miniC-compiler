@@ -34,6 +34,22 @@ struct Same
     }
 };
 
+struct ValueTable
+{
+    User* inst;
+    ValueTable(User* inst) : inst(inst) 
+    {
+        
+    }
+
+    static bool CanHandle(User* inst)
+    {
+        if(inst->GetInstId() > 7 && inst->GetInstId() < 22)
+            return true;
+        if(dynamic_cast<CallInst*>(inst) && !inst->HasSideEffect())
+            return true;
+    }
+};
 class CSE
 {
 private:
