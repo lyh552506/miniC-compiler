@@ -355,8 +355,10 @@ BinaryInst *BinaryInst::CreateInst(Operand _A, Operation __op, Operand _B,
   if (place != nullptr) {
     BasicBlock *instbb = place->GetParent();
     for (auto iter = instbb->begin(); iter != instbb->end(); ++iter)
-      if (*iter == place)
+      if (*iter == place){
         iter.insert_before(bin);
+        break;
+      }
   }
   return bin;
 }
