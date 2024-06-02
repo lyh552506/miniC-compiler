@@ -2,41 +2,42 @@
 #include <cassert>
 #include <vector>
 #include "CFG.hpp"
-
-struct InstHashTable
-{
-    size_t operator()(User* inst) const
+namespace InstHashTool{
+    struct InstHash
     {
-        size_t HashValue;
-        HashValue += std::hash<User::OpID>{}(inst->GetInstId());
-        for(auto& Use_ : inst->Getuselist())
+        size_t operator()(User* inst) const
         {
-            Value* val = Use_->usee;
-            HashValue = HashValue * 111 + std::hash<Value*>{}(val);
+            size_t HashValue;
+            HashValue += std::hash<User::OpID>{}(inst->GetInstId());
+            for(auto& Use_ : inst->Getuselist())
+            {
+                Value* val = Use_->usee;
+                HashValue = HashValue * 111 + std::hash<Value*>{}(val);
+            }
+            return HashValue;
         }
-        return HashValue;
-    }
-};
+    };
 
-struct Same
-{
-    bool operator()(User* LHS, User* RHS) const
+    struct InstSame
     {
-        if(LHS->GetInstId() != RHS->GetInstId())
-            return false;
-        if(LHS->GetType() != RHS->GetType())
-            return false;
-        auto& LHSUseList = LHS->Getuselist();
-        auto& RHSUseList = RHS->Getuselist();
-        if(LHSUseList.size() != RHSUseList.size())
-            return false;
-        if((LHS->GetInstId() > 7 && LHS->GetInstId() < 11) ||  (LHS->GetInstId() > 12 && LHS->GetInstId() < 17))
-            return std::is_permutation(LHSUseList.begin(), LHSUseList.end(), RHSUseList.begin(), []
-                (std::unique_ptr<Use>& lhs, std::unique_ptr<Use>& rhs){ return lhs->usee == rhs->usee; });
-        return std::equal(LHSUseList.begin(), LHSUseList.end(), RHSUseList.begin(), []
-        (std::unique_ptr<Use>& lhs, std::unique_ptr<Use>& rhs){ return lhs->usee == rhs->usee; });
-    }
-};
+        bool operator()(User* LHS, User* RHS) const
+        {
+            if(LHS->GetInstId() != RHS->GetInstId())
+                return false;
+            if(LHS->GetType() != RHS->GetType())
+                return false;
+            auto& LHSUseList = LHS->Getuselist();
+            auto& RHSUseList = RHS->Getuselist();
+            if(LHSUseList.size() != RHSUseList.size())
+                return false;
+            if((LHS->GetInstId() > 7 && LHS->GetInstId() < 11) ||  (LHS->GetInstId() > 12 && LHS->GetInstId() < 17))
+                return std::is_permutation(LHSUseList.begin(), LHSUseList.end(), RHSUseList.begin(), []
+                    (std::unique_ptr<Use>& lhs, std::unique_ptr<Use>& rhs){ return lhs->usee == rhs->usee; });
+            return std::equal(LHSUseList.begin(), LHSUseList.end(), RHSUseList.begin(), []
+            (std::unique_ptr<Use>& lhs, std::unique_ptr<Use>& rhs){ return lhs->usee == rhs->usee; });
+        }
+    };
+}
 template <typename Key, typename Val, typename AllocatorTy>
 class HashScope;
 template <typename Key, typename Val>

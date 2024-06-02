@@ -17,7 +17,6 @@ void CSE::RunOnFunction()
     while(!WorkList.empty())
     {
         dominance::Node CurrBlock = WorkList.front();
-
         if(!Processed.count(CurrBlock))
         {
             RunOnNode(CurrBlock);
@@ -27,11 +26,11 @@ void CSE::RunOnFunction()
     }
 }
 
-// bool CSE::RunOnNode(dominance::Node node)
-// {
-//     if(std::distance(node.rev.begin(), node.rev.end()) != 1)
-//         // TODO: 可能不处理
-//         return;
-
+bool CSE::RunOnNode(dominance::Node node)
+{
+    if(std::distance(node.rev.begin(), node.rev.end()) != 1)
+        // TODO: 可能不处理
+        // return;
+        ++CurrGens;
     
-// }
+}
