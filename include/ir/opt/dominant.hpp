@@ -1,6 +1,6 @@
 #pragma once
 #include <memory.h>
-
+#include <queue>
 #include <algorithm>
 #include <forward_list>
 #include <iostream>
@@ -90,7 +90,7 @@ class dominance : public PassManagerBase {
   int &updateBlockNum() { return block_num; }
   void RunOnFunction();
   void UpdateRevDst(int current, int pred);
-
+  std::queue<Node*> DFS_Dom(); 
  private:
   void init();
   /// @brief 获取每个节点的DFS序，同时初始化sdom为自己
