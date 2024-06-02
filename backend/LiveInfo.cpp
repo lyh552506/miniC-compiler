@@ -44,8 +44,14 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
     } else if (Opcode == OpType::ret) {
       if ((*inst)->GetOperandSize() != 0) {
         RISCVMOperand *val1 = (*inst)->GetOperand(0);
-        if (val1) {
+        if (val1->GetType() == RISCVType::riscv_i32) {
           PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
+          BlockLivein[block].insert(Phy);
+          Uses[block].insert(Phy);
+        }
+        else if(val1->GetType() == RISCVType::riscv_float32)
+        {
+          PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0);
           BlockLivein[block].insert(Phy);
           Uses[block].insert(Phy);
         }
