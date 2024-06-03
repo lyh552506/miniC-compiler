@@ -6,17 +6,22 @@
 void CSE::RunOnFunction()
 {
     // 这里采用deque而非vector的原因是在元素个数较多的时候deque的效率更高
-    std::deque<dominance::Node> WorkList;
-    std::vector<dominance::Node> DFS = DomTree->node;
-
+    std::deque<dominance::Node*> WorkList;
+    // std::vector<dominance::Node*> DFS = DomTree->node;
+    std::queue<dominance::Node*> DFS = DomTree->DFS_Dom();
     // 将DFS中元素压入WorkList中
-    WorkList.push_back(DFS.front());
-    for (auto it = DFS.begin() + 1; it != DFS.end(); ++it)
-        WorkList.push_back(*it);
+    while(!DFS.empty())
+    {
+        WorkList.push_back(DFS.front());
+        DFS.pop();
+    }
+    // WorkList.push_back(DFS.front());
+    // for (auto it = DFS.begin() + 1; it != DFS.end(); ++it)
+    //     WorkList.push_back(*it);
 
     while(!WorkList.empty())
     {
-        dominance::Node CurrBlock = WorkList.front();
+        dominance::Node* CurrBlock = WorkList.front();
         if(!Processed.count(CurrBlock))
         {
             RunOnNode(CurrBlock);
@@ -26,11 +31,18 @@ void CSE::RunOnFunction()
     }
 }
 
-bool CSE::RunOnNode(dominance::Node node)
+bool CSE::RunOnNode(dominance::Node* node)
 {
-    if(std::distance(node.rev.begin(), node.rev.end()) != 1)
+    if(std::distance(node->rev.begin(), node->rev.end()) != 1)
         // TODO: 可能不处理
         // return;
         ++CurrGens;
     
+    if(BasicBlock* block = DomTree->GetNode(node->rev.front()).thisBlock)
+        if(auto inst = dynamic_cast<CondInst*>(block->back()))
+            if(auto cond = dynamic_cast<User*>(inst->Getuselist()[0]->usee))
+                if(CanHandle(cond))
+                {
+                    
+                }
 }

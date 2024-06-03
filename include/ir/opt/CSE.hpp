@@ -37,14 +37,14 @@ private:
     // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Out;
     // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Gens;
     // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Kills;
-    std::set<dominance::Node> Processed;
+    std::set<dominance::Node*> Processed;
     size_t CurrGens;
 
 private:
     Function* func;
     dominance* DomTree;
     void Init();
-    bool RunOnNode(dominance::Node node);
+    bool RunOnNode(dominance::Node* node);
 public:
     CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0) { Init(); }
     void RunOnFunction();
