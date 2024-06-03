@@ -2,9 +2,6 @@
 #include "CFG.hpp"
 #include "my_stl.hpp"
 #include <cassert>
-#include <iostream>
-#include <set>
-#include <vector>
 
 void LcSSA::RunOnFunction() {
   loops = new LoopAnalysis(m_func, m_dom);
@@ -55,6 +52,7 @@ void LcSSA::FormalLcSSA(LoopInfo *l) {
         }
         if (!ContainBB.count(pbb)) {
           Rewrite.push_back(inst);
+          break;
         }
       }
     }
@@ -67,10 +65,15 @@ void LcSSA::FormalLcSSA(LoopInfo *l) {
         continue;
       _DEBUG(std::cerr << "Insert a lcssa Phi: " << inst->GetName() + ".lcssa"
                        << std::endl;);
-      auto phi =
-          PhiInst::NewPhiNode(ex->front(), ex,inst->GetType(), inst->GetName() + ".lcssa");
+      auto phi = PhiInst::NewPhiNode(ex->front(), ex, inst->GetType(),
+                                     inst->GetName() + ".lcssa");
       for (auto rev : m_dom->GetNode(ex->num).rev)
         phi->updateIncoming(inst, m_dom->GetNode(rev).thisBlock);
+      if (loops->LookUp(ex) != l) {
+        assert(0 && "Find a situation");
+      }
     }
   }
+  // now do RAUW
+  
 }
