@@ -2,6 +2,7 @@
 #include "CFG.hpp"
 #include "my_stl.hpp"
 #include <cassert>
+#include <utility>
 
 void LcSSA::RunOnFunction() {
   loops = new LoopAnalysis(m_func, m_dom);
@@ -23,57 +24,58 @@ void LcSSA::DFSLoops(LoopInfo *l) {
 void LcSSA::FormalLcSSA(LoopInfo *l) {
   std::set<BasicBlock *> ContainBB{l->GetLoopBody().begin(),
                                    l->GetLoopBody().end()};
-  std::vector<User *> Rewrite;
+
+  std::vector<User *> FormingInsts; //记录inst
   ContainBB.insert(l->GetHeader());
   std::vector<BasicBlock *> exit = loops->GetExitingBlock(l);
   assert(exit.size() > 0);
-  std::vector<BasicBlock *> WorkLists;
+  std::vector<User *> WorkLists;
   for (auto bb : ContainBB) {
     for (auto exitBB : exit)
-      if (bb != exitBB && m_dom->dominates(bb, exitBB))
-        WorkLists.push_back(bb);
-  }
-  if (WorkLists.empty())
-    return;
-  while (!WorkLists.empty()) {
-    auto target = WorkLists.back();
-    WorkLists.pop_back();
-    for (auto inst : *target) {
-      if (inst->GetUserListSize() == 0)
-        continue;
-      if (inst->GetUserListSize() == 1 &&
-          inst->GetUserlist().Front()->GetUser()->GetParent() == target)
-        continue;
-      for (auto user = inst->GetUserlist().begin();
-           user != inst->GetUserlist().end(); ++user) {
-        auto pbb = (*user)->GetUser()->GetParent();
-        if (auto phi = dynamic_cast<PhiInst *>((*user)->GetUser())) {
-          assert(0 && "this case is waiting to deal");
-        }
-        if (!ContainBB.count(pbb)) {
-          Rewrite.push_back(inst);
-          break;
+      if (bb != exitBB && m_dom->dominates(bb, exitBB)) {
+        for (auto inst : *bb) {
+          std::vector<Use *> Rewrite; //记录inst的所有在外部use
+          if (inst->GetUserListSize() == 0)
+            continue;
+          for (auto user = inst->GetUserlist().begin();
+               user != inst->GetUserlist().end(); ++user) {
+            auto pbb = (*user)->GetUser()->GetParent();
+            if (auto phi = dynamic_cast<PhiInst *>((*user)->GetUser())) {
+              assert(0 && "this case is waiting to deal");
+            }
+            if (!ContainBB.count(pbb)) {
+              FormingInsts.push_back(inst);
+              Rewrite.push_back(*user);
+            }
+          }
+          UseRerite[inst] = std::move(Rewrite);
         }
       }
-    }
   }
-  if (Rewrite.empty())
+  if (FormingInsts.empty() || UseRerite.empty())
     return;
-  for (auto inst : Rewrite) {
-    for (auto ex : exit) {
-      if (!m_dom->dominates(inst->GetParent(), ex))
-        continue;
+  while (!FormingInsts.empty()) {
+    auto inst = FormingInsts.back();
+    FormingInsts.pop_back();
+    std::vector<Use *> Rewrite = UseRerite[inst];
+    for (auto use : Rewrite) {
+      auto ex = use->GetUser()->GetParent();
+      assert(m_dom->dominates(inst->GetParent(), ex));
+      if (dynamic_cast<PhiInst *>(use->GetUser())) {
+        assert(0 && "Find a situation");
+      }
       _DEBUG(std::cerr << "Insert a lcssa Phi: " << inst->GetName() + ".lcssa"
                        << std::endl;);
       auto phi = PhiInst::NewPhiNode(ex->front(), ex, inst->GetType(),
                                      inst->GetName() + ".lcssa");
       for (auto rev : m_dom->GetNode(ex->num).rev)
         phi->updateIncoming(inst, m_dom->GetNode(rev).thisBlock);
-      if (loops->LookUp(ex) != l) {
-        assert(0 && "Find a situation");
-      }
+      if (auto subloop = loops->LookUp(ex))
+        if (l->Contain(subloop)) {
+          assert(0 && "Find a situation");
+        }
+      // now do RAUW
+      use->GetValue();
     }
   }
-  // now do RAUW
-  
 }
