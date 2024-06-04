@@ -270,6 +270,8 @@ class Function:public Value,public mylist<Function,BasicBlock>
     std::vector<BasicBlock*> bbs;
     std::pair<size_t,size_t> inlineinfo;
     public:
+    std::set<Function*> CalleeFuncs; // The Function who calls this
+    std::set<Function*> CallingFuncs; // The Function that the func calls
     std::pair<size_t,size_t>& GetInlineInfo();
     void InsertAlloca(AllocaInst* ptr);
     public:
