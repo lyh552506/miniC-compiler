@@ -343,7 +343,9 @@ std::string BinaryInst::GetOperation() {
 }
 
 BinaryInst *BinaryInst::clone(std::unordered_map<Operand, Operand> &mapping) {
-  return normal_clone<BinaryInst>(this, mapping);
+  auto tmp=normal_clone<BinaryInst>(this,mapping);
+  tmp->op=op;
+  return tmp;
 }
 
 BinaryInst::Operation BinaryInst::getopration() { return op; }
@@ -729,7 +731,32 @@ BasicBlock *BasicBlock::GenerateNewBlock() {
 BasicBlock *BasicBlock::SplitAt(User *inst) {
   auto call_inst = dynamic_cast<CallInst *>(inst);
   assert(call_inst != nullptr && "CallInst Is Expected Here");
-  auto tmp = GenerateNewBlock();
+  auto tmp = new BasicBlock();
+  
+  // other block:
+  // %xx= phi [%??, this block]
+  // should be transferred to
+  // %xx=phi [%??, tmp]
+  std::vector<BasicBlock*> succ;
+  if(auto cond=back()->as<CondInst>()){
+    for(int i=1;i<3;i++)
+      succ.push_back(cond->GetOperand(i)->as<BasicBlock>());
+  }
+  else if(auto uncond=back()->as<UnCondInst>()){
+    succ.push_back(uncond->GetOperand(0)->as<BasicBlock>());
+  }
+  for(auto bb:succ){
+    for(auto inst:*bb){
+      if(auto phi=inst->as<PhiInst>()){
+        for(auto& [ind,rec]:phi->PhiRecord){
+          if(rec.second==this)
+            rec.second=tmp;
+        }
+      }
+      else break;
+    }
+  }
+  
   auto [left, right] = split(inst, back());
   tmp->collect(left, right);
   return tmp;
@@ -1206,6 +1233,20 @@ Value *PhiInst::GetVal(int index) {
   return v;
 }
 
+std::pair<size_t,size_t>& Function::GetInlineInfo(){
+  //codesize,framesize
+  if(inlineinfo.first==0){
+    for(auto bb:*this){
+      for(auto inst:*bb){
+        inlineinfo.first++;
+        if(auto alloca=dynamic_cast<AllocaInst*>(inst))
+          inlineinfo.second+=dynamic_cast<PointerType*>(alloca->GetType())->GetSubType()->get_size();
+      }
+    }
+  }
+  return inlineinfo;
+}
+
 void Function::push_alloca(Variable *ptr) {
   auto obj = front()->push_alloca(ptr->get_name(), ptr->GetType());
   Singleton<Module>().Register(ptr->get_name(), obj);
@@ -1251,19 +1292,12 @@ void Module::GenerateGlobalVariable(Variable *ptr) {
   /// @todo 初始化单元
   auto obj = new Value(PointerType::NewPointerTypeGet(ptr->GetType()));
   obj->name = ".g." + ptr->get_name();
+  globalvalue.insert(obj);
   SymbolTable::Register(ptr->get_name(), obj);
   globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }
 
 void Module::EraseFunction(Function *func) {
-  for (BasicBlock *block : *func) {
-    for (auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_) {
-      User *inst = *inst_;
-      inst->ClearRelation();
-      inst->EraseFromParent();
-    }
-    block->EraseFromParent();
-  }
   for (auto iter = ls.begin(); iter != ls.end(); iter++) {
     auto &Ptr = *iter;
     auto Func = Ptr.get();

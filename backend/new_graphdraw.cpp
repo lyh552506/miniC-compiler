@@ -679,7 +679,7 @@ void GraphColor::RewriteProgram() {
           mir->GetDef() == mir->GetOperand(0)) {
         // TODO
         // mir->EraseFromParent();
-        WARN_LOCATION("this is warning: remember to add mir delete function");
+        //WARN_LOCATION("this is warning: remember to add mir delete function");
       }
     }
   }

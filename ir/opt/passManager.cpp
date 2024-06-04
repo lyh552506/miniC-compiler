@@ -17,8 +17,7 @@ void PassManager::InitPass() {
     m_adce = std::make_unique<ADCE>(m_func);
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
-    m_inline =
-        std::make_unique<Inliner>(m_func, Singleton<Module>(), m_dom.get());
+    m_inline = std::make_unique<Inliner>(Singleton<Module>());
     m_sccp = std::make_unique<SCCP>();
     m_reassociate = std::make_unique<Reassociate>(m_func, m_dom.get());
     m_cse = std::make_unique<CSE>(m_func);
