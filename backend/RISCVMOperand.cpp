@@ -67,6 +67,8 @@ Register* RISCVMOperand::ignoreLA() {
     return nullptr;
   else if(dynamic_cast<RISCVGlobalObject*>(this))
     return nullptr;
+  else if(dynamic_cast<BegAddrRegister*>(this))
+    return nullptr;
   else if(auto reg = dynamic_cast<Register*>(this))
     return reg;
   else 

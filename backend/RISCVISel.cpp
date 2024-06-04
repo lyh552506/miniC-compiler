@@ -59,10 +59,15 @@ void RISCVISel::InstLowering(AllocaInst* inst){
 void RISCVISel::InstLowering(StoreInst* inst){
     if(inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
         if(ConstIRInt* Intconst = dynamic_cast<ConstIRInt*>(inst->GetOperand(0))) {
-            auto minst=new RISCVMIR(RISCVMIR::_sw);
+            auto li = new RISCVMIR(RISCVMIR::li);
+            VirRegister* vreg = new VirRegister(RISCVTyper(inst->GetOperand(0)->GetType()));
+            li->SetDef(vreg);
             Imm* imm = new Imm(Intconst);
-            minst->AddOperand(imm);
-            // minst->AddOperand(Li_Intimm(Intconst));
+            li->AddOperand(imm);
+            ctx(li);
+
+            auto minst=new RISCVMIR(RISCVMIR::_sw);
+            minst->AddOperand(li->GetDef());
             minst->AddOperand(ctx.mapping(inst->GetOperand(1)));
             ctx(minst);
         }
@@ -123,154 +128,162 @@ void RISCVISel::InstLowering(UnCondInst* inst){
 
 void RISCVISel::InstLowering(CondInst* inst){
     #define M(x) ctx.mapping(x)
-    auto cond=inst->GetOperand(0)->as<BinaryInst>();
-    assert(cond!=nullptr&&"Invalid Condition");
-    // assert((cond->GetOperand(0)->GetType()==BoolType::NewBoolTypeGet())&&"Invalid Condition Type");
-    assert((cond->GetDef()->GetType()==BoolType::NewBoolTypeGet())&&"Invalid Condition Type");
-    if(cond->GetOperand(0)->GetType()==IntType::NewIntTypeGet()){
-        switch (cond->getopration())
-        {
-            case BinaryInst::Op_L:
+    if (auto cond=inst->GetOperand(0)->as<ConstIRBoolean>()) {
+        bool condition = cond->GetVal();
+        if(condition) {
+            ctx(Builder_withoutDef(RISCVMIR::_j, {ctx.mapping(inst->GetOperand(1))}));
+        }
+        else ctx(Builder_withoutDef(RISCVMIR::_j, {ctx.mapping(inst->GetOperand(2))}));
+        return;
+    }
+    else if(auto cond=inst->GetOperand(0)->as<BinaryInst>()) {
+        assert((cond->GetDef()->GetType()==BoolType::NewBoolTypeGet())&&"Invalid Condition Type");
+        if(cond->GetOperand(0)->GetType()==IntType::NewIntTypeGet()){
+            switch (cond->getopration())
             {
-                auto fi=Builder_withoutDef(RISCVMIR::_blt,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(fi);
-                ctx(se);
-                break;
+                case BinaryInst::Op_L:
+                {
+                    auto fi=Builder_withoutDef(RISCVMIR::_blt,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_LE:
+                {
+                    auto fi=Builder_withoutDef(RISCVMIR::_bge,{M(cond->GetOperand(1)),M(cond->GetOperand(0)),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_G:
+                {
+                    auto fi=Builder_withoutDef(RISCVMIR::_blt,{M(cond->GetOperand(1)),M(cond->GetOperand(0)),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_GE:
+                {
+                    auto fi=Builder_withoutDef(RISCVMIR::_bge,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_E:
+                {    
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_NE:
+                {
+                    auto fi=Builder_withoutDef(RISCVMIR::_bne,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_Or:
+                {
+                    assert("Or will not appear in IR");
+                    break;
+                }
+                case BinaryInst::Op_And:
+                {
+                    assert("And will not appear in IR");
+                    break;
+                }
+                default:
+                    break;
             }
-            case BinaryInst::Op_LE:
+        }
+        else if (cond->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
+            switch (cond->getopration())
             {
-                auto fi=Builder_withoutDef(RISCVMIR::_bge,{M(cond->GetOperand(1)),M(cond->GetOperand(0)),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(fi);
-                ctx(se);
-                break;
+                case BinaryInst::Op_L:
+                {
+                    auto condi=Builder(RISCVMIR::_flt_s,cond);
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(condi);
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_LE:
+                {
+                    auto condi=Builder(RISCVMIR::_fle_s,cond);
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(condi);
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_G:
+                {
+                    auto condi=Builder(RISCVMIR::_fgt_s,cond);
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(condi);
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_GE:
+                {
+                    auto condi=Builder(RISCVMIR::_fge_s,cond);
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(condi);
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_E:
+                {    
+                    auto condi=Builder(RISCVMIR::_feq_s,cond);
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    ctx(condi);
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_NE:
+                {
+                    auto condi=Builder(RISCVMIR::_feq_s,cond);
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
+                    ctx(condi);
+                    ctx(fi);
+                    ctx(se);
+                    break;
+                }
+                case BinaryInst::Op_Or:
+                {
+                    assert("Or will not appear in IR");
+                    break;
+                }
+                case BinaryInst::Op_And:
+                {
+                    assert("And will not appear in IR");
+                    break;
+                }
+                default:
+                    break;
             }
-            case BinaryInst::Op_G:
-            {
-                auto fi=Builder_withoutDef(RISCVMIR::_blt,{M(cond->GetOperand(1)),M(cond->GetOperand(0)),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(fi);
-                ctx(se);
-                break;
-            }
-            case BinaryInst::Op_GE:
-            {
-                auto fi=Builder_withoutDef(RISCVMIR::_bge,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(fi);
-                ctx(se);
-                break;
-            }
-            case BinaryInst::Op_E:
-            {    
-                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(fi);
-                ctx(se);
-                break;
-            }
-            case BinaryInst::Op_NE:
-            {
-                auto fi=Builder_withoutDef(RISCVMIR::_bne,{M(cond->GetOperand(0)),M(cond->GetOperand(1)),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(fi);
-                ctx(se);
-                break;
-            }
-            case BinaryInst::Op_Or:
-            {
-                assert("Or will not appear in IR");
-                break;
-            }
-            case BinaryInst::Op_And:
-            {
-                assert("And will not appear in IR");
-                break;
-            }
-            default:
-                break;
+        } else{
+            assert(0&&"Invalid cmp");
         }
     }
-    else if (cond->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
-        switch (cond->getopration())
-        {
-            case BinaryInst::Op_L:
-            {
-                auto condi=Builder(RISCVMIR::_flt_s,cond);
-                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(condi);
-                ctx(fi);
-                ctx(se);
-                break;
-            }
-            case BinaryInst::Op_LE:
-            {
-                auto condi=Builder(RISCVMIR::_fle_s,cond);
-                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(condi);
-                ctx(fi);
-                ctx(se);
-                break;
-            }
-            case BinaryInst::Op_G:
-            {
-                auto condi=Builder(RISCVMIR::_fgt_s,cond);
-                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(condi);
-                ctx(fi);
-                ctx(se);
-                break;
-            }
-            case BinaryInst::Op_GE:
-            {
-                auto condi=Builder(RISCVMIR::_fge_s,cond);
-                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(condi);
-                ctx(fi);
-                ctx(se);
-                break;
-            }
-            case BinaryInst::Op_E:
-            {    
-                auto condi=Builder(RISCVMIR::_feq_s,cond);
-                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
-                ctx(condi);
-                ctx(fi);
-                ctx(se);
-                break;
-            }
-            case BinaryInst::Op_NE:
-            {
-                auto condi=Builder(RISCVMIR::_feq_s,cond);
-                auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
-                auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
-                ctx(condi);
-                ctx(fi);
-                ctx(se);
-                break;
-            }
-            case BinaryInst::Op_Or:
-            {
-                assert("Or will not appear in IR");
-                break;
-            }
-            case BinaryInst::Op_And:
-            {
-                assert("And will not appear in IR");
-                break;
-            }
-            default:
-                break;
-        }
-    } else{
-        assert(0&&"Invalid cmp");
-    }
+    else assert(0&&"Error in CondInst Lowering");
     #undef M
 }
 
@@ -458,20 +471,24 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     #undef M
 
     StackRegister* stackreg = nullptr;
-    if(offset < 2048) {
-        stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
-    }
-    else if(offset >=2047) {
-        int mod = offset % 2047;
-        offset-=mod;
-        VirRegister* vreg2 = ctx.createVReg(riscv_i32);
-        Imm* imm2 = new Imm(ConstIRInt::GetNewConstant(mod));
-        auto inst2=Builder(ISA::_addi, {vreg2,vreg2, imm2});
-        ctx(inst2);
+    stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
 
-        stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), mod);
-    }
-    else assert(0&&"error offset in GetElement inst");
+    /// @details Legalize StackRegister's offset togeter in LegalizePass
+    // if(offset <= 2047) {
+    //     stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
+    // }
+    // else if(offset >2047) {
+    //     int mod = offset % 2047;
+    //     offset-=mod;
+    //     VirRegister* vreg2 = ctx.createVReg(riscv_i32);
+    //     Imm* imm2 = new Imm(ConstIRInt::GetNewConstant(offset));
+    //     auto inst2=Builder(ISA::_addi, {vreg2,vreg2, imm2});
+    //     ctx(inst2);
+
+    //     stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), mod);
+    // }
+    // else assert(0&&"error offset in GetElement inst");
+
     // replace the GetElementptr inst with stackreg (off(.1))
     ctx.change_mapping(ctx.mapping(inst->GetDef()), stackreg);
 }
@@ -491,9 +508,30 @@ void RISCVISel::InstLowering(CallInst* inst){
         int MAXnum = 8, paramnum=inst->Getuselist().size()-1;
         if (paramnum > MAXnum) {
             // spill to stack
+            int offset=0;
             for(int i=paramnum; i>MAXnum; i--) {
-                StackRegister* stackreg = frame->spill(inst->GetOperand(i));
-                ctx.insert_val2mop(inst->GetOperand(i), stackreg);
+                /// @todo load params to end of the frame
+                Value* operand = inst->GetOperand(i);
+                RISCVMIR* store = nullptr;
+                StackRegister* sreg = nullptr;
+                switch(RISCVTyper(operand->GetType())) {
+                    case riscv_i32:
+                    case riscv_float32:
+                        sreg = new StackRegister(PhyRegister::sp, offset);
+                        store = new RISCVMIR(RISCVMIR::_sw);
+                        offset += 4;
+                        break;
+                    case riscv_ptr:
+                        sreg = new StackRegister(PhyRegister::sp, offset);
+                        store = new RISCVMIR(RISCVMIR::_sd);
+                        offset += 8;
+                        break;
+                    default:
+                        assert(0&&"Error param type");
+                }
+                store->AddOperand(M(inst->GetOperand(i)));
+                store->AddOperand(sreg);
+                ctx(store);
             }
         }
         for (int i=1; i<=std::min(paramnum, MAXnum); i++) {
@@ -528,7 +566,7 @@ void RISCVISel::InstLowering(CallInst* inst){
             else assert(0&&"Error!");
         }
         size_t local_param_size=0;
-        for (int i=1; i<paramnum; i++) {
+        for (int i=MAXnum; i<paramnum; i++) {
             local_param_size += inst->GetOperand(i)->GetType()->get_size();
         }
         if (local_param_size > ctx.GetCurFunction()->GetMaxParamSize()) {

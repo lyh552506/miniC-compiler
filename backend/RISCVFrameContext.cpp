@@ -93,7 +93,9 @@ VirRegister* StackRegister::GetVreg() {
     return vreg;
   else return nullptr;
 }
+Register*& StackRegister::GetReg() { return reg; }
 void StackRegister::SetPreg(PhyRegister* &_reg) { this->reg = _reg; }
+void StackRegister::SetReg(Register* _reg) { this->reg = _reg; }
 void StackRegister::print() {
   if(VirRegister* vreg = dynamic_cast<VirRegister*>(reg))  {
     std::cout << offset << "(";

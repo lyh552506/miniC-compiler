@@ -44,8 +44,14 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
     } else if (Opcode == OpType::ret) {
       if ((*inst)->GetOperandSize() != 0) {
         RISCVMOperand *val1 = (*inst)->GetOperand(0);
-        if (val1) {
+        if (val1->GetType() == RISCVType::riscv_i32) {
           PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
+          BlockLivein[block].insert(Phy);
+          Uses[block].insert(Phy);
+        }
+        else if(val1->GetType() == RISCVType::riscv_float32)
+        {
+          PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0);
           BlockLivein[block].insert(Phy);
           Uses[block].insert(Phy);
         }
@@ -73,7 +79,7 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
           }
         }
       }
-    } else if ((*inst)->GetOperandSize() == 2) {
+    } else if ((*inst)->GetOperandSize() > 1) {
       RISCVMOperand *_val1 = (*inst)->GetOperand(0);
       RISCVMOperand *_val2 = (*inst)->GetOperand(1);
       UpdateInfo(_val1, block);
@@ -107,6 +113,7 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block) {
         _block_Succ = dynamic_cast<RISCVBasicBlock *>(inst->GetOperand(0));
       BlockLiveout[block].insert(BlockLivein[_block_Succ].begin(),
                                  BlockLivein[_block_Succ].end());
+      SuccBlocks[block].push_front(_block_Succ);
     } else if (Opcode == OpType::_beq || Opcode == OpType::_bne ||
                Opcode == OpType::_blt || Opcode == OpType::_bge ||
                Opcode == OpType::_bltu || Opcode == OpType::_bgeu) {
@@ -114,6 +121,7 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block) {
           dynamic_cast<RISCVBasicBlock *>(inst->GetOperand(2));
       BlockLiveout[block].insert(BlockLivein[_block_Succ1].begin(),
                                  BlockLivein[_block_Succ1].end());
+      SuccBlocks[block].push_front(_block_Succ1);
     }
   }
 }
@@ -161,19 +169,19 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
   for (auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_) {
     RISCVMIR *inst = *inst_;
     if (inst->GetOpcode() == OpType::call) {
-      for (int i = 0; i < inst->GetOperandSize(); i++) {
-        RISCVMOperand *val = inst->GetOperand(i);
-        if (auto reg = val->ignoreLA()) {
-          if (reg) {
-            if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
-              Precolored.insert(phy);
-              color[phy] = phy;
-            }
-            Live.insert(reg);
-            InstLive[inst] = Live;
-          }
-        }
-      }
+      // for (int i = 0; i < inst->GetOperandSize(); i++) {
+      //   RISCVMOperand *val = inst->GetOperand(i);
+      //   if (auto reg = val->ignoreLA()) {
+      //     if (reg) {
+      //       if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
+      //         Precolored.insert(phy);
+      //         color[phy] = phy;
+      //       }
+      //       Live.insert(reg);
+      //       InstLive[inst] = Live;
+      //     }
+      //   }
+      // }
       continue;
     } else if (inst->GetOperandSize() == 1) {
       if (inst->GetOpcode() == OpType::ret) {
@@ -204,7 +212,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           }
         }
       }
-    } else if (inst->GetOperandSize() == 2) {
+    } else if (inst->GetOperandSize() > 1) {
       RISCVMOperand *_val1 = inst->GetOperand(0);
       RISCVMOperand *_val2 = inst->GetOperand(1);
       if (auto val1 = _val1->ignoreLA()) {
@@ -476,6 +484,7 @@ bool InterVal::verify(
 void InterVal::PrintAnalysis() {
   std::cout << "--------InstLive--------" << std::endl;
   for (RISCVBasicBlock *block : *func) {
+    std::cout<<"-----Block "<<block->GetName()<<"-----"<<std::endl;
     for (RISCVMIR *inst : *block) {
       std::cout << "inst" << instNum[inst] << "Liveness:";
       for (RISCVMOperand *Op : InstLive[inst]) {
@@ -505,4 +514,18 @@ void InterVal::PrintAnalysis() {
 void InterVal::RunOnFunc_() {
   init();
   computeLiveIntervals();
+}
+
+
+void GraphColor::LiveInfoInit()
+{
+  BlockLivein.clear();
+  BlockLiveout.clear();
+  BlockInfo.clear();
+  RegLiveness.clear();
+  instNum.clear();
+  Uses.clear();
+  Defs.clear();
+  InstLive.clear();
+  IG.clear();
 }

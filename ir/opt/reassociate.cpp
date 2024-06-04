@@ -14,26 +14,30 @@
 
 void Reassociate::RunOnFunction() {
   // first should caculate RPO
+  bool changed = false;
   BasicBlock *EntryBB = m_func->front();
+  m_func->init_visited_block();
   PostOrderCFG(EntryBB);
   std::reverse(RPO.begin(), RPO.end());
   BuildRankMap();
   // phase 1: build the rank map
   for (auto bb : *m_func) {
     for (User *I : *bb)
-      OptimizeInst(I);
+      changed |= OptimizeInst(I);
   }
+  if (!changed)
+    return;
   std::vector<User *> Kill{RedoInst.begin(), RedoInst.end()};
   while (!Kill.empty()) {
-    auto val = Kill.back();
-    Kill.pop_back();
-    KillDeadInst(val, Kill);
+    auto val = PopBack(Kill);
+    KillDeadInstTrival(val, Kill);
   }
-  for (int i = 0; i < RedoInst.size(); i++) {
-    if (KillDeadInst(RedoInst[i], i)) {
+  while (!RedoInst.empty()) {
+    auto tar = PopBack(RedoInst);
+    if (KillDeadInst(tar, RedoInst)) {
       continue;
     } else
-      OptimizeInst(RedoInst[i]);
+      OptimizeInst(tar);
   }
 }
 
@@ -51,12 +55,15 @@ void Reassociate::BuildRankMap() {
     }
   }
 }
-
 int Reassociate::GetRank(Value *val) {
   if (!dynamic_cast<User *>(val)) {
     auto it =
         std::find_if(m_func->GetParams().begin(), m_func->GetParams().end(),
-                     [val](auto &ele) { return ele.get() == val; });
+                     [val](const auto &ele) { return ele.get() == val; });
+    // for (auto &x : m_func->GetParams()) {
+    //   if (x.get() == val)
+    //     return ValueRank[val];
+    // }
     if (it != m_func->GetParams().end())
       return ValueRank[val];
     else //对于global和常量
@@ -77,32 +84,32 @@ int Reassociate::GetRank(Value *val) {
   return ra;
 }
 
-void Reassociate::OptimizeInst(Value *I) {
+bool Reassociate::OptimizeInst(Value *I) {
   auto bin = dynamic_cast<BinaryInst *>(I);
   if (!bin || bin->IsCmpInst())
-    return;
+    return false;
   //如果是可交换（可重组）指令，尝试将含有const的操作数移动到右边
   if (IsCommutative(bin->getopration()))
     FormalBinaryInst(bin);
   else
-    return;
+    return false;
   // Float的代码重组有丢失精度的风险，暂时不对其进行处理
   if (IsBinaryFloatType(bin))
-    return;
+    return false;
 
   if (bin->GetUserlist().GetSize() == 1) {
     if (auto bin_user =
             dynamic_cast<BinaryInst *>(bin->GetUserlist().Front()->GetUser())) {
       if (bin->GetOperation() == bin_user->GetOperation()) {
-        PushVecSingleVal(RedoInst, dynamic_cast<User *>(bin));
-        return;
+        PushVecSingleVal(RedoInst, dynamic_cast<User *>(bin_user));
+        return false;
       }
     }
   }
-  ReassciateExp(bin);
+  return ReassciateExp(bin);
 }
 
-void Reassociate::ReassciateExp(BinaryInst *I) {
+bool Reassociate::ReassciateExp(BinaryInst *I) {
   std::vector<std::pair<Value *, int>> Leaf;
   std::vector<std::pair<Value *, int>> ValueToRank;
   //对表达式进行线性化分解
@@ -122,12 +129,12 @@ void Reassociate::ReassciateExp(BinaryInst *I) {
       ValueToRank.begin(), ValueToRank.end(),
       [](const auto &v1, const auto &v2) { return v1.second > v2.second; });
   if (Value *new_val = OptExp(I, ValueToRank)) {
-    // TODO
     if (new_val != I) {
       I->RAUW(new_val);
-      delete I;
+      PushVecSingleVal(RedoInst, dynamic_cast<User *>(I));
+      return true;
     }
-    return;
+    return false;
   }
   std::stable_sort(
       ValueToRank.begin(), ValueToRank.end(),
@@ -139,12 +146,19 @@ void Reassociate::ReassciateExp(BinaryInst *I) {
                                    << ele.second << " ]";
                        });
          std::cerr << std::endl;)
+  if (ValueToRank.size() == 1) {
+    if (ValueToRank[0].first == I)
+      return false;
+    I->RAUW(ValueToRank[0].first);
+    PushVecSingleVal(RedoInst, dynamic_cast<User *>(I));
+    return true;
+  }
   if (Size == ValueToRank.size())
-    return;
-  ReWriteExp(I, ValueToRank);
+    return false;
+  return ReWriteExp(I, ValueToRank);
 }
 
-void Reassociate::ReWriteExp(
+bool Reassociate::ReWriteExp(
     BinaryInst *exp, std::vector<std::pair<Value *, int>> &LinerizedOp) {
   std::set<Value *> NotWritable;
   std::vector<Value *> ReWrite;
@@ -183,21 +197,21 @@ void Reassociate::ReWriteExp(
       break;
     }
     auto val_1 = LinerizedOp[i].first;
-    auto Old_val1 = GetOperand(curr, 0);
+    auto Old_val1 = GetOperand(curr, 1);
     if (val_1 != Old_val1) {
-      if (val_1 == GetOperand(curr, 1)) {
+      if (val_1 == GetOperand(curr, 0)) {
         std::swap(curr->Getuselist()[0], curr->Getuselist()[1]);
       } else {
         if (IsOperandAssociate(Old_val1, exp->getopration()))
           ReWrite.push_back(Old_val1);
-        curr->SetOperand(0, val_1);
+        curr->SetOperand(1, val_1);
       }
     }
 
-    if (IsOperandAssociate(GetOperand(curr, 1), exp->getopration()) &&
-        !NotWritable.count(GetOperand(curr, 1))) {
+    if (IsOperandAssociate(GetOperand(curr, 0), exp->getopration()) &&
+        !NotWritable.count(GetOperand(curr, 0))) {
       _DEBUG(std::cerr << "Directly Have Two Rewritable Operand" << std::endl;)
-      curr = dynamic_cast<BinaryInst *>(GetOperand(curr, 1));
+      curr = dynamic_cast<BinaryInst *>(GetOperand(curr, 0));
       continue;
     }
 
@@ -208,15 +222,17 @@ void Reassociate::ReWriteExp(
       new_val = ReWrite.back();
       ReWrite.pop_back();
     }
-    curr->SetOperand(1, new_val);
+    curr->SetOperand(0, new_val);
     curr = dynamic_cast<BinaryInst *>(new_val);
     Changed = curr;
   }
   if (Changed) {
-    for (auto iter = exp->GetParent()->begin(); iter != exp->GetParent()->end();
-         ++iter) {
-      if ((*iter) != exp)
+    for (auto iter = exp->GetParent()->begin();
+         iter != exp->GetParent()->end();) {
+      if ((*iter) != exp) {
+        ++iter;
         continue;
+      }
       if (Changed == exp)
         break;
       Changed->EraseFromParent();
@@ -229,6 +245,8 @@ void Reassociate::ReWriteExp(
     assert(tmp);
     PushVecSingleVal(RedoInst, dynamic_cast<User *>(tmp));
   }
+  PushVecSingleVal(RedoInst, dynamic_cast<User *>(exp));
+  return true;
 }
 
 Value *Reassociate::OptExp(BinaryInst *exp,
@@ -261,10 +279,15 @@ Value *Reassociate::OptExp(BinaryInst *exp,
   //   exp->RAUW(LinerizedOp[0].first);
   int size = LinerizedOp.size();
   switch (exp->getopration()) {
-  case BinaryInst::Op_Add:
-    OptAdd(exp, LinerizedOp);
+  case BinaryInst::Op_Add: {
+    auto ret = OptAdd(exp, LinerizedOp);
+    if (ret != nullptr)
+      return ret;
+    break;
+  }
   case BinaryInst::Op_Mul:
     OptMul(exp, LinerizedOp);
+    break;
   default:
     break;
   }
@@ -308,8 +331,6 @@ void Reassociate::LinearizeExp(BinaryInst *I,
       }
       //不满足第一种情况
       if (Leafs.find(operand) == Leafs.end()) {
-        // if (dynamic_cast<User *>(operand) &&
-        //     dynamic_cast<User *>(operand)->Getuselist().size() != 1) {
         //找到了一个实际存在的leaf，并且之前没有添加过
         _DEBUG(std::cerr << "Find a Leaf " << operand->GetName() << std::endl;)
         Leafs.insert(operand);
@@ -361,12 +382,11 @@ void Reassociate::FormalBinaryInst(User *I) {
   assert(bin && "must be a binaryinst");
   auto LHS = GetOperand(bin, 0);
   auto RHS = GetOperand(bin, 1);
-  // TODO GetRank ，但是目前并不清楚这个对后续的作用
-  auto LHSRank=GetRank(LHS);
-  auto RHSRank=GetRank(RHS);
+  auto LHSRank = GetRank(LHS);
+  auto RHSRank = GetRank(RHS);
   if (dynamic_cast<ConstantData *>(RHS))
     return;
-  if (dynamic_cast<ConstantData *>(LHS)||LHSRank<RHSRank) {
+  if (dynamic_cast<ConstantData *>(LHS) || LHSRank > RHSRank) {
     std::swap(bin->Getuselist()[0], bin->Getuselist()[1]);
   }
 }
@@ -415,6 +435,7 @@ bool Reassociate::AbsorbConst(BinaryInst::Operation Op,
   default:
     return false;
   }
+  return false;
 }
 
 bool Reassociate::IsBinaryFloatType(BinaryInst *I) {
@@ -426,17 +447,14 @@ bool Reassociate::IsBinaryFloatType(BinaryInst *I) {
 
 Value *Reassociate::OptAdd(BinaryInst *AddInst,
                            std::vector<std::pair<Value *, int>> &LinerizedOp) {
-  // 对于X+X+X+Y，尝试优化成3*X+Y
   for (int i = 0; i < LinerizedOp.size(); i++) {
     if (i + 1 < LinerizedOp.size() && LinerizedOp[i + 1] == LinerizedOp[i]) {
       int same = 2;
       Value *src = LinerizedOp[i].first;
       while (LinerizedOp[same] == LinerizedOp[i])
         same++;
-      // for (int tmp = 0; tmp < same; tmp++) {
-      //   LinerizedOp[tmp] = LinerizedOp[LinerizedOp.size() - 1];
-      //   LinerizedOp.pop_back();
-      // }
+      if (same < 3)
+        return nullptr;
       BinaryInst *Mul = nullptr;
       if (AddInst->Getuselist()[0]->GetValue()->GetTypeEnum() ==
           IR_Value_Float) {
@@ -466,7 +484,93 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
       }
     }
   }
+
+  //尝试进行分配率
+  int Max = 0;
+  Value *Maxval = nullptr;
+  std::map<Value *, int> RecordAccurance;
+  for (int i = 0; i < LinerizedOp.size(); i++) {
+    if (IsOperandAssociate(LinerizedOp[i].first, BinaryInst::Op_Mul)) {
+      std::vector<Value *> op;
+      RecursionSplitOp(LinerizedOp[i].first, op);
+      std::set<Value *> visited;
+      for (auto _val : op) {
+        if (visited.insert(_val).second) {
+          int occ = ++RecordAccurance[_val];
+          if (occ > Max) {
+            Max = occ;
+            Maxval = _val;
+          }
+        }
+      }
+    }
+  }
+  if (Max > 1) {
+    //获得公因式val
+    bool HaveDiv = false;
+    std::vector<Value *> AddOperands;
+    for (int i = 0; i < LinerizedOp.size(); i++) {
+      if (!IsOperandAssociate(LinerizedOp[i].first, BinaryInst::Op_Mul))
+        continue;
+      std::vector<std::pair<Value *, int>> Leaf;
+      std::vector<std::pair<Value *, int>> divisor;
+      auto bin = dynamic_cast<BinaryInst *>(LinerizedOp[i].first);
+      assert(bin);
+      LinearizeExp(bin, Leaf);
+      for (auto &[_val, times] : Leaf) {
+        for (int i = 0; i < times; i++)
+          divisor.emplace_back(_val, GetRank(_val));
+      }
+      for (int i = 0; i < divisor.size(); i++) {
+        HaveDiv = false;
+        auto target = divisor[i];
+        if (target.first == Maxval) {
+          vec_pop(divisor, i);
+          HaveDiv = true;
+          break;
+        }
+      }
+      if (!HaveDiv)
+        continue;
+      vec_pop(LinerizedOp, i);
+      if (divisor.size() == 1) {
+        AddOperands.push_back(divisor[0].first);
+      } else {
+        ReWriteExp(bin, divisor);
+        AddOperands.push_back(bin);
+      }
+    }
+    _DEBUG(std::cerr << "Create ADD Inst: ( ";
+           std::for_each(AddOperands.begin(), AddOperands.end(),
+                         [](auto ele) { std::cerr << ele->GetName() << ", "; });
+           std::cerr << ")" << std::endl;)
+    auto add = CreatAddExp(AddInst, AddOperands);
+    auto add2mul =
+        BinaryInst::CreateInst(add, BinaryInst::Op_Mul, Maxval, AddInst);
+    PushVecSingleVal(RedoInst, dynamic_cast<User *>(add));
+    PushVecSingleVal(RedoInst, dynamic_cast<User *>(add2mul));
+    if (LinerizedOp.size() == 0)
+      return add2mul;
+    LinerizedOp.emplace_back(add2mul, GetRank(add2mul));
+  }
   return nullptr;
+}
+
+Value *Reassociate::CreatAddExp(User *Inst, std::vector<Value *> &AddOperands) {
+  if (AddOperands.size() == 1)
+    return AddOperands[0];
+  auto lhs = PopBack(AddOperands);
+  auto rhs = CreatAddExp(Inst, AddOperands);
+  return BinaryInst::CreateInst(lhs, BinaryInst::Op_Add, rhs, Inst);
+}
+
+void Reassociate::RecursionSplitOp(Value *I, std::vector<Value *> &ops) {
+  if (!IsOperandAssociate(I, BinaryInst::Op_Mul)) {
+    ops.push_back(I);
+    return;
+  }
+  RecursionSplitOp(GetOperand(I, 0), ops);
+  RecursionSplitOp(GetOperand(I, 1), ops);
 }
 
 bool Reassociate::KillDeadInst(User *I, int i) {
@@ -482,13 +586,31 @@ bool Reassociate::KillDeadInst(User *I, int i) {
 bool Reassociate::KillDeadInst(User *I, std::vector<User *> &kill) {
   if (I->GetUserListSize() == 0) {
     _DEBUG(std::cerr << "Killing Inst: " << I->GetName() << std::endl;)
-    auto it = std::find(RedoInst.begin(), RedoInst.end(), I);
-    assert(it != RedoInst.end());
-    RedoInst.erase(it);
     for (auto &op : I->Getuselist()) {
       if (auto tmp = dynamic_cast<User *>(op->GetValue()))
         PushVecSingleVal(kill, tmp);
     }
     delete I;
+    return true;
   }
+  return false;
+}
+
+bool Reassociate::KillDeadInstTrival(User *I, std::vector<User *> &kill) {
+  if (I->GetUserListSize() == 0) {
+    _DEBUG(std::cerr << "Killing Inst: " << I->GetName() << std::endl;)
+    auto it = std::find(RedoInst.begin(), RedoInst.end(), I);
+    auto iter = std::find(kill.begin(), kill.end(), I);
+    if (it != RedoInst.end()) {
+      RedoInst.erase(it);
+    }
+    // kill.erase(iter);
+    for (auto &op : I->Getuselist()) {
+      if (auto tmp = dynamic_cast<User *>(op->GetValue()))
+        PushVecSingleVal(kill, tmp);
+    }
+    delete I;
+    return true;
+  }
+  return false;
 }

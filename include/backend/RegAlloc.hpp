@@ -12,6 +12,7 @@
 #include <list>
 #include <map>
 #include <queue>
+#include <set>
 #include <stack>
 #include <string>
 #include <unordered_map>
@@ -54,6 +55,7 @@ private:
   RISCVFunction *m_func;
 
 public:
+  std::map<RISCVBasicBlock*, std::list<RISCVBasicBlock*>> SuccBlocks;
   std::map<RISCVBasicBlock *, std::unordered_set<MOperand>> Uses; // block uses
   std::map<RISCVBasicBlock *, std::unordered_set<MOperand>> Defs; // block defs
   std::map<RISCVBasicBlock *, std::set<MOperand>> BlockLivein;
@@ -78,8 +80,7 @@ public:
 class LiveInterval : public BlockLiveInfo {
   using Interval = RegAllocImpl::RegLiveInterval;
   RISCVFunction *func;
-
-protected:
+public:
   std::unordered_map<RISCVMIR *, int> instNum;
   std::unordered_map<RISCVBasicBlock *, BlockLiveInfo *> BlockInfo;
   std::map<RISCVBasicBlock *,
@@ -128,6 +129,7 @@ private:
   void AssignColors();
   void SpillNodeInMir();
   void RewriteProgram();
+  void CaculateTopu(RISCVBasicBlock* mbb);
   MOperand HeuristicFreeze();
   MOperand HeuristicSpill();
   PhyRegister *SelectPhyReg(RISCVType ty, std::unordered_set<MOperand> &assist);
@@ -141,6 +143,7 @@ private:
   int GetRegNums(MOperand v);
   int GetRegNums(RISCVType ty);
   void GC_init();
+  void LiveInfoInit();
   void SimplifyMv();
   RISCVMIR *CreateSpillMir(RISCVMOperand *spill,
                            std::unordered_set<VirRegister *> &temps);
@@ -184,6 +187,8 @@ private:
   std::unordered_map<PhyRegister *, RISCVType> RegType;
   //记录已经重写的spill node
   std::unordered_map<VirRegister *, RISCVMIR *> AlreadySpill;
+  std::vector<RISCVBasicBlock*> topu;
+  std::set<RISCVBasicBlock*> assist;
   RegisterList &reglist;
   int LoopWeight = 1;
   int livenessWeight = 1;

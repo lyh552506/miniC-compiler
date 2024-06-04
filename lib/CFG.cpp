@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#define BaseEnumNum 8
 template <typename T>
 T *normal_clone(T *from, std::unordered_map<Operand, Operand> &mapping) {
   if (mapping.find(from) != mapping.end())
@@ -330,6 +331,8 @@ BinaryInst::BinaryInst(Operand _A, Operation __op, Operand _B)
     : User(check_binary_boolean(__op) ? BoolType::NewBoolTypeGet()
                                       : _B->GetType()) {
   op = __op;
+  // 与User中的OpID对应
+  id = static_cast<User::OpID>(__op + BaseEnumNum);
   add_use(_A);
   add_use(_B);
 }
@@ -354,8 +357,10 @@ BinaryInst *BinaryInst::CreateInst(Operand _A, Operation __op, Operand _B,
   if (place != nullptr) {
     BasicBlock *instbb = place->GetParent();
     for (auto iter = instbb->begin(); iter != instbb->end(); ++iter)
-      if (*iter == place)
+      if (*iter == place){
         iter.insert_before(bin);
+        break;
+      }
   }
   return bin;
 }
@@ -478,8 +483,8 @@ void BinaryInst::print() {
 void BinaryInst::SetOperand(int index, Value *val) {
   assert(index < this->uselist.size());
   uselist[index].reset();
-  uselist.erase(uselist.begin()+index);
-  uselist.insert(uselist.begin()+index,std::make_unique<Use>(this,val));
+  uselist.erase(uselist.begin() + index);
+  uselist.insert(uselist.begin() + index, std::make_unique<Use>(this, val));
 }
 
 void Variable::attach(Operand _init) { attached_initializer = _init; }
@@ -1092,27 +1097,33 @@ void BasicBlock::clear() {
   mylist<BasicBlock, User>::clear();
 }
 
-PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB) {
+PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,
+                             std::string Name) {
   PhiInst *tmp = new PhiInst{BeforeInst};
   for (auto iter = currentBB->begin(); iter != currentBB->end(); ++iter) {
     if (*iter == BeforeInst)
       iter.insert_before(tmp);
   }
+  if (!Name.empty())
+    tmp->SetName(Name);
   return tmp;
 }
 
-PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,
-                             Type *ty) {
+PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB, Type *ty,
+                             std::string Name) {
   PhiInst *tmp = new PhiInst(BeforeInst, ty);
   for (auto iter = currentBB->begin(); iter != currentBB->end(); ++iter) {
     if (*iter == BeforeInst)
       iter.insert_before(tmp);
   }
+  if (!Name.empty())
+    tmp->SetName(Name);
   return tmp;
 }
 
 void PhiInst::updateIncoming(Value *Income, BasicBlock *BB) {
   add_use(Income);
+  // IndexToUse[oprandNum] = uselist.back().get();
   PhiRecord[oprandNum++] = std::make_pair(Income, BB);
 }
 /// @brief 找到当前phi函数bb块所对应的数据流
@@ -1166,6 +1177,7 @@ void PhiInst::Del_Incomes(int CurrentNum) {
       if (vec[i].get() == (*iter).get())
         vec.erase(std::remove(vec.begin(), vec.end(), (*iter)));
     PhiRecord.erase(CurrentNum);
+    this->FormatPhi();
     //维护PhiRecord的关系
     // std::vector<std::pair<int,std::pair<Value*,BasicBlock*>>> Defend;
     // for(auto& [_1,v]:PhiRecord)
@@ -1188,10 +1200,14 @@ void PhiInst::FormatPhi() {
       Defend.push_back(std::make_pair(_1, v));
     else
       CurrentNum++;
-  for (const auto &item : Defend)
+  std::sort(Defend.begin(), Defend.end(),
+            [](const auto &p1, const auto &p2) { return p1.first > p2.first; });
+  for (const auto &item : Defend) {
     PhiRecord.erase(item.first);
-  for (const auto &item : Defend)
+  }
+  for (const auto &item : Defend) {
     PhiRecord.insert(std::make_pair(PhiRecord.size(), item.second));
+  }
   oprandNum = PhiRecord.size();
 }
 

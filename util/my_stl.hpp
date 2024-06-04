@@ -1,7 +1,7 @@
 #pragma once
+#include "CFG.hpp"
 #include <cassert>
 #include <vector>
-#include "CFG.hpp"
 ///@brief 自定义宏，更加方便，需要什么自己加
 
 #define SDOM(x) node[x].sdom        //获取x对应结点的sdom
@@ -9,16 +9,16 @@
 #define IDOM(x) node[x].idom        //获取结点的idom
 
 #ifdef DEBUG
-  #define _DEBUG(x) x
+#define _DEBUG(x) x
 #else
-  #define _DEBUG(x)
+#define _DEBUG(x)
 #endif
 
 #ifdef __GNUC__
 #define TO_STRING(x) #x
 #define WARN_LOCATION(msg) _Pragma(TO_STRING(GCC warning msg))
 #else
-#define WARN_LOCATION(msg) 
+#define WARN_LOCATION(msg)
 #endif
 
 /// @brief 遍历一个function,每个bb是一个智能指针BasicBlockPtr
@@ -49,17 +49,22 @@ template <typename T> Value *GetOperand(T inst, int i) {
 #define GetPredNum(BB) BB->GetUserListSize()
 
 ///@brief 实现vector元素的pop
-template <typename T>
-void vec_pop(std::vector<T>& vec,int& index){
-  assert(index<vec.size()&&"index can not bigger than size");
-  vec[index]=vec[vec.size()-1];
+template <typename T> void vec_pop(std::vector<T> &vec, int &index) {
+  assert(index < vec.size() && "index can not bigger than size");
+  vec[index] = vec[vec.size() - 1];
   vec.pop_back();
   index--;
 }
 ///@brief 实现vec没有重复元素
-template<typename T>
-void PushVecSingleVal(std::vector<T>&vec,T v){
-  auto iter=std::find(vec.begin(),vec.end(),v);
-  if(iter!=vec.end()) return;
+template <typename T> void PushVecSingleVal(std::vector<T> &vec, T v) {
+  auto iter = std::find(vec.begin(), vec.end(), v);
+  if (iter != vec.end())
+    return;
   vec.push_back(v);
+}
+
+template <typename T> T PopBack(std::vector<T> &vec) {
+  T tmp = vec.back();
+  vec.pop_back();
+  return tmp;
 }

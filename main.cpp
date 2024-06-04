@@ -17,15 +17,22 @@ void copyFile(const std::string &sourcePath,
   destination << source.rdbuf();
 }
 
-static struct option long_options[] = {
-    {"mem2reg", no_argument, 0, 0},       {"pre", no_argument, 0, 1},
-    {"constprop", no_argument, 0, 2},     {"dce", no_argument, 0, 3},
-    {"adce", no_argument, 0, 4},          {"loopinfo", no_argument, 0, 5},
-    {"help", no_argument, 0, 6},          {"simplifycfg", no_argument, 0, 7},
-    {"ece", no_argument, 0, 8},           {"inline", no_argument, 0, 9},
-    {"global2local", no_argument, 0, 10}, {"sccp", no_argument, 0, 12},
-
-    {"reassociate", no_argument, 0, 11},  {0, 0, 0, 0}};
+static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
+                                       {"pre", no_argument, 0, 1},
+                                       {"constprop", no_argument, 0, 2},
+                                       {"dce", no_argument, 0, 3},
+                                       {"adce", no_argument, 0, 4},
+                                       {"loops", no_argument, 0, 5},
+                                       {"help", no_argument, 0, 6},
+                                       {"simplifycfg", no_argument, 0, 7},
+                                       {"ece", no_argument, 0, 8},
+                                       {"inline", no_argument, 0, 9},
+                                       {"global2local", no_argument, 0, 10},
+                                       {"sccp", no_argument, 0, 12},
+                                       {"reassociate", no_argument, 0, 11},
+                                       {"cse", no_argument, 0, 13},
+                                       {"lcssa", no_argument, 0, 14}, 
+                                       {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
@@ -50,6 +57,9 @@ int main(int argc, char **argv) {
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
          -1) {
     switch (option) {
+    default:
+      std::cerr << "No Such Opt!" << std::endl;
+      exit(0);
     case 0:
       pass_manager->IncludePass(0);
       break;
@@ -86,9 +96,19 @@ int main(int argc, char **argv) {
     case 11:
       pass_manager->IncludePass(11);
       break;
+    case 12:
+      pass_manager->IncludePass(12);
+      break;
+    case 13:
+      pass_manager->IncludePass(13);
+      break;
+    case 14:
+      pass_manager->IncludePass(14);
+      break;
     }
   }
   pass_manager->InitPass();
+  
   Singleton<Module>().Test();
   fflush(stdout);
   fclose(stdout);
