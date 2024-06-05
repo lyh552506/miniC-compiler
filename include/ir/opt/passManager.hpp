@@ -1,44 +1,41 @@
 #pragma once
-#include <memory>
 #include "../../yacc/parser.hpp"
 #include "../Analysis/DealCriticalEdges.hpp"
 #include "ADCE.hpp"
 #include "CFG.hpp"
+#include "CSE_Tmp.hpp"
 #include "ConstantFold.hpp"
 #include "ConstantProp.hpp"
 #include "DCE.hpp"
+#include "Global2Local.hpp"
 #include "IDF.hpp"
+#include "Inline.hpp"
 #include "LoopInfo.hpp"
+#include "LoopSimplify.hpp"
 #include "PassManagerBase.hpp"
 #include "PromoteMemtoRegister.hpp"
-#include "SSAPRE.hpp"
-#include "dominant.hpp"
-#include "cfgSimplify.hpp"
-#include "Inline.hpp"
-#include "Global2Local.hpp"
-#include "LoopSimplify.hpp"
 #include "SCCP.hpp"
-#include "reassociate.hpp"
-#include "CSE_Tmp.hpp"
+#include "SSAPRE.hpp"
+#include "cfgSimplify.hpp"
+#include "dominant.hpp"
 #include "lcssa.hpp"
+#include "reassociate.hpp"
+#include <memory>
 class PassManager : public PassManagerBase {
 public:
-  PassManager() : InitpassRecorder(50) {
-  }
+  PassManager() : InitpassRecorder(50) {}
   void PreWork(int i);
   void IncludePass(int pass);
   void InitPass();
   void RunOnFunction();
-  //void Anlaysis();
+  // void Anlaysis();
   void PrintPass(){};
   void setAnalsis(bool choi) { Analysis = choi; }
-  ~PassManager() {
-
-  }
+  ~PassManager() {}
 
 private:
   bool Analysis = false;
-  int func=0;
+  int func = 0;
   std::vector<int> InitpassRecorder;
   std::vector<Function *> FList;
   std::vector<BasicBlock *> BList;
