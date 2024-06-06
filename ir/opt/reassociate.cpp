@@ -297,7 +297,7 @@ Value *Reassociate::OptExp(BinaryInst *exp,
 }
 
 Value *Reassociate::OptMul(BinaryInst *MulInst,
-                           std::vector<std::pair<Value *, int>> &LinerizedOp) {}
+                           std::vector<std::pair<Value *, int>> &LinerizedOp) {return nullptr;}
 
 bool Reassociate::IsOperandAssociate(Value *op, BinaryInst::Operation opcode) {
   auto bin = dynamic_cast<BinaryInst *>(op);
