@@ -1,6 +1,7 @@
 #include "dominant.hpp"
 #include "CFG.hpp"
 #include "my_stl.hpp"
+#include "HashScope.hpp"
 #include <unordered_set>
 
 static bool CanHandle(User* inst)
@@ -43,10 +44,10 @@ private:
 private:
     Function* func;
     dominance* DomTree;
-    void Init();
+    // void Init();
     bool RunOnNode(dominance::Node* node);
 public:
-    CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0) { Init(); }
+    CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0) { }
     void RunOnFunction();
 };
 

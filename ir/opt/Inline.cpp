@@ -233,7 +233,9 @@ std::vector<BasicBlock*> Inliner::CopyBlocks(User* inst)
     for(auto& param : Func->GetParams())
     {
         Value* Param = param.get();
-        OperandMapping[Param]->RAUW(inst->Getuselist()[num++]->usee);
+        if(OperandMapping.find(Param) != OperandMapping.end())
+            OperandMapping[Param]->RAUW(inst->Getuselist()[num]->usee);
+        num++;
     }
     return copied_bbs;
 }

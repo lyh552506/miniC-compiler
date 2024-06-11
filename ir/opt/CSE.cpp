@@ -37,12 +37,12 @@ bool CSE::RunOnNode(dominance::Node* node)
         // TODO: 可能不处理
         // return;
         ++CurrGens;
-    
-    if(BasicBlock* block = DomTree->GetNode(node->rev.front()).thisBlock)
-        if(auto inst = dynamic_cast<CondInst*>(block->back()))
-            if(auto cond = dynamic_cast<User*>(inst->Getuselist()[0]->usee))
-                if(CanHandle(cond))
-                {
-                    
-                }
+    if(!node->rev.empty())
+        if(BasicBlock* block = DomTree->GetNode(node->rev.front()).thisBlock)
+            if(auto inst = dynamic_cast<CondInst*>(block->back()))
+                if(auto cond = dynamic_cast<User*>(inst->Getuselist()[0]->usee))
+                    if(CanHandle(cond))
+                    {
+                        
+                    }
 }

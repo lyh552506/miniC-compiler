@@ -41,6 +41,8 @@ namespace InstHashTool{
 template <typename Key, typename Val, typename AllocatorTy>
 class HashScope;
 template <typename Key, typename Val>
+class HashScopeIterator;
+template <typename Key, typename Val>
 class HashScopeVal
 {
     HashScopeVal* next_for_scope;
@@ -48,9 +50,9 @@ class HashScopeVal
     
     Key key;
     Val val;
-
+public:
     HashScopeVal(const Key &key, const Val &val) : key(key), val(val) {}
-
+    HashScopeVal() { next_for_key = nullptr; next_for_scope = nullptr; key = Key(); val = Val(); }
 public:
     const Key& GetKey() const { return key; }
     const Val& GetVal() const { return val; }
@@ -119,12 +121,7 @@ public:
             thisval->Delete(HashTable.Allocator);
         }
     }
-    HashScope_Scope *GetPrevScope() { return PrevScope; }
-    const HashScope_Scope *GetPrevScope() const { return PrevScope; }
-
-    HashScopeVal<Key, Val>* GetLastVal() { return LastVal; }
-    
-    void SetLastVal(HashScopeVal(Key, Val)* Val) { LastVal = Val; }
+    void SetLastVal(HashScopeVal<Key, Val>* newVal) { LastVal = newVal; }
 };
 
 template <typename Key, typename Val>
@@ -156,9 +153,8 @@ class HashScope
     HashScope(const HashScope& );
     void operator=(const HashScope& );
     friend class HashScope_Scope<Key, Val, AllocatorTy>;
-
 public:
-    HashScope() : CurScope(nullptr) {}
+    HashScope() { CurScope = nullptr; }
     HashScope(AllocatorTy Allocator_) : CurScope(0), Allocator(Allocator_) {}
     ~HashScope() { assert(!CurScope && Mapping.empty() && "Scope is not empty!"); } 
 
@@ -174,11 +170,11 @@ public:
         scope->SetLastVal(entry);
     }
 
-    HashScopeIterator end() { return HashScopeIterator(nullptr); }
-    HashScopeIterator begin(const Key& key)
+    HashScopeIterator<Key, Val> end() { return HashScopeIterator<Key, Val>(nullptr); }
+    HashScopeIterator<Key, Val> begin(const Key& key)
     {
         if(Mapping.find(key) != Mapping.end())
-            return HashScopeIterator(Mapping[key]);
+            return HashScopeIterator<Key, Val>(Mapping[key]);
         return end();
     }
 
