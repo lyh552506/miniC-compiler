@@ -1,8 +1,12 @@
 #include "lcssa.hpp"
+#include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "my_stl.hpp"
+#include <algorithm>
 #include <cassert>
+#include <string>
 #include <utility>
+#include <vector>
 
 void LcSSA::RunOnFunction() {
   loops = new LoopAnalysis(m_func, m_dom);
@@ -41,8 +45,10 @@ void LcSSA::DFSLoops(LoopInfo *l) {
 
 void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
                         std::vector<User *> &FormingInsts) {
+  int x = 0;
   std::vector<BasicBlock *> exit = loops->GetExitingBlock(l);
   std::vector<Use *> Rewrite; //记录inst的所有在外部use
+  std::vector<Value *> ShouldRedoLater;
   assert(exit.size() > 0);
   std::vector<User *> WorkLists;
   while (!FormingInsts.empty()) {
@@ -57,22 +63,39 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
     }
     if (Rewrite.empty())
       continue;
+    x = 0;
     for (auto ex : exit) {
       if (!m_dom->dominates(target->GetParent(), ex))
         continue;
-      _DEBUG(std::cerr << "Insert a lcssa Phi: " << inst->GetName() + ".lcssa"
+      _DEBUG(std::cerr << "Insert a lcssa Phi: " << target->GetName() + ".lcssa"
                        << std::endl;);
       auto phi = PhiInst::NewPhiNode(ex->front(), ex, target->GetType(),
-                                     target->GetName() + ".lcssa");
+                                     target->GetName() + ".lcssa." +
+                                         std::to_string(x++));
       for (auto rev : m_dom->GetNode(ex->num).rev)
         phi->updateIncoming(target, m_dom->GetNode(rev).thisBlock);
       if (auto subloop = loops->LookUp(ex))
         if (l->Contain(subloop)) {
-          assert(0 && "Find a situation");
+          //插入的phi如果在另一个循环存在，重新考虑处理
+          ShouldRedoLater.push_back(phi);
         }
     }
     for (auto rewrite : Rewrite) {
-      //TODO
+      auto user = rewrite->GetUser();
+      auto pbb = user->GetParent();
+      if (auto phi = dynamic_cast<PhiInst *>(user)) {
+        pbb = phi->ReturnBBIn(rewrite);
+      }
+      //如果直接是在exitbb
+      auto it = std::find(exit.begin(), exit.end(), pbb);
+      if (it != exit.end()) {
+        //此处可以直接替换
+        assert(dynamic_cast<PhiInst *>(pbb->front()));
+        rewrite->RemoveFromUserList(rewrite->GetUser());
+        rewrite->SetValue() = pbb->front();
+        pbb->front()->GetUserlist().push_front(rewrite);
+      }
+      //需要进一步检查
     }
   }
 
@@ -86,7 +109,8 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
   //       // if (dynamic_cast<PhiInst *>(use->GetUser())) {
   //       //   assert(0 && "Find a situation");
   //       // }
-  //       _DEBUG(std::cerr << "Insert a lcssa Phi: " << inst->GetName() + ".lcssa"
+  //       _DEBUG(std::cerr << "Insert a lcssa Phi: " << inst->GetName() +
+  //       ".lcssa"
   //                        << std::endl;);
   //       auto phi = PhiInst::NewPhiNode(ex->front(), ex, inst->GetType(),
   //                                      inst->GetName() + ".lcssa");
@@ -104,3 +128,5 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
   //   }
   // }
 }
+
+void LcSSA::CheckDataFlow() { return; }

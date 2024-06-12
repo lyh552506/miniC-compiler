@@ -220,9 +220,9 @@ int GraphColor::GetRegNums(MOperand v) {
     assert(tp == 0 && "error");
     return tp == riscv_i32 ? reglist.GetReglistInt().size()
                            : reglist.GetReglistFloat().size();
-  } else {
-    assert("excetion case");
   }
+  assert("excetion case");
+  return 0;
 }
 
 int GraphColor::GetRegNums(RISCVType ty) {

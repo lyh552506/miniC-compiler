@@ -15,7 +15,7 @@ public:
   void DFSLoops(LoopInfo *l);
   void FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
                    std::vector<User *> &FormingInsts);
-
+  void CheckDataFlow();
 private:
   Function *m_func;
   LoopAnalysis *loops;
