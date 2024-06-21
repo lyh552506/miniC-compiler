@@ -4,6 +4,7 @@
 #include "LoopInfo.hpp"
 #include "PassManagerBase.hpp"
 #include "dominant.hpp"
+#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -15,7 +16,9 @@ public:
   void DFSLoops(LoopInfo *l);
   void FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
                    std::vector<User *> &FormingInsts);
-  void CheckDataFlow();
+  void InsertPhis(Use *u);
+  void FindBBRecursive(std::set<BasicBlock *> &target, BasicBlock *bb);
+
 private:
   Function *m_func;
   LoopAnalysis *loops;

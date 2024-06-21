@@ -49,6 +49,8 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
   std::vector<BasicBlock *> exit = loops->GetExitingBlock(l);
   std::vector<Use *> Rewrite; //记录inst的所有在外部use
   std::vector<Value *> ShouldRedoLater;
+  std::vector<PhiInst *> AddPhi;
+  std::set<BasicBlock*> assist;
   assert(exit.size() > 0);
   std::vector<User *> WorkLists;
   while (!FormingInsts.empty()) {
@@ -72,6 +74,7 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
       auto phi = PhiInst::NewPhiNode(ex->front(), ex, target->GetType(),
                                      target->GetName() + ".lcssa." +
                                          std::to_string(x++));
+      assist.insert(ex);                                        
       for (auto rev : m_dom->GetNode(ex->num).rev)
         phi->updateIncoming(target, m_dom->GetNode(rev).thisBlock);
       if (auto subloop = loops->LookUp(ex))
@@ -79,6 +82,7 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
           //插入的phi如果在另一个循环存在，重新考虑处理
           ShouldRedoLater.push_back(phi);
         }
+      AddPhi.push_back(phi);
     }
     for (auto rewrite : Rewrite) {
       auto user = rewrite->GetUser();
@@ -96,6 +100,7 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
         pbb->front()->GetUserlist().push_front(rewrite);
       }
       //需要进一步检查
+
     }
   }
 
@@ -129,4 +134,12 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
   // }
 }
 
-void LcSSA::CheckDataFlow() { return; }
+void LcSSA::InsertPhis(Use* u) {
+  auto user=u->GetUser();
+  auto targetBB=user->GetParent();
+  if(auto phi=dynamic_cast<PhiInst*>(user))
+    targetBB=phi->ReturnBBIn(u);
+
+ }
+
+ void LcSSA::FindBBRecursive(std::set<BasicBlock *> &target, BasicBlock *bb){}
