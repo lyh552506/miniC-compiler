@@ -1,6 +1,6 @@
 #include "CSE.hpp"
 #include "HashScope.hpp"
-
+#include "DCE.hpp"
 
 // 先写一下迭代计算最小不动点部分
 void CSE::RunOnFunction()
@@ -33,6 +33,7 @@ void CSE::RunOnFunction()
 
 bool CSE::RunOnNode(dominance::Node* node)
 {
+    BasicBlock* CurrBlock = node->thisBlock;
     if(std::distance(node->rev.begin(), node->rev.end()) != 1)
         // TODO: 可能不处理
         // return;
@@ -41,8 +42,24 @@ bool CSE::RunOnNode(dominance::Node* node)
         if(BasicBlock* block = DomTree->GetNode(node->rev.front()).thisBlock)
             if(auto inst = dynamic_cast<CondInst*>(block->back()))
                 if(auto cond = dynamic_cast<User*>(inst->Getuselist()[0]->usee))
-                    if(CanHandle(cond))
-                    {
-                        
-                    }
+                if(CanHandle(cond))
+                {
+                    auto Condition = (dynamic_cast<BasicBlock*>(inst->Getuselist()[1]->usee) == block) ? 
+                    ConstIRBoolean::GetNewConstant(true) : ConstIRBoolean::GetNewConstant(false);
+                    AvailableValues.Insert(cond, Condition);
+                    _DEBUG(std::cerr << "Add Condition Value for '"<< cond->GetName() <<
+                    << "' as" << Condition << " in " << block->GetName() << std::endl;)
+                }
+
+    User* LoadStore = nullptr;
+    for(auto iter = CurrBlock->begin(); iter != CurrBlock->end();)
+    {
+        User* inst = *++iter;
+        if(DCE::isDeadInst(inst))
+        {
+            delete inst;
+        }
+    }
+    
+
 }
