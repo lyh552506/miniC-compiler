@@ -4,6 +4,7 @@
 #include "my_stl.hpp"
 #include <algorithm>
 #include <cassert>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -50,7 +51,7 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
   std::vector<Use *> Rewrite; //记录inst的所有在外部use
   std::vector<Value *> ShouldRedoLater;
   std::vector<PhiInst *> AddPhi;
-  std::set<BasicBlock*> assist;
+  std::set<BasicBlock *> assist;
   assert(exit.size() > 0);
   std::vector<User *> WorkLists;
   while (!FormingInsts.empty()) {
@@ -74,7 +75,7 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
       auto phi = PhiInst::NewPhiNode(ex->front(), ex, target->GetType(),
                                      target->GetName() + ".lcssa." +
                                          std::to_string(x++));
-      assist.insert(ex);                                        
+      assist.insert(ex);
       for (auto rev : m_dom->GetNode(ex->num).rev)
         phi->updateIncoming(target, m_dom->GetNode(rev).thisBlock);
       if (auto subloop = loops->LookUp(ex))
@@ -100,7 +101,8 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
         pbb->front()->GetUserlist().push_front(rewrite);
       }
       //需要进一步检查
-
+      std::set<BasicBlock *> ex{exit.begin(), exit.end()};
+      InsertPhis(rewrite, ex);
     }
   }
 
@@ -134,12 +136,31 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
   // }
 }
 
-void LcSSA::InsertPhis(Use* u) {
-  auto user=u->GetUser();
-  auto targetBB=user->GetParent();
-  if(auto phi=dynamic_cast<PhiInst*>(user))
-    targetBB=phi->ReturnBBIn(u);
+void LcSSA::InsertPhis(Use *u, std::set<BasicBlock *> &exit) {
+  std::set<BasicBlock *> target;
+  std::set<BasicBlock *> visited;
+  auto user = u->GetUser();
+  auto targetBB = user->GetParent();
+  if (auto phi = dynamic_cast<PhiInst *>(user))
+    targetBB = phi->ReturnBBIn(u);
+  FindBBRecursive(exit, target, visited, targetBB);
+  assert(!target.empty());
+  //开始创建phi函数
+  auto phi = PhiInst::NewPhiNode(targetBB->front(), targetBB,
+                                 u->GetValue()->GetName() + ".phi.lcssa");
+  for (auto bb : target)
+    phi->updateIncoming(bb->front(), bb);
+}
 
- }
-
- void LcSSA::FindBBRecursive(std::set<BasicBlock *> &target, BasicBlock *bb){}
+void LcSSA::FindBBRecursive(std::set<BasicBlock *> &exit,
+                            std::set<BasicBlock *> &target,
+                            std::set<BasicBlock *> &visited, BasicBlock *bb) {
+  if (visited.insert(bb).second) {
+    if (exit.find(bb) != exit.end())
+      target.insert(bb);
+    for (auto prednode : m_dom->GetNode(bb->num).rev) {
+      auto predbb = m_dom->GetNode(prednode).thisBlock;
+      FindBBRecursive(exit, target, visited, predbb);
+    }
+  }
+}

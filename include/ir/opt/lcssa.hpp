@@ -16,8 +16,10 @@ public:
   void DFSLoops(LoopInfo *l);
   void FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
                    std::vector<User *> &FormingInsts);
-  void InsertPhis(Use *u);
-  void FindBBRecursive(std::set<BasicBlock *> &target, BasicBlock *bb);
+  void InsertPhis(Use *u, std::set<BasicBlock *> &exit);
+  void FindBBRecursive(std::set<BasicBlock *> &exit,
+                       std::set<BasicBlock *> &target,
+                       std::set<BasicBlock *> &visited, BasicBlock *bb);
 
 private:
   Function *m_func;
