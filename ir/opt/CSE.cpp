@@ -1,7 +1,7 @@
 #include "CSE.hpp"
 #include "HashScope.hpp"
 #include "DCE.hpp"
-
+#include "ConstantFold.hpp"
 // 先写一下迭代计算最小不动点部分
 void CSE::RunOnFunction()
 {
@@ -58,8 +58,85 @@ bool CSE::RunOnNode(dominance::Node* node)
         if(DCE::isDeadInst(inst))
         {
             delete inst;
+            continue;
         }
-    }
-    
 
+        if(auto Binary = dynamic_cast<BinaryInst*>(inst))
+        {
+            if(auto Result = AvailableValues.lookup(Binary))
+            {
+                if(Result->GetType() == Binary->GetType())
+                {
+                    inst->RAUW(Result);
+                    delete inst;
+                    continue;
+                }
+            }
+            else
+            {
+                AvailableValues.Insert(Binary, Binary);
+            }
+        }
+        else if(auto Load = dynamic_cast<LoadInst*>(inst))
+        {
+            if(auto Result = AvailableValues.lookup(Load))
+            {
+                if(Result->GetType() == Load->GetType())
+                {
+                    inst->RAUW(Result);
+                    delete inst;
+                    continue;
+                }
+            }
+            else
+            {
+                AvailableValues.Insert(Load, Load);
+            }
+        }
+        else if(auto Store = dynamic_cast<StoreInst*>(inst))
+        {
+            if(auto Result = AvailableValues.lookup(Store))
+            {
+                if(Result->GetType() == Store->GetType())
+                {
+                    inst->RAUW(Result);
+                    delete inst;
+                    continue;
+                }
+            }
+            else
+            {
+                AvailableValues.Insert(Store, Store);
+            }
+        }
+        else if(auto Phi = dynamic_cast<PhiInst*>(inst))
+        {
+            if(auto Result = AvailableValues.lookup(Phi))
+            {
+                if(Result->GetType() == Phi->GetType())
+                {
+                    inst->RAUW(Result);
+                    delete inst;
+                    continue;
+                }
+            }
+            else
+            {
+                AvailableValues.Insert(Phi, Phi);
+            }
+        }
+        else if(auto SITFP_ = dynamic_cast<SITFP*>(inst))
+        {
+            if(auto Result = AvailableValues.lookup(SITFP_))
+            {
+                if(Result->GetType() == SITFP_->GetType())
+                {
+                    inst->RAUW(Result);
+                    delete inst;
+                }
+        // if(Value* C = ConstantFolding:: )
+            }
+        }
+    
+    }
 }
