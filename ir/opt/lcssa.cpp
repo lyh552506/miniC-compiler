@@ -34,31 +34,34 @@ void LcSSA::DFSLoops(LoopInfo *l) {
       if (inst->GetUserListSize() == 0)
         continue;
       for (const auto user : inst->GetUserlist()) {
-        if (ContainBB.find(user->GetUser()->GetParent()) != ContainBB.end())
+        if (ContainBB.find(user->GetUser()->GetParent()) == ContainBB.end())
           FormingInsts.push_back(inst);
       }
     }
   }
   if (FormingInsts.empty())
     return;
-  FormalLcSSA(l, ContainBB, FormingInsts);
+  FormalLcSSA(FormingInsts);
 }
 
-void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
-                        std::vector<User *> &FormingInsts) {
+void LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
   int x = 0;
-  std::vector<BasicBlock *> exit = loops->GetExitingBlock(l);
-  std::vector<Use *> Rewrite; //记录inst的所有在外部use
-  std::vector<Value *> ShouldRedoLater;
-  std::vector<PhiInst *> AddPhi;
-  std::set<BasicBlock *> assist;
-  assert(exit.size() > 0);
-  std::vector<User *> WorkLists;
+  std::set<User *> Erase;
   while (!FormingInsts.empty()) {
+    std::vector<User *> ShouldRedoLater;
+    std::set<PhiInst *> AddPhi;
+    std::vector<Use *> Rewrite; //记录inst的所有在外部use
+    std::set<BasicBlock *> ContainBB;
     auto target = PopBack(FormingInsts);
+    auto l = loops->LookUp(target->GetParent());
+    std::vector<BasicBlock *> exit = loops->GetExitingBlock(l);
+    ContainBB.insert(l->GetLoopBody().begin(), l->GetLoopBody().end());
+    ContainBB.insert(l->GetHeader());
+    if (exit.size() <= 0)
+      return;
     for (auto use : target->GetUserlist()) {
       auto pbb = use->GetUser()->GetParent();
-      if (auto phi = dynamic_cast<PhiInst *>(target)) {
+      if (auto phi = dynamic_cast<PhiInst *>(use->GetUser())) {
         pbb = phi->ReturnBBIn(use);
       }
       if (!ContainBB.count(pbb))
@@ -70,20 +73,20 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
     for (auto ex : exit) {
       if (!m_dom->dominates(target->GetParent(), ex))
         continue;
-      _DEBUG(std::cerr << "Insert a lcssa Phi: " << target->GetName() + ".lcssa"
+      _DEBUG(std::cerr << "Insert a lcssa Phi: "
+                       << target->GetName() + ".lcssa." + std::to_string(x)
                        << std::endl;);
       auto phi = PhiInst::NewPhiNode(ex->front(), ex, target->GetType(),
                                      target->GetName() + ".lcssa." +
                                          std::to_string(x++));
-      assist.insert(ex);
       for (auto rev : m_dom->GetNode(ex->num).rev)
         phi->updateIncoming(target, m_dom->GetNode(rev).thisBlock);
       if (auto subloop = loops->LookUp(ex))
-        if (l->Contain(subloop)) {
+        if (!l->Contain(subloop)) {
           //插入的phi如果在另一个循环存在，重新考虑处理
           ShouldRedoLater.push_back(phi);
         }
-      AddPhi.push_back(phi);
+      AddPhi.insert(phi);
     }
     for (auto rewrite : Rewrite) {
       auto user = rewrite->GetUser();
@@ -95,61 +98,81 @@ void LcSSA::FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
       auto it = std::find(exit.begin(), exit.end(), pbb);
       if (it != exit.end()) {
         //此处可以直接替换
+        auto _val=rewrite->GetValue();
         assert(dynamic_cast<PhiInst *>(pbb->front()));
         rewrite->RemoveFromUserList(rewrite->GetUser());
         rewrite->SetValue() = pbb->front();
         pbb->front()->GetUserlist().push_front(rewrite);
+        if (auto phi = dynamic_cast<PhiInst *>(user)) {
+          //更新record
+          for (auto &[_1, val] : phi->PhiRecord) {
+            if (val.first == _val) {
+              val.first = pbb->front();
+            }
+          }
+        }
+        continue;
       }
       //需要进一步检查
       std::set<BasicBlock *> ex{exit.begin(), exit.end()};
+      InsertedPhis.clear();
       InsertPhis(rewrite, ex);
+
+      for (auto phi : InsertedPhis) {
+        if (auto subloop = loops->LookUp(phi->GetParent()))
+          if (!l->Contain(subloop))
+            ShouldRedoLater.push_back(phi);
+      }
+    }
+    for (auto phi : ShouldRedoLater) {
+      if (phi->GetUserListSize() == 0) {
+        Erase.insert(phi);
+        continue;
+      }
+      FormingInsts.push_back(phi);
+    }
+    for (auto phi : AddPhi) {
+      if (phi->GetUserListSize() == 0)
+        Erase.insert(phi);
     }
   }
-
-  // while (!FormingInsts.empty()) {
-  //   auto inst = FormingInsts.back();
-  //   FormingInsts.pop_back();
-  //   std::vector<Use *> Rewrite = UseRerite[inst];
-  //   for (auto use : Rewrite) {
-  //     auto ex = use->GetUser()->GetParent();
-  //     if (m_dom->dominates(inst->GetParent(), ex)) {
-  //       // if (dynamic_cast<PhiInst *>(use->GetUser())) {
-  //       //   assert(0 && "Find a situation");
-  //       // }
-  //       _DEBUG(std::cerr << "Insert a lcssa Phi: " << inst->GetName() +
-  //       ".lcssa"
-  //                        << std::endl;);
-  //       auto phi = PhiInst::NewPhiNode(ex->front(), ex, inst->GetType(),
-  //                                      inst->GetName() + ".lcssa");
-  //       for (auto rev : m_dom->GetNode(ex->num).rev)
-  //         phi->updateIncoming(inst, m_dom->GetNode(rev).thisBlock);
-  //       if (auto subloop = loops->LookUp(ex))
-  //         if (l->Contain(subloop)) {
-  //           assert(0 && "Find a situation");
-  //         }
-  //       // now do RAUW
-  //       use->RemoveFromUserList(use->fat);
-  //       use->SetValue() = phi;
-  //       phi->GetUserlist().push_front(use);
-  //     }
-  //   }
-  // }
+  for (auto d : Erase) {
+    delete d;
+  }
 }
 
 void LcSSA::InsertPhis(Use *u, std::set<BasicBlock *> &exit) {
   std::set<BasicBlock *> target;
   std::set<BasicBlock *> visited;
   auto user = u->GetUser();
+  auto _val = u->GetValue();
   auto targetBB = user->GetParent();
   if (auto phi = dynamic_cast<PhiInst *>(user))
     targetBB = phi->ReturnBBIn(u);
   FindBBRecursive(exit, target, visited, targetBB);
   assert(!target.empty());
   //开始创建phi函数
-  auto phi = PhiInst::NewPhiNode(targetBB->front(), targetBB,
-                                 u->GetValue()->GetName() + ".phi.lcssa");
-  for (auto bb : target)
-    phi->updateIncoming(bb->front(), bb);
+  if (target.size() == 1) {
+    auto p = *(target.begin());
+    assert(dynamic_cast<PhiInst *>(p->front()));
+    u->RemoveFromUserList(u->GetUser());
+    u->SetValue() = p->front();
+    p->front()->GetUserlist().push_front(u);
+    if (auto phi = dynamic_cast<PhiInst *>(u->GetUser())) {
+      //更新record
+      for (auto &[_1, val] : phi->PhiRecord) {
+        if (val.first == _val) {
+          val.first = p->front();
+        }
+      }
+    }
+  } else if (target.size() > 1) {
+    auto phi = PhiInst::NewPhiNode(targetBB->front(), targetBB,
+                                   u->GetValue()->GetName() + ".phi.lcssa");
+    InsertedPhis.insert(phi);
+    for (auto bb : target)
+      phi->updateIncoming(bb->front(), bb);
+  }
 }
 
 void LcSSA::FindBBRecursive(std::set<BasicBlock *> &exit,

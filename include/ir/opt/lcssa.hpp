@@ -14,8 +14,7 @@ public:
   void RunOnFunction();
   void PrintPass() {}
   void DFSLoops(LoopInfo *l);
-  void FormalLcSSA(LoopInfo *l, std::set<BasicBlock *> &ContainBB,
-                   std::vector<User *> &FormingInsts);
+  void FormalLcSSA(std::vector<User *> &FormingInsts);
   void InsertPhis(Use *u, std::set<BasicBlock *> &exit);
   void FindBBRecursive(std::set<BasicBlock *> &exit,
                        std::set<BasicBlock *> &target,
@@ -28,4 +27,5 @@ private:
   //记录lcssa后的phi对应的原值，方便后续替换
   std::unordered_map<PhiInst *, Value *> LcssaRecord;
   std::unordered_map<User *, std::vector<Use *>> UseRerite;
+  std::set<PhiInst *> InsertedPhis;
 };
