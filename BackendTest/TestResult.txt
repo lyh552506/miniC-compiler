@@ -1,0 +1,67 @@
+Timeout: ./testcases/hidden_functional/39_fp_params.sy
+Timeout: ./testcases/hidden_functional/32_many_params3.sy
+Compiler Error：./testcases/functional/24_if_test5.sy
+Compiler Error：./testcases/functional/22_if_test3.sy
+Compiler Error：./testcases/functional/23_if_test4.sy
+Timeout: ./testcases/functional/86_long_code2.sy
+Timeout: ./testcases/performance/integer-divide-optimization-1.sy
+Timeout: ./testcases/performance/integer-divide-optimization-3.sy
+Timeout: ./testcases/performance/integer-divide-optimization-2.sy
+Compiler Error：./testcases/hidden_functional/38_light2d..s
+Compiler Error：./testcases/hidden_functional/29_long_line..s
+Compiler Error：./testcases/hidden_functional/37_dct..s
+Compiler Error：./testcases/hidden_functional/36_rotate..s
+Compiler Error：./testcases/hidden_functional/35_math..s
+Compiler Error：./testcases/functional/64_calculator..s
+Compiler Error：./testcases/functional/51_short_circuit3..s
+Compiler Error：./testcases/functional/95_float..s
+Compiler Error：./testcases/functional/82_long_func..s
+Compiler Error：./testcases/functional/40_unary_op..s
+Compiler Error：./testcases/functional/49_if_complex_expr..s
+Compiler Error：./testcases/functional/32_while_if_test2..s
+Compiler Error：./testcases/functional/41_unary_op2..s
+Compiler Error：./testcases/functional/21_if_test2..s
+Compiler Error：./testcases/functional/85_long_code..s
+Compiler Error：./testcases/final_performance/large_loop_array_3..s
+Compiler Error：./testcases/final_performance/recursive_call_1..s
+Compiler Error：./testcases/final_performance/recursive_call_3..s
+Compiler Error：./testcases/final_performance/large_loop_array_2..s
+Compiler Error：./testcases/final_performance/large_loop_array_1..s
+Compiler Error：./testcases/final_performance/recursive_call_2..s
+Compiler Error：./testcases/performance/crypto-3..s
+Compiler Error：./testcases/performance/crypto-2..s
+Compiler Error：./testcases/performance/crypto-1..s
+Compiler Error: Total: 27
+Runtime Error: Total: 0
+Timeout Error: Total: 0
+Wrong Answer: Total: 0
+TimeOut Function:6
+Bad Test: Total: 0
+Accepted: Total: 211
+./testcases/functional/24_if_test5.sy
+./testcases/functional/22_if_test3.sy
+./testcases/functional/23_if_test4.sy
+./testcases/hidden_functional/38_light2d..s
+./testcases/hidden_functional/29_long_line..s
+./testcases/hidden_functional/37_dct..s
+./testcases/hidden_functional/36_rotate..s
+./testcases/hidden_functional/35_math..s
+./testcases/functional/64_calculator..s
+./testcases/functional/51_short_circuit3..s
+./testcases/functional/95_float..s
+./testcases/functional/82_long_func..s
+./testcases/functional/40_unary_op..s
+./testcases/functional/49_if_complex_expr..s
+./testcases/functional/32_while_if_test2..s
+./testcases/functional/41_unary_op2..s
+./testcases/functional/21_if_test2..s
+./testcases/functional/85_long_code..s
+./testcases/final_performance/large_loop_array_3..s
+./testcases/final_performance/recursive_call_1..s
+./testcases/final_performance/recursive_call_3..s
+./testcases/final_performance/large_loop_array_2..s
+./testcases/final_performance/large_loop_array_1..s
+./testcases/final_performance/recursive_call_2..s
+./testcases/performance/crypto-3..s
+./testcases/performance/crypto-2..s
+./testcases/performance/crypto-1..s
