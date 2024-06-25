@@ -1,8 +1,45 @@
 #include "dominant.hpp"
 #include "CFG.hpp"
 #include "my_stl.hpp"
-#include "HashScope.hpp"
 #include <unordered_set>
+
+namespace HashTool
+{
+    struct InstHash
+    {
+        size_t operator()(User* inst)
+        {
+            size_t HashValue;
+            HashValue += std::hash<User::OpID>{}(inst->GetInstId());
+            for(auto& Use_ : inst->Getuselist())
+            {
+                Value* Val = Use_->usee;
+                HashValue = HashValue * 111 + std::hash<Value*>{}(Val);
+            }
+            return HashValue;
+        }
+    };
+
+    struct Same
+    {
+        bool operator()(User* LHS, User* RHS) const
+        {
+            if(LHS->GetInstId() != RHS->GetInstId())
+                return false;
+            if(LHS->GetType() != RHS->GetType())
+                return false;
+            auto& LHSUseList = LHS->Getuselist();
+            auto& RHSUseList = RHS->Getuselist();
+            if(LHSUseList.size() != RHSUseList.size())
+                return false;
+            if((LHS->GetInstId() > 7 && LHS->GetInstId() < 11) ||  (LHS->GetInstId() > 12 && LHS->GetInstId() < 17))
+                return std::is_permutation(LHSUseList.begin(), LHSUseList.end(), RHSUseList.begin(), []
+                    (std::unique_ptr<Use>& lhs, std::unique_ptr<Use>& rhs){ return lhs->usee == rhs->usee; });
+            return std::equal(LHSUseList.begin(), LHSUseList.end(), RHSUseList.begin(), []
+            (std::unique_ptr<Use>& lhs, std::unique_ptr<Use>& rhs){ return lhs->usee == rhs->usee; });
+        }
+    };
+}
 
 static bool CanHandle(User* inst)
 {
@@ -14,26 +51,9 @@ static bool CanHandle(User* inst)
 
 class CSE
 {
-    typedef HashScopeVal<User*, Value*> AllocatorTy;
-    typedef HashScope<User*, Value*, AllocatorTy> HashScopeTy;
-    HashScopeTy AvailableValues;
-    struct LoadValue
-    {
-        User* DefInst;
-        size_t Version;
-        int Id;
-        bool IsAtomic;
-        bool Variant;
-        LoadValue() : DefInst(nullptr), Version(0), Id(-1), IsAtomic(false), Variant(true) {}
-        LoadValue(User* inst, size_t Version, int ID, bool isAtomic, bool Variant) :
-            DefInst(inst), Version(Version), Id(ID), IsAtomic(isAtomic), Variant(Variant) {}  
-    };
-    typedef HashScopeVal<Value*, LoadValue> LoadAllocatorTy;
-    typedef HashScope<Value*, LoadValue, LoadAllocatorTy> LoadHashScopeTy;
-    LoadHashScopeTy AvailableLoads;
-    typedef HashScope<Value*, std::pair<User*, size_t>, HashScopeVal<Value*, std::pair<User*, size_t>>> CallHashScopeTy;
-    CallHashScopeTy AvailableCalls;
 private:
+    std::map<User*,std::unordered_set<User*,HashTool::InstHash, HashTool::Same>> Gens;
+    std::map<User*,std::unordered_set<User*,HashTool::InstHash, HashTool::Same>> Kills;
     // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> In;
     // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Out;
     // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Gens;
