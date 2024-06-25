@@ -166,7 +166,7 @@ public:
     {
         assert(scope && "No scope!");
         HashScopeVal<Key, Val>*& entry = Mapping[key];
-        entry = Val_Ptr::Create(entry, scope->GetLastVal(), key, val, Allocator);
+        entry = Val_Ptr::Create(entry, scope->LastVal, key, val, Allocator);
         scope->SetLastVal(entry);
     }
 
