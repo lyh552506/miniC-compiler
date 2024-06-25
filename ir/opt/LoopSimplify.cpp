@@ -31,7 +31,7 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       bool NeedToFormat = false;
       BasicBlock *bb = exit[index];
       for (auto rev : m_dom->GetNode(bb->num).rev) {
-        if (!loopAnlay->IsLoopIncludeBB(L,rev))
+        if (!loopAnlay->IsLoopIncludeBB(L, rev))
           NeedToFormat = true;
       }
       if (!NeedToFormat)
@@ -66,8 +66,8 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
   for (auto rev : m_dom->GetNode(Header->num).rev)
     if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != loop)
       OutSide.push_back(m_dom->GetNode(rev).thisBlock);
-  //assert(OutSide.size() > 1);
-  // phase 2: insert the preheader
+  // assert(OutSide.size() > 1);
+  //  phase 2: insert the preheader
   BasicBlock *preheader = new BasicBlock();
   preheader->SetName(preheader->GetName() + "_preheader");
   m_func->InsertBlock(Header, preheader);
@@ -155,18 +155,19 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
       }
     }
   }
-  // outside传入的数据流对应的值为一个
+  // 传入的数据流对应的值为一个
   if (ComingVal) {
-    std::vector<int> Erase;
+    // std::vector<int> Erase;
     for (auto &[_1, tmp] : phi->PhiRecord) {
       if (worklist.find(tmp.second) != worklist.end()) {
-        Erase.push_back(_1);
+        tmp.second = target;
       }
     }
-    for (auto i : Erase)
-      phi->Del_Incomes(i);
-    phi->updateIncoming(ComingVal, target);
-    phi->FormatPhi();
+    // for (auto i : Erase)
+    //   phi->Del_Incomes(i);
+    // phi->updateIncoming(ComingVal, target);
+    // phi->FormatPhi();
+
     return;
   }
   //对应的传入值有多个
