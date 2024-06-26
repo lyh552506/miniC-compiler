@@ -138,45 +138,52 @@ bool CSE::RunOnNode(dominance::Node* node)
             size_t Offset = HashTool::InstHash{}(inst);
             if(Geps.find(std::make_tuple(Base, Offset, inst->GetInstId())) != Geps.end())
             {
-                inst->RAUW(Geps[std::make_tuple(Base, Offset, inst->GetInstId())]);
-                wait_del.push_back(inst);
-                modified = true;
+                Value* val = Geps[std::make_tuple(Base, Offset, inst->GetInstId())];
+                if(User* gep = dynamic_cast<User*>(val))
+                {
+                    if(DomTree->dominates(CurrentBlock, gep->GetParent()))
+                    {
+                        inst->RAUW(Geps[std::make_tuple(Base, Offset, inst->GetInstId())]);
+                        wait_del.push_back(inst);
+                        modified = true;
+                    }
+                }
             }
             else
             {
                 Geps[std::make_tuple(Base, Offset, inst->GetInstId())] = inst;
             }
         }
-        // Load
-        if(dynamic_cast<LoadInst*>(inst))
-        {
-            Value* Val = inst->GetOperand(0);
-            if(Loads.find(std::make_pair(inst, inst->GetInstId())) != Loads.end())
-            {
-                inst->RAUW(Loads[std::make_pair(inst, inst->GetInstId())]);
-                wait_del.push_back(inst);
-                modified = true;
-            }
-            else
-            {
-                Loads[std::make_pair(inst, inst->GetInstId())] = Val;
-            }
-        }
-        // Store
-        if(dynamic_cast<StoreInst*>(inst))
-        {
-            Value* src = inst->GetOperand(0);
-            Value* dst = inst->GetOperand(1);
+        // // Load
+        // if(dynamic_cast<LoadInst*>(inst))
+        // {
+        //     Value* Val = inst->GetOperand(0);
+        //     if(Loads.find(std::make_pair(inst, inst->GetInstId())) != Loads.end())
+        //     {
+        //         inst->RAUW(Loads[std::make_pair(inst, inst->GetInstId())]);
+        //         wait_del.push_back(inst);
+        //         modified = true;
+        //     }
+        //     else
+        //     {
+        //         Loads[std::make_pair(inst, inst->GetInstId())] = Val;
+        //     }
+        // }
+        // // Store
+        // if(dynamic_cast<StoreInst*>(inst))
+        // {
+        //     Value* src = inst->GetOperand(0);
+        //     Value* dst = inst->GetOperand(1);
 
-            for(auto& iter : Loads)
-            {
-                if(iter.first.first == dst)
-                {
-                    // Loads[std::make_pair(dst, User::OpID::Load)] = src;
-                    Loads.erase(std::make_pair(dst, User::OpID::Load));
-                }
-            }
-        }
+        //     for(auto& iter : Loads)
+        //     {
+        //         if(iter.first.first == dst)
+        //         {
+        //             // Loads[std::make_pair(dst, User::OpID::Load)] = src;
+        //             Loads.erase(std::make_pair(dst, User::OpID::Load));
+        //         }
+        //     }
+        // }
         ++CurrGens;
     }
     while(!wait_del.empty())
