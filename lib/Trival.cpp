@@ -1,24 +1,24 @@
 #include "Trival.hpp"
 
-User* Trival::GenerateCallInst(std::string id,std::vector<Operand> args){
-    auto check_builtin=[](std::string _id){
-        if(_id=="getint")return true;
-        if(_id=="getfloat")return true;
-        if(_id=="getch")return true;
-        if(_id=="getarray")return true;
-        if(_id=="getfarray")return true;        
-        if(_id=="putint")return true;
-        if(_id=="putch")return true;
-        if(_id=="putarray")return true;
-        if(_id=="putfloat")return true;
-        if(_id=="putfarray")return true;
-        if(_id=="starttime")return true;
-        if(_id=="stoptime")return true;
-        if(_id=="putf")return true;
-        if(_id=="llvm.memcpy.p0.p0.i32")return true;
-        return false;
-    };
+bool Trival::check_builtin(std::string id){
+    if(id=="getint")return true;
+    if(id=="getfloat")return true;
+    if(id=="getch")return true;
+    if(id=="getarray")return true;
+    if(id=="getfarray")return true;        
+    if(id=="putint")return true;
+    if(id=="putch")return true;
+    if(id=="putarray")return true;
+    if(id=="putfloat")return true;
+    if(id=="putfarray")return true;
+    if(id=="starttime")return true;
+    if(id=="stoptime")return true;
+    if(id=="putf")return true;
+    if(id=="llvm.memcpy.p0.p0.i32")return true;
+    return false;
+}
 
+User* Trival::GenerateCallInst(std::string id,std::vector<Operand> args){
     if(check_builtin(id)){
         if(id!="llvm.memcpy.p0.p0.i32")
             assert(0&&"Do not supported here");
@@ -41,4 +41,22 @@ User* Trival::GenerateCallInst(std::string id,std::vector<Operand> args){
         std::cerr<<"No Such Function!\n";
         assert(0);
     }
+}
+
+CallInst* Trival::BuildInTransform(CallInst* inst){
+    if(!check_builtin(inst->GetOperand(0)->GetName()))return inst;
+    if(inst->GetOperand(0)->GetName()=="llvm.memcpy.p0.p0.i32"){
+        auto dst=inst->GetOperand(1);
+        auto src=inst->GetOperand(2);
+        auto size=inst->GetOperand(3);
+        auto args=std::vector<Operand>();
+        args.push_back(dst);
+        args.push_back(src);
+        args.push_back(size);
+        auto tmp=new CallInst(BuildInFunction::GetBuildInFunction("memcpy@plt"),args,"");
+        inst->FullReplace(tmp);
+        delete inst;
+        return tmp;
+    }
+    return inst;
 }

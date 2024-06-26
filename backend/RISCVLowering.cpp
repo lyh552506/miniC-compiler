@@ -1,5 +1,6 @@
 #include "RISCVLowering.hpp"
 #include "PhiElimination.hpp"
+#include "BuildInFunctionTransform.hpp"
 
 RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
@@ -24,6 +25,10 @@ bool RISCVModuleLowering::run(Module* m){
 }
 
 bool RISCVFunctionLowering::run(Function* m){
+    /// @note this function is used to lower buildin function to the correct form
+    /// @note and in order to solving user function which have the same name as buildin function
+    BuildInFunctionTransform buildin;
+    buildin.run(m);
     /// @note after isel, all insts will be User with an opcode. Only call, ret is not dealt with after this 
     /// @todo deal with alloca and imm
     /// @todo a scheduler can be added here, before or when emitting code to 3-address code

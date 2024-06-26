@@ -1,5 +1,5 @@
 #pragma once
-#include "CFG.hpp"
+#include "Trival.hpp"
 #include "MagicEnum.hpp"
 #include "RISCVFrameContext.hpp"
 class RISCVFrame;
