@@ -96,18 +96,24 @@ void RISCVISel::InstLowering(StoreInst* inst){
 }
 
 void RISCVISel::InstLowering(LoadInst* inst){
-    if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(IntType::NewIntTypeGet())) {
+    if (inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
+        ctx(Builder(RISCVMIR::_lw,inst));
+    }
+    else if  (inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
+        ctx(Builder(RISCVMIR::_flw,inst));
+    }
+    else if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(IntType::NewIntTypeGet())) {
         ctx(Builder(RISCVMIR::_lw,inst));
     }
     else if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(FloatType::NewFloatTypeGet()))
-        ctx(Builder(RISCVMIR::_flw,inst));
+        ctx(Builder(RISCVMIR::_lw,inst));
     
     else if(HasSubType* subtype = dynamic_cast<HasSubType*>(inst->GetOperand(0)->GetType())){
         if(subtype->get_baseType()==IntType::NewIntTypeGet()) {
             ctx(Builder(RISCVMIR::_lw,inst));
         }
         else if(subtype->get_baseType()==FloatType::NewFloatTypeGet()) {
-            ctx(Builder(RISCVMIR::_flw,inst));
+            ctx(Builder(RISCVMIR::_lw,inst));
         }
         else assert(0&&"invalid load type in subtype");
     }
