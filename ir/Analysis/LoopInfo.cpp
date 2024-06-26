@@ -1,5 +1,6 @@
 #include "LoopInfo.hpp"
 #include <set>
+#include <unordered_set>
 #include <vector>
 
 #include "CFG.hpp"
@@ -75,6 +76,23 @@ bool LoopAnalysis::IsLoopIncludeBB(LoopInfo *loop, BasicBlock *bb) {
   if (iter == loop->ContainBlocks.end())
     return false;
   return true;
+}
+
+bool LoopInfo::Contain(BasicBlock *bb) {
+  std::unordered_set<BasicBlock *> assist{this->ContainBlocks.begin(),
+                                          this->ContainBlocks.end()};
+  assist.insert(Header);
+  if (assist.find(bb) != assist.end())
+    return true;
+  return false;
+}
+
+bool LoopInfo::Contain(LoopInfo *loop) {
+  if (loop == this)
+    return true;
+  if (!loop)
+    return false;
+  return Contain(loop->GetParent());
 }
 
 LoopInfo *LoopAnalysis::LookUp(BasicBlock *bb) {

@@ -3,6 +3,7 @@
 #include "Singleton.hpp"
 #include "BaseCFG.hpp"
 #include <set>
+#include <unordered_set>
 #include <algorithm>
 class BasicBlock;
 class Function;
@@ -200,6 +201,7 @@ public:
   std::vector<Value*> Incomings;
   std::map<int,Use*> IndexToUse;
   void Del_Incomes(int CurrentNum);
+  std::map<Use*,int> UseToRecord;
   void FormatPhi();
   bool IsSame(PhiInst* phi);
   BasicBlock* GetBlock(int index);
@@ -267,9 +269,11 @@ class Function:public Value,public mylist<Function,BasicBlock>
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
     std::vector<BasicBlock*> bbs;
+    std::pair<size_t,size_t> inlineinfo;
     public:
     std::set<Function*> CalleeFuncs; // The Function who calls this
     std::set<Function*> CallingFuncs; // The Function that the func calls
+    std::pair<size_t,size_t>& GetInlineInfo();
     void InsertAlloca(AllocaInst* ptr);
     public:
     virtual Function* clone(std::unordered_map<Operand,Operand>&) override{return this;};
@@ -297,6 +301,7 @@ class Module:public SymbolTable
     std::vector<GlobalVariblePtr> globalvaribleptr;
     std::vector<MemcpyHandle*> constants_handle;
     public:
+    std::unordered_set<Value*> globalvalue;
     std::set<Function*> hasInlinedFunc; // Func that has done inlined pass
     std::set<Function*> inlinedFunc; // Func who is inlined by pass
     std::set<Function*> Side_Effect_Funcs; // Func that has side effect
