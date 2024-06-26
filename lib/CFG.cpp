@@ -867,6 +867,8 @@ BuildInFunction *BuildInFunction::GetBuildInFunction(std::string _id) {
       return VoidType::NewVoidTypeGet();
     if (_id == "llvm.memcpy.p0.p0.i32")
       return VoidType::NewVoidTypeGet();
+    if (_id == "memcpy@plt")
+      return VoidType::NewVoidTypeGet();
     assert(0);
   };
   if (mp.find(_id) == mp.end()) {

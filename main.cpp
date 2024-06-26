@@ -43,7 +43,9 @@ int main(int argc, char **argv) {
   filename = filename.substr(lastSlashPos);
 
   std::string asmoutput_path = argv[1];
-  asmoutput_path = asmoutput_path.substr(0, asmoutput_path.length() - 2) + ".s";
+  size_t lastPointPos = asmoutput_path.find_last_of(".");
+  asmoutput_path = asmoutput_path.substr(0, lastPointPos) + ".s";
+ 
   freopen(output_path.c_str(), "a", stdout);
   copyFile("runtime.ll", output_path);
   yyin = fopen(argv[1], "r");
