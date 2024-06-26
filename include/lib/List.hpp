@@ -61,6 +61,19 @@ class list_node
         assert(!SuccNodes.empty() && "There is no succ node!");
         return SuccNodes;
     }
+
+    virtual void replace_list_node_with(derived_list_node* other){
+        if(this->prev==nullptr)fat->head=other;
+        if(this->next==nullptr)fat->tail=other;
+        if(this->prev!=nullptr)this->prev->next=other;
+        if(this->next!=nullptr)this->next->prev=other;
+        other->prev=this->prev;
+        other->next=this->next;
+        other->fat=this->fat;
+        this->prev=nullptr;
+        this->next=nullptr;
+        this->fat=nullptr;
+    }
 };
 
 template<typename derived_mylist,typename derived_list_node>
