@@ -70,10 +70,10 @@ private:
 private:
     Function* func;
     dominance* DomTree;
-    // void Init();
+    void Init();
     bool RunOnNode(dominance::Node* node);
 public:
-    CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0) { }
+    CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0) { Init(); }
     void RunOnFunction();
     bool RunOnFunc();
 };

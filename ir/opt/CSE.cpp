@@ -2,6 +2,19 @@
 #include "HashScope.hpp"
 #include "DCE.hpp"
 #include "ConstantFold.hpp"
+
+void CSE::Init()
+{
+    CurrGens = 0;
+    Del_Calls.clear();
+    AEB_Binary.clear();
+    AEB.clear();
+    AEB_Const_RHS.clear();
+    AEB_Const_LHS.clear();
+    Loads.clear();
+    Geps.clear();
+    HashMap.clear();
+}
 // 先写一下迭代计算最小不动点部分
 void CSE::RunOnFunction()
 {
@@ -31,35 +44,35 @@ void CSE::RunOnFunction()
     }
 }
 
-bool CSE::RunOnFunc()
-{
-    bool modified = false;
-    CurrGens = 0;
-    // 这里采用deque而非vector的原因是在元素个数较多的时候deque的效率更高
-    std::deque<dominance::Node*> WorkList;
-    // std::vector<dominance::Node*> DFS = DomTree->node;
-    std::queue<dominance::Node*> DFS = DomTree->DFS_Dom();
-    // 将DFS中元素压入WorkList中
-    while(!DFS.empty())
-    {
-        WorkList.push_back(DFS.front());
-        DFS.pop();
-    }
-    // WorkList.push_back(DFS.front());
-    // for (auto it = DFS.begin() + 1; it != DFS.end(); ++it)
-    //     WorkList.push_back(*it);
-    while(!WorkList.empty())
-    {
-        dominance::Node* CurrNode = WorkList.front();
-        if(!Processed.count(CurrNode))
-        {
-            modified |= RunOnNode(CurrNode);
-            Processed.insert(CurrNode);
-            WorkList.pop_front();
-        }
-    }
-    return modified;
-}
+// bool CSE::RunOnFunc()
+// {
+//     bool modified = false;
+//     CurrGens = 0;
+//     // 这里采用deque而非vector的原因是在元素个数较多的时候deque的效率更高
+//     std::deque<dominance::Node*> WorkList;
+//     // std::vector<dominance::Node*> DFS = DomTree->node;
+//     std::queue<dominance::Node*> DFS = DomTree->DFS_Dom();
+//     // 将DFS中元素压入WorkList中
+//     while(!DFS.empty())
+//     {
+//         WorkList.push_back(DFS.front());
+//         DFS.pop();
+//     }
+//     // WorkList.push_back(DFS.front());
+//     // for (auto it = DFS.begin() + 1; it != DFS.end(); ++it)
+//     //     WorkList.push_back(*it);
+//     while(!WorkList.empty())
+//     {
+//         dominance::Node* CurrNode = WorkList.front();
+//         if(!Processed.count(CurrNode))
+//         {
+//             modified |= RunOnNode(CurrNode);
+//             Processed.insert(CurrNode);
+//             WorkList.pop_front();
+//         }
+//     }
+//     return modified;
+// }
 
 bool CSE::RunOnNode(dominance::Node* node)
 {
@@ -68,58 +81,58 @@ bool CSE::RunOnNode(dominance::Node* node)
     for(User* inst : *CurrentBlock)
     {
         // Binary
-        if(inst->IsBinary())
-        {
-            Value* LHS = inst->GetOperand(0);
-            Value* RHS = inst->GetOperand(0);
+        // if(dynamic_cast<BinaryInst*>(inst))
+        // {
+        //     Value* LHS = inst->GetOperand(0);
+        //     Value* RHS = inst->GetOperand(0);
 
-            ConstantData* ConstLHS = dynamic_cast<ConstantData*>(LHS);
-            ConstantData* ConstRHS = dynamic_cast<ConstantData*>(RHS);
-            if(LHS)
-            {
-                if(AEB_Const_LHS.find(std::make_tuple(ConstLHS, RHS, inst->GetInstId())) != AEB_Const_LHS.end())
-                {
-                    std::pair<size_t, Value*>& iter = AEB_Const_LHS[std::make_tuple(ConstLHS, RHS, inst->GetInstId())];
-                    inst->RAUW(iter.second);
-                    wait_del.push_back(inst);
-                    modified = true;
-                }
-                else
-                {
-                    AEB_Const_LHS[std::make_tuple(ConstLHS, RHS, inst->GetInstId())] = std::make_pair(CurrGens, inst);
-                }
-            }
-            else if(RHS)
-            {
-                if(AEB_Const_RHS.find(std::make_tuple(LHS, ConstRHS, inst->GetInstId())) != AEB_Const_RHS.end())
-                {
-                    std::pair<size_t, Value*>& iter = AEB_Const_RHS[std::make_tuple(LHS, ConstRHS, inst->GetInstId())];
-                    inst->RAUW(iter.second);
-                    wait_del.push_back(inst);
-                    modified = true;
-                }
-                else
-                {
-                    AEB_Const_RHS[std::make_tuple(LHS, ConstRHS, inst->GetInstId())] = std::make_pair(CurrGens, inst);
-                }
-            }
-            else
-            {
-                if(AEB_Binary.find(std::make_tuple(LHS, RHS, inst->GetInstId())) != AEB_Binary.end())
-                {
-                    std::pair<size_t, Value*>& iter = AEB_Binary[std::make_tuple(LHS, RHS, inst->GetInstId())];
-                    inst->RAUW(iter.second);
-                    wait_del.push_back(inst);
-                    modified = true;
-                }
-                else
-                {
-                    AEB_Binary[std::make_tuple(LHS, RHS, inst->GetInstId())] = std::make_pair(CurrGens, inst);
-                }
-            }
-        }
+        //     ConstantData* ConstLHS = dynamic_cast<ConstantData*>(LHS);
+        //     ConstantData* ConstRHS = dynamic_cast<ConstantData*>(RHS);
+        //     if(LHS)
+        //     {
+        //         if(AEB_Const_LHS.find(std::make_tuple(ConstLHS, RHS, inst->GetInstId())) != AEB_Const_LHS.end())
+        //         {
+        //             std::pair<size_t, Value*>& iter = AEB_Const_LHS[std::make_tuple(ConstLHS, RHS, inst->GetInstId())];
+        //             inst->RAUW(iter.second);
+        //             wait_del.push_back(inst);
+        //             modified = true;
+        //         }
+        //         else
+        //         {
+        //             AEB_Const_LHS[std::make_tuple(ConstLHS, RHS, inst->GetInstId())] = std::make_pair(CurrGens, inst);
+        //         }
+        //     }
+        //     else if(RHS)
+        //     {
+        //         if(AEB_Const_RHS.find(std::make_tuple(LHS, ConstRHS, inst->GetInstId())) != AEB_Const_RHS.end())
+        //         {
+        //             std::pair<size_t, Value*>& iter = AEB_Const_RHS[std::make_tuple(LHS, ConstRHS, inst->GetInstId())];
+        //             inst->RAUW(iter.second);
+        //             wait_del.push_back(inst);
+        //             modified = true;
+        //         }
+        //         else
+        //         {
+        //             AEB_Const_RHS[std::make_tuple(LHS, ConstRHS, inst->GetInstId())] = std::make_pair(CurrGens, inst);
+        //         }
+        //     }
+        //     else
+        //     {
+        //         if(AEB_Binary.find(std::make_tuple(LHS, RHS, inst->GetInstId())) != AEB_Binary.end())
+        //         {
+        //             std::pair<size_t, Value*>& iter = AEB_Binary[std::make_tuple(LHS, RHS, inst->GetInstId())];
+        //             inst->RAUW(iter.second);
+        //             wait_del.push_back(inst);
+        //             modified = true;
+        //         }
+        //         else
+        //         {
+        //             AEB_Binary[std::make_tuple(LHS, RHS, inst->GetInstId())] = std::make_pair(CurrGens, inst);
+        //         }
+        //     }
+        // }
         // Gep
-        if(inst->GetInstId() == 21)
+        if(dynamic_cast<GetElementPtrInst*>(inst))
         {
             Value* Base = inst->GetOperand(0);
             size_t Offset = HashTool::InstHash{}(inst);
@@ -135,7 +148,7 @@ bool CSE::RunOnNode(dominance::Node* node)
             }
         }
         // Load
-        if(inst->GetInstId() == 5)
+        if(dynamic_cast<LoadInst*>(inst))
         {
             Value* Val = inst->GetOperand(0);
             if(Loads.find(std::make_pair(inst, inst->GetInstId())) != Loads.end())
@@ -150,7 +163,7 @@ bool CSE::RunOnNode(dominance::Node* node)
             }
         }
         // Store
-        if(inst->GetInstId() == 6)
+        if(dynamic_cast<StoreInst*>(inst))
         {
             Value* src = inst->GetOperand(0);
             Value* dst = inst->GetOperand(1);
