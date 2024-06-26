@@ -115,7 +115,9 @@
       "filesystem": "cpp",
       "version": "cpp",
       "execution": "cpp",
-      "stdio.h": "c"
+      "stdio.h": "c",
+      "print": "cpp",
+      "__availability": "cpp"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true,

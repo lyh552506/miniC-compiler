@@ -183,6 +183,14 @@ bool User::IsUncondInst(){
     return true;
   return false;
 }
+
+bool User::IsBinary()
+{
+  if(id >= 8 && id <=20)
+    return true;
+  return false;
+}
+
 bool User::HasSideEffect()
 {
   if(dynamic_cast<StoreInst*>(this))

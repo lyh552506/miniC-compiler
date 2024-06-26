@@ -52,15 +52,21 @@ static bool CanHandle(User* inst)
 class CSE
 {
 private:
-    std::map<User*,std::unordered_set<User*,HashTool::InstHash, HashTool::Same>> Gens;
-    std::map<User*,std::unordered_set<User*,HashTool::InstHash, HashTool::Same>> Kills;
+    size_t CurrGens;
+    std::set<CallInst*> Del_Calls;
+    std::map<std::tuple<Value*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Binary;
+    std::map<size_t, std::pair<int, Value*>> AEB;
+    std::map<std::tuple<Value*, ConstantData*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_RHS;
+    std::map<std::tuple<ConstantData*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_LHS;
+    std::map<std::pair<Value*, User::OpID>, Value*> Loads;
+    std::map<std::tuple<Value*, size_t, User::OpID>, Value*> Geps;
+    std::map<size_t, Value*> HashMap;
     // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> In;
     // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Out;
     // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Gens;
     // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Kills;
     std::set<dominance::Node*> Processed;
-    size_t CurrGens;
-
+    std::vector<User*> wait_del;
 private:
     Function* func;
     dominance* DomTree;
@@ -69,5 +75,6 @@ private:
 public:
     CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0) { }
     void RunOnFunction();
+    bool RunOnFunc();
 };
 

@@ -157,6 +157,7 @@ class User:public Value,public list_node<BasicBlock,User>
     bool IsTerminateInst();
     bool IsCondInst();
     bool IsUncondInst();
+    bool IsBinary();
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
     int GetUseIndex(Use* Op);
     inline Operand GetOperand(int i){return uselist[i]->GetValue();}

@@ -21,122 +21,156 @@ void CSE::RunOnFunction()
 
     while(!WorkList.empty())
     {
-        dominance::Node* CurrBlock = WorkList.front();
-        if(!Processed.count(CurrBlock))
+        dominance::Node* CurrNode = WorkList.front();
+        if(!Processed.count(CurrNode))
         {
-            RunOnNode(CurrBlock);
-            Processed.insert(CurrBlock);
+            RunOnNode(CurrNode);
+            Processed.insert(CurrNode);
             WorkList.pop_front();
         }
     }
 }
 
+bool CSE::RunOnFunc()
+{
+    bool modified = false;
+    CurrGens = 0;
+    // 这里采用deque而非vector的原因是在元素个数较多的时候deque的效率更高
+    std::deque<dominance::Node*> WorkList;
+    // std::vector<dominance::Node*> DFS = DomTree->node;
+    std::queue<dominance::Node*> DFS = DomTree->DFS_Dom();
+    // 将DFS中元素压入WorkList中
+    while(!DFS.empty())
+    {
+        WorkList.push_back(DFS.front());
+        DFS.pop();
+    }
+    // WorkList.push_back(DFS.front());
+    // for (auto it = DFS.begin() + 1; it != DFS.end(); ++it)
+    //     WorkList.push_back(*it);
+    while(!WorkList.empty())
+    {
+        dominance::Node* CurrNode = WorkList.front();
+        if(!Processed.count(CurrNode))
+        {
+            modified |= RunOnNode(CurrNode);
+            Processed.insert(CurrNode);
+            WorkList.pop_front();
+        }
+    }
+    return modified;
+}
+
 bool CSE::RunOnNode(dominance::Node* node)
 {
-    BasicBlock* CurrBlock = node->thisBlock;
-    if(std::distance(node->rev.begin(), node->rev.end()) != 1)
-        // TODO: 可能不处理
-        // return;
-        ++CurrGens;
-    if(!node->rev.empty())
-        if(BasicBlock* block = DomTree->GetNode(node->rev.front()).thisBlock)
-            if(auto inst = dynamic_cast<CondInst*>(block->back()))
-                if(auto cond = dynamic_cast<User*>(inst->Getuselist()[0]->usee))
-                if(CanHandle(cond))
-                {
-                    auto Condition = (dynamic_cast<BasicBlock*>(inst->Getuselist()[1]->usee) == block) ? 
-                    ConstIRBoolean::GetNewConstant(true) : ConstIRBoolean::GetNewConstant(false);
-                    AvailableValues.Insert(cond, Condition);
-                    _DEBUG(std::cerr << "Add Condition Value for '"<< cond->GetName() <<
-                    << "' as" << Condition << " in " << block->GetName() << std::endl;)
-                }
-
-    User* LoadStore = nullptr;
-    for(auto iter = CurrBlock->begin(); iter != CurrBlock->end();)
+    bool modified = false;
+    BasicBlock* CurrentBlock = node->thisBlock;
+    for(User* inst : *CurrentBlock)
     {
-        User* inst = *++iter;
-        if(DCE::isDeadInst(inst))
+        // Binary
+        if(inst->IsBinary())
         {
-            delete inst;
-            continue;
-        }
+            Value* LHS = inst->GetOperand(0);
+            Value* RHS = inst->GetOperand(0);
 
-        if(auto Binary = dynamic_cast<BinaryInst*>(inst))
-        {
-            if(auto Result = AvailableValues.lookup(Binary))
+            ConstantData* ConstLHS = dynamic_cast<ConstantData*>(LHS);
+            ConstantData* ConstRHS = dynamic_cast<ConstantData*>(RHS);
+            if(LHS)
             {
-                if(Result->GetType() == Binary->GetType())
+                if(AEB_Const_LHS.find(std::make_tuple(ConstLHS, RHS, inst->GetInstId())) != AEB_Const_LHS.end())
                 {
-                    inst->RAUW(Result);
-                    delete inst;
-                    continue;
+                    std::pair<size_t, Value*>& iter = AEB_Const_LHS[std::make_tuple(ConstLHS, RHS, inst->GetInstId())];
+                    inst->RAUW(iter.second);
+                    wait_del.push_back(inst);
+                    modified = true;
+                }
+                else
+                {
+                    AEB_Const_LHS[std::make_tuple(ConstLHS, RHS, inst->GetInstId())] = std::make_pair(CurrGens, inst);
+                }
+            }
+            else if(RHS)
+            {
+                if(AEB_Const_RHS.find(std::make_tuple(LHS, ConstRHS, inst->GetInstId())) != AEB_Const_RHS.end())
+                {
+                    std::pair<size_t, Value*>& iter = AEB_Const_RHS[std::make_tuple(LHS, ConstRHS, inst->GetInstId())];
+                    inst->RAUW(iter.second);
+                    wait_del.push_back(inst);
+                    modified = true;
+                }
+                else
+                {
+                    AEB_Const_RHS[std::make_tuple(LHS, ConstRHS, inst->GetInstId())] = std::make_pair(CurrGens, inst);
                 }
             }
             else
             {
-                AvailableValues.Insert(Binary, Binary);
+                if(AEB_Binary.find(std::make_tuple(LHS, RHS, inst->GetInstId())) != AEB_Binary.end())
+                {
+                    std::pair<size_t, Value*>& iter = AEB_Binary[std::make_tuple(LHS, RHS, inst->GetInstId())];
+                    inst->RAUW(iter.second);
+                    wait_del.push_back(inst);
+                    modified = true;
+                }
+                else
+                {
+                    AEB_Binary[std::make_tuple(LHS, RHS, inst->GetInstId())] = std::make_pair(CurrGens, inst);
+                }
             }
         }
-        else if(auto Load = dynamic_cast<LoadInst*>(inst))
+        // Gep
+        if(inst->GetInstId() == 21)
         {
-            if(auto Result = AvailableValues.lookup(Load))
+            Value* Base = inst->GetOperand(0);
+            size_t Offset = HashTool::InstHash{}(inst);
+            if(Geps.find(std::make_tuple(Base, Offset, inst->GetInstId())) != Geps.end())
             {
-                if(Result->GetType() == Load->GetType())
-                {
-                    inst->RAUW(Result);
-                    delete inst;
-                    continue;
-                }
+                inst->RAUW(Geps[std::make_tuple(Base, Offset, inst->GetInstId())]);
+                wait_del.push_back(inst);
+                modified = true;
             }
             else
             {
-                AvailableValues.Insert(Load, Load);
+                Geps[std::make_tuple(Base, Offset, inst->GetInstId())] = inst;
             }
         }
-        else if(auto Store = dynamic_cast<StoreInst*>(inst))
+        // Load
+        if(inst->GetInstId() == 5)
         {
-            if(auto Result = AvailableValues.lookup(Store))
+            Value* Val = inst->GetOperand(0);
+            if(Loads.find(std::make_pair(inst, inst->GetInstId())) != Loads.end())
             {
-                if(Result->GetType() == Store->GetType())
-                {
-                    inst->RAUW(Result);
-                    delete inst;
-                    continue;
-                }
+                inst->RAUW(Loads[std::make_pair(inst, inst->GetInstId())]);
+                wait_del.push_back(inst);
+                modified = true;
             }
             else
             {
-                AvailableValues.Insert(Store, Store);
+                Loads[std::make_pair(inst, inst->GetInstId())] = Val;
             }
         }
-        else if(auto Phi = dynamic_cast<PhiInst*>(inst))
+        // Store
+        if(inst->GetInstId() == 6)
         {
-            if(auto Result = AvailableValues.lookup(Phi))
+            Value* src = inst->GetOperand(0);
+            Value* dst = inst->GetOperand(1);
+
+            for(auto& iter : Loads)
             {
-                if(Result->GetType() == Phi->GetType())
+                if(iter.first.first == dst)
                 {
-                    inst->RAUW(Result);
-                    delete inst;
-                    continue;
+                    // Loads[std::make_pair(dst, User::OpID::Load)] = src;
+                    Loads.erase(std::make_pair(dst, User::OpID::Load));
                 }
             }
-            else
-            {
-                AvailableValues.Insert(Phi, Phi);
-            }
         }
-        else if(auto SITFP_ = dynamic_cast<SITFP*>(inst))
-        {
-            if(auto Result = AvailableValues.lookup(SITFP_))
-            {
-                if(Result->GetType() == SITFP_->GetType())
-                {
-                    inst->RAUW(Result);
-                    delete inst;
-                }
-        // if(Value* C = ConstantFolding:: )
-            }
-        }
-    
+        ++CurrGens;
     }
+    while(!wait_del.empty())
+    {
+        User* inst = wait_del.back();
+        wait_del.pop_back();
+        delete inst;
+    }
+    return modified;
 }
