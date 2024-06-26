@@ -16,12 +16,13 @@ if [ "$option" == "-run" ]; then
 #     done
 
 elif [ "$option" == "-test" ]; then 
-    file="../function_test/test.c"
+    file="BackendTest/test.sy"
     base=$(basename $file)
     base=${base%.*}
     riscv64-unknown-elf-gcc -S -o $output_dir/$base.s $input_dir/$file -O0
     riscv64-unknown-elf-as -o $output_dir/$base.o $output_dir/$base.s 
     riscv64-unknown-elf-gcc -o $output_dir/$base $output_dir/$base.o $lib_dir
+    
     echo "running: $file"
     qemu-riscv64 $output_dir/$base
     echo

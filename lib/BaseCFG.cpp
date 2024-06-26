@@ -255,6 +255,12 @@ int User::GetUseIndex(Use* Op)
 }
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 
+void User::FullReplace(User* inst){
+  assert(inst->GetType()==this->GetType()&&"Type not match!");
+  RAUW(inst);
+  replace_list_node_with(inst);
+}
+
 // change uselist[num] to val while manage use-def relation
 void User::RSUW(int num,Operand val){
   auto& uselist=Getuselist();

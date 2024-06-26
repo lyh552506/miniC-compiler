@@ -11,7 +11,6 @@ void PassManager::InitPass() {
     PreWork(i);
     m_eliedg = std::make_unique<ElimitCriticalEdge>(m_func);
     m_dom = std::make_unique<dominance>(m_func, BList.size());
-    m_lcssa = std::make_unique<LcSSA>(m_func, m_dom.get());
     // m_pre = std::make_unique<PRE>(m_dom.get(), m_func);
     m_cfgsimple = std::make_unique<cfgSimplify>(m_func, m_dom.get());
     m_adce = std::make_unique<ADCE>(m_func);
@@ -100,6 +99,7 @@ void PassManager::RunOnFunction() {
     // m_inline->PrintPass();
   }
   if (InitpassRecorder[11]) {
+    PreWork(func);
     m_reassociate->RunOnFunction();
   }
   if (InitpassRecorder[13]) {
@@ -110,6 +110,10 @@ void PassManager::RunOnFunction() {
     // m_dce->PrintPass();
   }
   if (InitpassRecorder[14]) {
+    PreWork(func);
+    dominance *d = new dominance(m_func, BList.size());
+    d->update();
+    m_lcssa = std::make_unique<LcSSA>(m_func, d);
     m_lcssa->RunOnFunction();
   }
 }

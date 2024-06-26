@@ -201,6 +201,7 @@ public:
   std::vector<Value*> Incomings;
   std::map<int,Use*> IndexToUse;
   void Del_Incomes(int CurrentNum);
+  std::map<Use*,int> UseToRecord;
   void FormatPhi();
   bool IsSame(PhiInst* phi);
   BasicBlock* GetBlock(int index);

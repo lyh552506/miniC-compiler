@@ -343,8 +343,8 @@ std::string BinaryInst::GetOperation() {
 }
 
 BinaryInst *BinaryInst::clone(std::unordered_map<Operand, Operand> &mapping) {
-  auto tmp=normal_clone<BinaryInst>(this,mapping);
-  tmp->op=op;
+  auto tmp = normal_clone<BinaryInst>(this, mapping);
+  tmp->op = op;
   return tmp;
 }
 
@@ -357,7 +357,7 @@ BinaryInst *BinaryInst::CreateInst(Operand _A, Operation __op, Operand _B,
   if (place != nullptr) {
     BasicBlock *instbb = place->GetParent();
     for (auto iter = instbb->begin(); iter != instbb->end(); ++iter)
-      if (*iter == place){
+      if (*iter == place) {
         iter.insert_before(bin);
         break;
       }
@@ -732,31 +732,30 @@ BasicBlock *BasicBlock::SplitAt(User *inst) {
   auto call_inst = dynamic_cast<CallInst *>(inst);
   assert(call_inst != nullptr && "CallInst Is Expected Here");
   auto tmp = new BasicBlock();
-  
+
   // other block:
   // %xx= phi [%??, this block]
   // should be transferred to
   // %xx=phi [%??, tmp]
-  std::vector<BasicBlock*> succ;
-  if(auto cond=back()->as<CondInst>()){
-    for(int i=1;i<3;i++)
+  std::vector<BasicBlock *> succ;
+  if (auto cond = back()->as<CondInst>()) {
+    for (int i = 1; i < 3; i++)
       succ.push_back(cond->GetOperand(i)->as<BasicBlock>());
-  }
-  else if(auto uncond=back()->as<UnCondInst>()){
+  } else if (auto uncond = back()->as<UnCondInst>()) {
     succ.push_back(uncond->GetOperand(0)->as<BasicBlock>());
   }
-  for(auto bb:succ){
-    for(auto inst:*bb){
-      if(auto phi=inst->as<PhiInst>()){
-        for(auto& [ind,rec]:phi->PhiRecord){
-          if(rec.second==this)
-            rec.second=tmp;
+  for (auto bb : succ) {
+    for (auto inst : *bb) {
+      if (auto phi = inst->as<PhiInst>()) {
+        for (auto &[ind, rec] : phi->PhiRecord) {
+          if (rec.second == this)
+            rec.second = tmp;
         }
-      }
-      else break;
+      } else
+        break;
     }
   }
-  
+
   auto [left, right] = split(inst, back());
   tmp->collect(left, right);
   return tmp;
@@ -865,6 +864,8 @@ BuildInFunction *BuildInFunction::GetBuildInFunction(std::string _id) {
     if (_id == "putf")
       return VoidType::NewVoidTypeGet();
     if (_id == "llvm.memcpy.p0.p0.i32")
+      return VoidType::NewVoidTypeGet();
+    if (_id == "memcpy@plt")
       return VoidType::NewVoidTypeGet();
     assert(0);
   };
@@ -1123,8 +1124,10 @@ PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB, Type *ty,
 
 void PhiInst::updateIncoming(Value *Income, BasicBlock *BB) {
   add_use(Income);
-  // IndexToUse[oprandNum] = uselist.back().get();
-  PhiRecord[oprandNum++] = std::make_pair(Income, BB);
+  auto &use = uselist.back();
+  PhiRecord[oprandNum] = std::make_pair(Income, BB);
+  UseToRecord[use.get()] = oprandNum;
+  oprandNum++;
 }
 /// @brief 找到当前phi函数bb块所对应的数据流
 Value *PhiInst::ReturnValIn(BasicBlock *bb) {
@@ -1136,6 +1139,11 @@ Value *PhiInst::ReturnValIn(BasicBlock *bb) {
   if (it == PhiRecord.end())
     return nullptr;
   return it->second.first;
+}
+
+BasicBlock *PhiInst::ReturnBBIn(Use *use) {
+  int num = UseToRecord[use];
+  return PhiRecord[num].second;
 }
 
 std::vector<Value *> &PhiInst::GetAllPhiVal() {
@@ -1177,7 +1185,12 @@ void PhiInst::Del_Incomes(int CurrentNum) {
       if (vec[i].get() == (*iter).get())
         vec.erase(std::remove(vec.begin(), vec.end(), (*iter)));
     PhiRecord.erase(CurrentNum);
-    this->FormatPhi();
+    auto i = std::find_if(
+        UseToRecord.begin(), UseToRecord.end(),
+        [CurrentNum](auto &ele) { return ele.second == CurrentNum; });
+    if (i != UseToRecord.end()) {
+      UseToRecord.erase(i);
+    }
     //维护PhiRecord的关系
     // std::vector<std::pair<int,std::pair<Value*,BasicBlock*>>> Defend;
     // for(auto& [_1,v]:PhiRecord)
@@ -1206,6 +1219,11 @@ void PhiInst::FormatPhi() {
     PhiRecord.erase(item.first);
   }
   for (const auto &item : Defend) {
+    auto it =
+        std::find_if(UseToRecord.begin(), UseToRecord.end(),
+                     [item](auto &ele) { return ele.second == item.first; });
+    assert(it != UseToRecord.end());
+    it->second = PhiRecord.size();
     PhiRecord.insert(std::make_pair(PhiRecord.size(), item.second));
   }
   oprandNum = PhiRecord.size();
@@ -1233,14 +1251,16 @@ Value *PhiInst::GetVal(int index) {
   return v;
 }
 
-std::pair<size_t,size_t>& Function::GetInlineInfo(){
-  //codesize,framesize
-  if(inlineinfo.first==0){
-    for(auto bb:*this){
-      for(auto inst:*bb){
+std::pair<size_t, size_t> &Function::GetInlineInfo() {
+  // codesize,framesize
+  if (inlineinfo.first == 0) {
+    for (auto bb : *this) {
+      for (auto inst : *bb) {
         inlineinfo.first++;
-        if(auto alloca=dynamic_cast<AllocaInst*>(inst))
-          inlineinfo.second+=dynamic_cast<PointerType*>(alloca->GetType())->GetSubType()->get_size();
+        if (auto alloca = dynamic_cast<AllocaInst *>(inst))
+          inlineinfo.second += dynamic_cast<PointerType *>(alloca->GetType())
+                                   ->GetSubType()
+                                   ->get_size();
       }
     }
   }

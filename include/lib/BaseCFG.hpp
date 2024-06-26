@@ -165,6 +165,7 @@ class User:public Value,public list_node<BasicBlock,User>
     bool HasSideEffect();
     void RSUW(int,Operand);
     inline OpID GetInstId(){ return id; }
+    void FullReplace(User*);
 };
 
 class ConstantData:public Value

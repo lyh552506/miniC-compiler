@@ -34,6 +34,8 @@ public:
   void AddLoopDepth(int depth) { LoopDepth += depth; }
   bool IsVisited() { return visited; }
   void setVisited(bool v) { visited = v; }
+  bool Contain(BasicBlock *bb);
+  bool Contain(LoopInfo *loop);
   iterator begin() { return SubLoops.begin(); }
   iterator end() { return SubLoops.end(); }
   reverse_iterator rbegin() { return SubLoops.rbegin(); }
@@ -83,6 +85,7 @@ public:
   void LoopAnaly();
   void CloneToBB();
   void ExpandSubLoops();
+  bool CanBeOpt() { return LoopRecord.size() != 0; }
   // only for test
   void PrintPass();
   void RunOnFunction() {
