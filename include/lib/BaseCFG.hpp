@@ -100,6 +100,7 @@ class Value
     int GetUserListSize(){return GetUserlist().GetSize();}
     template<typename T>
     T* as(){return dynamic_cast<T*>(this);}
+    std::set<Function*> Change_Funcs;
 };
 using Operand=Value*;
 // class Constant:public User

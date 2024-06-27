@@ -52,8 +52,9 @@ static bool CanHandle(User* inst)
 class CSE
 {
 private:
+    int DelNum;
     size_t CurrGens;
-    std::set<CallInst*> Del_Calls;
+    std::set<Function*> Change_Load_Funcs;
     std::map<std::tuple<Value*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Binary;
     std::map<size_t, std::pair<int, Value*>> AEB;
     std::map<std::tuple<Value*, ConstantData*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_RHS;
@@ -72,8 +73,9 @@ private:
     dominance* DomTree;
     void Init();
     bool RunOnNode(dominance::Node* node);
+    Function* Find_Change(Value* val);
 public:
-    CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0) { Init(); }
+    CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0), DelNum(0) { Init(); }
     void RunOnFunction();
     bool RunOnFunc();
 };
