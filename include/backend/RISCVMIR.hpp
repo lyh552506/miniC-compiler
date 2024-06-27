@@ -107,6 +107,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         BeginFloatMV,
         _fmv_w_x,
         _fmv_x_w,
+        _fmv_s,
         EndFloatMV,
 
         BeginFloatConvert,
@@ -152,6 +153,8 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _fle_s,
         _fgt_s,
         _fge_s,
+
+
 
         EndFloatArithmetic,
         EndFloat,
@@ -203,11 +206,15 @@ class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBa
     using RISCVframe = std::unique_ptr<RISCVFrame>;
     RISCVframe frame;
     size_t max_param_size=0;
+    /// @brief save the index of the params of func's paramlist that should be spilled
+    std::vector<int> param_need_spill;
     public:
     RISCVFunction(Value*);
     RISCVframe& GetFrame();
     size_t GetMaxParamSize();
     void SetMaxParamSize(size_t);
+    void GenerateParamNeedSpill();
+    std::vector<int>& GetParamNeedSpill();
     void printfull();
 };
 

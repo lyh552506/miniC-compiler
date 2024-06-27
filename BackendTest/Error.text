@@ -1,28 +1,20 @@
 pass_args=[]
 Timeout: testcases/functional/86_long_code2.sy
 Compiler Error: Total: 0
-Assembler Error: Total: 5
-Linker Error: Total: 13
+Assembler Error: Total: 1
+Linker Error: Total: 9
 TimeOut Function:1
 Wrong Answer: Total: 0
-AE: testcases/functional/98_matrix_mul.s
-AE: testcases/functional/99_matrix_tran.s
 AE: testcases/functional/95_float.s
-AE: testcases/functional/97_matrix_sub.s
-AE: testcases/functional/96_matrix_add.s
 LE: testcases/functional/77_substr.o
-LE: testcases/functional/79_var_name.o
 LE: testcases/functional/66_exgcd.o
 LE: testcases/functional/69_expr_eval.o
 LE: testcases/functional/86_long_code2.o
 LE: testcases/functional/04_arr_defn3.o
 LE: testcases/functional/88_many_params2.o
 LE: testcases/functional/05_arr_defn4.o
-LE: testcases/functional/54_hidden_var.o
 LE: testcases/functional/63_big_int_mul.o
-LE: testcases/functional/90_many_locals.o
 LE: testcases/functional/84_long_array2.o
-LE: testcases/functional/87_many_params.o
 
 pass_args=["--mem2reg"]
 Timeout: testcases/functional/86_long_code2.sy

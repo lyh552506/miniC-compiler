@@ -115,7 +115,8 @@
       "filesystem": "cpp",
       "version": "cpp",
       "execution": "cpp",
-      "stdio.h": "c"
+      "stdio.h": "c",
+      "*.sy": "c"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true,

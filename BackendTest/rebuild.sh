@@ -1,4 +1,4 @@
 cd /home/nanqin/compiler/SB-compiler/build
-rm -rf*
+rm -rf *
 cmake ..
 make

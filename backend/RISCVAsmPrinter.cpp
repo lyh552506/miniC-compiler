@@ -146,7 +146,6 @@ void dataSegment::Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, myli
     it.insert_before(lui);
     it.insert_before(flw);
 
-    /// @todo
     for (int i=0; i<inst->GetOperandSize(); i++) {
         while(inst->GetOperand(i) == used) {
             inst->SetOperand(i,flw_rd);

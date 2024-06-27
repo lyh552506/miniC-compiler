@@ -11,10 +11,10 @@ pass_args=[] # "--mem2reg","--constprop","--reassociate","--simplifycfg"
 
 # # gcc test
 # # riscv64-unknown-elf-gcc -S 
-# os.rename(test_path,test_path.replace(".sy", ".c"))
-# compile_args=["riscv64-unknown-elf-gcc", "-S", "-o", test_path.replace(".sy", ".gcc.s"), test_path.replace(".sy", ".c")]
-# ret = subprocess.run(compile_args)
-# os.rename(test_path.replace(".sy", ".c"),test_path)
+os.rename(test_path,test_path.replace(".sy", ".c"))
+compile_args=["riscv64-unknown-elf-gcc", "-S", "-o", test_path.replace(".sy", ".gcc.s"), test_path.replace(".sy", ".c")]
+ret = subprocess.run(compile_args)
+os.rename(test_path.replace(".sy", ".c"),test_path)
 
 
 # compiler test

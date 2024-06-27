@@ -65,9 +65,46 @@ size_t RISCVFunction::GetMaxParamSize() {
 void RISCVFunction::SetMaxParamSize(size_t size) {
     max_param_size=size;
 }
+
+void RISCVFunction::GenerateParamNeedSpill() {
+    using ParamPtr=std::unique_ptr<Value>;
+    BuildInFunction* buildin;
+    if(buildin = dynamic_cast<BuildInFunction*>(func)) {
+        param_need_spill = {};
+        return;
+    }
+    int IntMax=8, FloatMax=8;
+    Function* func=dynamic_cast<Function*>(this->func);
+    std::vector<ParamPtr>& params = func->GetParams();
+    int index =0;
+    for(auto &i : params) {
+        if(i->GetType()==FloatType::NewFloatTypeGet()) {
+            if(FloatMax) {
+                FloatMax--;
+            }
+            else {
+                this->param_need_spill.push_back(index);
+            }
+        }
+        // int & ptr type
+        else {
+            if(IntMax) {
+                IntMax--;
+            }
+            else {
+                this->param_need_spill.push_back(index);
+            }
+        }
+        index++;
+    }
+}
+
+std::vector<int>& RISCVFunction::GetParamNeedSpill() {return this->param_need_spill;}
+
 // std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects(){
 //     return frame;
 // }
+
 
 RISCVBasicBlock::RISCVBasicBlock(std::string _name):NamedMOperand(_name,RISCVType::riscv_none){}
 
@@ -110,6 +147,7 @@ void RISCVBasicBlock::push_before_branch(RISCVMIR* minst) {
 
 RISCVFunction::RISCVFunction(Value* _func):RISCVGlobalObject(_func->GetType(),_func->GetName()),func(_func){
     frame.reset(new RISCVFrame(this));
+    GenerateParamNeedSpill();
 }
 
 
