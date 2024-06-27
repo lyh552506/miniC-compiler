@@ -34,7 +34,7 @@ public:
     int dfnum;  //记录dfs序
     int father; //此处是dfs序中遍历的father，区别rev链表
     int sdom;
-    int idom;
+    int idom; // 记录支配树父亲节点
     int DfsIn, DfsOut;
     int visited;
     BasicBlock *thisBlock;
@@ -82,7 +82,7 @@ public:
   int &updateBlockNum() { return block_num; }
   void RunOnFunction();
   void UpdateRevDst(int current, int pred);
-  const std::queue<Node *>& DFS_Dom();
+  const std::queue<Node *> &DFS_Dom();
 
 private:
   void init();
