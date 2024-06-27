@@ -165,6 +165,7 @@ class User:public Value,public list_node<BasicBlock,User>
     void RSUW(int,Operand);
     inline OpID GetInstId(){ return id; }
     void FullReplace(User*);
+    User* CloneInst();   //此处是复制一个全新的
 };
 
 class ConstantData:public Value
