@@ -64,6 +64,7 @@ class CSE
     Function* func;
     dominance* DomTree;
 private:
+    bool Is_Gep_Changed(User* inst, BasicBlock* Curr_Block);
     void Init();
     bool RunOnNode(dominance::Node* node, info& block_in, info& block_out);
     Function* Find_Change(Value* val, info* Info);
