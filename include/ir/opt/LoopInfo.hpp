@@ -130,7 +130,7 @@ private:
   std::vector<BasicBlock *> *bbs;      //提供num to bb map
   std::vector<std::vector<int>> *Dest; // CFG中的后继
   std::vector<BasicBlock *> PostOrder;
-  std::vector<LoopInfo *> LoopRecord;
+  std::vector<LoopInfo *> LoopRecord; //保证了嵌套层数越高，越靠前
   std::map<BasicBlock *, LoopInfo *> Loops;
   bool AlreadyGetInfo = false;
   int index = 0;
