@@ -117,7 +117,10 @@
       "execution": "cpp",
       "stdio.h": "c",
       "print": "cpp",
-      "__availability": "cpp"
+      "__availability": "cpp",
+      "__bits": "cpp",
+      "__string": "cpp",
+      "__tuple": "cpp"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true,

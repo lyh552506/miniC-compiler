@@ -98,13 +98,14 @@ void PassManager::RunOnFunction() {
     m_inline->Run();
     // m_inline->PrintPass();
   }
+  if (InitpassRecorder[13]) {
+    m_cse->RunOnFunc();
+  }
   if (InitpassRecorder[11]) {
     PreWork(func);
     m_reassociate->RunOnFunction();
   }
-  if (InitpassRecorder[13]) {
-    m_cse->RunOnFunction();
-  }
+
   if (InitpassRecorder[3]) {
     m_dce->RunOnFunction();
     // m_dce->PrintPass();

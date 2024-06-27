@@ -2,6 +2,7 @@
 #include "HashScope.hpp"
 #include "DCE.hpp"
 #include "ConstantFold.hpp"
+#include <algorithm>
 
 void CSE::Init()
 {
@@ -138,12 +139,12 @@ bool CSE::RunOnNode(dominance::Node* node, info& block_in, info& block_out)
             if(block_in.Loads.find(Val) != block_in.Loads.end())
             {
                 Value* val = block_in.Loads[Val];
-                Function* change_func = Find_Change(Val, &block_in);
+                CallInst* change_call = Find_Change(Val, &block_in);
                 if(User* load = dynamic_cast<User*>(val))
                 {
                     if(DomTree->dominates(load->GetParent(), CurrentBlock))
                     {
-                        if(!change_func)
+                        if(!change_call)
                         {
                             inst->RAUW(block_in.Loads[Val]);
                             wait_del.push_back(inst);
@@ -151,7 +152,7 @@ bool CSE::RunOnNode(dominance::Node* node, info& block_in, info& block_out)
                         }
                         else
                         {
-                            block_in.Funcs.erase(change_func);
+                            block_in.Calls.erase(change_call);
                             block_in.Loads[Val] = inst;
                         }
                     }
@@ -181,8 +182,8 @@ bool CSE::RunOnNode(dominance::Node* node, info& block_in, info& block_out)
 
         // Call
         if(CallInst* Call = dynamic_cast<CallInst*>(inst))
-                if(Function* func = dynamic_cast<Function*>(Call->Getuselist()[0]->usee))
-                    block_in.Funcs.insert(func);
+                if(dynamic_cast<Function*>(Call->Getuselist()[0]->usee))
+                    block_in.Calls.insert(Call);
     }
     block_out = block_in;
     while(!wait_del.empty())
@@ -194,12 +195,31 @@ bool CSE::RunOnNode(dominance::Node* node, info& block_in, info& block_out)
     return modified;
 }
 
-Function* CSE::Find_Change(Value* val, info* Info)
+CallInst* CSE::Find_Change(Value* val, info* Info)
 {
-    for(Function* item : Info->Funcs)
+    for(CallInst* item : Info->Calls)
     {
-        if(val->Change_Funcs.find(item) != val->Change_Funcs.end())
-            return item;
+        Function* Call_Func = dynamic_cast<Function*>(item->Getuselist()[0]->usee);
+        if(dynamic_cast<GetElementPtrInst*>(val))
+        {
+            auto &args = item->Getuselist();
+            auto iter = std::find_if(args.begin(), args.end(), 
+            [val](const User::UsePtr& usePtr){ return usePtr->usee == val; });
+            int index = 0;
+            if(iter != args.end())
+            {
+                index = std::distance(args.begin(), iter);
+                Value* param = Call_Func->GetParams()[index - 1].get();
+                if(param->Change_Funcs.find(Call_Func) != param->Change_Funcs.end())
+                    return item;
+            } 
+            
+        }
+        else if(val->isGlobVal())
+        {
+            if(val->Change_Funcs.find(Call_Func) != val->Change_Funcs.end())
+                return item;
+        }
     }
     return nullptr;
 }

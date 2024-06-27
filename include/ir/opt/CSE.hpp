@@ -44,27 +44,31 @@ namespace HashTool
 
 class CSE
 {
-    size_t CurrGens;
-    std::set<Function*> Change_Load_Funcs;
 
-    std::map<std::tuple<Value*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Binary;
-    std::map<std::tuple<Value*, ConstantData*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_RHS;
-    std::map<std::tuple<ConstantData*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_LHS;
+    typedef struct CSE_Info
+    {
+        std::map<std::tuple<Value*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Binary;
+        std::map<std::tuple<Value*, ConstantData*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_RHS;
+        std::map<std::tuple<ConstantData*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_LHS;
 
-    std::map<std::pair<Value*, User::OpID>, Value*> Loads;
-    std::map<std::tuple<Value*, size_t, User::OpID>, Value*> Geps;
+        std::map<Value*, Value*> Loads;
+        std::map<std::tuple<Value*, size_t, User::OpID>, Value*> Geps;
+        std::set<Function*> Funcs;
+    }info;
 
     std::set<dominance::Node*> Processed;
 
+    std::map<BasicBlock*, info*> BlockOut;
+    std::map<BasicBlock*, info*> BlockIn;
     std::vector<User*> wait_del;
     Function* func;
     dominance* DomTree;
 private:
     void Init();
-    bool RunOnNode(dominance::Node* node);
-    Function* Find_Change(Value* val);
+    bool RunOnNode(dominance::Node* node, info& block_in, info& block_out);
+    Function* Find_Change(Value* val, info* Info);
 public:
-    CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0) { Init(); }
+    CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom) { Init(); }
     bool RunOnFunc();
 };
 
