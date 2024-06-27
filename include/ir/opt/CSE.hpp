@@ -41,42 +41,30 @@ namespace HashTool
     };
 }
 
-static bool CanHandle(User* inst)
-{
-    if(inst->GetInstId() > 7 && inst->GetInstId() < 22)
-        return true;
-    if(dynamic_cast<CallInst*>(inst) && !inst->HasSideEffect())
-        return true;
-}
 
 class CSE
 {
-private:
-    int DelNum;
     size_t CurrGens;
     std::set<Function*> Change_Load_Funcs;
+
     std::map<std::tuple<Value*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Binary;
-    std::map<size_t, std::pair<int, Value*>> AEB;
     std::map<std::tuple<Value*, ConstantData*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_RHS;
     std::map<std::tuple<ConstantData*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_LHS;
+
     std::map<std::pair<Value*, User::OpID>, Value*> Loads;
     std::map<std::tuple<Value*, size_t, User::OpID>, Value*> Geps;
-    std::map<size_t, Value*> HashMap;
-    // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> In;
-    // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Out;
-    // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Gens;
-    // std::unordered_map<User*, std::unordered_set<User*, InstHashTable, Same>> Kills;
+
     std::set<dominance::Node*> Processed;
+
     std::vector<User*> wait_del;
-private:
     Function* func;
     dominance* DomTree;
+private:
     void Init();
     bool RunOnNode(dominance::Node* node);
     Function* Find_Change(Value* val);
 public:
-    CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0), DelNum(0) { Init(); }
-    void RunOnFunction();
+    CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom), CurrGens(0) { Init(); }
     bool RunOnFunc();
 };
 

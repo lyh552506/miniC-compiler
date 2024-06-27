@@ -7,12 +7,10 @@ void CSE::Init()
 {
     CurrGens = 0;
     AEB_Binary.clear();
-    AEB.clear();
     AEB_Const_RHS.clear();
     AEB_Const_LHS.clear();
     Loads.clear();
     Geps.clear();
-    HashMap.clear();
     Change_Load_Funcs.clear();
 }
 
@@ -126,11 +124,8 @@ bool CSE::RunOnNode(dominance::Node* node)
                 Geps[std::make_tuple(Base, Offset, inst->GetInstId())] = inst;
             }
         }
-        // TODO: There is a situation that whether SideEffectCall is before \
-                 the load which has changed the value of the loaded val
 
-        // 考虑一个处理方法？ 沿着 DFS 顺序下降的时候碰到一个 CallInst 时候，选择考虑
-        // Load
+        //Load
         if(dynamic_cast<LoadInst*>(inst))
         {
             Value* Val = inst->GetOperand(0);
@@ -198,7 +193,6 @@ bool CSE::RunOnNode(dominance::Node* node)
         User* inst = wait_del.back();
         wait_del.pop_back();
         delete inst;
-        ++DelNum;
     }
     return modified;
 }
