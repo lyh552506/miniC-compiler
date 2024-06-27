@@ -17,24 +17,7 @@ void copyFile(const std::string &sourcePath,
   std::ofstream destination(destinationPath, std::ios::binary);
   destination << source.rdbuf();
 }
-enum PassName {
-  mem2reg,
-  pre,
-  constprop,
-  dce,
-  adce,
-  loops,
-  help,
-  simplifycfg,
-  ece,
-  Inline,
-  global2local,
-  sccp,
-  reassociate,
-  cse,
-  lcssa,
-  licm
-};
+
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"pre", no_argument, 0, 1},
                                        {"constprop", no_argument, 0, 2},
@@ -82,49 +65,49 @@ int main(int argc, char **argv) {
       std::cerr << "No Such Opt!" << std::endl;
       exit(0);
     case mem2reg:
-      pass_manager->IncludePass(0);
+      pass_manager->IncludePass(mem2reg);
       break;
     case pre:
-      pass_manager->IncludePass(1);
+      pass_manager->IncludePass(pre);
       break;
     case constprop:
-      pass_manager->IncludePass(2);
+      pass_manager->IncludePass(constprop);
       break;
     case dce:
-      pass_manager->IncludePass(3);
+      pass_manager->IncludePass(dce);
       break;
     case adce:
-      pass_manager->IncludePass(4);
+      pass_manager->IncludePass(adce);
       break;
     case loops:
-      pass_manager->IncludePass(5);
+      pass_manager->IncludePass(loops);
       break;
     case help:
       std::cerr << "help" << std::endl;
       break;
     case simplifycfg:
-      pass_manager->IncludePass(7);
+      pass_manager->IncludePass(simplifycfg);
       break;
     case ece:
-      pass_manager->IncludePass(8);
+      pass_manager->IncludePass(ece);
       break;
     case Inline:
-      pass_manager->IncludePass(9);
+      pass_manager->IncludePass(Inline);
       break;
     case global2local:
-      pass_manager->IncludePass(10);
+      pass_manager->IncludePass(global2local);
       break;
     case sccp:
-      pass_manager->IncludePass(11);
+      pass_manager->IncludePass(sccp);
       break;
     case reassociate:
-      pass_manager->IncludePass(12);
+      pass_manager->IncludePass(reassociate);
       break;
     case cse:
-      pass_manager->IncludePass(13);
+      pass_manager->IncludePass(cse);
       break;
     case lcssa:
-      pass_manager->IncludePass(14);
+      pass_manager->IncludePass(lcssa);
       break;
     case licm:
       pass_manager->IncludePass(licm);

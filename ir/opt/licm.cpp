@@ -29,7 +29,7 @@ bool LICMPass::licmSink(const std::set<BasicBlock *> &contain, LoopInfo *l,
   if (contain.find(bb) == contain.end())
     return false;
   //找到支配最低节点
-  for (auto des : m_dom->GetNode(bb->num).des) {
+  for (auto des : m_dom->GetNode(bb->num).idom_child) {
     auto child = m_dom->GetNode(des).thisBlock;
     change |= licmSink(contain, l, child);
   }
@@ -99,6 +99,7 @@ bool LICMPass::UserOutSideLoop(const std::set<BasicBlock *> &contain, User *I,
                                LoopInfo *curloop) {
   for (auto use : I->GetUserlist()) {
     auto userbb = use->GetUser()->GetParent();
+    //f()
     if (contain.find(userbb) != contain.end())
       return false;
   }

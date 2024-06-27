@@ -6,8 +6,9 @@
 
 class LICMPass : PassManagerBase {
 public:
-  LICMPass(dominance *dom, Function *func)
-      : m_dom(dom), m_func(func) {}
+  LICMPass(dominance *dom, Function *func) : m_dom(dom), m_func(func) {
+    loop = new LoopAnalysis(func, dom);
+  }
   void RunOnFunction();
   void RunOnLoop(LoopInfo *l);
   void PrintPass(){};
