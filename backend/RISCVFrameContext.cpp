@@ -84,8 +84,11 @@ StackRegister::StackRegister(RISCVFrameObject* obj, VirRegister* _vreg, int _off
 StackRegister::StackRegister(PhyRegister::PhyReg _regenum, int _offset)
     : Register(riscv_ptr), offset(_offset) {
   reg = PhyRegister::GetPhyReg(_regenum);
-}StackRegister::StackRegister(VirRegister* _vreg, int _offset)
+}
+
+StackRegister::StackRegister(VirRegister* _vreg, int _offset)
     : Register(riscv_ptr), offset(_offset), reg(_vreg) {}
+
 void StackRegister::SetOffset(int _offset) { offset = _offset; }
 RISCVFrameObject*& StackRegister::GetParent() {return parent;}
 VirRegister* StackRegister::GetVreg() { 

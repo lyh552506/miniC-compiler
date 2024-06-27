@@ -17,4 +17,5 @@ void RegAllocImpl::RunGCpass(){
     legal.run();
 
     gc->RunOnFunc();
+    delete gc;
 }
