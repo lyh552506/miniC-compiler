@@ -1,15 +1,22 @@
 #include "LoopSimplify.hpp"
+#include "BaseCFG.hpp"
 #include "CFG.hpp"
+#include "Type.hpp"
 #include "dominant.hpp"
+#include "my_stl.hpp"
+#include <cassert>
+#include <set>
 
 void LoopSimplify::RunOnFunction() {
   loopAnlay->RunOnFunction();
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
-    SimplifyLoosImpl(*iter);
+    SimplifyLoopsImpl(*iter);
+  // for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
+  //   CaculateLoopInfo(*iter);
 }
 
-void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
+void LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {
   std::vector<LoopInfo *> WorkLists;
   WorkLists.push_back(loop);
   //将子循环递归的加入进来
@@ -31,7 +38,7 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       bool NeedToFormat = false;
       BasicBlock *bb = exit[index];
       for (auto rev : m_dom->GetNode(bb->num).rev) {
-        if (!loopAnlay->IsLoopIncludeBB(L,rev))
+        if (!loopAnlay->IsLoopIncludeBB(L, rev))
           NeedToFormat = true;
       }
       if (!NeedToFormat)
@@ -43,18 +50,22 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
     }
     // step 3: deal with latch/back-edge
     BasicBlock *header = L->GetHeader();
+    std::set<BasicBlock *> contain{L->GetLoopBody().begin(),
+                                   L->GetLoopBody().end()};
+    contain.insert(L->GetHeader());
     std::vector<BasicBlock *> Latch;
     for (auto rev : m_dom->GetNode(header->num).rev) {
       auto B = m_dom->GetNode(rev).thisBlock;
-      if (B != preheader && loopAnlay->LookUp(B) == L)
+      if (B != preheader && contain.find(B) != contain.end())
         Latch.push_back(m_dom->GetNode(rev).thisBlock);
     }
     if (Latch.size() > 1) {
       // if (Latch.size() < 8) {
       //   SplitNewLoop(loop);
-
       // }
       FormatLatch(loop, preheader, Latch);
+    } else {
+      loop->setLatch(Latch[0]);
     }
   }
 }
@@ -66,8 +77,8 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
   for (auto rev : m_dom->GetNode(Header->num).rev)
     if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != loop)
       OutSide.push_back(m_dom->GetNode(rev).thisBlock);
-  //assert(OutSide.size() > 1);
-  // phase 2: insert the preheader
+  // assert(OutSide.size() > 1);
+  //  phase 2: insert the preheader
   BasicBlock *preheader = new BasicBlock();
   preheader->SetName(preheader->GetName() + "_preheader");
   m_func->InsertBlock(Header, preheader);
@@ -155,18 +166,19 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
       }
     }
   }
-  // outside传入的数据流对应的值为一个
+  // 传入的数据流对应的值为一个
   if (ComingVal) {
-    std::vector<int> Erase;
+    // std::vector<int> Erase;
     for (auto &[_1, tmp] : phi->PhiRecord) {
       if (worklist.find(tmp.second) != worklist.end()) {
-        Erase.push_back(_1);
+        tmp.second = target;
       }
     }
-    for (auto i : Erase)
-      phi->Del_Incomes(i);
-    phi->updateIncoming(ComingVal, target);
-    phi->FormatPhi();
+    // for (auto i : Erase)
+    //   phi->Del_Incomes(i);
+    // phi->updateIncoming(ComingVal, target);
+    // phi->FormatPhi();
+
     return;
   }
   //对应的传入值有多个
@@ -262,6 +274,7 @@ LoopInfo *LoopSimplify::SplitNewLoop(LoopInfo *L) {
   }
   UpdateInfo(Outer, out, L->GetHeader());
   // TODO
+  return nullptr;
 }
 
 void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
@@ -274,4 +287,29 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
   }
   m_dom->GetNode(head->num).rev.push_front(insert->num);
   m_dom->GetNode(insert->num).des.push_front(head->num);
+}
+
+void LoopSimplify::CaculateLoopInfo(LoopInfo *loop) {
+  const auto Header = loop->GetHeader();
+  const auto Latch = loop->GetLatch();
+  const auto br = dynamic_cast<CondInst *>(*(Header->rbegin()));
+  assert(br);
+  const auto cmp = dynamic_cast<BinaryInst *>(GetOperand(br, 0));
+  if (cmp->GetTypeEnum() == IR_Value_Float)
+    loop->setLoopFpTp();
+  Value *initial = nullptr;
+  //在reassociate合法化完成后做
+  if (!dynamic_cast<ConstantData *>(GetOperand(cmp, 1)))
+    return;
+  auto constdata = dynamic_cast<ConstantData *>(GetOperand(cmp, 1));
+  if (auto constint = dynamic_cast<ConstIRInt *>(constdata))
+    loop->setBound(constint->GetVal());
+  if (auto constfloat = dynamic_cast<ConstIRFloat *>(constdata))
+    loop->setBound(constfloat->GetVal());
+  initial = GetOperand(cmp, 0);
+  if (auto sitfp = dynamic_cast<SITFP *>(initial))
+    initial = GetOperand(sitfp, 0);
+  if (auto fptsi = dynamic_cast<FPTSI *>(initial))
+    initial = GetOperand(fptsi, 0);
+  //assert(dynamic_cast<PhiInst *>(initial));
 }
