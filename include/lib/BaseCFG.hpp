@@ -8,9 +8,11 @@
 #include <cxxabi.h>
 #include "Type.hpp"
 #include <string>
+#include <set>
 class User;
 class Value;
 class BasicBlock;
+class Function;
 class Use
 {
     public:
@@ -98,9 +100,9 @@ class Value
     bool isConstZero();
     bool isConstOne();
     int GetUserListSize(){return GetUserlist().GetSize();}
+    std::set<Function*> Change_Funcs;
     template<typename T>
     T* as(){return dynamic_cast<T*>(this);}
-    std::set<Function*> Change_Funcs;
 };
 using Operand=Value*;
 // class Constant:public User
