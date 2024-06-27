@@ -38,6 +38,21 @@ class PhyRegister:public Register{
     void print();
     std::string GetName();
     bool isPhysical()final{return true;};
+    /// @return (1<<regenum), if valid 
+    uint64_t GetPhyRegMask();
+    bool isCallerSaved();
+    bool isCalleeSaved();
+};
+
+namespace PhyRegMask{
+    /// for a phyregister 
+    PhyRegister* GetPhyReg(uint64_t);
+    uint64_t GetPhyRegMask(PhyRegister*);
+    bool isCallerSaved(uint64_t);
+    bool isCalleeSaved(uint64_t);
+    
+    /// for a phyregister group
+    void visit(uint64_t,std::function<void(uint64_t&)>);
 };
 
 class VirRegister:public Register{
