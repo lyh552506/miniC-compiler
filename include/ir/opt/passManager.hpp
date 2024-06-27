@@ -21,6 +21,7 @@
 #include "lcssa.hpp"
 #include "reassociate.hpp"
 #include <memory>
+#include "licm.hpp"
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {}
@@ -55,4 +56,5 @@ private:
   std::unique_ptr<Reassociate> m_reassociate;
   std::unique_ptr<CSE> m_cse;
   std::unique_ptr<LcSSA> m_lcssa;
+  //std::unique_ptr<LICMPass> m_licm;
 };

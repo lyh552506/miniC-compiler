@@ -1,3 +1,4 @@
+#include "ConstantProp.hpp"
 #include "RISCVLowering.hpp"
 #include "dominant.hpp"
 #include "parser.hpp"
@@ -16,7 +17,24 @@ void copyFile(const std::string &sourcePath,
   std::ofstream destination(destinationPath, std::ios::binary);
   destination << source.rdbuf();
 }
-
+enum PassName {
+  mem2reg,
+  pre,
+  constprop,
+  dce,
+  adce,
+  loops,
+  help,
+  simplifycfg,
+  ece,
+  Inline,
+  global2local,
+  sccp,
+  reassociate,
+  cse,
+  lcssa,
+  licm
+};
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"pre", no_argument, 0, 1},
                                        {"constprop", no_argument, 0, 2},
@@ -31,7 +49,8 @@ static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"sccp", no_argument, 0, 12},
                                        {"reassociate", no_argument, 0, 11},
                                        {"cse", no_argument, 0, 13},
-                                       {"lcssa", no_argument, 0, 14}, 
+                                       {"lcssa", no_argument, 0, 14},
+                                       {"licm", no_argument, 0, 15},
                                        {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
@@ -45,7 +64,7 @@ int main(int argc, char **argv) {
   std::string asmoutput_path = argv[1];
   size_t lastPointPos = asmoutput_path.find_last_of(".");
   asmoutput_path = asmoutput_path.substr(0, lastPointPos) + ".s";
- 
+
   freopen(output_path.c_str(), "a", stdout);
   copyFile("runtime.ll", output_path);
   yyin = fopen(argv[1], "r");
@@ -62,55 +81,58 @@ int main(int argc, char **argv) {
     default:
       std::cerr << "No Such Opt!" << std::endl;
       exit(0);
-    case 0:
+    case mem2reg:
       pass_manager->IncludePass(0);
       break;
-    case 1:
+    case pre:
       pass_manager->IncludePass(1);
       break;
-    case 2:
+    case constprop:
       pass_manager->IncludePass(2);
       break;
-    case 3:
+    case dce:
       pass_manager->IncludePass(3);
       break;
-    case 4:
+    case adce:
       pass_manager->IncludePass(4);
       break;
-    case 5:
+    case loops:
       pass_manager->IncludePass(5);
       break;
-    case 6:
+    case help:
       std::cerr << "help" << std::endl;
       break;
-    case 7:
+    case simplifycfg:
       pass_manager->IncludePass(7);
       break;
-    case 8:
+    case ece:
       pass_manager->IncludePass(8);
       break;
-    case 9:
+    case Inline:
       pass_manager->IncludePass(9);
       break;
-    case 10:
+    case global2local:
       pass_manager->IncludePass(10);
       break;
-    case 11:
+    case sccp:
       pass_manager->IncludePass(11);
       break;
-    case 12:
+    case reassociate:
       pass_manager->IncludePass(12);
       break;
-    case 13:
+    case cse:
       pass_manager->IncludePass(13);
       break;
-    case 14:
+    case lcssa:
       pass_manager->IncludePass(14);
+      break;
+    case licm:
+      pass_manager->IncludePass(licm);
       break;
     }
   }
   pass_manager->InitPass();
-  
+
   Singleton<Module>().Test();
   fflush(stdout);
   fclose(stdout);

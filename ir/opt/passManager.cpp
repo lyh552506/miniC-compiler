@@ -116,6 +116,11 @@ void PassManager::RunOnFunction() {
     m_lcssa = std::make_unique<LcSSA>(m_func, d);
     m_lcssa->RunOnFunction();
   }
+  if (InitpassRecorder[15]) {
+    // m_licm = std::make_unique<LICMPass>(m_dom.get(), m_func);
+    auto m_licm = new LICMPass(m_dom.get(), m_func);
+    m_licm->RunOnFunction();
+  }
 }
 
 void PassManager::IncludePass(int pass) { InitpassRecorder[pass] = 1; }
