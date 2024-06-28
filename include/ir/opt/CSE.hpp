@@ -47,26 +47,26 @@ class CSE
 
     typedef struct CSE_Info
     {
-        std::map<std::tuple<Value*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Binary;
-        std::map<std::tuple<Value*, ConstantData*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_RHS;
-        std::map<std::tuple<ConstantData*, Value*, User::OpID>, std::pair<size_t, Value*>> AEB_Const_LHS;
-
+        std::map<std::tuple<Value*, Value*, User::OpID>, Value*> AEB_Binary;
+    
         std::map<Value*, Value*> Loads;
-        std::map<std::tuple<Value*, size_t, User::OpID>, Value*> Geps;
+        std::map<std::pair<Value*, size_t>, Value*> Geps;
         std::set<Function*> Funcs;
     }info;
 
     std::set<dominance::Node*> Processed;
-
+    std::set<BasicBlock*> Processed_Blocks;
     std::map<BasicBlock*, info*> BlockOut;
     std::map<BasicBlock*, info*> BlockIn;
     std::vector<User*> wait_del;
     Function* func;
     dominance* DomTree;
 private:
+    void Process_Multiple_In(info& block_in, std::vector<info*> args);
     bool Is_Gep_Changed(User* inst, BasicBlock* Curr_Block);
     void Init();
     bool RunOnNode(dominance::Node* node, info& block_in, info& block_out);
+    bool RunOnBlock(BasicBlock* block, info& block_in, info&block_out);
     Function* Find_Change(Value* val, info* Info);
 public:
     CSE(Function* m_func, dominance* dom) : func(m_func), DomTree(dom) { Init(); }
