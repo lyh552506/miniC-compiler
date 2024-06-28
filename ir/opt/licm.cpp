@@ -1,5 +1,6 @@
 #include "licm.hpp"
-
+#include "CFG.hpp"
+#include <cassert>
 
 void LICMPass::RunOnFunction() {
   loop->RunOnFunction();
@@ -87,16 +88,13 @@ bool LICMPass::licmHoist(const std::set<BasicBlock *> &contain, LoopInfo *l,
       auto prehead = loop->GetPreHeader(l);
       assert(prehead);
       auto New_inst = inst->CloneInst();
-      for (auto it = prehead->begin(); it != prehead->end(); ++it) {
-        if (dynamic_cast<PhiInst *>(*it))
-          continue;
-        _DEBUG(std::cerr << "LICM Move Invariant: " << inst->GetName()
-                         << " To PreHeader" << prehead->GetName() << std::endl;)
-        it.insert_before(New_inst);
-        inst->RAUW(New_inst);
-        delete inst;
-        changed = true;
-      }
+      auto it = prehead->rbegin();
+      _DEBUG(std::cerr << "LICM Move Invariant: " << inst->GetName()
+                       << " To PreHeader" << prehead->GetName() << std::endl;)
+      it.insert_before(New_inst);
+      inst->RAUW(New_inst);
+      delete inst;
+      changed = true;
     }
   }
   for (auto des : m_dom->GetNode(bb->num).idom_child) {
@@ -150,7 +148,7 @@ bool LICMPass::IsLoopInvariant(const std::set<BasicBlock *> &contain, User *I,
 }
 
 bool LICMPass::IsDomExit(User *I, std::vector<BasicBlock *> &exit) {
-  assert(exit.empty());
+  assert(!exit.empty());
   auto targetbb = I->GetParent();
   for (auto ex : exit) {
     if (!m_dom->dominates(targetbb, ex))

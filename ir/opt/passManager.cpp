@@ -73,6 +73,10 @@ void PassManager::RunOnFunction() {
   if (InitpassRecorder[constprop]) {
     m_constprop->RunOnFunction();
     // m_constprop->PrintPass();
+  }  
+  if (InitpassRecorder[dce]) {
+    m_dce->RunOnFunction();
+    // m_dce->PrintPass();
   }
   if (InitpassRecorder[sccp]) {
     m_sccp->RunOnFunction(m_func);
@@ -90,7 +94,7 @@ void PassManager::RunOnFunction() {
   if (InitpassRecorder[loops]) {
     PreWork(func);
     dominance *d = new dominance(m_func, BList.size());
-    d->update();
+    d->RunOnFunction();
     m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
     m_loopsimple->RunOnFunction();
     m_loopsimple->PrintPass();
@@ -106,17 +110,14 @@ void PassManager::RunOnFunction() {
   if (InitpassRecorder[cse]) {
     m_cse->RunOnFunction();
   }
-  if (InitpassRecorder[dce]) {
-    m_dce->RunOnFunction();
-    // m_dce->PrintPass();
-  }
+
   if (InitpassRecorder[lcssa]) {
     PreWork(func);
     dominance *d = new dominance(m_func, BList.size());
     d->update();
     m_lcssa = std::make_unique<LcSSA>(m_func, d);
     m_lcssa->RunOnFunction();
-    m_eliedg->RunOnFunction();
+    //m_eliedg->RunOnFunction();
   }
   if (InitpassRecorder[licm]) {
     // m_licm = std::make_unique<LICMPass>(m_dom.get(), m_func);
