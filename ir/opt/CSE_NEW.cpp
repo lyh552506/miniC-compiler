@@ -29,7 +29,7 @@ bool CSE::RunOnFunc()
         else if(CurrNode->iter != CurrNode->end)
         {
             WorkList.push_back(new ProcessNode(&DomTree->GetNode(CurrNode->nextChild())));   
-            _DEBUG(std::cerr<<WorkList.back()->node->thisBlock->num << " ";);        
+            // _DEBUG(std::cerr<<WorkList.back()->node->thisBlock->num << " ";);        
         }
             // WorkList.push_back(new ProcessNode(&DomTree->GetNode(CurrNode->nextChild())));
         else
@@ -241,57 +241,113 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
     BasicBlock* CurrentBlock = node_->node->thisBlock;
     for(User* inst : *CurrentBlock)
     {
-        // //Binary
-        // if(dynamic_cast<BinaryInst*>(inst))
-        // {
-        //     Value* LHS = inst->GetOperand(0);
-        //     Value* RHS = inst->GetOperand(0);
-
-        //     ConstantData* ConstLHS = dynamic_cast<ConstantData*>(LHS);
-        //     ConstantData* ConstRHS = dynamic_cast<ConstantData*>(RHS);
-        //     if(LHS)
-        //     {
-        //         if(AEB_Const_LHS.find(std::make_pair(ConstLHS, RHS)) != AEB_Const_LHS.end())
-        //         {
-        //             std::pair<size_t, Value*>& iter = AEB_Const_LHS[std::make_pair(ConstLHS, RHS)];
-        //             inst->RAUW(iter.second);
-        //             wait_del.push_back(inst);
-        //             modified = true;
-        //         }
-        //         else
-        //         {
-        //             AEB_Const_LHS[std::make_pair(ConstLHS, RHS)] = std::make_pair(CurrGens, inst);
-        //         }
-        //     }
-        //     else if(RHS)
-        //     {
-        //         if(AEB_Const_RHS.find(std::make_pair(LHS, ConstRHS)) != AEB_Const_RHS.end())
-        //         {
-        //             std::pair<size_t, Value*>& iter = AEB_Const_RHS[std::make_pair(LHS, ConstRHS)];
-        //             inst->RAUW(iter.second);
-        //             wait_del.push_back(inst);
-        //             modified = true;
-        //         }
-        //         else
-        //         {
-        //             AEB_Const_RHS[std::make_pair(LHS, ConstRHS)] = std::make_pair(CurrGens, inst);
-        //         }
-        //     }
-        //     else
-        //     {
-        //         if(AEB_Binary.find(std::make_pair(LHS, RHS)) != AEB_Binary.end())
-        //         {
-        //             std::pair<size_t, Value*>& iter = AEB_Binary[std::make_pair(LHS, RHS)];
-        //             inst->RAUW(iter.second);
-        //             wait_del.push_back(inst);
-        //             modified = true;
-        //         }
-        //         else
-        //         {
-        //             AEB_Binary[std::make_pair(LHS, RHS)] = std::make_pair(CurrGens, inst);
-        //         }
-        //     }
-        // }
+        //Binary
+        if(dynamic_cast<BinaryInst*>(inst))
+        {
+            size_t hash = HashTool::BinaryInstHash{}(inst);
+            for(auto& [key, val] : block_in.AEB_Binary)
+            {
+                if(key.second == User::OpID::Ge && inst->GetInstId() == User::OpID::L)
+                {
+                    if(HashTool::CmpSame{}(val, inst))
+                    {
+                        inst->RAUW(val);
+                        wait_del.push_back(inst);
+                        modified = true;
+                    }
+                    else
+                        block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+                }
+                if(key.second == User::OpID::L && inst->GetInstId() == User::OpID::Ge)
+                {
+                    if(HashTool::CmpSame{}(val, inst))
+                    {
+                        inst->RAUW(val);
+                        wait_del.push_back(inst);
+                        modified = true;
+                    }
+                    else
+                        block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+                }
+                if(key.second == User::OpID::G && inst->GetInstId() == User::OpID::Le)
+                {
+                    if(HashTool::CmpSame{}(val, inst))
+                    {
+                        inst->RAUW(val);
+                        wait_del.push_back(inst);
+                        modified = true;
+                    }
+                    else
+                        block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+                }
+                if(key.second == User::OpID::Le && inst->GetInstId() == User::OpID::G)
+                {
+                    if(HashTool::CmpSame{}(val, inst))
+                    {
+                        inst->RAUW(val);
+                        wait_del.push_back(inst);
+                        modified = true;
+                    }
+                    else
+                        block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+                }
+                if(block_in.AEB_Binary.find(std::make_pair(hash, inst->GetInstId())) != block_in.AEB_Binary.end())
+                {
+                        inst->RAUW(val);
+                        wait_del.push_back(inst);
+                        modified = true;
+                }
+                else
+                    block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            }
+            // Value* LHS = inst->GetOperand(0);
+            // Value* RHS = inst->GetOperand(0);
+            
+            // ConstantData* ConstLHS = dynamic_cast<ConstantData*>(LHS);
+            // ConstantData* ConstRHS = dynamic_cast<ConstantData*>(RHS);
+            // if(LHS)
+            // {
+            //     if(AEB_Const_LHS.find(std::make_pair(ConstLHS, RHS)) != AEB_Const_LHS.end())
+            //     {
+            //         std::pair<size_t, Value*>& iter = AEB_Const_LHS[std::make_pair(ConstLHS, RHS)];
+            //         inst->RAUW(iter.second);
+            //         wait_del.push_back(inst);
+            //         modified = true;
+            //     }
+            //     else
+            //     {
+            //         AEB_Const_LHS[std::make_pair(ConstLHS, RHS)] = std::make_pair(CurrGens, inst);
+            //     }
+            // }
+            // else if(RHS)
+            // {
+            //     if(AEB_Const_RHS.find(std::make_pair(LHS, ConstRHS)) != AEB_Const_RHS.end())
+            //     {
+            //         std::pair<size_t, Value*>& iter = AEB_Const_RHS[std::make_pair(LHS, ConstRHS)];
+            //         inst->RAUW(iter.second);
+            //         wait_del.push_back(inst);
+            //         modified = true;
+            //     }
+            //     else
+            //     {
+            //         AEB_Const_RHS[std::make_pair(LHS, ConstRHS)] = std::make_pair(CurrGens, inst);
+            //     }
+            // }
+            // else
+            // {
+            //     if(AEB_Binary.find(std::make_pair(LHS, RHS)) != AEB_Binary.end())
+            //     {
+            //         std::pair<size_t, Value*>& iter = AEB_Binary[std::make_pair(LHS, RHS)];
+            //         inst->RAUW(iter.second);
+            //         wait_del.push_back(inst);
+            //         modified = true;
+            //     }
+            //     else
+            //     {
+            //         AEB_Binary[std::make_pair(LHS, RHS)] = std::make_pair(CurrGens, inst);
+            //     }
+            // }
+        }
 
         // Gep
         if(dynamic_cast<GetElementPtrInst*>(inst))

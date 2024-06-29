@@ -23,7 +23,48 @@ namespace HashTool
             return std::hash<Value*>{}(val);
         }
     };
-
+    
+    struct BinaryInstHash
+    {
+        size_t operator()(User* inst)
+        {
+            size_t HashValue;
+            HashValue = std::hash<User::OpID>{}(inst->GetInstId());
+            for(auto& Use_ : inst->Getuselist())
+            {
+                Value* Val = Use_->usee;
+                HashValue = HashValue * 111 + std::hash<Value*>{}(Val);
+            }
+            return HashValue;
+        }
+    };
+    struct CmpSame
+    {
+        bool operator()(Value* LHS_, User* RHS) const
+        {
+            if(User* LHS = dynamic_cast<User*>(LHS_))
+            {
+                if(LHS->GetInstId() == User::OpID::Ge && RHS->GetInstId() == User::OpID::L)
+                {
+                    Value* LHS_LHS = LHS->GetOperand(0);
+                    Value* LHS_RHS = LHS->GetOperand(1);
+                    Value* RHS_LHS = RHS->GetOperand(0);
+                    Value* RHS_RHS = RHS->GetOperand(1);
+                    if((LHS_LHS == RHS_LHS && LHS_RHS == RHS_RHS) || (LHS_LHS == RHS_RHS && LHS_RHS == RHS_LHS))
+                        return true;
+                }
+                else if(LHS->GetInstId() == User::OpID::Le && RHS->GetInstId() == User::OpID::G)
+                {
+                    Value* LHS_LHS = LHS->GetOperand(0);
+                    Value* LHS_RHS = LHS->GetOperand(1);
+                    Value* RHS_LHS = RHS->GetOperand(0);
+                    Value* RHS_RHS = RHS->GetOperand(1);
+                    if((LHS_LHS == RHS_LHS && LHS_RHS == RHS_RHS) || (LHS_LHS == RHS_RHS && LHS_RHS == RHS_LHS))
+                        return true;
+                }
+            }
+        }   
+    };
     struct Same
     {
         bool operator()(User* LHS, User* RHS) const
@@ -65,8 +106,8 @@ class CSE
     };
     typedef struct CSE_Info
     {
-        std::map<std::tuple<Value*, Value*, User::OpID>, Value*> AEB_Binary;
-    
+        // std::map<std::tuple<Value*, Value*, User::OpID>, Value*> AEB_Binary;
+        std::map<std::pair<size_t, User::OpID>, Value*> AEB_Binary;
         // std::map<Value*, Value*> Loads;
         std::map<size_t, Value*> Loads;
         // std::map<std::pair<Value*, size_t>, Value*> Geps;
