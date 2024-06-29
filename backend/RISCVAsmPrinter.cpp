@@ -80,6 +80,7 @@ void functionSegment::PrintFuncSegment() {
 //dataSegment
 dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
     GenerateGloblvarList(module, ctx);
+    num_lable=0;
     // GenerateTempvarList(module);
 }
 void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx) {
@@ -90,7 +91,6 @@ void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx
     }
 }
 void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
-    int num_lable=0; // 用于浮点常量计数
     for (auto& function : ctx.GetFunctions()) {
         for (auto block : *function) {
             for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
@@ -111,7 +111,7 @@ void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
                             }
                             if(tempfloat==nullptr) {
                                 tempfloat = new tempvar(num_lable, constfloat->GetVal());
-                                num_lable++;
+                                this->num_lable++;
                                 tempvar_list.push_back(tempfloat); 
                             }
                             //在代码中修改加载方式；
@@ -146,7 +146,6 @@ void dataSegment::Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, myli
     it.insert_before(lui);
     it.insert_before(flw);
 
-    /// @todo
     for (int i=0; i<inst->GetOperandSize(); i++) {
         while(inst->GetOperand(i) == used) {
             inst->SetOperand(i,flw_rd);

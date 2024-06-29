@@ -37,7 +37,9 @@ class RISCVAsmPrinter {
 class dataSegment {
     private:
     std::vector<globlvar*> globlvar_list;//.data
+    int num_lable;
     std::vector<tempvar*> tempvar_list;//.data
+
     public:
     dataSegment(Module* module, RISCVLoweringContext& ctx);
     void GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx);

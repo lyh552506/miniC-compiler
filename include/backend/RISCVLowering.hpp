@@ -22,5 +22,4 @@ class RISCVFunctionLowering:BackEndPass<Function>{
     public:
     bool run(Function*);
     RISCVFunctionLowering(RISCVLoweringContext& ctx):ctx(ctx){};
-
 };

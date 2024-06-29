@@ -1,3 +1,4 @@
+#include "ConstantProp.hpp"
 #include "RISCVLowering.hpp"
 #include "dominant.hpp"
 #include "parser.hpp"
@@ -21,17 +22,18 @@ static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"pre", no_argument, 0, 1},
                                        {"constprop", no_argument, 0, 2},
                                        {"dce", no_argument, 0, 3},
-                                       {"adce", no_argument, 0, 4},
+                                       {"adce", no_argument, 0, 4}, // adce out
                                        {"loops", no_argument, 0, 5},
                                        {"help", no_argument, 0, 6},
                                        {"simplifycfg", no_argument, 0, 7},
                                        {"ece", no_argument, 0, 8},
-                                       {"inline", no_argument, 0, 9},
+                                       {"inline", no_argument, 0, 9}, // inline out
                                        {"global2local", no_argument, 0, 10},
-                                       {"sccp", no_argument, 0, 12},
+                                       {"sccp", no_argument, 0, 12}, // sccp out
                                        {"reassociate", no_argument, 0, 11},
-                                       {"cse", no_argument, 0, 13},
-                                       {"lcssa", no_argument, 0, 14}, 
+                                       {"cse", no_argument, 0, 13}, // cse out
+                                       {"lcssa", no_argument, 0, 14},
+                                       {"licm", no_argument, 0, 15}, // licm
                                        {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
@@ -45,7 +47,7 @@ int main(int argc, char **argv) {
   std::string asmoutput_path = argv[1];
   size_t lastPointPos = asmoutput_path.find_last_of(".");
   asmoutput_path = asmoutput_path.substr(0, lastPointPos) + ".s";
- 
+
   freopen(output_path.c_str(), "a", stdout);
   copyFile("runtime.ll", output_path);
   yyin = fopen(argv[1], "r");
@@ -62,55 +64,58 @@ int main(int argc, char **argv) {
     default:
       std::cerr << "No Such Opt!" << std::endl;
       exit(0);
-    case 0:
-      pass_manager->IncludePass(0);
+    case mem2reg:
+      pass_manager->IncludePass(mem2reg);
       break;
-    case 1:
-      pass_manager->IncludePass(1);
+    case pre:
+      pass_manager->IncludePass(pre);
       break;
-    case 2:
-      pass_manager->IncludePass(2);
+    case constprop:
+      pass_manager->IncludePass(constprop);
       break;
-    case 3:
-      pass_manager->IncludePass(3);
+    case dce:
+      pass_manager->IncludePass(dce);
       break;
-    case 4:
-      pass_manager->IncludePass(4);
+    case adce:
+      pass_manager->IncludePass(adce);
       break;
-    case 5:
-      pass_manager->IncludePass(5);
+    case loops:
+      pass_manager->IncludePass(loops);
       break;
-    case 6:
+    case help:
       std::cerr << "help" << std::endl;
       break;
-    case 7:
-      pass_manager->IncludePass(7);
+    case simplifycfg:
+      pass_manager->IncludePass(simplifycfg);
       break;
-    case 8:
-      pass_manager->IncludePass(8);
+    case ece:
+      pass_manager->IncludePass(ece);
       break;
-    case 9:
-      pass_manager->IncludePass(9);
+    case Inline:
+      pass_manager->IncludePass(Inline);
       break;
-    case 10:
-      pass_manager->IncludePass(10);
+    case global2local:
+      pass_manager->IncludePass(global2local);
       break;
-    case 11:
-      pass_manager->IncludePass(11);
+    case sccp:
+      pass_manager->IncludePass(sccp);
       break;
-    case 12:
-      pass_manager->IncludePass(12);
+    case reassociate:
+      pass_manager->IncludePass(reassociate);
       break;
-    case 13:
-      pass_manager->IncludePass(13);
+    case cse:
+      pass_manager->IncludePass(cse);
       break;
-    case 14:
-      pass_manager->IncludePass(14);
+    case lcssa:
+      pass_manager->IncludePass(lcssa);
+      break;
+    case licm:
+      pass_manager->IncludePass(licm);
       break;
     }
   }
   pass_manager->InitPass();
-  
+
   Singleton<Module>().Test();
   fflush(stdout);
   fclose(stdout);

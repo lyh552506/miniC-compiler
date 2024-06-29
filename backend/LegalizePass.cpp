@@ -29,12 +29,14 @@ void Legalize::run() {
                     if(framobj||sreg) {
                         // load .1 offset(s0)
                         //             ^
-                        if(i==0&&((opcode>ISA::BeginLoadMem&&opcode<ISA::EndLoadMem)||(opcode==ISA::_flw))) {
+                        if(i==0&&((opcode>ISA::BeginLoadMem&&opcode<ISA::EndLoadMem)\
+                        ||(opcode>ISA::BeginFloatLoadMem&&opcode<ISA::EndFloatLoadMem))) {
                             OffsetLegalize(i, it);
                         }
                         // store .1 offset(s0)
                         //             ^
-                        else if(i==1&&((opcode>ISA::BeginStoreMem&&opcode<ISA::EndStoreMem)||(opcode==ISA::_fsw))) {
+                        else if(i==1&&((opcode>ISA::BeginStoreMem&&opcode<ISA::EndStoreMem)\
+                        ||(opcode>ISA::BeginFloatStoreMem&&opcode<ISA::EndFloatStoreMem))) {
                             OffsetLegalize(i, it);
                         }
                         else StackAndFrameLegalize(i, it);
@@ -75,8 +77,9 @@ void Legalize::StackAndFrameLegalize(int i,mylist<RISCVBasicBlock, RISCVMIR>::it
         sreg = dynamic_cast<RISCVFrameObject*>(obj)->GetStackReg();
     }
     RISCVMIR* addi = new RISCVMIR(RISCVMIR::_addi);
-    VirRegister* vreg = ctx.createVReg(riscv_ptr);
-    addi->SetDef(vreg);
+    PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
+    // VirRegister* vreg = ctx.createVReg(riscv_ptr);
+    addi->SetDef(t0);
     addi->AddOperand(sreg->GetReg());
     Imm* imm = new Imm(ConstIRInt::GetNewConstant(sreg->GetOffset()));
     addi->AddOperand(imm);
@@ -99,9 +102,10 @@ void Legalize::OffsetLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator
         int mod = offset%2047;
         offset = offset - mod;
         RISCVMIR* addiw = new RISCVMIR(RISCVMIR::_addiw);
-        VirRegister* vreg = ctx.createVReg(riscv_ptr);
+        // VirRegister* vreg = ctx.createVReg(riscv_ptr);
+        PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
         Imm* imm = new Imm(ConstIRInt::GetNewConstant(offset));
-        addiw->SetDef(vreg);
+        addiw->SetDef(t0);
         addiw->AddOperand(sreg->GetReg());
         addiw->AddOperand(imm);
         it.insert_before(addiw);
@@ -119,9 +123,10 @@ void Legalize::zeroLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& 
 void Legalize::branchLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
     RISCVMIR* inst = *it;
     RISCVMIR* li = new RISCVMIR(RISCVMIR::li);
-    VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+    // VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+    PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
     Imm* imm = dynamic_cast<Imm*>(inst->GetOperand(i));
-    li->SetDef(vreg);
+    li->SetDef(t0);
     li->AddOperand(imm);
     it.insert_before(li);
     inst->SetOperand(i, li->GetDef());
@@ -138,8 +143,9 @@ void Legalize::noImminstLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::itera
         }
     }
     RISCVMIR* li = new RISCVMIR(RISCVMIR::li);
-    VirRegister* vreg = ctx.createVReg(riscv_i32);
-    li->SetDef(vreg);
+    // VirRegister* vreg = ctx.createVReg(riscv_i32);
+    PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
+    li->SetDef(t0);
     li->AddOperand(constdata);
     it.insert_before(li);
     inst->SetOperand(i, li->GetDef());
@@ -164,14 +170,15 @@ void Legalize::constintLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterat
             else if(inst->GetOpcode() == RISCVMIR::RISCVISA::_addi ||\
                     inst->GetOpcode() == RISCVMIR::RISCVISA::_addiw) {
                 RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
-                VirRegister* vreg = new VirRegister(RISCVType::riscv_i32);
-                li->SetDef(vreg);
+                // VirRegister* vreg = new VirRegister(RISCVType::riscv_i32);
+                PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
+                li->SetDef(t0);
                 li->AddOperand(constdata);
                 it.insert_before(li);
                 for(int i=0; i<inst->GetOperandSize(); i++) {
                     if(Imm* imm = dynamic_cast<Imm*>(inst->GetOperand(i))) {
                         if(imm->Getdata()==constdata->Getdata()) {
-                            inst->SetOperand(i,vreg);
+                            inst->SetOperand(i,t0);
                             break;
                         }
                     } 
@@ -184,62 +191,65 @@ void Legalize::constintLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterat
             return;
 
         } else if((mod>0&&mod<2048)||(mod>=-2048&&mod<0)) {
-            VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+            // VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+            PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
             Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod));
             RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
-            li->SetDef(vreg);
+            li->SetDef(t0);
             li->AddOperand(const_imm);
             it.insert_before(li);
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod));
             RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addiw);
-            addi->SetDef(vreg);
-            addi->AddOperand(vreg);
+            addi->SetDef(t0);
+            addi->AddOperand(t0);
             addi->AddOperand(mod_imm);
             it.insert_before(addi);
             MOpcodeLegalize(inst);
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 while(inst->GetOperand(i)==constdata) {
-                    inst->SetOperand(i,vreg);
+                    inst->SetOperand(i,t0);
                     return;
                 }
             }
         } else if (mod >=2048 && mod <4096) {
-            VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+            // VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+            PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
             Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod-4096));
             RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
-            li->SetDef(vreg);
+            li->SetDef(t0);
             li->AddOperand(const_imm);
             it.insert_before(li);
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod-4096));
             RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addiw);
-            addi->SetDef(vreg);
-            addi->AddOperand(vreg);
+            addi->SetDef(t0);
+            addi->AddOperand(t0);
             addi->AddOperand(mod_imm);
             it.insert_before(addi);
             MOpcodeLegalize(inst);
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 while(inst->GetOperand(i)==constdata) {
-                    inst->SetOperand(i,vreg);
+                    inst->SetOperand(i,t0);
                     return;
                 }
             }
         } else if (mod>=-4095&&mod<-2048) {
-            VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+            // VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+            PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
             Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod-4096));
             RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
-            li->SetDef(vreg);
+            li->SetDef(t0);
             li->AddOperand(const_imm);
             it.insert_before(li);
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod+4096));
             RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addiw);
-            addi->SetDef(vreg);
-            addi->AddOperand(vreg);
+            addi->SetDef(t0);
+            addi->AddOperand(t0);
             addi->AddOperand(mod_imm);
             it.insert_before(addi);
             MOpcodeLegalize(inst);
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 while(inst->GetOperand(i)==constdata) {
-                    inst->SetOperand(i,vreg);
+                    inst->SetOperand(i,t0);
                     return;
                 }
             }

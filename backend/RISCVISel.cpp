@@ -57,10 +57,12 @@ void RISCVISel::InstLowering(AllocaInst* inst){
 }
 
 void RISCVISel::InstLowering(StoreInst* inst){
-    if(inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
-        if(ConstIRInt* Intconst = dynamic_cast<ConstIRInt*>(inst->GetOperand(0))) {
+    Operand op0 = inst->GetOperand(0);
+    Operand op1 = inst->GetOperand(1);
+    if(op0->GetType()==IntType::NewIntTypeGet()) {
+        if(ConstIRInt* Intconst = dynamic_cast<ConstIRInt*>(op0)) {
             auto li = new RISCVMIR(RISCVMIR::li);
-            VirRegister* vreg = new VirRegister(RISCVTyper(inst->GetOperand(0)->GetType()));
+            VirRegister* vreg = new VirRegister(RISCVTyper(op0->GetType()));
             li->SetDef(vreg);
             Imm* imm = new Imm(Intconst);
             li->AddOperand(imm);
@@ -68,48 +70,50 @@ void RISCVISel::InstLowering(StoreInst* inst){
 
             auto minst=new RISCVMIR(RISCVMIR::_sw);
             minst->AddOperand(li->GetDef());
-            minst->AddOperand(ctx.mapping(inst->GetOperand(1)));
+            minst->AddOperand(ctx.mapping(op1));
             ctx(minst);
         }
         else {
-            auto minst=new RISCVMIR(RISCVMIR::_sw);
-            for(int i=0;i<inst->Getuselist().size();i++)
-                minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
-            ctx(minst);
+            ctx(Builder_withoutDef(RISCVMIR::_sw, inst));
+            // auto minst=new RISCVMIR(RISCVMIR::_sw);
+            // for(int i=0;i<inst->Getuselist().size();i++)
+            //     minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
+            // ctx(minst);
         }
     }
-    else if(inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
-        if(ConstIRFloat* Floatconst = dynamic_cast<ConstIRFloat*>(inst->GetOperand(0))) {
+    else if(op0->GetType()==FloatType::NewFloatTypeGet()) {
+        if(ConstIRFloat* Floatconst = dynamic_cast<ConstIRFloat*>(op0)) {
             auto minst=new RISCVMIR(RISCVMIR::_fsw);
             minst->AddOperand(new Imm(Floatconst));
             minst->AddOperand(ctx.mapping(inst->GetOperand(1)));
             ctx(minst);
         }
         else {
-            auto minst=new RISCVMIR(RISCVMIR::_fsw);
-            for(int i=0;i<inst->Getuselist().size();i++)
-                minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
-            ctx(minst);
+            ctx(Builder_withoutDef(RISCVMIR::_fsw,inst));
+            // auto minst=new RISCVMIR(RISCVMIR::_fsw);
+            // for(int i=0;i<inst->Getuselist().size();i++)
+            //     minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
+            // ctx(minst);
         }
+    }
+    else if(PointerType* ptrtype = dynamic_cast<PointerType*>(op0->GetType())) {
+        ctx(Builder_withoutDef(RISCVMIR::_sw, inst));
     }
     else assert("invalid store type");
 }
 
 void RISCVISel::InstLowering(LoadInst* inst){
-    if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(IntType::NewIntTypeGet())) {
+    if (inst->GetType()==IntType::NewIntTypeGet()) {
         ctx(Builder(RISCVMIR::_lw,inst));
     }
-    else if(inst->GetOperand(0)->GetType()==PointerType::NewPointerTypeGet(FloatType::NewFloatTypeGet()))
+    else if  (inst->GetType()==FloatType::NewFloatTypeGet()) {
         ctx(Builder(RISCVMIR::_flw,inst));
-    
-    else if(HasSubType* subtype = dynamic_cast<HasSubType*>(inst->GetOperand(0)->GetType())){
-        if(subtype->get_baseType()==IntType::NewIntTypeGet()) {
-            ctx(Builder(RISCVMIR::_lw,inst));
-        }
-        else if(subtype->get_baseType()==FloatType::NewFloatTypeGet()) {
-            ctx(Builder(RISCVMIR::_flw,inst));
-        }
-        else assert(0&&"invalid load type in subtype");
+    }
+    else if(PointerType* ptrtype = dynamic_cast<PointerType*>(inst->GetType())) {
+        ctx(Builder(RISCVMIR::_lw,inst));
+    }
+    else if(ArrayType* arraytype = dynamic_cast<ArrayType*>(inst->GetType())) {
+        ctx(Builder(RISCVMIR::_lw,inst));
     }
     else assert(0&&"invalid load type");
 }
@@ -502,83 +506,123 @@ void RISCVISel::InstLowering(CallInst* inst){
     // 把VReg Copy到PhyReg
     // 如果溢出则按照规约store
     // 如果有返回值则copy a0 到 VReg
-    std::unique_ptr<RISCVFrame>& frame = ctx.GetCurFunction()->GetFrame();
     #define M(x) ctx.mapping(x)
+    int IntMaxNum=8, FloatMaxNum=8;
+    std::unique_ptr<RISCVFrame>& frame = ctx.GetCurFunction()->GetFrame();
+    Function* called_midfunc;
+    RISCVFunction* called_func;
+    BuildInFunction* buildin_func;
+    std::vector<int> spillnodes;
+    if(called_midfunc = dynamic_cast<Function*>(inst->GetOperand(0))) {
+        called_func = dynamic_cast<RISCVFunction*>(M(called_midfunc));
+        spillnodes = called_func->GetParamNeedSpill();
+    }
+    else {
+        buildin_func = dynamic_cast<BuildInFunction*>(inst->GetOperand(0));
+        called_func = dynamic_cast<RISCVFunction*>(M(buildin_func));
+        spillnodes = called_func->GetParamNeedSpill();
+    }
+
     if(!inst->Getuselist().empty()) {
-        int MAXnum = 8, paramnum=inst->Getuselist().size()-1;
-        if (paramnum > MAXnum) {
-            // spill to stack
-            int offset=0;
-            for(int i=paramnum; i>MAXnum; i--) {
-                /// @todo load params to end of the frame
-                Value* operand = inst->GetOperand(i);
-                RISCVMIR* store = nullptr;
-                StackRegister* sreg = nullptr;
-                switch(RISCVTyper(operand->GetType())) {
-                    case riscv_i32:
-                    case riscv_float32:
-                        sreg = new StackRegister(PhyRegister::sp, offset);
-                        store = new RISCVMIR(RISCVMIR::_sw);
-                        offset += 4;
-                        break;
-                    case riscv_ptr:
-                        sreg = new StackRegister(PhyRegister::sp, offset);
-                        store = new RISCVMIR(RISCVMIR::_sd);
-                        offset += 8;
-                        break;
-                    default:
-                        assert(0&&"Error param type");
-                }
-                store->AddOperand(M(inst->GetOperand(i)));
-                store->AddOperand(sreg);
-                ctx(store);
-            }
-        }
-        for (int i=1; i<=std::min(paramnum, MAXnum); i++) {
-            int regnum=PhyRegister::PhyReg::a0-1;
-            regnum+=i;
-            if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(i))) {
-                auto li = new RISCVMIR(RISCVMIR::li);
-                PhyRegister* preg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum));
-                li->SetDef(preg);
-                Imm* imm = new Imm(constint);
-                li->AddOperand(imm);
-                ctx.insert_val2mop(constint, imm);
-                ctx(li);
-            }
-            /// @todo const float
-            // else if(ConstIRFloat* constfloat = dynamic_cast<ConstIRFloat*>(inst->GetOperand(i))) {
-            //     auto load = new RISCVMIR(RISCVMIR::_flw);
-            //     VirRegister* vreg = ctx.createVReg(RISCVTyper(inst->GetOperand(i)->GetType()));
-            //     load->SetDef(vreg);
-            //     Imm* imm = new Imm(constfloat);
-            //     load->AddOperand(imm);
-            //     ctx.insert_val2mop(constint, imm);
-            //     ctx(load);
-            // }
-            else if(inst->GetOperand(i)->GetType()==IntType::NewIntTypeGet()\
-            || inst->GetOperand(i)->GetType()==FloatType::NewFloatTypeGet()\
-            || dynamic_cast<PointerType*>(inst->GetOperand(i)->GetType()))
-                ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regnum)),M(inst->GetOperand(i))}));
-            else if(dynamic_cast<BoolType*>(inst->GetOperand(i)->GetType())) {
-                break;
-            }
-            else assert(0&&"Error!");
-        }
+        int offset = 0;
         size_t local_param_size=0;
-        for (int i=MAXnum; i<paramnum; i++) {
-            local_param_size += inst->GetOperand(i)->GetType()->get_size();
+        for(auto it = spillnodes.rbegin(); it!=spillnodes.rend(); it++) {
+            // spill to stack
+            // load params to end of the frame
+            int index = *it+1;
+            Operand op = inst->GetOperand(index);
+            RISCVMIR* store = nullptr;
+            StackRegister* sreg = nullptr;
+            switch(RISCVTyper(op->GetType())) {
+                case riscv_i32:
+                    sreg = new StackRegister(PhyRegister::sp, offset);
+                    store = new RISCVMIR(RISCVMIR::_sw);
+                    offset += 4;
+                    break;
+                case riscv_float32:
+                    sreg = new StackRegister(PhyRegister::sp, offset);
+                    store = new RISCVMIR(RISCVMIR::_fsw);
+                    offset += 4;
+                    break;
+                case riscv_ptr:
+                    sreg = new StackRegister(PhyRegister::sp, offset);
+                    store = new RISCVMIR(RISCVMIR::_sd);
+                    offset += 8;
+                    break;
+                default:
+                    assert(0&&"Error param type");
+            }
+            store->AddOperand(M(inst->GetOperand(index)));
+            store->AddOperand(sreg);
+            ctx(store);
+
+            local_param_size += op->GetType()->get_size();
         }
         if (local_param_size > ctx.GetCurFunction()->GetMaxParamSize()) {
             ctx.GetCurFunction()->SetMaxParamSize(local_param_size);
         }
+
+        int regint=PhyRegister::PhyReg::a0;
+        int regfloat=PhyRegister::PhyReg::fa0;
+        for(int index=1;index<inst->Getuselist().size();index++) {
+            if(std::find(spillnodes.begin(), spillnodes.end(), index)!=spillnodes.end()) {
+                continue;
+            }
+            
+            else {
+                Operand op = inst->GetOperand(index);
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(op)) {
+                    auto li = new RISCVMIR(RISCVMIR::li);
+                    PhyRegister* preg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint));
+                    li->SetDef(preg);
+                    Imm* imm = new Imm(constint);
+                    li->AddOperand(imm);
+                    ctx.insert_val2mop(constint, imm);
+                    ctx(li);
+                    regint++;
+                }
+                else if(RISCVTyper(op->GetType())==riscv_i32) {
+                    ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint)),M(op)}));
+                    regint++;
+                }
+                else if(RISCVTyper(op->GetType())==riscv_ptr) {
+                    ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint)),M(op)}));
+                    regint++;
+                }
+                else if(ConstIRFloat* constfloat = dynamic_cast<ConstIRFloat*>(op)) {
+                    auto load = new RISCVMIR(RISCVMIR::_fmv_s); 
+                    VirRegister* vreg = ctx.createVReg(RISCVTyper(op->GetType()));
+                    load->SetDef(vreg);
+                    Imm* imm = new Imm(constfloat);
+                    load->AddOperand(imm);
+                    ctx.insert_val2mop(constint, imm);
+                    ctx(load);
+                    regfloat++;
+                }
+                else if(RISCVTyper(op->GetType())==riscv_float32) {
+                    ctx(Builder(RISCVMIR::_fmv_s,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regfloat)),M(op)}));
+                    regfloat++;
+                }
+                else assert(0 && "CallInst selection illegal type");
+            }
+        }
     }
+
     if(!inst->GetUserlist().is_empty()){
         ctx(Builder_withoutDef(RISCVMIR::call, inst));
-        ctx(Builder(RISCVMIR::mv, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
+        if(RISCVTyper(inst->GetOperand(0)->GetType())==RISCVType::riscv_float32) {
+            ctx(Builder(RISCVMIR::_fmv_s, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0)}));
+        }
+        else if(RISCVTyper(inst->GetOperand(0)->GetType())==RISCVType::riscv_i32){
+            ctx(Builder(RISCVMIR::mv, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
+        }
+        else {
+            // no return
+        }
+        
     }
     else ctx(Builder_withoutDef(RISCVMIR::call, inst));
-    #undef M
+    #undef M  
 }
 
 void RISCVISel::InstLowering(RetInst* inst){
@@ -592,7 +636,7 @@ void RISCVISel::InstLowering(RetInst* inst){
         ctx(Builder_withoutDef(RISCVMIR::ret,inst));
     }
     else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
-        ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0),M(inst->GetOperand(0))}));
+        ctx(Builder(RISCVMIR::_fmv_s,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0),M(inst->GetOperand(0))}));
         ctx(Builder_withoutDef(RISCVMIR::ret,inst));
     }
     else 

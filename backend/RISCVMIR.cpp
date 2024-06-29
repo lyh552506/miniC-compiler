@@ -65,9 +65,46 @@ size_t RISCVFunction::GetMaxParamSize() {
 void RISCVFunction::SetMaxParamSize(size_t size) {
     max_param_size=size;
 }
+
+void RISCVFunction::GenerateParamNeedSpill() {
+    using ParamPtr=std::unique_ptr<Value>;
+    BuildInFunction* buildin;
+    if(buildin = dynamic_cast<BuildInFunction*>(func)) {
+        param_need_spill = {};
+        return;
+    }
+    int IntMax=8, FloatMax=8;
+    Function* func=dynamic_cast<Function*>(this->func);
+    std::vector<ParamPtr>& params = func->GetParams();
+    int index =0;
+    for(auto &i : params) {
+        if(i->GetType()==FloatType::NewFloatTypeGet()) {
+            if(FloatMax) {
+                FloatMax--;
+            }
+            else {
+                this->param_need_spill.push_back(index);
+            }
+        }
+        // int & ptr type
+        else {
+            if(IntMax) {
+                IntMax--;
+            }
+            else {
+                this->param_need_spill.push_back(index);
+            }
+        }
+        index++;
+    }
+}
+
+std::vector<int>& RISCVFunction::GetParamNeedSpill() {return this->param_need_spill;}
+
 // std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects(){
 //     return frame;
 // }
+
 
 RISCVBasicBlock::RISCVBasicBlock(std::string _name):NamedMOperand(_name,RISCVType::riscv_none){}
 
@@ -110,6 +147,7 @@ void RISCVBasicBlock::push_before_branch(RISCVMIR* minst) {
 
 RISCVFunction::RISCVFunction(Value* _func):RISCVGlobalObject(_func->GetType(),_func->GetName()),func(_func){
     frame.reset(new RISCVFrame(this));
+    GenerateParamNeedSpill();
 }
 
 
@@ -145,6 +183,36 @@ StackRegister* RISCVFrame::spill(VirRegister* mop) {
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
     return frameobjs.back().get()->GetStackReg();
 }
+RISCVMIR* RISCVFrame::spill(PhyRegister* mop) {
+    int type = mop->Getregenum();
+    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
+    StackRegister* sreg = frameobjs.back().get()->GetStackReg();
+    RISCVMIR* store;
+    if(type>PhyRegister::begin_normal_reg && type<PhyRegister::end_normal_reg) {
+        store = new RISCVMIR(RISCVMIR::_sd);
+    }
+    else if(type>PhyRegister::begin_float_reg && type<PhyRegister::end_float_reg) {
+        store = new RISCVMIR(RISCVMIR::_fsd);
+    }
+    else assert(0&&"wrong phyregister type");
+    store->AddOperand(mop);
+    store->AddOperand(sreg);
+    return store;
+}
+RISCVMIR* RISCVFrame::load_to_preg(StackRegister* sreg,PhyRegister* mop) {
+    int type = mop->Getregenum();
+    RISCVMIR* load;
+    if(type>PhyRegister::begin_normal_reg && type<PhyRegister::end_normal_reg) {
+        load = new RISCVMIR(RISCVMIR::_ld);
+    }
+    else if(type>PhyRegister::begin_float_reg && type<PhyRegister::end_float_reg) {
+        load = new RISCVMIR(RISCVMIR::_fld);
+    }
+    else assert(0&&"wrong phyregister type");
+    load->SetDef(mop);
+    load->AddOperand(sreg);
+    return load;
+}
 StackRegister* RISCVFrame::spill(Value* val) {
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
     return frameobjs.back().get()->GetStackReg();
@@ -166,6 +234,7 @@ void RISCVFrame::GenerateFrame() {
         obj->SetEndAddOff(frame_size);
         frame_size += obj->GetFrameObjSize();
         obj->SetBeginAddOff(frame_size);
+        int a =0;
     }
     frame_size += parent->GetMaxParamSize();
     int mod = frame_size % 16;
@@ -175,7 +244,8 @@ void RISCVFrame::GenerateFrame() {
 
     for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
         std::unique_ptr<RISCVFrameObject>& obj = *it;
-        int off = 0 - static_cast<int>(obj->GetBeginAddOff()+obj->GetFrameObjSize());
+        // int off = 0 - (int)(obj->GetBeginAddOff()+obj->GetFrameObjSize());
+        int off = 0 - (int)(obj->GetBeginAddOff());
         obj->GenerateStackRegister(off);
     }
 
@@ -260,7 +330,7 @@ void RISCVFrame::GenerateFrameTail() {
         for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
             RISCVMIR* inst = *it;
             if (inst->GetOpcode() == ISA::ret) {
-                
+                 
                 if( frame_size>2047) {
                     // 以合法方式保存sp.s0
                     // temp_frame_size = frame_size % 4096;
