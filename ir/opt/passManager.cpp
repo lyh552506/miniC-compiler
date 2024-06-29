@@ -13,7 +13,7 @@ void PassManager::InitPass() {
     m_eliedg = std::make_unique<ElimitCriticalEdge>(m_func);
     m_dom = std::make_unique<dominance>(m_func, BList.size());
     // m_pre = std::make_unique<PRE>(m_dom.get(), m_func);
-    m_cfgsimple = std::make_unique<cfgSimplify>(m_func, m_dom.get());
+    // m_cfgsimple = std::make_unique<cfgSimplify>(m_func, m_dom.get());
     m_adce = std::make_unique<ADCE>(m_func);
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
@@ -74,10 +74,18 @@ void PassManager::RunOnFunction() {
     m_constprop->RunOnFunction();
     // m_constprop->PrintPass();
   }
+  if (InitpassRecorder[dce]) {
+    m_dce->RunOnFunction();
+    // m_dce->PrintPass();
+  }
   if (InitpassRecorder[sccp]) {
     m_sccp->RunOnFunction(m_func);
   }
   if (InitpassRecorder[simplifycfg]) {
+    PreWork(func);
+    dominance *d = new dominance(m_func, BList.size());
+    d->update();
+    m_cfgsimple = new cfgSimplify(m_func, d);
     m_cfgsimple->RunOnFunction();
     PreWork(func);
     m_dom->update();
@@ -87,10 +95,14 @@ void PassManager::RunOnFunction() {
     m_adce->RunOnFunction();
     // m_adce->PrintPass();
   }
+  if (InitpassRecorder[reassociate]) {
+    PreWork(func);
+    m_reassociate->RunOnFunction();
+  }
   if (InitpassRecorder[loops]) {
     PreWork(func);
     dominance *d = new dominance(m_func, BList.size());
-    d->update();
+    d->RunOnFunction();
     m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
     m_loopsimple->RunOnFunction();
     m_loopsimple->PrintPass();
@@ -99,24 +111,18 @@ void PassManager::RunOnFunction() {
     m_inline->Run();
     // m_inline->PrintPass();
   }
-  if (InitpassRecorder[reassociate]) {
-    PreWork(func);
-    m_reassociate->RunOnFunction();
-  }
+  
   if (InitpassRecorder[cse]) {
     m_cse->RunOnFunction();
   }
-  if (InitpassRecorder[dce]) {
-    m_dce->RunOnFunction();
-    // m_dce->PrintPass();
-  }
+
   if (InitpassRecorder[lcssa]) {
     PreWork(func);
     dominance *d = new dominance(m_func, BList.size());
     d->update();
     m_lcssa = std::make_unique<LcSSA>(m_func, d);
     m_lcssa->RunOnFunction();
-    m_eliedg->RunOnFunction();
+    // m_eliedg->RunOnFunction();
   }
   if (InitpassRecorder[licm]) {
     // m_licm = std::make_unique<LICMPass>(m_dom.get(), m_func);

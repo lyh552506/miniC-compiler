@@ -76,15 +76,15 @@ void Legalize::StackAndFrameLegalize(int i,mylist<RISCVBasicBlock, RISCVMIR>::it
     else if(RISCVFrameObject* obj = dynamic_cast<RISCVFrameObject*>(inst->GetOperand(i))) {
         sreg = dynamic_cast<RISCVFrameObject*>(obj)->GetStackReg();
     }
-    RISCVMIR* addiw = new RISCVMIR(RISCVMIR::_addiw);
+    RISCVMIR* addi = new RISCVMIR(RISCVMIR::_addi);
     PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
     // VirRegister* vreg = ctx.createVReg(riscv_ptr);
-    addiw->SetDef(t0);
-    addiw->AddOperand(sreg->GetReg());
+    addi->SetDef(t0);
+    addi->AddOperand(sreg->GetReg());
     Imm* imm = new Imm(ConstIRInt::GetNewConstant(sreg->GetOffset()));
-    addiw->AddOperand(imm);
-    it.insert_before(addiw);
-    inst->SetOperand(i, addiw->GetDef());
+    addi->AddOperand(imm);
+    it.insert_before(addi);
+    inst->SetOperand(i, addi->GetDef());
 }
 
 void Legalize::OffsetLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
