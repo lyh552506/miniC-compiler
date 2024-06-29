@@ -5,6 +5,7 @@
 #include "Type.hpp"
 #include "dominant.hpp"
 #include "my_stl.hpp"
+#include <algorithm>
 #include <cassert>
 #include <set>
 
@@ -196,6 +197,11 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
       Erase.push_back(std::make_pair(_1, tmp));
     }
   }
+  bool same = std::all_of(Erase.begin(), Erase.end(), [&Erase](auto &ele) {
+    return ele.second.first == Erase.front().second.first;
+  });
+  if (same)
+    return;
   PhiInst *pre_phi =
       PhiInst::NewPhiNode(target->front(), target, phi->GetType());
   for (auto &[i, v] : Erase) {
