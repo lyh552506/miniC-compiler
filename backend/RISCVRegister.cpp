@@ -92,12 +92,14 @@ RegisterList::RegisterList() {
     }
 
     // reglist_caller
-    regenum = PhyReg::t0;
-    while(regenum<=PhyReg::t2) {
-      PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
-      reglist_caller.push_back(preg);
-      regenum = PhyReg(regenum + 1);
-    }
+    // regenum = PhyReg::t0;
+    // while(regenum<=PhyReg::t2) {
+    //   PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+    //   reglist_caller.push_back(preg);
+    //   regenum = PhyReg(regenum + 1);
+    // }
+    PhyRegister* preg = PhyRegister::GetPhyReg(PhyReg::t2);
+    reglist_caller.push_back(preg);
     regenum = PhyReg::a0;
     while(regenum<=PhyReg::a7) {
       PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
