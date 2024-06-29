@@ -120,7 +120,8 @@
       "__availability": "cpp",
       "__bits": "cpp",
       "__string": "cpp",
-      "__tuple": "cpp"
+      "__tuple": "cpp",
+      "time.h": "c"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true,
