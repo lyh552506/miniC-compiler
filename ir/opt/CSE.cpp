@@ -14,19 +14,22 @@ bool CSE::RunOnFunc()
     // 这里采用deque而非vector的原因是在元素个数较多的时候deque的效率更高
     std::deque<ProcessNode*> WorkList;
     WorkList.push_back(new ProcessNode(&DomTree->GetNode(0)));
+    BlockIn[DomTree->GetNode(0).thisBlock] = new info;
+    BlockOut[DomTree->GetNode(0).thisBlock] = new info;
     while(!WorkList.empty())
     {
         ProcessNode* CurrNode = WorkList.back();
         if(Processed.find(CurrNode) == Processed.end())
         {
-            BlockIn[CurrNode->node->thisBlock] = new info;
-            BlockOut[CurrNode->node->thisBlock] = new info;
             modified |= RunOnNode(CurrNode, *BlockIn[CurrNode->node->thisBlock], *BlockOut[CurrNode->node->thisBlock]);
             Processed.insert(CurrNode);
         }
         else if(CurrNode->iter != CurrNode->end)
         {
-            WorkList.push_back(new ProcessNode(&DomTree->GetNode(CurrNode->nextChild())));   
+            dominance::Node* Child = &DomTree->GetNode(CurrNode->nextChild());
+            BlockIn[Child->thisBlock] = BlockOut[CurrNode->node->thisBlock];
+            BlockOut[Child->thisBlock] = new info;
+            WorkList.push_back(new ProcessNode(Child));
         }
         else
         {
