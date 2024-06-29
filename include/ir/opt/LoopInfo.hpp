@@ -26,6 +26,8 @@ public:
   }
   BasicBlock *GetHeader() { return Header; }
   LoopInfo *GetParent() { return Parent; }
+  BasicBlock *GetLatch() { return Latch; }
+  bool IsLoopIntTp() { return IsInt; }
   int GetLoopDepth() { return LoopDepth; }
   int LoopBodyNum() { return ContainBlocks.size(); }
   void InsertLoopBody(BasicBlock *bb) { PushVecSingleVal(ContainBlocks, bb); }
@@ -34,6 +36,10 @@ public:
   void AddLoopDepth(int depth) { LoopDepth += depth; }
   bool IsVisited() { return visited; }
   void setVisited(bool v) { visited = v; }
+  void setLoopFpTp() { IsInt = false; }
+  void setBound(float b) { boundary = b; };
+  void setInitial(float init) { initial = init; }
+  void setStep(float st) { step = st; }
   bool Contain(BasicBlock *bb);
   bool Contain(LoopInfo *loop);
   iterator begin() { return SubLoops.begin(); }
@@ -58,6 +64,11 @@ private:
   std::vector<LoopInfo *> SubLoops;
   int LoopDepth = 0;    //嵌套深度
   bool visited = false; //辅助
+  bool CanUnroll = false;
+  bool IsInt = true;
+  float boundary = 0;
+  float initial = 0;
+  float step = 0;
 };
 
 class LoopAnalysis : public PassManagerBase {
@@ -119,7 +130,7 @@ private:
   std::vector<BasicBlock *> *bbs;      //提供num to bb map
   std::vector<std::vector<int>> *Dest; // CFG中的后继
   std::vector<BasicBlock *> PostOrder;
-  std::vector<LoopInfo *> LoopRecord;
+  std::vector<LoopInfo *> LoopRecord; //保证了嵌套层数越高，越靠前
   std::map<BasicBlock *, LoopInfo *> Loops;
   bool AlreadyGetInfo = false;
   int index = 0;

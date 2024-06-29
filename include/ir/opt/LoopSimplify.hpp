@@ -13,7 +13,7 @@ public:
   void PrintPass() override{};
 
 private:
-  void SimplifyLoosImpl(LoopInfo *loop);
+  void SimplifyLoopsImpl(LoopInfo *loop);
   void InsertPreHeader(LoopInfo *loop);
   void FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
                    std::vector<BasicBlock *> &latch);
@@ -23,6 +23,7 @@ private:
   LoopInfo* SplitNewLoop(LoopInfo *L);
   void UpdateInfo(std::vector<BasicBlock *> &bbs, BasicBlock *insert,
                   BasicBlock* head);
+  void CaculateLoopInfo(LoopInfo* loop);                  
   LoopAnalysis *loopAnlay;
   Function *m_func;
   dominance *m_dom;

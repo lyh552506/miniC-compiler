@@ -7,7 +7,9 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <queue>
 #include <string>
+#include <utility>
 #include <vector>
 #define BaseEnumNum 8
 template <typename T>
@@ -1206,27 +1208,25 @@ void PhiInst::Del_Incomes(int CurrentNum) {
 }
 
 void PhiInst::FormatPhi() {
-  int CurrentNum = 0;
-  std::vector<std::pair<int, std::pair<Value *, BasicBlock *>>> Defend;
-  for (auto &[_1, v] : PhiRecord)
-    if (_1 > CurrentNum)
-      Defend.push_back(std::make_pair(_1, v));
-    else
-      CurrentNum++;
-  std::sort(Defend.begin(), Defend.end(),
-            [](const auto &p1, const auto &p2) { return p1.first > p2.first; });
-  for (const auto &item : Defend) {
-    PhiRecord.erase(item.first);
+  std::vector<std::pair<int, std::pair<Value *, BasicBlock *>>> assist;
+  std::queue<std::pair<Value *, BasicBlock *>> defend;
+  oprandNum = 0;
+  for (auto &[_1, v] : PhiRecord) {
+    assist.push_back(std::make_pair(_1, v));
+    // defend.push(std::make_pair(v.first, v.second));
   }
-  for (const auto &item : Defend) {
-    auto it =
-        std::find_if(UseToRecord.begin(), UseToRecord.end(),
-                     [item](auto &ele) { return ele.second == item.first; });
-    assert(it != UseToRecord.end());
-    it->second = PhiRecord.size();
-    PhiRecord.insert(std::make_pair(PhiRecord.size(), item.second));
+  std::sort(assist.begin(), assist.end(),
+            [](const auto &p1, const auto &p2) { return p1.first < p2.first; });
+  PhiRecord.clear();
+  for (int i = 0; i < assist.size(); i++) {
+    defend.push(
+        std::make_pair(assist[i].second.first, assist[i].second.second));
   }
-  oprandNum = PhiRecord.size();
+  while (!defend.empty()) {
+    auto &[v_fir, v_sec] = defend.front();
+    defend.pop();
+    PhiRecord[oprandNum++] = std::make_pair(v_fir, v_sec);
+  }
 }
 
 bool PhiInst::IsSame(PhiInst *phi) {

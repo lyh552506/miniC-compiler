@@ -123,7 +123,7 @@ class CallInst:public User
 {
     public:
     CallInst(Type* _tp):User(_tp){id = OpID::Call;};
-    CallInst(Value*,std::vector<Operand>&,std::string);
+    CallInst(Value*,std::vector<Operand>&,std::string="");
     CallInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
 };

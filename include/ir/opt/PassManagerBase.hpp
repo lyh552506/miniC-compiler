@@ -1,5 +1,22 @@
 #pragma once
-
+enum PassName {
+  mem2reg,
+  pre,
+  constprop,
+  dce,
+  adce,
+  loops,
+  help,
+  simplifycfg,
+  ece,
+  Inline,
+  global2local,
+  sccp,
+  reassociate,
+  cse,
+  lcssa,
+  licm
+};
 class PassManagerBase{
 public:
     PassManagerBase()=default;
