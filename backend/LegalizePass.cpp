@@ -29,12 +29,14 @@ void Legalize::run() {
                     if(framobj||sreg) {
                         // load .1 offset(s0)
                         //             ^
-                        if(i==0&&((opcode>ISA::BeginLoadMem&&opcode<ISA::EndLoadMem)||(opcode==ISA::_flw))) {
+                        if(i==0&&((opcode>ISA::BeginLoadMem&&opcode<ISA::EndLoadMem)\
+                        ||(opcode>ISA::BeginFloatLoadMem&&opcode<ISA::EndFloatLoadMem))) {
                             OffsetLegalize(i, it);
                         }
                         // store .1 offset(s0)
                         //             ^
-                        else if(i==1&&((opcode>ISA::BeginStoreMem&&opcode<ISA::EndStoreMem)||(opcode==ISA::_fsw))) {
+                        else if(i==1&&((opcode>ISA::BeginStoreMem&&opcode<ISA::EndStoreMem)\
+                        ||(opcode>ISA::BeginFloatStoreMem&&opcode<ISA::EndFloatStoreMem))) {
                             OffsetLegalize(i, it);
                         }
                         else StackAndFrameLegalize(i, it);
