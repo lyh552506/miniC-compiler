@@ -67,7 +67,7 @@ void LARegister::print() {
 RegisterList::RegisterList() {
     using PhyReg=PhyRegister::PhyReg;
     // reglist_int
-    // t0 & t2 will not be regalloced, and it is real temp register
+    // t0 & t1 will not be regalloced, and it is real temp register
     PhyReg regenum = PhyReg::t2;
     while(regenum<=PhyReg::t6) {
         PhyRegister* preg = PhyRegister::GetPhyReg(regenum);

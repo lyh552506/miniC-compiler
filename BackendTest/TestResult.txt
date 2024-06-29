@@ -1,6 +1,6 @@
 Timeout: testcases/functional/86_long_code2.sy
 Compiler Error: Total: 21
-Assembler Error: Total: 6
+Assembler Error: Total: 4
 Linker Error: Total: 22
 TimeOut Function:1
 Wrong Answer: Total: 0
@@ -27,10 +27,8 @@ CE: testcases/functional/85_long_code.sy
 CE: testcases/functional/52_scope.sy
 AE: testcases/functional/21_if_test2.s
 AE: testcases/functional/41_unary_op2.s
-AE: testcases/functional/51_short_circuit3.s
 AE: testcases/functional/40_unary_op.s
 AE: testcases/functional/64_calculator.s
-AE: testcases/functional/49_if_complex_expr.s
 LE: testcases/functional/28_while_test3.o
 LE: testcases/functional/32_while_if_test2.o
 LE: testcases/functional/68_brainfk.o

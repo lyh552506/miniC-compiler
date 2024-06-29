@@ -332,19 +332,211 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@__constant..9 = constant [100 x [100 x i32]]  [[100 x i32]  [i32 1, i32 2, i32 3, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer], [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer, [100 x i32] zeroinitializer]
-@__constant..20 = constant [4 x float]  [float 0x3ff19999a0000000, float 0x40019999a0000000, float zeroinitializer, float zeroinitializer]
+@.g.array = global [110 x i32] zeroinitializer
+@.g.n = global i32 zeroinitializer
+define void @init(i32 %.6){
+.4:
+  br label %.11wc5 
+.11wc5:
+  %.18 = mul i32 %.6, %.6
+  %.19 = add i32 %.18, 1
+  %.20 = icmp sle i32 1, %.19
+  br i1 %.20, label %.12wloop.5.8, label %.13wn8
+.12wloop.5.8:
+  %.308 = phi i32 [1, %.11wc5], [%.36, %.22do_while_cond.5.8]
+  %.33 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.308
+  store i32 -1, i32* %.33
+  %.36 = add i32 %.308, 1
+  br label %.22do_while_cond.5.8 
+.13wn8:
+  ret void
+.22do_while_cond.5.8:
+  %.26 = mul i32 %.6, %.6
+  %.27 = add i32 %.26, 1
+  %.28 = icmp sle i32 %.36, %.27
+  br i1 %.28, label %.12wloop.5.8, label %.13wn8
+}
+define i32 @findfa(i32 %.43){
+.41:
+  %.48 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.43
+  %.49 = load i32, i32* %.48
+  %.51 = icmp eq i32 %.49, %.43
+  br i1 %.51, label %.45, label %.46
+.45:
+  ret i32 %.43 
+.46:
+  %.56 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.43
+  %.57 = load i32, i32* %.56
+  %.58at15 = call i32 @findfa(i32 %.57)
+  %.60 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.43
+  store i32 %.58at15, i32* %.60
+  %.63 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.43
+  %.64 = load i32, i32* %.63
+  ret i32 %.64 
+}
+define void @mmerge(i32 %.69, i32 %.72){
+.67:
+  %.76at20 = call i32 @findfa(i32 %.69)
+  %.80at21 = call i32 @findfa(i32 %.72)
+  %.86 = icmp ne i32 %.76at20, %.80at21
+  br i1 %.86, label %.82, label %.83
+.82:
+  %.90 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.76at20
+  store i32 %.80at21, i32* %.90
+  br label %.83 
+.83:
+  ret void
+}
 define i32 @main(){
-.1:
-  %.16 = alloca [4 x float]
-  %.3 = alloca [100 x [100 x i32]]
-  call void @llvm.memcpy.p0.p0.i32([100 x [100 x i32]]* %.3, [100 x [100 x i32]]* @__constant..9, i32 40000, i1 false)
-  call void @llvm.memcpy.p0.p0.i32([4 x float]* %.16, [4 x float]* @__constant..20, i32 16, i1 false)
-  %.24 = getelementptr inbounds [4 x float], [4 x float]* %.16, i32 0, i32 3
-  store float 0x40047ae140000000, float* %.24
-  %.29 = getelementptr inbounds [100 x [100 x i32]], [100 x [100 x i32]]* %.3, i32 0, i32 4, i32 66
-  store i32 345345, i32* %.29
-  %.31 = getelementptr inbounds [100 x [100 x i32]], [100 x [100 x i32]]* %.3, i32 0, i32 4, i32 66
-  %.32 = load i32, i32* %.31
-  ret i32 %.32 
+.95:
+  br label %.101wc28 
+.101wc28:
+  %.106 = icmp ne i32 1, 0
+  br i1 %.106, label %.102wloop.28.80, label %.103wn80
+.102wloop.28.80:
+  %.310 = phi i32 [1, %.101wc28], [%.113, %.108do_while_cond.28.80]
+  %.113 = sub i32 %.310, 1
+  store i32 4, i32* @.g.n
+  %.123 = load i32, i32* @.g.n
+  call void @init(i32 %.123)
+  %.126 = load i32, i32* @.g.n
+  %.127 = load i32, i32* @.g.n
+  %.128 = mul i32 %.126, %.127
+  %.129 = add i32 %.128, 1
+  br label %.131wc37 
+.103wn80:
+  ret i32 0 
+.108do_while_cond.28.80:
+  %.110 = icmp ne i32 %.113, 0
+  br i1 %.110, label %.102wloop.28.80, label %.103wn80
+.131wc37:
+  br i1 true, label %.132wloop.37.75, label %.133wn75
+.132wloop.37.75:
+  %.315 = phi i32 [0, %.131wc37], [%.313, %.139do_while_cond.37.75]
+  %.311 = phi i32 [0, %.131wc37], [%.295, %.139do_while_cond.37.75]
+  %.145at38 = call i32 @getint()
+  %.147at39 = call i32 @getint()
+  %.152 = icmp eq i32 %.315, 0
+  br i1 %.152, label %.149, label %.150
+.133wn75:
+  %.314 = phi i32 [0, %.131wc37], [%.313, %.139do_while_cond.37.75]
+  %.301 = icmp eq i32 %.314, 0
+  br i1 %.301, label %.298, label %.299
+.139do_while_cond.37.75:
+  %.142 = icmp slt i32 %.295, 10
+  br i1 %.142, label %.132wloop.37.75, label %.133wn75
+.149:
+  %.155 = load i32, i32* @.g.n
+  %.157 = sub i32 %.145at38, 1
+  %.158 = mul i32 %.155, %.157
+  %.160 = add i32 %.158, %.147at39
+  %.164 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.160
+  store i32 %.160, i32* %.164
+  %.169 = icmp eq i32 %.145at38, 1
+  br i1 %.169, label %.166, label %.167
+.150:
+  %.313 = phi i32 [%.315, %.132wloop.37.75], [%.312, %.265]
+  %.295 = add i32 %.311, 1
+  br label %.139do_while_cond.37.75 
+.166:
+  %.171 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 0
+  store i32 0, i32* %.171
+  call void @mmerge(i32 %.160, i32 0)
+  br label %.167 
+.167:
+  %.179 = load i32, i32* @.g.n
+  %.180 = icmp eq i32 %.145at38, %.179
+  br i1 %.180, label %.176, label %.177
+.176:
+  %.184 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.129
+  store i32 %.129, i32* %.184
+  call void @mmerge(i32 %.160, i32 %.129)
+  br label %.177 
+.177:
+  %.193 = load i32, i32* @.g.n
+  %.194 = icmp slt i32 %.147at39, %.193
+  br i1 %.194, label %.195, label %.191
+.190:
+  %.205 = add i32 %.160, 1
+  call void @mmerge(i32 %.160, i32 %.205)
+  br label %.191 
+.191:
+  %.211 = icmp sgt i32 %.147at39, 1
+  br i1 %.211, label %.212, label %.209
+.195:
+  %.198 = add i32 %.160, 1
+  %.199 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.198
+  %.200 = load i32, i32* %.199
+  %.201 = icmp ne i32 %.200, -1
+  br i1 %.201, label %.190, label %.191
+.208:
+  %.222 = sub i32 %.160, 1
+  call void @mmerge(i32 %.160, i32 %.222)
+  br label %.209 
+.209:
+  %.228 = load i32, i32* @.g.n
+  %.229 = icmp slt i32 %.145at38, %.228
+  br i1 %.229, label %.230, label %.226
+.212:
+  %.215 = sub i32 %.160, 1
+  %.216 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.215
+  %.217 = load i32, i32* %.216
+  %.218 = icmp ne i32 %.217, -1
+  br i1 %.218, label %.208, label %.209
+.225:
+  %.241 = load i32, i32* @.g.n
+  %.242 = add i32 %.160, %.241
+  call void @mmerge(i32 %.160, i32 %.242)
+  br label %.226 
+.226:
+  %.248 = icmp sgt i32 %.145at38, 1
+  br i1 %.248, label %.249, label %.246
+.230:
+  %.233 = load i32, i32* @.g.n
+  %.234 = add i32 %.160, %.233
+  %.235 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.234
+  %.236 = load i32, i32* %.235
+  %.237 = icmp ne i32 %.236, -1
+  br i1 %.237, label %.225, label %.226
+.245:
+  %.260 = load i32, i32* @.g.n
+  %.261 = sub i32 %.160, %.260
+  call void @mmerge(i32 %.160, i32 %.261)
+  br label %.246 
+.246:
+  %.266 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 0
+  %.267 = load i32, i32* %.266
+  %.268 = icmp ne i32 %.267, -1
+  br i1 %.268, label %.269, label %.265
+.249:
+  %.252 = load i32, i32* @.g.n
+  %.253 = sub i32 %.160, %.252
+  %.254 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.253
+  %.255 = load i32, i32* %.254
+  %.256 = icmp ne i32 %.255, -1
+  br i1 %.256, label %.245, label %.246
+.264:
+  %.285 = add i32 %.311, 1
+  call void @putint(i32 %.285)
+  call void @putch(i32 10)
+  br label %.265 
+.265:
+  %.312 = phi i32 [%.315, %.246], [%.315, %.269], [%.315, %.275], [1, %.264]
+  br label %.150 
+.269:
+  %.272 = getelementptr inbounds [110 x i32], [110 x i32]* @.g.array, i32 0, i32 %.129
+  %.273 = load i32, i32* %.272
+  %.274 = icmp ne i32 %.273, -1
+  br i1 %.274, label %.275, label %.265
+.275:
+  %.277at66 = call i32 @findfa(i32 0)
+  %.279at66 = call i32 @findfa(i32 %.129)
+  %.280 = icmp eq i32 %.277at66, %.279at66
+  br i1 %.280, label %.264, label %.265
+.298:
+  call void @putint(i32 -1)
+  call void @putch(i32 10)
+  br label %.299 
+.299:
+  br label %.108do_while_cond.28.80 
 }
