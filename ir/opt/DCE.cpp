@@ -54,10 +54,12 @@ void DCE::RunOnFunction()
             //     delete block;
             // }
             func->clear();
+            func->init_bbs();
             auto Block = new BasicBlock;
             auto ret = new RetInst(C);
             Block->push_back(ret);
             func->add_block(Block);
+            func->GetBasicBlock().push_back(Block);
         }
         return;
     }

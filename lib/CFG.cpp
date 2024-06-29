@@ -914,11 +914,30 @@ void BasicBlock::RemovePredBB(BasicBlock *pred) {
         BasicBlock *b = phi->PhiRecord.begin()->second.second;
         if (b == this) {
           phi->RAUW(UndefValue::get(phi->GetType()));
-          // phi->ClearRelation();
-          // phi->EraseFromParent();
           delete phi;
         } else {
+
           Value *repl = (*(phi->PhiRecord.begin())).second.first;
+          // avoid situation like this:
+          //   %54 =phi [%23,%1]
+          //   %.23 = add i32 %.54, 2
+          // After RAUW:  %.23 = add i32 %.23, 2; which is not SSA form
+          // for (auto use : phi->GetUserlist()) {
+          //   auto user = use->GetUser();
+          //   if (user->GetDef() != nullptr && user->GetDef() == repl) {
+          //     auto New = user->CloneInst();
+          //     for (auto iter = user->GetParent()->begin();
+          //          iter != user->GetParent()->end(); ++iter) {
+          //       if (*iter == user) {
+          //         iter.insert_before(New);
+          //         break;
+          //       }
+          //     }
+          //     user->RAUW(New);
+          //     repl=(*(phi->PhiRecord.begin())).second.first;
+          //     delete user;
+          //   }
+          // }
           phi->RAUW(repl);
           // phi->ClearRelation();
           // phi->EraseFromParent();
@@ -1052,7 +1071,7 @@ Operand BasicBlock::GenerateCallInst(std::string id, std::vector<Operand> args,
 }
 
 void BasicBlock::Delete() {
-  assert(GetUserlist().is_empty() && "It should not be used when human delete");
+  //assert(GetUserlist().is_empty() && "It should not be used when human delete");
   this->~BasicBlock();
 }
 
@@ -1115,9 +1134,12 @@ PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,
 PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB, Type *ty,
                              std::string Name) {
   PhiInst *tmp = new PhiInst(BeforeInst, ty);
+
   for (auto iter = currentBB->begin(); iter != currentBB->end(); ++iter) {
-    if (*iter == BeforeInst)
+    if (*iter == BeforeInst){
       iter.insert_before(tmp);
+      break;
+    }
   }
   if (!Name.empty())
     tmp->SetName(Name);

@@ -1,4 +1,6 @@
 #include "LoopInfo.hpp"
+#include <algorithm>
+#include <cassert>
 #include <set>
 #include <unordered_set>
 #include <vector>
@@ -228,4 +230,26 @@ void LoopAnalysis::PrintPass() {
         std::cout << x->GetName() << " ";
     std::cout << "\n\r";
   }
+}
+
+void LoopAnalysis::DeleteLoop(LoopInfo *loop) {
+  auto parent = loop->GetParent();
+  while (parent) {
+    auto it = std::find(parent->GetSubLoop().begin(),
+                        parent->GetSubLoop().end(), loop);
+    assert(it != parent->GetSubLoop().end());
+    parent->GetSubLoop().erase(it);
+    for (auto loopbody : loop->GetLoopBody()) {
+      auto iter = std::find(parent->GetLoopBody().begin(),
+                            parent->GetLoopBody().end(), loopbody);
+      if (iter != parent->GetLoopBody().end()) {
+        parent->GetLoopBody().erase(iter);
+      }
+    }
+    parent = parent->GetParent();
+  }
+  auto it = std::find(LoopRecord.begin(), LoopRecord.end(), loop);
+  assert(it != LoopRecord.end());
+  LoopRecord.erase(it);
+  return;
 }
