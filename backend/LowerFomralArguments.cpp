@@ -25,7 +25,7 @@ void LowerFormalArguments(Function* func, RISCVLoweringContext& ctx) {
                 ctx(loadinst); 
                 offset+=4;
             }
-            else if(type = riscv_float32) {
+            else if(type == riscv_float32) {
                 RISCVMIR* loadinst = new RISCVMIR(RISCVMIR::_flw);
                 loadinst->SetDef(vreg);
                 loadinst->AddOperand(stackreg);

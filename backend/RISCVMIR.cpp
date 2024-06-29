@@ -183,6 +183,36 @@ StackRegister* RISCVFrame::spill(VirRegister* mop) {
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
     return frameobjs.back().get()->GetStackReg();
 }
+RISCVMIR* RISCVFrame::spill(PhyRegister* mop) {
+    int type = mop->Getregenum();
+    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
+    StackRegister* sreg = frameobjs.back().get()->GetStackReg();
+    RISCVMIR* store;
+    if(type>PhyRegister::begin_normal_reg && type<PhyRegister::end_normal_reg) {
+        store = new RISCVMIR(RISCVMIR::_sd);
+    }
+    else if(type>PhyRegister::begin_float_reg && type<PhyRegister::end_float_reg) {
+        store = new RISCVMIR(RISCVMIR::_fsd);
+    }
+    else assert(0&&"wrong phyregister type");
+    store->AddOperand(mop);
+    store->AddOperand(sreg);
+    return store;
+}
+RISCVMIR* RISCVFrame::load_to_preg(StackRegister* sreg,PhyRegister* mop) {
+    int type = mop->Getregenum();
+    RISCVMIR* load;
+    if(type>PhyRegister::begin_normal_reg && type<PhyRegister::end_normal_reg) {
+        load = new RISCVMIR(RISCVMIR::_ld);
+    }
+    else if(type>PhyRegister::begin_float_reg && type<PhyRegister::end_float_reg) {
+        load = new RISCVMIR(RISCVMIR::_fld);
+    }
+    else assert(0&&"wrong phyregister type");
+    load->SetDef(mop);
+    load->AddOperand(sreg);
+    return load;
+}
 StackRegister* RISCVFrame::spill(Value* val) {
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
     return frameobjs.back().get()->GetStackReg();
@@ -298,7 +328,7 @@ void RISCVFrame::GenerateFrameTail() {
         for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
             RISCVMIR* inst = *it;
             if (inst->GetOpcode() == ISA::ret) {
-                
+                 
                 if( frame_size>2047) {
                     // 以合法方式保存sp.s0
                     // temp_frame_size = frame_size % 4096;

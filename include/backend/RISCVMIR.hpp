@@ -121,10 +121,12 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         BeginFloatLoadMem,
         _flw,
+        _fld,
         EndFloatLoadMem,
         
         BeginFloatStoreMem,
         _fsw,
+        _fsd,
         EndFloatStoreMem,
         
         EndFloatMem,
@@ -229,6 +231,8 @@ class RISCVFrame{
     RISCVFrame(RISCVFunction*);
     StackRegister* spill(VirRegister*);
     StackRegister* spill(Value*);
+    RISCVMIR* spill(PhyRegister*);
+    RISCVMIR* load_to_preg(StackRegister*,PhyRegister*);
     std::vector<std::unique_ptr<RISCVFrameObject>>& GetFrameObjs();
     void GenerateFrame();
     void GenerateFrameHead();

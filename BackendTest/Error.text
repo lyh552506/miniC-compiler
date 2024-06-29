@@ -5,7 +5,6 @@ Assembler Error: Total: 1
 Linker Error: Total: 9
 TimeOut Function:1
 Wrong Answer: Total: 0
-AE: testcases/functional/95_float.s
 LE: testcases/functional/77_substr.o
 LE: testcases/functional/66_exgcd.o
 LE: testcases/functional/69_expr_eval.o

@@ -13,8 +13,9 @@ void RegAllocImpl::RunGCpass(){
     frame.GenerateFrame();
     frame.GenerateFrameHead();
     frame.GenerateFrameTail();
+
     Legalize legal(ctx);
     legal.run();
 
-    gc->RunOnFunc();
+    // gc->RunOnFunc();
 }

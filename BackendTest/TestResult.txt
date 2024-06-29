@@ -1,16 +1,55 @@
 Timeout: testcases/functional/86_long_code2.sy
-Compiler Error: Total: 0
-Assembler Error: Total: 1
-Linker Error: Total: 9
+Compiler Error: Total: 21
+Assembler Error: Total: 6
+Linker Error: Total: 22
 TimeOut Function:1
 Wrong Answer: Total: 0
-AE: testcases/functional/95_float.s
-LE: testcases/functional/77_substr.o
-LE: testcases/functional/66_exgcd.o
-LE: testcases/functional/69_expr_eval.o
+CE: testcases/functional/94_nested_loops.sy
+CE: testcases/functional/29_break.sy
+CE: testcases/functional/34_arr_expr_len.sy
+CE: testcases/functional/31_while_if_test1.sy
+CE: testcases/functional/63_big_int_mul.sy
+CE: testcases/functional/24_if_test5.sy
+CE: testcases/functional/30_continue.sy
+CE: testcases/functional/32_while_if_test2.sy
+CE: testcases/functional/53_scope2.sy
+CE: testcases/functional/62_percolation.sy
+CE: testcases/functional/82_long_func.sy
+CE: testcases/functional/68_brainfk.sy
+CE: testcases/functional/28_while_test3.sy
+CE: testcases/functional/22_if_test3.sy
+CE: testcases/functional/23_if_test4.sy
+CE: testcases/functional/83_long_array.sy
+CE: testcases/functional/27_while_test2.sy
+CE: testcases/functional/26_while_test1.sy
+CE: testcases/functional/79_var_name.sy
+CE: testcases/functional/85_long_code.sy
+CE: testcases/functional/52_scope.sy
+AE: testcases/functional/21_if_test2.s
+AE: testcases/functional/41_unary_op2.s
+AE: testcases/functional/51_short_circuit3.s
+AE: testcases/functional/40_unary_op.s
+AE: testcases/functional/64_calculator.s
+AE: testcases/functional/49_if_complex_expr.s
+LE: testcases/functional/28_while_test3.o
+LE: testcases/functional/32_while_if_test2.o
+LE: testcases/functional/68_brainfk.o
+LE: testcases/functional/94_nested_loops.o
+LE: testcases/functional/79_var_name.o
+LE: testcases/functional/24_if_test5.o
+LE: testcases/functional/29_break.o
+LE: testcases/functional/83_long_array.o
 LE: testcases/functional/86_long_code2.o
-LE: testcases/functional/04_arr_defn3.o
-LE: testcases/functional/88_many_params2.o
-LE: testcases/functional/05_arr_defn4.o
+LE: testcases/functional/26_while_test1.o
+LE: testcases/functional/31_while_if_test1.o
+LE: testcases/functional/52_scope.o
+LE: testcases/functional/27_while_test2.o
+LE: testcases/functional/34_arr_expr_len.o
+LE: testcases/functional/82_long_func.o
+LE: testcases/functional/30_continue.o
+LE: testcases/functional/53_scope2.o
+LE: testcases/functional/22_if_test3.o
+LE: testcases/functional/85_long_code.o
 LE: testcases/functional/63_big_int_mul.o
-LE: testcases/functional/84_long_array2.o
+LE: testcases/functional/23_if_test4.o
+LE: testcases/functional/62_percolation.o

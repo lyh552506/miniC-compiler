@@ -15,16 +15,21 @@ class Register:public RISCVMOperand{
 class PhyRegister:public Register{
     public:
     enum PhyReg{
+        begin_normal_reg,
         zero,ra,sp,gp,tp,t0,t1,t2,s0,s1,
         a0,a1,a2,a3,a4,a5,a6,a7,
         s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,
         t3,t4,t5,t6,
+        end_normal_reg,
+        begin_float_reg,
         ft0,ft1,ft2,ft3,ft4,ft5,ft6,ft7,
         fs0,fs1,fa0,fa1,
         fa2,fa3,fa4,fa5,fa6,fa7,
         fs2,fs3,fs4,fs5,fs6,fs7,fs8,fs9,fs10,fs11,
         ft8,ft9,ft10,ft11,
+        end_float_reg,
         _NULL,
+
         x0=zero,x1=ra,x2=sp,x3=gp,x4=tp,x5=t0,x6=t1,x7=t2,x8=s0,x9=s1,
         x10=a0,x11=a1,x12=a2,x13=a3,x14=a4,x15=a5,x16=a6,x17=a7,
         x18=s2,x19=s3,x20=s4,x21=s5,x22=s6,x23=s7,x24=s8,x25=s9,x26=s10,x27=s11,
@@ -73,6 +78,7 @@ class RegisterList {
     std::vector<PhyRegister*> reglist_int;
     std::vector<PhyRegister*> reglist_float;
     std::vector<PhyRegister*> reglist_test;
+    std::vector<PhyRegister*> reglist_caller;
     // std::vector<PhyRegister*> reglist_param_int;
     // std::vector<PhyRegister*> reglist_temp_int;
     // std::vector<PhyRegister*> reglist_param_float;
