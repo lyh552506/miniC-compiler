@@ -1,5 +1,6 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
+#include <cassert>
 #include <sstream>
 
 Use::Use(User *__fat, Value *__usee) : fat(__fat), usee(__usee) {
@@ -257,8 +258,10 @@ User *User::CloneInst() {
     return new GetElementPtrInst(gep->GetOperand(0), tmp);
   } else if (auto ld = dynamic_cast<LoadInst *>(this)) {
     return new LoadInst(ld->GetOperand(0));
+  } else if(auto st=dynamic_cast<StoreInst*>(this)) {
+    return new StoreInst(st->GetOperand(0),st->GetOperand(1));
   } else {
-    assert(0 && "cant get this place");
+    assert(0);
   }
 }
 

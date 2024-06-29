@@ -31,8 +31,8 @@ public:
   int GetLoopDepth() { return LoopDepth; }
   int LoopBodyNum() { return ContainBlocks.size(); }
   void InsertLoopBody(BasicBlock *bb) { PushVecSingleVal(ContainBlocks, bb); }
-  const std::vector<BasicBlock *> &GetLoopBody() { return ContainBlocks; }
-  const std::vector<LoopInfo *> &GetSubLoop() { return SubLoops; }
+  std::vector<BasicBlock *> &GetLoopBody() { return ContainBlocks; }
+  std::vector<LoopInfo *> &GetSubLoop() { return SubLoops; }
   void AddLoopDepth(int depth) { LoopDepth += depth; }
   bool IsVisited() { return visited; }
   void setVisited(bool v) { visited = v; }
@@ -96,6 +96,7 @@ public:
   void LoopAnaly();
   void CloneToBB();
   void ExpandSubLoops();
+  void DeleteLoop(LoopInfo* loop);
   bool CanBeOpt() { return LoopRecord.size() != 0; }
   // only for test
   void PrintPass();
@@ -112,7 +113,7 @@ public:
                 return a1->LoopDepth > a2->LoopDepth;
               });
     AlreadyGetInfo = true;
-    _DEBUG(PrintPass();)
+   // _DEBUG(PrintPass();)
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }
   iterator begin() { return LoopRecord.begin(); }

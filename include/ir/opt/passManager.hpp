@@ -49,7 +49,7 @@ private:
   std::unique_ptr<ADCE> m_adce;
   std::unique_ptr<DCE> m_dce;
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
-  std::unique_ptr<cfgSimplify> m_cfgsimple;
+  cfgSimplify* m_cfgsimple;
   std::unique_ptr<Inliner> m_inline;
   std::unique_ptr<Global2Local> m_g2l;
   std::unique_ptr<SCCP> m_sccp;
