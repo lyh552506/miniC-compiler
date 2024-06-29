@@ -234,6 +234,7 @@ void RISCVFrame::GenerateFrame() {
         obj->SetEndAddOff(frame_size);
         frame_size += obj->GetFrameObjSize();
         obj->SetBeginAddOff(frame_size);
+        int a =0;
     }
     frame_size += parent->GetMaxParamSize();
     int mod = frame_size % 16;
@@ -243,7 +244,8 @@ void RISCVFrame::GenerateFrame() {
 
     for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
         std::unique_ptr<RISCVFrameObject>& obj = *it;
-        int off = 0 - static_cast<int>(obj->GetBeginAddOff()+obj->GetFrameObjSize());
+        // int off = 0 - (int)(obj->GetBeginAddOff()+obj->GetFrameObjSize());
+        int off = 0 - (int)(obj->GetBeginAddOff());
         obj->GenerateStackRegister(off);
     }
 

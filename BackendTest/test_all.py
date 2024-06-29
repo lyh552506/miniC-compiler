@@ -13,8 +13,10 @@ compiler_path = "./build/SYSY-compiler"
 # test_folder="./testcases"
 test_folder="testcases/functional"
 sylib_path = "BackendTest/sylib.o"
-pass_args=["--mem2reg","--constprop"] # ,"--reassociate","--simplifycfg"
-
+pass_args=["--mem2reg", "--pre", "--constprop", "--dce",\
+           "--loops", "--simplifycfg", "--ece",
+           "--global2local", "--reassociate",
+           "--lcssa"]
 CE_list = [] # Compile Error
 AE_list = [] # Assembler Error
 LE_list = [] # Linker Error

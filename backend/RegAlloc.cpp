@@ -17,5 +17,5 @@ void RegAllocImpl::RunGCpass(){
     Legalize legal(ctx);
     legal.run();
 
-    // gc->RunOnFunc();
+    gc->RunOnFunc();
 }
