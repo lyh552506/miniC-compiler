@@ -1,12 +1,6 @@
 #include "licm.hpp"
-#include "BaseCFG.hpp"
 #include "CFG.hpp"
-#include "my_stl.hpp"
-#include <algorithm>
 #include <cassert>
-#include <iostream>
-#include <set>
-#include <vector>
 
 void LICMPass::RunOnFunction() {
   loop->RunOnFunction();
@@ -23,11 +17,12 @@ void LICMPass::RunOnLoop(LoopInfo *l) {
   change |= licmSink(contain, l, head);
   change |= licmHoist(contain, l, head);
 }
-
+// user在外部
 bool LICMPass::licmSink(const std::set<BasicBlock *> &contain, LoopInfo *l,
                         BasicBlock *bb) {
+  bool changed = false;
   if (contain.find(bb) == contain.end())
-    return false;
+    return changed;
   //找到支配最低节点
   for (auto des : m_dom->GetNode(bb->num).idom_child) {
     auto child = m_dom->GetNode(des).thisBlock;
@@ -35,11 +30,11 @@ bool LICMPass::licmSink(const std::set<BasicBlock *> &contain, LoopInfo *l,
   }
   //只处理当前循环bb
   if (loop->LookUp(bb) != l)
-    return false;
+    return changed;
   for (auto iter = bb->rbegin(); iter != bb->rend(); --iter) {
     auto inst = *iter;
     if (UserOutSideLoop(contain, inst, l) && CanBeMove(inst)) {
-      _DEBUG(std::cerr << "LICM START SINK CODE: " << inst->GetName()
+      _DEBUG(std::cerr << "LICM START TO SINK CODE: " << inst->GetName()
                        << std::endl;)
       std::map<BasicBlock *, User *> InsertNew; //记录每个exit对应的
       for (auto user : inst->GetUserlist()) {
@@ -49,26 +44,7 @@ bool LICMPass::licmSink(const std::set<BasicBlock *> &contain, LoopInfo *l,
         auto PBB = phi->GetParent();
         User *CloneInst = nullptr;
         if (InsertNew.find(PBB) == InsertNew.end()) {
-          if (auto call = dynamic_cast<CallInst *>(inst)) {
-            std::vector<Value *> tmp;
-            std::for_each(
-                call->Getuselist().begin() + 1, call->Getuselist().end(),
-                [&tmp](auto &ele) { tmp.push_back(ele->GetValue()); });
-            CloneInst = new CallInst(call->Getuselist()[0]->GetValue(), tmp);
-          } else if (auto bin = dynamic_cast<BinaryInst *>(inst)) {
-            CloneInst = new BinaryInst(bin->GetOperand(0), bin->getopration(),
-                                       bin->GetOperand(1));
-          } else if (auto gep = dynamic_cast<GetElementPtrInst *>(inst)) {
-            std::vector<Value *> tmp;
-            for (int i = 1; i < gep->Getuselist().size(); i++) {
-              tmp.push_back(GetOperand(gep, i));
-            }
-            CloneInst = new GetElementPtrInst(GetOperand(gep, 0), tmp);
-          } else if (auto ld = dynamic_cast<LoadInst *>(inst)) {
-            CloneInst = new LoadInst(GetOperand(inst, 0));
-          } else {
-            assert(0 && "cant get this place");
-          }
+          CloneInst = inst->CloneInst();
           CloneInst->SetName(inst->GetName() + ".licm");
           for (auto it = PBB->begin(); it != PBB->end(); ++it) {
             if (!dynamic_cast<PhiInst *>(*it)) {
@@ -84,23 +60,98 @@ bool LICMPass::licmSink(const std::set<BasicBlock *> &contain, LoopInfo *l,
         }
         phi->RAUW(CloneInst);
         delete phi;
+        changed = true;
       }
       assert(inst->GetUserListSize() == 0);
       delete inst;
     }
   }
-  return false;
+  return changed;
 }
-
+// use都是不变量
 bool LICMPass::licmHoist(const std::set<BasicBlock *> &contain, LoopInfo *l,
-                         BasicBlock *bb) {}
+                         BasicBlock *bb) {
+  bool changed = false;
+  if (contain.find(bb) == contain.end())
+    return changed;
+  //只处理当前循环bb
+  if (loop->LookUp(bb) != l)
+    return changed;
+  for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
+    auto inst = *iter;
+    if (IsLoopInvariant(contain, inst, l) && CanBeMove(inst)) {
+      auto exit = loop->GetExit(l);
+      if (!IsDomExit(inst, exit))
+        continue;
+      _DEBUG(std::cerr << "LICM START TO HOIST CODE: " << inst->GetName()
+                       << std::endl;)
+      auto prehead = loop->GetPreHeader(l);
+      assert(prehead);
+      auto New_inst = inst->CloneInst();
+      auto it = prehead->rbegin();
+      _DEBUG(std::cerr << "LICM Move Invariant: " << inst->GetName()
+                       << " To PreHeader" << prehead->GetName() << std::endl;)
+      it.insert_before(New_inst);
+      inst->RAUW(New_inst);
+      delete inst;
+      changed = true;
+    }
+  }
+  for (auto des : m_dom->GetNode(bb->num).idom_child) {
+    auto child = m_dom->GetNode(des).thisBlock;
+    change |= licmHoist(contain, l, child);
+  }
+  return changed;
+}
 
 bool LICMPass::UserOutSideLoop(const std::set<BasicBlock *> &contain, User *I,
                                LoopInfo *curloop) {
   for (auto use : I->GetUserlist()) {
     auto userbb = use->GetUser()->GetParent();
-    //f()
+    if (auto phi = dynamic_cast<PhiInst *>(use->GetUser())) {
+      // check lcssa form
+      bool IsLcssaPhi =
+          std::all_of(phi->PhiRecord.begin(), phi->PhiRecord.end(),
+                      [I](const auto &val) { return I == val.second.first; });
+      if (IsLcssaPhi)
+        continue;
+      // true phi form
+      bool IsPhiMoveable =
+          std::all_of(phi->PhiRecord.begin(), phi->PhiRecord.end(),
+                      [I, &contain](const auto &val) {
+                        if (I == val.second.first)
+                          if (contain.find(val.second.second) != contain.end())
+                            return false;
+                        return true;
+                      });
+      if (!IsPhiMoveable)
+        return false;
+    }
     if (contain.find(userbb) != contain.end())
+      return false;
+  }
+  return true;
+}
+
+bool LICMPass::IsLoopInvariant(const std::set<BasicBlock *> &contain, User *I,
+                               LoopInfo *curloop) {
+  bool res =
+      std::all_of(I->Getuselist().begin(), I->Getuselist().end(),
+                  [curloop, &contain](auto &ele) {
+                    auto val = ele->GetValue();
+                    if (auto user = dynamic_cast<User *>(val))
+                      if (contain.find(user->GetParent()) != contain.end())
+                        return false;
+                    return true;
+                  });
+  return res;
+}
+
+bool LICMPass::IsDomExit(User *I, std::vector<BasicBlock *> &exit) {
+  assert(!exit.empty());
+  auto targetbb = I->GetParent();
+  for (auto ex : exit) {
+    if (!m_dom->dominates(targetbb, ex))
       return false;
   }
   return true;

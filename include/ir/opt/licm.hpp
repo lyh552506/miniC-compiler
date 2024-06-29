@@ -3,6 +3,7 @@
 #include "LoopInfo.hpp"
 #include "PassManagerBase.hpp"
 #include "dominant.hpp"
+#include <vector>
 
 class LICMPass : PassManagerBase {
 public:
@@ -21,7 +22,9 @@ private:
                  BasicBlock *bb);
   bool UserOutSideLoop(const std::set<BasicBlock *> &contain, User *I,
                        LoopInfo *curloop);
+  bool IsLoopInvariant(const std::set<BasicBlock *> &contain,User* I,LoopInfo * curloop);                       
   bool CanBeMove(User *I);
+  bool IsDomExit(User*I,std::vector<BasicBlock*>&exit);
   dominance *m_dom;
   Function *m_func;
   LoopAnalysis *loop;

@@ -1,5 +1,6 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
+#include <cassert>
 #include <sstream>
 
 Use::Use(User *__fat, Value *__usee) : fat(__fat), usee(__usee) {
@@ -9,12 +10,13 @@ void Use::RemoveFromUserList(User *is_valid) {
   assert(is_valid == fat);
   GetValue()->GetUserlist().GetSize()--;
   (*prev) = nxt;
-  if(nxt!=nullptr)nxt->prev = prev;
+  if (nxt != nullptr)
+    nxt->prev = prev;
 }
 void UserList::push_front(Use *_data) {
   // manage the size of the userlist
   size++;
-  
+
   _data->nxt = head;
   if (head != nullptr)
     head->prev = &(_data->nxt);
@@ -38,19 +40,20 @@ Value::Value(Type *_tp) : tp(_tp) {
   name += std::to_string(Singleton<Module>().IR_number("."));
 }
 
-Value* Value::clone(std::unordered_map<Operand,Operand>& mapping){
+Value *Value::clone(std::unordered_map<Operand, Operand> &mapping) {
   // if this is called it must be a param or Global
-  if(Singleton<Module>().globalvalue.find(this)!=Singleton<Module>().globalvalue.end())
+  if (Singleton<Module>().globalvalue.find(this) !=
+      Singleton<Module>().globalvalue.end())
     return this;
-  if(mapping.find(this)!=mapping.end())
+  if (mapping.find(this) != mapping.end())
     return mapping[this];
-  Value* newval=new Value(this->GetType());
-  mapping[this]=newval;
+  Value *newval = new Value(this->GetType());
+  mapping[this] = newval;
   return newval;
 }
 
-Value::~Value(){
-  while(!userlist.is_empty())
+Value::~Value() {
+  while (!userlist.is_empty())
     delete userlist.Front()->fat;
 }
 
@@ -75,65 +78,60 @@ void Value::print() {
     std::cout << "%" << GetName();
 }
 
-//replace all uses with transferred value
-void Value::RAUW(Value* val){
-    UserList& list=this->userlist;
-    // manage user size in value
-    list.GetSize()=0;
-    Use*& Head=list.Front();
-    while(Head){
-        if(auto phi=dynamic_cast<PhiInst*>(Head->fat))
-          phi->Phiprop(Head->usee,val);
-        Head->usee=val;
-        Use* tmp=Head->nxt;
-        val->userlist.push_front(Head);
-        Head=tmp;
-    }
+// replace all uses with transferred value
+void Value::RAUW(Value *val) {
+  UserList &list = this->userlist;
+  // manage user size in value
+  list.GetSize() = 0;
+  Use *&Head = list.Front();
+  while (Head) {
+    if (auto phi = dynamic_cast<PhiInst *>(Head->fat))
+      phi->Phiprop(Head->usee, val);
+    Head->usee = val;
+    Use *tmp = Head->nxt;
+    val->userlist.push_front(Head);
+    Head = tmp;
+  }
 }
-std::vector<BasicBlock*> BasicBlock::GetSuccBlock()
-{   
-    if(!Succ_Block.empty())
-        return this->Succ_Block;
-    else
-    {
-        std::cerr << "There is no Succ Block." << std::endl;
-        return std::vector<BasicBlock*>{};
-    }
+std::vector<BasicBlock *> BasicBlock::GetSuccBlock() {
+  if (!Succ_Block.empty())
+    return this->Succ_Block;
+  else {
+    std::cerr << "There is no Succ Block." << std::endl;
+    return std::vector<BasicBlock *>{};
+  }
 }
-bool Value::isUndefVal()
-{
-    if(dynamic_cast<UndefValue*>(this))
-        return true;
-    else
-        return false;
+bool Value::isUndefVal() {
+  if (dynamic_cast<UndefValue *>(this))
+    return true;
+  else
+    return false;
 }
 
-bool Value::isGlobVal(){
-  if(dynamic_cast<User*>(this))
+bool Value::isGlobVal() {
+  if (dynamic_cast<User *>(this))
     return false;
-  if(dynamic_cast<ConstantData*>(this))
+  if (dynamic_cast<ConstantData *>(this))
     return false;
   return true;
 }
 
-bool Value::isConstZero()
-{
-    if(auto num = dynamic_cast<ConstIRInt*>(this))
-        return num->GetVal() == 0;
-    else if(auto num = dynamic_cast<ConstIRFloat*>(this))
-        return num->GetVal() == 0;
-    else if(auto num = dynamic_cast<ConstIRBoolean*>(this))
-        return num->GetVal() == false;
-    else
-        return false;
+bool Value::isConstZero() {
+  if (auto num = dynamic_cast<ConstIRInt *>(this))
+    return num->GetVal() == 0;
+  else if (auto num = dynamic_cast<ConstIRFloat *>(this))
+    return num->GetVal() == 0;
+  else if (auto num = dynamic_cast<ConstIRBoolean *>(this))
+    return num->GetVal() == false;
+  else
+    return false;
 }
 
-bool Value::isConstOne()
-{
-    if(auto num = dynamic_cast<ConstIRInt*>(this))
-        return num->GetVal() == 1;
-    else 
-        return false;
+bool Value::isConstOne() {
+  if (auto num = dynamic_cast<ConstIRInt *>(this))
+    return num->GetVal() == 1;
+  else
+    return false;
 }
 
 void User::add_use(Value *__data) {
@@ -142,12 +140,12 @@ void User::add_use(Value *__data) {
 
 User::User() : Value(VoidType::NewVoidTypeGet()) {}
 
-User* User::clone(std::unordered_map<Operand,Operand>& mapping){
+User *User::clone(std::unordered_map<Operand, Operand> &mapping) {
   // this method is responsible for copying uselist
-  assert(mapping.find(this)!=mapping.end()&&"User not copied!");
-  auto to=dynamic_cast<User*>(mapping[this]);
-  assert(to!=nullptr&&"It is not a User!Impossible");
-  for(auto& use:uselist)
+  assert(mapping.find(this) != mapping.end() && "User not copied!");
+  auto to = dynamic_cast<User *>(mapping[this]);
+  assert(to != nullptr && "It is not a User!Impossible");
+  for (auto &use : uselist)
     to->add_use(use->GetValue()->clone(mapping));
   return to;
 }
@@ -160,131 +158,144 @@ void User::ClearRelation() {
     use->RemoveFromUserList(use->GetUser());
 }
 
-bool User::IsTerminateInst()
-{
-  if(dynamic_cast<UnCondInst*>(this))
+bool User::IsTerminateInst() {
+  if (dynamic_cast<UnCondInst *>(this))
     return true;
-  else if(dynamic_cast<CondInst*>(this))
+  else if (dynamic_cast<CondInst *>(this))
     return true;
-  else if(dynamic_cast<RetInst*>(this))
+  else if (dynamic_cast<RetInst *>(this))
     return true;
   else
     return false;
 }
 
-bool User::IsCondInst(){
-  if(dynamic_cast<CondInst*>(this))
+bool User::IsCondInst() {
+  if (dynamic_cast<CondInst *>(this))
     return true;
   return false;
 }
 
-bool User::IsUncondInst(){
-  if(dynamic_cast<UnCondInst*>(this))
+bool User::IsUncondInst() {
+  if (dynamic_cast<UnCondInst *>(this))
     return true;
   return false;
 }
-bool User::HasSideEffect()
-{
-  if(dynamic_cast<StoreInst*>(this))
-  {
-    Value* op = this->Getuselist()[1]->usee;
-    if(op->isGlobVal())
+bool User::HasSideEffect() {
+  if (dynamic_cast<StoreInst *>(this)) {
+    Value *op = this->Getuselist()[1]->usee;
+    if (op->isGlobVal())
       return true;
-    if(op->GetTypeEnum() == InnerDataType::IR_PTR)
+    if (op->GetTypeEnum() == InnerDataType::IR_PTR)
       return true;
   }
-  if(dynamic_cast<CallInst*>(this))
-  {
+  if (dynamic_cast<CallInst *>(this)) {
     std::string name = this->Getuselist()[0]->usee->GetName();
-    if(name =="getint" || name == "getch" || name == "getfloat" \
-    || name == "getfarray" || name == "putint" || name == "putfloat" \
-    || name == "putarray" || name == "putfarray" || name == "putf" || name == "getarray" \
-    || name == "putch" || name == "_sysy_starttime" || name == "_sysy_stoptime" \
-    || name == "llvm.memcpy.p0.p0.i32")
+    if (name == "getint" || name == "getch" || name == "getfloat" ||
+        name == "getfarray" || name == "putint" || name == "putfloat" ||
+        name == "putarray" || name == "putfarray" || name == "putf" ||
+        name == "getarray" || name == "putch" || name == "_sysy_starttime" ||
+        name == "_sysy_stoptime" || name == "llvm.memcpy.p0.p0.i32")
       return true;
-    Function* func = dynamic_cast<Function*>(this->Getuselist()[0]->GetValue());
-    if(func){
-    if(Singleton<Module>().Side_Effect_Funcs.count(func))
-      return true;
-    for(auto it = func->begin(); it != func->end(); ++it)
-    {
-      BasicBlock* block = *it;
-      for(auto iter = block->begin(); iter != block->end(); ++iter)
-      {
-        if(dynamic_cast<CallInst*>(*iter))
-        {
-          Function* Func = dynamic_cast<Function*>((*iter)->Getuselist()[0]->usee);
-          if(Func && Singleton<Module>().Side_Effect_Funcs.count(Func))
-            return true;
+    Function *func =
+        dynamic_cast<Function *>(this->Getuselist()[0]->GetValue());
+    if (func) {
+      if (Singleton<Module>().Side_Effect_Funcs.count(func))
+        return true;
+      for (auto it = func->begin(); it != func->end(); ++it) {
+        BasicBlock *block = *it;
+        for (auto iter = block->begin(); iter != block->end(); ++iter) {
+          if (dynamic_cast<CallInst *>(*iter)) {
+            Function *Func =
+                dynamic_cast<Function *>((*iter)->Getuselist()[0]->usee);
+            if (Func && Singleton<Module>().Side_Effect_Funcs.count(Func))
+              return true;
+          }
         }
       }
     }
-    }
   }
-  if(dynamic_cast<GetElementPtrInst*>(this))
-  {
+  if (dynamic_cast<GetElementPtrInst *>(this)) {
     auto &users = this->GetUserlist();
-    for(auto user_ : users)
-    {
-      User* user = user_->GetUser();
-      if(user->HasSideEffect())
+    for (auto user_ : users) {
+      User *user = user_->GetUser();
+      if (user->HasSideEffect())
         return true;
       else
         return false;
     }
   }
-  if(this->GetUserlist().is_empty())
+  if (this->GetUserlist().is_empty())
     return false;
   return false;
 }
-int User::GetUseIndex(Use* Op)
-{
-  for(int i = 0; i < uselist.size(); i++)
-  {
-    if(uselist[i].get() == Op)
+int User::GetUseIndex(Use *Op) {
+  for (int i = 0; i < uselist.size(); i++) {
+    if (uselist[i].get() == Op)
       return i;
   }
 }
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 
-void User::FullReplace(User* inst){
-  assert(inst->GetType()==this->GetType()&&"Type not match!");
+void User::FullReplace(User *inst) {
+  assert(inst->GetType() == this->GetType() && "Type not match!");
   RAUW(inst);
   replace_list_node_with(inst);
 }
+User *User::CloneInst() {
+  if (auto call = dynamic_cast<CallInst *>(this)) {
+    std::vector<Value *> tmp;
+    std::for_each(call->Getuselist().begin() + 1, call->Getuselist().end(),
+                  [&tmp](auto &ele) { tmp.push_back(ele->GetValue()); });
+    return new CallInst(call->Getuselist()[0]->GetValue(), tmp);
+  } else if (auto bin = dynamic_cast<BinaryInst *>(this)) {
+    return new BinaryInst(bin->GetOperand(0), bin->getopration(),
+                          bin->GetOperand(1));
+  } else if (auto gep = dynamic_cast<GetElementPtrInst *>(this)) {
+    std::vector<Value *> tmp;
+    for (int i = 1; i < gep->Getuselist().size(); i++) {
+      tmp.push_back(gep->GetOperand(i));
+    }
+    return new GetElementPtrInst(gep->GetOperand(0), tmp);
+  } else if (auto ld = dynamic_cast<LoadInst *>(this)) {
+    return new LoadInst(ld->GetOperand(0));
+  } else if(auto st=dynamic_cast<StoreInst*>(this)) {
+    return new StoreInst(st->GetOperand(0),st->GetOperand(1));
+  } else {
+    assert(0);
+  }
+}
 
 // change uselist[num] to val while manage use-def relation
-void User::RSUW(int num,Operand val){
-  auto& uselist=Getuselist();
-  assert(0<=num&&num<uselist.size()&&"Invalid Location!");
+void User::RSUW(int num, Operand val) {
+  auto &uselist = Getuselist();
+  assert(0 <= num && num < uselist.size() && "Invalid Location!");
   uselist[num]->RemoveFromUserList(this);
-  uselist[num]->usee=val;
+  uselist[num]->usee = val;
   val->add_user(uselist[num].get());
 }
 
 ConstantData::ConstantData(Type *_tp) : Value(_tp) {}
 
-ConstantData* ConstantData::clone(std::unordered_map<Operand,Operand>& mapping){
+ConstantData *
+ConstantData::clone(std::unordered_map<Operand, Operand> &mapping) {
   return this;
 }
 
-ConstantData* ConstantData::getNullValue(Type* tp)
-{
+ConstantData *ConstantData::getNullValue(Type *tp) {
   InnerDataType type = tp->GetTypeEnum();
-  if(type == InnerDataType::IR_Value_INT)
+  if (type == InnerDataType::IR_Value_INT)
     return ConstIRInt::GetNewConstant(0);
-  else if(type == InnerDataType::IR_Value_Float)
+  else if (type == InnerDataType::IR_Value_Float)
     return ConstIRFloat::GetNewConstant(0);
   else
     return nullptr;
 }
-bool ConstantData::isZero()
-{
-  if(auto Int = dynamic_cast<ConstIRInt*>(this))
+bool ConstantData::isZero() {
+  if (auto Int = dynamic_cast<ConstIRInt *>(this))
     return Int->GetVal() == 0;
-  else if(auto Float = dynamic_cast<ConstIRFloat*>(this))
+  else if (auto Float = dynamic_cast<ConstIRFloat *>(this))
     return Float->GetVal() == 0;
-  else if(auto Bool = dynamic_cast<ConstIRBoolean*>(this))
+  else if (auto Bool = dynamic_cast<ConstIRBoolean *>(this))
     return Bool->GetVal() == false;
   else
     return false;

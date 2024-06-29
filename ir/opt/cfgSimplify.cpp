@@ -1,19 +1,12 @@
 #include "cfgSimplify.hpp"
-
+#include "LoopInfo.hpp"
 #include <algorithm>
 #include <cassert>
-#include <cstddef>
-#include <cstdlib>
-#include <iostream>
-#include <iterator>
-#include <utility>
-#include <vector>
-
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "Singleton.hpp"
+#include <memory>
 
 void cfgSimplify::RunOnFunction() {
+  loopAnlaysis = new LoopAnalysis(m_func, m_dom);
+  loopAnlaysis->RunOnFunction();
   bool keep_loop = true;
   while (keep_loop) {
     keep_loop = false;
@@ -23,9 +16,41 @@ void cfgSimplify::RunOnFunction() {
     keep_loop |= mergeSpecialBlock();
     keep_loop |= SimplifyUncondBr();
     keep_loop |= mergeRetBlock();
+    keep_loop |= EliminateDeadLoop();
     if (m_dom != nullptr)
       keep_loop |= simplifyPhiInst();
   }
+}
+
+bool cfgSimplify::EliminateDeadLoop() {
+  bool changed = false;
+  for (auto iter = loopAnlaysis->begin(); iter != loopAnlaysis->end(); iter++) {
+    auto loop = *iter;
+    auto header = loop->GetHeader();
+    assert(header);
+    bool ShoudDelet = true;
+    for (auto rev : m_dom->GetNode(header->num).rev) {
+      auto revbb = m_dom->GetNode(rev).thisBlock;
+      if (!loop->Contain(revbb)) {
+        ShoudDelet = false;
+        break;
+      }
+    }
+    // dead loop
+    if (ShoudDelet) {
+      for (auto loopbody : loop->GetLoopBody()) {
+        auto it = std::find(m_func->GetBasicBlock().begin(),
+                            m_func->GetBasicBlock().end(), loopbody);
+        assert(it != m_func->GetBasicBlock().end());
+        m_func->GetBasicBlock().erase(it);
+        DeletDeadBlock(loopbody);
+      }
+      loopAnlaysis->DeleteLoop(loop);
+      changed = true;
+      break;
+    }
+  }
+  return changed;
 }
 
 bool cfgSimplify::simplifyPhiInst() {
@@ -206,7 +231,8 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock *bb) {
   //     bb  ...
   //     /
   //   succ
-  if(std::distance(m_dom->GetNode(bb->num).rev.begin(),m_dom->GetNode(bb->num).rev.end())==0)
+  if (std::distance(m_dom->GetNode(bb->num).rev.begin(),
+                    m_dom->GetNode(bb->num).rev.end()) == 0)
     return true;
   for (auto iter = succ->begin(); iter != succ->end(); ++iter) {
     //更新succ的phi信息
@@ -219,7 +245,7 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock *bb) {
       if (it == phi->PhiRecord.end())
         continue;
       int times = 0;
-      
+
       for (int rev : m_dom->GetNode(bb->num).rev) {
         if (times == 0)
           it->second.second = m_dom->GetNode(rev).thisBlock;
@@ -368,8 +394,12 @@ bool cfgSimplify::DelSamePhis() {
 bool cfgSimplify::simplify_Block() {
   bool changed = false;
   int index = 0;
-  while (index < m_func->GetBasicBlock().size()) {
-    BasicBlock *bb = m_func->GetBasicBlock()[index++];
+  std::set<BasicBlock *> WorkList{m_func->GetBasicBlock().begin(),
+                                  m_func->GetBasicBlock().end()};
+  while (!WorkList.empty()) {
+    // BasicBlock *bb = m_func->GetBasicBlock()[index++];
+    auto bb = *(WorkList.begin());
+    WorkList.erase(bb);
     int pred_num = std::distance(m_dom->GetNode(bb->num).rev.begin(),
                                  m_dom->GetNode(bb->num).rev.end());
     if ((pred_num == 0 && m_dom->GetNode(bb->num).idom != bb->num) ||
@@ -377,20 +407,21 @@ bool cfgSimplify::simplify_Block() {
 #ifdef DEBUG
       std::cerr << "simplify_Block :" << bb->GetName() << std::endl;
 #endif
+      auto it = std::find(m_func->GetBasicBlock().begin(),
+                          m_func->GetBasicBlock().end(), bb);
+      m_func->GetBasicBlock().erase(it);
+
       DeletDeadBlock(bb);
-      m_func->GetBasicBlock()[index - 1] =
-          m_func->GetBasicBlock()[m_func->GetBasicBlock().size() - 1];
-      m_func->GetBasicBlock().pop_back();
-      index--;
+      WorkList.insert(m_func->GetBasicBlock().begin(),
+                      m_func->GetBasicBlock().end());
       changed = true;
-      continue;
     }
   }
   return changed;
 }
 
 bool cfgSimplify::DealBrInst() {
-  bool changed=false;
+  bool changed = false;
   for (auto bb : m_func->GetBasicBlock()) {
     User *x = bb->back();
     if (auto cond = dynamic_cast<CondInst *>(x)) {
@@ -438,7 +469,7 @@ bool cfgSimplify::DealBrInst() {
           m_dom->GetNode(nxt->num).rev.remove(pred->num);
           m_dom->GetNode(pred->num).des.remove(nxt->num);
         }
-        changed=true;
+        changed = true;
       } else if (nxt == ignore) {
         UnCondInst *uncond = new UnCondInst(nxt);
         auto tmp = pred->begin();
@@ -453,7 +484,7 @@ bool cfgSimplify::DealBrInst() {
                   << std::endl;
 #endif
         delete cond;
-        changed=true;
+        changed = true;
       }
     }
   }
