@@ -29,9 +29,9 @@ static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"ece", no_argument, 0, 8},
                                        {"inline", no_argument, 0, 9}, // inline out
                                        {"global2local", no_argument, 0, 10},
-                                       {"sccp", no_argument, 0, 12}, // sccp out
-                                       {"reassociate", no_argument, 0, 11},
-                                       {"cse", no_argument, 0, 13}, // cse out
+                                       {"sccp", no_argument, 0, 11},
+                                       {"reassociate", no_argument, 0, 12},
+                                       {"cse", no_argument, 0, 13},
                                        {"lcssa", no_argument, 0, 14},
                                        {"licm", no_argument, 0, 15}, // licm
                                        {0, 0, 0, 0}};

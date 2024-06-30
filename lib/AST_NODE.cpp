@@ -603,19 +603,19 @@ BasicBlock* WhileStmt::GetInst(GetInstState state){
 
     condition->GetOperand(condition_part,inner_loop,nxt_building);
     
-    auto do_while_cond=state.current_building->GenerateNewBlock("do_while_cond."+std::to_string(begin)+"."+std::to_string(end));
+    //auto do_while_cond=state.current_building->GenerateNewBlock("do_while_cond."+std::to_string(begin)+"."+std::to_string(end));
     /// @note 考虑while true和while false的情况
     if(!inner_loop->GetUserlist().is_empty()){
-        condition->GetOperand(do_while_cond,inner_loop,nxt_building);
-        GetInstState loop_state={inner_loop,nxt_building,do_while_cond};
+        //condition->GetOperand(do_while_cond,inner_loop,nxt_building);
+        GetInstState loop_state={inner_loop,nxt_building,condition_part};
         inner_loop=stmt->GetInst(loop_state);
     }
     else{
         delete inner_loop;
-        delete do_while_cond;
+        //delete do_while_cond;
         inner_loop=nullptr;
     };
-    if(inner_loop!=nullptr&&!inner_loop->EndWithBranch())inner_loop->GenerateUnCondInst(do_while_cond);
+    if(inner_loop!=nullptr&&!inner_loop->EndWithBranch())inner_loop->GenerateUnCondInst(condition_part);
     if(nxt_building->GetUserlist().is_empty()){
         delete nxt_building;
         return state.current_building;
