@@ -86,15 +86,9 @@ dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
 void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx) {
     for(auto& data : module->GetGlobalVariable()) {
         globlvar* gvar = new globlvar(data.get());
-        ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->get_name()), gvar);
+        ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->GetName()), gvar);
         globlvar_list.push_back(gvar);
     }
-    for(auto& data : module->GetConstantHandle()) {
-        globlvar* gvar = new globlvar(data);
-        ctx.insert_val2mop(data, gvar);
-        globlvar_list.push_back(gvar);
-    }
-
 }
 void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
     for (auto& function : ctx.GetFunctions()) {
