@@ -246,6 +246,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     int LoopDepth=0;
     int num=0;
     bool visited=false;
+    bool reachable=false;
 };
 
 class BuildInFunction:public Value
@@ -291,6 +292,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     //curr ==>  insert -> curr
     void InsertBlock(BasicBlock* curr,BasicBlock* insert);
     void init_visited_block();
+    void init_reach_block();
     int bb_num=0;
 };
 class Module:public SymbolTable

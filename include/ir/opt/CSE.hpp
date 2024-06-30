@@ -98,6 +98,7 @@ class CSE
     std::vector<User*> wait_del;
     Function* func;
     dominance* DomTree;
+    size_t num;
 private:
     void Process_Multiple_In(info& block_in, std::vector<info*> args);
     bool Is_Gep_Changed(User* inst, BasicBlock* Curr_Block);

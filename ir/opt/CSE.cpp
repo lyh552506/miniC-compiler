@@ -10,6 +10,7 @@ void CSE::Init()
 }
 bool CSE::RunOnFunc()
 {
+    _DEBUG(num = 0;)
     bool modified = false;
     // 这里采用deque而非vector的原因是在元素个数较多的时候deque的效率更高
     std::deque<ProcessNode*> WorkList;
@@ -19,6 +20,8 @@ bool CSE::RunOnFunc()
     while(!WorkList.empty())
     {
         ProcessNode* CurrNode = WorkList.back();
+        if(CurrNode->node->thisBlock->GetName() == ".5")
+            int b =1;
         if(Processed.find(CurrNode) == Processed.end())
         {
             modified |= RunOnNode(CurrNode, *BlockIn[CurrNode->node->thisBlock], *BlockOut[CurrNode->node->thisBlock]);
@@ -27,6 +30,8 @@ bool CSE::RunOnFunc()
         else if(CurrNode->iter != CurrNode->end)
         {
             dominance::Node* Child = &DomTree->GetNode(CurrNode->nextChild());
+            // if(Child->thisBlock->GetName() == ".5")
+            //     int b =1;
             BlockIn[Child->thisBlock] = BlockOut[CurrNode->node->thisBlock];
             BlockOut[Child->thisBlock] = new info;
             WorkList.push_back(new ProcessNode(Child));
@@ -37,7 +42,7 @@ bool CSE::RunOnFunc()
             WorkList.pop_back();
         }
     }
-    
+    _DEBUG(std::cerr<<"Function: "<<func->GetName()<<" CSE: "<<num<<std::endl;)
     return modified;
 }
 
@@ -45,11 +50,63 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
 {
     bool modified = false;
     BasicBlock* CurrentBlock = node_->node->thisBlock;
+    if(CurrentBlock->GetName() == ".5")
+        int b =1;
+    // if(CurrentBlock->GetUserlist().GetSize() > 1)
+    //     block_in = *(new info);
+    // if(CurrentBlock->GetName() == ".5")
+    // {
+    //     auto test = DomTree->GetNode(node_->node->idom).thisBlock;
+    //     int b =1;
+    //     // auto test1 = DomTree->GetNode(node_->node->idom).idom_child;
+    //     // for(auto& item : test1)
+    //     // {
+    //     //     auto test2 = DomTree->GetNode(item).thisBlock;
+    //     // }
+    // }
     for(User* inst : *CurrentBlock)
     {
+        // if(dynamic_cast<CondInst*>(inst))
+        // {
+        //     if(auto boolean = dynamic_cast<ConstIRBoolean*>(inst->Getuselist()[0]->usee))
+        //     {
+        //         BasicBlock* TrueBlock = inst->Getuselist()[1]->usee->as<BasicBlock>();                
+        //         BasicBlock* FalseBlock = inst->Getuselist()[2]->usee->as<BasicBlock>();                
+        //         if(boolean->GetVal())
+        //         {
+        //             TrueBlock->reachable = true;
+        //             FalseBlock->reachable = false;
+        //         }
+        //         else
+        //         {
+        //             TrueBlock->reachable = false;
+        //             FalseBlock->reachable = true;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         BasicBlock* TrueBlock = inst->Getuselist()[1]->usee->as<BasicBlock>();                
+        //         BasicBlock* FalseBlock = inst->Getuselist()[2]->usee->as<BasicBlock>();                
+        //         TrueBlock->reachable = true;
+        //         FalseBlock->reachable = true;
+        //     }
+        // }
         //Binary
-        if(dynamic_cast<BinaryInst*>(inst))
+        if(auto binary = dynamic_cast<BinaryInst*>(inst))
         {
+            auto opcode = binary->getopration();
+            auto LHS = dynamic_cast<ConstantData*>(binary->GetOperand(0));
+            auto RHS = dynamic_cast<ConstantData*>(binary->GetOperand(1));
+            if(LHS && RHS)
+            {
+                auto C = ConstantFolding::ConstFoldBinary(opcode, LHS, RHS);
+                if(C)
+                {
+                inst->RAUW(C);
+                wait_del.push_back(inst);
+                modified = true;
+                }
+            }
             size_t hash = HashTool::BinaryInstHash{}(inst);
             for(auto& [key, val] : block_in.AEB_Binary)
             {
@@ -106,6 +163,7 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
                 else
                     block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
             }
+            continue;
         }
 
         // Gep
@@ -129,12 +187,13 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
             {
                 block_in.Geps[key] = inst;
             }
+            continue;
         }
 
         // Load
         if(dynamic_cast<LoadInst*>(inst))
         {
-            size_t Val = HashTool::InstHash{}(inst);
+            size_t Val = HashTool::InstHash{}(inst->Getuselist()[0]->usee);
             if(block_in.Loads.find(Val) != block_in.Loads.end())
             {
                 Value* val = block_in.Loads[Val];
@@ -156,11 +215,18 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
                         }
                     }
                 }
+                else if(dynamic_cast<ConstantData*>(val))
+                {
+                    inst->RAUW(block_in.Loads[Val]);
+                    wait_del.push_back(inst);
+                    modified = true;
+                }
             }
             else
             {
                 block_in.Loads[Val] = inst;
             }
+            continue;
         }
 
         // Store
@@ -198,14 +264,17 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
                 {
                     block_in.Loads[dst_hash] = Src;
                 }
+                else if(block_in.Loads.find(dst_hash) == block_in.Loads.end() && Dst->isGlobVal())
+                {
+                    block_in.Loads[dst_hash] = Src;
+                }
             }
-
             // // Handle Src -> Gens
             // {
 
             // }
 
-
+            continue;
         }
 
         // Call
@@ -236,6 +305,7 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
         User* inst = wait_del.back();
         wait_del.pop_back();
         delete inst;
+        num++;
     }
     return modified;
 }
