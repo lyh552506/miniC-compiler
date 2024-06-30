@@ -245,7 +245,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     void GenerateRetInst();
     Operand GenerateCallInst(std::string,std::vector<Operand>,int);
     void GenerateStoreInst(Operand,Operand);
-    void GenerateAlloca(Variable*);
+    void GenerateAlloca(Type*,std::string);
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
     BasicBlock* SplitAt(User*);
@@ -311,14 +311,12 @@ class Module:public SymbolTable
     std::vector<FunctionPtr> ls;
     std::vector<GlobalVariblePtr> globalvaribleptr;
     public:
-    std::unordered_set<Value*> globalvalue;
     std::set<Function*> hasInlinedFunc; // Func that has done inlined pass
     std::set<Function*> inlinedFunc; // Func who is inlined by pass
     std::set<Function*> Side_Effect_Funcs; // Func that has side effect
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
-    void GenerateGlobalVariable(Variable* ptr);
-    Operand GenerateMemcpyHandle(Type*,Operand);
+    void PushVariable(Variable* ptr);
     std::vector<FunctionPtr>& GetFuncTion();
     std::vector<GlobalVariblePtr>& GetGlobalVariable();
     void Test();

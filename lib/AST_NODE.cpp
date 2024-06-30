@@ -203,7 +203,6 @@ void BaseDef::codegen(){
         auto tmp=array_descripters->GetDeclDescipter();
         auto var=new Variable(Variable::GlobalVariable,tmp,ID);
         if(civ!=nullptr)var->add_use(civ->GetOperand(tmp,nullptr));
-        Singleton<Module>().GenerateGlobalVariable(var);
     }
     else
     {
@@ -230,7 +229,6 @@ void BaseDef::codegen(){
         else
         {
             if(civ!=nullptr)tmp->add_use(civ->GetFirst(nullptr));
-            Singleton<Module>().GenerateGlobalVariable(tmp);
         }
     }
 }
@@ -247,14 +245,13 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
     if(array_descripters!=nullptr)
     {
         auto tmp=array_descripters->GetDeclDescipter();
-        auto var=new Variable(Variable::GlobalVariable,tmp,ID);
-        state.current_building->GenerateAlloca(var);
+        state.current_building->GenerateAlloca(tmp,ID);
         if(civ!=nullptr)
         {
             Operand init=civ->GetOperand(tmp,state.current_building);
             // if(init==nullptr)return state.current_building;
             std::vector<Operand> args;
-            auto src=Singleton<Module>().GenerateMemcpyHandle(PointerType::NewPointerTypeGet(tmp),init);
+            auto src=new Variable(Variable::Constant,tmp,"");
             args.push_back(Singleton<Module>().GetValueByName(ID));//des
             args.push_back(src);
             args.push_back(ConstIRInt::GetNewConstant(tmp->get_size()));
@@ -268,7 +265,7 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
     else
     {
         auto decl_type=Type::NewTypeByEnum(Singleton<InnerDataType>());
-        auto tmp=new Variable(Variable::GlobalVariable,decl_type,ID);
+        // auto tmp=new Variable(Variable::GlobalVariable,decl_type,ID);
         if(Singleton<IR_CONSTDECL_FLAG>().flag==1){
             Operand var;
             if(civ==nullptr)
@@ -287,7 +284,7 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
             Singleton<Module>().Register(ID,var);
         }
         else{
-            state.current_building->GenerateAlloca(tmp);
+            state.current_building->GenerateAlloca(decl_type,ID);
             if(civ!=nullptr){
                 state.current_building->GenerateStoreInst(civ->GetFirst(state.current_building),Singleton<Module>().GetValueByName(ID));
             }
@@ -727,4 +724,9 @@ void FunctionCall::print(int x){
     AST_NODE::print(x);
     std::cout<<id;
     if(cp!=nullptr)cp->print(x+1);
+}
+
+void Module::PushVariable(Variable* ptr){
+    assert(ptr->usage!=Variable::Param&&"Wrong API Usage");
+    globalvaribleptr.push_back(std::make_unique<Variable>(ptr));
 }

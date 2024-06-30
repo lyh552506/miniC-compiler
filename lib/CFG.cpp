@@ -470,21 +470,26 @@ void BinaryInst::SetOperand(int index, Value *val) {
   uselist.insert(uselist.begin() + index, std::make_unique<Use>(this, val));
 }
 
-Variable::Variable(UsageTag tag, Type *_tp, std::string _id):User(PointerType::NewPointerTypeGet(_tp)),usage(tag){
+Variable::Variable(UsageTag tag, Type *_tp, std::string _id):User(tag==Param?_tp:PointerType::NewPointerTypeGet(_tp)),usage(tag){
   /// @warning FIXME: checkout which use name as condition
-  if(usage==GlobalVariable)
-    name=".G.";
-  else
-    name=".C.";
-  name+=_id;
+  if(usage==Param)return;
+  if(usage==GlobalVariable){
+    name=".G."+_id;
+    Singleton<Module>().Register(_id,this);
+  }
+  else if(usage==Constant)
+    name=".C."+name;
+  Singleton<Module>().PushVariable(this);
 }
 
 void Variable::print() {
   Value::print();
   if(usage==GlobalVariable)
     std::cout << " = global ";
-  else
+  else if(usage==Constant)
     std::cout << " = constant ";
+  else /* if(usage==Param) */
+    return;
   GetType()->print();
   std::cout<<" ";
   if(uselist.size()!=0){
@@ -1279,6 +1284,13 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
     }
   }
   return inlineinfo;
+}
+
+void Function::push_param(Variable* var){
+  auto alloca=new AllocaInst(PointerType::NewPointerTypeGet(var->GetType()));
+  auto store=new StoreInst(var,alloca);
+  front()->push_front(store);
+  front()->push_front(alloca);
 }
 
 void Function::init_visited_block() {
