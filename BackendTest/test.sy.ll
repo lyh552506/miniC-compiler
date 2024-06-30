@@ -332,8 +332,12 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.g.a = global [10 x [10 x i32]] zeroinitializer
 define i32 @main(){
-.6:
-  ret i32 0 
+.1:
+  %.3 = alloca [101 x i32]
+  %.6 = getelementptr inbounds [101 x i32], [101 x i32]* %.3, i32 0, i32 44
+  store i32 1234, i32* %.6
+  %.9 = getelementptr inbounds [101 x i32], [101 x i32]* %.3, i32 0, i32 44
+  %.10 = load i32, i32* %.9
+  ret i32 %.10 
 }

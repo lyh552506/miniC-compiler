@@ -2,6 +2,8 @@
 import os
 import sys
 import subprocess
+from contextlib import contextmanager
+import signal
 import filecmp
 import difflib
 
@@ -86,6 +88,20 @@ for objfile in AC_Assembler_list:
         if ret.returncode != 0:
             LE_list.append(objfile)
 
+
+def alarm_handler(signum, frame):
+    raise TimeoutError
+@contextmanager
+def time_limit(seconds):
+    if seconds is not None:
+        signal.signal(signal.SIGALRM, alarm_handler)
+        signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        if seconds is not None:
+            signal.alarm(0)
+
 # Run On Qemu
 Try_run_list = []
 for root, dirs, files in os.walk(test_folder):
@@ -102,23 +118,26 @@ for test in Try_run_list:
 
 
     try:
-        process = subprocess.Popen(compile_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, timeout=10)
-        stdout_data, stderr_data = process.communicate(input=input_data)
-        print("Output:", stdout_data.strip())
-    except subprocess.TimeoutExpired:
+        with time_limit(15):
+            process = subprocess.Popen(compile_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+            stdout_data, stderr_data = process.communicate(input=input_data)
+            print("Output:",test,"\n",stdout_data.strip())
+            try:
+                with open(test+".out", 'r') as fout:
+                    output_data = fout.read().strip()
+            except FileNotFoundError:
+                output_data = ""
+
+            if stdout_data.strip() == output_data:
+                AC_list.append(test)
+            else:
+                print("Wrong Answer: " + test, "\n")
+                WA_list.append(test)
+    except TimeoutError:
         Time_Out.append(test)
+        print("Time Out:" + test)
+
     
-    try:
-        with open(test+".out", 'r') as fout:
-            output_data = fout.read().strip()
-    except FileNotFoundError:
-        output_data = ""
-    
-    if stdout_data.strip() == output_data:
-        AC_list.append(test)
-    else:
-        print("Wrong Answer: " + test)
-        WA_list.append(test)
 
 print("Compiler Error: Total: "+str(len(CE_list)))
 print("Assembler Error: Total: "+str(len(AE_list)))

@@ -427,22 +427,21 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     using PhyReg=PhyRegister::PhyReg;
     using ISA = RISCVMIR::RISCVISA;
     PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
+    PhyRegister* t0 = PhyRegister::GetPhyReg(PhyReg::t0);
     RISCVMIR* inst1 = nullptr;
     if(RISCVFrameObject* frameobj = dynamic_cast<RISCVFrameObject*>(baseptr)) {
         // addiw .1 s0 beginaddregister
-        inst1 = new RISCVMIR(ISA::_addiw);
-        VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_ptr);
+        inst1 = new RISCVMIR(ISA::_addi);
         BegAddrRegister* breg1 = new BegAddrRegister(frameobj);
-        inst1->SetDef(vreg1);
+        inst1->SetDef(t0);
         inst1->AddOperand(s0);
         inst1->AddOperand(breg1);
         ctx(inst1);
     } 
     else {
         // addw .1 s0, .x
-        inst1 = new RISCVMIR(ISA::_addw);
-        VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_ptr);
-        inst1->SetDef(vreg1);
+        inst1 = new RISCVMIR(ISA::_add);
+        inst1->SetDef(t0);
         inst1->AddOperand(s0);
         inst1->AddOperand(baseptr);
         ctx(inst1);
@@ -468,14 +467,14 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
             auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index), li->GetDef()});
             ctx(mul);
             // addw .base .base .2
-            ctx(Builder(RISCVMIR::_addw,{inst1->GetDef(),inst1->GetDef(),mul->GetDef()}));
+            ctx(Builder(RISCVMIR::_add,{inst1->GetDef(),inst1->GetDef(),mul->GetDef()}));
         }
         hasSubtype=dynamic_cast<HasSubType*>(hasSubtype->GetSubType());
     }
     #undef M
 
     StackRegister* stackreg = nullptr;
-    stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
+    stackreg = new StackRegister(dynamic_cast<PhyRegister*>(inst1->GetDef())->Getregenum(), offset);
 
     /// @details Legalize StackRegister's offset togeter in LegalizePass
     // if(offset <= 2047) {

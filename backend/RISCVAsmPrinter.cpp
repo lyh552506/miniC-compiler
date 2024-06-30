@@ -89,6 +89,11 @@ void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx
         ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->get_name()), gvar);
         globlvar_list.push_back(gvar);
     }
+    for(auto& data : module->GetConstantHandle()) {
+        globlvar* gvar = new globlvar(data);
+        ctx.insert_val2mop(data, gvar);
+        globlvar_list.push_back(gvar);
+    }
 
 }
 void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
@@ -281,7 +286,83 @@ globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->get_n
     }
     else align = -1;//Error
 }
-
+globlvar::globlvar(MemcpyHandle* data):RISCVGlobalObject(data->GetType(),data->GetName()){
+    Operand init = data->GetOperand(0);
+    InnerDataType tp = init->GetType()->GetTypeEnum();
+    if(tp == InnerDataType::IR_Value_INT || tp == InnerDataType::IR_Value_Float) {
+        align = 2;
+        size = 4;
+        if (init) {
+            // sec = "data";
+            if(tp == InnerDataType::IR_Value_INT) {
+                std::string num = init->GetName();
+                int init = std::stoi(num);
+                init_vector.push_back(init);
+            }
+            if(tp == InnerDataType::IR_Value_Float) {
+                ConstIRFloat* temp = dynamic_cast<ConstIRFloat*>(init);
+                float init = temp->GetVal();
+                init_vector.push_back(init);
+            }
+        }
+        // else {
+        //     sec = "bss";
+        // }
+    }
+    else if (tp == InnerDataType::IR_ARRAY) {
+        align = 3;
+        Type* basetype = dynamic_cast<HasSubType*>(data->GetType())->get_baseType();
+        if(Initializer* arry_init = dynamic_cast<Initializer*>(init)) {
+            size = arry_init->GetType()->get_size();
+            int init_size = arry_init->size();
+            if (init_size == 0) {
+                // sec = "bss";
+            }
+            else {
+                // sec = "data";
+                int limi = dynamic_cast<ArrayType*>(arry_init->GetType())->GetNumEle();
+                for(int i=0;i<limi;i++){
+                    if(i < init_size){
+                        if(auto inits=dynamic_cast<Initializer*>((*arry_init)[i])) {
+                            //递归
+                            generate_array_init(inits, basetype);  
+                        }
+                        else {//Leaf 
+                            if(basetype->GetTypeEnum() == IR_Value_INT) {
+                                std::string num = (*arry_init)[i]->GetName();
+                                int init = std::stoi(num);
+                                init_vector.push_back(init);
+                            }
+                            else if (basetype->GetTypeEnum() == IR_Value_Float) {
+                                ConstIRFloat* temp = dynamic_cast<ConstIRFloat*>((*arry_init)[i]);
+                                float init = temp->GetVal();
+                                init_vector.push_back(init);
+                            }
+                        }
+                    }
+                    else {
+                        Type* temptp = dynamic_cast<ArrayType*>(arry_init->GetType())->GetSubType();
+                        size_t zeronum = temptp->get_size() / basetype->get_size();
+                        for(int i=0; i<zeronum; i++) {
+                            if(basetype->GetTypeEnum() == IR_Value_INT) {
+                                init_vector.push_back(static_cast<int>(0));
+                            }
+                            else if (basetype->GetTypeEnum() == IR_Value_Float) {
+                                init_vector.push_back(static_cast<float>(0));                        
+                            }
+                        }
+                    }
+                }
+            } 
+        }
+        else {
+            // undefined arr;
+            size = data->GetType()->get_size();
+            // sec = "bss";
+        }
+    }
+    else align = -1;//Error
+}
 void globlvar::generate_array_init(Initializer* arry_init, Type* basetype) {
     int init_size = arry_init->size();
     int limi = dynamic_cast<ArrayType*>(arry_init->GetType())->GetNumEle();

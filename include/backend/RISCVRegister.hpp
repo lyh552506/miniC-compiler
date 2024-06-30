@@ -59,7 +59,8 @@ class PhyRegister:public Register{
     };
     inline bool isCalleeSaved(){
         if(regenum==sp)return true;
-        if(regenum>=PhyReg::s0&&regenum<=PhyReg::s1)return true;
+        if(regenum==s1)return true;
+        // if(regenum>=PhyReg::s0&&regenum<=PhyReg::s1)return true;
         if(regenum>=PhyReg::s2&&regenum<=PhyReg::s11)return true;
         if(regenum>=PhyReg::fs0&&regenum<=PhyReg::fs1)return true;
         if(regenum>=PhyReg::fs2&&regenum<=PhyReg::fs11)return true;
