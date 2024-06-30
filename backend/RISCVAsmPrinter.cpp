@@ -89,6 +89,7 @@ void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx
         ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->get_name()), gvar);
         globlvar_list.push_back(gvar);
     }
+
 }
 void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
     for (auto& function : ctx.GetFunctions()) {
@@ -280,7 +281,7 @@ globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->get_n
     }
     else align = -1;//Error
 }
-// std::string globlvar::get_sec() {return sec;}
+
 void globlvar::generate_array_init(Initializer* arry_init, Type* basetype) {
     int init_size = arry_init->size();
     int limi = dynamic_cast<ArrayType*>(arry_init->GetType())->GetNumEle();

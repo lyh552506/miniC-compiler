@@ -11,7 +11,7 @@ sys.stdout = open(TestResult_path, 'w')
 
 compiler_path = "./build/SYSY-compiler"
 # test_folder="./testcases"
-test_folder="testcases/hidden_functional"
+test_folder="testcases/functional"
 sylib_path = "BackendTest/sylib.o"
 pass_args=["--mem2reg","--dce","--reassociate","--constprop","--ece","--simplifycfg","--loops","--lcssa"]
 CE_list = [] # Compile Error
@@ -21,6 +21,7 @@ LE_list = [] # Linker Error
 Time_Out = []
 WA_list = []
 
+AC_list = []
 # grab all the testcases
 # find files recursively
 test_list = []
@@ -86,21 +87,38 @@ for objfile in AC_Assembler_list:
             LE_list.append(objfile)
 
 # Run On Qemu
-# Try_run_list = []
-# for root, dirs, files in os.walk(test_folder):
-#     for file in files:
-#         if '.' not in file:
-#             Try_run_list.append(os.path.join(root, file))
-# for test in Try_run_list:
-#     compile_args=["qemu-riscv64", test]
-#     try:
-#         with open(test+".in", 'r') as fin:
-#             input_data = fin.read()
-#         process = subprocess.Popen(compile_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, timeout=10)
-#         stdout_data, stderr_data = process.communicate(input=input_data)
-#         print("Output:", stdout_data.strip())
-#     except subprocess.TimeoutExpired:
-#         Time_Out.append(test)
+Try_run_list = []
+for root, dirs, files in os.walk(test_folder):
+    for file in files:
+        if '.' not in file:
+            Try_run_list.append(os.path.join(root, file))
+for test in Try_run_list:
+    compile_args=["qemu-riscv64", test]
+    try:
+        with open(test+".in", 'r') as fin:
+            input_data = fin.read()
+    except FileNotFoundError:
+        input_data = ""
+
+
+    try:
+        process = subprocess.Popen(compile_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, timeout=10)
+        stdout_data, stderr_data = process.communicate(input=input_data)
+        print("Output:", stdout_data.strip())
+    except subprocess.TimeoutExpired:
+        Time_Out.append(test)
+    
+    try:
+        with open(test+".out", 'r') as fout:
+            output_data = fout.read().strip()
+    except FileNotFoundError:
+        output_data = ""
+    
+    if stdout_data.strip() == output_data:
+        AC_list.append(test)
+    else:
+        print("Wrong Answer: " + test)
+        WA_list.append(test)
 
 print("Compiler Error: Total: "+str(len(CE_list)))
 print("Assembler Error: Total: "+str(len(AE_list)))

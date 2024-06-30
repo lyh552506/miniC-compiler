@@ -1368,6 +1368,9 @@ std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() { return ls; }
 std::vector<std::unique_ptr<Variable>> &Module::GetGlobalVariable() {
   return globalvaribleptr;
 }
+std::vector<MemcpyHandle*>& Module::GetConstantHandle() {
+  return constants_handle;
+}
 
 Operand Module::GenerateMemcpyHandle(Type *_tp, Operand oper) {
   constants_handle.push_back(new MemcpyHandle(_tp, oper));

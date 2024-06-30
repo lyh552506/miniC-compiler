@@ -3,23 +3,26 @@
     .attribute unaligned_access, 0
     .attribute stack_align, 16
     .text
+    .globl  a
+    .bss
+    .align  3
+    .type  a, @object
+    .size  a, 400
+a:
+    .zero  400
+    .text
     .align  1
     .globl  main
     .type  main, @function
 main:
 .LBB0:
-	addi sp, sp, -432
-	sd ra, 424(sp)
-	sd s0, 416(sp)
-	addi s0, sp, 432
-	addi t0, s0, -420
-	mv a0, t0
-	mv a1, a1
-	li a2, 404
-	call memcpy@plt
+	addi sp, sp, -16
+	sd ra, 8(sp)
+	sd s0, 0(sp)
+	addi s0, sp, 16
 	mv a0, zero
-	ld ra, 424(sp)
-	ld s0, 416(sp)
-	addi sp, sp, 432
+	ld ra, 8(sp)
+	ld s0, 0(sp)
+	addi sp, sp, 16
 	ret 
     .size main, .-main

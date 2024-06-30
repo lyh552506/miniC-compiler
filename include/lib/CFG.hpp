@@ -311,6 +311,7 @@ class Module:public SymbolTable
     Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
     std::vector<GlobalVariblePtr>& GetGlobalVariable();
+    std::vector<MemcpyHandle*>& GetConstantHandle();
     void Test();
     void EraseFunction(Function* func);
     Function* GetMainFunction();
