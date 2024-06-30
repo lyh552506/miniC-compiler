@@ -402,8 +402,8 @@ bool cfgSimplify::simplify_Block() {
     WorkList.erase(bb);
     int pred_num = std::distance(m_dom->GetNode(bb->num).rev.begin(),
                                  m_dom->GetNode(bb->num).rev.end());
-    if ((pred_num == 0 && m_dom->GetNode(bb->num).idom != bb->num) ||
-        (pred_num == 1 && m_dom->GetNode(bb->num).rev.front() == bb->num)) {
+    if ((pred_num == 0 &&
+         m_dom->GetNode(bb->num).idom != bb->num)) { //自循环会有专门的函数处理
 #ifdef DEBUG
       std::cerr << "simplify_Block :" << bb->GetName() << std::endl;
 #endif
@@ -503,6 +503,7 @@ void cfgSimplify::DeletDeadBlock(BasicBlock *bb) {
     inst->RAUW(UndefValue::get(inst->GetType()));
   }
   updateDTinfo(bb);
+  loopAnlaysis->DeleteBlock(bb);
   bb->Delete();
   m_dom->updateBlockNum()--;
 }

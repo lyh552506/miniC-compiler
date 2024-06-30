@@ -253,3 +253,13 @@ void LoopAnalysis::DeleteLoop(LoopInfo *loop) {
   LoopRecord.erase(it);
   return;
 }
+
+void LoopAnalysis::DeleteBlock(BasicBlock *bb) {
+  auto loop = LookUp(bb);
+  if (!loop)
+    return;
+  while(loop){
+    loop->DeleteBlock(bb);
+    loop=loop->GetParent();
+  }
+}
