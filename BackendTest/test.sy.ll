@@ -332,10 +332,109 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@__constant..8 = constant [101 x i32]  [i32 1, i32 2, i32 3, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer]
+@.g.buf = global [2 x [100 x i32]] zeroinitializer
+define void @merge_sort(i32 %.6, i32 %.9){
+.4:
+  %.15 = add i32 %.6, 1
+  %.17 = icmp sge i32 %.15, %.9
+  br i1 %.17, label %.11, label %.12
+.11:
+  ret void
+.12:
+  %.23 = add i32 %.6, %.9
+  %.24 = sdiv i32 %.23, 2
+  call void @merge_sort(i32 %.6, i32 %.24)
+  call void @merge_sort(i32 %.24, i32 %.9)
+  br label %.41wc14 
+.41wc14:
+  %.173 = phi i32 [%.6, %.12], [%.171, %.74]
+  %.170 = phi i32 [%.24, %.12], [%.169, %.74]
+  %.167 = phi i32 [%.6, %.12], [%.87, %.74]
+  %.47 = icmp slt i32 %.173, %.24
+  br i1 %.47, label %.48, label %.187_preheader
+.42wloop.14.23:
+  %.58 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 0, i32 %.173
+  %.59 = load i32, i32* %.58
+  %.61 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 0, i32 %.170
+  %.62 = load i32, i32* %.61
+  %.63 = icmp slt i32 %.59, %.62
+  br i1 %.63, label %.54, label %.55
+.48:
+  %.52 = icmp slt i32 %.170, %.9
+  br i1 %.52, label %.42wloop.14.23, label %.187_preheader
+.54:
+  %.66 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 0, i32 %.173
+  %.67 = load i32, i32* %.66
+  %.69 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 1, i32 %.167
+  store i32 %.67, i32* %.69
+  %.72 = add i32 %.173, 1
+  br label %.74 
+.55:
+  %.77 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 0, i32 %.170
+  %.78 = load i32, i32* %.77
+  %.80 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 1, i32 %.167
+  store i32 %.78, i32* %.80
+  %.83 = add i32 %.170, 1
+  br label %.74 
+.74:
+  %.171 = phi i32 [%.173, %.55], [%.72, %.54]
+  %.169 = phi i32 [%.83, %.55], [%.170, %.54]
+  %.87 = add i32 %.167, 1
+  br label %.41wc14 
+.90wc24:
+  %.172 = phi i32 [%.173, %.48], [%.105, %.91wloop.24.28], [%.173, %.41wc14]
+  %.166 = phi i32 [%.167, %.48], [%.108, %.91wloop.24.28], [%.167, %.41wc14]
+  %.96 = icmp slt i32 %.172, %.24
+  br i1 %.96, label %.91wloop.24.28, label %.185_preheader
+.91wloop.24.28:
+  %.99 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 0, i32 %.172
+  %.100 = load i32, i32* %.99
+  %.102 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 1, i32 %.166
+  store i32 %.100, i32* %.102
+  %.105 = add i32 %.172, 1
+  %.108 = add i32 %.166, 1
+  br label %.90wc24 
+.111wc29:
+  %.168 = phi i32 [%.170.lcssa.0, %.185_preheader], [%.126, %.112wloop.29.33]
+  %.165 = phi i32 [%.166.lcssa.0, %.185_preheader], [%.129, %.112wloop.29.33]
+  %.117 = icmp slt i32 %.168, %.9
+  br i1 %.117, label %.112wloop.29.33, label %.181_preheader
+.112wloop.29.33:
+  %.120 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 0, i32 %.168
+  %.121 = load i32, i32* %.120
+  %.123 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 1, i32 %.165
+  store i32 %.121, i32* %.123
+  %.126 = add i32 %.168, 1
+  %.129 = add i32 %.165, 1
+  br label %.111wc29 
+.132wc35:
+  %.174 = phi i32 [%.6, %.181_preheader], [%.147, %.133wloop.35.38]
+  %.138 = icmp slt i32 %.174, %.9
+  br i1 %.138, label %.133wloop.35.38, label %.183_exit
+.133wloop.35.38:
+  %.141 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 1, i32 %.174
+  %.142 = load i32, i32* %.141
+  %.144 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 0, i32 %.174
+  store i32 %.142, i32* %.144
+  %.147 = add i32 %.174, 1
+  br label %.132wc35 
+.181_preheader:
+  br label %.132wc35 
+.183_exit:
+  br label %.11 
+.185_preheader:
+  %.166.lcssa.0 = phi i32 [%.166, %.90wc24]
+  br label %.111wc29 
+.187_preheader:
+  %.170.lcssa.0 = phi i32 [%.170, %.48], [%.170, %.41wc14]
+  br label %.90wc24 
+}
 define i32 @main(){
-.1:
-  %.3 = alloca [101 x i32]
-  call void @llvm.memcpy.p0.p0.i32([101 x i32]* %.3, [101 x i32]* @__constant..8, i32 404, i1 false)
+.152:
+  %.154 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 0, i32 0
+  %.156at43 = call i32 @getarray(i32* %.154)
+  call void @merge_sort(i32 0, i32 %.156at43)
+  %.161 = getelementptr inbounds [2 x [100 x i32]], [2 x [100 x i32]]* @.g.buf, i32 0, i32 0, i32 0
+  call void @putarray(i32 %.156at43, i32* %.161)
   ret i32 0 
 }

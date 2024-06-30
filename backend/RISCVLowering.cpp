@@ -44,9 +44,6 @@ bool RISCVFunctionLowering::run(Function* m){
     asmprinter->SetTextSegment(new textSegment(ctx));
     asmprinter->GetData()->GenerateTempvarList(ctx);
     asmprinter->GetData()->LegalizeGloablVar(ctx);
-
-    // Legalize legalize(ctx);
-    // legalize;
     
     // Register Allocation
     RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>(), ctx);

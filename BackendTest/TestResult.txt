@@ -1,53 +1,15 @@
-Compiler Error: Total: 43
-Assembler Error: Total: 5
-Linker Error: Total: 0
-TimeOut Function:0
+Timeout: testcases/functional/86_long_code2.sy
+Compiler Error: Total: 3
+Assembler Error: Total: 2
+Linker Error: Total: 4
+TimeOut Function:1
 Wrong Answer: Total: 0
-CE: testcases/functional/55_sort_test1.sy
-CE: testcases/functional/94_nested_loops.sy
-CE: testcases/functional/29_break.sy
-CE: testcases/functional/34_arr_expr_len.sy
-CE: testcases/functional/78_side_effect.sy
-CE: testcases/functional/96_matrix_add.sy
-CE: testcases/functional/31_while_if_test1.sy
-CE: testcases/functional/93_nested_calls.sy
 CE: testcases/functional/63_big_int_mul.sy
-CE: testcases/functional/44_stmt_expr.sy
-CE: testcases/functional/54_hidden_var.sy
-CE: testcases/functional/91_many_locals2.sy
-CE: testcases/functional/56_sort_test2.sy
-CE: testcases/functional/77_substr.sy
-CE: testcases/functional/72_hanoi.sy
-CE: testcases/functional/32_while_if_test2.sy
-CE: testcases/functional/64_calculator.sy
-CE: testcases/functional/59_sort_test5.sy
 CE: testcases/functional/62_percolation.sy
-CE: testcases/functional/74_kmp.sy
 CE: testcases/functional/61_sort_test7.sy
-CE: testcases/functional/65_color.sy
-CE: testcases/functional/88_many_params2.sy
-CE: testcases/functional/75_max_flow.sy
-CE: testcases/functional/68_brainfk.sy
-CE: testcases/functional/80_chaos_token.sy
-CE: testcases/functional/58_sort_test4.sy
-CE: testcases/functional/86_long_code2.sy
-CE: testcases/functional/69_expr_eval.sy
-CE: testcases/functional/79_var_name.sy
-CE: testcases/functional/99_matrix_tran.sy
-CE: testcases/functional/71_full_conn.sy
-CE: testcases/functional/87_many_params.sy
-CE: testcases/functional/85_long_code.sy
-CE: testcases/functional/98_matrix_mul.sy
-CE: testcases/functional/70_dijkstra.sy
-CE: testcases/functional/52_scope.sy
-CE: testcases/functional/73_int_io.sy
-CE: testcases/functional/57_sort_test3.sy
-CE: testcases/functional/84_long_array2.sy
-CE: testcases/functional/60_sort_test6.sy
-CE: testcases/functional/76_n_queens.sy
-CE: testcases/functional/97_matrix_sub.sy
-AE: testcases/functional/91_many_locals2.s
-AE: testcases/functional/63_big_int_mul.s
-AE: testcases/functional/54_hidden_var.s
 AE: testcases/functional/85_long_code.s
 AE: testcases/functional/64_calculator.s
+LE: testcases/functional/61_sort_test7.o
+LE: testcases/functional/86_long_code2.o
+LE: testcases/functional/63_big_int_mul.o
+LE: testcases/functional/62_percolation.o
