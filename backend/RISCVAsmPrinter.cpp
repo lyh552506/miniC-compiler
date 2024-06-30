@@ -86,7 +86,7 @@ dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
 void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx) {
     for(auto& data : module->GetGlobalVariable()) {
         globlvar* gvar = new globlvar(data.get());
-        ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->get_name()), gvar);
+        ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->GetName()), gvar);
         globlvar_list.push_back(gvar);
     }
 }
@@ -204,7 +204,7 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
 }
 
 //globlvar
-globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->get_name()){
+globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->GetName()){
     InnerDataType tp = data->GetType()->GetTypeEnum();
     if(tp == InnerDataType::IR_Value_INT || tp == InnerDataType::IR_Value_Float) {
         align = 2;
