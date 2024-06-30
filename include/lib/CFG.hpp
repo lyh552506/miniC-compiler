@@ -57,6 +57,7 @@ class Variable:public User
     /// @warning the type should be the inner type like alloca  
     Variable(UsageTag,Type*,std::string);
     void print();
+    Value* GetInitializer();
 };
 
 class UndefValue:public ConstantData{

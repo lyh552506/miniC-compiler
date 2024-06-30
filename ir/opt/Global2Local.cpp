@@ -46,8 +46,8 @@ void Global2Local::CalGlobal2Funcs()
     for(auto & global_ptr : module.GetGlobalVariable())
     {
         Variable* global = global_ptr.get();
-        Value* val = module.GetValueByName(global->get_name());
-        for(Use* user_ : val->GetUserlist())
+        // Value* val = module.GetValueByName(global->get_name());
+        for(Use* user_ : global->GetUserlist())
         {
             if(User* inst = dynamic_cast<User*>(user_->GetUser()))
                 Global2Funcs[global].insert(inst->GetParent()->GetParent());
@@ -105,18 +105,18 @@ void Global2Local::RunPass()
 
 void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
 {
-    AllocaInst* alloca = new AllocaInst(val->get_name(),val->GetType());
+    AllocaInst* alloca = new AllocaInst(val->GetName(),val->GetType());
     BasicBlock* begin = func->front();
     alloca->SetParent(begin);
     begin->push_front(alloca);
     if(!val->GetInitializer() && val->GetType()->GetTypeEnum() != InnerDataType::IR_ARRAY)
-        module.GetValueByName(val->get_name())->RAUW(alloca);
+        val->RAUW(alloca);
     else
     {
         if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
         {
             LocalArray(val, alloca, begin);
-            module.GetValueByName(val->get_name())->RAUW(alloca);
+            val->RAUW(alloca);
         }
         else
         {
@@ -129,7 +129,7 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
             Operand init = val->GetInitializer();
             StoreInst* store = new StoreInst(init, alloca);
             iter.insert_before(store);
-            module.GetValueByName(val->get_name())->RAUW(alloca);
+            val->RAUW(alloca);
         }
     }
 }
@@ -153,14 +153,10 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
 void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* block)
 {
     Operand initializer = arr->GetInitializer();
-    Value* val = module.GetValueByName(arr->get_name());
-    Type* tp = val->GetType();
+    Type* tp = arr->GetType();
     std::vector<Operand> args;
-    Operand src;
-    if(initializer)
-        src = module.GenerateMemcpyHandle(tp, initializer);
-    else
-        src = module.GenerateMemcpyHandle(tp, new Initializer(tp));
+    arr->usage=Variable::Constant;
+    Operand src=arr;
     args.push_back(alloca);
     args.push_back(src);
     if(auto subtp = dynamic_cast<HasSubType*>(tp)->GetSubType())
@@ -190,11 +186,10 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
     }
     if(RecursiveFunctions.find(func) != RecursiveFunctions.end())
         return false;
-    Value* Val = module.GetValueByName(val->get_name());
     if(val->GetType()->GetTypeEnum() != InnerDataType::IR_ARRAY)
     {
         bool changed = false;
-        for(Use* use_ : Val->GetUserlist())
+        for(Use* use_ : val->GetUserlist())
         {
             if(StoreInst* inst = dynamic_cast<StoreInst*>(use_->GetUser()))
                 changed = true;
@@ -233,7 +228,7 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
     }
     else
     {
-        for(Use* use_ : Val->GetUserlist())
+        for(Use* use_ : val->GetUserlist())
         {
             if(GetElementPtrInst* inst = dynamic_cast<GetElementPtrInst*>(use_->GetUser()))
             {
