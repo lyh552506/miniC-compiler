@@ -160,8 +160,13 @@ bool DCE::FuncHasSideEffect(Function* func)
         {
             for(Use* Use_ : _param->GetUserlist())
             {
-                if(dynamic_cast<StoreInst*>(Use_->usee))
+                if(dynamic_cast<StoreInst*>(Use_->GetUser()))
                     return true;
+                for(Use* Use__ : Use_->GetUser()->GetUserlist())
+                {
+                    if(dynamic_cast<StoreInst*>(Use__->GetUser()))
+                        return true;
+                }
             }
         }
     }
