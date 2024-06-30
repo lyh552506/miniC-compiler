@@ -71,25 +71,40 @@ namespace HashTool
                     if((LHS_LHS == RHS_LHS && LHS_RHS == RHS_RHS) || (LHS_LHS == RHS_RHS && LHS_RHS == RHS_LHS))
                         return true;
                 }
-                else if(LHS->GetInstId())
+                else if(LHS->GetInstId() == User::OpID::G && RHS->GetInstId() == User::OpID::Le)
+                {
+                    Value* LHS_LHS = LHS->GetOperand(0);
+                    Value* LHS_RHS = LHS->GetOperand(1);
+                    Value* RHS_LHS = RHS->GetOperand(0);
+                    Value* RHS_RHS = RHS->GetOperand(1);
+                    if((LHS_LHS == RHS_LHS && LHS_RHS == RHS_RHS) || (LHS_LHS == RHS_RHS && LHS_RHS == RHS_LHS))
+                        return true;
+                }
+                else
+                    return false;
             }
-        }   
+        }
     };
 }
 
-class info
+struct info
 {
-public:
     std::map<std::pair<size_t, User::OpID>, Value*> AEB_Binary;
     std::map<size_t, Value*> Loads;
     std::map<size_t, Value*> Geps;
     std::set<Function*> Funcs;
+    bool operator==(const info& rhs) const
+    {
+        if(AEB_Binary == rhs.AEB_Binary && Loads == rhs.Loads && Geps == rhs.Geps && Funcs == rhs.Funcs)
+            return true;
+        return false;
+    }
 };
 
 class CSE
 {
-    std::map<BasicBlock*, info*> BlockLiveIn;
-    std::map<BasicBlock*, info*> BlockLiveOut;
+    std::map<BasicBlock*, info> BlockLiveIn;
+    std::map<BasicBlock*, info> BlockLiveOut;
 private:
     void GetBlockLiveOut(BasicBlock* block);
     void GetBlockLiveIn(BasicBlock* block);
@@ -98,8 +113,9 @@ private:
     bool IsChanged = false;
     bool Changed = false;
     Function* m_func;
-    bool RunOnFunc(Function* func);
-    bool RunPass();
+    Function* Find_Change(Value* val, info Info);
+    void RunOnFunc(Function* func);
+    bool RunPass(BasicBlock* block);
 public:
     bool RunOnFunction();
     CSE(Function* func) : m_func(func) {}
