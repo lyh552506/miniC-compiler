@@ -230,7 +230,7 @@ void UnCondInst::print() {
 }
 
 CondInst::CondInst(Operand __cond, BasicBlock *__istrue,
-                   BasicBlock *__isfalse) {
+                   BasicBlock *__isfalse) { 
   add_use(__cond);
   add_use(__istrue);
   add_use(__isfalse);

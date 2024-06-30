@@ -116,10 +116,11 @@ private:
     Function* Find_Change(Value* val, info Info);
     void RunOnFunc(Function* func);
     bool RunPass(BasicBlock* block);
+    dominance* DomTree;
 public:
     bool RunOnFunction();
-    CSE(Function* func) : m_func(func) {}
-}
+    CSE(Function* func, dominance* m_dom) : m_func(func) , DomTree(m_dom) {}
+};
 
 // class CSE
 // {
