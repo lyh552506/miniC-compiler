@@ -145,9 +145,10 @@ void RISCVBasicBlock::push_before_branch(RISCVMIR* minst) {
     this->push_front(minst);
 }
 
-RISCVFunction::RISCVFunction(Value* _func):RISCVGlobalObject(_func->GetType(),_func->GetName()),func(_func){
+RISCVFunction::RISCVFunction(Value* _func):RISCVGlobalObject(_func->GetType(),_func->GetName()),func(_func), exit(".LBBexit"){
     frame.reset(new RISCVFrame(this));
     GenerateParamNeedSpill();
+    exit.SetParent(this);
 }
 
 
@@ -170,6 +171,24 @@ void RISCVFunction::printfull(){
     }
 }
 
+uint64_t RISCVFunction::GetUsedPhyRegMask(){
+    uint64_t flag=0u;
+    for(auto bb:*this){
+        for(auto inst:*bb){
+            for(int i=0;i<inst->GetOperandSize();i++){
+                PhyRegister* reg=nullptr;
+                if(auto sR=inst->GetOperand(i)->as<StackRegister>())
+                    reg=sR->GetReg()->as<PhyRegister>();
+                else
+                    reg=inst->GetOperand(i)->as<PhyRegister>();
+                if(reg!=nullptr)
+                    flag|=PhyRegMask::GetPhyRegMask(reg);
+            }
+        }
+    }
+    return flag;
+}
+
 // RISCVFrame::RISCVFrame() {}
 RISCVFrame::RISCVFrame(RISCVFunction* func) : parent(func) {}
 StackRegister* RISCVFrame::spill(VirRegister* mop) {
@@ -188,10 +207,10 @@ RISCVMIR* RISCVFrame::spill(PhyRegister* mop) {
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
     StackRegister* sreg = frameobjs.back().get()->GetStackReg();
     RISCVMIR* store;
-    if(type>PhyRegister::begin_normal_reg && type<PhyRegister::end_normal_reg) {
+    if(type>=PhyRegister::begin_normal_reg && type<=PhyRegister::end_normal_reg) {
         store = new RISCVMIR(RISCVMIR::_sd);
     }
-    else if(type>PhyRegister::begin_float_reg && type<PhyRegister::end_float_reg) {
+    else if(type>=PhyRegister::begin_float_reg && type<=PhyRegister::end_float_reg) {
         store = new RISCVMIR(RISCVMIR::_fsd);
     }
     else assert(0&&"wrong phyregister type");
@@ -202,10 +221,10 @@ RISCVMIR* RISCVFrame::spill(PhyRegister* mop) {
 RISCVMIR* RISCVFrame::load_to_preg(StackRegister* sreg,PhyRegister* mop) {
     int type = mop->Getregenum();
     RISCVMIR* load;
-    if(type>PhyRegister::begin_normal_reg && type<PhyRegister::end_normal_reg) {
+    if(type>=PhyRegister::begin_normal_reg && type<=PhyRegister::end_normal_reg) {
         load = new RISCVMIR(RISCVMIR::_ld);
     }
-    else if(type>PhyRegister::begin_float_reg && type<PhyRegister::end_float_reg) {
+    else if(type>=PhyRegister::begin_float_reg && type<=PhyRegister::end_float_reg) {
         load = new RISCVMIR(RISCVMIR::_fld);
     }
     else assert(0&&"wrong phyregister type");

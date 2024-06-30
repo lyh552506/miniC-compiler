@@ -23,6 +23,39 @@ VirRegister::VirRegister(RISCVType tp) : Register(tp) {
   rname= oss.str();
 }
 
+PhyRegister* PhyRegMask::GetPhyReg(uint64_t flag){
+  for(uint8_t i=0u;i<64u;i++){
+    if(flag==(((uint64_t)1)<<i)){
+      auto regenum = PhyRegister::PhyReg(i);
+      return PhyRegister::GetPhyReg(regenum);
+    }
+  }
+  assert("Can not get here");
+}
+
+uint64_t PhyRegMask::GetPhyRegMask(PhyRegister* reg) {
+  return ((uint64_t)1) << static_cast<uint64_t>(reg->Getregenum());
+}
+
+bool PhyRegMask::isCallerSaved(uint64_t flag) {
+  auto reg = GetPhyReg(flag);
+  return reg->isCallerSaved();
+}
+
+bool PhyRegMask::isCalleeSaved(uint64_t flag) {
+  auto reg = GetPhyReg(flag);
+  return reg->isCalleeSaved();
+}
+
+void PhyRegMask::visit(uint64_t flag, std::function<void(uint64_t)> func) {
+  for(uint8_t i=0u;i<64u;i++){
+    if(flag&(((uint64_t)1)<<i)){
+      func((uint64_t)1<<i);
+      return;
+    }
+  }
+}
+
 void PhyRegister::print() { std::cout << magic_enum::enum_name(regenum); }
 
 std::string PhyRegister::GetName() {
