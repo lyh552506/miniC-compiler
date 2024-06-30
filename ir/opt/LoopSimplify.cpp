@@ -161,8 +161,6 @@ void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
 void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
                                  BasicBlock *target) {
   Value *ComingVal = nullptr;
-  // if (phi->GetName() == ".4881")
-  //   int a = 0;
   for (auto &[_1, tmp] : phi->PhiRecord) {
     if (worklist.find(tmp.second) != worklist.end()) {
       if (ComingVal == nullptr) {
@@ -200,8 +198,15 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
   bool same = std::all_of(Erase.begin(), Erase.end(), [&Erase](auto &ele) {
     return ele.second.first == Erase.front().second.first;
   });
-  if (same)
+  Value *sameval = Erase.front().second.first;
+  if (same) {
+    for (auto &[i, v] : Erase) {
+      phi->Del_Incomes(i);
+    }
+    phi->updateIncoming(sameval, target);
+    phi->FormatPhi();
     return;
+  }
   PhiInst *pre_phi =
       PhiInst::NewPhiNode(target->front(), target, phi->GetType());
   for (auto &[i, v] : Erase) {
