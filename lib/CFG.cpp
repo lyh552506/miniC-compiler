@@ -1232,6 +1232,7 @@ void PhiInst::Del_Incomes(int CurrentNum) {
 void PhiInst::FormatPhi() {
   std::vector<std::pair<int, std::pair<Value *, BasicBlock *>>> assist;
   std::queue<std::pair<Value *, BasicBlock *>> defend;
+  UseToRecord.clear();
   oprandNum = 0;
   for (auto &[_1, v] : PhiRecord) {
     assist.push_back(std::make_pair(_1, v));
@@ -1248,6 +1249,10 @@ void PhiInst::FormatPhi() {
     auto &[v_fir, v_sec] = defend.front();
     defend.pop();
     PhiRecord[oprandNum++] = std::make_pair(v_fir, v_sec);
+  }
+  int tmp=0;
+  for(auto& use:uselist){
+    UseToRecord[use.get()]=tmp++;
   }
 }
 
