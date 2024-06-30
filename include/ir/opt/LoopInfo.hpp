@@ -1,4 +1,6 @@
 #pragma once
+#include <algorithm>
+#include <cassert>
 #include <vector>
 
 #include "CFG.hpp"
@@ -23,6 +25,11 @@ public:
   void setLatch(BasicBlock *bb) {
     Latch = bb;
     InsertLoopBody(bb);
+  }
+  void DeleteBlock(BasicBlock *bb) {
+    auto iter = std::find(ContainBlocks.begin(), ContainBlocks.end(), bb);
+    assert(iter != ContainBlocks.end());
+    ContainBlocks.erase(iter);
   }
   BasicBlock *GetHeader() { return Header; }
   LoopInfo *GetParent() { return Parent; }
@@ -96,7 +103,8 @@ public:
   void LoopAnaly();
   void CloneToBB();
   void ExpandSubLoops();
-  void DeleteLoop(LoopInfo* loop);
+  void DeleteLoop(LoopInfo *loop);
+  void DeleteBlock(BasicBlock *bb);
   bool CanBeOpt() { return LoopRecord.size() != 0; }
   // only for test
   void PrintPass();
@@ -113,7 +121,7 @@ public:
                 return a1->LoopDepth > a2->LoopDepth;
               });
     AlreadyGetInfo = true;
-   // _DEBUG(PrintPass();)
+    // _DEBUG(PrintPass();)
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }
   iterator begin() { return LoopRecord.begin(); }
