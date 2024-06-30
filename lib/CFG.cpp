@@ -490,7 +490,9 @@ void Variable::print() {
     std::cout << " = constant ";
   else /* if(usage==Param) */
     return;
-  GetType()->print();
+  auto tp=dynamic_cast<PointerType*>(GetType());
+  assert(tp!=nullptr&&"Variable Must Be a Pointer Type to Inner Content!");
+  tp->GetSubType()->print();
   std::cout<<" ";
   if(uselist.size()!=0){
     auto init=GetOperand(0);
@@ -1289,11 +1291,13 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
   return inlineinfo;
 }
 
-void Function::push_param(Variable* var){
+void Function::push_param(std::string realname,Variable* var){
   auto alloca=new AllocaInst(PointerType::NewPointerTypeGet(var->GetType()));
   auto store=new StoreInst(var,alloca);
-  front()->push_front(store);
   front()->push_front(alloca);
+  front()->push_back(store);
+  Singleton<Module>().Register(realname,alloca);
+  params.emplace_back(var);
 }
 
 void Function::init_visited_block() {

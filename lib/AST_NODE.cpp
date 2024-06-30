@@ -252,6 +252,7 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
             // if(init==nullptr)return state.current_building;
             std::vector<Operand> args;
             auto src=new Variable(Variable::Constant,tmp,"");
+            src->add_use(init);
             args.push_back(alloca);//des
             args.push_back(src);
             args.push_back(ConstIRInt::GetNewConstant(tmp->get_size()));
@@ -412,12 +413,12 @@ void FuncParam::GetVariable(Function& tmp){
             auto inner=dynamic_cast<HasSubType*>(vec);
             vec=PointerType::NewPointerTypeGet(inner->GetSubType());
         }
-        tmp.push_param(new Variable(Variable::Param,vec,ID));
+        tmp.push_param(ID,new Variable(Variable::Param,vec,ID));
     }
     else
     {
-        if(emptySquare)tmp.push_param(new Variable(Variable::Param, PointerType::NewPointerTypeGet(get_type(tp)),ID));
-        else tmp.push_param(new Variable(Variable::Param,get_type(tp),ID));
+        if(emptySquare)tmp.push_param(ID,new Variable(Variable::Param, PointerType::NewPointerTypeGet(get_type(tp)),ID));
+        else tmp.push_param(ID,new Variable(Variable::Param,get_type(tp),ID));
     }
 }
 void FuncParam::print(int x){
@@ -728,5 +729,5 @@ void FunctionCall::print(int x){
 
 void Module::PushVariable(Variable* ptr){
     assert(ptr->usage!=Variable::Param&&"Wrong API Usage");
-    globalvaribleptr.push_back(std::make_unique<Variable>(ptr));
+    globalvaribleptr.emplace_back(ptr);
 }

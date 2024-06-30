@@ -57,7 +57,12 @@ class Variable:public User
     /// @warning the type should be the inner type like alloca  
     Variable(UsageTag,Type*,std::string);
     void print();
-    Value* GetInitializer();
+    inline Value* GetInitializer(){
+        if(uselist.empty()){
+            return nullptr;
+        }
+        return uselist[0]->usee;
+    };
 };
 
 class UndefValue:public ConstantData{
@@ -292,7 +297,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     Function(InnerDataType _tp,std::string _id);
     void print();
     void add_block(BasicBlock*);
-    void push_param(Variable*);
+    void push_param(std::string,Variable*);
     void init_bbs(){ bbs.clear();}
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();

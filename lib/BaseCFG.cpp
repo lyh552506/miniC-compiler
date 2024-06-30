@@ -42,8 +42,7 @@ Value::Value(Type *_tp) : tp(_tp) {
 
 Value *Value::clone(std::unordered_map<Operand, Operand> &mapping) {
   // if this is called it must be a param or Global
-  if (Singleton<Module>().globalvalue.find(this) !=
-      Singleton<Module>().globalvalue.end())
+  if(isGlobal())
     return this;
   if (mapping.find(this) != mapping.end())
     return mapping[this];

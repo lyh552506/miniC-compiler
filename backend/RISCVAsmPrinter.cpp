@@ -86,7 +86,7 @@ dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
 void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx) {
     for(auto& data : module->GetGlobalVariable()) {
         globlvar* gvar = new globlvar(data.get());
-        ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->GetName()), gvar);
+        ctx.insert_val2mop(data.get(), gvar);
         globlvar_list.push_back(gvar);
     }
 }
