@@ -1,6 +1,7 @@
 #include "RISCVLowering.hpp"
 #include "PhiElimination.hpp"
 #include "BuildInFunctionTransform.hpp"
+#include "PostRACalleeSavedLegalizer.hpp"
 
 RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
@@ -33,7 +34,8 @@ bool RISCVFunctionLowering::run(Function* m){
     /// @todo deal with alloca and imm
     /// @todo a scheduler can be added here, before or when emitting code to 3-address code
     /// @note This is destory SSA form to 3-address code with mixture of phy and vir regs
-    ctx(ctx.mapping(m)->as<RISCVFunction>());
+    auto mfunc=ctx.mapping(m)->as<RISCVFunction>();
+    ctx(mfunc);
 
     RISCVISel isel(ctx);
     isel.run(m);
@@ -46,8 +48,21 @@ bool RISCVFunctionLowering::run(Function* m){
     asmprinter->GetData()->LegalizeGloablVar(ctx);
     
     // Register Allocation
-    RegAllocImpl regalloc(ctx.mapping(m)->as<RISCVFunction>(), ctx);
+    RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
+
+    // Generate Frame of current Function
+    // And generate the head and tail of frame here
+    PostRACalleeSavedLegalizer callee_saved_legalizer;
+    callee_saved_legalizer.run(mfunc);
+    
+    auto& frame = mfunc->GetFrame();
+    frame->GenerateFrame();
+    frame->GenerateFrameHead();
+    frame->GenerateFrameTail();
+
+    Legalize legal(ctx);
+    legal.run();
 
     return false;
 }

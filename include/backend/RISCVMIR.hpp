@@ -203,8 +203,8 @@ class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBa
     /// originally return type
     /// @todo some info like arguments doesn't need to store twice? 
     Value* func;
-    /// @todo FrameContext here
-    RISCVBasicBlock* entry;
+    // the exit bb for epilogue generation
+    RISCVBasicBlock exit;
     using RISCVframe = std::unique_ptr<RISCVFrame>;
     RISCVframe frame;
     size_t max_param_size=0;
@@ -218,6 +218,10 @@ class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBa
     void GenerateParamNeedSpill();
     std::vector<int>& GetParamNeedSpill();
     void printfull();
+
+    inline RISCVBasicBlock* GetEntry(){return front();};
+    inline RISCVBasicBlock* GetExit(){return &exit;};
+    uint64_t GetUsedPhyRegMask();
 };
 
 
