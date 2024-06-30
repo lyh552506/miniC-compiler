@@ -1347,9 +1347,6 @@ std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() { return ls; }
 std::vector<std::unique_ptr<Variable>> &Module::GetGlobalVariable() {
   return globalvaribleptr;
 }
-std::vector<MemcpyHandle*>& Module::GetConstantHandle() {
-  return constants_handle;
-}
 
 UndefValue *UndefValue::get(Type *Ty) {
   static std::map<Type *, UndefValue *> Undefs;
