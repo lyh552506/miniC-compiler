@@ -72,25 +72,6 @@ void Initializer::print() {
   std::cout << "]";
 }
 
-MemcpyHandle::MemcpyHandle(Type *_tp, Operand _src) : User(_tp) {
-  add_use(_src);
-  name = "__constant." + name;
-}
-
-MemcpyHandle *
-MemcpyHandle::clone(std::unordered_map<Operand, Operand> &mapping) {
-  return this;
-}
-
-void MemcpyHandle::print() {
-  Value::print();
-  std::cout << " = constant ";
-  dynamic_cast<PointerType *>(tp)->GetSubType()->print();
-  std::cout << " ";
-  dynamic_cast<Initializer *>(uselist[0]->GetValue())->print();
-  std::cout << "\n";
-}
-
 AllocaInst::AllocaInst(std::string str, Type *_tp)
     : User(PointerType::NewPointerTypeGet(_tp)) {
   // name=str;
@@ -489,31 +470,45 @@ void BinaryInst::SetOperand(int index, Value *val) {
   uselist.insert(uselist.begin() + index, std::make_unique<Use>(this, val));
 }
 
-void Variable::attach(Operand _init) { attached_initializer = _init; }
-
-Variable::Variable(std::string _id) : name(_id) {
-  tp = Type::NewTypeByEnum(Singleton<InnerDataType>());
+Variable::Variable(UsageTag tag, Type *_tp, std::string _id):User(tag==Param?_tp:PointerType::NewPointerTypeGet(_tp)),usage(tag){
+  /// @warning FIXME: checkout which use name as condition
+  if(usage==Param)return;
+  if(usage==GlobalVariable){
+    name=".G."+_id;
+    Singleton<Module>().Register(_id,this);
+  }
+  else if(usage==Constant)
+    name=".C."+name;
+  Singleton<Module>().PushVariable(this);
 }
-Variable::Variable(Type *_tp, std::string _id) : name(_id), tp(_tp) {}
-Variable::Variable(InnerDataType _tp, std::string _id) : name(_id) {
-  tp = Type::NewTypeByEnum(_tp);
-}
-std::string Variable::get_name() { return name; }
 
-Type *Variable::GetType() { return tp; }
-Operand &Variable::GetInitializer() { return attached_initializer; }
 void Variable::print() {
-  std::cout << "@.g." << get_name() << " = global ";
+  Value::print();
+  if(usage==GlobalVariable)
+    std::cout << " = global ";
+  else if(usage==Constant)
+    std::cout << " = constant ";
+  else /* if(usage==Param) */
+    return;
   GetType()->print();
-  if (attached_initializer) {
-    std::cout << " ";
-    if (auto array_init = dynamic_cast<Initializer *>(attached_initializer))
+  std::cout<<" ";
+  if(uselist.size()!=0){
+    auto init=GetOperand(0);
+    if (auto array_init = dynamic_cast<Initializer*>(init))
       array_init->print();
     else
-      attached_initializer->print();
-  } else
-    std::cout << " zeroinitializer";
+      // a simple const, like int x=3;
+      // can't be Constant
+      init->print();
+  }
+  else
+    std::cout << "zeroinitializer";
   std::cout << '\n';
+}
+
+bool Variable::isGlobal(){
+  if(usage==Param)return false;
+  else return true;
 }
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr) { add_use(base_ptr); }
@@ -1075,9 +1070,6 @@ void BasicBlock::Delete() {
   this->~BasicBlock();
 }
 
-void BasicBlock::GenerateAlloca(Variable *var) {
-  GetParent()->push_alloca(var);
-}
 Operand BasicBlock::GenerateGEPInst(Operand ptr) {
   auto tmp = new GetElementPtrInst(ptr);
   push_back(tmp);
@@ -1088,10 +1080,13 @@ Operand BasicBlock::GenerateZextInst(Operand ptr) {
   push_back(tmp);
   return tmp->GetDef();
 }
-Operand BasicBlock::push_alloca(std::string name, Type *_tp) {
-  auto tmp = new AllocaInst(name, _tp);
-  push_front(tmp);
-  return tmp->GetDef();
+
+AllocaInst* BasicBlock::GenerateAlloca(Type* _tp,std::string ID){
+  auto tp=PointerType::NewPointerTypeGet(_tp);
+  auto alloca=new AllocaInst(tp);
+  Singleton<Module>().Register(ID,alloca);
+  GetParent()->front()->push_front(alloca);
+  return alloca;
 }
 
 BasicBlock *BasicBlock::clone(std::unordered_map<Operand, Operand> &mapping) {
@@ -1294,22 +1289,16 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
   return inlineinfo;
 }
 
-void Function::push_alloca(Variable *ptr) {
-  auto obj = front()->push_alloca(ptr->get_name(), ptr->GetType());
-  Singleton<Module>().Register(ptr->get_name(), obj);
+void Function::push_param(Variable* var){
+  auto alloca=new AllocaInst(PointerType::NewPointerTypeGet(var->GetType()));
+  auto store=new StoreInst(var,alloca);
+  front()->push_front(store);
+  front()->push_front(alloca);
 }
 
 void Function::init_visited_block() {
   for (auto bb : bbs)
     bb->visited = false;
-}
-
-void Function::push_param(Variable *var) {
-  push_alloca(var);
-  /// @brief 实参
-  params.push_back(ParamPtr(new Value(var->GetType())));
-  front()->GenerateStoreInst(
-      params.back().get(), Singleton<Module>().GetValueByName(var->get_name()));
 }
 
 void Function::add_block(BasicBlock *bb) { push_back(bb); }
@@ -1323,8 +1312,6 @@ std::vector<std::unique_ptr<Value>> &Function::GetParams() { return params; }
 void Module::Test() {
   for (auto &i : globalvaribleptr)
     i->print();
-  for (auto &i : constants_handle)
-    i->print();
   for (auto &i : ls)
     i->print();
 }
@@ -1334,14 +1321,6 @@ Function &Module::GenerateFunction(InnerDataType _tp, std::string _id) {
   Register(_id, tmp);
   ls.push_back(FunctionPtr(tmp));
   return *ls.back();
-}
-void Module::GenerateGlobalVariable(Variable *ptr) {
-  /// @todo 初始化单元
-  auto obj = new Value(PointerType::NewPointerTypeGet(ptr->GetType()));
-  obj->name = ".g." + ptr->get_name();
-  globalvalue.insert(obj);
-  SymbolTable::Register(ptr->get_name(), obj);
-  globalvaribleptr.push_back(GlobalVariblePtr(ptr));
 }
 
 void Module::EraseFunction(Function *func) {
@@ -1370,11 +1349,6 @@ std::vector<std::unique_ptr<Variable>> &Module::GetGlobalVariable() {
 }
 std::vector<MemcpyHandle*>& Module::GetConstantHandle() {
   return constants_handle;
-}
-
-Operand Module::GenerateMemcpyHandle(Type *_tp, Operand oper) {
-  constants_handle.push_back(new MemcpyHandle(_tp, oper));
-  return constants_handle.back();
 }
 
 UndefValue *UndefValue::get(Type *Ty) {

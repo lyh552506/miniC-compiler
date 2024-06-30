@@ -22,22 +22,41 @@ class Initializer:public Value,public std::vector<Operand>
     void print();
 };
 
-class Variable
+/// @details
+/// Usage:
+/// 1. global variable
+/// 2. constant data
+///
+/// Why User:
+/// it needs to be user to handle initializer(the only use)
+///
+/// Name:
+/// it needs a name for lli print verification(which needs name for a constant array)
+/// 
+/// Type:
+/// it should be a pointer to inner type, like local variables' alloca
+/// 
+/// Global Things:
+/// If the UsageTag is global or consant
+/// This is the only *GLOBAL* in the project except for some functions
+/// or other relocation things
+///
+/// UsageTag:
+/// if it is a not a constant used for memcpy process, it will register itself in the symbol table automatically
+/// whatever the UsageTag is, variable will enter the vector for latter process in the backend
+/// GlobalVariable: int x=3; int arr[10086];
+/// Consant: Must be an arrary of contant used to initialize an array
+/// Param: We will use this for param too.
+class Variable:public User
 {
-    Operand attached_initializer=nullptr;
-    std::string name;
-    Type* tp;
     public:
-    Variable(std::string);
-    Variable(Type*,std::string);
-    Variable(InnerDataType,std::string);
-    void attach(Operand);
-    std::string get_name();
-    // Value* GetValue();
-    Type* GetType();
-    Operand& GetInitializer();
+    enum UsageTag{
+        GlobalVariable,Constant,Param
+    }usage;
+    bool isGlobal()final;
+    /// @warning the type should be the inner type like alloca  
+    Variable(UsageTag,Type*,std::string);
     void print();
-    bool isFunction(){ return false; }
 };
 
 class UndefValue:public ConstantData{
@@ -46,13 +65,6 @@ public:
   virtual UndefValue* clone(std::unordered_map<Operand,Operand>&) override;
   static UndefValue* get(Type *Ty);
   void print();
-};
-
-class MemcpyHandle:public User{
-    public:
-    MemcpyHandle* clone(std::unordered_map<Operand,Operand>&)override;
-    MemcpyHandle(Type*,Operand);
-    void print();
 };
 
 class AllocaInst:public User
@@ -219,7 +231,6 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     void print();
     int GetSuccNum();
     BasicBlock* clone(std::unordered_map<Operand,Operand>&) override;
-    Operand push_alloca(std::string,Type*);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
@@ -233,7 +244,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     void GenerateRetInst();
     Operand GenerateCallInst(std::string,std::vector<Operand>,int);
     void GenerateStoreInst(Operand,Operand);
-    void GenerateAlloca(Variable*);
+    AllocaInst* GenerateAlloca(Type*,std::string);
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
     BasicBlock* SplitAt(User*);
@@ -282,7 +293,6 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void add_block(BasicBlock*);
     void push_param(Variable*);
     void init_bbs(){ bbs.clear();}
-    void push_alloca(Variable*);
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
     std::vector<BasicBlock*>& GetBasicBlock(){return bbs;}
@@ -299,16 +309,13 @@ class Module:public SymbolTable
     using FunctionPtr=std::unique_ptr<Function>;
     std::vector<FunctionPtr> ls;
     std::vector<GlobalVariblePtr> globalvaribleptr;
-    std::vector<MemcpyHandle*> constants_handle;
     public:
-    std::unordered_set<Value*> globalvalue;
     std::set<Function*> hasInlinedFunc; // Func that has done inlined pass
     std::set<Function*> inlinedFunc; // Func who is inlined by pass
     std::set<Function*> Side_Effect_Funcs; // Func that has side effect
     Module()=default;
     Function& GenerateFunction(InnerDataType _tp,std::string _id);
-    void GenerateGlobalVariable(Variable* ptr);
-    Operand GenerateMemcpyHandle(Type*,Operand);
+    void PushVariable(Variable* ptr);
     std::vector<FunctionPtr>& GetFuncTion();
     std::vector<GlobalVariblePtr>& GetGlobalVariable();
     std::vector<MemcpyHandle*>& GetConstantHandle();
