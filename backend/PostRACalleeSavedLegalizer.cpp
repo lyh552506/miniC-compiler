@@ -8,14 +8,17 @@ bool PostRACalleeSavedLegalizer::run(RISCVFunction* func){
     });
     auto entry=func->GetEntry();
     auto exit_bb=func->GetExit();
-    auto frame=func->GetFrame();
+    auto& frame=func->GetFrame();
     PhyRegMask::visit(grp,[entry,exit_bb,&frame](uint64_t item){
         auto phyreg=PhyRegMask::GetPhyReg(item);
-        auto frameobj=frame.CreateFrameObject(RISCVFrameObject::Usage::callee_saved,8);
-        auto sw=RISCVTrival::SaveToStackObject(phyreg,frameobj);
+        // generate a sw
+        auto sw=frame->spill(phyreg);
         entry->push_front(sw);
-        auto reload=RISCVTrival::LoadFromStackObject(phyreg,frameobj);
+        
+        auto stackReg=sw->GetOperand(1);
         // insert before ret
+        auto reload=frame->load_to_preg(stackReg->as<StackRegister>(),phyreg);
         exit_bb->push_back(reload);
     });
+    return true;
 }

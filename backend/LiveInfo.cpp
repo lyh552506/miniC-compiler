@@ -63,6 +63,26 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
           UpdateInfo(val, block);
         }
       }
+      RegisterList& Regsiter_list = RegisterList::GetPhyRegList();
+      std::vector<PhyRegister*>& caller = Regsiter_list.GetReglistCaller();
+      for(PhyRegister* phy : caller)
+      {
+        if(auto reg = phy->ignoreLA())
+        {
+          if(Count(reg))
+          {
+            BlockLivein[block].erase(color[reg]);
+            Uses[block].erase(color[reg]);
+            Defs[block].insert(color[reg]);
+          }
+          else
+          {
+            BlockLivein[block].erase(reg);
+            Uses[block].erase(reg);
+            Defs[block].insert(reg);
+          }
+        }
+      }
     } else if ((*inst)->GetOperandSize() == 1) {
       RISCVMOperand *_val = (*inst)->GetOperand(0);
       UpdateInfo(_val, block);
