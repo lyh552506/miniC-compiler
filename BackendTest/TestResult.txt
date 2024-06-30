@@ -1,15 +1,14 @@
-Timeout: testcases/functional/86_long_code2.sy
-Compiler Error: Total: 3
-Assembler Error: Total: 2
-Linker Error: Total: 4
-TimeOut Function:1
+Timeout: testcases/hidden_functional/39_fp_params.sy
+Timeout: testcases/hidden_functional/29_long_line.sy
+Timeout: testcases/hidden_functional/32_many_params3.sy
+Compiler Error: Total: 0
+Assembler Error: Total: 4
+Linker Error: Total: 2
+TimeOut Function:3
 Wrong Answer: Total: 0
-CE: testcases/functional/63_big_int_mul.sy
-CE: testcases/functional/62_percolation.sy
-CE: testcases/functional/61_sort_test7.sy
-AE: testcases/functional/85_long_code.s
-AE: testcases/functional/64_calculator.s
-LE: testcases/functional/61_sort_test7.o
-LE: testcases/functional/86_long_code2.o
-LE: testcases/functional/63_big_int_mul.o
-LE: testcases/functional/62_percolation.o
+AE: testcases/hidden_functional/38_light2d.s
+AE: testcases/hidden_functional/35_math.s
+AE: testcases/hidden_functional/36_rotate.s
+AE: testcases/hidden_functional/37_dct.s
+LE: testcases/hidden_functional/32_many_params3.o
+LE: testcases/hidden_functional/39_fp_params.o

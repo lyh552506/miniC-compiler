@@ -98,6 +98,17 @@ void PassManager::RunOnFunction() {
   if (InitpassRecorder[reassociate]) {
     PreWork(func);
     m_reassociate->RunOnFunction();
+    
+  }
+  if (InitpassRecorder[simplifycfg]) {
+    PreWork(func);
+    dominance *d = new dominance(m_func, BList.size());
+    d->update();
+    m_cfgsimple = new cfgSimplify(m_func, d);
+    m_cfgsimple->RunOnFunction();
+    PreWork(func);
+    m_dom->update();
+    // m_cfgsimple->PrintPass();
   }
   if (InitpassRecorder[loops]) {
     PreWork(func);
