@@ -231,7 +231,6 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     void print();
     int GetSuccNum();
     BasicBlock* clone(std::unordered_map<Operand,Operand>&) override;
-    Operand push_alloca(std::string,Type*);
     Operand GenerateSITFP(Operand _A);
     Operand GenerateFPTSI(Operand _B);
     Operand GenerateBinaryInst(Operand _A,BinaryInst::Operation op,Operand _B);
@@ -245,7 +244,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     void GenerateRetInst();
     Operand GenerateCallInst(std::string,std::vector<Operand>,int);
     void GenerateStoreInst(Operand,Operand);
-    void GenerateAlloca(Type*,std::string);
+    AllocaInst* GenerateAlloca(Type*,std::string);
     BasicBlock* GenerateNewBlock();
     BasicBlock* GenerateNewBlock(std::string);
     BasicBlock* SplitAt(User*);

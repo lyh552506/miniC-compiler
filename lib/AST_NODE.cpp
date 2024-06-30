@@ -245,14 +245,14 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
     if(array_descripters!=nullptr)
     {
         auto tmp=array_descripters->GetDeclDescipter();
-        state.current_building->GenerateAlloca(tmp,ID);
+        auto alloca=state.current_building->GenerateAlloca(tmp,ID);
         if(civ!=nullptr)
         {
             Operand init=civ->GetOperand(tmp,state.current_building);
             // if(init==nullptr)return state.current_building;
             std::vector<Operand> args;
             auto src=new Variable(Variable::Constant,tmp,"");
-            args.push_back(Singleton<Module>().GetValueByName(ID));//des
+            args.push_back(alloca);//des
             args.push_back(src);
             args.push_back(ConstIRInt::GetNewConstant(tmp->get_size()));
             args.push_back(ConstIRBoolean::GetNewConstant(false));
@@ -284,9 +284,9 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
             Singleton<Module>().Register(ID,var);
         }
         else{
-            state.current_building->GenerateAlloca(decl_type,ID);
+            auto alloca=state.current_building->GenerateAlloca(decl_type,ID);
             if(civ!=nullptr){
-                state.current_building->GenerateStoreInst(civ->GetFirst(state.current_building),Singleton<Module>().GetValueByName(ID));
+                state.current_building->GenerateStoreInst(civ->GetFirst(state.current_building),alloca);
             }
         }
     }

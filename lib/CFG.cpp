@@ -1080,10 +1080,13 @@ Operand BasicBlock::GenerateZextInst(Operand ptr) {
   push_back(tmp);
   return tmp->GetDef();
 }
-Operand BasicBlock::push_alloca(std::string name, Type *_tp) {
-  auto tmp = new AllocaInst(name, _tp);
-  push_front(tmp);
-  return tmp->GetDef();
+
+AllocaInst* BasicBlock::GenerateAlloca(Type* _tp,std::string ID){
+  auto tp=PointerType::NewPointerTypeGet(_tp);
+  auto alloca=new AllocaInst(tp);
+  Singleton<Module>().Register(ID,alloca);
+  GetParent()->front()->push_front(alloca);
+  return alloca;
 }
 
 BasicBlock *BasicBlock::clone(std::unordered_map<Operand, Operand> &mapping) {
