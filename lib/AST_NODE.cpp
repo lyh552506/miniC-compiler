@@ -201,13 +201,14 @@ void BaseDef::codegen(){
     if(array_descripters!=nullptr)
     {
         auto tmp=array_descripters->GetDeclDescipter();
-        auto var=new Variable(tmp,ID);
-        if(civ!=nullptr)var->attach(civ->GetOperand(tmp,nullptr));
+        auto var=new Variable(Variable::GlobalVariable,tmp,ID);
+        if(civ!=nullptr)var->add_use(civ->GetOperand(tmp,nullptr));
         Singleton<Module>().GenerateGlobalVariable(var);
     }
     else
     {
-        auto tmp=new Variable(ID);
+        auto decl_type=Type::NewTypeByEnum(Singleton<InnerDataType>());
+        auto tmp=new Variable(Variable::GlobalVariable,decl_type,ID);
         if(Singleton<IR_CONSTDECL_FLAG>().flag==1){
             Operand var;
             if(civ==nullptr)
@@ -228,7 +229,7 @@ void BaseDef::codegen(){
         }
         else
         {
-            if(civ!=nullptr)tmp->attach(civ->GetFirst(nullptr));
+            if(civ!=nullptr)tmp->add_use(civ->GetFirst(nullptr));
             Singleton<Module>().GenerateGlobalVariable(tmp);
         }
     }
@@ -246,7 +247,7 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
     if(array_descripters!=nullptr)
     {
         auto tmp=array_descripters->GetDeclDescipter();
-        auto var=new Variable(tmp,ID);
+        auto var=new Variable(Variable::GlobalVariable,tmp,ID);
         state.current_building->GenerateAlloca(var);
         if(civ!=nullptr)
         {
@@ -266,7 +267,8 @@ BasicBlock* BaseDef::GetInst(GetInstState state){
     }
     else
     {
-        auto tmp=new Variable(ID);
+        auto decl_type=Type::NewTypeByEnum(Singleton<InnerDataType>());
+        auto tmp=new Variable(Variable::GlobalVariable,decl_type,ID);
         if(Singleton<IR_CONSTDECL_FLAG>().flag==1){
             Operand var;
             if(civ==nullptr)
@@ -413,12 +415,12 @@ void FuncParam::GetVariable(Function& tmp){
             auto inner=dynamic_cast<HasSubType*>(vec);
             vec=PointerType::NewPointerTypeGet(inner->GetSubType());
         }
-        tmp.push_param(new Variable(vec,ID));
+        tmp.push_param(new Variable(Variable::Param,vec,ID));
     }
     else
     {
-        if(emptySquare)tmp.push_param(new Variable(PointerType::NewPointerTypeGet(get_type(tp)),ID));
-        else tmp.push_param(new Variable(get_type(tp),ID));
+        if(emptySquare)tmp.push_param(new Variable(Variable::Param, PointerType::NewPointerTypeGet(get_type(tp)),ID));
+        else tmp.push_param(new Variable(Variable::Param,get_type(tp),ID));
     }
 }
 void FuncParam::print(int x){

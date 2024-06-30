@@ -184,11 +184,11 @@ bool DCE::FuncHasSideEffect(Function* func)
             }
             if(dynamic_cast<StoreInst*>(inst))
             {
-                if(inst->Getuselist()[1]->usee->isGlobVal())
+                if(inst->Getuselist()[1]->usee->isGlobal())
                     return true;
                 if(auto gep = dynamic_cast<GetElementPtrInst*>(inst->Getuselist()[1]->usee))
                 {
-                    if(gep->Getuselist()[0]->usee->isGlobVal())
+                    if(gep->Getuselist()[0]->usee->isGlobal())
                         return true;
                 }
             }
