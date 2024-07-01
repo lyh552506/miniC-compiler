@@ -813,7 +813,7 @@ void Function::InsertBlock(BasicBlock *pred, BasicBlock *succ,
       assert("Not connected on CFG");
       return;
     } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
-      assert(uncond->Getuselist()[0]->GetValue() == succ &&
+       assert(uncond->Getuselist()[0]->GetValue() == succ &&
              "Not connected on CFG");
       uncond->RSUW(0, insert);
       insert->GenerateUnCondInst(succ);

@@ -4,6 +4,7 @@
 #include "ConstantFold.hpp"
 #include "LoopInfo.hpp"
 #include "PassManagerBase.hpp"
+#include "dominant.hpp"
 #include <algorithm>
 #include <cassert>
 #include <optional>
@@ -88,6 +89,20 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   lr_ph->SetName(lr_ph->GetName() + ".lr_ph");
   m_func->push_back(lr_ph);
   prehead->back()->Getuselist()[1]->SetValue() = header;
+  prehead->back()->Getuselist()[2]->SetValue() = Exit;
+  //补充dom里面的node信息
+  auto node = new dominance::Node;
+  node->init();
+  node->thisBlock = lr_ph;
+  lr_ph->num = m_dom->node.size();
+  node->des.push_front(header->num);
+  node->rev.push_front(prehead->num);
+  m_dom->GetNode(prehead->num).des.push_front(m_dom->node.size());
+  m_dom->GetNode(header->num).rev.push_front(m_dom->node.size());
+  m_dom->GetNode(Exit->num).rev.push_front(prehead->num);
+  m_dom->GetNode(prehead->num).des.push_front(Exit->num);
+  m_dom->node.push_back(*node);
+
   m_func->InsertBlock(prehead, header, lr_ph);
   for (auto iter = header->begin();
        iter != header->end() && dynamic_cast<PhiInst *>(*iter) != nullptr;
@@ -95,7 +110,13 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     auto phi = dynamic_cast<PhiInst *>(*iter);
     phi->ModifyBlock(prehead, lr_ph);
   }
-  //Form Exit
+  // Form Exit
+  for (auto rev : m_dom->GetNode(Exit->num).rev) {
+    auto l = loopAnlasis->LookUp(m_dom->GetNode(rev).thisBlock);
+    if (!l || l->Contain(Exit))
+      continue;
+    
+  }
   return changed;
 }
 
