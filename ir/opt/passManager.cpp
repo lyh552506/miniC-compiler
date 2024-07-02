@@ -18,7 +18,6 @@ void PassManager::InitPass() {
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
     m_inline = std::make_unique<Inliner>(Singleton<Module>());
-    m_sccp = std::make_unique<SCCP>();
     m_reassociate = std::make_unique<Reassociate>(m_func, m_dom.get());
     m_cse = std::make_unique<CSE>(m_func, m_dom.get());
     // m_cse = std::make_unique<CSE>(m_func);
@@ -78,9 +77,6 @@ void PassManager::RunOnFunction() {
   if (InitpassRecorder[dce]) {
     m_dce->RunOnFunction();
     // m_dce->PrintPass();
-  }
-  if (InitpassRecorder[sccp]) {
-    m_sccp->RunOnFunction(m_func);
   }
   if (InitpassRecorder[simplifycfg]) {
     PreWork(func);

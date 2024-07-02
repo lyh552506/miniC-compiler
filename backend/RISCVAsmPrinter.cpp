@@ -86,7 +86,7 @@ dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
 void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx) {
     for(auto& data : module->GetGlobalVariable()) {
         globlvar* gvar = new globlvar(data.get());
-        ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->get_name()), gvar);
+        ctx.insert_val2mop(data.get(), gvar);
         globlvar_list.push_back(gvar);
     }
     for(auto& data : module->GetConstantHandle()) {
@@ -210,8 +210,9 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
 }
 
 //globlvar
-globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->get_name()){
-    InnerDataType tp = data->GetType()->GetTypeEnum();
+globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->GetName()){
+    
+    InnerDataType tp = (dynamic_cast<PointerType*>(data->GetType()))->GetSubType()->GetTypeEnum();
     if(tp == InnerDataType::IR_Value_INT || tp == InnerDataType::IR_Value_Float) {
         align = 2;
         size = 4;
@@ -280,7 +281,7 @@ globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->get_n
         }
         else {
             // undefined arr;
-            size = data->GetType()->get_size();
+            size = (dynamic_cast<PointerType*>(data->GetType()))->GetSubType()->get_size();
             // sec = "bss";
         }
     }

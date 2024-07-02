@@ -161,10 +161,12 @@ bool DCE::FuncHasSideEffect(Function* func)
         {
             for(Use* Use_ : _param->GetUserlist())
             {
-                if(dynamic_cast<StoreInst*>(Use_->usee))
+                if(dynamic_cast<StoreInst*>(Use_->GetUser()))
+                    return true;
+                for(Use* Use__ : Use_->GetUser()->GetUserlist())
                 {
-                    _param->Change_Funcs.insert(func);
-                    flag = true;
+                    if(dynamic_cast<StoreInst*>(Use__->GetUser()))
+                        return true;
                 }
             }
         }
@@ -188,23 +190,12 @@ bool DCE::FuncHasSideEffect(Function* func)
             }
             if(dynamic_cast<StoreInst*>(inst))
             {
-                if(inst->Getuselist()[1]->usee->isGlobVal())
-                {
-                    Value* val = inst->Getuselist()[1]->usee;
-                    val->Change_Funcs.insert(func);
-                    func->Change_Val.insert(val);
-                    flag = true;
-                }
-
+                if(inst->Getuselist()[1]->usee->isGlobal())
+                    return true;
                 if(auto gep = dynamic_cast<GetElementPtrInst*>(inst->Getuselist()[1]->usee))
                 {
-                    if(gep->Getuselist()[0]->usee->isGlobVal())
-                    {
-                        Value* val = gep->Getuselist()[0]->usee;
-                        val->Change_Funcs.insert(func);
-                        flag = true;
-                    }
-                        // flag = true;
+                    if(gep->Getuselist()[0]->usee->isGlobal())
+                        return true;
                 }
             }
         }
