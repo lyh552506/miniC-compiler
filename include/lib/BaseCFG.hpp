@@ -8,9 +8,11 @@
 #include <cxxabi.h>
 #include "Type.hpp"
 #include <string>
+#include <set>
 class User;
 class Value;
 class BasicBlock;
+class Function;
 class Use
 {
     public:
@@ -98,6 +100,7 @@ class Value
     bool isConstZero();
     bool isConstOne();
     int GetUserListSize(){return GetUserlist().GetSize();}
+    std::set<Function*> Change_Funcs;
     template<typename T>
     T* as(){return dynamic_cast<T*>(this);}
 };
@@ -157,6 +160,7 @@ class User:public Value,public list_node<BasicBlock,User>
     bool IsTerminateInst();
     bool IsCondInst();
     bool IsUncondInst();
+    bool IsBinary();
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
     int GetUseIndex(Use* Op);
     inline Operand GetOperand(int i){return uselist[i]->GetValue();}

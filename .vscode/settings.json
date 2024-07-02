@@ -116,7 +116,13 @@
       "version": "cpp",
       "execution": "cpp",
       "stdio.h": "c",
-      "*.sy": "c"
+      "print": "cpp",
+      "__availability": "cpp",
+      "__bits": "cpp",
+      "__string": "cpp",
+      "__tuple": "cpp",
+      "time.h": "c",
+      "*.sy": "cpp"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true,

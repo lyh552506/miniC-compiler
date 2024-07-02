@@ -180,10 +180,20 @@ bool User::IsUncondInst() {
     return true;
   return false;
 }
-bool User::HasSideEffect() {
-  if (dynamic_cast<StoreInst *>(this)) {
-    Value *op = this->Getuselist()[1]->usee;
-    if (op->isGlobVal())
+
+bool User::IsBinary()
+{
+  if(id >= 8 && id <=20)
+    return true;
+  return false;
+}
+
+bool User::HasSideEffect()
+{
+  if(dynamic_cast<StoreInst*>(this))
+  {
+    Value* op = this->Getuselist()[1]->usee;
+    if(op->isGlobVal())
       return true;
     if (op->GetTypeEnum() == InnerDataType::IR_PTR)
       return true;

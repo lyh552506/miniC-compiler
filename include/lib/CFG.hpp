@@ -246,6 +246,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     int LoopDepth=0;
     int num=0;
     bool visited=false;
+    bool reachable=false;
 };
 
 class BuildInFunction:public Value
@@ -273,6 +274,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     public:
     std::set<Function*> CalleeFuncs; // The Function who calls this
     std::set<Function*> CallingFuncs; // The Function that the func calls
+    std::set<Value*> Change_Val; // Used for cse 
     std::pair<size_t,size_t>& GetInlineInfo();
     void InsertAlloca(AllocaInst* ptr);
     public:
@@ -291,6 +293,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     //curr ==>  insert -> curr
     void InsertBlock(BasicBlock* curr,BasicBlock* insert);
     void init_visited_block();
+    void init_reach_block();
     int bb_num=0;
 };
 class Module:public SymbolTable

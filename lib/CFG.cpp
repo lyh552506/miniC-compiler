@@ -232,7 +232,7 @@ void UnCondInst::print() {
 }
 
 CondInst::CondInst(Operand __cond, BasicBlock *__istrue,
-                   BasicBlock *__isfalse) {
+                   BasicBlock *__isfalse) { 
   add_use(__cond);
   add_use(__istrue);
   add_use(__isfalse);
@@ -1303,7 +1303,11 @@ void Function::init_visited_block() {
   for (auto bb : bbs)
     bb->visited = false;
 }
-
+void Function::init_reach_block()
+{
+  for(auto bb : bbs)
+    bb->reachable = true;
+}
 void Function::push_param(Variable *var) {
   push_alloca(var);
   /// @brief 实参
