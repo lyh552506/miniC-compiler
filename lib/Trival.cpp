@@ -44,7 +44,10 @@ User* Trival::GenerateCallInst(std::string id,std::vector<Operand> args){
 }
 
 CallInst* Trival::BuildInTransform(CallInst* inst){
-    if(!check_builtin(inst->GetOperand(0)->GetName()))return inst;
+    if(!check_builtin(inst->GetOperand(0)->GetName())){
+        // std::cerr<<inst->GetOperand(0)->GetName()<<'\n';
+        return inst;
+    }
     if(inst->GetOperand(0)->GetName()=="llvm.memcpy.p0.p0.i32"){
         auto dst=inst->GetOperand(1);
         auto src=inst->GetOperand(2);
@@ -58,5 +61,6 @@ CallInst* Trival::BuildInTransform(CallInst* inst){
         delete inst;
         return tmp;
     }
+    // std::cerr<<inst->GetOperand(0)->GetName()<<'\n';
     return inst;
 }

@@ -33,10 +33,13 @@ void RISCVMIR::printfull(){
     if (name.find('_') != std::string::npos) name.erase(0,1);
     size_t pos=0;
     while((pos=name.find('_'))!=std::string::npos) name.replace(pos, 1, ".");
+    if(name=="ret") {
+        this->GetParent()->GetParent()->GetExit()->printfull();
+        std::cout<<"\t"<< name <<" \n";
+        return;
+    }
     std::cout<<"\t"<< name <<" ";
-    
-    if(name=="ret") {std::cout<<"\n";}
-    else if (name=="call") {
+    if (name=="call") {
         operands[0]->print();
     }
     else {
@@ -145,15 +148,19 @@ void RISCVBasicBlock::push_before_branch(RISCVMIR* minst) {
     this->push_front(minst);
 }
 
-RISCVFunction::RISCVFunction(Value* _func):RISCVGlobalObject(_func->GetType(),_func->GetName()),func(_func){
+RISCVFunction::RISCVFunction(Value* _func):RISCVGlobalObject(_func->GetType(),_func->GetName()),func(_func), exit(".LBBexit"){
     frame.reset(new RISCVFrame(this));
     GenerateParamNeedSpill();
+    exit.SetParent(this);
 }
 
 
 void RISCVBasicBlock::printfull(){
-    NamedMOperand::print();
-    std::cout<<":\n";
+    if(this->GetName()==".LBBexit") {}
+    else {
+        NamedMOperand::print();
+        std::cout<<":\n";
+    }
     for(auto minst:*this)
         minst->printfull();
 }
@@ -170,6 +177,24 @@ void RISCVFunction::printfull(){
     }
 }
 
+uint64_t RISCVFunction::GetUsedPhyRegMask(){
+    uint64_t flag=0u;
+    for(auto bb:*this){
+        for(auto inst:*bb){
+            for(int i=0;i<inst->GetOperandSize();i++){
+                PhyRegister* reg=nullptr;
+                if(auto sR=inst->GetOperand(i)->as<StackRegister>())
+                    reg=sR->GetReg()->as<PhyRegister>();
+                else
+                    reg=inst->GetOperand(i)->as<PhyRegister>();
+                if(reg!=nullptr)
+                    flag|=PhyRegMask::GetPhyRegMask(reg);
+            }
+        }
+    }
+    return flag;
+}
+
 // RISCVFrame::RISCVFrame() {}
 RISCVFrame::RISCVFrame(RISCVFunction* func) : parent(func) {}
 StackRegister* RISCVFrame::spill(VirRegister* mop) {
@@ -182,6 +207,36 @@ StackRegister* RISCVFrame::spill(VirRegister* mop) {
     // }
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
     return frameobjs.back().get()->GetStackReg();
+}
+RISCVMIR* RISCVFrame::spill(PhyRegister* mop) {
+    int type = mop->Getregenum();
+    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
+    StackRegister* sreg = frameobjs.back().get()->GetStackReg();
+    RISCVMIR* store;
+    if(type>=PhyRegister::begin_normal_reg && type<=PhyRegister::end_normal_reg) {
+        store = new RISCVMIR(RISCVMIR::_sd);
+    }
+    else if(type>=PhyRegister::begin_float_reg && type<=PhyRegister::end_float_reg) {
+        store = new RISCVMIR(RISCVMIR::_fsd);
+    }
+    else assert(0&&"wrong phyregister type");
+    store->AddOperand(mop);
+    store->AddOperand(sreg);
+    return store;
+}
+RISCVMIR* RISCVFrame::load_to_preg(StackRegister* sreg,PhyRegister* mop) {
+    int type = mop->Getregenum();
+    RISCVMIR* load;
+    if(type>=PhyRegister::begin_normal_reg && type<=PhyRegister::end_normal_reg) {
+        load = new RISCVMIR(RISCVMIR::_ld);
+    }
+    else if(type>=PhyRegister::begin_float_reg && type<=PhyRegister::end_float_reg) {
+        load = new RISCVMIR(RISCVMIR::_fld);
+    }
+    else assert(0&&"wrong phyregister type");
+    load->SetDef(mop);
+    load->AddOperand(sreg);
+    return load;
 }
 StackRegister* RISCVFrame::spill(Value* val) {
     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
@@ -204,6 +259,7 @@ void RISCVFrame::GenerateFrame() {
         obj->SetEndAddOff(frame_size);
         frame_size += obj->GetFrameObjSize();
         obj->SetBeginAddOff(frame_size);
+        int a =0;
     }
     frame_size += parent->GetMaxParamSize();
     int mod = frame_size % 16;
@@ -213,7 +269,8 @@ void RISCVFrame::GenerateFrame() {
 
     for(FramObj::iterator it = frameobjs.begin(); it != frameobjs.end(); it++) {
         std::unique_ptr<RISCVFrameObject>& obj = *it;
-        int off = 0 - static_cast<int>(obj->GetBeginAddOff()+obj->GetFrameObjSize());
+        // int off = 0 - (int)(obj->GetBeginAddOff()+obj->GetFrameObjSize());
+        int off = 0 - (int)(obj->GetBeginAddOff());
         obj->GenerateStackRegister(off);
     }
 
@@ -293,12 +350,13 @@ void RISCVFrame::GenerateFrameTail() {
     PhyRegister* ra = PhyRegister::GetPhyReg(PhyReg::ra);
 
     int temp_frame_size = frame_size;
-
+    RISCVFunction* func = parent;
+    auto exit_bb=func->GetExit();
     for(auto block : *parent) {
         for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
             RISCVMIR* inst = *it;
             if (inst->GetOpcode() == ISA::ret) {
-                
+                 
                 if( frame_size>2047) {
                     // 以合法方式保存sp.s0
                     // temp_frame_size = frame_size % 4096;
@@ -332,9 +390,12 @@ void RISCVFrame::GenerateFrameTail() {
                 if(temp_frame_size != frame_size) {
                     it.insert_before(inst0);
                 }
-                it.insert_before(inst1);
-                it.insert_before(inst2);
-                it.insert_before(inst3);
+                exit_bb->push_back(inst1);
+                exit_bb->push_back(inst2);
+                exit_bb->push_back(inst3);
+                // it.insert_before(inst1);
+                // it.insert_before(inst2);
+                // it.insert_before(inst3);
             }
         } 
     }

@@ -48,6 +48,7 @@ class RISCVFrameObject:public RISCVMOperand{
     public:
     RISCVFrameObject(Value*);
     RISCVFrameObject(VirRegister*);
+    RISCVFrameObject(PhyRegister*);
     void GenerateStackRegister(int);
     size_t GetFrameObjSize();
     size_t GetBeginAddOff();

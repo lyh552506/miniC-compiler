@@ -761,4 +761,5 @@ Value *PRE::Find_Leader(ValueNumberedSet &set, Value *val) {
   for (auto tmp = set.contents.begin(); tmp != set.contents.end(); tmp++)
     if (hash == VN->LookupOrAdd(*tmp))
       return *tmp;
+  assert(0&&"Unreachable");
 }

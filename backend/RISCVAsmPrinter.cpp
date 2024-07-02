@@ -80,17 +80,22 @@ void functionSegment::PrintFuncSegment() {
 //dataSegment
 dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
     GenerateGloblvarList(module, ctx);
+    num_lable=0;
     // GenerateTempvarList(module);
 }
 void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx) {
     for(auto& data : module->GetGlobalVariable()) {
         globlvar* gvar = new globlvar(data.get());
-        ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->get_name()), gvar);
+        ctx.insert_val2mop(data.get(), gvar);
         globlvar_list.push_back(gvar);
     }
+    // for(auto& data : module->GetConstantHandle()) {
+    //     globlvar* gvar = new globlvar(data);
+    //     ctx.insert_val2mop(data, gvar);
+    //     globlvar_list.push_back(gvar);
+    // }
 }
 void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
-    int num_lable=0; // 用于浮点常量计数
     for (auto& function : ctx.GetFunctions()) {
         for (auto block : *function) {
             for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
@@ -111,7 +116,7 @@ void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
                             }
                             if(tempfloat==nullptr) {
                                 tempfloat = new tempvar(num_lable, constfloat->GetVal());
-                                num_lable++;
+                                this->num_lable++;
                                 tempvar_list.push_back(tempfloat); 
                             }
                             //在代码中修改加载方式；
@@ -204,8 +209,9 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
 }
 
 //globlvar
-globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->get_name()){
-    InnerDataType tp = data->GetType()->GetTypeEnum();
+globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->GetName()){
+    
+    InnerDataType tp = (dynamic_cast<PointerType*>(data->GetType()))->GetSubType()->GetTypeEnum();
     if(tp == InnerDataType::IR_Value_INT || tp == InnerDataType::IR_Value_Float) {
         align = 2;
         size = 4;
@@ -274,13 +280,12 @@ globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->get_n
         }
         else {
             // undefined arr;
-            size = data->GetType()->get_size();
+            size = (dynamic_cast<PointerType*>(data->GetType()))->GetSubType()->get_size();
             // sec = "bss";
         }
     }
     else align = -1;//Error
 }
-// std::string globlvar::get_sec() {return sec;}
 void globlvar::generate_array_init(Initializer* arry_init, Type* basetype) {
     int init_size = arry_init->size();
     int limi = dynamic_cast<ArrayType*>(arry_init->GetType())->GetNumEle();
