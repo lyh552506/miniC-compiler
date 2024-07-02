@@ -2,8 +2,8 @@
 #include "InstructionSimplify.hpp"
 
 Value *ConstantFolding::ConstantFoldInst(User *inst) {
-  // if (auto PHiInst = dynamic_cast<PhiInst *>(inst))
-  //   return ConstantFoldPhiInst(PHiInst);
+  if (auto PHiInst = dynamic_cast<PhiInst *>(inst))
+    return ConstantFoldPhiInst(PHiInst);
   if (auto BInaryInst = dynamic_cast<BinaryInst *>(inst))
     return ConstantFoldBinaryInst(BInaryInst);
   if (auto _SITFP = dynamic_cast<SITFP *>(inst))

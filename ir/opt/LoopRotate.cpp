@@ -10,6 +10,7 @@
 #include <optional>
 #include <set>
 #include <unordered_map>
+#include <variant>
 
 void LoopRotate::RunOnFunction() {
   bool changed = false;
@@ -85,37 +86,72 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
       }
     }
   }
-  auto lr_ph = new BasicBlock();
-  lr_ph->SetName(lr_ph->GetName() + ".lr_ph");
-  m_func->push_back(lr_ph);
-  prehead->back()->Getuselist()[1]->SetValue() = header;
-  prehead->back()->Getuselist()[2]->SetValue() = Exit;
-  //补充dom里面的node信息
-  auto node = new dominance::Node;
-  node->init();
-  node->thisBlock = lr_ph;
-  lr_ph->num = m_dom->node.size();
-  node->des.push_front(header->num);
-  node->rev.push_front(prehead->num);
-  m_dom->GetNode(prehead->num).des.push_front(m_dom->node.size());
-  m_dom->GetNode(header->num).rev.push_front(m_dom->node.size());
-  m_dom->GetNode(Exit->num).rev.push_front(prehead->num);
-  m_dom->GetNode(prehead->num).des.push_front(Exit->num);
-  m_dom->node.push_back(*node);
+  if (dynamic_cast<CondInst *>(prehead->back()) &&
+      !dynamic_cast<ConstIRBoolean *>(prehead->back()->GetOperand(0))) {
+    auto lr_ph = new BasicBlock();
+    lr_ph->SetName(lr_ph->GetName() + ".lr_ph");
+    m_func->push_back(lr_ph);
+    prehead->back()->Getuselist()[1]->SetValue() = header;
+    prehead->back()->Getuselist()[2]->SetValue() = Exit;
+    //补充dom里面的node信息
+    auto node = new dominance::Node;
+    node->init();
+    node->thisBlock = lr_ph;
+    lr_ph->num = m_dom->node.size();
+    node->des.push_front(header->num);
+    node->rev.push_front(prehead->num);
+    m_dom->GetNode(prehead->num).des.push_front(m_dom->node.size());
+    m_dom->GetNode(header->num).rev.push_front(m_dom->node.size());
+    m_dom->GetNode(Exit->num).rev.push_front(prehead->num);
+    m_dom->GetNode(prehead->num).des.push_front(Exit->num);
+    m_dom->GetNode(prehead->num).des.remove(header->num);
+    m_dom->GetNode(header->num).rev.remove(prehead->num);
+    m_dom->node.push_back(*node);
 
-  m_func->InsertBlock(prehead, header, lr_ph);
-  for (auto iter = header->begin();
-       iter != header->end() && dynamic_cast<PhiInst *>(*iter) != nullptr;
-       ++iter) {
-    auto phi = dynamic_cast<PhiInst *>(*iter);
-    phi->ModifyBlock(prehead, lr_ph);
-  }
-  // Form Exit
-  for (auto rev : m_dom->GetNode(Exit->num).rev) {
-    auto l = loopAnlasis->LookUp(m_dom->GetNode(rev).thisBlock);
-    if (!l || l->Contain(Exit))
-      continue;
-    
+    m_func->InsertBlock(prehead, header, lr_ph);
+    for (auto iter = header->begin();
+         iter != header->end() && dynamic_cast<PhiInst *>(*iter) != nullptr;
+         ++iter) {
+      auto phi = dynamic_cast<PhiInst *>(*iter);
+      phi->ModifyBlock(prehead, lr_ph);
+    }
+    // Form Exit
+    for (auto rev : m_dom->GetNode(Exit->num).rev) {
+      auto l = loopAnlasis->LookUp(m_dom->GetNode(rev).thisBlock);
+      if (!l || l->Contain(Exit))
+        continue;
+      auto loopexit = new BasicBlock();
+      loopexit->SetName(loopexit->GetName() + ".loopexit");
+      m_func->push_back(loopexit);
+      m_func->InsertBlock(header, Exit, loopexit);
+
+      auto Node = new dominance::Node;
+      Node->init();
+      Node->thisBlock = loopexit;
+      loopexit->num = m_dom->node.size();
+      Node->des.push_front(Exit->num);
+      Node->rev.push_front(header->num);
+      m_dom->GetNode(header->num).des.remove(Exit->num);
+      m_dom->GetNode(Exit->num).rev.remove(header->num);
+      m_dom->GetNode(Exit->num).rev.push_front(loopexit->num);
+      m_dom->GetNode(header->num).des.push_front(loopexit->num);
+    }
+  } else {
+    auto cond = dynamic_cast<CondInst *>(prehead->back());
+    auto Bool =
+        dynamic_cast<ConstIRBoolean *>(cond->Getuselist()[0]->GetValue());
+    BasicBlock *nxt =
+        dynamic_cast<BasicBlock *>(cond->Getuselist()[1]->GetValue());
+    BasicBlock *ignore =
+        dynamic_cast<BasicBlock *>(cond->Getuselist()[2]->GetValue());
+    if (Bool->GetVal() == false) {
+      std::swap(nxt, ignore);
+    }
+    auto uncond = new UnCondInst(nxt);
+    m_dom->GetNode(ignore->num).rev.remove(prehead->num);
+    m_dom->GetNode(prehead->num).des.remove(ignore->num);
+    prehead->rbegin().insert_before(uncond);
+    delete cond;
   }
   return changed;
 }
