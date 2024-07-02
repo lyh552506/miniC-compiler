@@ -103,7 +103,7 @@ bool DCE::isDeadInst(User* inst)
     if(!inst->GetUserlist().is_empty() || inst->IsTerminateInst())
         return false;
     if(!inst->HasSideEffect())
-        return true; 
+        return true;
     return false;
 }
 
@@ -151,8 +151,9 @@ Value* DCE::RVACC(Function* func)
 
 bool DCE::FuncHasSideEffect(Function* func)
 {
+    bool flag = false;
     if(Recursive_Funcs.count(func))
-        return true;
+        flag = true;
     auto &Params = func->GetParams();
     for(auto &_param : Params)
     {
@@ -160,8 +161,13 @@ bool DCE::FuncHasSideEffect(Function* func)
         {
             for(Use* Use_ : _param->GetUserlist())
             {
-                if(dynamic_cast<StoreInst*>(Use_->usee))
+                if(dynamic_cast<StoreInst*>(Use_->GetUser()))
                     return true;
+                for(Use* Use__ : Use_->GetUser()->GetUserlist())
+                {
+                    if(dynamic_cast<StoreInst*>(Use__->GetUser()))
+                        return true;
+                }
             }
         }
     }
@@ -177,24 +183,24 @@ bool DCE::FuncHasSideEffect(Function* func)
                 || name == "putarray" || name == "putfarray" || name == "putf" || name == "getarray" \
                 || name == "putch" || name == "_sysy_starttime" || name == "_sysy_stoptime" \
                 || name == "llvm.memcpy.p0.p0.i32")
-                  return true;
+                  flag = true;
                 Function* Func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
                 if(Func && Singleton<Module>().Side_Effect_Funcs.count(Func))
-                    return true;
+                    flag = true;
             }
             if(dynamic_cast<StoreInst*>(inst))
             {
-                if(inst->Getuselist()[1]->usee->isGlobVal())
+                if(inst->Getuselist()[1]->usee->isGlobal())
                     return true;
                 if(auto gep = dynamic_cast<GetElementPtrInst*>(inst->Getuselist()[1]->usee))
                 {
-                    if(gep->Getuselist()[0]->usee->isGlobVal())
+                    if(gep->Getuselist()[0]->usee->isGlobal())
                         return true;
                 }
             }
         }
     }
-    return false;
+    return flag;
 }
 
 void DCE::DetectRecursive()

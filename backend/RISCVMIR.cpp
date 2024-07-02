@@ -33,10 +33,13 @@ void RISCVMIR::printfull(){
     if (name.find('_') != std::string::npos) name.erase(0,1);
     size_t pos=0;
     while((pos=name.find('_'))!=std::string::npos) name.replace(pos, 1, ".");
+    if(name=="ret") {
+        this->GetParent()->GetParent()->GetExit()->printfull();
+        std::cout<<"\t"<< name <<" \n";
+        return;
+    }
     std::cout<<"\t"<< name <<" ";
-    
-    if(name=="ret") {std::cout<<"\n";}
-    else if (name=="call") {
+    if (name=="call") {
         operands[0]->print();
     }
     else {
@@ -153,8 +156,11 @@ RISCVFunction::RISCVFunction(Value* _func):RISCVGlobalObject(_func->GetType(),_f
 
 
 void RISCVBasicBlock::printfull(){
-    NamedMOperand::print();
-    std::cout<<":\n";
+    if(this->GetName()==".LBBexit") {}
+    else {
+        NamedMOperand::print();
+        std::cout<<":\n";
+    }
     for(auto minst:*this)
         minst->printfull();
 }
@@ -344,7 +350,8 @@ void RISCVFrame::GenerateFrameTail() {
     PhyRegister* ra = PhyRegister::GetPhyReg(PhyReg::ra);
 
     int temp_frame_size = frame_size;
-
+    RISCVFunction* func = parent;
+    auto exit_bb=func->GetExit();
     for(auto block : *parent) {
         for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
             RISCVMIR* inst = *it;
@@ -383,9 +390,12 @@ void RISCVFrame::GenerateFrameTail() {
                 if(temp_frame_size != frame_size) {
                     it.insert_before(inst0);
                 }
-                it.insert_before(inst1);
-                it.insert_before(inst2);
-                it.insert_before(inst3);
+                exit_bb->push_back(inst1);
+                exit_bb->push_back(inst2);
+                exit_bb->push_back(inst3);
+                // it.insert_before(inst1);
+                // it.insert_before(inst2);
+                // it.insert_before(inst3);
             }
         } 
     }

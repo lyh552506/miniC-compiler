@@ -42,8 +42,7 @@ Value::Value(Type *_tp) : tp(_tp) {
 
 Value *Value::clone(std::unordered_map<Operand, Operand> &mapping) {
   // if this is called it must be a param or Global
-  if (Singleton<Module>().globalvalue.find(this) !=
-      Singleton<Module>().globalvalue.end())
+  if(isGlobal())
     return this;
   if (mapping.find(this) != mapping.end())
     return mapping[this];
@@ -64,14 +63,12 @@ std::string Value::GetName() { return name; }
 void Value::print() {
   if (isConst())
     std::cout << GetName();
+  else if(isGlobal())
+    std::cout << "@" << GetName();
   else if (auto tmp = dynamic_cast<Function *>(this))
     std::cout << "@" << tmp->GetName();
   else if (auto tmp = dynamic_cast<BuildInFunction *>(this))
     std::cout << "@" << tmp->GetName();
-  else if (auto tmp = dynamic_cast<MemcpyHandle *>(this))
-    std::cout << "@" << tmp->GetName();
-  else if (GetName().substr(0, 2) == ".g")
-    std::cout << "@" << GetName();
   else if (GetName() == "undef")
     std::cout << GetName();
   else
@@ -108,12 +105,8 @@ bool Value::isUndefVal() {
     return false;
 }
 
-bool Value::isGlobVal() {
-  if (dynamic_cast<User *>(this))
-    return false;
-  if (dynamic_cast<ConstantData *>(this))
-    return false;
-  return true;
+bool Value::isGlobal() {
+  return false;
 }
 
 bool Value::isConstZero() {
@@ -180,10 +173,17 @@ bool User::IsUncondInst() {
     return true;
   return false;
 }
+bool User::IsBinary()
+{
+  if(id >= 8 && id <=20)
+    return true;
+  return false;
+}
+
 bool User::HasSideEffect() {
   if (dynamic_cast<StoreInst *>(this)) {
     Value *op = this->Getuselist()[1]->usee;
-    if (op->isGlobVal())
+    if (op->isGlobal())
       return true;
     if (op->GetTypeEnum() == InnerDataType::IR_PTR)
       return true;
@@ -233,6 +233,7 @@ int User::GetUseIndex(Use *Op) {
     if (uselist[i].get() == Op)
       return i;
   }
+  assert(0&&"Unreachable");
 }
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 

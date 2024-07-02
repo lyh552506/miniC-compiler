@@ -18,9 +18,9 @@ void PassManager::InitPass() {
     m_dce = std::make_unique<DCE>(m_func);
     m_constprop = std::make_unique<ConstantProp>(m_func);
     m_inline = std::make_unique<Inliner>(Singleton<Module>());
-    m_sccp = std::make_unique<SCCP>();
     m_reassociate = std::make_unique<Reassociate>(m_func, m_dom.get());
-    m_cse = std::make_unique<CSE>(m_func);
+    m_cse = std::make_unique<CSE>(m_func, m_dom.get());
+    // m_cse = std::make_unique<CSE>(m_func);
     RunOnFunction();
     // SCCPSolver::runSCCP(*m_func);
   }
@@ -78,9 +78,6 @@ void PassManager::RunOnFunction() {
     m_dce->RunOnFunction();
     // m_dce->PrintPass();
   }
-  if (InitpassRecorder[sccp]) {
-    m_sccp->RunOnFunction(m_func);
-  }
   if (InitpassRecorder[simplifycfg]) {
     PreWork(func);
     dominance *d = new dominance(m_func, BList.size());
@@ -98,6 +95,17 @@ void PassManager::RunOnFunction() {
   if (InitpassRecorder[reassociate]) {
     PreWork(func);
     m_reassociate->RunOnFunction();
+    
+  }
+  if (InitpassRecorder[simplifycfg]) {
+    PreWork(func);
+    dominance *d = new dominance(m_func, BList.size());
+    d->update();
+    m_cfgsimple = new cfgSimplify(m_func, d);
+    m_cfgsimple->RunOnFunction();
+    PreWork(func);
+    m_dom->update();
+    // m_cfgsimple->PrintPass();
   }
   if (InitpassRecorder[loops]) {
     PreWork(func);
@@ -111,12 +119,20 @@ void PassManager::RunOnFunction() {
     m_inline->Run();
     // m_inline->PrintPass();
   }
-
-  if (InitpassRecorder[cse]) {
+  if (InitpassRecorder[3]) {
+    m_dce->RunOnFunction();
+    // m_dce->PrintPass();
+  }
+  if (InitpassRecorder[13]) {
     m_cse->RunOnFunction();
   }
+  if (InitpassRecorder[11]) {
+    PreWork(func);
+    m_reassociate->RunOnFunction();
+  }
 
-  if (InitpassRecorder[lcssa]) {
+
+  if (InitpassRecorder[14]) {
     PreWork(func);
     dominance *d = new dominance(m_func, BList.size());
     d->update();

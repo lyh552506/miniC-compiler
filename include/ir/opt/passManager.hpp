@@ -3,7 +3,7 @@
 #include "../Analysis/DealCriticalEdges.hpp"
 #include "ADCE.hpp"
 #include "CFG.hpp"
-#include "CSE_Tmp.hpp"
+#include "CSE.hpp"
 #include "ConstantFold.hpp"
 #include "ConstantProp.hpp"
 #include "DCE.hpp"
@@ -14,7 +14,6 @@
 #include "LoopSimplify.hpp"
 #include "PassManagerBase.hpp"
 #include "PromoteMemtoRegister.hpp"
-#include "SCCP.hpp"
 #include "SSAPRE.hpp"
 #include "cfgSimplify.hpp"
 #include "dominant.hpp"
@@ -53,7 +52,6 @@ private:
   cfgSimplify* m_cfgsimple;
   std::unique_ptr<Inliner> m_inline;
   std::unique_ptr<Global2Local> m_g2l;
-  std::unique_ptr<SCCP> m_sccp;
   std::unique_ptr<Reassociate> m_reassociate;
   std::unique_ptr<CSE> m_cse;
   std::unique_ptr<LcSSA> m_lcssa;

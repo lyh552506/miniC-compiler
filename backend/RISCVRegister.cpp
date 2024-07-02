@@ -30,7 +30,7 @@ PhyRegister* PhyRegMask::GetPhyReg(uint64_t flag){
       return PhyRegister::GetPhyReg(regenum);
     }
   }
-  assert("Can not get here");
+  assert(0&&"Can not get here");
 }
 
 uint64_t PhyRegMask::GetPhyRegMask(PhyRegister* reg) {
@@ -99,11 +99,15 @@ void LARegister::print() {
 
 RegisterList::RegisterList() {
     using PhyReg=PhyRegister::PhyReg;
+    PhyRegister* preg = nullptr;
     // reglist_int
     // t0 & t1 will not be regalloced, and it is real temp register
     PhyReg regenum = PhyReg::t2;
+    preg = PhyRegister::GetPhyReg(regenum);
+    reglist_int.push_back(preg);
+    regenum = PhyReg::s1;
     while(regenum<=PhyReg::t6) {
-        PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+        preg = PhyRegister::GetPhyReg(regenum);
         reglist_int.push_back(preg);
         regenum = PhyReg(regenum + 1);
     }
@@ -111,7 +115,7 @@ RegisterList::RegisterList() {
     // reglist_float
     regenum = PhyReg::ft0;
     while(regenum<=PhyReg::ft11) {
-        PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+        preg = PhyRegister::GetPhyReg(regenum);
         reglist_float.push_back(preg);
         regenum = PhyReg(regenum + 1);
     }
@@ -119,27 +123,23 @@ RegisterList::RegisterList() {
     // reglist_test
     regenum = PhyReg::a0;
     while(regenum<=PhyReg::a3) {
-      PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+      preg = PhyRegister::GetPhyReg(regenum);
       reglist_test.push_back(preg);
       regenum = PhyReg(regenum + 1);
     }
 
     // reglist_caller
-    regenum = PhyReg::t0;
-    while(regenum<=PhyReg::t2) {
-      PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
-      reglist_caller.push_back(preg);
-      regenum = PhyReg(regenum + 1);
-    }
+    preg = PhyRegister::GetPhyReg(PhyReg::t2);
+    reglist_caller.push_back(preg);
     regenum = PhyReg::a0;
     while(regenum<=PhyReg::a7) {
-      PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+      preg = PhyRegister::GetPhyReg(regenum);
       reglist_caller.push_back(preg);
       regenum = PhyReg(regenum + 1);
     }
     regenum = PhyReg::t3;
     while(regenum<=PhyReg::t6) {
-      PhyRegister* preg = PhyRegister::GetPhyReg(regenum);
+      preg = PhyRegister::GetPhyReg(regenum);
       reglist_caller.push_back(preg);
       regenum = PhyReg(regenum + 1);
     }

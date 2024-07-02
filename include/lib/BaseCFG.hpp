@@ -8,9 +8,11 @@
 #include <cxxabi.h>
 #include "Type.hpp"
 #include <string>
+#include <set>
 class User;
 class Value;
 class BasicBlock;
+class Function;
 class Use
 {
     public:
@@ -89,15 +91,14 @@ class Value
     virtual bool isConst(){return false;}
     void RAUW(Value* val); //ReplaceAllUseWith
     void SetName(std::string newname);
-    bool isVirtual(){ return name[0] == '.'; }
-    bool isVirtual(Value* Op){ return Op->GetName()[0] == '.'; }
     virtual std::string GetName();
     UserList& GetUserlist(){return userlist;};
-    bool isGlobVal();
+    virtual bool isGlobal();
     bool isUndefVal();
     bool isConstZero();
     bool isConstOne();
     int GetUserListSize(){return GetUserlist().GetSize();}
+    std::set<Function*> Change_Funcs;
     template<typename T>
     T* as(){return dynamic_cast<T*>(this);}
 };
@@ -157,6 +158,7 @@ class User:public Value,public list_node<BasicBlock,User>
     bool IsTerminateInst();
     bool IsCondInst();
     bool IsUncondInst();
+    bool IsBinary();
     std::vector<UsePtr>& Getuselist(){return this->uselist;}
     int GetUseIndex(Use* Op);
     inline Operand GetOperand(int i){return uselist[i]->GetValue();}

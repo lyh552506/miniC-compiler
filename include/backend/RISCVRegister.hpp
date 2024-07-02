@@ -46,7 +46,10 @@ class PhyRegister:public Register{
     std::string GetName();
     bool isPhysical()final{return true;};
     /// @return (1<<regenum), if valid 
-    uint64_t GetPhyRegMask();
+    inline uint64_t GetPhyRegMask(){
+        assert(regenum<64&&"incorrect regnum");
+        return ((uint64_t)1)<<regenum;
+    };
     inline bool isCallerSaved(){
         if(regenum==PhyReg::ra)return true;
         if(regenum>=PhyReg::t0&&regenum<=PhyReg::t2)return true;
@@ -59,7 +62,8 @@ class PhyRegister:public Register{
     };
     inline bool isCalleeSaved(){
         if(regenum==sp)return true;
-        if(regenum>=PhyReg::s0&&regenum<=PhyReg::s1)return true;
+        if(regenum==s1)return true;
+        // if(regenum>=PhyReg::s0&&regenum<=PhyReg::s1)return true;
         if(regenum>=PhyReg::s2&&regenum<=PhyReg::s11)return true;
         if(regenum>=PhyReg::fs0&&regenum<=PhyReg::fs1)return true;
         if(regenum>=PhyReg::fs2&&regenum<=PhyReg::fs11)return true;
