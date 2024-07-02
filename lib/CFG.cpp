@@ -549,7 +549,7 @@ void GetElementPtrInst::print() {
   }
   std::cout << '\n';
 }
-std::vector<Operand> &GetElementPtrInst::GetIndexs() {
+std::vector<Operand> GetElementPtrInst::GetIndexs() {
   std::vector<Operand> indexs;
   for (int i = 1; i < uselist.size(); i++)
     indexs.push_back(uselist[i]->GetValue());

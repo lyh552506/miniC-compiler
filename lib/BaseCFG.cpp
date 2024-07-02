@@ -233,6 +233,7 @@ int User::GetUseIndex(Use *Op) {
     if (uselist[i].get() == Op)
       return i;
   }
+  assert(0&&"Unreachable");
 }
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 

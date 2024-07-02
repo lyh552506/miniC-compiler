@@ -60,7 +60,6 @@ class globlvar: public RISCVGlobalObject{
     std::vector<std::variant<int , float>> init_vector;
     public:
     globlvar(Variable* data);
-    globlvar(MemcpyHandle* data);
     ~globlvar() = default;
     void generate_array_init(Initializer* arry_init, Type* basetype);
     void PrintGloblvar();

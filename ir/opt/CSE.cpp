@@ -130,11 +130,11 @@ void CSE::GetBlockLiveOut(BasicBlock* block)
                     }
                 }
 
-                if(BlockLiveOut[block].Loads.find(dst_hash) != BlockLiveOut[block].Loads.end() && !Dst->isGlobVal())
+                if(BlockLiveOut[block].Loads.find(dst_hash) != BlockLiveOut[block].Loads.end() && !Dst->isGlobal())
                     BlockLiveOut[block].Loads.erase(dst_hash);
-                else if(BlockLiveOut[block].Loads.find(dst_hash) != BlockLiveOut[block].Loads.end() && Dst->isGlobVal())
+                else if(BlockLiveOut[block].Loads.find(dst_hash) != BlockLiveOut[block].Loads.end() && Dst->isGlobal())
                     BlockLiveOut[block].Loads[dst_hash] = Dst;
-                else if(BlockLiveOut[block].Loads.find(dst_hash) == BlockLiveOut[block].Loads.end() && Dst->isGlobVal())
+                else if(BlockLiveOut[block].Loads.find(dst_hash) == BlockLiveOut[block].Loads.end() && Dst->isGlobal())
                     BlockLiveOut[block].Loads[dst_hash] = Src;
             }
             continue;
@@ -442,15 +442,15 @@ bool CSE::RunPass(BasicBlock* block)
                     }
                 }
 
-                if(BlockLiveIn[block].Loads.find(dst_hash) != BlockLiveIn[block].Loads.end() && !Dst->isGlobVal())
+                if(BlockLiveIn[block].Loads.find(dst_hash) != BlockLiveIn[block].Loads.end() && !Dst->isGlobal())
                 {
                     BlockLiveIn[block].Loads.erase(dst_hash);
                 }
-                else if(BlockLiveIn[block].Loads.find(dst_hash) != BlockLiveIn[block].Loads.end() && Dst->isGlobVal())
+                else if(BlockLiveIn[block].Loads.find(dst_hash) != BlockLiveIn[block].Loads.end() && Dst->isGlobal())
                 {
                     BlockLiveIn[block].Loads[dst_hash] = Src;
                 }
-                else if(BlockLiveIn[block].Loads.find(dst_hash) == BlockLiveIn[block].Loads.end() && Dst->isGlobVal())
+                else if(BlockLiveIn[block].Loads.find(dst_hash) == BlockLiveIn[block].Loads.end() && Dst->isGlobal())
                 {
                     BlockLiveIn[block].Loads[dst_hash] = Src;
                 }

@@ -680,6 +680,7 @@ RISCVMOperand* RISCVISel::Li_Intimm(ConstIRInt* Intconst) {
     //     } else assert(0&&"error imm");
     // }
     // return vreg;
+    assert(0&&"Unreachable");
 }
 
 void RISCVISel::InstLowering(User* inst){

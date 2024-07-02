@@ -300,6 +300,7 @@ bool Global2Local::hasChanged(int index, Function* func)
         else
             return false;
     }
+    assert(0&&"!!!RETURN VALUE!!!, Unreachable");
 }
 
 // bool Global2Local::CanLocal(Variable* val)

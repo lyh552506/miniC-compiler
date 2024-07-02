@@ -186,7 +186,7 @@ class GetElementPtrInst:public User
     GetElementPtrInst* clone(std::unordered_map<Operand,Operand>&)override;
     Type* GetType()final;
     void print()final;
-    std::vector<Operand>& GetIndexs();
+    std::vector<Operand> GetIndexs();
 };
 //zext i1 to i32
 class ZextInst:public User
@@ -327,7 +327,6 @@ class Module:public SymbolTable
     void PushVariable(Variable* ptr);
     std::vector<FunctionPtr>& GetFuncTion();
     std::vector<GlobalVariblePtr>& GetGlobalVariable();
-    std::vector<MemcpyHandle*>& GetConstantHandle();
     void Test();
     void EraseFunction(Function* func);
     Function* GetMainFunction();

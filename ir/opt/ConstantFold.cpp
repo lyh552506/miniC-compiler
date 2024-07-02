@@ -28,6 +28,7 @@ Value *ConstantFolding::ConstantFoldPhiInst(PhiInst *inst) {
   }
   if (CommonValue)
     return CommonValue;
+  assert(0&&"Unreachable");
 }
 
 Value *ConstantFolding::ConstantFoldBinaryInst(BinaryInst *inst) {
