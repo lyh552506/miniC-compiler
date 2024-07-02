@@ -10,6 +10,10 @@ namespace HashTool
         size_t operator()(Value* val)
         {
             size_t HashValue;
+            if(val->isGlobal())
+            {
+                return std::hash<std::string>{}(val->GetName());
+            }
             if(User* inst = dynamic_cast<User*>(val))
             {
                 HashValue = std::hash<User::OpID>{}(inst->GetInstId());
