@@ -99,6 +99,10 @@ void PassManager::RunOnFunction() {
     m_inline->Run();
     // m_inline->PrintPass();
   }
+  if (InitpassRecorder[3]) {
+    m_dce->RunOnFunction();
+    // m_dce->PrintPass();
+  }
   if (InitpassRecorder[13]) {
     m_cse->RunOnFunction();
   }
@@ -107,10 +111,7 @@ void PassManager::RunOnFunction() {
     m_reassociate->RunOnFunction();
   }
 
-  if (InitpassRecorder[3]) {
-    m_dce->RunOnFunction();
-    // m_dce->PrintPass();
-  }
+
   if (InitpassRecorder[14]) {
     PreWork(func);
     dominance *d = new dominance(m_func, BList.size());

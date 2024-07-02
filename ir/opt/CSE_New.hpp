@@ -105,10 +105,12 @@ class CSE
 {
     std::map<BasicBlock*, info> BlockLiveIn;
     std::map<BasicBlock*, info> BlockLiveOut;
+    std::vector<User*> wait_del;
 private:
     void GetBlockLiveOut(BasicBlock* block);
     void GetBlockLiveIn(BasicBlock* block);
     void iterate(Function* func);
+    void update();
     std::map<BasicBlock*, bool> Unchanged;
     bool IsChanged = false;
     bool Changed = false;

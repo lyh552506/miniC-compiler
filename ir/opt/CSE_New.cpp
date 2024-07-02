@@ -5,7 +5,33 @@ bool CSE::RunOnFunction()
 {
     if(m_func->GetName() == "main")
         int b =1;
-    bool modified;
+    bool modified = false;
+    bool Changed = false;
+    update();
+    for(BasicBlock* block : *m_func)
+    {
+        Changed = RunPass(block);
+        modified |= Changed;
+        if(Changed)
+        {
+            while(!wait_del.empty())
+            {
+                User* inst = wait_del.back();
+                wait_del.pop_back();
+                delete inst;
+            }
+            update();
+        }
+
+        
+    }
+
+    return modified;
+}
+
+void CSE::update()
+{
+    wait_del.clear();
     BlockLiveIn.clear();
     BlockLiveOut.clear();
     for(BasicBlock *block : *m_func)
@@ -16,9 +42,6 @@ bool CSE::RunOnFunction()
     iterate(m_func);
     while (IsChanged)
         iterate(m_func);
-    for(BasicBlock* block : *m_func)
-        modified = RunPass(block);
-    return modified;
 }
 
 void CSE::iterate(Function* func)
@@ -118,10 +141,56 @@ void CSE::GetBlockLiveOut(BasicBlock* block)
         }
 
         // Call
-        if(CallInst* call = dynamic_cast<CallInst*>(inst))
+        if(CallInst* Call = dynamic_cast<CallInst*>(inst))
         {
-            if(Function* func = dynamic_cast<Function*>(call->GetOperand(0)))
+            Value* f = Call->Getuselist()[0]->usee;
+            std::string name = f->GetName();
+            if(Function* func = dynamic_cast<Function*>(Call->Getuselist()[0]->usee))
+            {
                 BlockLiveOut[block].Funcs.insert(func);
+                // for(auto& Use_ : Call->Getuselist())
+                // {
+                //     if(LoadInst* load = dynamic_cast<LoadInst*>(Use_->usee))
+                //     {
+                //         size_t load_hash = HashTool::InstHash{}(load);
+                //         if(BlockLiveIn[block].Loads.find(load_hash) != BlockLiveIn[block].Loads.end())
+                //         {
+                //             BlockLiveIn[block].Loads.erase(load_hash);
+                //         }
+                //     }
+                // }
+                for(Value* val : func->Change_Val)
+                {
+                    if(BlockLiveOut[block].Loads.find(HashTool::InstHash{}(val)) != BlockLiveOut[block].Loads.end())
+                    {
+                        auto iter = BlockLiveOut[block].Loads.find(HashTool::InstHash{}(val));
+                        BlockLiveOut[block].Loads.erase(iter);
+                    }
+                }
+            }
+            else if(name == "getarray" || name == "getfarray")
+            {
+                auto Use_ = Call->Getuselist()[1]->usee;
+                if(BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Loads.end())
+                {
+                    auto iter = BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_));
+                    BlockLiveIn[block].Loads.erase(iter);
+                }
+                if(BlockLiveIn[block].Geps.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Geps.end())
+                {
+                    auto iter = BlockLiveIn[block].Geps.find(HashTool::InstHash{}(Use_));
+                    BlockLiveIn[block].Geps.erase(iter);
+                }
+            }
+            // else if(name == "getint" || name == "getch" || name == "getfloat")
+            // {
+            //     auto Use_ = Call->Getuselist()[1]->usee;
+            //     if(BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Loads.end())
+            //     {
+            //         auto iter = BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_));
+            //         BlockLiveIn[block].Loads.erase(iter);
+            //     }
+            // }
         }
     }
 }
@@ -129,8 +198,6 @@ void CSE::GetBlockLiveOut(BasicBlock* block)
 void CSE::GetBlockLiveIn(BasicBlock* block)
 {
     bool flag = true;
-    if(block->GetName() == ".322wloop.62.64")
-        int a = 1;
     for(auto User_ : block->GetUserlist())
     {
         BasicBlock* pred;
@@ -181,7 +248,7 @@ void CSE::GetBlockLiveIn(BasicBlock* block)
             }
             for(const auto& item : BlockLiveOut[pred].Funcs)
             {
-                if(BlockLiveOut[block].Funcs.find(item) != BlockLiveOut[block].Funcs.end())
+                if(BlockLiveOut[block].Funcs.find(item) == BlockLiveOut[block].Funcs.end())
                     intersection_Funcs.insert(item);
             }
             BlockLiveIn[block].AEB_Binary = intersection_AEB_Binary;
@@ -194,9 +261,7 @@ void CSE::GetBlockLiveIn(BasicBlock* block)
 
 bool CSE::RunPass(BasicBlock* block)
 {
-    if(block->GetName() == ".161wn39")
-        int b = 1;
-    std::vector<User*> wait_del;
+    // std::vector<User*> wait_del;
     bool modified = false;
     for(User* inst : *block)
     {
@@ -217,66 +282,66 @@ bool CSE::RunPass(BasicBlock* block)
             //     }
             // }
             size_t hash = HashTool::BinaryInstHash{}(inst);
-            if(inst->GetInstId() <= User::OpID::G && inst->GetInstId() >= User::OpID::Ge)
-            {
-                if(!BlockLiveIn[block].AEB_Binary.empty())
-                {
-                    for(auto& iter : BlockLiveIn[block].AEB_Binary)
-                    {
-                        if(iter.first.second == User::OpID::Ge && inst->GetInstId() == User::OpID::L)
-                        {
-                            if(HashTool::CmpSame{}(iter.second, inst))
-                            {
-                                inst->RAUW(iter.second);
-                                wait_del.push_back(inst);
-                                modified = true;
-                            }
-                            else
-                                BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
-                            break;
-                        }
-                        if(iter.first.second == User::OpID::L && inst->GetInstId() == User::OpID::Ge)
-                        {
-                            if(HashTool::CmpSame{}(iter.second, inst))
-                            {
-                                inst->RAUW(iter.second);
-                                wait_del.push_back(inst);
-                                modified = true;
-                            }
-                            else
-                                BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
-                            break;
-                        }
-                        if(iter.first.second == User::OpID::G && inst->GetInstId() == User::OpID::Le)
-                        {
-                            if(HashTool::CmpSame{}(iter.second, inst))
-                            {
-                                inst->RAUW(iter.second);
-                                wait_del.push_back(inst);
-                                modified = true;
-                            }
-                            else
-                                BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
-                            break;
-                        }
-                        if(iter.first.second == User::OpID::Le && inst->GetInstId() == User::OpID::G)
-                        {
-                            if(HashTool::CmpSame{}(iter.second, inst))
-                            {
-                                inst->RAUW(iter.second);
-                                wait_del.push_back(inst);
-                                modified = true;
-                            }
-                            else
-                                BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
-                            break;
-                        }
-                    }
-                }
-                else
-                    BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
-            }
-            else
+            // if(inst->GetInstId() <= User::OpID::G && inst->GetInstId() >= User::OpID::Ge)
+            // {
+            //     if(!BlockLiveIn[block].AEB_Binary.empty())
+            //     {
+            //         for(auto& iter : BlockLiveIn[block].AEB_Binary)
+            //         {
+            //             if(iter.first.second == User::OpID::Ge && inst->GetInstId() == User::OpID::L)
+            //             {
+            //                 if(HashTool::CmpSame{}(iter.second, inst))
+            //                 {
+            //                     inst->RAUW(iter.second);
+            //                     wait_del.push_back(inst);
+            //                     modified = true;
+            //                 }
+            //                 else
+            //                     BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            //                 break;
+            //             }
+            //             if(iter.first.second == User::OpID::L && inst->GetInstId() == User::OpID::Ge)
+            //             {
+            //                 if(HashTool::CmpSame{}(iter.second, inst))
+            //                 {
+            //                     inst->RAUW(iter.second);
+            //                     wait_del.push_back(inst);
+            //                     modified = true;
+            //                 }
+            //                 else
+            //                     BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            //                 break;
+            //             }
+            //             if(iter.first.second == User::OpID::G && inst->GetInstId() == User::OpID::Le)
+            //             {
+            //                 if(HashTool::CmpSame{}(iter.second, inst))
+            //                 {
+            //                     inst->RAUW(iter.second);
+            //                     wait_del.push_back(inst);
+            //                     modified = true;
+            //                 }
+            //                 else
+            //                     BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            //                 break;
+            //             }
+            //             if(iter.first.second == User::OpID::Le && inst->GetInstId() == User::OpID::G)
+            //             {
+            //                 if(HashTool::CmpSame{}(iter.second, inst))
+            //                 {
+            //                     inst->RAUW(iter.second);
+            //                     wait_del.push_back(inst);
+            //                     modified = true;
+            //                 }
+            //                 else
+            //                     BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            //                 break;
+            //             }
+            //         }
+            //     }
+            //     else
+            //         BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            // }
+            // else
             {
                 if(BlockLiveIn[block].AEB_Binary.find(std::make_pair(hash, inst->GetInstId())) != BlockLiveIn[block].AEB_Binary.end())
                 {
@@ -319,13 +384,13 @@ bool CSE::RunPass(BasicBlock* block)
             {
                 Value* val = BlockLiveIn[block].Loads[Val];
                 Function* change_func = Find_Change(inst->Getuselist()[0]->usee, BlockLiveIn[block]);
-                if(User* load = dynamic_cast<User*>(val))
+                if(auto load = dynamic_cast<User*>(val))
                 {
-                    if(DomTree->dominates(load->GetParent(), block))
-                    {
+                    // if(DomTree->dominates(load->GetParent(), block))
+                    // {
                         if(!change_func)
                         {
-                            inst->RAUW(BlockLiveIn[block].Loads[Val]);
+                            inst->RAUW(load);
                             wait_del.push_back(inst);
                             modified = true;
                         }
@@ -334,11 +399,11 @@ bool CSE::RunPass(BasicBlock* block)
                             BlockLiveIn[block].Funcs.erase(change_func);
                             BlockLiveIn[block].Loads[Val] = inst;
                         }
-                    }
+                    // }
                 }
                 else if(dynamic_cast<ConstantData*>(val))
                 {
-                    inst->RAUW(BlockLiveIn[block].Loads[Val]);
+                    inst->RAUW(val);
                     wait_del.push_back(inst);
                     modified = true;
                 }
@@ -385,10 +450,10 @@ bool CSE::RunPass(BasicBlock* block)
                 {
                     BlockLiveIn[block].Loads[dst_hash] = Src;
                 }
-                // else if(BlockLiveIn[block].Loads.find(dst_hash) == BlockLiveIn[block].Loads.end() && Dst->isGlobVal())
-                // {
-                //     BlockLiveIn[block].Loads[dst_hash] = Src;
-                // }
+                else if(BlockLiveIn[block].Loads.find(dst_hash) == BlockLiveIn[block].Loads.end() && Dst->isGlobVal())
+                {
+                    BlockLiveIn[block].Loads[dst_hash] = Src;
+                }
             }
             // // Handle Src -> Gens
             // {
@@ -401,6 +466,8 @@ bool CSE::RunPass(BasicBlock* block)
         // Call
         if(CallInst* Call = dynamic_cast<CallInst*>(inst))
         {
+            Value* f = Call->Getuselist()[0]->usee;
+            std::string name = f->GetName();
             if(Function* func = dynamic_cast<Function*>(Call->Getuselist()[0]->usee))
             {
                 BlockLiveIn[block].Funcs.insert(func);
@@ -415,17 +482,43 @@ bool CSE::RunPass(BasicBlock* block)
                 //         }
                 //     }
                 // }
+                for(Value* val : func->Change_Val)
+                {
+                    if(BlockLiveIn[block].Loads.find(HashTool::InstHash{}(val)) != BlockLiveIn[block].Loads.end())
+                    {
+                        auto iter = BlockLiveIn[block].Loads.find(HashTool::InstHash{}(val));
+                        BlockLiveIn[block].Loads.erase(iter);
+                    }
+                }
             }
+            else if(name == "getarray" || name == "getfarray")
+            {
+                auto Use_ = Call->Getuselist()[1]->usee;
+                if(BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Loads.end())
+                {
+                    auto iter = BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_));
+                    BlockLiveIn[block].Loads.erase(iter);
+                }
+                if(BlockLiveIn[block].Geps.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Geps.end())
+                {
+                    auto iter = BlockLiveIn[block].Geps.find(HashTool::InstHash{}(Use_));
+                    BlockLiveIn[block].Geps.erase(iter);
+                }
+            }
+            // else if(name == "getint" || name == "getch" || name == "getfloat")
+            // {
+            //     auto Use_ = Call->Getuselist()[1]->usee;
+            //     if(BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Loads.end())
+            //     {
+            //         auto iter = BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_));
+            //         BlockLiveIn[block].Loads.erase(iter);
+            //     }
+            // }
 
         }
 
     }
-    while(!wait_del.empty())
-    {
-        User* inst = wait_del.back();
-        wait_del.pop_back();
-        delete inst;
-    }
+
     return modified;
 }
 

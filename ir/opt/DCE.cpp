@@ -196,6 +196,7 @@ bool DCE::FuncHasSideEffect(Function* func)
                 {
                     Value* val = inst->Getuselist()[1]->usee;
                     val->Change_Funcs.insert(func);
+                    func->Change_Val.insert(val);
                     flag = true;
                 }
 

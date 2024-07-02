@@ -274,6 +274,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     public:
     std::set<Function*> CalleeFuncs; // The Function who calls this
     std::set<Function*> CallingFuncs; // The Function that the func calls
+    std::set<Value*> Change_Val; // Used for cse 
     std::pair<size_t,size_t>& GetInlineInfo();
     void InsertAlloca(AllocaInst* ptr);
     public:
