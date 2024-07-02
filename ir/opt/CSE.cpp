@@ -1,167 +1,356 @@
 #include "CSE.hpp"
-#include "HashScope.hpp"
-#include "DCE.hpp"
 #include "ConstantFold.hpp"
 
-void CSE::Init()
+bool CSE::RunOnFunction()
 {
-    BlockOut.clear();
-    BlockIn.clear();
-}
-bool CSE::RunOnFunc()
-{
-    _DEBUG(num = 0;)
+    if(m_func->GetName() == "main")
+        int b =1;
     bool modified = false;
-    // 这里采用deque而非vector的原因是在元素个数较多的时候deque的效率更高
-    std::deque<ProcessNode*> WorkList;
-    WorkList.push_back(new ProcessNode(&DomTree->GetNode(0)));
-    BlockIn[DomTree->GetNode(0).thisBlock] = new info;
-    BlockOut[DomTree->GetNode(0).thisBlock] = new info;
-    while(!WorkList.empty())
+    bool Changed = false;
+    update();
+    for(BasicBlock* block : *m_func)
     {
-        ProcessNode* CurrNode = WorkList.back();
-        if(CurrNode->node->thisBlock->GetName() == ".5")
-            int b =1;
-        if(Processed.find(CurrNode) == Processed.end())
+        Changed = RunPass(block);
+        modified |= Changed;
+        if(Changed)
         {
-            modified |= RunOnNode(CurrNode, *BlockIn[CurrNode->node->thisBlock], *BlockOut[CurrNode->node->thisBlock]);
-            Processed.insert(CurrNode);
+            while(!wait_del.empty())
+            {
+                User* inst = wait_del.back();
+                wait_del.pop_back();
+                delete inst;
+            }
+            update();
         }
-        else if(CurrNode->iter != CurrNode->end)
-        {
-            dominance::Node* Child = &DomTree->GetNode(CurrNode->nextChild());
-            // if(Child->thisBlock->GetName() == ".5")
-            //     int b =1;
-            BlockIn[Child->thisBlock] = BlockOut[CurrNode->node->thisBlock];
-            BlockOut[Child->thisBlock] = new info;
-            WorkList.push_back(new ProcessNode(Child));
-        }
-        else
-        {
-            delete CurrNode;
-            WorkList.pop_back();
-        }
+
+        
     }
-    _DEBUG(std::cerr<<"Function: "<<func->GetName()<<" CSE: "<<num<<std::endl;)
+
     return modified;
 }
 
-bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
+void CSE::update()
 {
-    bool modified = false;
-    BasicBlock* CurrentBlock = node_->node->thisBlock;
-    if(CurrentBlock->GetName() == ".5")
-        int b =1;
-    // if(CurrentBlock->GetUserlist().GetSize() > 1)
-    //     block_in = *(new info);
-    // if(CurrentBlock->GetName() == ".5")
-    // {
-    //     auto test = DomTree->GetNode(node_->node->idom).thisBlock;
-    //     int b =1;
-    //     // auto test1 = DomTree->GetNode(node_->node->idom).idom_child;
-    //     // for(auto& item : test1)
-    //     // {
-    //     //     auto test2 = DomTree->GetNode(item).thisBlock;
-    //     // }
-    // }
-    for(User* inst : *CurrentBlock)
+    wait_del.clear();
+    BlockLiveIn.clear();
+    BlockLiveOut.clear();
+    for(BasicBlock *block : *m_func)
     {
-        // if(dynamic_cast<CondInst*>(inst))
-        // {
-        //     if(auto boolean = dynamic_cast<ConstIRBoolean*>(inst->Getuselist()[0]->usee))
-        //     {
-        //         BasicBlock* TrueBlock = inst->Getuselist()[1]->usee->as<BasicBlock>();                
-        //         BasicBlock* FalseBlock = inst->Getuselist()[2]->usee->as<BasicBlock>();                
-        //         if(boolean->GetVal())
-        //         {
-        //             TrueBlock->reachable = true;
-        //             FalseBlock->reachable = false;
-        //         }
-        //         else
-        //         {
-        //             TrueBlock->reachable = false;
-        //             FalseBlock->reachable = true;
-        //         }
-        //     }
-        //     else
-        //     {
-        //         BasicBlock* TrueBlock = inst->Getuselist()[1]->usee->as<BasicBlock>();                
-        //         BasicBlock* FalseBlock = inst->Getuselist()[2]->usee->as<BasicBlock>();                
-        //         TrueBlock->reachable = true;
-        //         FalseBlock->reachable = true;
-        //     }
-        // }
+        GetBlockLiveOut(block);
+        GetBlockLiveIn(block);
+    }
+    iterate(m_func);
+    while (IsChanged)
+        iterate(m_func);
+}
+
+void CSE::iterate(Function* func)
+{
+    RunOnFunc(func);
+    bool isChanged = false;
+    for(BasicBlock* block : *func)
+    {
+        if(!Unchanged[block])
+        {
+            isChanged = true;
+            break;
+        }
+    }
+}
+
+void CSE::RunOnFunc(Function* func)
+{
+    for(BasicBlock* block : *func)
+    {
+        info Old_BlockLiveOut = BlockLiveOut[block];
+        info Old_BlockLiveIn = BlockLiveIn[block];
+        GetBlockLiveIn(block);
+        BlockLiveOut[block] = BlockLiveIn[block];
+        GetBlockLiveOut(block);
+        if(BlockLiveOut[block] == Old_BlockLiveOut)
+            Unchanged[block] = true;
+        else
+            Unchanged[block] = false;
+    }
+}
+
+void CSE::GetBlockLiveOut(BasicBlock* block)
+{
+    for(User* inst : *block)
+    {
         //Binary
         if(auto binary = dynamic_cast<BinaryInst*>(inst))
         {
-            auto opcode = binary->getopration();
-            auto LHS = dynamic_cast<ConstantData*>(binary->GetOperand(0));
-            auto RHS = dynamic_cast<ConstantData*>(binary->GetOperand(1));
-            if(LHS && RHS)
+            size_t hash = HashTool::BinaryInstHash{}(inst);
+            if(BlockLiveOut[block].AEB_Binary.find(std::make_pair(hash, inst->GetInstId())) == BlockLiveOut[block].AEB_Binary.end())
             {
-                auto C = ConstantFolding::ConstFoldBinary(opcode, LHS, RHS);
-                if(C)
+                BlockLiveOut[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            }
+            continue;
+        }
+
+        // Gep
+        if(dynamic_cast<GetElementPtrInst*>(inst))
+        {
+            size_t hash = HashTool::InstHash{}(inst);
+            if(BlockLiveOut[block].Geps.find(hash) == BlockLiveOut[block].Geps.end())
+                BlockLiveOut[block].Geps[hash] = inst;
+            continue;
+        }
+
+        // load
+        if(dynamic_cast<LoadInst*>(inst))
+        {
+            size_t hash = HashTool::InstHash{}(inst);
+            if(BlockLiveOut[block].Loads.find(hash) == BlockLiveOut[block].Loads.end())
+                BlockLiveOut[block].Loads[hash] = inst;
+            continue;
+        }
+
+        // Store
+        if(dynamic_cast<StoreInst*>(inst))
+        {
+            Value* Src = inst->GetOperand(0);
+            Value* Dst = inst->GetOperand(1);
+            size_t src_hash = HashTool::InstHash{}(Src);
+            size_t dst_hash = HashTool::InstHash{}(Dst);
+            {
+                if(BlockLiveOut[block].Geps.find(dst_hash) != BlockLiveOut[block].Geps.end())
                 {
-                inst->RAUW(C);
-                wait_del.push_back(inst);
-                modified = true;
+                    BlockLiveOut[block].Geps.erase(dst_hash);
+                    auto gep = dynamic_cast<GetElementPtrInst*>(Dst);
+                    for(auto& Use_ : gep->Getuselist())
+                    {
+                        if(LoadInst* load = dynamic_cast<LoadInst*>(Use_->usee))
+                        {
+                            size_t load_hash = HashTool::InstHash{}(load);
+                            if(BlockLiveOut[block].Loads.find(load_hash) != BlockLiveOut[block].Loads.end())
+                                BlockLiveOut[block].Loads.erase(load_hash);
+                        }
+                    }
+                }
+
+                if(BlockLiveOut[block].Loads.find(dst_hash) != BlockLiveOut[block].Loads.end() && !Dst->isGlobVal())
+                    BlockLiveOut[block].Loads.erase(dst_hash);
+                else if(BlockLiveOut[block].Loads.find(dst_hash) != BlockLiveOut[block].Loads.end() && Dst->isGlobVal())
+                    BlockLiveOut[block].Loads[dst_hash] = Dst;
+                else if(BlockLiveOut[block].Loads.find(dst_hash) == BlockLiveOut[block].Loads.end() && Dst->isGlobVal())
+                    BlockLiveOut[block].Loads[dst_hash] = Src;
+            }
+            continue;
+        }
+
+        // Call
+        if(CallInst* Call = dynamic_cast<CallInst*>(inst))
+        {
+            Value* f = Call->Getuselist()[0]->usee;
+            std::string name = f->GetName();
+            if(Function* func = dynamic_cast<Function*>(Call->Getuselist()[0]->usee))
+            {
+                BlockLiveOut[block].Funcs.insert(func);
+                // for(auto& Use_ : Call->Getuselist())
+                // {
+                //     if(LoadInst* load = dynamic_cast<LoadInst*>(Use_->usee))
+                //     {
+                //         size_t load_hash = HashTool::InstHash{}(load);
+                //         if(BlockLiveIn[block].Loads.find(load_hash) != BlockLiveIn[block].Loads.end())
+                //         {
+                //             BlockLiveIn[block].Loads.erase(load_hash);
+                //         }
+                //     }
+                // }
+                for(Value* val : func->Change_Val)
+                {
+                    if(BlockLiveOut[block].Loads.find(HashTool::InstHash{}(val)) != BlockLiveOut[block].Loads.end())
+                    {
+                        auto iter = BlockLiveOut[block].Loads.find(HashTool::InstHash{}(val));
+                        BlockLiveOut[block].Loads.erase(iter);
+                    }
                 }
             }
-            size_t hash = HashTool::BinaryInstHash{}(inst);
-            for(auto& [key, val] : block_in.AEB_Binary)
+            else if(name == "getarray" || name == "getfarray")
             {
-                if(key.second == User::OpID::Ge && inst->GetInstId() == User::OpID::L)
+                auto Use_ = Call->Getuselist()[1]->usee;
+                if(BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Loads.end())
                 {
-                    if(HashTool::CmpSame{}(val, inst))
-                    {
-                        inst->RAUW(val);
-                        wait_del.push_back(inst);
-                        modified = true;
-                    }
-                    else
-                        block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+                    auto iter = BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_));
+                    BlockLiveIn[block].Loads.erase(iter);
                 }
-                if(key.second == User::OpID::L && inst->GetInstId() == User::OpID::Ge)
+                if(BlockLiveIn[block].Geps.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Geps.end())
                 {
-                    if(HashTool::CmpSame{}(val, inst))
-                    {
-                        inst->RAUW(val);
-                        wait_del.push_back(inst);
-                        modified = true;
-                    }
-                    else
-                        block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+                    auto iter = BlockLiveIn[block].Geps.find(HashTool::InstHash{}(Use_));
+                    BlockLiveIn[block].Geps.erase(iter);
                 }
-                if(key.second == User::OpID::G && inst->GetInstId() == User::OpID::Le)
+            }
+            // else if(name == "getint" || name == "getch" || name == "getfloat")
+            // {
+            //     auto Use_ = Call->Getuselist()[1]->usee;
+            //     if(BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Loads.end())
+            //     {
+            //         auto iter = BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_));
+            //         BlockLiveIn[block].Loads.erase(iter);
+            //     }
+            // }
+        }
+    }
+}
+
+void CSE::GetBlockLiveIn(BasicBlock* block)
+{
+    bool flag = true;
+    for(auto User_ : block->GetUserlist())
+    {
+        BasicBlock* pred;
+        User* inst = User_->GetUser();
+        if(dynamic_cast<CondInst*>(inst))
+            pred = inst->GetParent();
+        else if(dynamic_cast<UnCondInst*>(inst))
+            pred = inst->GetParent();
+        else
+            continue;
+        if(flag)
+        {
+            BlockLiveIn[block].AEB_Binary = BlockLiveOut[pred].AEB_Binary;
+            BlockLiveIn[block].Loads = BlockLiveOut[pred].Loads;
+            BlockLiveIn[block].Geps = BlockLiveOut[pred].Geps;
+            BlockLiveIn[block].Funcs = BlockLiveOut[pred].Funcs;
+            flag = false;
+        }
+        else
+        {
+            std::map<std::pair<size_t, User::OpID>, Value*> intersection_AEB_Binary;
+            std::map<size_t, Value*> intersection_Loads;
+            std::map<size_t, Value*> intersection_Geps;
+            std::set<Function*> intersection_Funcs;
+            for(const auto& item : BlockLiveOut[pred].AEB_Binary)
+            {
+                if(BlockLiveIn[block].AEB_Binary.find(item.first) != BlockLiveIn[block].AEB_Binary.end())
                 {
-                    if(HashTool::CmpSame{}(val, inst))
-                    {
-                        inst->RAUW(val);
-                        wait_del.push_back(inst);
-                        modified = true;
-                    }
-                    else
-                        block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+                    if(item.second == BlockLiveIn[block].AEB_Binary[item.first])
+                        intersection_AEB_Binary[item.first] = item.second;
                 }
-                if(key.second == User::OpID::Le && inst->GetInstId() == User::OpID::G)
+            }
+            for(const auto& item : BlockLiveOut[pred].Loads)
+            {
+                if(BlockLiveOut[block].Loads.find(item.first) != BlockLiveOut[block].Loads.end())
                 {
-                    if(HashTool::CmpSame{}(val, inst))
-                    {
-                        inst->RAUW(val);
-                        wait_del.push_back(inst);
-                        modified = true;
-                    }
-                    else
-                        block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+                    if(item.second == BlockLiveOut[block].Loads[item.first])
+                        intersection_Loads[item.first] = item.second;
                 }
-                if(block_in.AEB_Binary.find(std::make_pair(hash, inst->GetInstId())) != block_in.AEB_Binary.end())
+            }
+            for(const auto& item : BlockLiveOut[pred].Geps)
+            {
+                if(BlockLiveOut[block].Geps.find(item.first) != BlockLiveOut[block].Geps.end())
                 {
-                        inst->RAUW(val);
-                        wait_del.push_back(inst);
-                        modified = true;
+                    if(item.second == BlockLiveOut[block].Geps[item.first])
+                        intersection_Geps[item.first] = item.second;
+                }
+            }
+            for(const auto& item : BlockLiveOut[pred].Funcs)
+            {
+                if(BlockLiveOut[block].Funcs.find(item) == BlockLiveOut[block].Funcs.end())
+                    intersection_Funcs.insert(item);
+            }
+            BlockLiveIn[block].AEB_Binary = intersection_AEB_Binary;
+            BlockLiveIn[block].Loads = intersection_Loads;
+            BlockLiveIn[block].Geps = intersection_Geps;
+            BlockLiveIn[block].Funcs = intersection_Funcs;
+        }
+    }
+}
+
+bool CSE::RunPass(BasicBlock* block)
+{
+    // std::vector<User*> wait_del;
+    bool modified = false;
+    for(User* inst : *block)
+    {
+        //Binary
+        if(auto binary = dynamic_cast<BinaryInst*>(inst))
+        {
+            // auto opcode = binary->getopration();
+            // auto LHS = dynamic_cast<ConstantData*>(binary->GetOperand(0));
+            // auto RHS = dynamic_cast<ConstantData*>(binary->GetOperand(1));
+            // if(LHS && RHS)
+            // {
+            //     auto C = ConstantFolding::ConstFoldBinary(opcode, LHS, RHS);
+            //     if(C)
+            //     {
+            //     inst->RAUW(C);
+            //     wait_del.push_back(inst);
+            //     modified = true;
+            //     }
+            // }
+            size_t hash = HashTool::BinaryInstHash{}(inst);
+            // if(inst->GetInstId() <= User::OpID::G && inst->GetInstId() >= User::OpID::Ge)
+            // {
+            //     if(!BlockLiveIn[block].AEB_Binary.empty())
+            //     {
+            //         for(auto& iter : BlockLiveIn[block].AEB_Binary)
+            //         {
+            //             if(iter.first.second == User::OpID::Ge && inst->GetInstId() == User::OpID::L)
+            //             {
+            //                 if(HashTool::CmpSame{}(iter.second, inst))
+            //                 {
+            //                     inst->RAUW(iter.second);
+            //                     wait_del.push_back(inst);
+            //                     modified = true;
+            //                 }
+            //                 else
+            //                     BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            //                 break;
+            //             }
+            //             if(iter.first.second == User::OpID::L && inst->GetInstId() == User::OpID::Ge)
+            //             {
+            //                 if(HashTool::CmpSame{}(iter.second, inst))
+            //                 {
+            //                     inst->RAUW(iter.second);
+            //                     wait_del.push_back(inst);
+            //                     modified = true;
+            //                 }
+            //                 else
+            //                     BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            //                 break;
+            //             }
+            //             if(iter.first.second == User::OpID::G && inst->GetInstId() == User::OpID::Le)
+            //             {
+            //                 if(HashTool::CmpSame{}(iter.second, inst))
+            //                 {
+            //                     inst->RAUW(iter.second);
+            //                     wait_del.push_back(inst);
+            //                     modified = true;
+            //                 }
+            //                 else
+            //                     BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            //                 break;
+            //             }
+            //             if(iter.first.second == User::OpID::Le && inst->GetInstId() == User::OpID::G)
+            //             {
+            //                 if(HashTool::CmpSame{}(iter.second, inst))
+            //                 {
+            //                     inst->RAUW(iter.second);
+            //                     wait_del.push_back(inst);
+            //                     modified = true;
+            //                 }
+            //                 else
+            //                     BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            //                 break;
+            //             }
+            //         }
+            //     }
+            //     else
+            //         BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+            // }
+            // else
+            {
+                if(BlockLiveIn[block].AEB_Binary.find(std::make_pair(hash, inst->GetInstId())) != BlockLiveIn[block].AEB_Binary.end())
+                {
+                    inst->RAUW(BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())]);
+                    wait_del.push_back(inst);
+                    modified = true;
                 }
                 else
-                    block_in.AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
+                    BlockLiveIn[block].AEB_Binary[std::make_pair(hash, inst->GetInstId())] = inst;
             }
             continue;
         }
@@ -170,22 +359,19 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
         if(dynamic_cast<GetElementPtrInst*>(inst))
         {
             size_t key = HashTool::InstHash{}(inst);
-            if(block_in.Geps.find(key) != block_in.Geps.end())
+            if(BlockLiveIn[block].Geps.find(key) != BlockLiveIn[block].Geps.end())
             {
-                Value* val = block_in.Geps[key];
+                Value* val = BlockLiveIn[block].Geps[key];
                 if(User* gep = dynamic_cast<User*>(val))
                 {
-                    if(DomTree->dominates(gep->GetParent(), CurrentBlock))
-                    {
-                        inst->RAUW(block_in.Geps[key]);
+                        inst->RAUW(BlockLiveIn[block].Geps[key]);
                         wait_del.push_back(inst);
                         modified = true;
-                    }
                 }
             }
             else
             {
-                block_in.Geps[key] = inst;
+                BlockLiveIn[block].Geps[key] = inst;
             }
             continue;
         }
@@ -194,37 +380,37 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
         if(dynamic_cast<LoadInst*>(inst))
         {
             size_t Val = HashTool::InstHash{}(inst->Getuselist()[0]->usee);
-            if(block_in.Loads.find(Val) != block_in.Loads.end())
+            if(BlockLiveIn[block].Loads.find(Val) != BlockLiveIn[block].Loads.end())
             {
-                Value* val = block_in.Loads[Val];
-                Function* change_func = Find_Change(inst->Getuselist()[0]->usee, &block_in);
-                if(User* load = dynamic_cast<User*>(val))
+                Value* val = BlockLiveIn[block].Loads[Val];
+                Function* change_func = Find_Change(inst->Getuselist()[0]->usee, BlockLiveIn[block]);
+                if(auto load = dynamic_cast<User*>(val))
                 {
-                    if(DomTree->dominates(load->GetParent(), CurrentBlock))
-                    {
+                    // if(DomTree->dominates(load->GetParent(), block))
+                    // {
                         if(!change_func)
                         {
-                            inst->RAUW(block_in.Loads[Val]);
+                            inst->RAUW(load);
                             wait_del.push_back(inst);
                             modified = true;
                         }
                         else
                         {
-                            block_in.Funcs.erase(change_func);
-                            block_in.Loads[Val] = inst;
+                            BlockLiveIn[block].Funcs.erase(change_func);
+                            BlockLiveIn[block].Loads[Val] = inst;
                         }
-                    }
+                    // }
                 }
                 else if(dynamic_cast<ConstantData*>(val))
                 {
-                    inst->RAUW(block_in.Loads[Val]);
+                    inst->RAUW(val);
                     wait_del.push_back(inst);
                     modified = true;
                 }
             }
             else
             {
-                block_in.Loads[Val] = inst;
+                BlockLiveIn[block].Loads[Val] = inst;
             }
             continue;
         }
@@ -239,34 +425,34 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
 
             //Handle Dst -> Kills
             {
-                if(block_in.Geps.find(dst_hash) != block_in.Geps.end())
+                if(BlockLiveIn[block].Geps.find(dst_hash) != BlockLiveIn[block].Geps.end())
                 {
-                    block_in.Geps.erase(dst_hash);
+                    BlockLiveIn[block].Geps.erase(dst_hash);
                     auto gep = dynamic_cast<GetElementPtrInst*>(Dst);
                     for(auto& Use_ : gep->Getuselist())
                     {
                         if(LoadInst* load = dynamic_cast<LoadInst*>(Use_->usee))
                         {
                             size_t load_hash = HashTool::InstHash{}(load);
-                            if(block_in.Loads.find(load_hash) != block_in.Loads.end())
+                            if(BlockLiveIn[block].Loads.find(load_hash) != BlockLiveIn[block].Loads.end())
                             {
-                                block_in.Loads.erase(load_hash);
+                                BlockLiveIn[block].Loads.erase(load_hash);
                             }
                         }
                     }
                 }
 
-                if(block_in.Loads.find(dst_hash) != block_in.Loads.end() && !Dst->isGlobVal())
+                if(BlockLiveIn[block].Loads.find(dst_hash) != BlockLiveIn[block].Loads.end() && !Dst->isGlobVal())
                 {
-                    block_in.Loads.erase(dst_hash);
+                    BlockLiveIn[block].Loads.erase(dst_hash);
                 }
-                else if(block_in.Loads.find(dst_hash) != block_in.Loads.end() && Dst->isGlobVal())
+                else if(BlockLiveIn[block].Loads.find(dst_hash) != BlockLiveIn[block].Loads.end() && Dst->isGlobVal())
                 {
-                    block_in.Loads[dst_hash] = Src;
+                    BlockLiveIn[block].Loads[dst_hash] = Src;
                 }
-                else if(block_in.Loads.find(dst_hash) == block_in.Loads.end() && Dst->isGlobVal())
+                else if(BlockLiveIn[block].Loads.find(dst_hash) == BlockLiveIn[block].Loads.end() && Dst->isGlobVal())
                 {
-                    block_in.Loads[dst_hash] = Src;
+                    BlockLiveIn[block].Loads[dst_hash] = Src;
                 }
             }
             // // Handle Src -> Gens
@@ -280,130 +466,68 @@ bool CSE::RunOnNode(ProcessNode* node_, info& block_in, info& block_out)
         // Call
         if(CallInst* Call = dynamic_cast<CallInst*>(inst))
         {
+            Value* f = Call->Getuselist()[0]->usee;
+            std::string name = f->GetName();
             if(Function* func = dynamic_cast<Function*>(Call->Getuselist()[0]->usee))
             {
-                block_in.Funcs.insert(func);
+                BlockLiveIn[block].Funcs.insert(func);
                 // for(auto& Use_ : Call->Getuselist())
                 // {
                 //     if(LoadInst* load = dynamic_cast<LoadInst*>(Use_->usee))
                 //     {
                 //         size_t load_hash = HashTool::InstHash{}(load);
-                //         if(block_in.Loads.find(load_hash) != block_in.Loads.end())
+                //         if(BlockLiveIn[block].Loads.find(load_hash) != BlockLiveIn[block].Loads.end())
                 //         {
-                //             block_in.Loads.erase(load_hash);
+                //             BlockLiveIn[block].Loads.erase(load_hash);
                 //         }
                 //     }
                 // }
+                for(Value* val : func->Change_Val)
+                {
+                    if(BlockLiveIn[block].Loads.find(HashTool::InstHash{}(val)) != BlockLiveIn[block].Loads.end())
+                    {
+                        auto iter = BlockLiveIn[block].Loads.find(HashTool::InstHash{}(val));
+                        BlockLiveIn[block].Loads.erase(iter);
+                    }
+                }
             }
+            else if(name == "getarray" || name == "getfarray")
+            {
+                auto Use_ = Call->Getuselist()[1]->usee;
+                if(BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Loads.end())
+                {
+                    auto iter = BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_));
+                    BlockLiveIn[block].Loads.erase(iter);
+                }
+                if(BlockLiveIn[block].Geps.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Geps.end())
+                {
+                    auto iter = BlockLiveIn[block].Geps.find(HashTool::InstHash{}(Use_));
+                    BlockLiveIn[block].Geps.erase(iter);
+                }
+            }
+            // else if(name == "getint" || name == "getch" || name == "getfloat")
+            // {
+            //     auto Use_ = Call->Getuselist()[1]->usee;
+            //     if(BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_)) != BlockLiveIn[block].Loads.end())
+            //     {
+            //         auto iter = BlockLiveIn[block].Loads.find(HashTool::InstHash{}(Use_));
+            //         BlockLiveIn[block].Loads.erase(iter);
+            //     }
+            // }
 
         }
 
     }
-    block_out = block_in;
-    while(!wait_del.empty())
-    {
-        User* inst = wait_del.back();
-        wait_del.pop_back();
-        delete inst;
-        num++;
-    }
+
     return modified;
 }
 
-Function* CSE::Find_Change(Value* val, info* Info)
+Function* CSE::Find_Change(Value* val, info Info)
 {
-    for(Function* item : Info->Funcs)
+    for(Function* item : Info.Funcs)
     {
         if(val->Change_Funcs.find(item) != val->Change_Funcs.end())
             return item;
     }
     return nullptr;
-}
-
-bool CSE::Is_Gep_Changed(User* inst, BasicBlock* Curr_Block)
-{
-    for(Use* Use_ : inst->GetUserlist())
-    {
-        User* User_ = Use_->GetUser();
-        if(LoadInst* load = dynamic_cast<LoadInst*>(User_))
-        {
-            for(Use* Use_1 : User_->GetUserlist())
-            {
-                if(CallInst* call = dynamic_cast<CallInst*>(Use_1->GetUser()))
-                {
-                    auto& args = call->Getuselist();
-                    auto iter = std::find_if(args.begin(), args.end(),
-                    [load](const User::UsePtr& usePtr){ return usePtr->usee == load; });
-                    Function* func = dynamic_cast<Function*>(call->Getuselist()[0]->usee);
-                    if(iter != args.end() && func)
-                    {
-                        int index = std::distance(args.begin(), iter);
-                        Value* param = func->GetParams()[index - 1].get();
-                        for(Use* use : param->GetUserlist())
-                        {
-                            if(dynamic_cast<StoreInst*>(use->GetUser()))
-                                return true;
-                        }
-                    }
-                }
-            }
-        }
-        // if(CallInst* call = dynamic_cast<CallInst*>(User_))
-        // {
-        //     auto& args = call->Getuselist();
-        //     auto iter = std::find_if(args.begin(), args.end(),
-        //     [inst](const User::UsePtr& usePtr){ return usePtr->usee == inst; });
-        //     Function* func = dynamic_cast<Function*>(call->Getuselist()[0]->usee);
-        //     if(iter != args.end() && func)
-        //     {
-        //         int index = std::distance(args.begin(), iter);
-        //         Value* param = func->GetParams()[index - 1].get();
-        //         for(Use* use : param->GetUserlist())
-        //         {
-        //             if(dynamic_cast<StoreInst*>(use->GetUser()))
-        //                 return true;
-        //         }
-        //     }
-        // }
-        if(dynamic_cast<StoreInst*>(User_) && (User_->GetParent() == Curr_Block))
-            return true;
-    }
-}
-
-
-void CSE::Process_Multiple_In(info& block_in, std::vector<info*> args)
-{
-    for(info* arg : args)
-    {
-        // if(arg == args[0])
-        //     continue;
-        for(auto&[key, val] : arg->AEB_Binary)
-        {
-            if(block_in.AEB_Binary.find(key) != block_in.AEB_Binary.end())
-                block_in.AEB_Binary.erase(key);
-            else
-                block_in.AEB_Binary.insert(std::make_pair(key, val));
-        }
-        for(auto&[key, val] : arg->Loads)
-        {
-            if(block_in.Loads.find(key) != block_in.Loads.end())
-                block_in.Loads.erase(key);
-            else
-                block_in.Loads.insert(std::make_pair(key, val));
-        }
-        for(auto&[key, val] : arg->Geps)
-        {
-            if(block_in.Geps.find(key) != block_in.Geps.end())
-                block_in.Geps.erase(key);
-            else
-                block_in.Geps.insert(std::make_pair(key, val));
-        }
-        for(Function* F : arg->Funcs)
-        {
-            if(block_in.Funcs.find(F) != block_in.Funcs.end())
-                block_in.Funcs.erase(F);
-            else
-                block_in.Funcs.insert(F);
-        }
-    }
 }
