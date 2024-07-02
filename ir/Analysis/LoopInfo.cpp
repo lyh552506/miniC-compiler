@@ -186,6 +186,22 @@ BasicBlock *LoopAnalysis::GetPreHeader(LoopInfo *loopinfo) {
   return preheader;
 }
 
+BasicBlock *LoopAnalysis::GetLatch(LoopInfo *loop) {
+  auto header = loop->GetHeader();
+  auto preheader = GetPreHeader(loop);
+  BasicBlock *latch = nullptr;
+  for (auto rev : m_dom->GetNode(header->num).rev) {
+    auto B = m_dom->GetNode(rev).thisBlock;
+    if (B != preheader && loop->Contain(B)) {
+      if (!latch)
+        latch = B;
+      else
+        break;
+    }
+  }
+  return latch;
+}
+
 std::vector<BasicBlock *> LoopAnalysis::GetExitingBlock(LoopInfo *loopinfo) {
   std::vector<BasicBlock *> exit;
   for (auto bb : loopinfo->ContainBlocks) {
@@ -258,8 +274,22 @@ void LoopAnalysis::DeleteBlock(BasicBlock *bb) {
   auto loop = LookUp(bb);
   if (!loop)
     return;
-  while(loop){
+  while (loop) {
     loop->DeleteBlock(bb);
-    loop=loop->GetParent();
+    loop = loop->GetParent();
   }
+}
+
+bool LoopAnalysis::IsLoopInvariant(const std::set<BasicBlock *> &contain,
+                                   User *I, LoopInfo *curloop) {
+  bool res =
+      std::all_of(I->Getuselist().begin(), I->Getuselist().end(),
+                  [curloop, &contain](auto &ele) {
+                    auto val = ele->GetValue();
+                    if (auto user = dynamic_cast<User *>(val))
+                      if (contain.find(user->GetParent()) != contain.end())
+                        return false;
+                    return true;
+                  });
+  return res;
 }

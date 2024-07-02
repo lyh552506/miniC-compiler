@@ -1,3 +1,4 @@
+#pragma once
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
@@ -22,7 +23,7 @@ private:
                  BasicBlock *bb);
   bool UserOutSideLoop(const std::set<BasicBlock *> &contain, User *I,
                        LoopInfo *curloop);
-  bool IsLoopInvariant(const std::set<BasicBlock *> &contain,User* I,LoopInfo * curloop);                       
+  //bool IsLoopInvariant(const std::set<BasicBlock *> &contain,User* I,LoopInfo * curloop);                       
   bool CanBeMove(User *I);
   bool IsDomExit(User*I,std::vector<BasicBlock*>&exit);
   dominance *m_dom;

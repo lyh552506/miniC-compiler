@@ -813,7 +813,7 @@ void Function::InsertBlock(BasicBlock *pred, BasicBlock *succ,
       assert("Not connected on CFG");
       return;
     } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
-      assert(cond->Getuselist()[0]->GetValue() == succ &&
+       assert(uncond->Getuselist()[0]->GetValue() == succ &&
              "Not connected on CFG");
       uncond->RSUW(0, insert);
       insert->GenerateUnCondInst(succ);
@@ -1071,7 +1071,8 @@ Operand BasicBlock::GenerateCallInst(std::string id, std::vector<Operand> args,
 }
 
 void BasicBlock::Delete() {
-  //assert(GetUserlist().is_empty() && "It should not be used when human delete");
+  // assert(GetUserlist().is_empty() && "It should not be used when human
+  // delete");
   this->~BasicBlock();
 }
 
@@ -1136,7 +1137,7 @@ PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB, Type *ty,
   PhiInst *tmp = new PhiInst(BeforeInst, ty);
 
   for (auto iter = currentBB->begin(); iter != currentBB->end(); ++iter) {
-    if (*iter == BeforeInst){
+    if (*iter == BeforeInst) {
       iter.insert_before(tmp);
       break;
     }
@@ -1250,9 +1251,9 @@ void PhiInst::FormatPhi() {
     defend.pop();
     PhiRecord[oprandNum++] = std::make_pair(v_fir, v_sec);
   }
-  int tmp=0;
-  for(auto& use:uselist){
-    UseToRecord[use.get()]=tmp++;
+  int tmp = 0;
+  for (auto &use : uselist) {
+    UseToRecord[use.get()] = tmp++;
   }
 }
 
@@ -1276,6 +1277,18 @@ BasicBlock *PhiInst::GetBlock(int index) {
 Value *PhiInst::GetVal(int index) {
   auto &[v, bb] = PhiRecord[index];
   return v;
+}
+
+void PhiInst::ModifyBlock(BasicBlock *Old, BasicBlock *New) {
+  auto it1 = std::find_if(
+      PhiRecord.begin(), PhiRecord.end(),
+      [Old](const std::pair<int, std::pair<Value *, BasicBlock *>> &ele) {
+        return ele.second.second == Old;
+      });
+  if (it1 == PhiRecord.end())
+    return;
+  //将value对应的块信息更改
+  it1->second.second = New;
 }
 
 std::pair<size_t, size_t> &Function::GetInlineInfo() {

@@ -111,7 +111,7 @@ void PassManager::RunOnFunction() {
     m_inline->Run();
     // m_inline->PrintPass();
   }
-  
+
   if (InitpassRecorder[cse]) {
     m_cse->RunOnFunction();
   }
@@ -123,6 +123,13 @@ void PassManager::RunOnFunction() {
     m_lcssa = std::make_unique<LcSSA>(m_func, d);
     m_lcssa->RunOnFunction();
     // m_eliedg->RunOnFunction();
+  }
+  if (InitpassRecorder[looprotate]) {
+    PreWork(func);
+    dominance *d = new dominance(m_func, BList.size());
+    d->update();
+    auto lr = new LoopRotate(m_func, d);
+    lr->RunOnFunction();
   }
   if (InitpassRecorder[licm]) {
     // m_licm = std::make_unique<LICMPass>(m_dom.get(), m_func);

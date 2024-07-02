@@ -1,5 +1,6 @@
 #include "licm.hpp"
 #include "CFG.hpp"
+#include "LoopInfo.hpp"
 #include <cassert>
 
 void LICMPass::RunOnFunction() {
@@ -79,7 +80,7 @@ bool LICMPass::licmHoist(const std::set<BasicBlock *> &contain, LoopInfo *l,
     return changed;
   for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
     auto inst = *iter;
-    if (IsLoopInvariant(contain, inst, l) && CanBeMove(inst)) {
+    if (LoopAnalysis::IsLoopInvariant(contain, inst, l) && CanBeMove(inst)) {
       auto exit = loop->GetExit(l);
       if (!IsDomExit(inst, exit))
         continue;
@@ -133,19 +134,6 @@ bool LICMPass::UserOutSideLoop(const std::set<BasicBlock *> &contain, User *I,
   return true;
 }
 
-bool LICMPass::IsLoopInvariant(const std::set<BasicBlock *> &contain, User *I,
-                               LoopInfo *curloop) {
-  bool res =
-      std::all_of(I->Getuselist().begin(), I->Getuselist().end(),
-                  [curloop, &contain](auto &ele) {
-                    auto val = ele->GetValue();
-                    if (auto user = dynamic_cast<User *>(val))
-                      if (contain.find(user->GetParent()) != contain.end())
-                        return false;
-                    return true;
-                  });
-  return res;
-}
 
 bool LICMPass::IsDomExit(User *I, std::vector<BasicBlock *> &exit) {
   assert(!exit.empty());

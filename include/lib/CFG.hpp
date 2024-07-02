@@ -206,6 +206,7 @@ public:
   bool IsSame(PhiInst* phi);
   BasicBlock* GetBlock(int index);
   Value* GetVal(int index);
+  void ModifyBlock(BasicBlock* Old,BasicBlock* New);
   std::vector<BasicBlock*> Blocks;
   int oprandNum;
   bool IsGetIncomings=false;

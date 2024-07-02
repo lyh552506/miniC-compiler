@@ -317,7 +317,7 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
 
 void LoopSimplify::CaculateLoopInfo(LoopInfo *loop) {
   const auto Header = loop->GetHeader();
-  const auto Latch = loop->GetLatch();
+  const auto Latch = loopAnlay->GetLatch(loop);
   const auto br = dynamic_cast<CondInst *>(*(Header->rbegin()));
   assert(br);
   const auto cmp = dynamic_cast<BinaryInst *>(GetOperand(br, 0));

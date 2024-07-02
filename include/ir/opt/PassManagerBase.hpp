@@ -15,7 +15,8 @@ enum PassName {
   reassociate,
   cse,
   lcssa,
-  licm
+  licm,
+  looprotate
 };
 class PassManagerBase{
 public:
