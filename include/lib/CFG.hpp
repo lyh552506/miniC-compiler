@@ -123,7 +123,7 @@ class CallInst:public User
 {
     public:
     CallInst(Type* _tp):User(_tp){id = OpID::Call;};
-    CallInst(Value*,std::vector<Operand>&,std::string);
+    CallInst(Value*,std::vector<Operand>&,std::string="");
     CallInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
 };
@@ -314,6 +314,7 @@ class Module:public SymbolTable
     Operand GenerateMemcpyHandle(Type*,Operand);
     std::vector<FunctionPtr>& GetFuncTion();
     std::vector<GlobalVariblePtr>& GetGlobalVariable();
+    std::vector<MemcpyHandle*>& GetConstantHandle();
     void Test();
     void EraseFunction(Function* func);
     Function* GetMainFunction();

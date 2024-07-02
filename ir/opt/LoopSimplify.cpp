@@ -1,15 +1,24 @@
 #include "LoopSimplify.hpp"
+#include "BaseCFG.hpp"
 #include "CFG.hpp"
+#include "LoopInfo.hpp"
+#include "Type.hpp"
 #include "dominant.hpp"
+#include "my_stl.hpp"
+#include <algorithm>
+#include <cassert>
+#include <set>
 
 void LoopSimplify::RunOnFunction() {
   loopAnlay->RunOnFunction();
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
-    SimplifyLoosImpl(*iter);
+    SimplifyLoopsImpl(*iter);
+  // for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
+  //   CaculateLoopInfo(*iter);
 }
 
-void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
+void LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {
   std::vector<LoopInfo *> WorkLists;
   WorkLists.push_back(loop);
   //将子循环递归的加入进来
@@ -31,7 +40,7 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
       bool NeedToFormat = false;
       BasicBlock *bb = exit[index];
       for (auto rev : m_dom->GetNode(bb->num).rev) {
-        if (!loopAnlay->IsLoopIncludeBB(L,rev))
+        if (!loopAnlay->IsLoopIncludeBB(L, rev))
           NeedToFormat = true;
       }
       if (!NeedToFormat)
@@ -43,18 +52,23 @@ void LoopSimplify::SimplifyLoosImpl(LoopInfo *loop) {
     }
     // step 3: deal with latch/back-edge
     BasicBlock *header = L->GetHeader();
+    std::set<BasicBlock *> contain{L->GetLoopBody().begin(),
+                                   L->GetLoopBody().end()};
+    contain.insert(L->GetHeader());
     std::vector<BasicBlock *> Latch;
     for (auto rev : m_dom->GetNode(header->num).rev) {
       auto B = m_dom->GetNode(rev).thisBlock;
-      if (B != preheader && loopAnlay->LookUp(B) == L)
+      if (B != preheader && contain.find(B) != contain.end())
         Latch.push_back(m_dom->GetNode(rev).thisBlock);
     }
+    assert(!Latch.empty());
     if (Latch.size() > 1) {
       // if (Latch.size() < 8) {
       //   SplitNewLoop(loop);
-
       // }
       FormatLatch(loop, preheader, Latch);
+    } else {
+      loop->setLatch(Latch[0]);
     }
   }
 }
@@ -63,11 +77,13 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
   // phase 1：collect ouside block and inside block
   std::vector<BasicBlock *> OutSide;
   BasicBlock *Header = loop->GetHeader();
+  std::set<BasicBlock *> contain{loop->GetLoopBody().begin(),
+                                 loop->GetLoopBody().end()};
   for (auto rev : m_dom->GetNode(Header->num).rev)
-    if (loopAnlay->LookUp(m_dom->GetNode(rev).thisBlock) != loop)
+    if (contain.find(m_dom->GetNode(rev).thisBlock) == contain.end())
       OutSide.push_back(m_dom->GetNode(rev).thisBlock);
-  //assert(OutSide.size() > 1);
-  // phase 2: insert the preheader
+  // assert(OutSide.size() > 1);
+  //  phase 2: insert the preheader
   BasicBlock *preheader = new BasicBlock();
   preheader->SetName(preheader->GetName() + "_preheader");
   m_func->InsertBlock(Header, preheader);
@@ -77,6 +93,8 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
   std::cerr << "insert a preheader: " << preheader->GetName() << std::endl;
 #endif
   // phase 3: update the rev and des
+  if (preheader->GetName() == ".5729_preheader")
+    int a = 0;
   for (auto target : OutSide) {
     auto condition = target->back();
     if (auto cond = dynamic_cast<CondInst *>(condition)) {
@@ -96,7 +114,7 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
       break;
   }
   // phase 5: update the rev and des
-  UpdateInfo(OutSide, preheader, Header);
+  UpdateInfo(OutSide, preheader, Header, loop);
   loop->setPreHeader(preheader);
 }
 
@@ -137,7 +155,7 @@ void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
     else
       break;
   }
-  UpdateInfo(Inside, new_exit, exit);
+  UpdateInfo(Inside, new_exit, exit, loop);
 }
 
 void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
@@ -155,18 +173,19 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
       }
     }
   }
-  // outside传入的数据流对应的值为一个
+  // 传入的数据流对应的值为一个
   if (ComingVal) {
-    std::vector<int> Erase;
+    // std::vector<int> Erase;
     for (auto &[_1, tmp] : phi->PhiRecord) {
       if (worklist.find(tmp.second) != worklist.end()) {
-        Erase.push_back(_1);
+        tmp.second = target;
       }
     }
-    for (auto i : Erase)
-      phi->Del_Incomes(i);
-    phi->updateIncoming(ComingVal, target);
-    phi->FormatPhi();
+    // for (auto i : Erase)
+    //   phi->Del_Incomes(i);
+    // phi->updateIncoming(ComingVal, target);
+    // phi->FormatPhi();
+
     return;
   }
   //对应的传入值有多个
@@ -176,6 +195,18 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
       Erase.push_back(std::make_pair(_1, tmp));
     }
   }
+  bool same = std::all_of(Erase.begin(), Erase.end(), [&Erase](auto &ele) {
+    return ele.second.first == Erase.front().second.first;
+  });
+  Value *sameval = Erase.front().second.first;
+  if (same) {
+    for (auto &[i, v] : Erase) {
+      phi->Del_Incomes(i);
+    }
+    phi->updateIncoming(sameval, target);
+    phi->FormatPhi();
+    return;
+  }
   PhiInst *pre_phi =
       PhiInst::NewPhiNode(target->front(), target, phi->GetType());
   for (auto &[i, v] : Erase) {
@@ -184,6 +215,11 @@ void LoopSimplify::UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
   }
   phi->updateIncoming(pre_phi, target);
   phi->FormatPhi();
+  // if (phi->PhiRecord.size() == 1) {
+  //   auto repl = GetOperand(phi, 0);
+  //   phi->RAUW(repl);
+  //   delete phi;
+  // }
   return;
 }
 
@@ -216,7 +252,7 @@ void LoopSimplify::FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
     }
   }
   m_dom->node.push_back(Node);
-  UpdateInfo(latch, new_latch, head);
+  UpdateInfo(latch, new_latch, head, loop);
   loop->setLatch(new_latch);
 }
 // need to ReAnlaysis loops （暂时先不使用这个功能）
@@ -260,12 +296,14 @@ LoopInfo *LoopSimplify::SplitNewLoop(LoopInfo *L) {
       uncond->RSUW(0, out);
     }
   }
-  UpdateInfo(Outer, out, L->GetHeader());
-  // TODO
+  // UpdateInfo(Outer, out, L->GetHeader());
+  //  TODO
+  return nullptr;
 }
 
 void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
-                              BasicBlock *insert, BasicBlock *head) {
+                              BasicBlock *insert, BasicBlock *head,
+                              LoopInfo *loop) {
   for (auto bb : bbs) {
     m_dom->GetNode(bb->num).des.remove(head->num);
     m_dom->GetNode(head->num).rev.remove(bb->num);
@@ -274,4 +312,55 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
   }
   m_dom->GetNode(head->num).rev.push_front(insert->num);
   m_dom->GetNode(insert->num).des.push_front(head->num);
+  UpdateLoopInfo(head, insert, loop, bbs);
+}
+
+void LoopSimplify::CaculateLoopInfo(LoopInfo *loop) {
+  const auto Header = loop->GetHeader();
+  const auto Latch = loop->GetLatch();
+  const auto br = dynamic_cast<CondInst *>(*(Header->rbegin()));
+  assert(br);
+  const auto cmp = dynamic_cast<BinaryInst *>(GetOperand(br, 0));
+  if (cmp->GetTypeEnum() == IR_Value_Float)
+    loop->setLoopFpTp();
+  Value *initial = nullptr;
+  //在reassociate合法化完成后做
+  if (!dynamic_cast<ConstantData *>(GetOperand(cmp, 1)))
+    return;
+  auto constdata = dynamic_cast<ConstantData *>(GetOperand(cmp, 1));
+  if (auto constint = dynamic_cast<ConstIRInt *>(constdata))
+    loop->setBound(constint->GetVal());
+  if (auto constfloat = dynamic_cast<ConstIRFloat *>(constdata))
+    loop->setBound(constfloat->GetVal());
+  initial = GetOperand(cmp, 0);
+  if (auto sitfp = dynamic_cast<SITFP *>(initial))
+    initial = GetOperand(sitfp, 0);
+  if (auto fptsi = dynamic_cast<FPTSI *>(initial))
+    initial = GetOperand(fptsi, 0);
+  // assert(dynamic_cast<PhiInst *>(initial));
+}
+
+void LoopSimplify::UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,
+                                  LoopInfo *loop,
+                                  const std::vector<BasicBlock *> &pred) {
+  auto l = loopAnlay->LookUp(Old);
+  if (!l)
+    return;
+  LoopInfo *InnerOutside = nullptr;
+  for (const auto pre : pred) {
+    auto curloop = loopAnlay->LookUp(pre);
+    while (curloop != nullptr && !curloop->Contain(Old))
+      curloop = curloop->GetParent();
+    if (curloop && curloop->Contain(Old) &&
+        (!InnerOutside ||
+         InnerOutside->GetLoopDepth() < curloop->GetLoopDepth()))
+      InnerOutside = curloop;
+    if (InnerOutside) {
+      loopAnlay->setLoop(New, InnerOutside);
+      while (InnerOutside != nullptr) {
+        InnerOutside->InsertLoopBody(New);
+        InnerOutside = InnerOutside->GetParent();
+      }
+    }
+  }
 }

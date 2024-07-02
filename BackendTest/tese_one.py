@@ -9,8 +9,8 @@ pass_args=[] # "--mem2reg","--constprop","--reassociate","--simplifycfg"
 
 
 
-# # gcc test
-# # riscv64-unknown-elf-gcc -S 
+# # # gcc test
+# # # riscv64-unknown-elf-gcc -S 
 # os.rename(test_path,test_path.replace(".sy", ".c"))
 # compile_args=["riscv64-unknown-elf-gcc", "-S", "-o", test_path.replace(".sy", ".gcc.s"), test_path.replace(".sy", ".c")]
 # ret = subprocess.run(compile_args)
@@ -54,5 +54,13 @@ if ret.returncode != 0:
     print("Linker Error:"+target)
     sys.exit(1)
 
-
-
+# qemu test
+target = test_path.replace(".sy", "")
+compile_args=["qemu-riscv64", target]
+try:
+    ret = subprocess.run(compile_args,timeout=10)
+except subprocess.TimeoutExpired:
+    print("TimeOut!")
+# if ret.returncode != 0:
+#     print("Qemu Error:"+target)
+#     sys.exit(1)

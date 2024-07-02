@@ -48,6 +48,12 @@ RISCVFrameObject::RISCVFrameObject(VirRegister* val) : RISCVMOperand(val->GetTyp
     contextype = val->GetType();
     size = 8;
 }
+RISCVFrameObject::RISCVFrameObject(PhyRegister* preg) : RISCVMOperand(preg->GetType()){
+    reg = new StackRegister(this, PhyRegister::PhyReg::s0, begin_addr_offsets);
+    name = preg->GetName();
+    contextype = preg->GetType();
+    size = 8;
+}
 
 void RISCVFrameObject::GenerateStackRegister(int offset) {
     reg->SetOffset(offset);
@@ -84,8 +90,11 @@ StackRegister::StackRegister(RISCVFrameObject* obj, VirRegister* _vreg, int _off
 StackRegister::StackRegister(PhyRegister::PhyReg _regenum, int _offset)
     : Register(riscv_ptr), offset(_offset) {
   reg = PhyRegister::GetPhyReg(_regenum);
-}StackRegister::StackRegister(VirRegister* _vreg, int _offset)
+}
+
+StackRegister::StackRegister(VirRegister* _vreg, int _offset)
     : Register(riscv_ptr), offset(_offset), reg(_vreg) {}
+
 void StackRegister::SetOffset(int _offset) { offset = _offset; }
 RISCVFrameObject*& StackRegister::GetParent() {return parent;}
 VirRegister* StackRegister::GetVreg() { 

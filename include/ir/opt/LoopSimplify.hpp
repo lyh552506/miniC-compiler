@@ -13,16 +13,19 @@ public:
   void PrintPass() override{};
 
 private:
-  void SimplifyLoosImpl(LoopInfo *loop);
+  void SimplifyLoopsImpl(LoopInfo *loop);
   void InsertPreHeader(LoopInfo *loop);
   void FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
                    std::vector<BasicBlock *> &latch);
   void FormatExit(LoopInfo *loop, BasicBlock *exit);
   void UpdatePhiNode(PhiInst *phi, std::set<BasicBlock *> &worklist,
                      BasicBlock *target);
-  LoopInfo* SplitNewLoop(LoopInfo *L);
+  LoopInfo *SplitNewLoop(LoopInfo *L);
   void UpdateInfo(std::vector<BasicBlock *> &bbs, BasicBlock *insert,
-                  BasicBlock* head);
+                  BasicBlock *head,LoopInfo* loop);
+  void CaculateLoopInfo(LoopInfo *loop);
+  void UpdateLoopInfo(BasicBlock *Old, BasicBlock *New, LoopInfo *loop,
+                      const std::vector<BasicBlock *> &pred);
   LoopAnalysis *loopAnlay;
   Function *m_func;
   dominance *m_dom;

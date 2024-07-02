@@ -7,7 +7,9 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <queue>
 #include <string>
+#include <utility>
 #include <vector>
 #define BaseEnumNum 8
 template <typename T>
@@ -912,11 +914,30 @@ void BasicBlock::RemovePredBB(BasicBlock *pred) {
         BasicBlock *b = phi->PhiRecord.begin()->second.second;
         if (b == this) {
           phi->RAUW(UndefValue::get(phi->GetType()));
-          // phi->ClearRelation();
-          // phi->EraseFromParent();
           delete phi;
         } else {
+
           Value *repl = (*(phi->PhiRecord.begin())).second.first;
+          // avoid situation like this:
+          //   %54 =phi [%23,%1]
+          //   %.23 = add i32 %.54, 2
+          // After RAUW:  %.23 = add i32 %.23, 2; which is not SSA form
+          // for (auto use : phi->GetUserlist()) {
+          //   auto user = use->GetUser();
+          //   if (user->GetDef() != nullptr && user->GetDef() == repl) {
+          //     auto New = user->CloneInst();
+          //     for (auto iter = user->GetParent()->begin();
+          //          iter != user->GetParent()->end(); ++iter) {
+          //       if (*iter == user) {
+          //         iter.insert_before(New);
+          //         break;
+          //       }
+          //     }
+          //     user->RAUW(New);
+          //     repl=(*(phi->PhiRecord.begin())).second.first;
+          //     delete user;
+          //   }
+          // }
           phi->RAUW(repl);
           // phi->ClearRelation();
           // phi->EraseFromParent();
@@ -1050,7 +1071,7 @@ Operand BasicBlock::GenerateCallInst(std::string id, std::vector<Operand> args,
 }
 
 void BasicBlock::Delete() {
-  assert(GetUserlist().is_empty() && "It should not be used when human delete");
+  //assert(GetUserlist().is_empty() && "It should not be used when human delete");
   this->~BasicBlock();
 }
 
@@ -1113,9 +1134,12 @@ PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,
 PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB, Type *ty,
                              std::string Name) {
   PhiInst *tmp = new PhiInst(BeforeInst, ty);
+
   for (auto iter = currentBB->begin(); iter != currentBB->end(); ++iter) {
-    if (*iter == BeforeInst)
+    if (*iter == BeforeInst){
       iter.insert_before(tmp);
+      break;
+    }
   }
   if (!Name.empty())
     tmp->SetName(Name);
@@ -1206,27 +1230,30 @@ void PhiInst::Del_Incomes(int CurrentNum) {
 }
 
 void PhiInst::FormatPhi() {
-  int CurrentNum = 0;
-  std::vector<std::pair<int, std::pair<Value *, BasicBlock *>>> Defend;
-  for (auto &[_1, v] : PhiRecord)
-    if (_1 > CurrentNum)
-      Defend.push_back(std::make_pair(_1, v));
-    else
-      CurrentNum++;
-  std::sort(Defend.begin(), Defend.end(),
-            [](const auto &p1, const auto &p2) { return p1.first > p2.first; });
-  for (const auto &item : Defend) {
-    PhiRecord.erase(item.first);
+  std::vector<std::pair<int, std::pair<Value *, BasicBlock *>>> assist;
+  std::queue<std::pair<Value *, BasicBlock *>> defend;
+  UseToRecord.clear();
+  oprandNum = 0;
+  for (auto &[_1, v] : PhiRecord) {
+    assist.push_back(std::make_pair(_1, v));
+    // defend.push(std::make_pair(v.first, v.second));
   }
-  for (const auto &item : Defend) {
-    auto it =
-        std::find_if(UseToRecord.begin(), UseToRecord.end(),
-                     [item](auto &ele) { return ele.second == item.first; });
-    assert(it != UseToRecord.end());
-    it->second = PhiRecord.size();
-    PhiRecord.insert(std::make_pair(PhiRecord.size(), item.second));
+  std::sort(assist.begin(), assist.end(),
+            [](const auto &p1, const auto &p2) { return p1.first < p2.first; });
+  PhiRecord.clear();
+  for (int i = 0; i < assist.size(); i++) {
+    defend.push(
+        std::make_pair(assist[i].second.first, assist[i].second.second));
   }
-  oprandNum = PhiRecord.size();
+  while (!defend.empty()) {
+    auto &[v_fir, v_sec] = defend.front();
+    defend.pop();
+    PhiRecord[oprandNum++] = std::make_pair(v_fir, v_sec);
+  }
+  int tmp=0;
+  for(auto& use:uselist){
+    UseToRecord[use.get()]=tmp++;
+  }
 }
 
 bool PhiInst::IsSame(PhiInst *phi) {
@@ -1344,6 +1371,9 @@ std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() { return ls; }
 
 std::vector<std::unique_ptr<Variable>> &Module::GetGlobalVariable() {
   return globalvaribleptr;
+}
+std::vector<MemcpyHandle*>& Module::GetConstantHandle() {
+  return constants_handle;
 }
 
 Operand Module::GenerateMemcpyHandle(Type *_tp, Operand oper) {

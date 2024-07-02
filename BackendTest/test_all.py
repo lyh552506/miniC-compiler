@@ -2,6 +2,8 @@
 import os
 import sys
 import subprocess
+from contextlib import contextmanager
+import signal
 import filecmp
 import difflib
 
@@ -13,8 +15,7 @@ compiler_path = "./build/SYSY-compiler"
 # test_folder="./testcases"
 test_folder="testcases/functional"
 sylib_path = "BackendTest/sylib.o"
-pass_args=["--mem2reg"] # ,"--constprop","--reassociate","--simplifycfg"
-
+pass_args=["--mem2reg","--dce","--reassociate","--constprop","--ece","--simplifycfg","--loops","--lcssa"]
 CE_list = [] # Compile Error
 AE_list = [] # Assembler Error
 LE_list = [] # Linker Error
@@ -22,6 +23,7 @@ LE_list = [] # Linker Error
 Time_Out = []
 WA_list = []
 
+AC_list = []
 # grab all the testcases
 # find files recursively
 test_list = []
@@ -86,22 +88,56 @@ for objfile in AC_Assembler_list:
         if ret.returncode != 0:
             LE_list.append(objfile)
 
+
+def alarm_handler(signum, frame):
+    raise TimeoutError
+@contextmanager
+def time_limit(seconds):
+    if seconds is not None:
+        signal.signal(signal.SIGALRM, alarm_handler)
+        signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        if seconds is not None:
+            signal.alarm(0)
+
 # Run On Qemu
-# Try_run_list = []
-# for root, dirs, files in os.walk(test_folder):
-#     for file in files:
-#         if '.' not in file:
-#             Try_run_list.append(os.path.join(root, file))
-# for test in Try_run_list:
-#     compile_args=["qemu-riscv64", test]
-#     try:
-#         with open(test+".in", 'r') as fin:
-#             input_data = fin.read()
-#         process = subprocess.Popen(compile_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, timeout=10)
-#         stdout_data, stderr_data = process.communicate(input=input_data)
-#         print("Output:", stdout_data.strip())
-#     except subprocess.TimeoutExpired:
-#         Time_Out.append(test)
+Try_run_list = []
+for root, dirs, files in os.walk(test_folder):
+    for file in files:
+        if '.' not in file:
+            Try_run_list.append(os.path.join(root, file))
+for test in Try_run_list:
+    compile_args=["qemu-riscv64", test]
+    try:
+        with open(test+".in", 'r') as fin:
+            input_data = fin.read()
+    except FileNotFoundError:
+        input_data = ""
+
+
+    try:
+        with time_limit(15):
+            process = subprocess.Popen(compile_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+            stdout_data, stderr_data = process.communicate(input=input_data)
+            print("Output:",test,"\n",stdout_data.strip())
+            try:
+                with open(test+".out", 'r') as fout:
+                    output_data = fout.read().strip()
+            except FileNotFoundError:
+                output_data = ""
+
+            if stdout_data.strip() == output_data:
+                AC_list.append(test)
+            else:
+                print("Wrong Answer: " + test, "\n")
+                WA_list.append(test)
+    except TimeoutError:
+        Time_Out.append(test)
+        print("Time Out:" + test)
+
+    
 
 print("Compiler Error: Total: "+str(len(CE_list)))
 print("Assembler Error: Total: "+str(len(AE_list)))

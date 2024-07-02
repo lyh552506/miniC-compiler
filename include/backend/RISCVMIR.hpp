@@ -107,6 +107,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         BeginFloatMV,
         _fmv_w_x,
         _fmv_x_w,
+        _fmv_s,
         EndFloatMV,
 
         BeginFloatConvert,
@@ -120,10 +121,12 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         BeginFloatLoadMem,
         _flw,
+        _fld,
         EndFloatLoadMem,
         
         BeginFloatStoreMem,
         _fsw,
+        _fsd,
         EndFloatStoreMem,
         
         EndFloatMem,
@@ -152,6 +155,8 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _fle_s,
         _fgt_s,
         _fge_s,
+
+
 
         EndFloatArithmetic,
         EndFloat,
@@ -198,17 +203,25 @@ class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBa
     /// originally return type
     /// @todo some info like arguments doesn't need to store twice? 
     Value* func;
-    /// @todo FrameContext here
-    RISCVBasicBlock* entry;
+    // the exit bb for epilogue generation
+    RISCVBasicBlock exit;
     using RISCVframe = std::unique_ptr<RISCVFrame>;
     RISCVframe frame;
     size_t max_param_size=0;
+    /// @brief save the index of the params of func's paramlist that should be spilled
+    std::vector<int> param_need_spill;
     public:
     RISCVFunction(Value*);
     RISCVframe& GetFrame();
     size_t GetMaxParamSize();
     void SetMaxParamSize(size_t);
+    void GenerateParamNeedSpill();
+    std::vector<int>& GetParamNeedSpill();
     void printfull();
+
+    inline RISCVBasicBlock* GetEntry(){return front();};
+    inline RISCVBasicBlock* GetExit(){return &exit;};
+    uint64_t GetUsedPhyRegMask();
 };
 
 
@@ -222,6 +235,8 @@ class RISCVFrame{
     RISCVFrame(RISCVFunction*);
     StackRegister* spill(VirRegister*);
     StackRegister* spill(Value*);
+    RISCVMIR* spill(PhyRegister*);
+    RISCVMIR* load_to_preg(StackRegister*,PhyRegister*);
     std::vector<std::unique_ptr<RISCVFrameObject>>& GetFrameObjs();
     void GenerateFrame();
     void GenerateFrameHead();
