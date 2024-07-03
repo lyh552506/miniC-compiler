@@ -428,16 +428,24 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     using ISA = RISCVMIR::RISCVISA;
     PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
     PhyRegister* t0 = PhyRegister::GetPhyReg(PhyReg::t0);
+    PhyRegister* zero = PhyRegister::GetPhyReg(PhyReg::zero);
     RISCVMIR* inst1 = nullptr;
     if(RISCVFrameObject* frameobj = dynamic_cast<RISCVFrameObject*>(baseptr)) {
-        // addiw .1 s0 beginaddregister
+        // addi .1 s0 beginaddregister
         inst1 = new RISCVMIR(ISA::_addi);
         BegAddrRegister* breg1 = new BegAddrRegister(frameobj);
         inst1->SetDef(t0);
         inst1->AddOperand(s0);
         inst1->AddOperand(breg1);
         ctx(inst1);
-    } 
+    }
+    else if (RISCVGlobalObject* globl = dynamic_cast<RISCVGlobalObject*>(baseptr)) {
+        inst1 = new RISCVMIR(ISA::_add);
+        inst1->SetDef(t0);
+        inst1->AddOperand(zero);
+        inst1->AddOperand(baseptr);
+        ctx(inst1);
+    }
     else {
         // addw .1 s0, .x
         inst1 = new RISCVMIR(ISA::_add);
@@ -475,6 +483,12 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
 
     StackRegister* stackreg = nullptr;
     stackreg = new StackRegister(dynamic_cast<PhyRegister*>(inst1->GetDef())->Getregenum(), offset);
+    // if (RISCVGlobalObject* globl = dynamic_cast<RISCVGlobalObject*>(baseptr)) {
+    //     stackreg = new StackRegister(PhyRegister::t0, offset);
+    // }
+    // else {
+    //     stackreg = new StackRegister(dynamic_cast<PhyRegister*>(inst1->GetDef())->Getregenum(), offset);
+    // }
 
     /// @details Legalize StackRegister's offset togeter in LegalizePass
     // if(offset <= 2047) {

@@ -43,7 +43,7 @@ class RISCVFrameObject:public RISCVMOperand{
     size_t end_addr_offsets=0;
     StackRegister* reg;
     size_t size=0;
-    std::string name; 
+    std::string name;
     RISCVType contextype;
     public:
     RISCVFrameObject(Value*);

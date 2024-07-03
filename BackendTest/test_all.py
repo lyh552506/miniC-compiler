@@ -22,8 +22,9 @@ LE_list = [] # Linker Error
 
 Time_Out = []
 WA_list = []
-
+TLE_list = []
 AC_list = []
+BadTest_list = []
 # grab all the testcases
 # find files recursively
 test_list = []
@@ -97,10 +98,29 @@ for root, dirs, files in os.walk(test_folder):
 for test in Try_run_list:
     compile_args=["qemu-riscv64", test]
     try:
-        with open(test+".in", 'r') as fin:
-            input_data = fin.read()
-    except FileNotFoundError:
-        input_data = ""
+        if not os.path.exists(test+"/test.in"):
+            ret = subprocess.run(compile_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=10)
+        else:
+            ret = subprocess.run(compile_args,stdin=open(temp_path+"/test.in"),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=60)
+    except subprocess.TimeoutExpired:
+        print("TIMEOUT ERROR: "+test)
+        TLE_list.append(test)
+
+    if not os.path.exists(test+".out"):
+        BadTest_list.append(test)
+    else:
+        out_file=test + ".out"
+
+    dump_str=ret.stdout.decode()
+    if dump_str and not dump_str.endswith('\n'):
+        dump_str += "\n"
+    dump_str += str(ret.returncode) + "\n"
+    std_output=open(out_file).read()
+    diff = difflib.unified_diff(dump_str.splitlines(), std_output.splitlines(), lineterm='')
+    if(len(list(diff))!=0):
+        print("Wrong Answer: "+test)
+        WA_list.append(test)
+
 
 
     try:

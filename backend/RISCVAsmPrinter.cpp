@@ -86,7 +86,7 @@ dataSegment::dataSegment(Module* module, RISCVLoweringContext& ctx) {
 void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx) {
     for(auto& data : module->GetGlobalVariable()) {
         globlvar* gvar = new globlvar(data.get());
-        ctx.insert_val2mop(Singleton<Module>().GetValueByName(data->GetName()), gvar);
+        ctx.insert_val2mop(dynamic_cast<Value*>(data.get()), gvar);
         globlvar_list.push_back(gvar);
     }
 }
@@ -204,8 +204,6 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
 }
 
 //globlvar
-globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->GetName()){
-    InnerDataType tp = data->GetType()->GetTypeEnum();
 globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->GetName()){
     
     InnerDataType tp = (dynamic_cast<PointerType*>(data->GetType()))->GetSubType()->GetTypeEnum();
