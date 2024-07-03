@@ -98,10 +98,10 @@ for root, dirs, files in os.walk(test_folder):
 for test in Try_run_list:
     compile_args=["qemu-riscv64", test]
     try:
-        if not os.path.exists(test+"/test.in"):
+        if not os.path.exists(test+".in"):
             ret = subprocess.run(compile_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=10)
         else:
-            ret = subprocess.run(compile_args,stdin=open(temp_path+"/test.in"),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=60)
+            ret = subprocess.run(compile_args,stdin=open(test+".in"),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=60)
     except subprocess.TimeoutExpired:
         print("TIMEOUT ERROR: "+test)
         TLE_list.append(test)
@@ -123,25 +123,6 @@ for test in Try_run_list:
 
 
 
-    try:
-        with time_limit(15):
-            process = subprocess.Popen(compile_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
-            stdout_data, stderr_data = process.communicate(input=input_data)
-            print("Output:",test,"\n",stdout_data.strip())
-            try:
-                with open(test+".out", 'r') as fout:
-                    output_data = fout.read().strip()
-            except FileNotFoundError:
-                output_data = ""
-
-            if stdout_data.strip() == output_data:
-                AC_list.append(test)
-            else:
-                print("Wrong Answer: " + test, "\n")
-                WA_list.append(test)
-    except TimeoutError:
-        Time_Out.append(test)
-        print("Time Out:" + test)
 
 print("Compiler Error: Total: "+str(len(CE_list)))
 print("Assembler Error: Total: "+str(len(AE_list)))

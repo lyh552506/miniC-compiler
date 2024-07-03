@@ -4,7 +4,7 @@ RISCInst
 testcases/**/*.ll
 testcases/**/*.s
 testcases/**/*.o
-testcases/**/!*./
+testcases/**/!*\./
 testcases_output
 testcases_c
 test.ipynb
