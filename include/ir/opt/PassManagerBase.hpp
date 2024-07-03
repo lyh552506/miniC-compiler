@@ -21,6 +21,7 @@ enum PassName {
 class PassManagerBase{
 public:
     PassManagerBase()=default;
+    virtual bool RunOnFunction() = 0;
     virtual void RunOnFunction()=0;
     virtual void InitPass(){};
     virtual void PrintPass()=0;
