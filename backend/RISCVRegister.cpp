@@ -51,7 +51,6 @@ void PhyRegMask::visit(uint64_t flag, std::function<void(uint64_t)> func) {
   for(uint8_t i=0u;i<64u;i++){
     if(flag&(((uint64_t)1)<<i)){
       func((uint64_t)1<<i);
-      return;
     }
   }
 }
