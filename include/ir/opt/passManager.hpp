@@ -21,6 +21,7 @@
 #include "reassociate.hpp"
 #include <memory>
 #include "licm.hpp"
+#include "LoopRotate.hpp"
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {}

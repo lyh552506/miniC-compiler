@@ -259,8 +259,14 @@ User *User::CloneInst() {
     return new GetElementPtrInst(gep->GetOperand(0), tmp);
   } else if (auto ld = dynamic_cast<LoadInst *>(this)) {
     return new LoadInst(ld->GetOperand(0));
-  } else if(auto st=dynamic_cast<StoreInst*>(this)) {
-    return new StoreInst(st->GetOperand(0),st->GetOperand(1));
+  } else if (auto st = dynamic_cast<StoreInst *>(this)) {
+    return new StoreInst(st->GetOperand(0), st->GetOperand(1));
+  } else if (auto cond = dynamic_cast<CondInst *>(this)) {
+    return new CondInst(cond->GetOperand(0),
+                        dynamic_cast<BasicBlock *>(cond->GetOperand(1)),
+                        dynamic_cast<BasicBlock *>(cond->GetOperand(1)));
+  } else if (auto uncond = dynamic_cast<UnCondInst *>(this)) {
+    return new UnCondInst(dynamic_cast<BasicBlock *>(uncond->GetOperand(0)));
   } else {
     assert(0);
   }

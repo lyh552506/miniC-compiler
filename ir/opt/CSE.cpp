@@ -3,8 +3,6 @@
 
 bool CSE::RunOnFunction()
 {
-    if(m_func->GetName() == "main")
-        int b =1;
     bool modified = false;
     bool Changed = false;
     update();
@@ -133,7 +131,7 @@ void CSE::GetBlockLiveOut(BasicBlock* block)
                 if(BlockLiveOut[block].Loads.find(dst_hash) != BlockLiveOut[block].Loads.end() && !Dst->isGlobal())
                     BlockLiveOut[block].Loads.erase(dst_hash);
                 else if(BlockLiveOut[block].Loads.find(dst_hash) != BlockLiveOut[block].Loads.end() && Dst->isGlobal())
-                    BlockLiveOut[block].Loads[dst_hash] = Dst;
+                    BlockLiveOut[block].Loads[dst_hash] = Src;
                 else if(BlockLiveOut[block].Loads.find(dst_hash) == BlockLiveOut[block].Loads.end() && Dst->isGlobal())
                     BlockLiveOut[block].Loads[dst_hash] = Src;
             }
