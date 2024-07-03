@@ -46,7 +46,6 @@ void Global2Local::CalGlobal2Funcs()
     for(auto & global_ptr : module.GetGlobalVariable())
     {
         Variable* global = global_ptr.get();
-        // Value* val = module.GetValueByName(global->get_name());
         for(Use* user_ : global->GetUserlist())
         {
             if(User* inst = dynamic_cast<User*>(user_->GetUser()))
@@ -64,59 +63,113 @@ void Global2Local::RunPass()
 {
     Function* main = module.GetMainFunction();
     auto& globalvals = module.GetGlobalVariable();
-    for(auto iter = globalvals.begin(); iter != globalvals.end();)
+    bool Repeat = false;
+    for(auto iter = globalvals.begin(); iter != globalvals.end(); )
     {
         Variable* global = iter->get();
-        if(Global2Funcs[global].size() == 0)
+        if(!Repeat && global)
         {
-            iter = globalvals.erase(iter);
-        }
-        else if(Global2Funcs[global].size() == 1)
-        {
-            Function* func = *Global2Funcs[global].begin();
-            if(CanLocal(global, func))
+            auto Tp = dynamic_cast<HasSubType*>(global->GetType());
+            if(Tp->GetSubType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
             {
-                LocalGlobalVariable(global, func);
-                iter = globalvals.erase(iter);
+                ++iter;
             }
             else
-                ++iter;
+            {
+                if(Global2Funcs[global].size() == 0)
+                {
+                    if(globalvals.size() == 1)
+                    {
+                        globalvals.erase(iter);
+                        return;
+                    }
+                    else
+                        iter = globalvals.erase(iter);
+                }
+                else if(global->usage == Variable::Constant)
+                    iter++;
+                else if(Global2Funcs[global].size() == 1)
+                {
+                    Function* func = *Global2Funcs[global].begin();
+                    if(CanLocal(global, func))
+                    {
+                        _DEBUG(std::cerr << "LocalGlobalVariable: " << global->GetName() << std::endl;)
+                        LocalGlobalVariable(global, func);
+                        if(globalvals.size() == 1)
+                        {
+                            globalvals.erase(iter);
+                            return;
+                        }
+                        else
+                            iter = globalvals.erase(iter);
+                    }
+                    else
+                        iter++;
+                }
+                else
+                    iter++;
+            }
+            if(iter == globalvals.end())
+            {
+                Repeat = true;
+                iter = globalvals.begin();
+            }
         }
-        // FIXME : 适配多个func使用Global Array
-        // else if(global->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
-        // {
-        //     for(Function* func : Global2Funcs[global])
-        //     {
-        //         if(RecursiveFunctions.find(func) == RecursiveFunctions.end())
-        //             LocalGep(global, func); //todo 需要完善
-        //     }
-        //     ++iter;
-        // }
-        else if(global->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
+        else if(iter == globalvals.end())
+            return;
+        else if(Repeat && global)
         {
-            ++iter;
-            continue;
+            if(global->usage == Variable::Constant)
+                iter++;
+            else if(Global2Funcs[global].size() == 1)
+            {
+                Function* func = *Global2Funcs[global].begin();
+                if(CanLocal(global, func))
+                {
+                    _DEBUG(std::cerr << "LocalGlobalVariable: " << global->GetName() << std::endl;)
+                    LocalGlobalVariable(global, func);
+                    if(globalvals.size() == 1)
+                    {
+                        globalvals.erase(iter);
+                    }
+                    else
+                        iter = globalvals.erase(iter);
+                }
+                else
+                    ++iter;
+            }
+            else
+                iter++;
         }
-        else
-            ++iter;
     }
+    //     // FIXME : 适配多个func使用Global Array
+    //     // else if(global->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
+    //     // {
+    //     //     for(Function* func : Global2Funcs[global])
+    //     //     {
+    //     //         if(RecursiveFunctions.find(func) == RecursiveFunctions.end())
+    //     //             LocalGep(global, func); //todo 需要完善
+    //     //     }
+    //     //     ++iter;
+    //     // }
+    // }
 }
-
 
 void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
 {
-    AllocaInst* alloca = new AllocaInst(val->GetName(),val->GetType());
+    auto tp = dynamic_cast<HasSubType*>(val->GetType());
+    AllocaInst* alloca = new AllocaInst(val->GetName(),tp->GetSubType());
     BasicBlock* begin = func->front();
     alloca->SetParent(begin);
     begin->push_front(alloca);
-    if(!val->GetInitializer() && val->GetType()->GetTypeEnum() != InnerDataType::IR_ARRAY)
+    if(!val->GetInitializer())
         val->RAUW(alloca);
     else
     {
-        if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
+        if(tp->GetSubType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
         {
-            LocalArray(val, alloca, begin);
             val->RAUW(alloca);
+            LocalArray(val, alloca, begin);
         }
         else
         {
@@ -155,10 +208,10 @@ void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* blo
     Operand initializer = arr->GetInitializer();
     Type* tp = arr->GetType();
     std::vector<Operand> args;
-    arr->usage=Variable::Constant;
-    Operand src=arr;
+    arr->usage = Variable::Constant;
+    Operand src = arr;
     args.push_back(alloca);
-    args.push_back(src);
+    args.push_back(arr);
     if(auto subtp = dynamic_cast<HasSubType*>(tp)->GetSubType())
         args.push_back(ConstIRInt::GetNewConstant(subtp->get_size()));
     else
@@ -176,28 +229,36 @@ void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* blo
 
 bool Global2Local::CanLocal(Variable* val, Function* func)
 {
-    if(val->GetType()->GetTypeEnum() == InnerDataType::IR_ARRAY 
-    || val->GetType()->GetTypeEnum() == InnerDataType::IR_PTR)
+    auto Sub_Tp = dynamic_cast<HasSubType*>(val->GetType());
+    if(Sub_Tp->GetSubType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
     {
-        Type* tp = val->GetType();
-        size_t size = tp->get_size();
-        if(size > MaxSize)
+        size_t size = Sub_Tp->GetSubType()->get_size();
+        CurrSize += size;
+        if(CurrSize > MaxSize)
             return false;
     }
     if(RecursiveFunctions.find(func) != RecursiveFunctions.end())
         return false;
-    if(val->GetType()->GetTypeEnum() != InnerDataType::IR_ARRAY)
+    if(Sub_Tp->GetSubType()->GetTypeEnum() != InnerDataType::IR_ARRAY)
     {
         bool changed = false;
         for(Use* use_ : val->GetUserlist())
         {
             if(StoreInst* inst = dynamic_cast<StoreInst*>(use_->GetUser()))
+            {
                 changed = true;
+                break;
+            }
             else if(GetElementPtrInst* inst = dynamic_cast<GetElementPtrInst*>(use_->GetUser()))
             {
                 for(Use* use__ : inst->GetUserlist())
                     if(dynamic_cast<StoreInst*>(use__->GetUser()))
+                    {
                         changed = true;
+                        break;
+                    }
+                if(changed)
+                    break;
             }
         }
         if(changed)
@@ -300,6 +361,7 @@ bool Global2Local::hasChanged(int index, Function* func)
         else
             return false;
     }
+    return false;
     assert(0&&"!!!RETURN VALUE!!!, Unreachable");
 }
 
