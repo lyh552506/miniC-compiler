@@ -2,6 +2,7 @@
 
 #include "CFG.hpp"
 #include "Singleton.hpp"
+#include <cassert>
 
 void dominance::init() {
   auto &bbs = thisFunc->GetBasicBlock();
@@ -124,6 +125,12 @@ void dominance::dom_begin() {
 
 /// @brief 判断bb1是否dominate bb2
 bool dominance::dominates(BasicBlock *bb1, BasicBlock *bb2) {
+  if (!bb1 && bb2)
+    return true;
+  if (bb1 && !bb2)
+    return false;
+  if (!bb1 && !bb2)
+    assert(0 && "what happend?");
   DfsDominator(0);
   Node &n1 = node[bb1->num];
   Node &n2 = node[bb2->num];
@@ -156,8 +163,8 @@ void dominance::DfsDominator(int root) {
   IsDFSValid = true;
 }
 
-const std::queue<dominance::Node *>& dominance::DFS_Dom() {
-  std::queue<dominance::Node*> tmp;
+const std::queue<dominance::Node *> &dominance::DFS_Dom() {
+  std::queue<dominance::Node *> tmp;
   dfs_dom.swap(tmp);
   DfsDominator(0);
   return dfs_dom;

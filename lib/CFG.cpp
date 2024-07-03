@@ -213,7 +213,7 @@ void UnCondInst::print() {
 }
 
 CondInst::CondInst(Operand __cond, BasicBlock *__istrue,
-                   BasicBlock *__isfalse) {
+                   BasicBlock *__isfalse) { 
   add_use(__cond);
   add_use(__istrue);
   add_use(__isfalse);
@@ -490,7 +490,9 @@ void Variable::print() {
     std::cout << " = constant ";
   else /* if(usage==Param) */
     return;
-  GetType()->print();
+  auto tp=dynamic_cast<PointerType*>(GetType());
+  assert(tp!=nullptr&&"Variable Must Be a Pointer Type to Inner Content!");
+  tp->GetSubType()->print();
   std::cout<<" ";
   if(uselist.size()!=0){
     auto init=GetOperand(0);
@@ -547,7 +549,7 @@ void GetElementPtrInst::print() {
   }
   std::cout << '\n';
 }
-std::vector<Operand> &GetElementPtrInst::GetIndexs() {
+std::vector<Operand> GetElementPtrInst::GetIndexs() {
   std::vector<Operand> indexs;
   for (int i = 1; i < uselist.size(); i++)
     indexs.push_back(uselist[i]->GetValue());
@@ -808,7 +810,7 @@ void Function::InsertBlock(BasicBlock *pred, BasicBlock *succ,
       assert("Not connected on CFG");
       return;
     } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
-      assert(cond->Getuselist()[0]->GetValue() == succ &&
+       assert(uncond->Getuselist()[0]->GetValue() == succ &&
              "Not connected on CFG");
       uncond->RSUW(0, insert);
       insert->GenerateUnCondInst(succ);
@@ -1066,7 +1068,8 @@ Operand BasicBlock::GenerateCallInst(std::string id, std::vector<Operand> args,
 }
 
 void BasicBlock::Delete() {
-  //assert(GetUserlist().is_empty() && "It should not be used when human delete");
+  // assert(GetUserlist().is_empty() && "It should not be used when human
+  // delete");
   this->~BasicBlock();
 }
 
@@ -1131,7 +1134,7 @@ PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB, Type *ty,
   PhiInst *tmp = new PhiInst(BeforeInst, ty);
 
   for (auto iter = currentBB->begin(); iter != currentBB->end(); ++iter) {
-    if (*iter == BeforeInst){
+    if (*iter == BeforeInst) {
       iter.insert_before(tmp);
       break;
     }
@@ -1245,9 +1248,9 @@ void PhiInst::FormatPhi() {
     defend.pop();
     PhiRecord[oprandNum++] = std::make_pair(v_fir, v_sec);
   }
-  int tmp=0;
-  for(auto& use:uselist){
-    UseToRecord[use.get()]=tmp++;
+  int tmp = 0;
+  for (auto &use : uselist) {
+    UseToRecord[use.get()] = tmp++;
   }
 }
 
@@ -1273,6 +1276,18 @@ Value *PhiInst::GetVal(int index) {
   return v;
 }
 
+void PhiInst::ModifyBlock(BasicBlock *Old, BasicBlock *New) {
+  auto it1 = std::find_if(
+      PhiRecord.begin(), PhiRecord.end(),
+      [Old](const std::pair<int, std::pair<Value *, BasicBlock *>> &ele) {
+        return ele.second.second == Old;
+      });
+  if (it1 == PhiRecord.end())
+    return;
+  //将value对应的块信息更改
+  it1->second.second = New;
+}
+
 std::pair<size_t, size_t> &Function::GetInlineInfo() {
   // codesize,framesize
   if (inlineinfo.first == 0) {
@@ -1289,16 +1304,23 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
   return inlineinfo;
 }
 
-void Function::push_param(Variable* var){
+void Function::push_param(std::string realname,Variable* var){
   auto alloca=new AllocaInst(PointerType::NewPointerTypeGet(var->GetType()));
   auto store=new StoreInst(var,alloca);
-  front()->push_front(store);
   front()->push_front(alloca);
+  front()->push_back(store);
+  Singleton<Module>().Register(realname,alloca);
+  params.emplace_back(var);
 }
 
 void Function::init_visited_block() {
   for (auto bb : bbs)
     bb->visited = false;
+}
+void Function::init_reach_block()
+{
+  for(auto bb : bbs)
+    bb->reachable = true;
 }
 
 void Function::add_block(BasicBlock *bb) { push_back(bb); }

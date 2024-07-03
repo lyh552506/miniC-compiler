@@ -57,7 +57,12 @@ class Variable:public User
     /// @warning the type should be the inner type like alloca  
     Variable(UsageTag,Type*,std::string);
     void print();
-    Value* GetInitializer();
+    inline Value* GetInitializer(){
+        if(uselist.empty()){
+            return nullptr;
+        }
+        return uselist[0]->usee;
+    };
 };
 
 class UndefValue:public ConstantData{
@@ -181,7 +186,7 @@ class GetElementPtrInst:public User
     GetElementPtrInst* clone(std::unordered_map<Operand,Operand>&)override;
     Type* GetType()final;
     void print()final;
-    std::vector<Operand>& GetIndexs();
+    std::vector<Operand> GetIndexs();
 };
 //zext i1 to i32
 class ZextInst:public User
@@ -219,6 +224,7 @@ public:
   bool IsSame(PhiInst* phi);
   BasicBlock* GetBlock(int index);
   Value* GetVal(int index);
+  void ModifyBlock(BasicBlock* Old,BasicBlock* New);
   std::vector<BasicBlock*> Blocks;
   int oprandNum;
   bool IsGetIncomings=false;
@@ -258,6 +264,7 @@ class BasicBlock:public Value,public mylist<BasicBlock,User>,public list_node<Fu
     int LoopDepth=0;
     int num=0;
     bool visited=false;
+    bool reachable=false;
 };
 
 class BuildInFunction:public Value
@@ -285,6 +292,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     public:
     std::set<Function*> CalleeFuncs; // The Function who calls this
     std::set<Function*> CallingFuncs; // The Function that the func calls
+    std::set<Value*> Change_Val; // Used for cse 
     std::pair<size_t,size_t>& GetInlineInfo();
     void InsertAlloca(AllocaInst* ptr);
     public:
@@ -292,7 +300,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     Function(InnerDataType _tp,std::string _id);
     void print();
     void add_block(BasicBlock*);
-    void push_param(Variable*);
+    void push_param(std::string,Variable*);
     void init_bbs(){ bbs.clear();}
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
@@ -302,6 +310,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     //curr ==>  insert -> curr
     void InsertBlock(BasicBlock* curr,BasicBlock* insert);
     void init_visited_block();
+    void init_reach_block();
     int bb_num=0;
 };
 class Module:public SymbolTable

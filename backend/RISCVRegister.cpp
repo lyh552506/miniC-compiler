@@ -30,7 +30,7 @@ PhyRegister* PhyRegMask::GetPhyReg(uint64_t flag){
       return PhyRegister::GetPhyReg(regenum);
     }
   }
-  assert("Can not get here");
+  assert(0&&"Can not get here");
 }
 
 uint64_t PhyRegMask::GetPhyRegMask(PhyRegister* reg) {

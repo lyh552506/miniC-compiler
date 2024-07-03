@@ -206,6 +206,9 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
 //globlvar
 globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->GetName()){
     InnerDataType tp = data->GetType()->GetTypeEnum();
+globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->GetName()){
+    
+    InnerDataType tp = (dynamic_cast<PointerType*>(data->GetType()))->GetSubType()->GetTypeEnum();
     if(tp == InnerDataType::IR_Value_INT || tp == InnerDataType::IR_Value_Float) {
         align = 2;
         size = 4;
@@ -274,13 +277,12 @@ globlvar::globlvar(Variable* data):RISCVGlobalObject(data->GetType(),data->GetNa
         }
         else {
             // undefined arr;
-            size = data->GetType()->get_size();
+            size = (dynamic_cast<PointerType*>(data->GetType()))->GetSubType()->get_size();
             // sec = "bss";
         }
     }
     else align = -1;//Error
 }
-
 void globlvar::generate_array_init(Initializer* arry_init, Type* basetype) {
     int init_size = arry_init->size();
     int limi = dynamic_cast<ArrayType*>(arry_init->GetType())->GetNumEle();

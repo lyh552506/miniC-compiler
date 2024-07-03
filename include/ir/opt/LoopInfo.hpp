@@ -33,7 +33,7 @@ public:
   }
   BasicBlock *GetHeader() { return Header; }
   LoopInfo *GetParent() { return Parent; }
-  BasicBlock *GetLatch() { return Latch; }
+  
   bool IsLoopIntTp() { return IsInt; }
   int GetLoopDepth() { return LoopDepth; }
   int LoopBodyNum() { return ContainBlocks.size(); }
@@ -59,6 +59,7 @@ public:
     Existing_Block = nullptr;
     LoopDepth = 0;
   }
+  int RotateTimes = 0;
 
 private:
   BasicBlock *Header = nullptr;
@@ -89,7 +90,7 @@ public:
   void Analysis();
   bool IsLoopIncludeBB(LoopInfo *loop, int index);
   bool IsLoopIncludeBB(LoopInfo *loop, BasicBlock *bb);
-  BasicBlock *GetLatch();
+  BasicBlock *GetLatch(LoopInfo* loop);
   BasicBlock *GetPreHeader(LoopInfo *loopinfo);
   std::vector<BasicBlock *> GetExitingBlock(LoopInfo *loopinfo);
   std::vector<BasicBlock *> GetExit(LoopInfo *loopinfo);
@@ -106,6 +107,8 @@ public:
   void DeleteLoop(LoopInfo *loop);
   void DeleteBlock(BasicBlock *bb);
   bool CanBeOpt() { return LoopRecord.size() != 0; }
+  static bool IsLoopInvariant(const std::set<BasicBlock *> &contain, User *I,
+                              LoopInfo *curloop);
   // only for test
   void PrintPass();
   void RunOnFunction() {

@@ -88,20 +88,6 @@ for objfile in AC_Assembler_list:
         if ret.returncode != 0:
             LE_list.append(objfile)
 
-
-def alarm_handler(signum, frame):
-    raise TimeoutError
-@contextmanager
-def time_limit(seconds):
-    if seconds is not None:
-        signal.signal(signal.SIGALRM, alarm_handler)
-        signal.alarm(seconds)
-    try:
-        yield
-    finally:
-        if seconds is not None:
-            signal.alarm(0)
-
 # Run On Qemu
 Try_run_list = []
 for root, dirs, files in os.walk(test_folder):
@@ -136,8 +122,6 @@ for test in Try_run_list:
     except TimeoutError:
         Time_Out.append(test)
         print("Time Out:" + test)
-
-    
 
 print("Compiler Error: Total: "+str(len(CE_list)))
 print("Assembler Error: Total: "+str(len(AE_list)))

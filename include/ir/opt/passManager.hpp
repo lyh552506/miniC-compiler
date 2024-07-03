@@ -3,7 +3,7 @@
 #include "../Analysis/DealCriticalEdges.hpp"
 #include "ADCE.hpp"
 #include "CFG.hpp"
-#include "CSE_Tmp.hpp"
+#include "CSE.hpp"
 #include "ConstantFold.hpp"
 #include "ConstantProp.hpp"
 #include "DCE.hpp"
@@ -21,6 +21,7 @@
 #include "reassociate.hpp"
 #include <memory>
 #include "licm.hpp"
+#include "LoopRotate.hpp"
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {}
