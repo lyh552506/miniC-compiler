@@ -97,7 +97,7 @@ void RISCVISel::InstLowering(StoreInst* inst){
         }
     }
     else if(PointerType* ptrtype = dynamic_cast<PointerType*>(op0->GetType())) {
-        ctx(Builder_withoutDef(RISCVMIR::_sw, inst));
+        ctx(Builder_withoutDef(RISCVMIR::_sd, inst));
     }
     else assert("invalid store type");
 }
@@ -110,11 +110,11 @@ void RISCVISel::InstLowering(LoadInst* inst){
         ctx(Builder(RISCVMIR::_flw,inst));
     }
     else if(PointerType* ptrtype = dynamic_cast<PointerType*>(inst->GetType())) {
-        ctx(Builder(RISCVMIR::_lw,inst));
+        ctx(Builder(RISCVMIR::_ld,inst));
     }
-    else if(ArrayType* arraytype = dynamic_cast<ArrayType*>(inst->GetType())) {
-        ctx(Builder(RISCVMIR::_lw,inst));
-    }
+    // else if(ArrayType* arraytype = dynamic_cast<ArrayType*>(inst->GetType())) {
+    //     ctx(Builder(RISCVMIR::_lw,inst));
+    // }
     else assert(0&&"invalid load type");
 }
 

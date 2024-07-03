@@ -115,6 +115,7 @@ void PhiElimination::runonBasicBlock(BasicBlock* bb){
             auto& phirec=phi->PhiRecord;
             for(auto& [idx,pair]:phirec){
                 auto [val,bb]=pair;
+                if(val->isUndefVal())continue;
                 auto src=cxt.mapping(val);
                 auto dst=cxt.mapping(phi);
                 phiMap[bb].emplace_back(src,dst);
