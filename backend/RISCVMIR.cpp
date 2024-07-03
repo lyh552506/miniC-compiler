@@ -352,11 +352,10 @@ void RISCVFrame::GenerateFrameTail() {
     int temp_frame_size = frame_size;
     RISCVFunction* func = parent;
     auto exit_bb=func->GetExit();
-    for(auto block : *parent) {
-        for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
-            RISCVMIR* inst = *it;
-            if (inst->GetOpcode() == ISA::ret) {
-                 
+    // for(auto block : *parent) {
+        // for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
+            // RISCVMIR* inst = *it;
+            // if (inst->GetOpcode() == ISA::ret) {
                 if( frame_size>2047) {
                     // 以合法方式保存sp.s0
                     // temp_frame_size = frame_size % 4096;
@@ -388,7 +387,8 @@ void RISCVFrame::GenerateFrameTail() {
                 inst3->AddOperand(imm3);
                 
                 if(temp_frame_size != frame_size) {
-                    it.insert_before(inst0);
+                    // it.insert_before(inst0);
+                    exit_bb->push_back(inst0);
                 }
                 exit_bb->push_back(inst1);
                 exit_bb->push_back(inst2);
@@ -396,9 +396,9 @@ void RISCVFrame::GenerateFrameTail() {
                 // it.insert_before(inst1);
                 // it.insert_before(inst2);
                 // it.insert_before(inst3);
-            }
-        } 
-    }
+            // }
+        // } 
+    // }
 }
 
 void RISCVFrame::AddCantBeSpill(RISCVMOperand* reg) {

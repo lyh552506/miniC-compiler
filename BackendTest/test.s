@@ -16,116 +16,122 @@
     .type  bubblesort, @function
 bubblesort:
 .LBB0:
-	addi sp, sp, -32
-	sd ra, 24(sp)
-	sd s0, 16(sp)
-	addi s0, sp, 32
-	sd s1, -24(s0)
+	addi sp, sp, -48
+	sd ra, 40(sp)
+	sd s0, 32(sp)
+	addi s0, sp, 48
+	sd s1, -40(s0)
 	mv a0, a0
 	j .LBB1
 .LBB1:
-	mv t2, zero
+	sd a0, -32(s0)
+	li t2, 0
+	sw t2, -24(s0)
 	j .LBB2
 .LBB2:
-	lui s1, %hi(.G.n)
-	lw a0, %lo(.G.n)(s1)
-	li s1, 1
-	subw s1, a0, s1
-	blt t2, s1, .LBB3
+	lw s1, -24(s0)
+	lui t2, %hi(.G.n)
+	lw a0, %lo(.G.n)(t2)
+	li t2, 1
+	subw t2, a0, t2
+	blt s1, t2, .LBB3
 	j .LBB4
 .LBB3:
-	lui s1, %hi(.G.n)
-	lw s1, %lo(.G.n)(s1)
-	subw s1, s1, t2
-	li a0, 1
-	subw s1, s1, a0
-	blt zero, s1, .LBB4
-	j .LBB5
+	mv a0, zero
+	ld s1, -40(s0)
+	ld ra, 40(sp)
+	ld s0, 32(sp)
+	addi sp, sp, 48
+	ret 
 .LBB4:
 	mv a0, zero
-	ld s1, -24(s0)
-	ld ra, 24(sp)
-	ld s0, 16(sp)
-	addi sp, sp, 32
+	ld s1, -40(s0)
+	ld ra, 40(sp)
+	ld s0, 32(sp)
+	addi sp, sp, 48
 	ret 
-.LBB5:
-	addiw t2, t2, 1
-	mv t2, t2
-	j .LBB2
     .size bubblesort, .-bubblesort
     .align  1
     .globl  main
     .type  main, @function
 main:
-.LBB6:
-	addi sp, sp, -64
-	sd ra, 56(sp)
-	sd s0, 48(sp)
-	addi s0, sp, 64
-	sd s1, -24(s0)
+.LBB5:
+	addi sp, sp, -80
+	sd ra, 72(sp)
+	sd s0, 64(sp)
+	addi s0, sp, 80
+	sd s1, -32(s0)
 	li s1, 10
 	lui t2, %hi(.G.n)
 	sw s1, %lo(.G.n)(t2)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	li t2, 4
 	sw t2, 0(t0)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	li t2, 3
 	sw t2, 4(t0)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	li t2, 9
 	sw t2, 8(t0)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	li t2, 2
 	sw t2, 12(t0)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	li t2, 0
 	sw t2, 16(t0)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	li t2, 1
 	sw t2, 20(t0)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	li t2, 6
 	sw t2, 24(t0)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	li t2, 5
 	sw t2, 28(t0)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	li t2, 7
 	sw t2, 32(t0)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	li t2, 8
 	sw t2, 36(t0)
-	addi t0, s0, -64
+	addi t0, s0, -72
 	addi t0, t0, 0
 	mv a0, t0
 	call bubblesort
 	mv a0, a0
-	mv t2, a0
-	j .LBB7
+	sw a0, -24(s0)
+	j .LBB6
+.LBB6:
+	lw s1, -24(s0)
+	lui t2, %hi(.G.n)
+	lw t2, %lo(.G.n)(t2)
+	blt s1, t2, .LBB7
+	j .LBB8
 .LBB7:
-	lui s1, %hi(.G.n)
-	lw s1, %lo(.G.n)(s1)
-	blt t2, s1, .LBB8
-	j .LBB9
-.LBB8:
-	addi t0, s0, -64
-	li s1, 4
-	mulw s1, t2, s1
-	add t0, t0, s1
-	lw a0, 0(t0)
+	lw s1, -24(s0)
+	addi t0, s0, -72
+	li t2, 4
+	mulw t2, s1, t2
+	add t0, t0, t2
+	lw t2, 0(t0)
+	sw t2, -20(s0)
+	lw a0, -20(s0)
 	mv a0, a0
 	call putint
-	li a0, 10
+	li t2, 10
+	sw t2, -20(s0)
+	lw a0, -20(s0)
+	mv a0, a0
 	call putch
+	lw t2, -24(s0)
 	addiw t2, t2, 1
-	mv t2, t2
-	j .LBB7
-.LBB9:
+	sw t2, -24(s0)
+	j .LBB6
+.LBB8:
 	mv a0, zero
-	ld s1, -24(s0)
-	ld ra, 56(sp)
-	ld s0, 48(sp)
-	addi sp, sp, 64
+	ld s1, -32(s0)
+	ld ra, 72(sp)
+	ld s0, 64(sp)
+	addi sp, sp, 80
 	ret 
     .size main, .-main
