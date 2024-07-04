@@ -135,16 +135,16 @@ void Legalize::OffsetLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator
     else {
         int mod = offset%2047;
         offset = offset - mod;
-        RISCVMIR* addiw = new RISCVMIR(RISCVMIR::_addiw);
+        RISCVMIR* addi = new RISCVMIR(RISCVMIR::_addi);
         // VirRegister* vreg = ctx.createVReg(riscv_ptr);
         PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
         Imm* imm = new Imm(ConstIRInt::GetNewConstant(offset));
-        addiw->SetDef(t0);
-        addiw->AddOperand(sreg->GetReg());
-        addiw->AddOperand(imm);
-        it.insert_before(addiw);
+        addi->SetDef(t0);
+        addi->AddOperand(sreg->GetReg());
+        addi->AddOperand(imm);
+        it.insert_before(addi);
         sreg->SetOffset(mod);
-        sreg->SetReg(dynamic_cast<Register*>(addiw->GetDef()));
+        sreg->SetReg(dynamic_cast<Register*>(addi->GetDef()));
     } 
 }
 
@@ -203,7 +203,7 @@ void Legalize::constintLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterat
                 return;
             }
             else if(inst->GetOpcode() == RISCVMIR::RISCVISA::_addi ||\
-                    inst->GetOpcode() == RISCVMIR::RISCVISA::_addiw) {
+                    inst->GetOpcode() == RISCVMIR::RISCVISA::_addi) {
                 RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
                 // VirRegister* vreg = new VirRegister(RISCVType::riscv_i32);
                 li->SetDef(t0);
@@ -232,7 +232,7 @@ void Legalize::constintLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterat
             li->AddOperand(const_imm);
             it.insert_before(li);
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod));
-            RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addiw);
+            RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addi);
             addi->SetDef(t0);
             addi->AddOperand(t0);
             addi->AddOperand(mod_imm);
@@ -252,7 +252,7 @@ void Legalize::constintLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterat
             li->AddOperand(const_imm);
             it.insert_before(li);
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod-4096));
-            RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addiw);
+            RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addi);
             addi->SetDef(t0);
             addi->AddOperand(t0);
             addi->AddOperand(mod_imm);
@@ -272,7 +272,7 @@ void Legalize::constintLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterat
             li->AddOperand(const_imm);
             it.insert_before(li);
             Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod+4096));
-            RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addiw);
+            RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addi);
             addi->SetDef(t0);
             addi->AddOperand(t0);
             addi->AddOperand(mod_imm);

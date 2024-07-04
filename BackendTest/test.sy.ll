@@ -332,31 +332,197 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.G.N = global i32 zeroinitializer
-@.G.arr = global [6 x i32]  [i32 1, i32 2, i32 33, i32 4, i32 5, i32 6]
-define i32 @main(){
-.15:
+define i32 @func(i32 %.2, i32 %.5, i32 %.8, i32 %.11, i32 %.14, i32 %.17, i32 %.20, i32 %.23, i32 %.26, i32 %.29, i32 %.32, i32 %.35, i32 %.38, i32 %.41, i32 %.44, i32 %.47, i32 %.50, i32 %.53, i32 %.56, i32 %.59, i32 %.62, i32 %.65, i32 %.68, i32 %.71, i32 %.74, i32 %.77){
+.1:
+  %.78 = alloca i32
+  %.75 = alloca i32
+  %.72 = alloca i32
+  %.69 = alloca i32
+  %.66 = alloca i32
+  %.63 = alloca i32
+  %.60 = alloca i32
+  %.57 = alloca i32
+  %.54 = alloca i32
+  %.51 = alloca i32
+  %.48 = alloca i32
+  %.45 = alloca i32
+  %.42 = alloca i32
+  %.39 = alloca i32
+  %.36 = alloca i32
+  %.33 = alloca i32
+  %.30 = alloca i32
+  %.27 = alloca i32
+  %.24 = alloca i32
+  %.21 = alloca i32
   %.18 = alloca i32
-  %.16 = alloca i32
-  store i32 0, i32* %.16
-  store i32 0, i32* %.18
-  br label %.20wc6 
-.20wc6:
-  %.24 = load i32, i32* %.16
-  %.25 = icmp slt i32 %.24, 6
-  br i1 %.25, label %.21wloop.6.9, label %.22wn9
-.21wloop.6.9:
-  %.27 = load i32, i32* %.18
-  %.28 = load i32, i32* %.16
-  %.29 = getelementptr inbounds [6 x i32], [6 x i32]* @.G.arr, i32 0, i32 %.28
-  %.30 = load i32, i32* %.29
-  %.31 = add i32 %.27, %.30
-  store i32 %.31, i32* %.18
-  %.33 = load i32, i32* %.16
-  %.34 = add i32 %.33, 1
-  store i32 %.34, i32* %.16
-  br label %.20wc6 
-.22wn9:
-  %.37 = load i32, i32* %.18
-  ret i32 %.37 
+  %.15 = alloca i32
+  %.12 = alloca i32
+  %.9 = alloca i32
+  %.6 = alloca i32
+  %.3 = alloca i32
+  store i32 %.2, i32* %.3
+  store i32 %.5, i32* %.6
+  store i32 %.8, i32* %.9
+  store i32 %.11, i32* %.12
+  store i32 %.14, i32* %.15
+  store i32 %.17, i32* %.18
+  store i32 %.20, i32* %.21
+  store i32 %.23, i32* %.24
+  store i32 %.26, i32* %.27
+  store i32 %.29, i32* %.30
+  store i32 %.32, i32* %.33
+  store i32 %.35, i32* %.36
+  store i32 %.38, i32* %.39
+  store i32 %.41, i32* %.42
+  store i32 %.44, i32* %.45
+  store i32 %.47, i32* %.48
+  store i32 %.50, i32* %.51
+  store i32 %.53, i32* %.54
+  store i32 %.56, i32* %.57
+  store i32 %.59, i32* %.60
+  store i32 %.62, i32* %.63
+  store i32 %.65, i32* %.66
+  store i32 %.68, i32* %.69
+  store i32 %.71, i32* %.72
+  store i32 %.74, i32* %.75
+  store i32 %.77, i32* %.78
+  %.80 = load i32, i32* %.3
+  call void @putint(i32 %.80)
+  call void @putch(i32 10)
+  %.86 = load i32, i32* %.6
+  call void @putint(i32 %.86)
+  call void @putch(i32 10)
+  %.89 = load i32, i32* %.9
+  call void @putint(i32 %.89)
+  call void @putch(i32 10)
+  %.92 = load i32, i32* %.12
+  call void @putint(i32 %.92)
+  call void @putch(i32 10)
+  %.95 = load i32, i32* %.15
+  call void @putint(i32 %.95)
+  call void @putch(i32 10)
+  %.98 = load i32, i32* %.18
+  call void @putint(i32 %.98)
+  call void @putch(i32 10)
+  %.101 = load i32, i32* %.21
+  call void @putint(i32 %.101)
+  call void @putch(i32 10)
+  %.104 = load i32, i32* %.24
+  call void @putint(i32 %.104)
+  call void @putch(i32 10)
+  %.107 = load i32, i32* %.27
+  call void @putint(i32 %.107)
+  call void @putch(i32 10)
+  %.110 = load i32, i32* %.30
+  call void @putint(i32 %.110)
+  call void @putch(i32 10)
+  %.113 = load i32, i32* %.33
+  call void @putint(i32 %.113)
+  call void @putch(i32 10)
+  %.116 = load i32, i32* %.36
+  call void @putint(i32 %.116)
+  call void @putch(i32 10)
+  %.119 = load i32, i32* %.39
+  call void @putint(i32 %.119)
+  call void @putch(i32 10)
+  %.122 = load i32, i32* %.42
+  call void @putint(i32 %.122)
+  call void @putch(i32 10)
+  %.125 = load i32, i32* %.45
+  call void @putint(i32 %.125)
+  call void @putch(i32 10)
+  %.128 = load i32, i32* %.48
+  call void @putint(i32 %.128)
+  call void @putch(i32 10)
+  %.131 = load i32, i32* %.51
+  call void @putint(i32 %.131)
+  call void @putch(i32 10)
+  %.134 = load i32, i32* %.54
+  call void @putint(i32 %.134)
+  call void @putch(i32 10)
+  %.137 = load i32, i32* %.57
+  call void @putint(i32 %.137)
+  call void @putch(i32 10)
+  %.140 = load i32, i32* %.60
+  call void @putint(i32 %.140)
+  call void @putch(i32 10)
+  %.143 = load i32, i32* %.63
+  call void @putint(i32 %.143)
+  call void @putch(i32 10)
+  %.146 = load i32, i32* %.66
+  call void @putint(i32 %.146)
+  call void @putch(i32 10)
+  %.149 = load i32, i32* %.69
+  call void @putint(i32 %.149)
+  call void @putch(i32 10)
+  %.152 = load i32, i32* %.72
+  call void @putint(i32 %.152)
+  call void @putch(i32 10)
+  %.155 = load i32, i32* %.75
+  call void @putint(i32 %.155)
+  call void @putch(i32 10)
+  %.158 = load i32, i32* %.78
+  call void @putint(i32 %.158)
+  call void @putch(i32 10)
+  %.161 = load i32, i32* %.3
+  %.162 = load i32, i32* %.6
+  %.163 = add i32 %.161, %.162
+  %.164 = load i32, i32* %.9
+  %.165 = add i32 %.163, %.164
+  %.166 = load i32, i32* %.12
+  %.167 = add i32 %.165, %.166
+  %.168 = load i32, i32* %.15
+  %.169 = add i32 %.167, %.168
+  %.170 = load i32, i32* %.18
+  %.171 = add i32 %.169, %.170
+  %.172 = load i32, i32* %.21
+  %.173 = add i32 %.171, %.172
+  %.174 = load i32, i32* %.24
+  %.175 = add i32 %.173, %.174
+  %.176 = load i32, i32* %.27
+  %.177 = add i32 %.175, %.176
+  %.178 = load i32, i32* %.30
+  %.179 = add i32 %.177, %.178
+  %.180 = load i32, i32* %.33
+  %.181 = add i32 %.179, %.180
+  %.182 = load i32, i32* %.36
+  %.183 = add i32 %.181, %.182
+  %.184 = load i32, i32* %.39
+  %.185 = add i32 %.183, %.184
+  %.186 = load i32, i32* %.42
+  %.187 = add i32 %.185, %.186
+  %.188 = load i32, i32* %.45
+  %.189 = add i32 %.187, %.188
+  %.190 = load i32, i32* %.48
+  %.191 = add i32 %.189, %.190
+  %.192 = load i32, i32* %.51
+  %.193 = add i32 %.191, %.192
+  %.194 = load i32, i32* %.54
+  %.195 = add i32 %.193, %.194
+  %.196 = load i32, i32* %.57
+  %.197 = add i32 %.195, %.196
+  %.198 = load i32, i32* %.60
+  %.199 = add i32 %.197, %.198
+  %.200 = load i32, i32* %.63
+  %.201 = add i32 %.199, %.200
+  %.202 = load i32, i32* %.66
+  %.203 = add i32 %.201, %.202
+  %.204 = load i32, i32* %.69
+  %.205 = add i32 %.203, %.204
+  %.206 = load i32, i32* %.72
+  %.207 = add i32 %.205, %.206
+  %.208 = load i32, i32* %.75
+  %.209 = add i32 %.207, %.208
+  %.210 = load i32, i32* %.78
+  %.211 = add i32 %.209, %.210
+  ret i32 %.211 
+}
+define i32 @main(){
+.214:
+  %.215 = alloca i32
+  %.241at37 = call i32 @func(i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7, i32 8, i32 9, i32 10, i32 11, i32 12, i32 13, i32 14, i32 15, i32 16, i32 17, i32 18, i32 19, i32 20, i32 21, i32 22, i32 23, i32 24, i32 25, i32 26)
+  store i32 %.241at37, i32* %.215
+  %.243 = load i32, i32* %.215
+  call void @putint(i32 %.243)
+  ret i32 0 
 }

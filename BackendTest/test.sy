@@ -1,11 +1,40 @@
-const int N = -1;
-int arr[N + 2 * 4 - 99 / 99] = {1, 2, 33, 4, 5, 6};
+int func(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l , int m, int n\
+        ,int o, int p, int q, int r, int s, int t, int u, int v, int w, int x, int y, int z) {
+    putint(a);putch(10);
+    putint(b);putch(10);
+    putint(c);putch(10);
+    putint(d);putch(10);
+    putint(e);putch(10);
+    putint(f);putch(10);
+    putint(g);putch(10);
+    putint(h);putch(10);
+    putint(i);putch(10);
+    putint(j);putch(10);
+    putint(k);putch(10);
+    putint(l);putch(10);
+    putint(m);putch(10);
+    putint(n);putch(10);
+    putint(o);putch(10);
+    putint(p);putch(10);
+    putint(q);putch(10);
+    putint(r);putch(10);
+    putint(s);putch(10);
+    putint(t);putch(10);
+    putint(u);putch(10);
+    putint(v);putch(10);
+    putint(w);putch(10);
+    putint(x);putch(10);
+    putint(y);putch(10);
+    putint(z);putch(10);
 
-int main() {
-  int i = 0, sum = 0;
-  while (i < 6) {
-    sum = sum + arr[i];
-    i = i + 1;
-  }
-  return sum;
+    return a + b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + r + s + t + u + v + w + x + y + z;
+}
+// int func(int a, int b, int c, int d, int e ,int f,int g,int h, int i) {
+//     return a + b + c + d + e + f + g + h + i;
+// }
+int main () {
+    // return func(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    int a = func(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26);
+    putint(a);
+    return 0;
 }
