@@ -1,4 +1,5 @@
 #include "RISCVMIR.hpp"
+#include "RISCVMOperand.hpp"
 #include "RISCVRegister.hpp"
 #include "RISCVType.hpp"
 #include "RegAlloc.hpp"
@@ -18,7 +19,6 @@ void GraphColor::RunOnFunc() {
   for (auto &[key, val] : IG) {
     AdjList[key].insert(val.begin(), val.end());
   }
-  // PrintAnalysis();
   while (condition) {
     condition = false;
     CaculateLiveness();
@@ -459,9 +459,6 @@ void GraphColor::spill() {
 void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     MOperand select = selectstack.back();
-    if (select->GetName() == ".182" || select->GetName() == ".1" ||
-        select->GetName() == ".2")
-      int a = 0;
     RISCVType ty = select->GetType();
     selectstack.pop_back();
     std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),
@@ -485,7 +482,7 @@ void GraphColor::AssignColors() {
         spilledNodes.insert(select);
       else {
         coloredNode.insert(select);
-        color[select] = SelectPhyReg(ty, int_assist);
+        color[select] = SelectPhyReg(select, ty, int_assist);
         _DEBUG(std::cerr << "Assign reg(int): " << color[select]->GetName()
                          << " To " << select->GetName() << std::endl;)
       }
@@ -494,7 +491,7 @@ void GraphColor::AssignColors() {
         spilledNodes.insert(select);
       else {
         coloredNode.insert(select);
-        color[select] = SelectPhyReg(ty, float_assist);
+        color[select] = SelectPhyReg(select, ty, float_assist);
         _DEBUG(std::cerr << "Assign reg(float): " << color[select]->GetName()
                          << " To " << select->GetName() << std::endl;)
       }
@@ -677,24 +674,53 @@ void GraphColor::RewriteProgram() {
       }
       if (mir->GetOpcode() == RISCVMIR::mv &&
           mir->GetDef() == mir->GetOperand(0)) {
-        // TODO
-        // mir->EraseFromParent();
-        //WARN_LOCATION("this is warning: remember to add mir delete function");
+        delete mir;
       }
     }
   }
 }
 
 //单独抽离成一个函数，后续有调用规约修改的时候我们再更改
-PhyRegister *GraphColor::SelectPhyReg(RISCVType ty,
+PhyRegister *GraphColor::SelectPhyReg(MOperand vreg, RISCVType ty,
                                       std::unordered_set<MOperand> &assist) {
+  std::unordered_set<PhyRegister *> MoveTarget;
+  if (moveList.find(vreg) != moveList.end()) {
+    const auto &MovReg = moveList[vreg];
+    for (auto v : MovReg) {
+      auto def = v->GetDef();
+      auto op = v->GetOperand(0);
+      if (def == vreg) {
+        if (auto p_op = dynamic_cast<PhyRegister *>(op))
+          MoveTarget.insert(p_op);
+      } else if (def == op) {
+        if (auto p_def = dynamic_cast<PhyRegister *>(def))
+          MoveTarget.insert(p_def);
+      } else {
+        assert(0);
+      }
+    }
+  }
   if (ty == riscv_i32 || ty == riscv_ptr) {
+    if (!MoveTarget.empty()) {
+      for (auto reg : MoveTarget) {
+        if (assist.find(reg) != assist.end()) {
+          return reg;
+        }
+      }
+    }
     for (auto reg : reglist.GetReglistInt()) {
       if (assist.find(reg) != assist.end()) {
         return reg;
       }
     }
   } else if (ty == riscv_float32) {
+    if (!MoveTarget.empty()) {
+      for (auto reg : MoveTarget) {
+        if (assist.find(reg) != assist.end()) {
+          return reg;
+        }
+      }
+    }
     for (auto reg : reglist.GetReglistFloat()) {
       if (assist.find(reg) != assist.end())
         return reg;
