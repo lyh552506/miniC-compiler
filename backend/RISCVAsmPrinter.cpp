@@ -285,13 +285,10 @@ void globlvar::generate_array_init(Initializer* arry_init, Type* basetype) {
     int init_size = arry_init->size();
     int limi = dynamic_cast<ArrayType*>(arry_init->GetType())->GetNumEle();
     if (init_size == 0) {
-        for (int i=0; i<limi; i++) {
-            if (basetype->GetTypeEnum() == IR_Value_INT) {
-                init_vector.push_back(static_cast<int>(0));
-            }
-            else if (basetype->GetTypeEnum() == IR_Value_Float) {
-                init_vector.push_back(static_cast<float>(0));   
-            }
+        auto zero_num=arry_init->GetType()->get_size()/basetype->get_size();
+        for(auto i=0;i<zero_num;i++){
+            if(basetype->GetTypeEnum()==IR_Value_INT)init_vector.push_back(static_cast<int>(0));
+            else init_vector.push_back(static_cast<float>(0));
         }
     }
     else {

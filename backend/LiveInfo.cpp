@@ -63,26 +63,6 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
           UpdateInfo(val, block);
         }
       }
-      RegisterList& Regsiter_list = RegisterList::GetPhyRegList();
-      std::vector<PhyRegister*>& caller = Regsiter_list.GetReglistCaller();
-      for(PhyRegister* phy : caller)
-      {
-        if(auto reg = phy->ignoreLA())
-        {
-          if(Count(reg))
-          {
-            BlockLivein[block].erase(color[reg]);
-            Uses[block].erase(color[reg]);
-            Defs[block].insert(color[reg]);
-          }
-          else
-          {
-            BlockLivein[block].erase(reg);
-            Uses[block].erase(reg);
-            Defs[block].insert(reg);
-          }
-        }
-      }
     } else if ((*inst)->GetOperandSize() == 1) {
       RISCVMOperand *_val = (*inst)->GetOperand(0);
       UpdateInfo(_val, block);
@@ -189,19 +169,25 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
   for (auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_) {
     RISCVMIR *inst = *inst_;
     if (inst->GetOpcode() == OpType::call) {
-      // for (int i = 0; i < inst->GetOperandSize(); i++) {
-      //   RISCVMOperand *val = inst->GetOperand(i);
-      //   if (auto reg = val->ignoreLA()) {
-      //     if (reg) {
-      //       if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
-      //         Precolored.insert(phy);
-      //         color[phy] = phy;
-      //       }
-      //       Live.insert(reg);
-      //       InstLive[inst] = Live;
-      //     }
-      //   }
-      // }
+      InstLive[inst]=Live;
+      for(auto reg:reglist.GetReglistCaller()){
+        Precolored.insert(reg);
+        color[reg]=reg;
+        InstLive[inst].insert(reg);
+        Live.erase(reg);
+      }
+      for (int i = 0; i < inst->GetOperandSize(); i++) {
+        RISCVMOperand *val = inst->GetOperand(i);
+        if (auto reg = val->ignoreLA()) {
+          if (reg) {
+            if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
+              Precolored.insert(phy);
+              color[phy] = phy;
+            }
+            Live.insert(reg);
+          }
+        }
+      }
       continue;
     } else if (inst->GetOperandSize() == 1) {
       if (inst->GetOpcode() == OpType::ret) {
@@ -315,6 +301,10 @@ void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
 
 void GraphColor::CalcIG(RISCVBasicBlock *block) {
   for (RISCVMIR *inst : *block) {
+    if(inst->GetOpcode()==RISCVMIR::call){
+      for(auto reg:reglist.GetReglistCaller())
+        InstLive[inst].insert(reg);
+    }
     if (InstLive[inst].size() > 1) {
       for (auto *Op1 : InstLive[inst]) {
         for (auto *Op2 : InstLive[inst]) {

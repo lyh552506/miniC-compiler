@@ -46,6 +46,10 @@ bool RISCVFunctionLowering::run(Function* m){
     asmprinter->SetTextSegment(new textSegment(ctx));
     asmprinter->GetData()->GenerateTempvarList(ctx);
     asmprinter->GetData()->LegalizeGloablVar(ctx);
+
+
+    // asmprinter->printAsm();
+    
     
     Legalize legal(ctx);
     // legal.run_beforeRA();
