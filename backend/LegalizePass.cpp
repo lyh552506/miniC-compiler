@@ -203,7 +203,7 @@ void Legalize::constintLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterat
                 return;
             }
             else if(inst->GetOpcode() == RISCVMIR::RISCVISA::_addi ||\
-                    inst->GetOpcode() == RISCVMIR::RISCVISA::_addi) {
+                    inst->GetOpcode() == RISCVMIR::RISCVISA::_addiw) {
                 RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
                 // VirRegister* vreg = new VirRegister(RISCVType::riscv_i32);
                 li->SetDef(t0);

@@ -3,349 +3,552 @@
     .attribute unaligned_access, 0
     .attribute stack_align, 16
     .text
+    .globl  .G.RADIUS
+    .bss
+    .align  2
+    .type  .G.RADIUS, @object
+    .size  .G.RADIUS, 4
+.G.RADIUS:
+    .zero  4
+    .globl  .G.PI
+    .align  2
+    .type  .G.PI, @object
+    .size  .G.PI, 4
+.G.PI:
+    .zero  4
+    .globl  .G.EPS
+    .align  2
+    .type  .G.EPS, @object
+    .size  .G.EPS, 4
+.G.EPS:
+    .zero  4
+    .globl  .G.PI_HEX
+    .align  2
+    .type  .G.PI_HEX, @object
+    .size  .G.PI_HEX, 4
+.G.PI_HEX:
+    .zero  4
+    .globl  .G.HEX2
+    .align  2
+    .type  .G.HEX2, @object
+    .size  .G.HEX2, 4
+.G.HEX2:
+    .zero  4
+    .globl  .G.FACT
+    .align  2
+    .type  .G.FACT, @object
+    .size  .G.FACT, 4
+.G.FACT:
+    .zero  4
+    .globl  .G.EVAL1
+    .align  2
+    .type  .G.EVAL1, @object
+    .size  .G.EVAL1, 4
+.G.EVAL1:
+    .zero  4
+    .globl  .G.EVAL2
+    .align  2
+    .type  .G.EVAL2, @object
+    .size  .G.EVAL2, 4
+.G.EVAL2:
+    .zero  4
+    .globl  .G.EVAL3
+    .align  2
+    .type  .G.EVAL3, @object
+    .size  .G.EVAL3, 4
+.G.EVAL3:
+    .zero  4
+    .globl  .G.CONV1
+    .align  2
+    .type  .G.CONV1, @object
+    .size  .G.CONV1, 4
+.G.CONV1:
+    .zero  4
+    .globl  .G.CONV2
+    .align  2
+    .type  .G.CONV2, @object
+    .size  .G.CONV2, 4
+.G.CONV2:
+    .zero  4
+    .globl  .G.MAX
+    .align  2
+    .type  .G.MAX, @object
+    .size  .G.MAX, 4
+.G.MAX:
+    .zero  4
+    .globl  .G.TWO
+    .align  2
+    .type  .G.TWO, @object
+    .size  .G.TWO, 4
+.G.TWO:
+    .zero  4
+    .globl  .G.THREE
+    .align  2
+    .type  .G.THREE, @object
+    .size  .G.THREE, 4
+.G.THREE:
+    .zero  4
+    .globl  .G.FIVE
+    .align  2
+    .type  .G.FIVE, @object
+    .size  .G.FIVE, 4
+.G.FIVE:
+    .zero  4
+    .globl  .C..198
+    .data
+    .align  3
+    .type  .C..198, @object
+    .size  .C..198, 40
+.C..198:
+    .word  1065353216
+    .word  1073741824
+    .zero  32
+    .text
     .align  1
-    .globl  func
-    .type  func, @function
-func:
+    .globl  float_abs
+    .type  float_abs, @function
+float_abs:
 .LBB0:
-	addi sp, sp, -256
-	sd ra, 248(sp)
-	sd s0, 240(sp)
-	addi s0, sp, 256
-	sd s11, -128(s0)
-	sd s10, -136(s0)
-	sd s9, -144(s0)
-	sd s8, -152(s0)
-	sd s7, -160(s0)
-	sd s6, -168(s0)
-	sd s5, -176(s0)
-	sd s4, -184(s0)
-	sd s3, -192(s0)
-	sd s2, -200(s0)
-	sd s1, -208(s0)
-	lw s4, 0(s0)
-	lw t2, 4(s0)
-	sd t2, -232(s0)
-	lw t2, 8(s0)
-	sd t2, -224(s0)
-	lw t2, 12(s0)
-	sd t2, -248(s0)
-	lw t5, 16(s0)
-	lw s5, 20(s0)
-	lw s6, 24(s0)
-	lw s2, 28(s0)
-	lw t2, 32(s0)
-	sd t2, -216(s0)
-	lw t2, 36(s0)
-	sd t2, -240(s0)
-	lw s7, 40(s0)
-	lw s8, 44(s0)
-	lw s9, 48(s0)
-	lw s10, 52(s0)
-	lw t4, 56(s0)
-	lw s11, 60(s0)
-	lw s1, 64(s0)
-	lw t3, 68(s0)
-	mv s3, a0
-	mv t2, a1
-	mv a0, a2
-	mv t6, a4
-	mv a4, a5
-	mv a2, a6
-	mv a1, a7
+	addi sp, sp, -32
+	sd ra, 24(sp)
+	sd s0, 16(sp)
+	addi s0, sp, 32
+	fmv.s ft0, fa0
 	j .LBB1
 .LBB1:
-	sw s3, -24(s0)
-	sw t2, -28(s0)
-	sw a0, -32(s0)
-	sw a3, -36(s0)
-	sw t6, -40(s0)
-	sw a4, -44(s0)
-	sw a2, -48(s0)
-	sw a1, -52(s0)
-	sw t3, -56(s0)
-	sw s1, -60(s0)
-	sw s11, -64(s0)
-	sw t4, -68(s0)
-	sw s10, -76(s0)
-	sw s9, -72(s0)
-	sw s8, -120(s0)
-	sw s7, -116(s0)
-	ld t2, -240(s0)
-	sw t2, -112(s0)
-	ld t2, -216(s0)
-	sw t2, -108(s0)
-	sw s2, -104(s0)
-	sw s6, -100(s0)
-	sw s5, -96(s0)
-	sw t5, -92(s0)
-	ld t2, -248(s0)
-	sw t2, -88(s0)
-	ld t2, -224(s0)
-	sw t2, -84(s0)
-	ld t2, -232(s0)
-	sw t2, -20(s0)
-	sw s4, -80(s0)
-	lw t2, -24(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -28(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -32(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -36(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -40(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -44(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -48(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -52(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -56(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -60(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -64(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -68(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -76(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -72(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -120(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -116(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -112(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -108(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -104(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -100(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -96(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -92(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -88(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -84(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -20(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -80(s0)
-	mv a0, t2
-	call putint
-	li a0, 10
-	call putch
-	lw t2, -24(s0)
-	lw s1, -28(s0)
-	addw t2, t2, s1
-	lw s1, -32(s0)
-	addw s1, t2, s1
-	lw t2, -36(s0)
-	addw s1, s1, t2
-	lw t2, -40(s0)
-	addw t2, s1, t2
-	lw s1, -44(s0)
-	addw s1, t2, s1
-	lw t2, -48(s0)
-	addw s1, s1, t2
-	lw t2, -52(s0)
-	addw t2, s1, t2
-	lw s1, -56(s0)
-	addw t2, t2, s1
-	lw s1, -60(s0)
-	addw t2, t2, s1
-	lw s1, -64(s0)
-	addw t2, t2, s1
-	lw s1, -68(s0)
-	addw t2, t2, s1
-	lw s1, -76(s0)
-	addw t2, t2, s1
-	lw s1, -72(s0)
-	addw t2, t2, s1
-	lw s1, -120(s0)
-	addw t2, t2, s1
-	lw s1, -116(s0)
-	addw s1, t2, s1
-	lw t2, -112(s0)
-	addw t2, s1, t2
-	lw s1, -108(s0)
-	addw s1, t2, s1
-	lw t2, -104(s0)
-	addw t2, s1, t2
-	lw s1, -100(s0)
-	addw t2, t2, s1
-	lw s1, -96(s0)
-	addw t2, t2, s1
-	lw s1, -92(s0)
-	addw s1, t2, s1
-	lw t2, -88(s0)
-	addw t2, s1, t2
-	lw s1, -84(s0)
-	addw s1, t2, s1
-	lw t2, -20(s0)
-	addw t2, s1, t2
-	lw s1, -80(s0)
-	addw t2, t2, s1
-	mv a0, t2
-	ld s1, -208(s0)
-	ld s2, -200(s0)
-	ld s3, -192(s0)
-	ld s4, -184(s0)
-	ld s5, -176(s0)
-	ld s6, -168(s0)
-	ld s7, -160(s0)
-	ld s8, -152(s0)
-	ld s9, -144(s0)
-	ld s10, -136(s0)
-	ld s11, -128(s0)
-	ld ra, 248(sp)
-	ld s0, 240(sp)
-	addi sp, sp, 256
+	fsw ft0, -20(s0)
+	flw ft1, -20(s0)
+	fcvt.s.w ft0, zero
+	flt.s t2, ft1, ft0
+	beq t2, zero, .LBB2
+	j .LBB3
+.LBB2:
+	flw ft1, -20(s0)
+	lui t2, %hi(.LC0)
+	flw ft0, %lo(.LC0)(t2)
+	fsub.s ft0, ft0, ft1
+	fmv.s fa0, ft0
+	ld ra, 24(sp)
+	ld s0, 16(sp)
+	addi sp, sp, 32
 	ret 
-    .size func, .-func
+.LBB3:
+	flw ft0, -20(s0)
+	fmv.s fa0, ft0
+	ld ra, 24(sp)
+	ld s0, 16(sp)
+	addi sp, sp, 32
+	ret 
+    .size float_abs, .-float_abs
+    .align  1
+    .globl  circle_area
+    .type  circle_area, @function
+circle_area:
+.LBB4:
+	addi sp, sp, -32
+	sd ra, 24(sp)
+	sd s0, 16(sp)
+	addi s0, sp, 32
+	sd s1, -28(s0)
+	mv t2, a0
+	j .LBB5
+.LBB5:
+	sw t2, -20(s0)
+	lw t2, -20(s0)
+	fcvt.s.w ft1, t2
+	lui t2, %hi(.LC1)
+	flw ft0, %lo(.LC1)(t2)
+	fmul.s ft1, ft0, ft1
+	lw t2, -20(s0)
+	fcvt.s.w ft0, t2
+	fmul.s ft1, ft1, ft0
+	lw s1, -20(s0)
+	lw t2, -20(s0)
+	mulw t2, s1, t2
+	fcvt.s.w ft2, t2
+	lui t2, %hi(.LC1)
+	flw ft0, %lo(.LC1)(t2)
+	fmul.s ft0, ft2, ft0
+	fadd.s ft0, ft1, ft0
+	li t0, 2
+	fcvt.s.w ft1, t0
+	fdiv.s ft0, ft0, ft1
+	fmv.s fa0, ft0
+	ld s1, -28(s0)
+	ld ra, 24(sp)
+	ld s0, 16(sp)
+	addi sp, sp, 32
+	ret 
+    .size circle_area, .-circle_area
+    .align  1
+    .globl  float_eq
+    .type  float_eq, @function
+float_eq:
+.LBB6:
+	addi sp, sp, -32
+	sd ra, 24(sp)
+	sd s0, 16(sp)
+	addi s0, sp, 32
+	fmv.s ft0, fa0
+	fmv.s ft1, fa1
+	j .LBB7
+.LBB7:
+	fsw ft0, -24(s0)
+	fsw ft1, -20(s0)
+	flw ft0, -24(s0)
+	flw ft1, -20(s0)
+	fsub.s ft0, ft0, ft1
+	fmv.s fa0, ft0
+	call float_abs
+	fmv.s ft1, fa0
+	lui t2, %hi(.LC2)
+	flw ft0, %lo(.LC2)(t2)
+	flt.s t2, ft1, ft0
+	beq t2, zero, .LBB8
+	j .LBB9
+.LBB8:
+	lui t2, %hi(.LC3)
+	flw ft0, %lo(.LC3)(t2)
+	fcvt.w.s a0, ft0, rtz
+	ld ra, 24(sp)
+	ld s0, 16(sp)
+	addi sp, sp, 32
+	ret 
+.LBB9:
+	mv a0, zero
+	ld ra, 24(sp)
+	ld s0, 16(sp)
+	addi sp, sp, 32
+	ret 
+    .size float_eq, .-float_eq
+    .align  1
+    .globl  error
+    .type  error, @function
+error:
+.LBB10:
+	addi sp, sp, -16
+	sd ra, 8(sp)
+	sd s0, 0(sp)
+	addi s0, sp, 16
+	li a0, 101
+	call putch
+	li a0, 114
+	call putch
+	li a0, 114
+	call putch
+	li a0, 111
+	call putch
+	li a0, 114
+	call putch
+	li a0, 10
+	call putch
+	ld ra, 8(sp)
+	ld s0, 0(sp)
+	addi sp, sp, 16
+	ret 
+    .size error, .-error
+    .align  1
+    .globl  ok
+    .type  ok, @function
+ok:
+.LBB11:
+	addi sp, sp, -16
+	sd ra, 8(sp)
+	sd s0, 0(sp)
+	addi s0, sp, 16
+	li a0, 111
+	call putch
+	li a0, 107
+	call putch
+	li a0, 10
+	call putch
+	ld ra, 8(sp)
+	ld s0, 0(sp)
+	addi sp, sp, 16
+	ret 
+    .size ok, .-ok
+    .align  1
+    .globl  assert
+    .type  assert, @function
+assert:
+.LBB12:
+	addi sp, sp, -32
+	sd ra, 24(sp)
+	sd s0, 16(sp)
+	addi s0, sp, 32
+	j .LBB13
+.LBB13:
+	sw a0, -20(s0)
+	lw t2, -20(s0)
+	beq t2, zero, .LBB14
+	j .LBB15
+.LBB14:
+	call error
+	j .LBB16
+.LBB15:
+	call ok
+	j .LBB16
+.LBB16:
+	ld ra, 24(sp)
+	ld s0, 16(sp)
+	addi sp, sp, 32
+	ret 
+    .size assert, .-assert
+    .align  1
+    .globl  assert_not
+    .type  assert_not, @function
+assert_not:
+.LBB17:
+	addi sp, sp, -32
+	sd ra, 24(sp)
+	sd s0, 16(sp)
+	addi s0, sp, 32
+	j .LBB18
+.LBB18:
+	sw a0, -20(s0)
+	lw t2, -20(s0)
+	bne t2, zero, .LBB19
+	j .LBB20
+.LBB19:
+	call error
+	j .LBB21
+.LBB20:
+	call ok
+	j .LBB21
+.LBB21:
+	ld ra, 24(sp)
+	ld s0, 16(sp)
+	addi sp, sp, 32
+	ret 
+    .size assert_not, .-assert_not
     .align  1
     .globl  main
     .type  main, @function
 main:
-.LBB2:
-	addi sp, sp, -112
-	sd ra, 104(sp)
-	sd s0, 96(sp)
-	addi s0, sp, 112
-	sd sp, -28(s0)
-	li t0, 26
-	sw t0, 0(sp)
-	li t0, 25
-	sw t0, 4(sp)
-	li t0, 24
-	sw t0, 8(sp)
-	li t0, 23
-	sw t0, 12(sp)
-	li t0, 22
-	sw t0, 16(sp)
-	li t0, 21
-	sw t0, 20(sp)
-	li t0, 20
-	sw t0, 24(sp)
-	li t0, 19
-	sw t0, 28(sp)
-	li t0, 18
-	sw t0, 32(sp)
-	li t0, 17
-	sw t0, 36(sp)
-	li t0, 16
-	sw t0, 40(sp)
-	li t0, 15
-	sw t0, 44(sp)
-	li t0, 14
-	sw t0, 48(sp)
-	li t0, 13
-	sw t0, 52(sp)
-	li t0, 12
-	sw t0, 56(sp)
-	li t0, 11
-	sw t0, 60(sp)
-	li t0, 10
-	sw t0, 64(sp)
-	li t0, 9
-	sw t0, 68(sp)
-	li a0, 1
-	li a1, 2
-	li a2, 3
-	li a3, 4
-	li a4, 5
-	li a5, 6
-	li a6, 7
-	li a7, 8
-	call func
-	sw a0, -20(s0)
-	lw a0, -20(s0)
+.LBB22:
+	addi sp, sp, -96
+	sd ra, 88(sp)
+	sd s0, 80(sp)
+	addi s0, sp, 96
+	fsd fs0, -56(s0)
+	sd s1, -48(s0)
+	lui t2, %hi(.LC4)
+	flw ft0, %lo(.LC4)(t2)
+	fmv.s fa0, ft0
+	lui t2, %hi(.LC5)
+	flw ft0, %lo(.LC5)(t2)
+	fmv.s fa1, ft0
+	lui t2, %hi(.LC4)
+	flw ft0, %lo(.LC4)(t2)
+	lui t2, %hi(.LC5)
+	flw ft0, %lo(.LC5)(t2)
+	call float_eq
+	mv t2, a0
+	mv a0, t2
+	call assert_not
+	lui t2, %hi(.LC6)
+	flw ft0, %lo(.LC6)(t2)
+	fmv.s fa0, ft0
+	lui t2, %hi(.LC7)
+	flw ft0, %lo(.LC7)(t2)
+	fmv.s fa1, ft0
+	lui t2, %hi(.LC6)
+	flw ft0, %lo(.LC6)(t2)
+	lui t2, %hi(.LC7)
+	flw ft0, %lo(.LC7)(t2)
+	call float_eq
+	mv t2, a0
+	mv a0, t2
+	call assert_not
+	lui t2, %hi(.LC7)
+	flw ft0, %lo(.LC7)(t2)
+	fmv.s fa0, ft0
+	lui t2, %hi(.LC7)
+	flw ft0, %lo(.LC7)(t2)
+	fmv.s fa1, ft0
+	lui t2, %hi(.LC7)
+	flw ft0, %lo(.LC7)(t2)
+	call float_eq
+	mv t2, a0
+	mv a0, t2
+	call assert
+	lui t2, %hi(.LC8)
+	flw ft0, %lo(.LC8)(t2)
+	fcvt.w.s t2, ft0, rtz
+	mv a0, t2
+	call circle_area
+	fmv.s fs0, fa0
+	li a0, 5
+	call circle_area
+	fmv.s ft0, fa0
+	fmv.s fa0, fs0
+	fmv.s fa1, ft0
+	call float_eq
+	mv t2, a0
+	mv a0, t2
+	call assert
+	lui t2, %hi(.LC9)
+	flw ft0, %lo(.LC9)(t2)
+	fmv.s fa0, ft0
+	lui t2, %hi(.LC10)
+	flw ft0, %lo(.LC10)(t2)
+	fmv.s fa1, ft0
+	lui t2, %hi(.LC9)
+	flw ft0, %lo(.LC9)(t2)
+	lui t2, %hi(.LC10)
+	flw ft0, %lo(.LC10)(t2)
+	call float_eq
+	mv t2, a0
+	mv a0, t2
+	call assert_not
+	j .LBB23
+.LBB23:
+	call ok
+	j .LBB24
+.LBB24:
+	j .LBB25
+.LBB25:
+	call ok
+	j .LBB26
+.LBB26:
+	j .LBB27
+.LBB27:
+	j .LBB28
+.LBB29:
+	call ok
+	j .LBB30
+.LBB28:
+	j .LBB29
+.LBB30:
+	li t2, 1
+	sw t2, -40(s0)
+	li t2, 0
+	sw t2, -36(s0)
+	addi t0, s0, -96
+	mv a0, t0
+	lui t2, %hi(.C..198)
+	addi t2, t2, %lo(.C..198)
+	mv a1, t2
+	li a2, 40
+	lui t2, %hi(.C..198)
+	addi t2, t2, %lo(.C..198)
+	call memcpy@plt
+	addi t2, s0, -96
+	addi t0, t2, 0
+	mv a0, t0
+	call getfarray
+	mv t2, a0
+	sw t2, -32(s0)
+	j .LBB31
+.LBB31:
+	lw t2, -40(s0)
+	li t1, 1000001536
+	addi t1, t1, -1536
+	mv t0, t1
+	blt t2, t0, .LBB32
+	j .LBB33
+.LBB32:
+	call getfloat
+	fmv.s ft0, fa0
+	fsw ft0, -28(s0)
+	flw ft0, -28(s0)
+	lui t2, %hi(.LC1)
+	flw ft1, %lo(.LC1)(t2)
+	fmul.s ft0, ft1, ft0
+	flw ft1, -28(s0)
+	fmul.s ft0, ft0, ft1
+	fsw ft0, -24(s0)
+	flw ft0, -28(s0)
+	fcvt.w.s t2, ft0, rtz
+	mv a0, t2
+	call circle_area
+	fmv.s ft0, fa0
+	fsw ft0, -20(s0)
+	lw s1, -36(s0)
+	addi t2, s0, -96
+	li a0, 4
+	mulw s1, s1, a0
+	add t2, t2, s1
+	flw ft1, 0(t2)
+	flw ft0, -28(s0)
+	fadd.s ft0, ft1, ft0
+	lw s1, -36(s0)
+	addi a0, s0, -96
+	li t2, 4
+	mulw t2, s1, t2
+	add a0, a0, t2
+	fsw ft0, 0(a0)
+	flw ft0, -24(s0)
+	fmv.s fa0, ft0
+	call putfloat
+	li a0, 32
+	call putch
+	flw ft0, -20(s0)
+	fcvt.w.s t2, ft0, rtz
+	mv a0, t2
 	call putint
+	li a0, 10
+	call putch
+	lw t2, -40(s0)
+	fcvt.s.w ft0, t2
+	lui t2, %hi(.LC11)
+	flw ft1, %lo(.LC11)(t2)
+	fmul.s ft0, ft0, ft1
+	fcvt.w.s t2, ft0, rtz
+	sw t2, -40(s0)
+	lw t2, -36(s0)
+	addiw t2, t2, 1
+	sw t2, -36(s0)
+	j .LBB31
+.LBB33:
+	lw s1, -32(s0)
+	addi t2, s0, -96
+	mv a0, s1
+	addi t0, t2, 0
+	mv a1, t0
+	call putfarray
 	mv a0, zero
-	ld sp, -28(s0)
-	ld ra, 104(sp)
-	ld s0, 96(sp)
-	addi sp, sp, 112
+	ld s1, -48(s0)
+	fld fs0, -56(s0)
+	ld ra, 88(sp)
+	ld s0, 80(sp)
+	addi sp, sp, 96
 	ret 
     .size main, .-main
+    .section    .rodata
+    .align  2
+.LC0:
+    .word  0
+    .align  2
+.LC1:
+    .word  1078530011
+    .align  2
+.LC2:
+    .word  897988541
+    .align  2
+.LC3:
+    .word  1065353216
+    .align  2
+.LC4:
+    .word  1033895936
+    .align  2
+.LC5:
+    .word  -956241920
+    .align  2
+.LC6:
+    .word  1119752446
+    .align  2
+.LC7:
+    .word  1107966695
+    .align  2
+.LC8:
+    .word  1085276160
+    .align  2
+.LC9:
+    .word  1130954752
+    .align  2
+.LC10:
+    .word  1166012416
+    .align  2
+.LC11:
+    .word  1092616192
