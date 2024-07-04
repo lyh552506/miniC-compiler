@@ -13,7 +13,7 @@ sys.stdout = open(TestResult_path, 'w')
 
 compiler_path = "./build/SYSY-compiler"
 # test_folder="./testcases"
-test_folder="testcases/functional"
+test_folder="testcases/hidden_functional"
 output_folder = "testcases/output"
 sylib_path = "BackendTest/sylib.o"
 pass_args=[] # "--mem2reg","--dce","--reassociate","--constprop","--ece","--simplifycfg","--loops","--lcssa"
@@ -70,7 +70,7 @@ for test in test_list:
             continue
         if ret.returncode != 0:
             AE_list.append(test)
-  
+
 # riscv64-unknown-elf-gcc -o test test.o sylib.o -lm
 AC_Assembler_list = []
 for root, dirs, files in os.walk(output_folder):
@@ -126,8 +126,6 @@ for test in Try_run_list:
         WA_list.append(test)
     else:
         AC_list.append(test)
-
-
 
 
 print("Compiler Error: Total: "+str(len(CE_list)))
