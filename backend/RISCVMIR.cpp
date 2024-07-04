@@ -328,7 +328,7 @@ void RISCVFrame::GenerateFrameHead() {
     //addi sp, sp, framesize-temp_frame_size
     if(frame_size != temp_frame_size) {
         RISCVMIR* inst5 = new RISCVMIR(ISA::_addi);
-        Imm* imm5 = new Imm(ConstIRInt::GetNewConstant(frame_size - temp_frame_size));
+        Imm* imm5 = new Imm(ConstIRInt::GetNewConstant(temp_frame_size - frame_size));
         inst5->SetDef(sp);
         inst5->AddOperand(sp);
         inst5->AddOperand(imm5);

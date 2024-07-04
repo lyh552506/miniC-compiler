@@ -7,6 +7,7 @@ class Legalize {
     RISCVLoweringContext& ctx;
     public:
     Legalize(RISCVLoweringContext&);
+    void LegalizePass(mylist<RISCVBasicBlock, RISCVMIR>::iterator);
     // 
     void StackAndFrameLegalize(int ,mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
     void OffsetLegalize(int, mylist<RISCVBasicBlock, RISCVMIR>::iterator&);
@@ -19,4 +20,5 @@ class Legalize {
     void MOpcodeLegalize(RISCVMIR*);
     bool isImminst(RISCVMIR::RISCVISA);
     void run();
+    void run_afterRA();
 };

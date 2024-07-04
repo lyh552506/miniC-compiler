@@ -1,46 +1,48 @@
-int n;
-int bubblesort(int arr[])
+
+int func(int a, int b[][59], int c, int d[], int e, int f, int g[], int h, int i)
 {
-    // return 0;
-    int i;
-    int j;
-    i =0;
-    while(i < n-1){
-    // Last i elements are already in place
-        // return 0;
-        j = 0;
-        // return 0;
-        while(j < n-i-1){
-            // return 0;
-            if (arr[j] > arr[j+1]) {
-                // return 0;
-                // swap(&arr[j], &arr[j+1]); 
-                int tmp;
-                tmp = arr[j+1];
-                arr[j+1] = arr[j];
-                arr[j] = tmp;
-            }
-            j = j + 1;
-        }
-        i = i + 1;
+    int index = 0;
+    while (index < 10) {
+        putint(b[a][index]);
+        index = index + 1;
     }
-    return 0;
+    putch(10);
+
+    putint(d[c]);
+    putch(10);
+
+    while (i < 10) {
+        g[i] = h * 128875 % 3724;
+        i = i + 1;
+        h = h + 7;
+    }
+
+    return e + f;
 }
 
-int main(){
-    n = 10;
-    int a[10];
-    a[0]=4;a[1]=3;a[2]=9;a[3]=2;a[4]=0;
-    a[5]=1;a[6]=6;a[7]=5;a[8]=7;a[9]=8;
-    int i;
-    i = bubblesort(a);
-    while (i < n) {
-        int tmp;
-        tmp = a[i];
-        putint(tmp);
-        tmp = 10;
-        putch(tmp);
-        i = i + 1;
+int main()
+{
+    int a[61][67] = {};
+    int b[53][59] = {};
+
+    a[17][1] = 6;
+    a[17][3] = 7;
+    a[17][4] = 4;
+    a[17][7] = 9;
+    a[17][11] = 11;
+
+    b[6][1] = 1;
+    b[6][2] = 2;
+    b[6][3] = 3;
+    b[6][9] = 9;
+
+    int ret;
+    ret = func(a[17][1], b, a[17][3], a[17], b[6][3], b[6][0], b[6], b[34][4], b[51][18]) * 3;
+
+    while (ret >= 0) {
+        putint(b[6][ret]); putch(32);
+        ret = ret - 1;
     }
+    putch(10);
     return 0;
 }
