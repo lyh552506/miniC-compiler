@@ -11,7 +11,7 @@ using InterVal = LiveInterval;
 using OpType = RISCVMIR::RISCVISA;
 bool BlockInfo::Count(Register *op) {
   if (op) {
-    if(color.find(op) != color.end())
+    if (color.find(op) != color.end())
       return true;
     else
       return false;
@@ -48,9 +48,7 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
           PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
           BlockLivein[block].insert(Phy);
           Uses[block].insert(Phy);
-        }
-        else if(val1->GetType() == RISCVType::riscv_float32)
-        {
+        } else if (val1->GetType() == RISCVType::riscv_float32) {
           PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0);
           BlockLivein[block].insert(Phy);
           Uses[block].insert(Phy);
@@ -192,10 +190,10 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
       }
     }
     if (inst->GetOpcode() == OpType::call) {
-      InstLive[inst]=Live;
-      for(auto reg:reglist.GetReglistCaller()){
+      InstLive[inst] = Live;
+      for (auto reg : reglist.GetReglistCaller()) {
         Precolored.insert(reg);
-        color[reg]=reg;
+        color[reg] = reg;
         InstLive[inst].insert(reg);
         Live.erase(reg);
       }
@@ -281,7 +279,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
 void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
   for (RISCVMIR *inst : *block) {
     OpType Opcode = inst->GetOpcode();
-    if (Opcode == OpType::mv) {
+    if (Opcode == OpType::mv || Opcode == OpType::_fmv_s) {
       auto op1 = inst->GetOperand(0)->ignoreLA();
       auto def = inst->GetDef()->ignoreLA();
       if (op1 && def) {
@@ -301,10 +299,8 @@ void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
 
 void GraphColor::CalcIG(RISCVBasicBlock *block) {
   for (RISCVMIR *inst : *block) {
-    if(block->GetName() == ".LBB2")
-      int b =1;
-    if(inst->GetOpcode()==RISCVMIR::call){
-      for(auto reg:reglist.GetReglistCaller())
+    if (inst->GetOpcode() == RISCVMIR::call) {
+      for (auto reg : reglist.GetReglistCaller())
         InstLive[inst].insert(reg);
     }
     if (InstLive[inst].size() > 1) {
@@ -496,7 +492,7 @@ bool InterVal::verify(
 void InterVal::PrintAnalysis() {
   std::cout << "--------InstLive--------" << std::endl;
   for (RISCVBasicBlock *block : *func) {
-    std::cout<<"-----Block "<<block->GetName()<<"-----"<<std::endl;
+    std::cout << "-----Block " << block->GetName() << "-----" << std::endl;
     for (RISCVMIR *inst : *block) {
       std::cout << "inst" << instNum[inst] << "Liveness:";
       for (RISCVMOperand *Op : InstLive[inst]) {
@@ -528,9 +524,7 @@ void InterVal::RunOnFunc_() {
   computeLiveIntervals();
 }
 
-
-void GraphColor::LiveInfoInit()
-{
+void GraphColor::LiveInfoInit() {
   BlockLivein.clear();
   BlockLiveout.clear();
   BlockInfo.clear();

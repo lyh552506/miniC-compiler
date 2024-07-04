@@ -213,8 +213,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_L:
                 {
                     auto condi=Builder(RISCVMIR::_flt_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -223,8 +223,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_LE:
                 {
                     auto condi=Builder(RISCVMIR::_fle_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -233,8 +233,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_G:
                 {
                     auto condi=Builder(RISCVMIR::_fgt_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -243,8 +243,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_GE:
                 {
                     auto condi=Builder(RISCVMIR::_fge_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -253,8 +253,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_E:
                 {    
                     auto condi=Builder(RISCVMIR::_feq_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -263,8 +263,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_NE:
                 {
                     auto condi=Builder(RISCVMIR::_feq_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
