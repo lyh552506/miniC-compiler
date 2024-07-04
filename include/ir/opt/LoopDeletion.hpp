@@ -5,10 +5,16 @@
 #include "LoopInfo.hpp"
 
 
-
-class LoopDeletion : public PassManagerBase 
+class LoopDeletion : public PassManagerBase
 {
 public:
-    // bool RunOnFunction();
-    
+    LoopDeletion(Function* m_func, dominance* m_dom) : func(m_func), dom(m_dom) {}
+    void RunOnFunction() override;
+    bool DetectDeadLoop(LoopInfo* loop, dominance* dom);
+    bool DeleteLoop(LoopInfo* loop);
+    bool CanBeDelete(LoopInfo* loop);
+private:
+    LoopAnalysis* loop;
+    Function* func;
+    dominance* dom;
 };
