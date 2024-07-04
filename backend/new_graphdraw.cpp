@@ -1,3 +1,4 @@
+#include "RISCVFrameContext.hpp"
 #include "RISCVMIR.hpp"
 #include "RISCVMOperand.hpp"
 #include "RISCVRegister.hpp"
@@ -689,6 +690,12 @@ PhyRegister *GraphColor::SelectPhyReg(MOperand vreg, RISCVType ty,
     for (auto v : MovReg) {
       auto def = v->GetDef();
       auto op = v->GetOperand(0);
+      if (auto st = dynamic_cast<StackRegister *>(def)) {
+        def = st->GetVreg();
+      }
+      if (auto st = dynamic_cast<StackRegister *>(op)) {
+        op = st->GetVreg();
+      }
       if (def == vreg) {
         if (auto p_op = dynamic_cast<PhyRegister *>(op))
           MoveTarget.insert(p_op);
