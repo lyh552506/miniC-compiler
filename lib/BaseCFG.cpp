@@ -13,8 +13,8 @@ void Use::RemoveFromUserList(User *is_valid) {
   if (nxt != nullptr)
     nxt->prev = prev;
   // GetValue()->GetUserlist().GetSize()
-  if(GetValue()->GetUserlist().GetSize()==0&&nxt!=nullptr)
-    assert(0&&"FUCK");
+  if (GetValue()->GetUserlist().GetSize() == 0 && nxt != nullptr)
+    assert(0 && "FUCK");
 }
 void UserList::push_front(Use *_data) {
   // manage the size of the userlist
@@ -45,7 +45,7 @@ Value::Value(Type *_tp) : tp(_tp) {
 
 Value *Value::clone(std::unordered_map<Operand, Operand> &mapping) {
   // if this is called it must be a param or Global
-  if(isGlobal())
+  if (isGlobal())
     return this;
   if (mapping.find(this) != mapping.end())
     return mapping[this];
@@ -66,7 +66,7 @@ std::string Value::GetName() { return name; }
 void Value::print() {
   if (isConst())
     std::cout << GetName();
-  else if(isGlobal())
+  else if (isGlobal())
     std::cout << "@" << GetName();
   else if (auto tmp = dynamic_cast<Function *>(this))
     std::cout << "@" << tmp->GetName();
@@ -108,9 +108,7 @@ bool Value::isUndefVal() {
     return false;
 }
 
-bool Value::isGlobal() {
-  return false;
-}
+bool Value::isGlobal() { return false; }
 
 bool Value::isConstZero() {
   if (auto num = dynamic_cast<ConstIRInt *>(this))
@@ -176,9 +174,8 @@ bool User::IsUncondInst() {
     return true;
   return false;
 }
-bool User::IsBinary()
-{
-  if(id >= 8 && id <=20)
+bool User::IsBinary() {
+  if (id >= 8 && id <= 20)
     return true;
   return false;
 }
@@ -236,7 +233,7 @@ int User::GetUseIndex(Use *Op) {
     if (uselist[i].get() == Op)
       return i;
   }
-  assert(0&&"Unreachable");
+  assert(0 && "Unreachable");
 }
 Value *User::GetDef() { return dynamic_cast<Value *>(this); }
 
@@ -282,6 +279,12 @@ void User::RSUW(int num, Operand val) {
   uselist[num]->RemoveFromUserList(this);
   uselist[num]->usee = val;
   val->add_user(uselist[num].get());
+}
+// change use to val while manage use-def relation
+void User::RSUW(Use *u, Operand val) {
+  u->RemoveFromUserList(this);
+  u->usee = val;
+  val->add_user(u);
 }
 
 ConstantData::ConstantData(Type *_tp) : Value(_tp) {}

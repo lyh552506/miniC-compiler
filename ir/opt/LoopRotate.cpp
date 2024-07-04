@@ -7,6 +7,7 @@
 #include "dominant.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <optional>
 #include <set>
 #include <unordered_map>
@@ -43,6 +44,8 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     // condition提取到preheader，顺便做一些不变量提取
     auto inst = *iter;
     if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+      if (phi->GetName() == ".56")
+        x = phi;
       PreHeaderValue[phi] = phi->ReturnValIn(prehead);
       continue;
     }
@@ -56,9 +59,12 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
       auto new_inst = inst->CloneInst();
       //可能从phi提取出循环后变为了可简化的指令
       Value *simplify = nullptr;
-      for (auto &use : new_inst->Getuselist()) {
+      for (int i = 0; i < new_inst->Getuselist().size(); i++) {
+        auto &use = new_inst->Getuselist()[i];
         if (PreHeaderValue.count(use->GetValue())) {
-          use->SetValue() = PreHeaderValue[use->GetValue()];
+          // use->RemoveFromUserList(use->GetUser());
+          auto tmp = PreHeaderValue[use->GetValue()];
+          new_inst->RSUW(i, tmp);
         }
       }
       if (dynamic_cast<BinaryInst *>(new_inst) &&
@@ -69,9 +75,10 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
             dynamic_cast<ConstantData *>(new_inst->GetOperand(0)),
             dynamic_cast<ConstantData *>(new_inst->GetOperand(1)));
       }
-      if (simplify)
+      if (simplify) {
+        delete new_inst;
         PreHeaderValue[inst] = simplify;
-      else {
+      } else {
         PreHeaderValue[inst] = new_inst;
         new_inst->SetParent(prehead);
         It.insert_before(new_inst);
@@ -81,18 +88,20 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   delete *It;
   prehead->back()->Getuselist()[1]->SetValue() = New_header;
   prehead->back()->Getuselist()[2]->SetValue() = Exit;
+  prehead->back()->RSUW(1, New_header);
+  prehead->back()->RSUW(2, Exit);
   m_dom->GetNode(Exit->num).rev.push_front(prehead->num);
   m_dom->GetNode(prehead->num).des.push_front(Exit->num);
   m_dom->GetNode(prehead->num).des.remove(header->num);
   m_dom->GetNode(header->num).rev.remove(prehead->num);
   m_dom->GetNode(New_header->num).rev.push_front(prehead->num);
   m_dom->GetNode(prehead->num).des.push_front(New_header->num);
-
   // Deal With Phi In header
-  PreservePhi(header, loop, prehead);
+  PreservePhi(header, loop, prehead, New_header);
 
   if (dynamic_cast<CondInst *>(prehead->back()) &&
       !dynamic_cast<ConstIRBoolean *>(prehead->back()->GetOperand(0))) {
+
     for (auto des : m_dom->GetNode(header->num).des) {
       auto succ = m_dom->GetNode(des).thisBlock;
       for (auto inst : *succ) {
@@ -144,7 +153,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
       m_dom->GetNode(Exit->num).rev.push_front(loopexit->num);
       m_dom->GetNode(header->num).des.push_front(loopexit->num);
     }
-  } else {
+  } else if (dynamic_cast<CondInst *>(prehead->back())) {
     auto cond = dynamic_cast<CondInst *>(prehead->back());
     auto Bool =
         dynamic_cast<ConstIRBoolean *>(cond->Getuselist()[0]->GetValue());
@@ -168,6 +177,8 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     m_dom->GetNode(prehead->num).des.remove(ignore->num);
     prehead->rbegin().insert_before(uncond);
     delete cond;
+  } else {
+    assert(0);
   }
   loop->setHeader(New_header);
 
@@ -189,7 +200,10 @@ bool LoopRotate::CanBeMove(User *I) {
 }
 
 void LoopRotate::PreservePhi(BasicBlock *header, LoopInfo *loop,
-                             BasicBlock *preheader) {
+                             BasicBlock *preheader, BasicBlock *new_header) {
+  // bool = true ---> outside the loop
+  std::map<PhiInst *, std::map<bool, Value *>> RecordPhi;
+  std::map<PhiInst *, PhiInst *> PhiInsert;
   for (auto des : m_dom->GetNode(header->num).des) {
     auto succ = m_dom->GetNode(des).thisBlock;
     for (auto iter = succ->begin();
@@ -198,25 +212,59 @@ void LoopRotate::PreservePhi(BasicBlock *header, LoopInfo *loop,
       phi->updateIncoming(phi->ReturnValIn(header), preheader);
     }
   }
-
-  // // clear phi
+  // clear phi
   for (auto iter = header->begin();
        (iter != header->end()) && dynamic_cast<PhiInst *>(*iter); ++iter) {
     auto phi = dynamic_cast<PhiInst *>(*iter);
     for (int i = 0; i < phi->PhiRecord.size(); i++) {
       if (phi->PhiRecord[i].second == preheader) {
-        phi->Del_Incomes(i);
+        RecordPhi[phi][true] = phi->PhiRecord[i].first;
+        phi->Del_Incomes(i--);
+        continue;
       }
+      RecordPhi[phi][false] = phi->PhiRecord[i].first;
     }
   }
   //去掉preheader到header的边之后，现在loop有两个是数据流入口，需要更新phi
   // lcssa保证user在loop内
   for (auto inst : *header) {
-    for (auto use : inst->GetUserlist()) {
+    for (auto iter = inst->GetUserlist().begin();
+         iter != inst->GetUserlist().end();) {
+      auto use = *iter;
+      ++iter;
       auto user = use->GetUser();
       auto targetBB = user->GetParent();
       if (targetBB == header)
         continue;
+      if (targetBB == preheader) {
+        continue;
+      }
+      if (auto phi = dynamic_cast<PhiInst *>(use->GetValue())) {
+        if (PhiInsert.find(phi) == PhiInsert.end()) {
+          assert(phi->PhiRecord.size() == 1);
+          auto new_phi = PhiInst::NewPhiNode(new_header->front(), new_header,
+                                             inst->GetType());
+          for (auto [flag, val] : RecordPhi[phi]) {
+            if (flag)
+              new_phi->updateIncoming(RecordPhi[phi][flag], preheader);
+            else
+              new_phi->updateIncoming(RecordPhi[phi][flag], header);
+          }
+          // use->SetValue() = new_phi;
+          user->RSUW(use, new_phi);
+          PhiInsert[phi] = new_phi;
+        } else {
+          // use->SetValue() = PhiInsert[phi];
+          user->RSUW(use, PhiInsert[phi]);
+        }
+        if (auto p = dynamic_cast<PhiInst *>(use->GetUser())) {
+          for (int i = 0; i < p->PhiRecord.size(); i++) {
+            if (p->PhiRecord[i].first == phi) {
+              p->PhiRecord[i].first = use->SetValue();
+            }
+          }
+        }
+      }
     }
   }
 }
