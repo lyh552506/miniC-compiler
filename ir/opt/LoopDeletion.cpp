@@ -81,8 +81,21 @@ bool LoopDeletion::CanBeDelete(LoopInfo* loopInfo)
         
         if(auto Inst_Com = dynamic_cast<User*>(CommonValue))
         {
-            break;
+            auto test = loop->IsLoopInvariant();
         }
     }
 }
 
+bool LoopDeletion::makeLoopInvariant(User* inst, LoopInfo* loopinfo, User* Termination)
+{
+  const std::set<BasicBlock*> contain{loopinfo->GetLoopBody().begin(), loopinfo->GetLoopBody().end()};
+  if(LoopAnalysis::IsLoopInvariant(contain, inst, loopinfo))
+    return true;
+  if(dynamic_cast<LoadInst*>(inst))
+    return false;
+  if(!Termination)
+  {
+    BasicBlock* preheader = loop->GetPreHeader(loopinfo);
+
+  }
+}
