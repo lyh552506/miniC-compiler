@@ -73,17 +73,24 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
         PreHeaderValue[inst] = simplify;
       else {
         PreHeaderValue[inst] = new_inst;
+        new_inst->SetParent(prehead);
         It.insert_before(new_inst);
       }
     }
   }
   delete *It;
-  prehead->back()->Getuselist()[1]->SetValue() = header;
+  prehead->back()->Getuselist()[1]->SetValue() = New_header;
   prehead->back()->Getuselist()[2]->SetValue() = Exit;
   m_dom->GetNode(Exit->num).rev.push_front(prehead->num);
   m_dom->GetNode(prehead->num).des.push_front(Exit->num);
   m_dom->GetNode(prehead->num).des.remove(header->num);
   m_dom->GetNode(header->num).rev.remove(prehead->num);
+  m_dom->GetNode(New_header->num).rev.push_front(prehead->num);
+  m_dom->GetNode(prehead->num).des.push_front(New_header->num);
+
+  // Deal With Phi In header
+  PreservePhi(header, loop, prehead);
+
   if (dynamic_cast<CondInst *>(prehead->back()) &&
       !dynamic_cast<ConstIRBoolean *>(prehead->back()->GetOperand(0))) {
     for (auto des : m_dom->GetNode(header->num).des) {
@@ -107,7 +114,6 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     node->rev.push_front(prehead->num);
     m_dom->GetNode(prehead->num).des.push_front(m_dom->node.size());
     m_dom->GetNode(header->num).rev.push_front(m_dom->node.size());
-
     m_dom->node.push_back(*node);
 
     m_func->InsertBlock(prehead, header, lr_ph);
@@ -149,6 +155,14 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     if (Bool->GetVal() == false) {
       std::swap(nxt, ignore);
     }
+    for (auto iter = ignore->begin();
+         iter != ignore->end() && dynamic_cast<PhiInst *>(*iter); ++iter) {
+      auto phi = dynamic_cast<PhiInst *>(*iter);
+      for (int i = 0; i < phi->PhiRecord.size(); i++) {
+        if (phi->PhiRecord[i].second == prehead)
+          phi->Del_Incomes(i);
+      }
+    }
     auto uncond = new UnCondInst(nxt);
     m_dom->GetNode(ignore->num).rev.remove(prehead->num);
     m_dom->GetNode(prehead->num).des.remove(ignore->num);
@@ -156,25 +170,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     delete cond;
   }
   loop->setHeader(New_header);
-  // Deal With Phi In header
-  for (auto inst : *header) {
-    for (auto use : inst->GetUserlist()) {
-      auto user = use->GetUser();
-      auto targetBB = user->GetParent();
-      if (targetBB == header)
-        continue;
-    }
-  }
-  // clear phi
-  // for (auto iter = header->begin();
-  //      (iter != header->end()) && dynamic_cast<PhiInst *>(*iter); ++iter) {
-  //   auto phi = dynamic_cast<PhiInst *>(*iter);
-  //   for (int i = 0; i < phi->PhiRecord.size(); i++) {
-  //     if (phi->PhiRecord[i].second == prehead) {
-  //       phi->Del_Incomes(i);
-  //     }
-  //   }
-  // }
+
   SimplifyBlocks(header, loop);
   return changed;
 }
@@ -189,6 +185,39 @@ bool LoopRotate::CanBeMove(User *I) {
     return true;
   } else {
     return false;
+  }
+}
+
+void LoopRotate::PreservePhi(BasicBlock *header, LoopInfo *loop,
+                             BasicBlock *preheader) {
+  for (auto des : m_dom->GetNode(header->num).des) {
+    auto succ = m_dom->GetNode(des).thisBlock;
+    for (auto iter = succ->begin();
+         iter != succ->end() && dynamic_cast<PhiInst *>(*iter); ++iter) {
+      auto phi = dynamic_cast<PhiInst *>(*iter);
+      phi->updateIncoming(phi->ReturnValIn(header), preheader);
+    }
+  }
+
+  // // clear phi
+  for (auto iter = header->begin();
+       (iter != header->end()) && dynamic_cast<PhiInst *>(*iter); ++iter) {
+    auto phi = dynamic_cast<PhiInst *>(*iter);
+    for (int i = 0; i < phi->PhiRecord.size(); i++) {
+      if (phi->PhiRecord[i].second == preheader) {
+        phi->Del_Incomes(i);
+      }
+    }
+  }
+  //去掉preheader到header的边之后，现在loop有两个是数据流入口，需要更新phi
+  // lcssa保证user在loop内
+  for (auto inst : *header) {
+    for (auto use : inst->GetUserlist()) {
+      auto user = use->GetUser();
+      auto targetBB = user->GetParent();
+      if (targetBB == header)
+        continue;
+    }
   }
 }
 
@@ -241,6 +270,6 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     inst->SetParent(Latch);
     insert_iter.insert_after(inst);
   }
-
+  loopAnlasis->DeleteBlock(Header);
   delete Header;
 }
