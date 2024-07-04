@@ -332,93 +332,31 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.C..73 = constant [1 x i32]  [i32 1]
-@.C..81 = constant [1 x i32]  [i32 1]
-define i32 @exgcd(i32 %.2, i32 %.5, i32* %.8, i32* %.11){
-.1:
-  %.38 = alloca i32
-  %.29 = alloca i32
-  %.12 = alloca i32*
-  %.9 = alloca i32*
-  %.6 = alloca i32
-  %.3 = alloca i32
-  store i32 %.2, i32* %.3
-  store i32 %.5, i32* %.6
-  store i32* %.8, i32** %.9
-  store i32* %.11, i32** %.12
-  %.16 = load i32, i32* %.6
-  %.18 = icmp eq i32 %.16, 0
-  br i1 %.18, label %.14, label %.15
-.14:
-  %.21 = load i32*, i32** %.9
-  %.22 = getelementptr inbounds i32, i32* %.21, i32 0
-  store i32 1, i32* %.22
-  %.24 = load i32*, i32** %.12
-  %.25 = getelementptr inbounds i32, i32* %.24, i32 0
-  store i32 0, i32* %.25
-  %.27 = load i32, i32* %.3
-  ret i32 %.27 
-.15:
-  %.30 = load i32, i32* %.6
-  %.31 = load i32, i32* %.3
-  %.32 = load i32, i32* %.6
-  %.33 = srem i32 %.31, %.32
-  %.34 = load i32*, i32** %.9
-  %.35 = load i32*, i32** %.12
-  %.36at8 = call i32 @exgcd(i32 %.30, i32 %.33, i32* %.34, i32* %.35)
-  store i32 %.36at8, i32* %.29
-  %.39 = load i32*, i32** %.9
-  %.40 = getelementptr inbounds i32, i32* %.39, i32 0
-  %.41 = load i32, i32* %.40
-  store i32 %.41, i32* %.38
-  %.43 = load i32*, i32** %.12
-  %.44 = getelementptr inbounds i32, i32* %.43, i32 0
-  %.45 = load i32, i32* %.44
-  %.46 = load i32*, i32** %.9
-  %.47 = getelementptr inbounds i32, i32* %.46, i32 0
-  store i32 %.45, i32* %.47
-  %.49 = load i32, i32* %.38
-  %.50 = load i32, i32* %.3
-  %.51 = load i32, i32* %.6
-  %.52 = sdiv i32 %.50, %.51
-  %.53 = load i32*, i32** %.12
-  %.54 = getelementptr inbounds i32, i32* %.53, i32 0
-  %.55 = load i32, i32* %.54
-  %.56 = mul i32 %.52, %.55
-  %.57 = sub i32 %.49, %.56
-  %.58 = load i32*, i32** %.12
-  %.59 = getelementptr inbounds i32, i32* %.58, i32 0
-  store i32 %.57, i32* %.59
-  %.61 = load i32, i32* %.29
-  ret i32 %.61 
-}
+@.G.N = global i32 zeroinitializer
+@.G.arr = global [6 x i32]  [i32 1, i32 2, i32 33, i32 4, i32 5, i32 6]
 define i32 @main(){
-.64:
-  %.79 = alloca [1 x i32]
-  %.71 = alloca [1 x i32]
-  %.68 = alloca i32
-  %.65 = alloca i32
-  store i32 7, i32* %.65
-  store i32 15, i32* %.68
-  call void @llvm.memcpy.p0.p0.i32([1 x i32]* %.71, [1 x i32]* @.C..73, i32 4, i1 false)
-  call void @llvm.memcpy.p0.p0.i32([1 x i32]* %.79, [1 x i32]* @.C..81, i32 4, i1 false)
-  %.83 = load i32, i32* %.65
-  %.84 = load i32, i32* %.68
-  %.85 = getelementptr inbounds [1 x i32], [1 x i32]* %.71, i32 0, i32 0
-  %.86 = getelementptr inbounds [1 x i32], [1 x i32]* %.79, i32 0, i32 0
-  %.87at18 = call i32 @exgcd(i32 %.83, i32 %.84, i32* %.85, i32* %.86)
-  %.88 = getelementptr inbounds [1 x i32], [1 x i32]* %.71, i32 0, i32 0
-  %.89 = load i32, i32* %.88
-  %.90 = load i32, i32* %.68
-  %.91 = srem i32 %.89, %.90
-  %.92 = load i32, i32* %.68
-  %.93 = add i32 %.91, %.92
-  %.94 = load i32, i32* %.68
-  %.95 = srem i32 %.93, %.94
-  %.96 = getelementptr inbounds [1 x i32], [1 x i32]* %.71, i32 0, i32 0
-  store i32 %.95, i32* %.96
-  %.98 = getelementptr inbounds [1 x i32], [1 x i32]* %.71, i32 0, i32 0
-  %.99 = load i32, i32* %.98
-  call void @putint(i32 %.99)
-  ret i32 0 
+.15:
+  %.18 = alloca i32
+  %.16 = alloca i32
+  store i32 0, i32* %.16
+  store i32 0, i32* %.18
+  br label %.20wc6 
+.20wc6:
+  %.24 = load i32, i32* %.16
+  %.25 = icmp slt i32 %.24, 6
+  br i1 %.25, label %.21wloop.6.9, label %.22wn9
+.21wloop.6.9:
+  %.27 = load i32, i32* %.18
+  %.28 = load i32, i32* %.16
+  %.29 = getelementptr inbounds [6 x i32], [6 x i32]* @.G.arr, i32 0, i32 %.28
+  %.30 = load i32, i32* %.29
+  %.31 = add i32 %.27, %.30
+  store i32 %.31, i32* %.18
+  %.33 = load i32, i32* %.16
+  %.34 = add i32 %.33, 1
+  store i32 %.34, i32* %.16
+  br label %.20wc6 
+.22wn9:
+  %.37 = load i32, i32* %.18
+  ret i32 %.37 
 }

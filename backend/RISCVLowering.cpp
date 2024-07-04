@@ -54,6 +54,8 @@ bool RISCVFunctionLowering::run(Function* m){
     Legalize legal(ctx);
     // legal.run_beforeRA();
 
+    // asmprinter->printAsm();
+
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
@@ -68,7 +70,6 @@ bool RISCVFunctionLowering::run(Function* m){
     frame->GenerateFrameHead();
     frame->GenerateFrameTail();
 
-    // legal.run_afterRA();
     legal.run();
 
     return false;
