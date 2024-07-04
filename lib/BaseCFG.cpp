@@ -12,6 +12,9 @@ void Use::RemoveFromUserList(User *is_valid) {
   (*prev) = nxt;
   if (nxt != nullptr)
     nxt->prev = prev;
+  // GetValue()->GetUserlist().GetSize()
+  if(GetValue()->GetUserlist().GetSize()==0&&nxt!=nullptr)
+    assert(0&&"FUCK");
 }
 void UserList::push_front(Use *_data) {
   // manage the size of the userlist

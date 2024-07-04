@@ -450,7 +450,8 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
         // addw .1 s0, .x
         inst1 = new RISCVMIR(ISA::_add);
         inst1->SetDef(t0);
-        inst1->AddOperand(s0);
+        // inst1->AddOperand(s0);
+        inst1->AddOperand(zero);
         inst1->AddOperand(baseptr);
         ctx(inst1);
     }
