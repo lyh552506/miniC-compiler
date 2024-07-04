@@ -61,6 +61,8 @@ void GraphColor::MakeWorklist() {
 
 std::unordered_set<RISCVMIR *> GraphColor::MoveRelated(MOperand v) {
   std::unordered_set<RISCVMIR *> tmp;
+  if (moveList.find(v) == moveList.end())
+    return tmp;
   for (auto inst : moveList[v]) {
     auto iter = std::find(worklistMoves.begin(), worklistMoves.end(), inst);
     if (activeMoves.find(inst) != activeMoves.end() ||
@@ -673,7 +675,8 @@ void GraphColor::RewriteProgram() {
           stackreg->SetPreg(replace);
         }
       }
-      if (mir->GetOpcode() == RISCVMIR::mv &&
+      if ((mir->GetOpcode() == RISCVMIR::mv ||
+           mir->GetOpcode() == RISCVMIR::_fmv_s) &&
           mir->GetDef() == mir->GetOperand(0)) {
         delete mir;
       }
