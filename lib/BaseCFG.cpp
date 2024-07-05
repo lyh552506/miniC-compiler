@@ -12,6 +12,9 @@ void Use::RemoveFromUserList(User *is_valid) {
   (*prev) = nxt;
   if (nxt != nullptr)
     nxt->prev = prev;
+  // GetValue()->GetUserlist().GetSize()
+  if(GetValue()->GetUserlist().GetSize()==0&&nxt!=nullptr)
+    assert(0&&"FUCK");
 }
 void UserList::push_front(Use *_data) {
   // manage the size of the userlist
@@ -264,7 +267,7 @@ User *User::CloneInst() {
   } else if (auto cond = dynamic_cast<CondInst *>(this)) {
     return new CondInst(cond->GetOperand(0),
                         dynamic_cast<BasicBlock *>(cond->GetOperand(1)),
-                        dynamic_cast<BasicBlock *>(cond->GetOperand(1)));
+                        dynamic_cast<BasicBlock *>(cond->GetOperand(2)));
   } else if (auto uncond = dynamic_cast<UnCondInst *>(this)) {
     return new UnCondInst(dynamic_cast<BasicBlock *>(uncond->GetOperand(0)));
   } else {

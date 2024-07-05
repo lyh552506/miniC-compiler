@@ -46,7 +46,16 @@ bool RISCVFunctionLowering::run(Function* m){
     asmprinter->SetTextSegment(new textSegment(ctx));
     asmprinter->GetData()->GenerateTempvarList(ctx);
     asmprinter->GetData()->LegalizeGloablVar(ctx);
+
+
+    // asmprinter->printAsm();
     
+    
+    Legalize legal(ctx);
+    // legal.run_beforeRA();
+
+    // asmprinter->printAsm();
+
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
@@ -61,7 +70,6 @@ bool RISCVFunctionLowering::run(Function* m){
     frame->GenerateFrameHead();
     frame->GenerateFrameTail();
 
-    Legalize legal(ctx);
     legal.run();
 
     return false;

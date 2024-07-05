@@ -1202,7 +1202,7 @@ void PhiInst::Del_Incomes(int CurrentNum) {
           return ele->GetValue() == PhiRecord[CurrentNum].first;
         });
     auto &vec = Getuselist();
-    (*iter)->RemoveFromUserList((*iter)->GetUser());
+    // (*iter)->RemoveFromUserList((*iter)->GetUser());
     for (int i = 0; i < vec.size(); i++)
       if (vec[i].get() == (*iter).get())
         vec.erase(std::remove(vec.begin(), vec.end(), (*iter)));
@@ -1223,6 +1223,7 @@ void PhiInst::Del_Incomes(int CurrentNum) {
     // for(const auto& item:Defend)
     //   PhiRecord.insert(std::make_pair(item.first-1,item.second));
     // oprandNum--;
+    FormatPhi();
   } else
     std::cerr << "No such PhiRecord" << std::endl;
 }

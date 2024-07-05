@@ -90,6 +90,10 @@ bool cfgSimplify::simplifyPhiInst() {
           changed = true;
           continue;
         }
+        if (incomes.size() == 1) {
+          phi->RAUW(origin);
+          delete phi;
+        }
       } else
         break;
     }
@@ -435,12 +439,7 @@ bool cfgSimplify::DealBrInst() {
       if (Bool != nullptr) {
         if (Bool->GetVal() == true) {
           UnCondInst *uncond = new UnCondInst(nxt);
-          auto tmp = pred->begin();
-          for (auto iter = pred->begin();; ++iter) {
-            if (iter == pred->end())
-              break;
-            tmp = iter;
-          }
+          auto tmp = pred->rbegin();
           tmp.insert_before(uncond);
 #ifdef DEBUG
           std::cerr << "DealBr Delet condInst in block" << bb->GetName()
