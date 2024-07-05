@@ -10,11 +10,13 @@ class LoopDeletion : public PassManagerBase
 public:
     LoopDeletion(Function* m_func, dominance* m_dom) : func(m_func), dom(m_dom) {}
     void RunOnFunction() override;
-    bool DetectDeadLoop(LoopInfo* loop, dominance* dom);
-    bool DeleteLoop(LoopInfo* loop);
+    bool DetectDeadLoop(LoopInfo* loop);
+    bool TryDeleteLoop(LoopInfo* loop);
     bool CanBeDelete(LoopInfo* loop);
     bool makeLoopInvariant(User* inst, LoopInfo* loop, User* Termination);
     bool makeLoopInvariant(Value* val, LoopInfo* loop, User* Termination);
+    bool RunOnFunc();
+    void PrintPass() override{};
 private:
     LoopAnalysis* loop;
     Function* func;

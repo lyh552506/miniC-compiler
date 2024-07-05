@@ -20,6 +20,7 @@ void PassManager::InitPass() {
     m_inline = std::make_unique<Inliner>(Singleton<Module>());
     m_reassociate = std::make_unique<Reassociate>(m_func, m_dom.get());
     m_cse = std::make_unique<CSE>(m_func, m_dom.get());
+    m_loopdeletion = std::make_unique<LoopDeletion>(m_func, m_dom.get());
     // m_cse = std::make_unique<CSE>(m_func);
     RunOnFunction();
     // SCCPSolver::runSCCP(*m_func);
@@ -31,6 +32,7 @@ void PassManager::InitPass() {
       func = i;
       PreWork(i);
       m_dom = std::make_unique<dominance>(m_func, BList.size());
+      m_dom->RunOnFunction();
     }
   }
 }
@@ -154,6 +156,16 @@ void PassManager::RunOnFunction() {
     d->RunOnFunction();
     auto m_licm = new LICMPass(d, m_func);
     m_licm->RunOnFunction();
+  }
+  if(InitpassRecorder[loopdeletion])
+  {
+    bool flag = false;
+    flag = m_loopdeletion->RunOnFunc();
+    if(flag)
+    {
+      PreWork(func);
+      m_dom->update();
+    }
   }
 }
 

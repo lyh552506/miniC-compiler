@@ -16,10 +16,28 @@ void LoopDeletion::RunOnFunction() {
     loop = new LoopAnalysis(func, dom);
     loop->RunOnFunction();
     for (auto loop : *loop)
-        changed |= DeleteLoop(loop);
+    {
+      if(DetectDeadLoop(loop))
+        changed |= TryDeleteLoop(loop);
+    }
 }
 
-bool LoopDeletion::DetectDeadLoop(LoopInfo* loopInfo, dominance* dom)
+bool LoopDeletion::RunOnFunc() {
+    bool changed = false;
+    loop = new LoopAnalysis(func, dom);
+    loop->RunOnFunction();
+    for (auto loop : *loop)
+    {
+      if(DetectDeadLoop(loop))
+      {
+        changed |= TryDeleteLoop(loop);
+        _DEBUG(std::cerr << "LoopDeletion\n"<< "In function: " << func->GetName() << " " << changed << std::endl;)
+      }
+
+    }
+    return changed;
+}
+bool LoopDeletion::DetectDeadLoop(LoopInfo* loopInfo)
 {
     bool modified = false;
     BasicBlock* preheader = loop->GetPreHeader(loopInfo);
@@ -54,7 +72,8 @@ bool LoopDeletion::DetectDeadLoop(LoopInfo* loopInfo, dominance* dom)
         return false;
 
     if(CanBeDelete(loopInfo))
-        modified |= DeleteLoop(loopInfo);
+        modified |= TryDeleteLoop(loopInfo);
+    return modified;
 }
 
 bool LoopDeletion::CanBeDelete(LoopInfo* loopInfo)
@@ -93,8 +112,38 @@ bool LoopDeletion::CanBeDelete(LoopInfo* loopInfo)
 
     if(!flag_common || !flag_invariant)
         return false;
+
+    for(User* inst : *loopInfo->GetHeader())
+    {
+      if(inst->HasSideEffect())
+        return false;
+    }
     
-    
+    for(BasicBlock* block : loopInfo->GetLoopBody())
+    {
+        for(User* inst : *block)
+        {
+            if(inst->HasSideEffect())
+                return false;
+        }
+    }
+
+    for(BasicBlock* block : loop->GetExitingBlock(loopInfo))
+    {
+      for(User* inst : *block)
+      {
+        if(inst->HasSideEffect())
+          return false;
+      }
+    }
+
+    for(User* inst : *loop->GetExit(loopInfo)[0])
+    {
+      if (inst->HasSideEffect())
+        return false;
+    }
+
+  return true;
 }
 
 bool LoopDeletion::makeLoopInvariant(User* inst, LoopInfo* loopinfo, User* Termination)
@@ -134,5 +183,31 @@ bool LoopDeletion::makeLoopInvariant(Value* val, LoopInfo* loopinfo, User* Termi
 {
   if(auto inst = dynamic_cast<User*>(val))
     return makeLoopInvariant(inst, loopinfo, Termination);
+  return true;
+}
+
+bool LoopDeletion::TryDeleteLoop(LoopInfo* loopInfo)
+{
+  BasicBlock* Header = loopInfo->GetHeader();
+  BasicBlock* exitblock = loop->GetExit(loopInfo)[0];
+  loop->DeleteLoop(loopInfo);
+  User* inst = exitblock->back();
+  delete inst;
+  UnCondInst* new_br = new UnCondInst(exitblock);
+  Header->push_back(new_br);
+  Function* func_ = Header->GetParent(); 
+  for(BasicBlock* block : loopInfo->GetLoopBody())
+  {
+    func_->GetBasicBlock().erase(std::remove(func_->GetBasicBlock().begin(), 
+    func_->GetBasicBlock().end(), block), func_->GetBasicBlock().end());
+    // for(auto inst = block->rbegin(); inst != block->rend(); ++inst)
+    // {
+
+    //     (*inst)->ClearRelation();
+    //     (*inst)->EraseFromParent();
+    //     delete *inst;
+    // }
+    delete block;
+  }
   return true;
 }
