@@ -463,6 +463,9 @@ void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     MOperand select = selectstack.back();
     RISCVType ty = select->GetType();
+    if(select->GetName()==".53"){
+      int a=0;
+    }
     selectstack.pop_back();
     std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),
                                             reglist.GetReglistInt().end()};
@@ -701,14 +704,12 @@ PhyRegister *GraphColor::SelectPhyReg(MOperand vreg, RISCVType ty,
       }
       if (def == vreg) {
         if (auto p_op = dynamic_cast<PhyRegister *>(op))
-          MoveTarget.insert(p_op);\
-
+          MoveTarget.insert(p_op);
       } else if (vreg == op) {
-      // } else if (def == op) {
         if (auto p_def = dynamic_cast<PhyRegister *>(def))
           MoveTarget.insert(p_def);
       } else {
-        // assert(0);
+        assert(0);
       }
     }
   }

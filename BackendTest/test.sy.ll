@@ -332,216 +332,49 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.G.RADIUS = global float zeroinitializer
-@.G.PI = global float zeroinitializer
-@.G.EPS = global float zeroinitializer
-@.G.PI_HEX = global float zeroinitializer
-@.G.HEX2 = global float zeroinitializer
-@.G.FACT = global float zeroinitializer
-@.G.EVAL1 = global float zeroinitializer
-@.G.EVAL2 = global float zeroinitializer
-@.G.EVAL3 = global float zeroinitializer
-@.G.CONV1 = global float zeroinitializer
-@.G.CONV2 = global float zeroinitializer
-@.G.MAX = global i32 zeroinitializer
-@.G.TWO = global i32 zeroinitializer
-@.G.THREE = global i32 zeroinitializer
-@.G.FIVE = global i32 zeroinitializer
-@.C..198 = constant [10 x float]  [float 0x3ff0000000000000, float 0x4000000000000000, float zeroinitializer, float zeroinitializer, float zeroinitializer, float zeroinitializer, float zeroinitializer, float zeroinitializer, float zeroinitializer, float zeroinitializer]
-define float @float_abs(float %.39){
-.38:
-  %.40 = alloca float
-  store float %.39, float* %.40
-  %.44 = load float, float* %.40
-  %.46 = sitofp i32 0 to float
-  %.47 = fcmp ult float %.44, %.46
-  br i1 %.47, label %.42, label %.43
-.42:
-  %.49 = load float, float* %.40
-  %.50 = fsub float 0x0, %.49
-  ret float %.50 
-.43:
-  %.52 = load float, float* %.40
-  ret float %.52 
-}
-define float @circle_area(i32 %.56){
-.55:
-  %.57 = alloca i32
-  store i32 %.56, i32* %.57
-  %.59 = load i32, i32* %.57
-  %.60 = sitofp i32 %.59 to float
-  %.61 = fmul float 0x400921fb60000000, %.60
-  %.62 = load i32, i32* %.57
-  %.63 = sitofp i32 %.62 to float
-  %.64 = fmul float %.61, %.63
-  %.65 = load i32, i32* %.57
-  %.66 = load i32, i32* %.57
-  %.67 = mul i32 %.65, %.66
-  %.68 = sitofp i32 %.67 to float
-  %.69 = fmul float %.68, 0x400921fb60000000
-  %.70 = fadd float %.64, %.69
-  %.71 = sitofp i32 2 to float
-  %.72 = fdiv float %.70, %.71
-  ret float %.72 
-}
-define i32 @float_eq(float %.76, float %.79){
-.75:
-  %.80 = alloca float
-  %.77 = alloca float
-  store float %.76, float* %.77
-  store float %.79, float* %.80
-  %.84 = load float, float* %.77
-  %.85 = load float, float* %.80
-  %.86 = fsub float %.84, %.85
-  %.87at27 = call float @float_abs(float %.86)
-  %.88 = fcmp ult float %.87at27, 0x3eb0c6f7a0000000
-  br i1 %.88, label %.82, label %.83
-.82:
-  %.93 = fptosi float 0x3ff0000000000000 to i32
-  ret i32 %.93 
-.83:
-  ret i32 0 
-}
-define void @error(){
-.97:
-  call void @putch(i32 101)
-  call void @putch(i32 114)
-  call void @putch(i32 114)
-  call void @putch(i32 111)
-  call void @putch(i32 114)
-  call void @putch(i32 10)
-  ret void
-}
-define void @ok(){
-.111:
-  call void @putch(i32 111)
-  call void @putch(i32 107)
-  call void @putch(i32 10)
-  ret void
-}
-define void @assert(i32 %.119){
-.118:
-  %.120 = alloca i32
-  store i32 %.119, i32* %.120
-  %.124 = load i32, i32* %.120
-  %.125 = icmp eq i32 %.124, 0
-  br i1 %.125, label %.122, label %.123
-.122:
-  call void @error()
-  br label %.128 
-.123:
-  call void @ok()
-  br label %.128 
-.128:
-  ret void
-}
-define void @assert_not(i32 %.135){
-.134:
-  %.136 = alloca i32
-  store i32 %.135, i32* %.136
-  %.140 = load i32, i32* %.136
-  %.141 = icmp ne i32 %.140, 0
-  br i1 %.141, label %.138, label %.139
-.138:
-  call void @error()
-  br label %.144 
-.139:
-  call void @ok()
-  br label %.144 
-.144:
-  ret void
+@.G.loopCount = global i32 0
+define i32 @func(i32 %.4, i32 %.7, i32 %.10, i32 %.13, i32 %.16, i32 %.19, i32 %.22, i32 %.25, i32 %.28, i32 %.31, i32 %.34, i32 %.37, i32 %.40, i32 %.43, i32 %.46){
+.3:
+  br label %.53wc7 
+.53wc7:
+  %.3304 = phi i32 [0, %.3], [%.3277, %.54wloop.7.114]
+  %.3303 = phi i32 [0, %.3], [%.3273, %.54wloop.7.114]
+  %.58 = load i32, i32* @.G.loopCount
+  %.59 = icmp slt i32 %.3304, %.58
+  br i1 %.59, label %.54wloop.7.114, label %.55wn114
+.54wloop.7.114:
+  %.3321 = add i32 %.4, %.46
+  %.3322 = add i32 %.7, %.3321
+  %.3323 = add i32 %.10, %.3322
+  %.3324 = add i32 %.13, %.3323
+  %.3325 = add i32 %.16, %.3324
+  %.3326 = add i32 %.19, %.3325
+  %.3327 = add i32 %.22, %.3326
+  %.3328 = add i32 %.25, %.3327
+  %.3329 = add i32 %.28, %.3328
+  %.3330 = add i32 %.31, %.3329
+  %.3331 = add i32 %.34, %.3330
+  %.3332 = add i32 %.37, %.3331
+  %.3333 = add i32 %.40, %.3332
+  %.3334 = add i32 %.43, %.3333
+  %.3335 = mul i32 %.3334, 100
+  %.3265 = sdiv i32 %.3335, 100
+  %.3269 = add i32 %.3265, %.3303
+  %.3273 = srem i32 %.3269, 1500000001
+  %.3277 = add i32 %.3304, 1
+  br label %.53wc7 
+.55wn114:
+  %.3303.lcssa.0 = phi i32 [%.3303, %.53wc7]
+  ret i32 %.3303.lcssa.0 
 }
 define i32 @main(){
-.150:
-  %.224 = alloca float
-  %.218 = alloca float
-  %.214 = alloca float
-  %.202 = alloca i32
-  %.196 = alloca [10 x float]
-  %.194 = alloca i32
-  %.192 = alloca i32
-  %.151at66 = call i32 @float_eq(float 0x3fb4000000000000, float 0xc0e01d0000000000)
-  call void @assert_not(i32 %.151at66)
-  %.153at67 = call i32 @float_eq(float 0x4057c21fc0000000, float 0x4041475ce0000000)
-  call void @assert_not(i32 %.153at67)
-  %.155at68 = call i32 @float_eq(float 0x4041475ce0000000, float 0x4041475ce0000000)
-  call void @assert(i32 %.155at68)
-  %.157 = fptosi float 0x4016000000000000 to i32
-  %.158at69 = call float @circle_area(i32 %.157)
-  %.159at70 = call float @circle_area(i32 5)
-  %.160at69 = call i32 @float_eq(float %.158at69, float %.159at70)
-  call void @assert(i32 %.160at69)
-  %.162at71 = call i32 @float_eq(float 0x406d200000000000, float 0x40affe0000000000)
-  call void @assert_not(i32 %.162at71)
-  br label %.164 
-.164:
-  call void @ok()
-  br label %.171 
-.171:
-  br label %.173 
-.173:
-  call void @ok()
-  br label %.178 
-.178:
-  br label %.181 
-.181:
-  br label %.185 
-.183:
-  call void @ok()
-  br label %.190 
-.185:
-  br label %.183 
-.190:
-  store i32 1, i32* %.192
-  store i32 0, i32* %.194
-  call void @llvm.memcpy.p0.p0.i32([10 x float]* %.196, [10 x float]* @.C..198, i32 40, i1 false)
-  %.203 = getelementptr inbounds [10 x float], [10 x float]* %.196, i32 0, i32 0
-  %.205at82 = call i32 @getfarray(float* %.203)
-  store i32 %.205at82, i32* %.202
-  br label %.207wc83 
-.207wc83:
-  %.211 = load i32, i32* %.192
-  %.212 = icmp slt i32 %.211, 1000000000
-  br i1 %.212, label %.208wloop.83.95, label %.209wn95
-.208wloop.83.95:
-  %.216at84 = call float @getfloat()
-  store float %.216at84, float* %.214
-  %.219 = load float, float* %.214
-  %.220 = fmul float 0x400921fb60000000, %.219
-  %.221 = load float, float* %.214
-  %.222 = fmul float %.220, %.221
-  store float %.222, float* %.218
-  %.225 = load float, float* %.214
-  %.226 = fptosi float %.225 to i32
-  %.227at85 = call float @circle_area(i32 %.226)
-  store float %.227at85, float* %.224
-  %.229 = load i32, i32* %.194
-  %.230 = getelementptr inbounds [10 x float], [10 x float]* %.196, i32 0, i32 %.229
-  %.231 = load float, float* %.230
-  %.232 = load float, float* %.214
-  %.233 = fadd float %.231, %.232
-  %.234 = load i32, i32* %.194
-  %.235 = getelementptr inbounds [10 x float], [10 x float]* %.196, i32 0, i32 %.234
-  store float %.233, float* %.235
-  %.237 = load float, float* %.218
-  call void @putfloat(float %.237)
-  call void @putch(i32 32)
-  %.242 = load float, float* %.224
-  %.243 = fptosi float %.242 to i32
-  call void @putint(i32 %.243)
+.3283:
+  %.3285at120 = call i32 @getint()
+  store i32 %.3285at120, i32* @.G.loopCount
+  call void @_sysy_starttime(i32 121)
+  %.3291at122 = call i32 @func(i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1)
+  call void @_sysy_stoptime(i32 123)
+  call void @putint(i32 %.3291at122)
   call void @putch(i32 10)
-  %.247 = load i32, i32* %.192
-  %.250 = sitofp i32 %.247 to float
-  %.251 = fmul float %.250, 0x4024000000000000
-  %.252 = fptosi float %.251 to i32
-  store i32 %.252, i32* %.192
-  %.254 = load i32, i32* %.194
-  %.255 = add i32 %.254, 1
-  store i32 %.255, i32* %.194
-  br label %.207wc83 
-.209wn95:
-  %.258 = load i32, i32* %.202
-  %.259 = getelementptr inbounds [10 x float], [10 x float]* %.196, i32 0, i32 0
-  call void @putfarray(i32 %.258, float* %.259)
   ret i32 0 
 }

@@ -1,17 +1,19 @@
 Timeout: testcases/functional/86_long_code2.sy
-Wrong Answer: testcases/output/51_short_circuit3
 Wrong Answer: testcases/output/93_nested_calls
 Wrong Answer: testcases/output/69_expr_eval
-Wrong Answer: testcases/output/99_matrix_tran
-Wrong Answer: testcases/output/96_matrix_add
-Wrong Answer: testcases/output/98_matrix_mul
 Wrong Answer: testcases/output/65_color
 Wrong Answer: testcases/output/87_many_params
 Wrong Answer: testcases/output/89_many_globals
-Compiler Error: Total: 0
+Compiler Error: Total: 3
 Assembler Error: Total: 0
-Linker Error: Total: 1
+Linker Error: Total: 4
 TimeOut Function:1
-Wrong Answer: Total: 9
-Accecpt : Total: 90
+Wrong Answer: Total: 5
+Accecpt : Total: 91
+CE: testcases/functional/40_unary_op.sy
+CE: testcases/functional/41_unary_op2.sy
+CE: testcases/functional/51_short_circuit3.sy
+LE: testcases/output/41_unary_op2.o
+LE: testcases/output/51_short_circuit3.o
 LE: testcases/output/86_long_code2.o
+LE: testcases/output/40_unary_op.o
