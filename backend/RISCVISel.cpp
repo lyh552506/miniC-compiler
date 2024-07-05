@@ -713,7 +713,7 @@ void RISCVISel::InstLowering(User* inst){
     else if(auto phi=dynamic_cast<PhiInst*>(inst))InstLowering(phi);
     else if(auto call=dynamic_cast<CallInst*>(inst))InstLowering(call);
     else if(auto ret=dynamic_cast<RetInst*>(inst))InstLowering(ret);
-    else assert("Invalid Inst Type");
+    else assert(0&&"Invalid Inst Type");
 }
 
 RISCVISel::RISCVISel(RISCVLoweringContext& _ctx):ctx(_ctx){}

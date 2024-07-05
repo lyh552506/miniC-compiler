@@ -113,28 +113,25 @@ float_abs:
 	sd ra, 24(sp)
 	sd s0, 16(sp)
 	addi s0, sp, 32
-	fmv.s ft0, fa0
 	j .LBB1
 .LBB1:
-	fsw ft0, -20(s0)
+	fsw fa0, -20(s0)
 	flw ft1, -20(s0)
 	fcvt.s.w ft0, zero
 	flt.s t2, ft1, ft0
 	beq t2, zero, .LBB2
 	j .LBB3
-.LBB2:
+.LBB3:
 	flw ft1, -20(s0)
 	lui t2, %hi(.LC0)
 	flw ft0, %lo(.LC0)(t2)
-	fsub.s ft0, ft0, ft1
-	fmv.s fa0, ft0
+	fsub.s fa0, ft0, ft1
 	ld ra, 24(sp)
 	ld s0, 16(sp)
 	addi sp, sp, 32
 	ret 
-.LBB3:
-	flw ft0, -20(s0)
-	fmv.s fa0, ft0
+.LBB2:
+	flw fa0, -20(s0)
 	ld ra, 24(sp)
 	ld s0, 16(sp)
 	addi sp, sp, 32
@@ -155,25 +152,24 @@ circle_area:
 .LBB5:
 	sw t2, -20(s0)
 	lw t2, -20(s0)
-	fcvt.s.w ft1, t2
+	fcvt.s.w ft0, t2
 	lui t2, %hi(.LC1)
-	flw ft0, %lo(.LC1)(t2)
-	fmul.s ft1, ft0, ft1
+	flw ft1, %lo(.LC1)(t2)
+	fmul.s ft1, ft1, ft0
 	lw t2, -20(s0)
 	fcvt.s.w ft0, t2
-	fmul.s ft1, ft1, ft0
-	lw s1, -20(s0)
+	fmul.s ft2, ft1, ft0
 	lw t2, -20(s0)
-	mulw t2, s1, t2
-	fcvt.s.w ft2, t2
+	lw s1, -20(s0)
+	mulw t2, t2, s1
+	fcvt.s.w ft0, t2
 	lui t2, %hi(.LC1)
-	flw ft0, %lo(.LC1)(t2)
-	fmul.s ft0, ft2, ft0
-	fadd.s ft0, ft1, ft0
+	flw ft1, %lo(.LC1)(t2)
+	fmul.s ft0, ft0, ft1
+	fadd.s ft0, ft2, ft0
 	li t0, 2
 	fcvt.s.w ft1, t0
-	fdiv.s ft0, ft0, ft1
-	fmv.s fa0, ft0
+	fdiv.s fa0, ft0, ft1
 	ld s1, -28(s0)
 	ld ra, 24(sp)
 	ld s0, 16(sp)
@@ -189,24 +185,20 @@ float_eq:
 	sd ra, 24(sp)
 	sd s0, 16(sp)
 	addi s0, sp, 32
-	fmv.s ft0, fa0
-	fmv.s ft1, fa1
 	j .LBB7
 .LBB7:
-	fsw ft0, -24(s0)
-	fsw ft1, -20(s0)
-	flw ft0, -24(s0)
-	flw ft1, -20(s0)
-	fsub.s ft0, ft0, ft1
-	fmv.s fa0, ft0
+	fsw fa0, -24(s0)
+	fsw fa1, -20(s0)
+	flw ft1, -24(s0)
+	flw ft0, -20(s0)
+	fsub.s fa0, ft1, ft0
 	call float_abs
-	fmv.s ft1, fa0
 	lui t2, %hi(.LC2)
 	flw ft0, %lo(.LC2)(t2)
-	flt.s t2, ft1, ft0
+	flt.s t2, fa0, ft0
 	beq t2, zero, .LBB8
 	j .LBB9
-.LBB8:
+.LBB9:
 	lui t2, %hi(.LC3)
 	flw ft0, %lo(.LC3)(t2)
 	fcvt.w.s a0, ft0, rtz
@@ -214,7 +206,7 @@ float_eq:
 	ld s0, 16(sp)
 	addi sp, sp, 32
 	ret 
-.LBB9:
+.LBB8:
 	mv a0, zero
 	ld ra, 24(sp)
 	ld s0, 16(sp)
@@ -380,9 +372,8 @@ main:
 	fmv.s fs0, fa0
 	li a0, 5
 	call circle_area
-	fmv.s ft0, fa0
+	fmv.s fa1, fa0
 	fmv.s fa0, fs0
-	fmv.s fa1, ft0
 	call float_eq
 	mv t2, a0
 	mv a0, t2
@@ -433,8 +424,8 @@ main:
 	lui t2, %hi(.C..198)
 	addi t2, t2, %lo(.C..198)
 	call memcpy@plt
-	addi t2, s0, -96
-	addi t0, t2, 0
+	addi a0, s0, -96
+	addi t0, a0, 0
 	mv a0, t0
 	call getfarray
 	mv t2, a0
@@ -454,9 +445,9 @@ main:
 	flw ft0, -28(s0)
 	lui t2, %hi(.LC1)
 	flw ft1, %lo(.LC1)(t2)
+	fmul.s ft1, ft1, ft0
+	flw ft0, -28(s0)
 	fmul.s ft0, ft1, ft0
-	flw ft1, -28(s0)
-	fmul.s ft0, ft0, ft1
 	fsw ft0, -24(s0)
 	flw ft0, -28(s0)
 	fcvt.w.s t2, ft0, rtz
@@ -465,11 +456,11 @@ main:
 	fmv.s ft0, fa0
 	fsw ft0, -20(s0)
 	lw s1, -36(s0)
-	addi t2, s0, -96
-	li a0, 4
-	mulw s1, s1, a0
-	add t2, t2, s1
-	flw ft1, 0(t2)
+	addi a0, s0, -96
+	li t2, 4
+	mulw t2, s1, t2
+	add a0, a0, t2
+	flw ft1, 0(a0)
 	flw ft0, -28(s0)
 	fadd.s ft0, ft1, ft0
 	lw s1, -36(s0)
@@ -501,10 +492,10 @@ main:
 	sw t2, -36(s0)
 	j .LBB31
 .LBB33:
-	lw s1, -32(s0)
-	addi t2, s0, -96
-	mv a0, s1
-	addi t0, t2, 0
+	lw t2, -32(s0)
+	addi a1, s0, -96
+	mv a0, t2
+	addi t0, a1, 0
 	mv a1, t0
 	call putfarray
 	mv a0, zero

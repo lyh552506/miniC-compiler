@@ -701,8 +701,10 @@ PhyRegister *GraphColor::SelectPhyReg(MOperand vreg, RISCVType ty,
       }
       if (def == vreg) {
         if (auto p_op = dynamic_cast<PhyRegister *>(op))
-          MoveTarget.insert(p_op);
-      } else if (def == op) {
+          MoveTarget.insert(p_op);\
+
+      } else if (vreg == op) {
+      // } else if (def == op) {
         if (auto p_def = dynamic_cast<PhyRegister *>(def))
           MoveTarget.insert(p_def);
       } else {

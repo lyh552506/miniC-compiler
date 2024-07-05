@@ -8,11 +8,10 @@ Wrong Answer: testcases/output/98_matrix_mul
 Wrong Answer: testcases/output/65_color
 Wrong Answer: testcases/output/87_many_params
 Wrong Answer: testcases/output/89_many_globals
-Wrong Answer: testcases/output/95_float
 Compiler Error: Total: 0
 Assembler Error: Total: 0
 Linker Error: Total: 1
 TimeOut Function:1
-Wrong Answer: Total: 10
-Accecpt : Total: 89
+Wrong Answer: Total: 9
+Accecpt : Total: 90
 LE: testcases/output/86_long_code2.o
