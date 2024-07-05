@@ -11,7 +11,7 @@ using InterVal = LiveInterval;
 using OpType = RISCVMIR::RISCVISA;
 bool BlockInfo::Count(Register *op) {
   if (op) {
-    if(color.find(op) != color.end())
+    if (color.find(op) != color.end())
       return true;
     else
       return false;
@@ -48,9 +48,7 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
           PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
           BlockLivein[block].insert(Phy);
           Uses[block].insert(Phy);
-        }
-        else if(val1->GetType() == RISCVType::riscv_float32)
-        {
+        } else if (val1->GetType() == RISCVType::riscv_float32) {
           PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0);
           BlockLivein[block].insert(Phy);
           Uses[block].insert(Phy);
@@ -61,26 +59,6 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
         RISCVMOperand *val = (*inst)->GetOperand(i);
         if (val) {
           UpdateInfo(val, block);
-        }
-      }
-      RegisterList& Regsiter_list = RegisterList::GetPhyRegList();
-      std::vector<PhyRegister*>& caller = Regsiter_list.GetReglistCaller();
-      for(PhyRegister* phy : caller)
-      {
-        if(auto reg = phy->ignoreLA())
-        {
-          if(Count(reg))
-          {
-            BlockLivein[block].erase(color[reg]);
-            Uses[block].erase(color[reg]);
-            Defs[block].insert(color[reg]);
-          }
-          else
-          {
-            BlockLivein[block].erase(reg);
-            Uses[block].erase(reg);
-            Defs[block].insert(reg);
-          }
         }
       }
     } else if ((*inst)->GetOperandSize() == 1) {
@@ -188,20 +166,49 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
   std::set<MOperand> Live = BlockLiveout[block];
   for (auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_) {
     RISCVMIR *inst = *inst_;
+    if (RISCVMOperand *_DefValue = inst->GetDef()) {
+      if (auto DefValue = _DefValue->ignoreLA()) {
+        if (dynamic_cast<VirRegister *>(DefValue)) {
+          if (!Count(DefValue))
+            initial.insert(DefValue);
+        }
+
+        if (Count(DefValue)) {
+          Live.erase(color[DefValue]);
+          color[color[DefValue]] = color[DefValue];
+          Precolored.insert(color[DefValue]);
+        } else {
+          if(auto phy = dynamic_cast<PhyRegister*>(DefValue))
+          {
+            Precolored.insert(phy);
+            color[phy] = phy;
+            Live.erase(DefValue);
+          }
+          else
+            Live.erase(DefValue);
+        }
+      }
+    }
     if (inst->GetOpcode() == OpType::call) {
-      // for (int i = 0; i < inst->GetOperandSize(); i++) {
-      //   RISCVMOperand *val = inst->GetOperand(i);
-      //   if (auto reg = val->ignoreLA()) {
-      //     if (reg) {
-      //       if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
-      //         Precolored.insert(phy);
-      //         color[phy] = phy;
-      //       }
-      //       Live.insert(reg);
-      //       InstLive[inst] = Live;
-      //     }
-      //   }
-      // }
+      InstLive[inst] = Live;
+      for (auto reg : reglist.GetReglistCaller()) {
+        Precolored.insert(reg);
+        color[reg] = reg;
+        InstLive[inst].insert(reg);
+        Live.erase(reg);
+      }
+      for (int i = 0; i < inst->GetOperandSize(); i++) {
+        RISCVMOperand *val = inst->GetOperand(i);
+        if (auto reg = val->ignoreLA()) {
+          if (reg) {
+            if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
+              Precolored.insert(phy);
+              color[phy] = phy;
+            }
+            Live.insert(reg);
+          }
+        }
+      }
       continue;
     } else if (inst->GetOperandSize() == 1) {
       if (inst->GetOpcode() == OpType::ret) {
@@ -266,36 +273,13 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
         }
       }
     }
-    if (RISCVMOperand *_DefValue = inst->GetDef()) {
-      if (auto DefValue = _DefValue->ignoreLA()) {
-        if (dynamic_cast<VirRegister *>(DefValue)) {
-          if (!Count(DefValue))
-            initial.insert(DefValue);
-        }
-
-        if (Count(DefValue)) {
-          Live.erase(color[DefValue]);
-          color[color[DefValue]] = color[DefValue];
-          Precolored.insert(color[DefValue]);
-        } else {
-          if(auto phy = dynamic_cast<PhyRegister*>(DefValue))
-          {
-            Precolored.insert(phy);
-            color[phy] = phy;
-            Live.erase(DefValue);
-          }
-          else
-            Live.erase(DefValue);
-        }
-      }
-    }
     InstLive[inst] = Live;
   }
 }
 void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
   for (RISCVMIR *inst : *block) {
     OpType Opcode = inst->GetOpcode();
-    if (Opcode == OpType::mv) {
+    if (Opcode == OpType::mv || Opcode == OpType::_fmv_s) {
       auto op1 = inst->GetOperand(0)->ignoreLA();
       auto def = inst->GetDef()->ignoreLA();
       if (op1 && def) {
@@ -315,6 +299,10 @@ void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
 
 void GraphColor::CalcIG(RISCVBasicBlock *block) {
   for (RISCVMIR *inst : *block) {
+    if (inst->GetOpcode() == RISCVMIR::call) {
+      for (auto reg : reglist.GetReglistCaller())
+        InstLive[inst].insert(reg);
+    }
     if (InstLive[inst].size() > 1) {
       for (auto *Op1 : InstLive[inst]) {
         for (auto *Op2 : InstLive[inst]) {
@@ -504,7 +492,7 @@ bool InterVal::verify(
 void InterVal::PrintAnalysis() {
   std::cout << "--------InstLive--------" << std::endl;
   for (RISCVBasicBlock *block : *func) {
-    std::cout<<"-----Block "<<block->GetName()<<"-----"<<std::endl;
+    std::cout << "-----Block " << block->GetName() << "-----" << std::endl;
     for (RISCVMIR *inst : *block) {
       std::cout << "inst" << instNum[inst] << "Liveness:";
       for (RISCVMOperand *Op : InstLive[inst]) {
@@ -536,9 +524,7 @@ void InterVal::RunOnFunc_() {
   computeLiveIntervals();
 }
 
-
-void GraphColor::LiveInfoInit()
-{
+void GraphColor::LiveInfoInit() {
   BlockLivein.clear();
   BlockLiveout.clear();
   BlockInfo.clear();

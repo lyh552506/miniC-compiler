@@ -213,8 +213,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_L:
                 {
                     auto condi=Builder(RISCVMIR::_flt_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -223,8 +223,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_LE:
                 {
                     auto condi=Builder(RISCVMIR::_fle_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -233,8 +233,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_G:
                 {
                     auto condi=Builder(RISCVMIR::_fgt_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -243,8 +243,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_GE:
                 {
                     auto condi=Builder(RISCVMIR::_fge_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -253,8 +253,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_E:
                 {    
                     auto condi=Builder(RISCVMIR::_feq_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -263,8 +263,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 case BinaryInst::Op_NE:
                 {
                     auto condi=Builder(RISCVMIR::_feq_s,cond);
-                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(2))});
-                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(1))});
+                    auto fi=Builder_withoutDef(RISCVMIR::_beq,{M(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero),M(inst->GetOperand(1))});
+                    auto se=Builder_withoutDef(RISCVMIR::_j,{M(inst->GetOperand(2))});
                     ctx(condi);
                     ctx(fi);
                     ctx(se);
@@ -306,7 +306,7 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                     // if(inttemp<2048)
                     //     ctx(Builder(RISCVMIR::_addiw,inst));
                     // else if(inttemp>=2048) {
-                    //     auto minst=new RISCVMIR(RISCVMIR::_addw);
+                    //     auto minst=new RISCVMIR(RISCVMIR::_add);
                     //     minst->SetDef(ctx.mapping(inst->GetDef()));
                     //     minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
                     //     minst->AddOperand(Li_Intimm(constint));
@@ -427,30 +427,32 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     using PhyReg=PhyRegister::PhyReg;
     using ISA = RISCVMIR::RISCVISA;
     PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
-    PhyRegister* t0 = PhyRegister::GetPhyReg(PhyReg::t0);
+    // PhyRegister* t0 = PhyRegister::GetPhyReg(PhyReg::t0);
+    VirRegister* vreg= new VirRegister(RISCVType::riscv_i32);
     PhyRegister* zero = PhyRegister::GetPhyReg(PhyReg::zero);
     RISCVMIR* inst1 = nullptr;
     if(RISCVFrameObject* frameobj = dynamic_cast<RISCVFrameObject*>(baseptr)) {
         // addi .1 s0 beginaddregister
         inst1 = new RISCVMIR(ISA::_addi);
         BegAddrRegister* breg1 = new BegAddrRegister(frameobj);
-        inst1->SetDef(t0);
+        inst1->SetDef(vreg);
         inst1->AddOperand(s0);
         inst1->AddOperand(breg1);
         ctx(inst1);
     }
     else if (RISCVGlobalObject* globl = dynamic_cast<RISCVGlobalObject*>(baseptr)) {
         inst1 = new RISCVMIR(ISA::_add);
-        inst1->SetDef(t0);
+        inst1->SetDef(vreg);
         inst1->AddOperand(zero);
         inst1->AddOperand(baseptr);
         ctx(inst1);
     }
     else {
-        // addw .1 s0, .x
+        // add .1 s0, .x
         inst1 = new RISCVMIR(ISA::_add);
-        inst1->SetDef(t0);
-        inst1->AddOperand(s0);
+        inst1->SetDef(vreg);
+        // inst1->AddOperand(s0);
+        inst1->AddOperand(zero);
         inst1->AddOperand(baseptr);
         ctx(inst1);
     }
@@ -474,7 +476,7 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
             ctx(li);
             auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index), li->GetDef()});
             ctx(mul);
-            // addw .base .base .2
+            // add .base .base .2
             ctx(Builder(RISCVMIR::_add,{inst1->GetDef(),inst1->GetDef(),mul->GetDef()}));
         }
         hasSubtype=dynamic_cast<HasSubType*>(hasSubtype->GetSubType());
@@ -482,7 +484,9 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
     #undef M
 
     StackRegister* stackreg = nullptr;
-    stackreg = new StackRegister(dynamic_cast<PhyRegister*>(inst1->GetDef())->Getregenum(), offset);
+    stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
+    // stackreg = new StackRegister(dynamic_cast<PhyRegister*>(inst1->GetDef())->Getregenum(), offset);
+    
     // if (RISCVGlobalObject* globl = dynamic_cast<RISCVGlobalObject*>(baseptr)) {
     //     stackreg = new StackRegister(PhyRegister::t0, offset);
     // }
@@ -578,7 +582,7 @@ void RISCVISel::InstLowering(CallInst* inst){
         int regint=PhyRegister::PhyReg::a0;
         int regfloat=PhyRegister::PhyReg::fa0;
         for(int index=1;index<inst->Getuselist().size();index++) {
-            if(std::find(spillnodes.begin(), spillnodes.end(), index)!=spillnodes.end()) {
+            if(std::find(spillnodes.begin(), spillnodes.end(), index-1)!=spillnodes.end()) {
                 continue;
             }
             
@@ -604,8 +608,9 @@ void RISCVISel::InstLowering(CallInst* inst){
                 }
                 else if(ConstIRFloat* constfloat = dynamic_cast<ConstIRFloat*>(op)) {
                     auto load = new RISCVMIR(RISCVMIR::_fmv_s); 
-                    VirRegister* vreg = ctx.createVReg(RISCVTyper(op->GetType()));
-                    load->SetDef(vreg);
+                    // VirRegister* vreg = ctx.createVReg(RISCVTyper(op->GetType()));
+                    PhyRegister* freg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regfloat));
+                    load->SetDef(freg);
                     Imm* imm = new Imm(constfloat);
                     load->AddOperand(imm);
                     ctx.insert_val2mop(constint, imm);
@@ -620,7 +625,6 @@ void RISCVISel::InstLowering(CallInst* inst){
             }
         }
     }
-
     if(!inst->GetUserlist().is_empty()){
         ctx(Builder_withoutDef(RISCVMIR::call, inst));
         if(RISCVTyper(inst->GetOperand(0)->GetType())==RISCVType::riscv_float32) {
@@ -632,7 +636,6 @@ void RISCVISel::InstLowering(CallInst* inst){
         else {
             // no return
         }
-        
     }
     else ctx(Builder_withoutDef(RISCVMIR::call, inst));
     #undef M  
@@ -640,7 +643,7 @@ void RISCVISel::InstLowering(CallInst* inst){
 
 void RISCVISel::InstLowering(RetInst* inst){
     #define M(x) ctx.mapping(x)
-    if(inst->Getuselist().empty()) {
+    if(inst->Getuselist().empty() || inst->GetOperand(0)->isUndefVal()) {
         auto minst=new RISCVMIR(RISCVMIR::ret);
         ctx(minst);
     }

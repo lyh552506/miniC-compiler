@@ -5,6 +5,7 @@ testcases/**/*.ll
 testcases/**/*.s
 testcases/**/*.o
 testcases/output
+BackendTest
 testcases_output
 testcases_c
 test.ipynb
@@ -12,4 +13,4 @@ function_test/
 .cache/clangd/index
 Testing
 test.ipynb
-BackendTest
+CMakeLists.txt

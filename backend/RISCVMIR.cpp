@@ -42,7 +42,7 @@ void RISCVMIR::printfull(){
     if (name=="call") {
         operands[0]->print();
     }
-    else {
+    else { 
         if(def!=nullptr) {
             def->print();
             if(operands.size()>0) std::cout << ", ";
@@ -53,9 +53,11 @@ void RISCVMIR::printfull(){
             if(i!=operands.size()-1)
                 std::cout<<", ";
         }
-        // std::cout << std::endl;
+        if(name=="fcvt.w.s") {
+            std::cout<<", rtz";
+        }
         std::cout <<'\n';
-    }
+    } 
 }
 
 std::unique_ptr<RISCVFrame>& RISCVFunction::GetFrame() {
@@ -328,7 +330,7 @@ void RISCVFrame::GenerateFrameHead() {
     //addi sp, sp, framesize-temp_frame_size
     if(frame_size != temp_frame_size) {
         RISCVMIR* inst5 = new RISCVMIR(ISA::_addi);
-        Imm* imm5 = new Imm(ConstIRInt::GetNewConstant(frame_size - temp_frame_size));
+        Imm* imm5 = new Imm(ConstIRInt::GetNewConstant(temp_frame_size - frame_size));
         inst5->SetDef(sp);
         inst5->AddOperand(sp);
         inst5->AddOperand(imm5);

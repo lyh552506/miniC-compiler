@@ -132,7 +132,7 @@ private:
   void CaculateTopu(RISCVBasicBlock* mbb);
   MOperand HeuristicFreeze();
   MOperand HeuristicSpill();
-  PhyRegister *SelectPhyReg(RISCVType ty, std::unordered_set<MOperand> &assist);
+  PhyRegister *SelectPhyReg(MOperand vreg,RISCVType ty, std::unordered_set<MOperand> &assist);
   bool GeorgeCheck(MOperand dst, MOperand src, RISCVType ty);
   bool BriggsCheck(std::unordered_set<MOperand> target, RISCVType ty);
   void AddWorkList(MOperand v);
