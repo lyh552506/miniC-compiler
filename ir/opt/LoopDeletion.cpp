@@ -63,6 +63,7 @@ bool LoopDeletion::CanBeDelete(LoopInfo* loopInfo)
 
     Value * CommonValue;
     bool flag_common = true;
+    bool flag_invariant = true;
     auto inst = ExitBlock->begin();
     while(auto Phi = dynamic_cast<PhiInst*>(*inst))
     {
@@ -81,21 +82,57 @@ bool LoopDeletion::CanBeDelete(LoopInfo* loopInfo)
         
         if(auto Inst_Com = dynamic_cast<User*>(CommonValue))
         {
-            auto test = loop->IsLoopInvariant();
+            if(!makeLoopInvariant(Inst_Com, loopInfo, loop->GetPreHeader(loopInfo)->back()))
+            {
+                flag_invariant = false;
+                break;
+            }
         }
+        ++inst;
     }
+
+    if(!flag_common || !flag_invariant)
+        return false;
+    
+    
 }
 
 bool LoopDeletion::makeLoopInvariant(User* inst, LoopInfo* loopinfo, User* Termination)
 {
-  const std::set<BasicBlock*> contain{loopinfo->GetLoopBody().begin(), loopinfo->GetLoopBody().end()};
-  if(LoopAnalysis::IsLoopInvariant(contain, inst, loopinfo))
-    return true;
-  if(dynamic_cast<LoadInst*>(inst))
-    return false;
-  if(!Termination)
-  {
-    BasicBlock* preheader = loop->GetPreHeader(loopinfo);
+    const std::set<BasicBlock*> contain{loopinfo->GetLoopBody().begin(), loopinfo->GetLoopBody().end()};
+    if(LoopAnalysis::IsLoopInvariant(contain, inst, loopinfo))
+      return true;
+    if(dynamic_cast<LoadInst*>(inst))
+      return false;
+    if(!Termination)
+    {
+      BasicBlock* preheader = loop->GetPreHeader(loopinfo);
+      if(!preheader)
+        return false;
+      Termination = preheader->back();
+    }
 
-  }
+    for(auto& use : inst->Getuselist())
+    {
+      if(!makeLoopInvariant(use->usee, loopinfo, Termination))
+        return false;
+    }
+
+    {
+      BasicBlock* block = Termination->GetParent();
+      auto iter = block->begin();
+      while(*iter != Termination)
+        ++iter;
+      inst->EraseFromParent();
+      iter.insert_before(inst);
+    }
+
+    return true;
+}
+
+bool LoopDeletion::makeLoopInvariant(Value* val, LoopInfo* loopinfo, User* Termination)
+{
+  if(auto inst = dynamic_cast<User*>(val))
+    return makeLoopInvariant(inst, loopinfo, Termination);
+  return true;
 }

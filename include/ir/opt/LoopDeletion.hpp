@@ -14,6 +14,7 @@ public:
     bool DeleteLoop(LoopInfo* loop);
     bool CanBeDelete(LoopInfo* loop);
     bool makeLoopInvariant(User* inst, LoopInfo* loop, User* Termination);
+    bool makeLoopInvariant(Value* val, LoopInfo* loop, User* Termination);
 private:
     LoopAnalysis* loop;
     Function* func;
