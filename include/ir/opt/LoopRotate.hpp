@@ -20,6 +20,5 @@ private:
   LoopAnalysis *loopAnlasis;
   Function *m_func;
   dominance *m_dom;
-  PhiInst *x = nullptr;
   const int Heuristic = 8;
 };

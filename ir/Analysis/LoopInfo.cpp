@@ -80,6 +80,14 @@ bool LoopAnalysis::IsLoopIncludeBB(LoopInfo *loop, BasicBlock *bb) {
   return true;
 }
 
+bool LoopAnalysis::IsLoopExiting(LoopInfo *loop, BasicBlock *bb) {
+  auto exiting = GetExitingBlock(loop);
+  auto it = std::find(exiting.begin(), exiting.end(), bb);
+  if (it != exiting.end())
+    return true;
+  return false;
+}
+
 bool LoopInfo::Contain(BasicBlock *bb) {
   std::unordered_set<BasicBlock *> assist{this->ContainBlocks.begin(),
                                           this->ContainBlocks.end()};

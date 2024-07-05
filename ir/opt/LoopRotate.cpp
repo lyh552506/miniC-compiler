@@ -25,11 +25,15 @@ void LoopRotate::RunOnFunction() {
 bool LoopRotate::RotateLoop(LoopInfo *loop) {
   if (loop->RotateTimes > 8)
     return false;
+  loop->RotateTimes++;
   bool changed = false;
   auto prehead = loopAnlasis->GetPreHeader(loop);
   auto header = loop->GetHeader();
   auto latch = loopAnlasis->GetLatch(loop);
   assert(latch && prehead && header && "After Simplify Loop Must Be Conon");
+  if (!loopAnlasis->IsLoopExiting(loop, header)) {
+    return false;
+  }
   auto cond = dynamic_cast<CondInst *>(header->back());
   assert(cond && "Header Must have 2 succ: One is exit ,another is body");
   auto New_header = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
@@ -44,8 +48,6 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     // condition提取到preheader，顺便做一些不变量提取
     auto inst = *iter;
     if (auto phi = dynamic_cast<PhiInst *>(inst)) {
-      if (phi->GetName() == ".56")
-        x = phi;
       PreHeaderValue[phi] = phi->ReturnValIn(prehead);
       continue;
     }
@@ -86,8 +88,8 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     }
   }
   delete *It;
-  prehead->back()->Getuselist()[1]->SetValue() = New_header;
-  prehead->back()->Getuselist()[2]->SetValue() = Exit;
+  // prehead->back()->Getuselist()[1]->SetValue() = New_header;
+  // prehead->back()->Getuselist()[2]->SetValue() = Exit;
   prehead->back()->RSUW(1, New_header);
   prehead->back()->RSUW(2, Exit);
   m_dom->GetNode(Exit->num).rev.push_front(prehead->num);
@@ -119,19 +121,19 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     node->init();
     node->thisBlock = lr_ph;
     lr_ph->num = m_dom->node.size();
-    node->des.push_front(header->num);
+    node->des.push_front(New_header->num);
     node->rev.push_front(prehead->num);
     m_dom->GetNode(prehead->num).des.push_front(m_dom->node.size());
-    m_dom->GetNode(header->num).rev.push_front(m_dom->node.size());
+    m_dom->GetNode(New_header->num).rev.push_front(m_dom->node.size());
     m_dom->node.push_back(*node);
 
-    m_func->InsertBlock(prehead, header, lr_ph);
-    for (auto iter = header->begin();
-         iter != header->end() && dynamic_cast<PhiInst *>(*iter) != nullptr;
-         ++iter) {
-      auto phi = dynamic_cast<PhiInst *>(*iter);
-      phi->ModifyBlock(prehead, lr_ph);
-    }
+    m_func->InsertBlock(prehead, New_header, lr_ph);
+    // for (auto iter = header->begin();
+    //      iter != header->end() && dynamic_cast<PhiInst *>(*iter) != nullptr;
+    //      ++iter) {
+    //   auto phi = dynamic_cast<PhiInst *>(*iter);
+    //   phi->ModifyBlock(prehead, lr_ph);
+    // }
     // Form Exit
     for (auto rev : m_dom->GetNode(Exit->num).rev) {
       auto l = loopAnlasis->LookUp(m_dom->GetNode(rev).thisBlock);
@@ -152,6 +154,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
       m_dom->GetNode(Exit->num).rev.remove(header->num);
       m_dom->GetNode(Exit->num).rev.push_front(loopexit->num);
       m_dom->GetNode(header->num).des.push_front(loopexit->num);
+      m_dom->node.push_back(*Node);
     }
   } else if (dynamic_cast<CondInst *>(prehead->back())) {
     auto cond = dynamic_cast<CondInst *>(prehead->back());
@@ -171,6 +174,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
         if (phi->PhiRecord[i].second == prehead)
           phi->Del_Incomes(i);
       }
+      phi->FormatPhi();
     }
     auto uncond = new UnCondInst(nxt);
     m_dom->GetNode(ignore->num).rev.remove(prehead->num);
@@ -182,7 +186,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   }
   loop->setHeader(New_header);
 
-  SimplifyBlocks(header, loop);
+  // SimplifyBlocks(header, loop);
   return changed;
 }
 
@@ -220,6 +224,7 @@ void LoopRotate::PreservePhi(BasicBlock *header, LoopInfo *loop,
       if (phi->PhiRecord[i].second == preheader) {
         RecordPhi[phi][true] = phi->PhiRecord[i].first;
         phi->Del_Incomes(i--);
+        phi->FormatPhi();
         continue;
       }
       RecordPhi[phi][false] = phi->PhiRecord[i].first;
@@ -236,9 +241,8 @@ void LoopRotate::PreservePhi(BasicBlock *header, LoopInfo *loop,
       auto targetBB = user->GetParent();
       if (targetBB == header)
         continue;
-      if (targetBB == preheader) {
+      if (!loop->Contain(targetBB))
         continue;
-      }
       if (auto phi = dynamic_cast<PhiInst *>(use->GetValue())) {
         if (PhiInsert.find(phi) == PhiInsert.end()) {
           assert(phi->PhiRecord.size() == 1);
@@ -258,11 +262,9 @@ void LoopRotate::PreservePhi(BasicBlock *header, LoopInfo *loop,
           user->RSUW(use, PhiInsert[phi]);
         }
         if (auto p = dynamic_cast<PhiInst *>(use->GetUser())) {
-          for (int i = 0; i < p->PhiRecord.size(); i++) {
-            if (p->PhiRecord[i].first == phi) {
+          for (int i = 0; i < p->PhiRecord.size(); i++)
+            if (p->PhiRecord[i].first == phi)
               p->PhiRecord[i].first = use->SetValue();
-            }
-          }
         }
       }
     }
