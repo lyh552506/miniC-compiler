@@ -165,6 +165,7 @@ class User:public Value,public list_node<BasicBlock,User>
     bool Alive = false;
     bool HasSideEffect();
     void RSUW(int,Operand);
+    void RSUW(Use* u,Operand);
     inline OpID GetInstId(){ return id; }
     void FullReplace(User*);
     User* CloneInst();   //此处是复制一个全新的
