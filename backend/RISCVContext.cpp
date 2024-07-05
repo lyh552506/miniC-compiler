@@ -23,8 +23,14 @@ RISCVMOperand* RISCVLoweringContext::Create(Value* val){
     }
     else if(auto bb=dynamic_cast<BasicBlock*>(val))
         return RISCVBasicBlock::CreateRISCVBasicBlock();
-    else if(val->isConst())
+    else if(val->isConst()){
+        // change bool const to int const
+        if(auto boolval=val->as<ConstIRBoolean>()){
+            auto imm=boolval->GetVal();
+            return Imm::GetImm(ConstIRInt::GetNewConstant(imm));
+        }
         return Imm::GetImm(val->as<ConstantData>());
+    }
     else if(auto func=dynamic_cast<Function*>(val))
         return new RISCVFunction(func);
     else if(auto buildin=dynamic_cast<BuildInFunction*>(val)){
