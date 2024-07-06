@@ -47,9 +47,6 @@ bool RISCVFunctionLowering::run(Function* m){
     asmprinter->GetData()->GenerateTempvarList(ctx);
     asmprinter->GetData()->LegalizeGloablVar(ctx);
 
-
-    // asmprinter->printAsm();
-    
     
     Legalize legal(ctx);
     // legal.run_beforeRA();

@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
-#include <cstdlib>
 #include <optional>
 #include <set>
 #include <unordered_map>
@@ -53,6 +52,8 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     // condition提取到preheader，顺便做一些不变量提取
     auto inst = *iter;
     if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+      if (phi->GetName() == ".56")
+        x = phi;
       PreHeaderValue[phi] = phi->ReturnValIn(prehead);
       continue;
     }
@@ -93,8 +94,6 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     }
   }
   delete *It;
-  // prehead->back()->Getuselist()[1]->SetValue() = New_header;
-  // prehead->back()->Getuselist()[2]->SetValue() = Exit;
   prehead->back()->RSUW(1, New_header);
   prehead->back()->RSUW(2, Exit);
   m_dom->GetNode(Exit->num).rev.push_front(prehead->num);
@@ -240,6 +239,9 @@ void LoopRotate::PreservePhi(BasicBlock *header, LoopInfo *loop,
         continue;
       if (!loop->Contain(targetBB))
         continue;
+      if (targetBB == preheader) {
+        continue;
+      }
       if (auto phi = dynamic_cast<PhiInst *>(use->GetValue())) {
         if (PhiInsert.find(phi) == PhiInsert.end()) {
           assert(phi->PhiRecord.size() == 1);
@@ -259,9 +261,11 @@ void LoopRotate::PreservePhi(BasicBlock *header, LoopInfo *loop,
           user->RSUW(use, PhiInsert[phi]);
         }
         if (auto p = dynamic_cast<PhiInst *>(use->GetUser())) {
-          for (int i = 0; i < p->PhiRecord.size(); i++)
-            if (p->PhiRecord[i].first == phi)
+          for (int i = 0; i < p->PhiRecord.size(); i++) {
+            if (p->PhiRecord[i].first == phi) {
               p->PhiRecord[i].first = use->SetValue();
+            }
+          }
         }
       }
     }

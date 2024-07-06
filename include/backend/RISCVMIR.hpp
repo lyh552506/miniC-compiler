@@ -61,6 +61,8 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         EndLogic,
 
         BeginComp,
+        _seqz,
+        _snez,
         _slt,
         _slti,
         _sltu,
