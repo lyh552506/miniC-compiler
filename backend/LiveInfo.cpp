@@ -166,6 +166,29 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
   std::set<MOperand> Live = BlockLiveout[block];
   for (auto inst_ = block->rbegin(); inst_ != block->rend(); --inst_) {
     RISCVMIR *inst = *inst_;
+    if (RISCVMOperand *_DefValue = inst->GetDef()) {
+      if (auto DefValue = _DefValue->ignoreLA()) {
+        if (dynamic_cast<VirRegister *>(DefValue)) {
+          if (!Count(DefValue))
+            initial.insert(DefValue);
+        }
+
+        if (Count(DefValue)) {
+          Live.erase(color[DefValue]);
+          color[color[DefValue]] = color[DefValue];
+          Precolored.insert(color[DefValue]);
+        } else {
+          if(auto phy = dynamic_cast<PhyRegister*>(DefValue))
+          {
+            Precolored.insert(phy);
+            color[phy] = phy;
+            Live.erase(DefValue);
+          }
+          else
+            Live.erase(DefValue);
+        }
+      }
+    }
     if (inst->GetOpcode() == OpType::call) {
       InstLive[inst] = Live;
       for (auto reg : reglist.GetReglistCaller()) {
@@ -247,27 +270,6 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
             Precolored.insert(phy);
             initial.erase(val2);
           }
-        }
-      }
-    }
-    if (RISCVMOperand *_DefValue = inst->GetDef()) {
-      if (auto DefValue = _DefValue->ignoreLA()) {
-        if (dynamic_cast<VirRegister *>(DefValue)) {
-          if (!Count(DefValue))
-            initial.insert(DefValue);
-        }
-
-        if (Count(DefValue)) {
-          Live.erase(color[DefValue]);
-          color[color[DefValue]] = color[DefValue];
-          Precolored.insert(color[DefValue]);
-        } else {
-          if (auto phy = dynamic_cast<PhyRegister *>(DefValue)) {
-            Precolored.insert(phy);
-            color[phy] = phy;
-            Live.erase(DefValue);
-          } else
-            Live.erase(DefValue);
         }
       }
     }

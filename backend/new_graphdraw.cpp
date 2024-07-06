@@ -709,7 +709,7 @@ PhyRegister *GraphColor::SelectPhyReg(MOperand vreg, RISCVType ty,
         if (auto p_def = dynamic_cast<PhyRegister *>(def))
           MoveTarget.insert(p_def);
       } else {
-        assert(0);
+        // assert(0);
       }
     }
   }

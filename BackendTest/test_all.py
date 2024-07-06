@@ -13,7 +13,7 @@ sys.stdout = open(TestResult_path, 'w')
 
 compiler_path = "./build/SYSY-compiler"
 # test_folder="./testcases"
-test_folder="testcases/hidden_functional"
+test_folder="testcases/functional"
 output_folder = "testcases/output"
 sylib_path = "BackendTest/sylib.o"
 pass_args=[] # "--mem2reg","--dce","--reassociate","--constprop","--ece","--simplifycfg","--loops","--lcssa"

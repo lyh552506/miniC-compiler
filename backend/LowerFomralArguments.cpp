@@ -11,7 +11,7 @@ void LowerFormalArguments(Function* func, RISCVLoweringContext& ctx) {
     if(!params.empty()) {
         RISCVType type;
         int offset = 0;
-        for(auto it=spillnodes.begin(); it!=spillnodes.end(); it++) {
+        for(auto it=spillnodes.rbegin(); it!=spillnodes.rend(); it++) {
             // load param from stack to reg
             type = RISCVTyper(params[*it]->GetType());
             VirRegister* vreg = ctx.createVReg(type);

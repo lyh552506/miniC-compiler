@@ -42,7 +42,7 @@ void RISCVMIR::printfull(){
     if (name=="call") {
         operands[0]->print();
     }
-    else {
+    else { 
         if(def!=nullptr) {
             def->print();
             if(operands.size()>0) std::cout << ", ";
@@ -53,9 +53,11 @@ void RISCVMIR::printfull(){
             if(i!=operands.size()-1)
                 std::cout<<", ";
         }
-        // std::cout << std::endl;
+        if(name=="fcvt.w.s") {
+            std::cout<<", rtz";
+        }
         std::cout <<'\n';
-    }
+    } 
 }
 
 std::unique_ptr<RISCVFrame>& RISCVFunction::GetFrame() {
