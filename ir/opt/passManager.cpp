@@ -20,7 +20,6 @@ void PassManager::InitPass() {
     m_inline = std::make_unique<Inliner>(Singleton<Module>());
     m_reassociate = std::make_unique<Reassociate>(m_func, m_dom.get());
     m_cse = std::make_unique<CSE>(m_func, m_dom.get());
-    m_loopdeletion = std::make_unique<LoopDeletion>(m_func, m_dom.get());
     // m_cse = std::make_unique<CSE>(m_func);
     RunOnFunction();
     // SCCPSolver::runSCCP(*m_func);
@@ -159,12 +158,30 @@ void PassManager::RunOnFunction() {
   }
   if(InitpassRecorder[loopdeletion])
   {
+    PreWork(func);
+    dominance *d = new dominance(m_func, BList.size());
+    d->RunOnFunction();
+    m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
+    m_loopsimple->RunOnFunction();
+    m_loopsimple->PrintPass();
+    PreWork(func);
+    dominance *d1 = new dominance(m_func, BList.size());
+    d1->update();
+    m_lcssa = std::make_unique<LcSSA>(m_func, d1);
+    m_lcssa->RunOnFunction();
     bool flag = false;
+    PreWork(func);
+    dominance *d2 = new dominance(m_func, BList.size());
+    d2->RunOnFunction();
+    auto m_loopdeletion = new LoopDeletion(m_func, d2);
     flag = m_loopdeletion->RunOnFunc();
     if(flag)
     {
       PreWork(func);
-      m_dom->update();
+      dominance *dom = new dominance(m_func, BList.size());
+      dom->update();
+      m_lcssa = std::make_unique<LcSSA>(m_func, dom);
+      m_lcssa->RunOnFunction();
     }
   }
 }
