@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstdlib>
 #include <optional>
 #include <set>
 #include <unordered_map>
@@ -34,6 +35,10 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   if (!loopAnlasis->IsLoopExiting(loop, header)) {
     return false;
   }
+  // if(header->GetName()==".63wc32"){
+  //   Singleton<Module>().Test();
+  //   exit(0);
+  // }
   auto cond = dynamic_cast<CondInst *>(header->back());
   assert(cond && "Header Must have 2 succ: One is exit ,another is body");
   auto New_header = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
@@ -104,14 +109,6 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   if (dynamic_cast<CondInst *>(prehead->back()) &&
       !dynamic_cast<ConstIRBoolean *>(prehead->back()->GetOperand(0))) {
 
-    for (auto des : m_dom->GetNode(header->num).des) {
-      auto succ = m_dom->GetNode(des).thisBlock;
-      for (auto inst : *succ) {
-        if (auto phi = dynamic_cast<PhiInst *>(inst)) {
-          phi->updateIncoming(phi->ReturnValIn(header), prehead);
-        }
-      }
-    }
     auto lr_ph = new BasicBlock();
     lr_ph->SetName(lr_ph->GetName() + ".lr_ph");
     m_func->push_back(lr_ph);
@@ -186,7 +183,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   }
   loop->setHeader(New_header);
 
-  // SimplifyBlocks(header, loop);
+  SimplifyBlocks(header, loop);
   return changed;
 }
 
@@ -295,6 +292,9 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     auto succ = m_dom->GetNode(des).thisBlock;
     for (auto inst : *succ) {
       if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+        if(phi->GetName()==".89.lcssa.0"){
+          int a=0;
+        }
         auto iter = std::find_if(
             phi->PhiRecord.begin(), phi->PhiRecord.end(),
             [Header](auto &ele) { return ele.second.second == Header; });

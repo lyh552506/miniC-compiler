@@ -211,14 +211,14 @@ BasicBlock *LoopAnalysis::GetLatch(LoopInfo *loop) {
 }
 
 std::vector<BasicBlock *> LoopAnalysis::GetExitingBlock(LoopInfo *loopinfo) {
-  std::vector<BasicBlock *> exit;
-  for (auto bb : loopinfo->ContainBlocks) {
-    for (auto succ : m_dom->GetNode(bb->num).des) {
+  std::vector<BasicBlock *> exit = GetExit(loopinfo);
+  for (auto bb : exit) {
+    for (auto rev : m_dom->GetNode(bb->num).rev) {
       // auto iter =
       //     std::find(loopinfo->ContainBlocks.begin(),
       //               loopinfo->ContainBlocks.end(), GetCorrespondBlock(succ));
-      if (!IsLoopIncludeBB(loopinfo, succ))
-        PushVecSingleVal(exit, m_dom->GetNode(succ).thisBlock);
+      if (IsLoopIncludeBB(loopinfo, rev))
+        PushVecSingleVal(exit, m_dom->GetNode(rev).thisBlock);
     }
   }
   return exit;
