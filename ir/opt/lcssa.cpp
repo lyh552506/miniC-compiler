@@ -54,7 +54,7 @@ void LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
     std::set<BasicBlock *> ContainBB;
     auto target = PopBack(FormingInsts);
     auto l = loops->LookUp(target->GetParent());
-    std::vector<BasicBlock *> exit = loops->GetExitingBlock(l);
+    std::vector<BasicBlock *> exit = loops->GetExit(l);
     ContainBB.insert(l->GetLoopBody().begin(), l->GetLoopBody().end());
     ContainBB.insert(l->GetHeader());
     if (exit.size() <= 0)

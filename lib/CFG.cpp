@@ -213,7 +213,7 @@ void UnCondInst::print() {
 }
 
 CondInst::CondInst(Operand __cond, BasicBlock *__istrue,
-                   BasicBlock *__isfalse) { 
+                   BasicBlock *__isfalse) {
   add_use(__cond);
   add_use(__istrue);
   add_use(__isfalse);
@@ -470,47 +470,50 @@ void BinaryInst::SetOperand(int index, Value *val) {
   uselist.insert(uselist.begin() + index, std::make_unique<Use>(this, val));
 }
 
-Variable::Variable(UsageTag tag, Type *_tp, std::string _id):User(tag==Param?_tp:PointerType::NewPointerTypeGet(_tp)),usage(tag){
+Variable::Variable(UsageTag tag, Type *_tp, std::string _id)
+    : User(tag == Param ? _tp : PointerType::NewPointerTypeGet(_tp)),
+      usage(tag) {
   /// @warning FIXME: checkout which use name as condition
-  if(usage==Param)return;
-  if(usage==GlobalVariable){
-    name=".G."+_id;
-    Singleton<Module>().Register(_id,this);
-  }
-  else if(usage==Constant)
-    name=".C."+name;
+  if (usage == Param)
+    return;
+  if (usage == GlobalVariable) {
+    name = ".G." + _id;
+    Singleton<Module>().Register(_id, this);
+  } else if (usage == Constant)
+    name = ".C." + name;
   Singleton<Module>().PushVariable(this);
 }
 
 void Variable::print() {
   Value::print();
-  if(usage==GlobalVariable)
+  if (usage == GlobalVariable)
     std::cout << " = global ";
-  else if(usage==Constant)
+  else if (usage == Constant)
     std::cout << " = constant ";
   else /* if(usage==Param) */
     return;
-  auto tp=dynamic_cast<PointerType*>(GetType());
-  assert(tp!=nullptr&&"Variable Must Be a Pointer Type to Inner Content!");
+  auto tp = dynamic_cast<PointerType *>(GetType());
+  assert(tp != nullptr && "Variable Must Be a Pointer Type to Inner Content!");
   tp->GetSubType()->print();
-  std::cout<<" ";
-  if(uselist.size()!=0){
-    auto init=GetOperand(0);
-    if (auto array_init = dynamic_cast<Initializer*>(init))
+  std::cout << " ";
+  if (uselist.size() != 0) {
+    auto init = GetOperand(0);
+    if (auto array_init = dynamic_cast<Initializer *>(init))
       array_init->print();
     else
       // a simple const, like int x=3;
       // can't be Constant
       init->print();
-  }
-  else
+  } else
     std::cout << "zeroinitializer";
   std::cout << '\n';
 }
 
-bool Variable::isGlobal(){
-  if(usage==Param)return false;
-  else return true;
+bool Variable::isGlobal() {
+  if (usage == Param)
+    return false;
+  else
+    return true;
 }
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr) { add_use(base_ptr); }
@@ -810,7 +813,7 @@ void Function::InsertBlock(BasicBlock *pred, BasicBlock *succ,
       assert("Not connected on CFG");
       return;
     } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
-       assert(uncond->Getuselist()[0]->GetValue() == succ &&
+      assert(uncond->Getuselist()[0]->GetValue() == succ &&
              "Not connected on CFG");
       uncond->RSUW(0, insert);
       insert->GenerateUnCondInst(succ);
@@ -904,8 +907,10 @@ void BasicBlock::RemovePredBB(BasicBlock *pred) {
           [pred](const std::pair<int, std::pair<Value *, BasicBlock *>> &ele) {
             return ele.second.second == pred;
           });
-      if (tmp != phi->PhiRecord.end())
+      if (tmp != phi->PhiRecord.end()) {
         phi->Del_Incomes(tmp->first);
+        phi->FormatPhi();
+      }
       if (phi->PhiRecord.size() == 1) {
         //如果删除后还剩一个operand,检查是否是循环
         BasicBlock *b = phi->PhiRecord.begin()->second.second;
@@ -1084,10 +1089,10 @@ Operand BasicBlock::GenerateZextInst(Operand ptr) {
   return tmp->GetDef();
 }
 
-AllocaInst* BasicBlock::GenerateAlloca(Type* _tp,std::string ID){
-  auto tp=PointerType::NewPointerTypeGet(_tp);
-  auto alloca=new AllocaInst(tp);
-  Singleton<Module>().Register(ID,alloca);
+AllocaInst *BasicBlock::GenerateAlloca(Type *_tp, std::string ID) {
+  auto tp = PointerType::NewPointerTypeGet(_tp);
+  auto alloca = new AllocaInst(tp);
+  Singleton<Module>().Register(ID, alloca);
   GetParent()->front()->push_front(alloca);
   return alloca;
 }
@@ -1223,7 +1228,7 @@ void PhiInst::Del_Incomes(int CurrentNum) {
     // for(const auto& item:Defend)
     //   PhiRecord.insert(std::make_pair(item.first-1,item.second));
     // oprandNum--;
-    FormatPhi();
+    // FormatPhi();
   } else
     std::cerr << "No such PhiRecord" << std::endl;
 }
@@ -1305,12 +1310,12 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
   return inlineinfo;
 }
 
-void Function::push_param(std::string realname,Variable* var){
-  auto alloca=new AllocaInst(PointerType::NewPointerTypeGet(var->GetType()));
-  auto store=new StoreInst(var,alloca);
+void Function::push_param(std::string realname, Variable *var) {
+  auto alloca = new AllocaInst(PointerType::NewPointerTypeGet(var->GetType()));
+  auto store = new StoreInst(var, alloca);
   front()->push_front(alloca);
   front()->push_back(store);
-  Singleton<Module>().Register(realname,alloca);
+  Singleton<Module>().Register(realname, alloca);
   params.emplace_back(var);
 }
 
@@ -1318,9 +1323,8 @@ void Function::init_visited_block() {
   for (auto bb : bbs)
     bb->visited = false;
 }
-void Function::init_reach_block()
-{
-  for(auto bb : bbs)
+void Function::init_reach_block() {
+  for (auto bb : bbs)
     bb->reachable = true;
 }
 
