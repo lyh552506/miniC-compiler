@@ -15,7 +15,8 @@ private:
   bool RotateLoop(LoopInfo *loop);
   bool CanBeMove(User *I);
   void SimplifyBlocks(BasicBlock *Header, LoopInfo *loop);
-  void PreservePhi(BasicBlock *header, LoopInfo *loop,BasicBlock* preheader);
+  void PreservePhi(BasicBlock *header, LoopInfo *loop, BasicBlock *preheader,
+                   BasicBlock *new_header);
   LoopAnalysis *loopAnlasis;
   Function *m_func;
   dominance *m_dom;

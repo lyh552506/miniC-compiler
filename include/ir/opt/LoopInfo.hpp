@@ -33,7 +33,7 @@ public:
   }
   BasicBlock *GetHeader() { return Header; }
   LoopInfo *GetParent() { return Parent; }
-  
+
   bool IsLoopIntTp() { return IsInt; }
   int GetLoopDepth() { return LoopDepth; }
   int LoopBodyNum() { return ContainBlocks.size(); }
@@ -90,7 +90,8 @@ public:
   void Analysis();
   bool IsLoopIncludeBB(LoopInfo *loop, int index);
   bool IsLoopIncludeBB(LoopInfo *loop, BasicBlock *bb);
-  BasicBlock *GetLatch(LoopInfo* loop);
+  bool IsLoopExiting(LoopInfo *loop, BasicBlock *bb);
+  BasicBlock *GetLatch(LoopInfo *loop);
   BasicBlock *GetPreHeader(LoopInfo *loopinfo);
   std::vector<BasicBlock *> GetExitingBlock(LoopInfo *loopinfo);
   std::vector<BasicBlock *> GetExit(LoopInfo *loopinfo);
@@ -124,7 +125,7 @@ public:
                 return a1->LoopDepth > a2->LoopDepth;
               });
     AlreadyGetInfo = true;
-    // _DEBUG(PrintPass();)
+    _DEBUG(PrintPass();)
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }
   iterator begin() { return LoopRecord.begin(); }
