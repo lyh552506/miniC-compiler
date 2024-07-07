@@ -98,7 +98,7 @@ void LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
       auto it = std::find(exit.begin(), exit.end(), pbb);
       if (it != exit.end()) {
         //此处可以直接替换
-        auto _val=rewrite->GetValue();
+        auto _val = rewrite->GetValue();
         assert(dynamic_cast<PhiInst *>(pbb->front()));
         rewrite->RemoveFromUserList(rewrite->GetUser());
         rewrite->SetValue() = pbb->front();
@@ -168,6 +168,7 @@ void LcSSA::InsertPhis(Use *u, std::set<BasicBlock *> &exit) {
     }
   } else if (target.size() > 1) {
     auto phi = PhiInst::NewPhiNode(targetBB->front(), targetBB,
+                                   (*(target.begin()))->front()->GetType(),
                                    u->GetValue()->GetName() + ".phi.lcssa");
     InsertedPhis.insert(phi);
     for (auto bb : target)
