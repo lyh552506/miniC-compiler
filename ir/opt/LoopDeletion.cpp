@@ -22,8 +22,6 @@ void LoopDeletion::RunOnFunction() {
 }
 
 bool LoopDeletion::RunOnFunc() {
-  if(func->GetName() == "next_token")
-    int c = 1;
     bool changed = false;
     loop = new LoopAnalysis(func, dom);
     loop->RunOnFunction();
@@ -31,36 +29,16 @@ bool LoopDeletion::RunOnFunc() {
       changed |= DetectDeadLoop(loop_);
     return changed;
 }
+
 bool LoopDeletion::DetectDeadLoop(LoopInfo* loopInfo)
 {
-  // if(loopInfo->Ge)
     bool modified = false;
     BasicBlock* preheader = loop->GetPreHeader(loopInfo);
-    if(loopInfo->GetHeader()->GetName() == ".79wc17")
-      int c= 1;
     if(!preheader)
         return false;
     
-    // bool flag = false;
     std::vector<BasicBlock*> exitblocks = loop->GetExit(loopInfo);
     auto test = loop->GetExitingBlock(loopInfo);
-    // for(BasicBlock* block : exitblocks)
-    // {
-    //     for(Use* User_ : block->GetUserlist())
-    //     {
-    //         if(dynamic_cast<CondInst*>(User_->GetUser()) || dynamic_cast<UnCondInst*>(User_->GetUser()))
-    //         {
-    //             BasicBlock* pred = User_->GetUser()->GetParent();
-    //             std::vector<BasicBlock*> LoopBody = loopInfo->GetLoopBody();
-    //             if(std::find(LoopBody.begin(), LoopBody.end(), pred) == LoopBody.end())
-    //             {
-    //                 flag &= true;
-    //             }
-    //         }
-    //     }
-    //     if(flag)
-    //         return false;
-    // }
 
     if(!loopInfo->GetSubLoop().empty())
         return false;
