@@ -281,9 +281,9 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock *bb) {
     m_dom->GetNode(succ->num).rev.push_front(rev);
     m_dom->GetNode(rev).des.push_front(succ->num);
   }
-// #ifdef DEBUG
-//   std::cerr << "Simplify Uncond Block" << bb->GetName() << std::endl;
-// #endif
+#ifdef DEBUG
+  std::cerr << "Simplify Uncond Block" << bb->GetName() << std::endl;
+#endif
   DeletDeadBlock(bb);
   return true;
 }
@@ -408,9 +408,9 @@ bool cfgSimplify::simplify_Block() {
                                  m_dom->GetNode(bb->num).rev.end());
     if ((pred_num == 0 &&
          m_dom->GetNode(bb->num).idom != bb->num)) { //自循环会有专门的函数处理
-// #ifdef DEBUG
-//       std::cerr << "simplify_Block :" << bb->GetName() << std::endl;
-// #endif
+#ifdef DEBUG
+      std::cerr << "simplify_Block :" << bb->GetName() << std::endl;
+#endif
       auto it = std::find(m_func->GetBasicBlock().begin(),
                           m_func->GetBasicBlock().end(), bb);
       m_func->GetBasicBlock().erase(it);
@@ -441,10 +441,10 @@ bool cfgSimplify::DealBrInst() {
           UnCondInst *uncond = new UnCondInst(nxt);
           auto tmp = pred->rbegin();
           tmp.insert_before(uncond);
-// #ifdef DEBUG
-//           std::cerr << "DealBr Delet condInst in block" << bb->GetName()
-//                     << std::endl;
-// #endif
+#ifdef DEBUG
+          std::cerr << "DealBr Delet condInst in block" << bb->GetName()
+                    << std::endl;
+#endif
           delete cond;
           ignore->RemovePredBB(pred);
           //更新m_dom相关参数
@@ -459,10 +459,10 @@ bool cfgSimplify::DealBrInst() {
             tmp = iter;
           }
           tmp.insert_before(uncond);
-// #ifdef DEBUG
-//           std::cerr << "DealBr Delet condInst in block" << bb->GetName()
-//                     << std::endl;
-// #endif
+#ifdef DEBUG
+          std::cerr << "DealBr Delet condInst in block" << bb->GetName()
+                    << std::endl;
+#endif
           delete cond;
           nxt->RemovePredBB(pred);
           m_dom->GetNode(nxt->num).rev.remove(pred->num);
@@ -478,10 +478,10 @@ bool cfgSimplify::DealBrInst() {
           tmp = iter;
         }
         tmp.insert_before(uncond);
-// #ifdef DEBUG
-//         std::cerr << "DealBr Delet condInst in block" << bb->GetName()
-//                   << std::endl;
-// #endif
+#ifdef DEBUG
+        std::cerr << "DealBr Delet condInst in block" << bb->GetName()
+                  << std::endl;
+#endif
         delete cond;
         changed = true;
       }
