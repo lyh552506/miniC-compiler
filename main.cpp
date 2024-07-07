@@ -27,7 +27,8 @@ static struct option long_options[] = {
     {"global2local", no_argument, 0, 10}, {"sccp", no_argument, 0, 11},
     {"reassociate", no_argument, 0, 12},  {"cse", no_argument, 0, 13},
     {"lcssa", no_argument, 0, 14},        {"licm", no_argument, 0, 15},
-    {"loop-rotate", no_argument, 0, 16},  {"loopdeletion", no_argument, 0, 17},  
+    {"loop-rotate", no_argument, 0, 16},  {"loopdeletion", no_argument, 0, 17},
+    {"deadargselimination", no_argument, 0, 18},
     {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
@@ -111,6 +112,9 @@ int main(int argc, char **argv) {
       break;
     case loopdeletion:
       pass_manager->IncludePass(loopdeletion);
+      break;
+    case deadargselimination:
+      pass_manager->IncludePass(deadargselimination);
       break;
     }
   }

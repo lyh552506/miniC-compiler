@@ -34,6 +34,11 @@ void PassManager::InitPass() {
       m_dom->RunOnFunction();
     }
   }
+  if(InitpassRecorder[deadargselimination])
+  {
+    m_deadargselimination = std::make_unique<DeadArgsElimination>(Singleton<Module>());
+    m_deadargselimination->RunOnModule();
+  }
 }
 
 void PassManager::PreWork(int i) {

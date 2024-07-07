@@ -23,6 +23,7 @@
 #include "licm.hpp"
 #include "LoopRotate.hpp"
 #include "LoopDeletion.hpp"
+#include "DeadArgsElimination.hpp"
 class PassManager : public PassManagerBase {
 public:
   PassManager() : InitpassRecorder(50) {}
@@ -58,4 +59,5 @@ private:
   std::unique_ptr<LcSSA> m_lcssa;
   //std::unique_ptr<LICMPass> m_licm;
   std::unique_ptr<LoopDeletion> m_loopdeletion;
+  std::unique_ptr<DeadArgsElimination> m_deadargselimination;
 };
