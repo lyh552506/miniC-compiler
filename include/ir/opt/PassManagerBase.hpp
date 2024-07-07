@@ -17,7 +17,8 @@ enum PassName {
   lcssa,
   licm,
   looprotate,
-  loopdeletion
+  loopdeletion,
+  deadargselimination
 };
 class PassManagerBase{
 public:
