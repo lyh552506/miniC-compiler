@@ -89,9 +89,9 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
   m_func->InsertBlock(Header, preheader);
   dominance::Node Node;
   Node.thisBlock = preheader;
-#ifdef DEBUG
-  std::cerr << "insert a preheader: " << preheader->GetName() << std::endl;
-#endif
+// #ifdef DEBUG
+//   std::cerr << "insert a preheader: " << preheader->GetName() << std::endl;
+// #endif
   // phase 3: update the rev and des
   if (preheader->GetName() == ".5729_preheader")
     int a = 0;
@@ -230,9 +230,9 @@ void LoopSimplify::FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
   new_latch->SetName(new_latch->GetName() + "_latch");
   dominance::Node Node;
   Node.thisBlock = new_latch;
-#ifdef DEBUG
-  std::cerr << "insert a latch: " << new_latch->GetName() << std::endl;
-#endif
+// #ifdef DEBUG
+//   std::cerr << "insert a latch: " << new_latch->GetName() << std::endl;
+// #endif
   m_func->InsertBlock(head, new_latch);
   std::set<BasicBlock *> work{latch.begin(), latch.end()};
   for (auto inst : *head) {

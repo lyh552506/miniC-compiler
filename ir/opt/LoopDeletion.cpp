@@ -22,6 +22,8 @@ void LoopDeletion::RunOnFunction() {
 }
 
 bool LoopDeletion::RunOnFunc() {
+  if(func->GetName() == "next_token")
+    int c = 1;
     bool changed = false;
     loop = new LoopAnalysis(func, dom);
     loop->RunOnFunction();
@@ -38,6 +40,7 @@ bool LoopDeletion::DetectDeadLoop(LoopInfo* loopInfo)
     
     // bool flag = false;
     std::vector<BasicBlock*> exitblocks = loop->GetExit(loopInfo);
+    auto test = loop->GetExitingBlock(loopInfo);
     // for(BasicBlock* block : exitblocks)
     // {
     //     for(Use* User_ : block->GetUserlist())
@@ -178,8 +181,8 @@ bool LoopDeletion::makeLoopInvariant_val(Value* val, LoopInfo* loopinfo, User* T
 
 bool LoopDeletion::TryDeleteLoop(LoopInfo* loopInfo)
 {
-  _DEBUG(std::cerr<< "Try to delete loop:" << loopInfo->GetHeader()->GetName() << 
-  "in func:" << func->GetName() <<"\n";)
+  // _DEBUG(std::cerr<< "Try to delete loop:" << loopInfo->GetHeader()->GetName() << 
+  // "in func:" << func->GetName() <<"\n";)
   BasicBlock* Header = loopInfo->GetHeader();
   BasicBlock* exitblock = loop->GetExit(loopInfo)[0];
   loop->DeleteLoop(loopInfo);

@@ -122,7 +122,8 @@
       "__string": "cpp",
       "__tuple": "cpp",
       "time.h": "c",
-      "*.sy": "cpp"
+      "*.sy": "cpp",
+      "*.def": "cpp"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "aiXcoder.showTrayIcon": true,
