@@ -36,25 +36,25 @@ bool LoopDeletion::DetectDeadLoop(LoopInfo* loopInfo)
     if(!preheader)
         return false;
     
-    bool flag = false;
+    // bool flag = false;
     std::vector<BasicBlock*> exitblocks = loop->GetExit(loopInfo);
-    for(BasicBlock* block : exitblocks)
-    {
-        for(Use* User_ : block->GetUserlist())
-        {
-            if(dynamic_cast<CondInst*>(User_->GetUser()) || dynamic_cast<UnCondInst*>(User_->GetUser()))
-            {
-                BasicBlock* pred = User_->GetUser()->GetParent();
-                std::vector<BasicBlock*> LoopBody = loopInfo->GetLoopBody();
-                if(std::find(LoopBody.begin(), LoopBody.end(), pred) == LoopBody.end())
-                {
-                    flag &= true;
-                }
-            }
-        }
-        if(flag)
-            return false;
-    }
+    // for(BasicBlock* block : exitblocks)
+    // {
+    //     for(Use* User_ : block->GetUserlist())
+    //     {
+    //         if(dynamic_cast<CondInst*>(User_->GetUser()) || dynamic_cast<UnCondInst*>(User_->GetUser()))
+    //         {
+    //             BasicBlock* pred = User_->GetUser()->GetParent();
+    //             std::vector<BasicBlock*> LoopBody = loopInfo->GetLoopBody();
+    //             if(std::find(LoopBody.begin(), LoopBody.end(), pred) == LoopBody.end())
+    //             {
+    //                 flag &= true;
+    //             }
+    //         }
+    //     }
+    //     if(flag)
+    //         return false;
+    // }
 
     if(!loopInfo->GetSubLoop().empty())
         return false;
@@ -77,20 +77,17 @@ bool LoopDeletion::CanBeDelete(LoopInfo* loopInfo)
     auto inst = ExitBlock->begin();
     while(auto Phi = dynamic_cast<PhiInst*>(*inst))
     {
-        for(BasicBlock* block : loop->GetExitingBlock(loopInfo))
-        {
-            auto val = Phi->GetVal(block->num);
-            if(CommonValue && val != CommonValue)
-            {
-                flag_common = false;
-                break;
-            }
-            CommonValue = val;
-        }
+        std::vector<BasicBlock*> exitingBlocks = loop->GetExitingBlock(loopInfo);
+        Value* firstval = Phi->ReturnValIn(exitingBlocks[0]);
+
+        flag_common = std::all_of(exitingBlocks.begin(), exitingBlocks.end(),
+        [Phi, firstval](BasicBlock* block) 
+        { return Phi->ReturnValIn(block) == firstval; });
+
         if(!flag_common)
             break;
         
-        if(auto Inst_Com = dynamic_cast<User*>(CommonValue))
+        if(auto Inst_Com = dynamic_cast<User*>(firstval))
         {
             if(!makeLoopInvariant(Inst_Com, loopInfo, loop->GetPreHeader(loopInfo)->back()))
             {
@@ -142,8 +139,10 @@ bool LoopDeletion::makeLoopInvariant(User* inst, LoopInfo* loopinfo, User* Termi
     const std::set<BasicBlock*> contain{loopinfo->GetLoopBody().begin(), loopinfo->GetLoopBody().end()};
     if(LoopAnalysis::IsLoopInvariant(contain, inst, loopinfo))
       return true;
-    if(dynamic_cast<LoadInst*>(inst))
+
+    if(!IsSafeToMove(inst))
       return false;
+
     if(!Termination)
     {
       BasicBlock* preheader = loop->GetPreHeader(loopinfo);
@@ -154,7 +153,7 @@ bool LoopDeletion::makeLoopInvariant(User* inst, LoopInfo* loopinfo, User* Termi
 
     for(auto& use : inst->Getuselist())
     {
-      if(!makeLoopInvariant(use->usee, loopinfo, Termination))
+      if(!makeLoopInvariant_val(use->usee, loopinfo, Termination))
         return false;
     }
 
@@ -170,7 +169,7 @@ bool LoopDeletion::makeLoopInvariant(User* inst, LoopInfo* loopinfo, User* Termi
     return true;
 }
 
-bool LoopDeletion::makeLoopInvariant(Value* val, LoopInfo* loopinfo, User* Termination)
+bool LoopDeletion::makeLoopInvariant_val(Value* val, LoopInfo* loopinfo, User* Termination)
 {
   if(auto inst = dynamic_cast<User*>(val))
     return makeLoopInvariant(inst, loopinfo, Termination);
@@ -179,6 +178,8 @@ bool LoopDeletion::makeLoopInvariant(Value* val, LoopInfo* loopinfo, User* Termi
 
 bool LoopDeletion::TryDeleteLoop(LoopInfo* loopInfo)
 {
+  _DEBUG(std::cerr<< "Try to delete loop:" << loopInfo->GetHeader()->GetName() << 
+  "in func:" << func->GetName() <<"\n";)
   BasicBlock* Header = loopInfo->GetHeader();
   BasicBlock* exitblock = loop->GetExit(loopInfo)[0];
   loop->DeleteLoop(loopInfo);
@@ -200,5 +201,51 @@ bool LoopDeletion::TryDeleteLoop(LoopInfo* loopInfo)
     // }
     delete block;
   }
+  return true;
+}
+
+bool LoopDeletion::IsSafeToMove(User* inst)
+{
+  auto instid = inst->GetInstId();
+  if(instid == User::OpID::Phi)
+    return false;
+  if(instid == User::OpID::Div)
+  {
+    if(auto CONST = dynamic_cast<ConstantData*>(inst->GetOperand(1)))
+    {
+      if(CONST->getNullValue(CONST->GetType()))
+        return false;
+    }
+  }
+  if(instid == User::OpID::Mod)
+  {
+    if(auto CONST = dynamic_cast<ConstantData*>(inst->GetOperand(1)))
+    {
+      if(CONST->getNullValue(CONST->GetType()))
+        return false;
+      if(auto INT = dynamic_cast<ConstIRInt*>(CONST))
+      {
+        if(INT->GetVal() == -1)
+          return false;
+      }
+    }
+  }
+  if(instid == User::OpID::Load)
+    return false;
+  
+  if(instid == User::OpID::Call)
+  {
+    std::string name = inst->Getuselist()[0]->usee->GetName();
+    if (name == "getint" || name == "getch" || name == "getfloat" ||
+        name == "getfarray" || name == "putint" || name == "putfloat" ||
+        name == "putarray" || name == "putfarray" || name == "putf" ||
+        name == "getarray" || name == "putch" || name == "_sysy_starttime" ||
+        name == "_sysy_stoptime" || name == "llvm.memcpy.p0.p0.i32")
+        return false;
+  }
+
+  if(instid == User::OpID::Alloca || instid == User::OpID::Phi || instid == User::OpID::Store
+  || instid == User::OpID::Ret || instid == User::OpID::UnCond || instid == User::OpID::Cond)
+    return false;
   return true;
 }

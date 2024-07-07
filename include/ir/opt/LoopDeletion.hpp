@@ -13,8 +13,9 @@ public:
     bool DetectDeadLoop(LoopInfo* loop);
     bool TryDeleteLoop(LoopInfo* loop);
     bool CanBeDelete(LoopInfo* loop);
+    bool IsSafeToMove(User* inst);
     bool makeLoopInvariant(User* inst, LoopInfo* loop, User* Termination);
-    bool makeLoopInvariant(Value* val, LoopInfo* loop, User* Termination);
+    bool makeLoopInvariant_val(Value* val, LoopInfo* loop, User* Termination);
     bool RunOnFunc();
     void PrintPass() override{};
 private:

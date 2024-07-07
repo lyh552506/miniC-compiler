@@ -163,7 +163,7 @@ void PassManager::RunOnFunction() {
     d->RunOnFunction();
     m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
     m_loopsimple->RunOnFunction();
-    m_loopsimple->PrintPass();
+    // m_loopsimple->PrintPass();
     PreWork(func);
     dominance *d1 = new dominance(m_func, BList.size());
     d1->update();

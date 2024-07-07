@@ -133,9 +133,9 @@ void LoopSimplify::FormatExit(LoopInfo *loop, BasicBlock *exit) {
   dominance::Node Node;
   Node.thisBlock = new_exit;
   Node.des.push_front(exit->num);
-#ifdef DEBUG
-  std::cerr << "insert a exit: " << new_exit->GetName() << std::endl;
-#endif
+// #ifdef DEBUG
+//   std::cerr << "insert a exit: " << new_exit->GetName() << std::endl;
+// #endif
   for (auto bb : Inside) {
     auto condition = bb->back();
     Node.rev.push_front(bb->num);

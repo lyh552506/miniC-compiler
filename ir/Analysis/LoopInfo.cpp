@@ -212,16 +212,17 @@ BasicBlock *LoopAnalysis::GetLatch(LoopInfo *loop) {
 
 std::vector<BasicBlock *> LoopAnalysis::GetExitingBlock(LoopInfo *loopinfo) {
   std::vector<BasicBlock *> exit = GetExit(loopinfo);
+  std::vector<BasicBlock *> exiting;
   for (auto bb : exit) {
     for (auto rev : m_dom->GetNode(bb->num).rev) {
       // auto iter =
       //     std::find(loopinfo->ContainBlocks.begin(),
       //               loopinfo->ContainBlocks.end(), GetCorrespondBlock(succ));
       if (IsLoopIncludeBB(loopinfo, rev))
-        PushVecSingleVal(exit, m_dom->GetNode(rev).thisBlock);
+        PushVecSingleVal(exiting, m_dom->GetNode(rev).thisBlock);
     }
   }
-  return exit;
+  return exiting;
 }
 
 std::vector<BasicBlock *> LoopAnalysis::GetExit(LoopInfo *loopinfo) {
@@ -242,18 +243,18 @@ std::vector<BasicBlock *> LoopAnalysis::GetExit(LoopInfo *loopinfo) {
 // num of loops
 // each loop nodes
 void LoopAnalysis::PrintPass() {
-  std::cout << "---------------------Loop Analysis-----------------------\n";
-  std::cout << "Num Of Loops:" << LoopRecord.size() << "\n";
-  for (int i = 0; i < LoopRecord.size(); i++) {
-    auto tmp = LoopRecord[i];
-    std::cout << "Loop Depth:" << tmp->GetLoopDepth() << "\n";
-    std::cout << "Loop Head:" << tmp->GetHeader()->GetName() << "\n";
-    std::cout << "Loop Body:";
-    for (auto x : tmp->GetLoopBody())
-      if (x != tmp->GetHeader())
-        std::cout << x->GetName() << " ";
-    std::cout << "\n\r";
-  }
+  // std::cout << "---------------------Loop Analysis-----------------------\n";
+  // std::cout << "Num Of Loops:" << LoopRecord.size() << "\n";
+  // for (int i = 0; i < LoopRecord.size(); i++) {
+  //   auto tmp = LoopRecord[i];
+  //   std::cout << "Loop Depth:" << tmp->GetLoopDepth() << "\n";
+  //   std::cout << "Loop Head:" << tmp->GetHeader()->GetName() << "\n";
+  //   std::cout << "Loop Body:";
+  //   for (auto x : tmp->GetLoopBody())
+  //     if (x != tmp->GetHeader())
+  //       std::cout << x->GetName() << " ";
+  //   std::cout << "\n\r";
+  // }
 }
 
 void LoopAnalysis::DeleteLoop(LoopInfo *loop) {

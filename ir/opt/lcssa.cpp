@@ -24,8 +24,8 @@ void LcSSA::DFSLoops(LoopInfo *l) {
   for (auto sub : *l) {
     DFSLoops(sub);
   }
-  _DEBUG(std::cerr << "Start To Formal Loop: " << l->GetHeader()->GetName()
-                   << std::endl;)
+  // _DEBUG(std::cerr << "Start To Formal Loop: " << l->GetHeader()->GetName()
+  //                  << std::endl;)
   std::set<BasicBlock *> ContainBB{l->GetLoopBody().begin(),
                                    l->GetLoopBody().end()};
   ContainBB.insert(l->GetHeader());
@@ -73,9 +73,9 @@ void LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
     for (auto ex : exit) {
       if (!m_dom->dominates(target->GetParent(), ex))
         continue;
-      _DEBUG(std::cerr << "Insert a lcssa Phi: "
-                       << target->GetName() + ".lcssa." + std::to_string(x)
-                       << std::endl;);
+      // _DEBUG(std::cerr << "Insert a lcssa Phi: "
+      //                  << target->GetName() + ".lcssa." + std::to_string(x)
+      //                  << std::endl;);
       auto phi = PhiInst::NewPhiNode(ex->front(), ex, target->GetType(),
                                      target->GetName() + ".lcssa." +
                                          std::to_string(x++));
