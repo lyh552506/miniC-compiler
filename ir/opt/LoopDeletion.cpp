@@ -33,8 +33,11 @@ bool LoopDeletion::RunOnFunc() {
 }
 bool LoopDeletion::DetectDeadLoop(LoopInfo* loopInfo)
 {
+  // if(loopInfo->Ge)
     bool modified = false;
     BasicBlock* preheader = loop->GetPreHeader(loopInfo);
+    if(loopInfo->GetHeader()->GetName() == ".79wc17")
+      int c= 1;
     if(!preheader)
         return false;
     
@@ -140,12 +143,13 @@ bool LoopDeletion::CanBeDelete(LoopInfo* loopInfo)
 bool LoopDeletion::makeLoopInvariant(User* inst, LoopInfo* loopinfo, User* Termination)
 {
     const std::set<BasicBlock*> contain{loopinfo->GetLoopBody().begin(), loopinfo->GetLoopBody().end()};
+    bool flag = false;
     if(LoopAnalysis::IsLoopInvariant(contain, inst, loopinfo))
-      return true;
-
+      flag = true;
     if(!IsSafeToMove(inst))
+      flag = false;
+    if(!flag)
       return false;
-
     if(!Termination)
     {
       BasicBlock* preheader = loop->GetPreHeader(loopinfo);
@@ -153,18 +157,17 @@ bool LoopDeletion::makeLoopInvariant(User* inst, LoopInfo* loopinfo, User* Termi
         return false;
       Termination = preheader->back();
     }
-
     for(auto& use : inst->Getuselist())
     {
       if(!makeLoopInvariant_val(use->usee, loopinfo, Termination))
         return false;
     }
-
     {
       BasicBlock* block = Termination->GetParent();
       auto iter = block->begin();
       while(*iter != Termination)
         ++iter;
+      // inst->ClearRelation();
       inst->EraseFromParent();
       iter.insert_before(inst);
     }
@@ -181,8 +184,8 @@ bool LoopDeletion::makeLoopInvariant_val(Value* val, LoopInfo* loopinfo, User* T
 
 bool LoopDeletion::TryDeleteLoop(LoopInfo* loopInfo)
 {
-  // _DEBUG(std::cerr<< "Try to delete loop:" << loopInfo->GetHeader()->GetName() << 
-  // "in func:" << func->GetName() <<"\n";)
+  _DEBUG(std::cerr<< "Try to delete loop:" << loopInfo->GetHeader()->GetName() << 
+  "in func:" << func->GetName() <<"\n";)
   BasicBlock* Header = loopInfo->GetHeader();
   BasicBlock* exitblock = loop->GetExit(loopInfo)[0];
   loop->DeleteLoop(loopInfo);
@@ -204,6 +207,7 @@ bool LoopDeletion::TryDeleteLoop(LoopInfo* loopInfo)
     // }
     delete block;
   }
+  _DEBUG(std::cerr<<"Has Changed In Function:" << func->GetName() << "\n";)
   return true;
 }
 
@@ -238,13 +242,8 @@ bool LoopDeletion::IsSafeToMove(User* inst)
   
   if(instid == User::OpID::Call)
   {
-    std::string name = inst->Getuselist()[0]->usee->GetName();
-    if (name == "getint" || name == "getch" || name == "getfloat" ||
-        name == "getfarray" || name == "putint" || name == "putfloat" ||
-        name == "putarray" || name == "putfarray" || name == "putf" ||
-        name == "getarray" || name == "putch" || name == "_sysy_starttime" ||
-        name == "_sysy_stoptime" || name == "llvm.memcpy.p0.p0.i32")
-        return false;
+    if(inst->HasSideEffect())
+      return false;
   }
 
   if(instid == User::OpID::Alloca || instid == User::OpID::Phi || instid == User::OpID::Store
