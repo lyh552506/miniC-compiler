@@ -92,10 +92,10 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     }
   }
   delete *It;
-  if (header->GetName() == ".196wc49") {
-    Singleton<Module>().Test();
-    exit(0);
-  }
+  // if (header->GetName() == ".196wc49") {
+  //   Singleton<Module>().Test();
+  //   exit(0);
+  // }
   prehead->back()->RSUW(1, New_header);
   prehead->back()->RSUW(2, Exit);
   m_dom->GetNode(Exit->num).rev.push_front(prehead->num);
@@ -112,8 +112,12 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
 
     auto lr_ph = new BasicBlock();
     lr_ph->SetName(lr_ph->GetName() + ".lr_ph");
-    m_func->push_back(lr_ph);
-
+    m_func->push_bb(lr_ph);
+    auto parent = loopAnlasis->LookUp(prehead);
+    while (parent) {
+      parent->InsertLoopBody(lr_ph);
+      parent = parent->GetParent();
+    }
     //补充dom里面的node信息
     auto node = new dominance::Node;
     node->init();
@@ -143,8 +147,13 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     for (auto rev : revToModify) {
       auto loopexit = new BasicBlock();
       loopexit->SetName(loopexit->GetName() + ".loopexit");
-      m_func->push_back(loopexit);
+      m_func->push_bb(loopexit);
       m_func->InsertBlock(header, Exit, loopexit);
+      auto parent = loopAnlasis->LookUp(Exit);
+      while (parent) {
+        parent->InsertLoopBody(loopexit);
+        parent = parent->GetParent();
+      }
       PreserveLcssa(loopexit, Exit, m_dom->GetNode(rev).thisBlock);
       auto Node = new dominance::Node;
       Node->init();
@@ -341,6 +350,10 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     insert_iter.insert_after(inst);
   }
   loopAnlasis->DeleteBlock(Header);
+  Header->EraseFromParent();
+  auto it = std::find(m_func->GetBasicBlock().begin(),
+                      m_func->GetBasicBlock().end(), Header);
+  m_func->GetBasicBlock().erase(it);
   delete Header;
 }
 

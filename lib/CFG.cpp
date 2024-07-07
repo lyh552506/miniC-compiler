@@ -795,7 +795,7 @@ void Function::print() {
   std::cout << "}\n";
 }
 
-void Function::push_bb(BasicBlock *bb) { bbs.push_back(bb); }
+void Function::push_bb(BasicBlock *bb) { bbs.push_back(bb);push_back(bb); }
 
 void Function::InsertAlloca(AllocaInst *ptr) { front()->push_back(ptr); }
 

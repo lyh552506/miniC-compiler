@@ -22,6 +22,8 @@ private:
                    std::unordered_map<Value *, Value *> &PreHeaderValue);
   void PreserveLcssa(BasicBlock *new_exit, BasicBlock *old_exit,
                      BasicBlock *pred);
+  void UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,
+                      const std::vector<BasicBlock *> &pred);
   LoopAnalysis *loopAnlasis;
   Function *m_func;
   dominance *m_dom;
