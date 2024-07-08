@@ -14,8 +14,6 @@ void LoopSimplify::RunOnFunction() {
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
     SimplifyLoopsImpl(*iter);
-  // for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
-  //   CaculateLoopInfo(*iter);
 }
 
 void LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {
@@ -93,8 +91,6 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
 //   std::cerr << "insert a preheader: " << preheader->GetName() << std::endl;
 // #endif
   // phase 3: update the rev and des
-  if (preheader->GetName() == ".5729_preheader")
-    int a = 0;
   for (auto target : OutSide) {
     auto condition = target->back();
     if (auto cond = dynamic_cast<CondInst *>(condition)) {
@@ -312,7 +308,7 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
   }
   m_dom->GetNode(head->num).rev.push_front(insert->num);
   m_dom->GetNode(insert->num).des.push_front(head->num);
-  UpdateLoopInfo(head, insert, loop, bbs);
+  UpdateLoopInfo(head, insert, bbs);
 }
 
 void LoopSimplify::CaculateLoopInfo(LoopInfo *loop) {
@@ -341,7 +337,6 @@ void LoopSimplify::CaculateLoopInfo(LoopInfo *loop) {
 }
 
 void LoopSimplify::UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,
-                                  LoopInfo *loop,
                                   const std::vector<BasicBlock *> &pred) {
   auto l = loopAnlay->LookUp(Old);
   if (!l)

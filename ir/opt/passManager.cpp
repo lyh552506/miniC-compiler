@@ -49,7 +49,7 @@ void PassManager::PreWork(int i) {
   m_func->init_bbs();
   FList.push_back(m_func);
   for (auto bb = m_func->begin(); bb != m_func->end(); ++bb)
-    m_func->push_bb(*bb);
+    m_func->GetBasicBlock().push_back(*bb);
   BList = Singleton<Module>().GetFuncTion()[i]->GetBasicBlock();
   for (m_func->bb_num = 0; m_func->bb_num < BList.size(); m_func->bb_num++)
     BList[m_func->bb_num]->num = m_func->bb_num;

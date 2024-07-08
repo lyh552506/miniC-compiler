@@ -802,7 +802,7 @@ void Function::print() {
   std::cout << "}\n";
 }
 
-void Function::push_bb(BasicBlock *bb) { bbs.push_back(bb); }
+void Function::push_bb(BasicBlock *bb) { bbs.push_back(bb);push_back(bb); }
 
 void Function::InsertAlloca(AllocaInst *ptr) { front()->push_back(ptr); }
 
@@ -832,7 +832,7 @@ void Function::InsertBlock(BasicBlock *pred, BasicBlock *succ,
 
 void Function::InsertBlock(BasicBlock *curr, BasicBlock *insert) {
   insert->GenerateUnCondInst(curr);
-  this->push_back(insert);
+  // this->push_back(insert);
   insert->num = this->bb_num++;
   this->push_bb(insert);
 }
