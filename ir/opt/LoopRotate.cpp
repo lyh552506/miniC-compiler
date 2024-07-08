@@ -8,8 +8,10 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstdlib>
 #include <optional>
 #include <set>
+#include <unistd.h>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -318,9 +320,9 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     auto succ = m_dom->GetNode(des).thisBlock;
     for (auto inst : *succ) {
       if (auto phi = dynamic_cast<PhiInst *>(inst)) {
-        if (phi->GetName() == ".89.lcssa.0") {
-          int a = 0;
-        }
+        // if (phi->GetName() == ".89.lcssa.0") {
+        //   int a = 0;
+        // }
         auto iter = std::find_if(
             phi->PhiRecord.begin(), phi->PhiRecord.end(),
             [Header](auto &ele) { return ele.second.second == Header; });
@@ -350,7 +352,7 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     insert_iter.insert_after(inst);
   }
   loopAnlasis->DeleteBlock(Header);
-  Header->EraseFromParent();
+  // Header->EraseFromParent();
   auto it = std::find(m_func->GetBasicBlock().begin(),
                       m_func->GetBasicBlock().end(), Header);
   m_func->GetBasicBlock().erase(it);

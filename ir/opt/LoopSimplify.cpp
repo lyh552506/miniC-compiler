@@ -14,8 +14,6 @@ void LoopSimplify::RunOnFunction() {
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
     SimplifyLoopsImpl(*iter);
-  // for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
-  //   CaculateLoopInfo(*iter);
 }
 
 void LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {

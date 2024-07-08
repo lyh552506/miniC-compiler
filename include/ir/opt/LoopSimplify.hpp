@@ -24,7 +24,7 @@ private:
   void UpdateInfo(std::vector<BasicBlock *> &bbs, BasicBlock *insert,
                   BasicBlock *head,LoopInfo* loop);
   void CaculateLoopInfo(LoopInfo *loop);
-  void UpdateLoopInfo(BasicBlock *Old, BasicBlock *New, LoopInfo *loop,
+  void UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,
                       const std::vector<BasicBlock *> &pred);
   LoopAnalysis *loopAnlay;
   Function *m_func;

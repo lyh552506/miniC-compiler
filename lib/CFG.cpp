@@ -825,7 +825,7 @@ void Function::InsertBlock(BasicBlock *pred, BasicBlock *succ,
 
 void Function::InsertBlock(BasicBlock *curr, BasicBlock *insert) {
   insert->GenerateUnCondInst(curr);
-  this->push_back(insert);
+  // this->push_back(insert);
   insert->num = this->bb_num++;
   this->push_bb(insert);
 }
