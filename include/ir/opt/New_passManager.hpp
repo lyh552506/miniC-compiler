@@ -9,6 +9,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+class FunctionPassManager;
+class ModulePassManager;
 
 enum OptLevel { O0, O1, O2, O3 };
 enum PassName {
@@ -59,20 +61,52 @@ public:
     std::unique_ptr<Pass> pass =
         std::make_unique<Pass>(func, std::forward<Args>(args)...);
     auto *result = pass->GetResult(func);
-    Contain.emplace_back(pass.release(), [](void* ptr) { delete static_cast<Pass*>(ptr); });
+    Contain.emplace_back(pass.release(),
+                         [](void *ptr) { delete static_cast<Pass *>(ptr); });
     return static_cast<Pass *>(result);
   }
 };
 
 template <typename Scope>
-class _PassManager : public _AnalysisManagerBase<_PassManager<Scope>, Scope> {
+class _PassManager : public _PassManagerBase<_PassManager<Scope>, Scope> {
 public:
-  virtual bool Run(Scope base, _AnalysisManager &AM);
-  void AddPass(PassName pass) { _Pass.push_back(pass); }
+  _PassManager() = default;
+  virtual ~_PassManager() = default;
+  virtual bool Run(Scope *base) override { return true; }
   void DecodeArgs(int argc, char *argv[]);
-  void RunOnLevel();
+  void RunOnLevel(OptLevel level);
+
+private:
+  std::unique_ptr<FunctionPassManager> FPM;
+  std::unique_ptr<ModulePassManager> MPM;
+};
+
+class FunctionPassManager : public _PassManager<Function> {
+public:
+  FunctionPassManager(_AnalysisManager &_AM) : AM(_AM) {}
+  virtual ~FunctionPassManager() = default;
+
+  bool Run(Function *func) override { return true; }
+  void AddPass(PassName pass) { _Pass.push_back(pass); }
+  virtual bool RunOnFunction(Function *func, _AnalysisManager &AM) {
+    return true;
+  }
 
 private:
   std::vector<PassName> _Pass;
-  OptLevel level;
+  std::map<PassName,bool> EnablePass;
+  _AnalysisManager &AM;
+};
+
+class ModulePassManager : public _PassManager<Module> {
+public:
+  ModulePassManager(_AnalysisManager &_AM) : AM(_AM) {}
+  virtual ~ModulePassManager() = default;
+  bool Run(Module *mod) override { return true; }
+  void AddPass(PassName pass) { _Pass.push_back(pass); }
+  virtual bool RunOnModule(Module *mod, _AnalysisManager &AM) { return true; }
+
+private:
+  std::vector<PassName> _Pass;
+  _AnalysisManager &AM;
 };

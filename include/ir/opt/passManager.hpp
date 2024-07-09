@@ -1,6 +1,5 @@
 #pragma once
 #include "../../yacc/parser.hpp"
-#include "../Analysis/DealCriticalEdges.hpp"
 #include "ADCE.hpp"
 #include "CFG.hpp"
 #include "CSE.hpp"
