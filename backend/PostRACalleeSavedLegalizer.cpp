@@ -5,6 +5,7 @@ bool PostRACalleeSavedLegalizer::run(RISCVFunction* func){
     uint64_t grp=func->GetUsedPhyRegMask();
     PhyRegMask::visit(grp,[&grp](uint64_t item){
         if(!PhyRegMask::isCalleeSaved(item))grp&=~item;
+        if(PhyRegMask::GetPhyReg(item)==PhyRegister::GetPhyReg(PhyRegister::sp))grp&=~item;
     });
     auto entry=func->GetEntry();
     auto exit_bb=func->GetExit();
