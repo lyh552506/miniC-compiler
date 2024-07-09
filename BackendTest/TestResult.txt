@@ -1,47 +1,9 @@
 Timeout: testcases/functional/86_long_code2.sy
-Wrong Answer: testcases/output/59_sort_test5
-TIMEOUT ERROR: testcases/output/94_nested_loops
-Wrong Answer: testcases/output/94_nested_loops
-Wrong Answer: testcases/output/51_short_circuit3
-Wrong Answer: testcases/output/88_many_params2
-Wrong Answer: testcases/output/28_while_test3
-Wrong Answer: testcases/output/44_stmt_expr
-Wrong Answer: testcases/output/75_max_flow
-Wrong Answer: testcases/output/69_expr_eval
-Wrong Answer: testcases/output/64_calculator
-Wrong Answer: testcases/output/83_long_array
-TIMEOUT ERROR: testcases/output/82_long_func
-Wrong Answer: testcases/output/82_long_func
-Wrong Answer: testcases/output/55_sort_test1
-Wrong Answer: testcases/output/97_matrix_sub
-Wrong Answer: testcases/output/77_substr
-Wrong Answer: testcases/output/61_sort_test7
-Wrong Answer: testcases/output/76_n_queens
-Wrong Answer: testcases/output/68_brainfk
-Wrong Answer: testcases/output/57_sort_test3
-TIMEOUT ERROR: testcases/output/71_full_conn
-Wrong Answer: testcases/output/71_full_conn
-Wrong Answer: testcases/output/74_kmp
-Wrong Answer: testcases/output/58_sort_test4
-TIMEOUT ERROR: testcases/output/78_side_effect
-Wrong Answer: testcases/output/78_side_effect
-Wrong Answer: testcases/output/60_sort_test6
-Wrong Answer: testcases/output/27_while_test2
-Wrong Answer: testcases/output/96_matrix_add
-Wrong Answer: testcases/output/62_percolation
-Wrong Answer: testcases/output/63_big_int_mul
-Wrong Answer: testcases/output/65_color
-Wrong Answer: testcases/output/92_register_alloc
 Wrong Answer: testcases/output/87_many_params
-Wrong Answer: testcases/output/70_dijkstra
-Wrong Answer: testcases/output/56_sort_test2
-Wrong Answer: testcases/output/89_many_globals
-Wrong Answer: testcases/output/95_float
-Wrong Answer: testcases/output/85_long_code
 Compiler Error: Total: 0
 Assembler Error: Total: 0
 Linker Error: Total: 1
 TimeOut Function:1
-Wrong Answer: Total: 35
-Accecpt : Total: 64
+Wrong Answer: Total: 1
+Accecpt : Total: 98
 LE: testcases/output/86_long_code2.o

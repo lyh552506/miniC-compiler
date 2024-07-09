@@ -153,6 +153,7 @@ void GraphColor::CaculateLiveness() {
   RunOnFunction();
   //计算IG,并且添加precolored集合
   IG.clear();
+  initial.clear();
   for (const auto b : *m_func) {
     CalInstLive(b);
     CalcmoveList(b);

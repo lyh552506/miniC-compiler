@@ -194,18 +194,37 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
       for (auto reg : reglist.GetReglistCaller()) {
         Precolored.insert(reg);
         color[reg] = reg;
-        InstLive[inst].insert(reg);
+        // InstLive[inst].insert(reg);
         Live.erase(reg);
       }
-      for (int i = 0; i < inst->GetOperandSize(); i++) {
+for (int i = 0; i < inst->GetOperandSize(); i++) {
         RISCVMOperand *val = inst->GetOperand(i);
         if (auto reg = val->ignoreLA()) {
           if (reg) {
-            if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
-              Precolored.insert(phy);
-              color[phy] = phy;
+            // if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
+            //   Precolored.insert(phy);
+            //   color[phy] = phy;
+            // }
+            if (Count(reg))
+            {
+              Precolored.insert(color[reg]);
+              color[color[reg]] = color[reg];
+              Live.insert(color[reg]);
+              InstLive[inst].insert(color[reg]);
             }
-            Live.insert(reg);
+            else
+            {
+              Live.insert(reg);
+              InstLive[inst].insert(reg);
+              initial.insert(reg);
+              if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
+                Precolored.insert(phy);
+                color[phy] = phy;
+                initial.erase(reg);
+            }
+            }
+            // Live.insert(reg);
+            // InstLive[inst].insert(reg);
           }
         }
       }
