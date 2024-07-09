@@ -1,8 +1,13 @@
+#include "CFG.hpp"
 #include "ConstantProp.hpp"
+#include "LoopInfo.hpp"
+#include "New_passManager.hpp"
+#include "PassManagerBase.hpp"
 #include "RISCVLowering.hpp"
 #include "dominant.hpp"
 #include "parser.hpp"
-#include "passManager.hpp"
+// #include "passManager.hpp"
+#include "AliasAnalysis.hpp"
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -18,18 +23,16 @@ void copyFile(const std::string &sourcePath,
   destination << source.rdbuf();
 }
 
-static struct option long_options[] = {
-    {"mem2reg", no_argument, 0, 0},       {"pre", no_argument, 0, 1},
-    {"constprop", no_argument, 0, 2},     {"dce", no_argument, 0, 3},
-    {"adce", no_argument, 0, 4},          {"loops", no_argument, 0, 5},
-    {"help", no_argument, 0, 6},          {"simplifycfg", no_argument, 0, 7},
-    {"ece", no_argument, 0, 8},           {"inline", no_argument, 0, 9},
-    {"global2local", no_argument, 0, 10}, {"sccp", no_argument, 0, 11},
-    {"reassociate", no_argument, 0, 12},  {"cse", no_argument, 0, 13},
-    {"lcssa", no_argument, 0, 14},        {"licm", no_argument, 0, 15},
-    {"loop-rotate", no_argument, 0, 16},  {"loopdeletion", no_argument, 0, 17},
-    {"deadargselimination", no_argument, 0, 18},
-    {0, 0, 0, 0}};
+// static struct option long_options[] = {
+//     {"mem2reg", no_argument, 0, 0},       {"pre", no_argument, 0, 1},
+//     {"constprop", no_argument, 0, 2},     {"dce", no_argument, 0, 3},
+//     {"adce", no_argument, 0, 4},          {"loops", no_argument, 0, 5},
+//     {"help", no_argument, 0, 6},          {"simplifycfg", no_argument, 0, 7},
+//     {"ece", no_argument, 0, 8},           {"inline", no_argument, 0, 9},
+//     {"global2local", no_argument, 0, 10}, {"sccp", no_argument, 0, 11},
+//     {"reassociate", no_argument, 0, 12},  {"cse", no_argument, 0, 13},
+//     {"lcssa", no_argument, 0, 14},        {"licm", no_argument, 0, 15},
+//     {"loop-rotate", no_argument, 0, 16},  {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
@@ -49,6 +52,13 @@ int main(int argc, char **argv) {
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
+  Function *func = Singleton<Module>().GetFuncTion()[0].get();
+  Singleton<Module>().Test();
+
+  _AnalysisManager AM;
+  auto alia = AM.get<AliasAnalysis>(func);
+  auto dom = AM.get<dominance>(func);
+  auto loop = AM.get<LoopAnalysis>(func,dom);
 #ifdef SYSY_ENABLE_MIDDLE_END
   std::unique_ptr<PassManager> pass_manager(new PassManager);
   int optionIndex, option;
