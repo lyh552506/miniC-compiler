@@ -43,7 +43,7 @@ size_t AliasAnalysis::GetHash(Value *val) {
   return 0;
 }
 
-const void *AliasAnalysis::GetResult(Function *func) {
+void *AliasAnalysis::GetResult(Function *func) {
     AliasTable.clear();
     run();
     return this;

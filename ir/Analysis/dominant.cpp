@@ -6,9 +6,9 @@
 
 void dominance::init() {
   auto &bbs = thisFunc->GetBasicBlock();
-  block_num = bbs.size();
-  node.resize(bbs.size());
-  Dest.resize(bbs.size());
+  block_num = thisFunc->Size();
+  node.resize(thisFunc->Size());
+  Dest.resize(thisFunc->Size());
   for (auto bb : bbs)
     node[bb->num].init();
   for (auto bb : bbs) {
@@ -49,13 +49,14 @@ void dominance::RunOnFunction() {
   promoteMemoryToRegister(*thisFunc, *this);
 }
 
-void dominance::update() {
+void* dominance::GetResult(Function* func) {
   init();
   for (int i = 1; i <= block_num; i++) {
     dsu[i].ancestor = i;
     dsu[i].min_sdom = i;
   }
   dom_begin(); //标志开始函数
+  return this;
 }
 
 void dominance::DFS(int pos) {

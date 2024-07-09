@@ -1,10 +1,13 @@
 #pragma once
 #include "CFG.hpp"
 #include "PassManagerBase.hpp"
+#include <any>
 #include <cstdlib>
 #include <getopt.h>
 #include <iostream>
+#include <memory>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 enum OptLevel { O0, O1, O2, O3 };
@@ -44,15 +47,20 @@ static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
 class _AnalysisManager
     : public _AnalysisManagerBase<_AnalysisManager, Function> {
 private:
+  std::vector<std::unique_ptr<void, void (*)(void *)>> Contain;
+
 public:
   _AnalysisManager() = default;
 
-  template <typename Pass, typename name = std::enable_if_t<std::is_base_of_v<
-                               _AnalysisManagerBase<Pass, Function>, Pass>>>
-  const Pass *get(Function *func) {
-    std::unique_ptr<Pass> pass = std::make_unique<Pass>(func);
-    const auto *result = pass->GetResult(func);
-    return static_cast<const Pass *>(result);
+  template <typename Pass, typename... Args,
+            typename name = std::enable_if_t<
+                std::is_base_of_v<_AnalysisManagerBase<Pass, Function>, Pass>>>
+  Pass *get(Function *func, Args &&...args) {
+    std::unique_ptr<Pass> pass =
+        std::make_unique<Pass>(func, std::forward<Args>(args)...);
+    auto *result = pass->GetResult(func);
+    Contain.emplace_back(pass.release(), [](void* ptr) { delete static_cast<Pass*>(ptr); });
+    return static_cast<Pass *>(result);
   }
 };
 

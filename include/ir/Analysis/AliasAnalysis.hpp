@@ -9,10 +9,10 @@ enum InstTy {
   Gep = 231,
 };
 
-class AliasAnalysis : public _AnalysisManagerBase<AliasAnalysis, Function *> {
+class AliasAnalysis : public _AnalysisManagerBase<AliasAnalysis, Function> {
 public:
   explicit AliasAnalysis(Function *func) : m_func(func) {}
-  const void *GetResult(Function *func);
+  void *GetResult(Function *func);
   size_t GetHash(Value *val);
 
 private:
