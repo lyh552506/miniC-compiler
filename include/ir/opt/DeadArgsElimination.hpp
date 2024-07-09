@@ -1,13 +1,11 @@
 #include "CFG.hpp"
 #include "PassManagerBase.hpp"
-
-class DeadArgsElimination
+#include "New_passManager.hpp"
+class DeadArgsElimination : public ModulePassManager
 {
 private:
-    Module& module;
     std::vector<std::pair<Value*, int>> wait_del;
 public:
-    bool RunOnModule();
+    bool RunOnModule(Module &mod, _AnalysisManager &AM);
     bool Detect_Dead_Args(Function* func);
-    DeadArgsElimination(Module& m) : module(m) { wait_del.clear(); }
 };

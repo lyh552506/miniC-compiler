@@ -19,7 +19,7 @@
 void LoopRotate::RunOnFunction() {
   bool changed = false;
   loopAnlasis = new LoopAnalysis(m_func, m_dom);
-  loopAnlasis->RunOnFunction();
+  // loopAnlasis->RunOnFunction();
   for (auto loop : *loopAnlasis) {
     changed |= RotateLoop(loop);
   }

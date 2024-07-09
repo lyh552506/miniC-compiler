@@ -5,8 +5,8 @@
 #include <memory>
 
 void cfgSimplify::RunOnFunction() {
-  loopAnlaysis = new LoopAnalysis(m_func, m_dom);
-  loopAnlaysis->RunOnFunction();
+  // loopAnlaysis = new LoopAnalysis(m_func, m_dom);
+  // loopAnlaysis->RunOnFunction();
   bool keep_loop = true;
   while (keep_loop) {
     keep_loop = false;

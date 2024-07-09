@@ -4,7 +4,7 @@
 #include <cassert>
 
 void LICMPass::RunOnFunction() {
-  loop->RunOnFunction();
+  // loop->RunOnFunction();
   for (auto l = loop->begin(); l != loop->end(); l++) {
     RunOnLoop(*l);
   }

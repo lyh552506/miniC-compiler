@@ -6,7 +6,7 @@
 #include "RISCVLowering.hpp"
 #include "dominant.hpp"
 #include "parser.hpp"
-// #include "passManager.hpp"
+#include "passManager.hpp"
 #include "AliasAnalysis.hpp"
 #include <fstream>
 #include <getopt.h>
@@ -81,15 +81,12 @@ int main(int argc, char **argv) {
     case dce:
       pass_manager->IncludePass(dce);
       break;
-    case adce:
-      pass_manager->IncludePass(adce);
+    case loopsimplify:
+      pass_manager->IncludePass(loopsimplify);
       break;
-    case loops:
-      pass_manager->IncludePass(loops);
-      break;
-    case help:
-      std::cerr << "help" << std::endl;
-      break;
+    // case help:
+    //   std::cerr << "help" << std::endl;
+    //   break;
     case simplifycfg:
       pass_manager->IncludePass(simplifycfg);
       break;
@@ -101,9 +98,6 @@ int main(int argc, char **argv) {
       break;
     case global2local:
       pass_manager->IncludePass(global2local);
-      break;
-    case sccp:
-      pass_manager->IncludePass(sccp);
       break;
     case reassociate:
       pass_manager->IncludePass(reassociate);

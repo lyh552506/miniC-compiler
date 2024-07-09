@@ -1,15 +1,12 @@
 #pragma once
 #include "ConstantFold.hpp"
-
-class ConstantProp
+#include "PassManagerBase.hpp"
+#include "New_passManager.hpp"
+class ConstantProp : public FunctionPassManager
 {  
-    void RunOnBlock(BasicBlock* block);
+    bool RunOnBlock(BasicBlock* block);
 private:
     ConstantFolding* ConstFold;
-    Function* _func;
 public:
-    void RunOnFunction();
-    void PrintPass();
-
-    ConstantProp(Function* func) : _func(func) {}
+    bool RunOnFunction(Function* _func, _AnalysisManager& AM);
 };

@@ -1,18 +1,14 @@
 #include "DCE.hpp"
 #include "my_stl.hpp"
 #include <algorithm>
-void DCE::PrintPass()
-{
-    std::cout << "--------DCE--------" << std::endl;
-    Singleton<Module>().Test();
-}
 
-void DCE::RunOnFunction()
+bool DCE::RunOnFunction(Function* func, _AnalysisManager &AM)
 {
     Value* C = RVACC(func);
     if(dynamic_cast<UndefValue*>(C) && !func->HasSideEffect)
     {
-        for(auto iter = func->rbegin(); iter != func->rend(); --iter)
+        for(auto iter = func->rbegin(); 
+        iter != func->rend(); --iter)
         {
             bool NDelBlock = false;
             for(auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1)
@@ -28,7 +24,7 @@ void DCE::RunOnFunction()
             if(!NDelBlock)
                 (*iter)->EraseFromParent();
         }
-        return;
+        return true;
     }
     if(C && !func->HasSideEffect)
     {
@@ -57,26 +53,28 @@ void DCE::RunOnFunction()
             func->add_block(Block);
             func->GetBasicBlock().push_back(Block);
         }
-        return;
+        return true;
     }
+    bool modified = false;
     std::vector<User*> WorkList;
     for(BasicBlock* block : *func)
     {
         for(auto inst = block->rbegin();inst != block->rend(); --inst)
         {
             if(std::find(WorkList.begin(), WorkList.end(), (*inst)) == WorkList.end())
-                DCEInst((*inst), WorkList);
+                modified |= DCEInst((*inst), WorkList);
         }
     }
     while(!WorkList.empty())
     {
         User* inst = WorkList.back();
         WorkList.pop_back();
-        DCEInst(inst, WorkList);
+        modified |= DCEInst(inst, WorkList);
     }
+    return modified;
 }
 
-void DCE::DCEInst(User* inst, std::vector<User*> &Worklist)
+bool DCE::DCEInst(User* inst, std::vector<User*> &Worklist)
 {
     if(isDeadInst(inst))
     {
@@ -91,7 +89,9 @@ void DCE::DCEInst(User* inst, std::vector<User*> &Worklist)
         }
         inst->ClearRelation();
         inst->EraseFromParent();
+        return true;
     }
+    return false;
 }
 
 bool DCE::isDeadInst(User* inst)

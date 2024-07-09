@@ -10,7 +10,7 @@
 #include <set>
 
 void LoopSimplify::RunOnFunction() {
-  loopAnlay->RunOnFunction();
+  // loopAnlay->RunOnFunction();
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
     SimplifyLoopsImpl(*iter);

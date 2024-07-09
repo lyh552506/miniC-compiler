@@ -27,7 +27,9 @@ enum PassName {
   cse,
   lcssa,
   licm,
-  looprotate
+  looprotate,
+  loopdeletion,
+  deadargselimination
 };
 
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
@@ -104,7 +106,7 @@ public:
   virtual ~ModulePassManager() = default;
   bool Run(Module *mod) override { return true; }
   void AddPass(PassName pass) { _Pass.push_back(pass); }
-  virtual bool RunOnModule(Module *mod, _AnalysisManager &AM) { return true; }
+  virtual bool RunOnModule(Module &mod, _AnalysisManager &AM) { return true; }
 
 private:
   std::vector<PassName> _Pass;

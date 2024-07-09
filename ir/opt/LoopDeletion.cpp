@@ -13,8 +13,8 @@
 
 void LoopDeletion::RunOnFunction() {
     bool changed = false;
-    loop = new LoopAnalysis(func, dom);
-    loop->RunOnFunction();
+    // loop = new LoopAnalysis(func, dom);
+    // loop->RunOnFunction();
     for (auto loop : *loop)
     {
       changed |= DetectDeadLoop(loop);
@@ -23,8 +23,8 @@ void LoopDeletion::RunOnFunction() {
 
 bool LoopDeletion::RunOnFunc() {
     bool changed = false;
-    loop = new LoopAnalysis(func, dom);
-    loop->RunOnFunction();
+    // loop = new LoopAnalysis(func, dom);
+    // loop->RunOnFunction();
     for (auto loop_ : *loop)
       changed |= DetectDeadLoop(loop_);
     return changed;

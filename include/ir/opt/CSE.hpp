@@ -2,7 +2,8 @@
 #include "CFG.hpp"
 #include "my_stl.hpp"
 #include <unordered_set>
-
+#include "New_passManager.hpp"
+#include "PassManagerBase.hpp"
 namespace HashTool
 {
     struct InstHash
@@ -105,7 +106,7 @@ struct info
     }
 };
 
-class CSE
+class CSE : public FunctionPassManager
 {
     std::map<BasicBlock*, info> BlockLiveIn;
     std::map<BasicBlock*, info> BlockLiveOut;
@@ -122,10 +123,8 @@ private:
     Function* Find_Change(Value* val, info Info);
     void RunOnFunc(Function* func);
     bool RunPass(BasicBlock* block);
-    dominance* DomTree;
 public:
-    bool RunOnFunction();
-    CSE(Function* func, dominance* m_dom) : m_func(func) , DomTree(m_dom) {}
+    bool RunOnFunction(Function*func, _AnalysisManager& AM);
 };
 
 // class CSE

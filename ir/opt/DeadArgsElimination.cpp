@@ -1,18 +1,22 @@
 #include "DeadArgsElimination.hpp"
 #include "CFG.hpp"
 #include "my_stl.hpp"
-bool DeadArgsElimination::RunOnModule()
+bool DeadArgsElimination::RunOnModule(Module &mod, _AnalysisManager &AM)
 {
+    wait_del.clear();
     bool modified = false;
     bool changed = true;
     while(changed)
     {
         changed = false;
-        for(auto& func_Ptr : module.GetFuncTion())
+        for(auto& func_Ptr : mod.GetFuncTion())
         {
             changed |= Detect_Dead_Args(func_Ptr.get());
         }
+        modified |= changed;
     }
+    
+    return modified;
 }
 
 bool DeadArgsElimination::Detect_Dead_Args(Function* func)
