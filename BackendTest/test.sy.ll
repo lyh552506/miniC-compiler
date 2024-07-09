@@ -332,49 +332,61 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.G.loopCount = global i32 0
-define i32 @func(i32 %.4, i32 %.7, i32 %.10, i32 %.13, i32 %.16, i32 %.19, i32 %.22, i32 %.25, i32 %.28, i32 %.31, i32 %.34, i32 %.37, i32 %.40, i32 %.43, i32 %.46){
-.3:
-  br label %.53wc7 
-.53wc7:
-  %.3304 = phi i32 [0, %.3], [%.3277, %.54wloop.7.114]
-  %.3303 = phi i32 [0, %.3], [%.3273, %.54wloop.7.114]
-  %.58 = load i32, i32* @.G.loopCount
-  %.59 = icmp slt i32 %.3304, %.58
-  br i1 %.59, label %.54wloop.7.114, label %.55wn114
-.54wloop.7.114:
-  %.3321 = add i32 %.4, %.46
-  %.3322 = add i32 %.7, %.3321
-  %.3323 = add i32 %.10, %.3322
-  %.3324 = add i32 %.13, %.3323
-  %.3325 = add i32 %.16, %.3324
-  %.3326 = add i32 %.19, %.3325
-  %.3327 = add i32 %.22, %.3326
-  %.3328 = add i32 %.25, %.3327
-  %.3329 = add i32 %.28, %.3328
-  %.3330 = add i32 %.31, %.3329
-  %.3331 = add i32 %.34, %.3330
-  %.3332 = add i32 %.37, %.3331
-  %.3333 = add i32 %.40, %.3332
-  %.3334 = add i32 %.43, %.3333
-  %.3335 = mul i32 %.3334, 100
-  %.3265 = sdiv i32 %.3335, 100
-  %.3269 = add i32 %.3265, %.3303
-  %.3273 = srem i32 %.3269, 1500000001
-  %.3277 = add i32 %.3304, 1
-  br label %.53wc7 
-.55wn114:
-  %.3303.lcssa.0 = phi i32 [%.3303, %.53wc7]
-  ret i32 %.3303.lcssa.0 
-}
+@.G.b = global i32 5
+@.G.c = global [4 x i32]  [i32 6, i32 7, i32 8, i32 9]
+@.C..58 = constant [2 x [8 x i32]]  [[8 x i32]  [i32 0, i32 9, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer], [8 x i32]  [i32 8, i32 3, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer, i32 zeroinitializer]]
+@.C..80 = constant [7 x [1 x [5 x i32]]]  [[1 x [5 x i32]] zeroinitializer, [1 x [5 x i32]] zeroinitializer, [1 x [5 x i32]]  [[5 x i32]  [i32 2, i32 1, i32 8, i32 zeroinitializer, i32 zeroinitializer]], [1 x [5 x i32]]  [[5 x i32] zeroinitializer], [1 x [5 x i32]] zeroinitializer, [1 x [5 x i32]] zeroinitializer, [1 x [5 x i32]] zeroinitializer]
 define i32 @main(){
-.3283:
-  %.3285at120 = call i32 @getint()
-  store i32 %.3285at120, i32* @.G.loopCount
-  call void @_sysy_starttime(i32 121)
-  %.3291at122 = call i32 @func(i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1, i32 1)
-  call void @_sysy_stoptime(i32 123)
-  call void @putint(i32 %.3291at122)
+.10:
+  %.72 = alloca [7 x [1 x [5 x i32]]]
+  %.54 = alloca [2 x [8 x i32]]
+  call void @putint(i32 3)
+  call void @putint(i32 3)
+  call void @putint(i32 1)
+  call void @putch(i32 10)
+  br label %.29wc20 
+.29wc20:
+  %.45 = icmp ne i32 1, 0
+  br i1 %.45, label %.42, label %.29wc20
+.42:
+  call void @putint(i32 1)
+  call void @putch(i32 10)
+  %.52 = getelementptr inbounds [4 x i32], [4 x i32]* @.G.c, i32 0, i32 2
+  store i32 1, i32* %.52
+  call void @llvm.memcpy.p0.p0.i32([2 x [8 x i32]]* %.54, [2 x [8 x i32]]* @.C..58, i32 64, i1 false)
+  %.68 = getelementptr inbounds [4 x i32], [4 x i32]* @.G.c, i32 0, i32 2
+  %.69 = load i32, i32* %.68
+  %.70 = icmp ne i32 %.69, 0
+  br i1 %.70, label %.66, label %.67
+.66:
+  call void @llvm.memcpy.p0.p0.i32([7 x [1 x [5 x i32]]]* %.72, [7 x [1 x [5 x i32]]]* @.C..80, i32 140, i1 false)
+  %.84 = getelementptr inbounds [7 x [1 x [5 x i32]]], [7 x [1 x [5 x i32]]]* %.72, i32 0, i32 2, i32 0, i32 0
+  %.85 = load i32, i32* %.84
+  call void @putint(i32 %.85)
+  %.88 = getelementptr inbounds [7 x [1 x [5 x i32]]], [7 x [1 x [5 x i32]]]* %.72, i32 0, i32 2, i32 0, i32 1
+  %.89 = load i32, i32* %.88
+  call void @putint(i32 %.89)
+  %.92 = getelementptr inbounds [7 x [1 x [5 x i32]]], [7 x [1 x [5 x i32]]]* %.72, i32 0, i32 2, i32 0, i32 2
+  %.93 = load i32, i32* %.92
+  call void @putint(i32 %.93)
+  br label %.67 
+.67:
+  call void @putch(i32 10)
+  %.97 = load i32, i32* @.G.b
+  call void @putint(i32 %.97)
+  call void @putch(i32 10)
+  %.100 = getelementptr inbounds [4 x i32], [4 x i32]* @.G.c, i32 0, i32 0
+  %.101 = load i32, i32* %.100
+  call void @putint(i32 %.101)
+  %.103 = getelementptr inbounds [4 x i32], [4 x i32]* @.G.c, i32 0, i32 1
+  %.104 = load i32, i32* %.103
+  call void @putint(i32 %.104)
+  %.106 = getelementptr inbounds [4 x i32], [4 x i32]* @.G.c, i32 0, i32 2
+  %.107 = load i32, i32* %.106
+  call void @putint(i32 %.107)
+  %.109 = getelementptr inbounds [4 x i32], [4 x i32]* @.G.c, i32 0, i32 3
+  %.110 = load i32, i32* %.109
+  call void @putint(i32 %.110)
   call void @putch(i32 10)
   ret i32 0 
 }

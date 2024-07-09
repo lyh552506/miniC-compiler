@@ -15,6 +15,11 @@ class RISCVISel:public BackEndPass<Function>{
     RISCVMIR* Builder_withoutDef(RISCVMIR::RISCVISA,User*);
     RISCVMIR* Builder(RISCVMIR::RISCVISA,std::initializer_list<RISCVMOperand*>);
     RISCVMIR* Builder_withoutDef(RISCVMIR::RISCVISA _isa,std::initializer_list<RISCVMOperand*> list);
+
+    // return the virreg which handles the condition
+    // will register to the mapping automatically
+    void condition_helper(BinaryInst*);
+
     void InstLowering(User*);
     void InstLowering(AllocaInst*);
     void InstLowering(StoreInst*);
@@ -31,6 +36,8 @@ class RISCVISel:public BackEndPass<Function>{
     //
     void InstLowering(CallInst*);
     void InstLowering(RetInst*);
+
+    void InstLowering(ZextInst*);
  
     RISCVMOperand* Li_Intimm(ConstIRInt* Intconst);
     public:
