@@ -1,6 +1,5 @@
 #pragma once
 #include "../../yacc/parser.hpp"
-#include "ADCE.hpp"
 #include "CFG.hpp"
 #include "CSE.hpp"
 #include "ConstantFold.hpp"
@@ -47,7 +46,6 @@ private:
   std::unique_ptr<dominance> m_dom;
   std::unique_ptr<PRE> m_pre;
   std::unique_ptr<ConstantProp> m_constprop;
-  std::unique_ptr<ADCE> m_adce;
   std::unique_ptr<DCE> m_dce;
   std::unique_ptr<ElimitCriticalEdge> m_eliedg;
   cfgSimplify* m_cfgsimple;

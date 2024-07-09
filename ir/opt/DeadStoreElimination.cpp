@@ -1,7 +1,8 @@
 #include "DeadStoreElimination.hpp"
 #include "CFG.hpp"
 
-void DSE::RunOnFunction()
+bool DSE::RunOnFunction(Function* func, _AnalysisManager &AM)
 {
-
+    bool modified = false;
+    return modified;
 }

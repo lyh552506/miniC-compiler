@@ -123,12 +123,13 @@ bool NoRecursive::CanBeInlined(CallInst *call) {
   return false;
 }
 
-void Inliner::Run() {
-  init();
-  Inline();
+bool Inliner::RunOnModule(Module& mod, _AnalysisManager &AM) {
+  init(mod);
+  Inline(mod);
+  return false;
 }
 
-void Inliner::init() {
+void Inliner::init(Module& m) {
   for (auto it = m.GetFuncTion().begin(); it != m.GetFuncTion().end();) {
     if (it->get()->GetUserListSize() == 0 && it->get()->GetName() != "main")
       it = m.GetFuncTion().erase(it);
@@ -151,7 +152,7 @@ void Inliner::init() {
   }
 }
 
-void Inliner::Inline() {
+void Inliner::Inline(Module& m) {
   while (!NeedInlineCall.empty()) {
     User *inst = NeedInlineCall.front();
     // std::cout<<";";
@@ -261,11 +262,4 @@ void Inliner::HandleRetPhi(BasicBlock *RetBlock, PhiInst *Phi,
       block->push_back(Br);
     }
   }
-}
-
-void Inliner::PrintPass() {
-#ifdef SYSY_MIDDLE_END_DEBUG
-  std::cout << "--------Inline--------" << std::endl;
-  Singleton<Module>().Test();
-#endif
 }

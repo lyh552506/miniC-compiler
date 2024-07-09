@@ -1,6 +1,7 @@
 #include "CFG.hpp"
-
-class SideEffect
+#include "New_passManager.hpp"
+#include "PassManagerBase.hpp"
+class SideEffect : public ModulePassManager
 {
     std::map<Function*, std::set<Function*>> CalleeFuncs;
     std::map<Function*, std::set<Function*>> CallingFuncs;
@@ -13,6 +14,5 @@ private:
     bool FuncHasSideEffect(Function* func);
     void CreateSideEffectFunc();
 public:
-    SideEffect(Module& m) : module(m) { CalleeFuncs.clear(); CallingFuncs.clear(); RecursiveFuncs.clear(); }
-    void RunOnModule();
+    bool RunOnModule(Module& mod, _AnalysisManager &AM);
 };

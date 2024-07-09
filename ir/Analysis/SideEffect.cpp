@@ -1,11 +1,12 @@
 #include "SideEffect.hpp"
 
-void SideEffect::RunOnModule()
+bool SideEffect::RunOnModule(Module& module, _AnalysisManager &AM)
 {
     for(auto& Func_Ptr : module.GetFuncTion())
         CreateCallMap(Func_Ptr.get());
     DetectRecursive();
-    CreateSideEffectFunc();   
+    CreateSideEffectFunc();
+    return false;   
 }
 
 
