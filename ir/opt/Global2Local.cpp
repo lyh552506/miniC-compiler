@@ -273,10 +273,10 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
                     {
                         BasicBlock* block = call->GetParent();
                         Function* func_ = block->GetParent();
-                        dom_info = std::make_unique<dominance>(func_, func_->GetBasicBlock().size());
-                        dom_info->RunOnFunction();
-                        loopAnalysis = std::make_unique<LoopAnalysis>(func_, dom_info.get());
-                        loopAnalysis->RunOnFunction();
+                        // dom_info = std::make_unique<dominance>(func_, func_->GetBasicBlock().size());
+                        // dom_info->RunOnFunction();
+                        // loopAnalysis = std::make_unique<LoopAnalysis>(func_, dom_info.get());
+                        // loopAnalysis->RunOnFunction();
                         if(block->LoopDepth != 0)
                             return false;
                     }
@@ -314,10 +314,10 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
                             {
                                 BasicBlock* block = call->GetParent();
                                 Function* func_ = block->GetParent();
-                                dom_info = std::make_unique<dominance>(func_, func_->GetBasicBlock().size());
-                                dom_info->RunOnFunction();
-                                loopAnalysis = std::make_unique<LoopAnalysis>(func_, dom_info.get());
-                                loopAnalysis->RunOnFunction();
+                                // dom_info = std::make_unique<dominance>(func_, func_->GetBasicBlock().size());
+                                // dom_info->RunOnFunction();
+                                // loopAnalysis = std::make_unique<LoopAnalysis>(func_, dom_info.get());
+                                // loopAnalysis->RunOnFunction();
                                 if(block->LoopDepth != 0)
                                     return false;
                             }
