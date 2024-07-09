@@ -80,6 +80,14 @@ bool LoopAnalysis::IsLoopIncludeBB(LoopInfo *loop, BasicBlock *bb) {
   return true;
 }
 
+bool LoopAnalysis::IsLoopExiting(LoopInfo *loop, BasicBlock *bb) {
+  auto exiting = GetExitingBlock(loop);
+  auto it = std::find(exiting.begin(), exiting.end(), bb);
+  if (it != exiting.end())
+    return true;
+  return false;
+}
+
 bool LoopInfo::Contain(BasicBlock *bb) {
   std::unordered_set<BasicBlock *> assist{this->ContainBlocks.begin(),
                                           this->ContainBlocks.end()};
@@ -203,17 +211,18 @@ BasicBlock *LoopAnalysis::GetLatch(LoopInfo *loop) {
 }
 
 std::vector<BasicBlock *> LoopAnalysis::GetExitingBlock(LoopInfo *loopinfo) {
-  std::vector<BasicBlock *> exit;
-  for (auto bb : loopinfo->ContainBlocks) {
-    for (auto succ : m_dom->GetNode(bb->num).des) {
+  std::vector<BasicBlock *> exit = GetExit(loopinfo);
+  std::vector<BasicBlock *> exiting;
+  for (auto bb : exit) {
+    for (auto rev : m_dom->GetNode(bb->num).rev) {
       // auto iter =
       //     std::find(loopinfo->ContainBlocks.begin(),
       //               loopinfo->ContainBlocks.end(), GetCorrespondBlock(succ));
-      if (!IsLoopIncludeBB(loopinfo, succ))
-        PushVecSingleVal(exit, m_dom->GetNode(succ).thisBlock);
+      if (IsLoopIncludeBB(loopinfo, rev))
+        PushVecSingleVal(exiting, m_dom->GetNode(rev).thisBlock);
     }
   }
-  return exit;
+  return exiting;
 }
 
 std::vector<BasicBlock *> LoopAnalysis::GetExit(LoopInfo *loopinfo) {

@@ -200,10 +200,10 @@ class ZextInst:public User
 
 class PhiInst : public User {
 public:
-  PhiInst(Type *ty) : User{ty} {}
+  PhiInst(Type *ty) : User{ty} {id = OpID::Phi;}
   PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {id = OpID::Phi;}
 
-  PhiInst(User *BeforeInst):oprandNum(0) {}
+  PhiInst(User *BeforeInst):oprandNum(0) {id = OpID::Phi;}
 
   void print() final;
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,std::string Name="");

@@ -1,9 +1,11 @@
 #pragma once
+#include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
 #include "PassManagerBase.hpp"
 #include "dominant.hpp"
 #include "lcssa.hpp"
+#include <unordered_map>
 
 class LoopRotate : public PassManagerBase {
 public:
@@ -16,10 +18,12 @@ private:
   bool CanBeMove(User *I);
   void SimplifyBlocks(BasicBlock *Header, LoopInfo *loop);
   void PreservePhi(BasicBlock *header, LoopInfo *loop, BasicBlock *preheader,
-                   BasicBlock *new_header);
+                   BasicBlock *new_header,
+                   std::unordered_map<Value *, Value *> &PreHeaderValue);
+  void PreserveLcssa(BasicBlock *new_exit, BasicBlock *old_exit,
+                     BasicBlock *pred);
   LoopAnalysis *loopAnlasis;
   Function *m_func;
   dominance *m_dom;
-  PhiInst *x = nullptr;
   const int Heuristic = 8;
 };

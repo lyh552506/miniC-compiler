@@ -31,6 +31,7 @@ void PassManager::InitPass() {
       func = i;
       PreWork(i);
       m_dom = std::make_unique<dominance>(m_func, BList.size());
+      m_dom->RunOnFunction();
     }
   }
 }
@@ -154,6 +155,34 @@ void PassManager::RunOnFunction() {
     d->RunOnFunction();
     auto m_licm = new LICMPass(d, m_func);
     m_licm->RunOnFunction();
+  }
+  if(InitpassRecorder[loopdeletion])
+  {
+    PreWork(func);
+    dominance *d = new dominance(m_func, BList.size());
+    d->RunOnFunction();
+    m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
+    m_loopsimple->RunOnFunction();
+    // m_loopsimple->PrintPass();
+    PreWork(func);
+    dominance *d1 = new dominance(m_func, BList.size());
+    d1->update();
+    m_lcssa = std::make_unique<LcSSA>(m_func, d1);
+    m_lcssa->RunOnFunction();
+    bool flag = false;
+    PreWork(func);
+    dominance *d2 = new dominance(m_func, BList.size());
+    d2->RunOnFunction();
+    auto m_loopdeletion = new LoopDeletion(m_func, d2);
+    flag = m_loopdeletion->RunOnFunc();
+    if(flag)
+    {
+      PreWork(func);
+      dominance *dom = new dominance(m_func, BList.size());
+      dom->update();
+      m_lcssa = std::make_unique<LcSSA>(m_func, dom);
+      m_lcssa->RunOnFunction();
+    }
   }
 }
 
