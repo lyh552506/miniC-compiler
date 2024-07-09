@@ -290,8 +290,6 @@ class Function:public Value,public mylist<Function,BasicBlock>
     std::vector<BasicBlock*> bbs;
     std::pair<size_t,size_t> inlineinfo;
     public:
-    std::set<Function*> CalleeFuncs; // The Function who calls this
-    std::set<Function*> CallingFuncs; // The Function that the func calls
     std::set<Value*> Change_Val; // Used for cse 
     std::pair<size_t,size_t>& GetInlineInfo();
     void InsertAlloca(AllocaInst* ptr);
@@ -312,6 +310,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void init_visited_block();
     void init_reach_block();
     int bb_num=0;
+    bool HasSideEffect = false;
 };
 class Module:public SymbolTable
 {

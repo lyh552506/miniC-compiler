@@ -12,10 +12,5 @@ private:
     bool DelF = false;
     Function* func;
     void DCEInst(User* inst, std::vector<User*> &Worklist);
-    void DetectRecursive();
-    void VisitFunc(Function* entry, std::set<Function*>& visited);
     Value* RVACC(Function* func);
-    bool FuncHasSideEffect(Function* func);
-    void CreateCallMap();
-    void CreateSideEffectFunc();
 };
