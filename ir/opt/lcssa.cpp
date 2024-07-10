@@ -1,6 +1,7 @@
 #include "lcssa.hpp"
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
+#include "LoopInfo.hpp"
 #include "my_stl.hpp"
 #include <algorithm>
 #include <cassert>
@@ -9,17 +10,19 @@
 #include <utility>
 #include <vector>
 
-void LcSSA::RunOnFunction() {
-  // loops = new LoopAnalysis(m_func, m_dom);
-  // loops->RunOnFunction();
+bool LcSSA::Run() {
+  m_dom = AM.get<dominance>(m_func);
+  loops = AM.get<LoopAnalysis>(m_func, m_dom);
+  bool changed = false;
   if (!loops->CanBeOpt())
-    return;
+    return changed;
   for (auto l = loops->begin(); l != loops->end(); l++) {
-    DFSLoops(*l);
+    changed |= DFSLoops(*l);
   }
+  return changed;
 }
 
-void LcSSA::DFSLoops(LoopInfo *l) {
+bool LcSSA::DFSLoops(LoopInfo *l) {
   std::vector<User *> FormingInsts;
   for (auto sub : *l) {
     DFSLoops(sub);
@@ -40,12 +43,13 @@ void LcSSA::DFSLoops(LoopInfo *l) {
     }
   }
   if (FormingInsts.empty())
-    return;
-  FormalLcSSA(FormingInsts);
+    return false;
+  return FormalLcSSA(FormingInsts);
 }
 
-void LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
+bool LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
   int x = 0;
+  bool changed = false;
   std::set<User *> Erase;
   while (!FormingInsts.empty()) {
     std::vector<User *> ShouldRedoLater;
@@ -58,7 +62,7 @@ void LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
     ContainBB.insert(l->GetLoopBody().begin(), l->GetLoopBody().end());
     ContainBB.insert(l->GetHeader());
     if (exit.size() <= 0)
-      return;
+      return changed;
     for (auto use : target->GetUserlist()) {
       auto pbb = use->GetUser()->GetParent();
       if (auto phi = dynamic_cast<PhiInst *>(use->GetUser())) {
@@ -81,6 +85,7 @@ void LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
                                          std::to_string(x++));
       for (auto rev : m_dom->GetNode(ex->num).rev)
         phi->updateIncoming(target, m_dom->GetNode(rev).thisBlock);
+      changed |= true;
       if (auto subloop = loops->LookUp(ex))
         if (!l->Contain(subloop)) {
           //插入的phi如果在另一个循环存在，重新考虑处理
@@ -139,6 +144,7 @@ void LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
   for (auto d : Erase) {
     delete d;
   }
+  return changed;
 }
 
 void LcSSA::InsertPhis(Use *u, std::set<BasicBlock *> &exit) {

@@ -11,6 +11,7 @@
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
+#include <memory>
 
 extern FILE *yyin;
 extern int optind, opterr, optopt;
@@ -22,17 +23,6 @@ void copyFile(const std::string &sourcePath,
   std::ofstream destination(destinationPath, std::ios::binary);
   destination << source.rdbuf();
 }
-
-// static struct option long_options[] = {
-//     {"mem2reg", no_argument, 0, 0},       {"pre", no_argument, 0, 1},
-//     {"constprop", no_argument, 0, 2},     {"dce", no_argument, 0, 3},
-//     {"adce", no_argument, 0, 4},          {"loops", no_argument, 0, 5},
-//     {"help", no_argument, 0, 6},          {"simplifycfg", no_argument, 0, 7},
-//     {"ece", no_argument, 0, 8},           {"inline", no_argument, 0, 9},
-//     {"global2local", no_argument, 0, 10}, {"sccp", no_argument, 0, 11},
-//     {"reassociate", no_argument, 0, 12},  {"cse", no_argument, 0, 13},
-//     {"lcssa", no_argument, 0, 14},        {"licm", no_argument, 0, 15},
-//     {"loop-rotate", no_argument, 0, 16},  {0, 0, 0, 0}};
 
 int main(int argc, char **argv) {
   std::string output_path = argv[1];
@@ -55,75 +45,9 @@ int main(int argc, char **argv) {
   Function *func = Singleton<Module>().GetFuncTion()[0].get();
   Singleton<Module>().Test();
 
-  _AnalysisManager AM;
-  auto alia = AM.get<AliasAnalysis>(func);
-  auto dom = AM.get<dominance>(func);
-  auto loop = AM.get<LoopAnalysis>(func,dom);
 #ifdef SYSY_ENABLE_MIDDLE_END
-  std::unique_ptr<PassManager> pass_manager(new PassManager);
-  int optionIndex, option;
-  // 目前处于调试阶段，最终会换成-O1 -O2 -O3
-  while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
-         -1) {
-    switch (option) {
-    default:
-      std::cerr << "No Such Opt!" << std::endl;
-      exit(0);
-    case mem2reg:
-      pass_manager->IncludePass(mem2reg);
-      break;
-    case pre:
-      pass_manager->IncludePass(pre);
-      break;
-    case constprop:
-      pass_manager->IncludePass(constprop);
-      break;
-    case dce:
-      pass_manager->IncludePass(dce);
-      break;
-    case loopsimplify:
-      pass_manager->IncludePass(loopsimplify);
-      break;
-    // case help:
-    //   std::cerr << "help" << std::endl;
-    //   break;
-    case simplifycfg:
-      pass_manager->IncludePass(simplifycfg);
-      break;
-    case ece:
-      pass_manager->IncludePass(ece);
-      break;
-    case Inline:
-      pass_manager->IncludePass(Inline);
-      break;
-    case global2local:
-      pass_manager->IncludePass(global2local);
-      break;
-    case reassociate:
-      pass_manager->IncludePass(reassociate);
-      break;
-    case cse:
-      pass_manager->IncludePass(cse);
-      break;
-    case lcssa:
-      pass_manager->IncludePass(lcssa);
-      break;
-    case licm:
-      pass_manager->IncludePass(licm);
-      break;
-    case looprotate:
-      pass_manager->IncludePass(looprotate);
-      break;
-    case loopdeletion:
-      pass_manager->IncludePass(loopdeletion);
-      break;
-    case deadargselimination:
-      pass_manager->IncludePass(deadargselimination);
-      break;
-    }
-  }
-  pass_manager->InitPass();
-
+  auto PM = std::make_unique<_PassManager>();
+  PM->Run();
   Singleton<Module>().Test();
   fflush(stdout);
   fclose(stdout);

@@ -6,15 +6,15 @@
 #include <getopt.h>
 #include <iostream>
 #include <memory>
+#include <queue>
 #include <type_traits>
 #include <utility>
 #include <vector>
 class FunctionPassManager;
 class ModulePassManager;
-
-enum OptLevel { O0, O1, O2, O3 };
+enum OptLevel { O0=0, O1=1, O2=2, O3=3 };
 enum PassName {
-  mem2reg,
+  mem2reg=4,
   pre,
   constprop,
   dce,
@@ -55,7 +55,7 @@ private:
 
 public:
   _AnalysisManager() = default;
-
+  virtual ~_AnalysisManager() = default;
   template <typename Pass, typename... Args,
             typename name = std::enable_if_t<
                 std::is_base_of_v<_AnalysisManagerBase<Pass, Function>, Pass>>>
@@ -67,48 +67,43 @@ public:
                          [](void *ptr) { delete static_cast<Pass *>(ptr); });
     return static_cast<Pass *>(result);
   }
+
+  template <typename Pass, typename... Args,
+            typename name = std::enable_if_t<
+                std::is_base_of_v<_AnalysisManagerBase<Pass, Module>, Pass>>>
+  Pass *get(Module *mod, Args &&...args) {
+    std::unique_ptr<Pass> pass =
+        std::make_unique<Pass>(mod, std::forward<Args>(args)...);
+    auto *result = pass->GetResult(mod);
+    Contain.emplace_back(pass.release(),
+                         [](void *ptr) { delete static_cast<Pass *>(ptr); });
+    return static_cast<Pass *>(result);
+  }
 };
 
-template <typename Scope>
-class _PassManager : public _PassManagerBase<_PassManager<Scope>, Scope> {
+class _PassManager : public _PassManagerBase<_PassManager, Function> {
 public:
   _PassManager() = default;
   virtual ~_PassManager() = default;
-  virtual bool Run(Scope *base) override { return true; }
-  void DecodeArgs(int argc, char *argv[]);
+  bool Run();
   void RunOnLevel(OptLevel level);
-
-private:
-  std::unique_ptr<FunctionPassManager> FPM;
-  std::unique_ptr<ModulePassManager> MPM;
-};
-
-class FunctionPassManager : public _PassManager<Function> {
-public:
-  FunctionPassManager(_AnalysisManager &_AM) : AM(_AM) {}
-  virtual ~FunctionPassManager() = default;
-
-  bool Run(Function *func) override { return true; }
-  void AddPass(PassName pass) { _Pass.push_back(pass); }
-  virtual bool RunOnFunction(Function *func, _AnalysisManager &AM) {
-    return true;
+  void RunOnTest(int argc, char *argv[]);
+  template <typename Pass, typename name = std::enable_if_t<std::is_base_of_v<
+                               _PassManagerBase<Pass, Function>, Pass>>>
+  bool RunImpl(Function *func, _AnalysisManager &AM) {
+    auto pass = std::make_unique<Pass>(func, AM);
+    return pass->Run();
   }
-
+  template <typename Pass, typename name = std::enable_if_t<std::is_base_of_v<
+                               _PassManagerBase<Pass, Module>, Pass>>>
+  bool RunImpl(Module *mod, _AnalysisManager &AM) {
+    auto pass = std::make_unique<Pass>(mod, AM);
+    return pass->Run();
+  }
+  void DecodeArgs(int argc, char *argv[]);
 private:
-  std::vector<PassName> _Pass;
-  std::map<PassName,bool> EnablePass;
-  _AnalysisManager &AM;
-};
-
-class ModulePassManager : public _PassManager<Module> {
-public:
-  ModulePassManager(_AnalysisManager &_AM) : AM(_AM) {}
-  virtual ~ModulePassManager() = default;
-  bool Run(Module *mod) override { return true; }
-  void AddPass(PassName pass) { _Pass.push_back(pass); }
-  virtual bool RunOnModule(Module &mod, _AnalysisManager &AM) { return true; }
-
-private:
-  std::vector<PassName> _Pass;
-  _AnalysisManager &AM;
+  void Init();
+  OptLevel level;
+  void AddPass(PassName pass) { EnablePass.push(pass); }
+  std::queue<PassName> EnablePass;
 };

@@ -1,12 +1,13 @@
 #include "cfgSimplify.hpp"
 #include "LoopInfo.hpp"
+#include "dominant.hpp"
 #include <algorithm>
 #include <cassert>
 #include <memory>
 
-void cfgSimplify::RunOnFunction() {
-  // loopAnlaysis = new LoopAnalysis(m_func, m_dom);
-  // loopAnlaysis->RunOnFunction();
+bool cfgSimplify::Run() {
+  m_dom = AM.get<dominance>(m_func);
+  loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
   bool keep_loop = true;
   while (keep_loop) {
     keep_loop = false;
@@ -20,6 +21,7 @@ void cfgSimplify::RunOnFunction() {
     if (m_dom != nullptr)
       keep_loop |= simplifyPhiInst();
   }
+  return false;
 }
 
 bool cfgSimplify::EliminateDeadLoop() {
