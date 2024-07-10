@@ -14,7 +14,7 @@ public:
   void AddNullBlock(User *inst, int succ);
   ElimitCriticalEdge(Function *func, _AnalysisManager &_AM)
       : m_func(func), AM(_AM) {}
-  void Run();
+  bool Run();
   void PrintPass();
 
 private:

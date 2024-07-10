@@ -16,15 +16,8 @@ private:
   void InitPass(Pass pass);
 
 public:
-  virtual bool Run(Scope *Base) = 0;
+  virtual bool Run() = 0;
   _PassManagerBase() = default;
   const Pass *derived_this() const { return static_cast<const Pass *>(this); }
 };
 
-class PassManagerBase {
-public:
-  PassManagerBase() = default;
-  virtual void RunOnFunction() = 0;
-  virtual void InitPass(){};
-  virtual void PrintPass() = 0;
-};

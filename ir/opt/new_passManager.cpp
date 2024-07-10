@@ -1,7 +1,6 @@
 #include "New_passManager.hpp"
 #include <cassert>
 
-
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -52,8 +51,30 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case looprotate:
       AddPass(looprotate);
       break;
+    case O0:
+      level = O0;
+      break;
+    case O1:
+      level = O1;
+      break;
+    case O2:
+      level = O2;
+      break;
+    case O3:
+      level = O3;
+      break;
     }
   }
+}
+
+bool _PassManager::Run() {
+#ifdef TEST
+  int a = 0;
+#elif defined(LEVEL)
+  int a = 1;
+#else
+  int a = 3;
+#endif
 }
 
 void _PassManager::RunOnLevel(OptLevel level) {
@@ -66,7 +87,6 @@ void _PassManager::RunOnLevel(OptLevel level) {
 ///@brief 执行Pass顺序会按照给定参数的顺序来
 void _PassManager::RunOnTest(int argc, char *argv[]) {
   Init();
-  DecodeArgs(argc, argv);
   while (!EnablePass.empty()) {
     auto name = EnablePass.front();
     EnablePass.pop();

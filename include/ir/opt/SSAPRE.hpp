@@ -125,7 +125,7 @@ struct ValueNumberedSet {
 
 class PRE : public _PassManagerBase<PRE, Function> {
 public:
-  void Run();
+  bool Run();
   void PrintPass() {
     std::cout << "--------pre--------" << std::endl;
     Singleton<Module>().Test();

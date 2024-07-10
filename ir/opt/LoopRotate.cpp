@@ -16,13 +16,14 @@
 #include <utility>
 #include <variant>
 
-void LoopRotate::Run() {
+bool LoopRotate::Run() {
   bool changed = false;
   m_dom = AM.get<dominance>(m_func);
   loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
   for (auto loop : *loopAnlasis) {
     changed |= RotateLoop(loop);
   }
+  return changed;
 }
 
 bool LoopRotate::RotateLoop(LoopInfo *loop) {

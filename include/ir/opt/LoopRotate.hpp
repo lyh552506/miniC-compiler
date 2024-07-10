@@ -11,7 +11,7 @@
 class LoopRotate : public _PassManagerBase<LoopRotate, Function> {
 public:
   LoopRotate(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
-  void Run();
+  bool Run();
   void PrintPass();
 
 private:

@@ -9,11 +9,9 @@
 
 class LICMPass : _PassManagerBase<LICMPass, Function> {
 public:
-  LICMPass(Function *func, _AnalysisManager &_AM) : AM(_AM), m_func(func) {
-    m_dom = AM.get<dominance>(func);
-  }
-  void Run();
-  void RunOnLoop(LoopInfo *l);
+  LICMPass(Function *func, _AnalysisManager &_AM) : AM(_AM), m_func(func) {}
+  bool Run();
+  bool RunOnLoop(LoopInfo *l);
   void PrintPass(){};
   bool change = false;
 

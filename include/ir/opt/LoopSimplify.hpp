@@ -8,11 +8,11 @@
 class LoopSimplify : public _PassManagerBase<LoopSimplify, Function> {
 public:
   LoopSimplify(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
-  void Run();
+  bool Run();
   void PrintPass();
 
 private:
-  void SimplifyLoopsImpl(LoopInfo *loop);
+  bool SimplifyLoopsImpl(LoopInfo *loop);
   void InsertPreHeader(LoopInfo *loop);
   void FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
                    std::vector<BasicBlock *> &latch);

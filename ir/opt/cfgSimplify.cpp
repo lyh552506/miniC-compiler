@@ -5,7 +5,7 @@
 #include <cassert>
 #include <memory>
 
-void cfgSimplify::Run() {
+bool cfgSimplify::Run() {
   m_dom = AM.get<dominance>(m_func);
   loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
   bool keep_loop = true;
@@ -21,6 +21,7 @@ void cfgSimplify::Run() {
     if (m_dom != nullptr)
       keep_loop |= simplifyPhiInst();
   }
+  return false;
 }
 
 bool cfgSimplify::EliminateDeadLoop() {

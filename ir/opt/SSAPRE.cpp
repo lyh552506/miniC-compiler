@@ -190,7 +190,7 @@ void PRE::Elimination() {
   }
 }
 
-void PRE::Run() {
+bool PRE::Run() {
   BasicBlock *Entry = m_func->front();
   auto entrynode = &(m_dom->GetNode(Entry->num));
   m_func->init_visited_block();
@@ -198,6 +198,7 @@ void PRE::Run() {
   m_func->init_visited_block();
   PostOrderCFG(m_func->front());
   init_pass();
+  return false;
 }
 
 RetStats PRE::IdentyPartilRedundancy(
@@ -761,5 +762,5 @@ Value *PRE::Find_Leader(ValueNumberedSet &set, Value *val) {
   for (auto tmp = set.contents.begin(); tmp != set.contents.end(); tmp++)
     if (hash == VN->LookupOrAdd(*tmp))
       return *tmp;
-  assert(0&&"Unreachable");
+  assert(0 && "Unreachable");
 }

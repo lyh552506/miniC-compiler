@@ -6,9 +6,9 @@
 
 
 
-class LoopDeletion : public PassManagerBase 
-{
-public:
-    // bool RunOnFunction();
+// class LoopDeletion : public PassManagerBase 
+// {
+// public:
+//     // bool RunOnFunction();
     
-};
+// };

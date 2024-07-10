@@ -12,7 +12,7 @@
 class cfgSimplify : public _PassManagerBase<cfgSimplify, Function> {
 public:
   cfgSimplify(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
-  void Run();
+  bool Run();
   void PrintPass();
   ~cfgSimplify() { delete loopAnlaysis; }
 

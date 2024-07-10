@@ -7,7 +7,7 @@
 class Reassociate : public _PassManagerBase<Reassociate, Function> {
 public:
   Reassociate(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
-  void Run();
+  bool Run();
   void PrintPass() {}
 
 private:

@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-void Reassociate::Run() {
+bool Reassociate::Run() {
   // first should caculate RPO
   bool changed = false;
   BasicBlock *EntryBB = m_func->front();
@@ -28,7 +28,7 @@ void Reassociate::Run() {
       changed |= OptimizeInst(I);
   }
   if (!changed)
-    return;
+    return false;
   std::vector<User *> Kill{RedoInst.begin(), RedoInst.end()};
   while (!Kill.empty()) {
     auto val = PopBack(Kill);
@@ -41,6 +41,7 @@ void Reassociate::Run() {
     } else
       OptimizeInst(tar);
   }
+  return changed;
 }
 
 void Reassociate::BuildRankMap() {

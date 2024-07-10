@@ -12,10 +12,10 @@
 class LcSSA : public _PassManagerBase<LcSSA, Function> {
 public:
   LcSSA(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
-  void Run();
+  bool Run();
   void PrintPass() {}
-  void DFSLoops(LoopInfo *l);
-  void FormalLcSSA(std::vector<User *> &FormingInsts);
+  bool DFSLoops(LoopInfo *l);
+  bool FormalLcSSA(std::vector<User *> &FormingInsts);
   void InsertPhis(Use *u, std::set<BasicBlock *> &exit);
   void FindBBRecursive(std::set<BasicBlock *> &exit,
                        std::set<BasicBlock *> &target,
