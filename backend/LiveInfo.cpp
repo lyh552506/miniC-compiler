@@ -174,7 +174,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
         }
 
         if (Count(DefValue)) {
-          Live.erase(color[DefValue]);
+          Live.erase(DefValue);
           color[color[DefValue]] = color[DefValue];
           Precolored.insert(color[DefValue]);
         } else {
@@ -197,20 +197,20 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
         // InstLive[inst].insert(reg);
         Live.erase(reg);
       }
-for (int i = 0; i < inst->GetOperandSize(); i++) {
+      for (int i = 0; i < inst->GetOperandSize(); i++) {
         RISCVMOperand *val = inst->GetOperand(i);
         if (auto reg = val->ignoreLA()) {
           if (reg) {
             // if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
-            //   Precolored.insert(phy);
+            //   Precolored.insert(phy);a
             //   color[phy] = phy;
             // }
             if (Count(reg))
             {
               Precolored.insert(color[reg]);
               color[color[reg]] = color[reg];
-              Live.insert(color[reg]);
-              InstLive[inst].insert(color[reg]);
+              Live.insert(reg);
+              InstLive[inst].insert(reg);
             }
             else
             {
@@ -228,6 +228,7 @@ for (int i = 0; i < inst->GetOperandSize(); i++) {
           }
         }
       }
+      CalcIG(inst);
       continue;
     } else if (inst->GetOperandSize() == 1) {
       if (inst->GetOpcode() == OpType::ret) {
@@ -238,6 +239,7 @@ for (int i = 0; i < inst->GetOperandSize(); i++) {
           Precolored.insert(Phy);
           color[Phy] = Phy;
           InstLive[inst] = Live;
+          CalcIG(inst);
           continue;
         }
       } else {
@@ -246,7 +248,7 @@ for (int i = 0; i < inst->GetOperandSize(); i++) {
           if (Count(val1)) {
             Precolored.insert(color[val1]);
             color[color[val1]] = color[val1];
-            Live.insert(color[val1]);
+            Live.insert(val1);
           } else {
             Live.insert(val1);
             initial.insert(val1);
@@ -265,7 +267,7 @@ for (int i = 0; i < inst->GetOperandSize(); i++) {
         if (Count(val1)) {
           Precolored.insert(color[val1]);
           color[color[val1]] = color[val1];
-          Live.insert(color[val1]);
+          Live.insert(val1);
         } else {
           Live.insert(val1);
           initial.insert(val1);
@@ -280,7 +282,7 @@ for (int i = 0; i < inst->GetOperandSize(); i++) {
         if (Count(val2)) {
           Precolored.insert(color[val2]);
           color[color[val2]] = color[val2];
-          Live.insert(color[val2]);
+          Live.insert(val2);
         } else {
           Live.insert(val2);
           initial.insert(val2);
@@ -293,6 +295,7 @@ for (int i = 0; i < inst->GetOperandSize(); i++) {
       }
     }
     InstLive[inst] = Live;
+    CalcIG(inst);
   }
 }
 void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
@@ -316,8 +319,7 @@ void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
   }
 }
 
-void GraphColor::CalcIG(RISCVBasicBlock *block) {
-  for (RISCVMIR *inst : *block) {
+void GraphColor::CalcIG(RISCVMIR* inst) {
     if (inst->GetOpcode() == RISCVMIR::call) {
       for (auto reg : reglist.GetReglistCaller())
         InstLive[inst].insert(reg);
@@ -334,8 +336,7 @@ void GraphColor::CalcIG(RISCVBasicBlock *block) {
       if (op1)
         IG[op1];
     } else
-      continue;
-  }
+      return;
 }
 void BlockInfo::PrintPass() {
   std::cout << "--------BlockLiveInfo--------" << std::endl;

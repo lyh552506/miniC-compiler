@@ -156,7 +156,6 @@ void GraphColor::CaculateLiveness() {
   for (const auto b : *m_func) {
     CalInstLive(b);
     CalcmoveList(b);
-    CalcIG(b);
   }
   RunOnFunc_();
 }
