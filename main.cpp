@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   Singleton<Module>().Test();
 
   _AnalysisManager AM;
-  FunctionPassManager FPM(AM);
+  // FunctionPassManager FPM(AM);
   auto alia = AM.get<AliasAnalysis>(func);
   auto dom = AM.get<dominance>(func);
   auto loop = AM.get<LoopAnalysis>(func,dom);

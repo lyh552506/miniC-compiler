@@ -6,12 +6,13 @@
 
 /// @note 支配树的根节点通过entryblock返回
 // mem2reg的开始函数
-class Mem2reg : public FunctionPassManager{
+class Mem2reg: public _PassManagerBase<Mem2reg,Function> {
 public:
-  bool RunOnFunction(Function *func, _AnalysisManager &AM) {
+  bool Run(Function *func, _AnalysisManager &AM) {
     auto dom = AM.get<dominance>(func);
-    return promoteMemoryToRegister(*func,*dom);
+    return promoteMemoryToRegister(*func, *dom);
   }
+
 private:
   bool promoteMemoryToRegister(Function &func, dominance &dom);
 };
