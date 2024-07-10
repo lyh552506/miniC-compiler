@@ -57,6 +57,10 @@ void GraphColor::MakeWorklist() {
       simplifyWorkList.push_back(node);
     }
   }
+  AdjList.clear();
+  for (auto &[key, val] : IG) {
+    AdjList[key].insert(val.begin(), val.end());
+  }
 }
 
 std::unordered_set<RISCVMIR *> GraphColor::MoveRelated(MOperand v) {
@@ -153,7 +157,7 @@ void GraphColor::CaculateLiveness() {
   RunOnFunction();
   //计算IG,并且添加precolored集合
   IG.clear();
-  initial.clear();
+  // initial.clear();
   for (const auto b : *m_func) {
     CalInstLive(b);
     CalcmoveList(b);

@@ -125,6 +125,8 @@ void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
 }
 std::vector<tempvar*> dataSegment::get_tempvar_list() {return tempvar_list;}
 void dataSegment::Change_LoadConstFloat(RISCVMIR* inst, tempvar* tempfloat, mylist<RISCVBasicBlock,RISCVMIR>::iterator it, Imm* used) {
+    if(inst->GetOpcode() == RISCVMIR::call) {return;}
+    
     std::string opcode(magic_enum::enum_name(inst->GetOpcode()));
     RISCVBasicBlock* block = inst->GetParent();
     std::unique_ptr<RISCVFrame>& frame = block->GetParent()->GetFrame();
@@ -171,6 +173,7 @@ void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
             auto inst = *it;
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 if(globlvar* gvar = dynamic_cast<globlvar*>(inst->GetOperand(i))) {
+                    if(inst->GetOpcode() == ISA::call) {continue;}
                     std::unique_ptr<RISCVFrame>& frame = cur_func->GetFrame();
                     ISA opcode = inst->GetOpcode();
                     // lui .1, %hi(name)
