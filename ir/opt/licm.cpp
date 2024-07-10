@@ -3,8 +3,8 @@
 #include "LoopInfo.hpp"
 #include <cassert>
 
-void LICMPass::RunOnFunction() {
-  loop->RunOnFunction();
+void LICMPass::Run() {
+  // loop->RunOnFunction();
   for (auto l = loop->begin(); l != loop->end(); l++) {
     RunOnLoop(*l);
   }

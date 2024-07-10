@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 
-void LcSSA::RunOnFunction() {
-  loops = new LoopAnalysis(m_func, m_dom);
-  loops->RunOnFunction();
+void LcSSA::Run() {
+  // loops = new LoopAnalysis(m_func, m_dom);
+  // loops->RunOnFunction();
   if (!loops->CanBeOpt())
     return;
   for (auto l = loops->begin(); l != loops->end(); l++) {

@@ -4,6 +4,7 @@
 #include "CFG.hpp"
 #include "ConstantFold.hpp"
 #include "Type.hpp"
+#include "dominant.hpp"
 #include "my_stl.hpp"
 #include <algorithm>
 #include <cassert>
@@ -12,12 +13,13 @@
 #include <utility>
 #include <vector>
 
-void Reassociate::RunOnFunction() {
+void Reassociate::Run() {
   // first should caculate RPO
   bool changed = false;
   BasicBlock *EntryBB = m_func->front();
   m_func->init_visited_block();
-  PostOrderCFG(EntryBB);
+  auto m_dom = AM.get<dominance>(m_func);
+  PostOrderCFG(EntryBB, m_dom);
   std::reverse(RPO.begin(), RPO.end());
   BuildRankMap();
   // phase 1: build the rank map
@@ -297,7 +299,9 @@ Value *Reassociate::OptExp(BinaryInst *exp,
 }
 
 Value *Reassociate::OptMul(BinaryInst *MulInst,
-                           std::vector<std::pair<Value *, int>> &LinerizedOp) {return nullptr;}
+                           std::vector<std::pair<Value *, int>> &LinerizedOp) {
+  return nullptr;
+}
 
 bool Reassociate::IsOperandAssociate(Value *op, BinaryInst::Operation opcode) {
   auto bin = dynamic_cast<BinaryInst *>(op);
@@ -354,12 +358,12 @@ void Reassociate::LinearizeExp(BinaryInst *I,
   return;
 }
 
-void Reassociate::PostOrderCFG(BasicBlock *root) {
+void Reassociate::PostOrderCFG(BasicBlock *root, dominance *m_dom) {
   if (root->visited)
     return;
   root->visited = true;
   for (int tmp : m_dom->GetNode(root->num).des) {
-    PostOrderCFG(m_dom->GetNode(tmp).thisBlock);
+    PostOrderCFG(m_dom->GetNode(tmp).thisBlock, m_dom);
   }
   RPO.push_back(root);
 }

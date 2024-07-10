@@ -1,6 +1,6 @@
 #include"DealCriticalEdges.hpp"
 
-void ElimitCriticalEdge::RunOnFunction(){
+void ElimitCriticalEdge::Run(){
   DealCriticalEdges();
 }
 

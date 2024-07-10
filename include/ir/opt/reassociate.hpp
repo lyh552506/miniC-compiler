@@ -1,17 +1,18 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
+#include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 #include "dominant.hpp"
 #include <vector>
-class Reassociate : public PassManagerBase {
+class Reassociate : public _PassManagerBase<Reassociate, Function> {
 public:
-  Reassociate(Function *func, dominance *dom) : m_func(func), m_dom(dom) {}
-  void RunOnFunction();
+  Reassociate(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
+  void Run();
   void PrintPass() {}
 
 private:
   void BuildRankMap();
-  void PostOrderCFG(BasicBlock *root);
+  void PostOrderCFG(BasicBlock *root, dominance *m_dom);
   bool OptimizeInst(Value *I);
   int GetRank(Value *val);
   bool IsBinaryFloatType(BinaryInst *I);
@@ -29,9 +30,9 @@ private:
   bool KillDeadInst(User *I, int i);
   bool KillDeadInst(User *I, std::vector<User *> &kill);
   bool KillDeadInstTrival(User *I, std::vector<User *> &kill);
-  void RecursionSplitOp(Value *I, std::vector<Value *>& ops);
-  Value* CreatAddExp(User* Inst,std::vector<Value *>& AddOperands);
-  Value* RemoveOp(Value* I);
+  void RecursionSplitOp(Value *I, std::vector<Value *> &ops);
+  Value *CreatAddExp(User *Inst, std::vector<Value *> &AddOperands);
+  Value *RemoveOp(Value *I);
   Value *OptExp(BinaryInst *exp,
                 std::vector<std::pair<Value *, int>> &LinerizedOp);
   Value *OptAdd(BinaryInst *AddInst,
@@ -43,5 +44,5 @@ private:
   std::vector<BasicBlock *> RPO;
   std::vector<User *> RedoInst;
   Function *m_func;
-  dominance *m_dom;
+  _AnalysisManager &AM;
 };

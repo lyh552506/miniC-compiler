@@ -9,8 +9,9 @@
 #include <cassert>
 #include <set>
 
-void LoopSimplify::RunOnFunction() {
-  loopAnlay->RunOnFunction();
+void LoopSimplify::Run() {
+  m_dom = AM.get<dominance>(m_func);
+  loopAnlay = AM.get<LoopAnalysis>(m_func, m_dom);
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
     SimplifyLoopsImpl(*iter);

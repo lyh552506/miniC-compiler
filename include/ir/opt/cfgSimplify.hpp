@@ -1,6 +1,7 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
+#include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 #include "Singleton.hpp"
 #include "dominant.hpp"
@@ -8,11 +9,10 @@
 #include <algorithm>
 #include <vector>
 
-class cfgSimplify : public PassManagerBase {
+class cfgSimplify : public _PassManagerBase<cfgSimplify, Function> {
 public:
-  cfgSimplify(Function *func, dominance *dom = nullptr)
-      : m_func(func), m_dom(dom) {}
-  void RunOnFunction();
+  cfgSimplify(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
+  void Run();
   void PrintPass();
   ~cfgSimplify() { delete loopAnlaysis; }
 
@@ -32,6 +32,7 @@ private:
   bool EliminateDeadLoop();
   Function *m_func;
   dominance *m_dom;
+  _AnalysisManager &AM;
   std::map<BasicBlock *, std::vector<PhiInst *>> BlockToPhis;
   LoopAnalysis *loopAnlaysis;
 };

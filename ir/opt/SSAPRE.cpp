@@ -190,7 +190,7 @@ void PRE::Elimination() {
   }
 }
 
-void PRE::RunOnFunction() {
+void PRE::Run() {
   BasicBlock *Entry = m_func->front();
   auto entrynode = &(m_dom->GetNode(Entry->num));
   m_func->init_visited_block();
