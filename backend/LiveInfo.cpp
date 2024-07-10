@@ -36,7 +36,7 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
       continue;
     else if (Opcode == OpType::_beq || Opcode == OpType::_bne ||
              Opcode == OpType::_blt || Opcode == OpType::_bge ||
-             Opcode == OpType::_bltu || Opcode == OpType::_bgeu) {
+             Opcode == OpType::_bltu || Opcode == OpType::_bgeu || Opcode == OpType::_bgt || Opcode ==OpType :: _ble) {
       RISCVMOperand *val1 = (*inst)->GetOperand(0);
       RISCVMOperand *val2 = (*inst)->GetOperand(1);
       UpdateInfo(val1, block);
@@ -114,7 +114,7 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block) {
       SuccBlocks[block].push_front(_block_Succ);
     } else if (Opcode == OpType::_beq || Opcode == OpType::_bne ||
                Opcode == OpType::_blt || Opcode == OpType::_bge ||
-               Opcode == OpType::_bltu || Opcode == OpType::_bgeu) {
+               Opcode == OpType::_bltu || Opcode == OpType::_bgeu || Opcode == OpType::_bgt || Opcode == OpType::_ble) {
       RISCVBasicBlock *_block_Succ1 =
           dynamic_cast<RISCVBasicBlock *>(inst->GetOperand(2));
       BlockLiveout[block].insert(BlockLivein[_block_Succ1].begin(),
