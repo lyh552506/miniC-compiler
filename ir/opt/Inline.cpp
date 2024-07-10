@@ -123,9 +123,9 @@ bool NoRecursive::CanBeInlined(CallInst *call) {
   return false;
 }
 
-bool Inliner::RunOnModule(Module& mod, _AnalysisManager &AM) {
-  init(mod);
-  Inline(mod);
+bool Inliner::Run() {
+  init(m);
+  Inline(m);
   return false;
 }
 

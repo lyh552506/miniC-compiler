@@ -1,7 +1,7 @@
 #include "DeadArgsElimination.hpp"
 #include "CFG.hpp"
 #include "my_stl.hpp"
-bool DeadArgsElimination::RunOnModule(Module &mod, _AnalysisManager &AM)
+bool DeadArgsElimination::Run()
 {
     wait_del.clear();
     bool modified = false;

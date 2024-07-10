@@ -33,17 +33,19 @@ class NoRecursive:public InlineHeuristic{
     NoRecursive(Module&);
 };
 
-class Inliner : public ModulePassManager
+class Inliner : public _PassManagerBase<Inliner, Module>
 {
 public:
-    bool RunOnModule(Module& mod, _AnalysisManager &AM);
+    bool Run();
     void Inline(Module& m);
+    Inliner(Module& m, _AnalysisManager &AM) : m(m), AM(AM) {}
 private:
     std::vector<BasicBlock*> CopyBlocks(User* inst);
     void HandleVoidRet(BasicBlock* spiltBlock, std::vector<BasicBlock*>& blocks);
     void HandleRetPhi(BasicBlock* RetBlock, PhiInst* phi, std::vector<BasicBlock*>& blocks);
 private:
-    // Module& m;
+    Module& m;
+    _AnalysisManager &AM;
     // LoopAnalysis* loopAnalysis;
     void init(Module& m);
     std::vector<User*> NeedInlineCall;

@@ -1,7 +1,7 @@
 #include "CSE.hpp"
 #include "ConstantFold.hpp"
 
-bool CSE::RunOnFunction(Function*func, _AnalysisManager& AM)
+bool CSE::Run()
 {
     bool modified = false;
     bool Changed = false;

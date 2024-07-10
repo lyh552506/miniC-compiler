@@ -11,20 +11,10 @@
 #include <set>
 #include <unordered_map>
 
-void LoopDeletion::RunOnFunction() {
+bool LoopDeletion::Run() {
     bool changed = false;
-    // loop = new LoopAnalysis(func, dom);
-    // loop->RunOnFunction();
-    for (auto loop : *loop)
-    {
-      changed |= DetectDeadLoop(loop);
-    }
-}
-
-bool LoopDeletion::RunOnFunc() {
-    bool changed = false;
-    // loop = new LoopAnalysis(func, dom);
-    // loop->RunOnFunction();
+    dom = AM.get<dominance>(func);
+    loop = AM.get<LoopAnalysis>(func, dom);
     for (auto loop_ : *loop)
       changed |= DetectDeadLoop(loop_);
     return changed;

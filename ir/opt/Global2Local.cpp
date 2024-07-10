@@ -53,7 +53,7 @@ void Global2Local::CalGlobal2Funcs(Module& module)
         }
     }
 }
-bool Global2Local::RunOnModule(Module& module, _AnalysisManager& AM)
+bool Global2Local::Run()
 {
     init(module);
     RunPass(module);

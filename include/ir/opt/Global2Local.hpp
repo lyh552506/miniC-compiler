@@ -3,7 +3,7 @@
 #include "LoopInfo.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-class Global2Local : public ModulePassManager
+class Global2Local : public _PassManagerBase<Global2Local, Module>
 {
     protected:
     dominance* dom_info;
@@ -16,6 +16,8 @@ class Global2Local : public ModulePassManager
     std::map<Variable*, std::set<Function*>> Global2Funcs;  // 哪些func 用了这个 globalvalue
     std::vector<User*> insert_insts;
     std::map<Function*, int> CallTimes;
+    Module& module;
+    _AnalysisManager& AM;
     private:
     void init(Module& module);
     void createSuccFuncs(Module& module);
@@ -30,5 +32,6 @@ class Global2Local : public ModulePassManager
     bool hasChanged(int index, Function* func);
     void CreateCallNum(Module& module);
     public:
-    bool RunOnModule(Module& module, _AnalysisManager& AM);
+    bool Run();
+    Global2Local(Module& m, _AnalysisManager& AM) : module(m), AM(AM) {}
 };

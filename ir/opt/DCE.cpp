@@ -2,7 +2,7 @@
 #include "my_stl.hpp"
 #include <algorithm>
 
-bool DCE::RunOnFunction(Function* func, _AnalysisManager &AM)
+bool DCE::Run()
 {
     Value* C = RVACC(func);
     if(dynamic_cast<UndefValue*>(C) && !func->HasSideEffect)

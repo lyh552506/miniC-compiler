@@ -106,11 +106,13 @@ struct info
     }
 };
 
-class CSE : public FunctionPassManager
+class CSE : public _PassManagerBase<CSE, Function>
 {
     std::map<BasicBlock*, info> BlockLiveIn;
     std::map<BasicBlock*, info> BlockLiveOut;
     std::vector<User*> wait_del;
+    Function* m_func;
+    _AnalysisManager& AM;
 private:
     void GetBlockLiveOut(BasicBlock* block);
     void GetBlockLiveIn(BasicBlock* block);
@@ -119,12 +121,12 @@ private:
     std::map<BasicBlock*, bool> Unchanged;
     bool IsChanged = false;
     bool Changed = false;
-    Function* m_func;
     Function* Find_Change(Value* val, info Info);
     void RunOnFunc(Function* func);
     bool RunPass(BasicBlock* block);
 public:
-    bool RunOnFunction(Function*func, _AnalysisManager& AM);
+    bool Run();
+    CSE(Function* func_, _AnalysisManager& AM_) : m_func(func_), AM(AM_) {}
 };
 
 // class CSE

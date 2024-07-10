@@ -1,7 +1,7 @@
 #include "ConstantProp.hpp"
 #include <set>
 
-bool ConstantProp::RunOnFunction(Function* _func, _AnalysisManager& AM)
+bool ConstantProp::Run()
 {
     bool modified = false;
     for(BasicBlock* block : *_func)

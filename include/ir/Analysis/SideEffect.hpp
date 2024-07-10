@@ -1,7 +1,7 @@
 #include "CFG.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-class SideEffect : public ModulePassManager
+class SideEffect : public _AnalysisManager
 {
     std::map<Function*, std::set<Function*>> CalleeFuncs;
     std::map<Function*, std::set<Function*>> CallingFuncs;

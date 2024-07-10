@@ -8,12 +8,14 @@
 // mem2reg的开始函数
 class Mem2reg: public _PassManagerBase<Mem2reg,Function> {
 public:
-  bool Run(Function *func, _AnalysisManager &AM) {
+  bool Run() {
     auto dom = AM.get<dominance>(func);
     return promoteMemoryToRegister(*func, *dom);
   }
-
+  Mem2reg(Function *func_, _AnalysisManager &AM) : func(func_), AM(AM) {}
 private:
+  Function *func;
+  _AnalysisManager &AM;
   bool promoteMemoryToRegister(Function &func, dominance &dom);
 };
 
