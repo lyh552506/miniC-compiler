@@ -113,7 +113,7 @@ public:
   }
   template <typename Pass, typename name = std::enable_if_t<std::is_base_of_v<
                                _PassManagerBase<Pass, Module>, Pass>>>
-  bool RunImpl(Module &mod, _AnalysisManager &AM) {
+  bool RunImpl(Module *mod, _AnalysisManager &AM) {
     auto pass = std::make_unique<Pass>(mod, AM);
     return pass->Run();
   }

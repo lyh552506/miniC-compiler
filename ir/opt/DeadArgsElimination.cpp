@@ -9,7 +9,7 @@ bool DeadArgsElimination::Run()
     while(changed)
     {
         changed = false;
-        for(auto& func_Ptr : mod.GetFuncTion())
+        for(auto& func_Ptr : mod->GetFuncTion())
         {
             changed |= Detect_Dead_Args(func_Ptr.get());
         }

@@ -2,7 +2,7 @@
 #include "my_stl.hpp"
 bool StoreOnlyGlobalElimination::Run()
 {
-    auto& globals = module.GetGlobalVariable();
+    auto& globals = module->GetGlobalVariable();
     DetectStoreOnlyGlobal();    
     while(!storeOnlyGlobals.empty())
     {
@@ -27,7 +27,7 @@ bool StoreOnlyGlobalElimination::Run()
 
 void StoreOnlyGlobalElimination::DetectStoreOnlyGlobal()
 {
-    for(auto& ptr : module.GetGlobalVariable())
+    for(auto& ptr : module->GetGlobalVariable())
     {
         if(ptr->usage == Variable::UsageTag::Param)
             continue;

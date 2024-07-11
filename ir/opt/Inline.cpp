@@ -1,7 +1,7 @@
 #include "Inline.hpp"
 #include "CFG.hpp"
 
-std::unique_ptr<InlineHeuristic> InlineHeuristic::get(Module &m) {
+std::unique_ptr<InlineHeuristic> InlineHeuristic::get(Module *m) {
   auto heuristic = std::make_unique<InlineHeuristicManager>();
   heuristic->push_back(std::make_unique<NoRecursive>(m));
   ///!!! size_limit must be placed at the very end !!!
@@ -37,7 +37,7 @@ bool SizeLimit::CanBeInlined(CallInst *call) {
   return true;
 }
 
-NoRecursive::NoRecursive(Module &_m) : m(_m) {
+NoRecursive::NoRecursive(Module *_m) : m(_m) {
   // struct Node{
   //     std::unordered_set<int> sons;
   //     int dfn=0;
@@ -129,10 +129,10 @@ bool Inliner::Run() {
   return false;
 }
 
-void Inliner::init(Module& m) {
-  for (auto it = m.GetFuncTion().begin(); it != m.GetFuncTion().end();) {
+void Inliner::init(Module* m) {
+  for (auto it = m->GetFuncTion().begin(); it != m->GetFuncTion().end();) {
     if (it->get()->GetUserListSize() == 0 && it->get()->GetName() != "main")
-      it = m.GetFuncTion().erase(it);
+      it = m->GetFuncTion().erase(it);
     else
       it++;
   }
@@ -140,7 +140,7 @@ void Inliner::init(Module& m) {
   auto judge = InlineHeuristic::get(m);
 
   // in this way we only iterate over this non buildin functions
-  for (auto &funcptr : m.GetFuncTion()) {
+  for (auto &funcptr : m->GetFuncTion()) {
     Function *func = funcptr.get();
     auto &calllists = func->GetUserlist();
     for (auto callinst : calllists) {
@@ -152,7 +152,7 @@ void Inliner::init(Module& m) {
   }
 }
 
-void Inliner::Inline(Module& m) {
+void Inliner::Inline(Module* m) {
   while (!NeedInlineCall.empty()) {
     User *inst = NeedInlineCall.front();
     // std::cout<<";";
@@ -210,7 +210,7 @@ void Inliner::Inline(Module& m) {
       HandleVoidRet(SplitBlock, blocks);
     auto &&inlined_func = inst->GetOperand(0)->as<Function>();
     if (inlined_func->GetUserListSize() == 0)
-      m.EraseFunction(inlined_func);
+      m->EraseFunction(inlined_func);
     delete inst;
   }
 }

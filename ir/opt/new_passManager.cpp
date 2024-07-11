@@ -132,16 +132,16 @@ void _PassManager::RunOnTest(int argc, char *argv[]) {
       auto m_loopdeletion = RunImpl<LoopDeletion>(curfunc, AM);
     }
     case Inline: {
-      // auto m_inline = RunImpl<Inliner>(module, AM);
+      auto m_inline = RunImpl<Inliner>(module, AM);
     }
     case cse: {
       auto m_cse = RunImpl<CSE>(curfunc, AM); 
     }
     case deadargselimination: {
-      // auto m_deadargselimination = RunImpl<DeadArgsElimination>(module, AM);
+      auto m_deadargselimination = RunImpl<DeadArgsElimination>(module, AM);
     }
     case storeonlyglobalelimination: {
-      // auto m_storeonlyglobalelimination = RunImpl<StoreOnlyGlobalElimination>(module, AM);
+      auto m_storeonlyglobalelimination = RunImpl<StoreOnlyGlobalElimination>(module, AM);
     }
     default: {
       assert(0);

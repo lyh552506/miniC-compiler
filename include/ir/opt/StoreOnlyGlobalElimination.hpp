@@ -7,13 +7,13 @@ class StoreOnlyGlobalElimination
     : public _PassManagerBase<StoreOnlyGlobalElimination, Module> {
 private:
   std::vector<Variable *> storeOnlyGlobals;
-  Module &module;
+  Module *module;
   _AnalysisManager &AM;
   void DetectStoreOnlyGlobal();
 
 public:
   bool Run();
-  StoreOnlyGlobalElimination(Module &m, _AnalysisManager &AM)
+  StoreOnlyGlobalElimination(Module *m, _AnalysisManager &AM)
       : module(m), AM(AM) {
     storeOnlyGlobals.clear();
   }

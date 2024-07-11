@@ -9,7 +9,7 @@ class InlineHeuristic{
     public:
     virtual bool CanBeInlined(CallInst*)=0;
     //everytime we call get we'll reanalyze the whole module again to see which can be inlined
-    static std::unique_ptr<InlineHeuristic> get(Module&);
+    static std::unique_ptr<InlineHeuristic> get(Module*);
 };
 
 class InlineHeuristicManager:public InlineHeuristic,public std::vector<std::unique_ptr<InlineHeuristic>>{
@@ -28,27 +28,27 @@ class SizeLimit:public InlineHeuristic{
     SizeLimit();
 };
 class NoRecursive:public InlineHeuristic{
-    Module& m;
+    Module* m;
     // std::unordered_set<Function*> recursive;
     public:
     bool CanBeInlined(CallInst*)override;
-    NoRecursive(Module&);
+    NoRecursive(Module*);
 };
 
 class Inliner : public _PassManagerBase<Inliner, Module>
 {
 public:
     bool Run();
-    void Inline(Module& m);
-    Inliner(Module& m, _AnalysisManager &AM) : m(m), AM(AM) {}
+    void Inline(Module* m);
+    Inliner(Module* m, _AnalysisManager &AM) : m(m), AM(AM) {}
 private:
     std::vector<BasicBlock*> CopyBlocks(User* inst);
     void HandleVoidRet(BasicBlock* spiltBlock, std::vector<BasicBlock*>& blocks);
     void HandleRetPhi(BasicBlock* RetBlock, PhiInst* phi, std::vector<BasicBlock*>& blocks);
 private:
-    Module& m;
+    Module* m;
     _AnalysisManager &AM;
     // LoopAnalysis* loopAnalysis;
-    void init(Module& m);
+    void init(Module* m);
     std::vector<User*> NeedInlineCall;
 };
