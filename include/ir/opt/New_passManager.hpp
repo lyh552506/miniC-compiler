@@ -22,6 +22,7 @@
 #include "licm.hpp"
 #include "LoopRotate.hpp"
 #include "mem2reg.hpp"
+#include "DealCriticalEdges.hpp"
 class FunctionPassManager;
 class ModulePassManager;
 enum OptLevel { O0=0, O1=1, O2=2, O3=3 };

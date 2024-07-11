@@ -102,7 +102,7 @@ void _PassManager::RunOnTest(int argc, char *argv[]) {
       auto Mem2regRes = RunImpl<Mem2reg>(curfunc, AM);
     }
     case ece: {
-      // auto eliedg=RunImpl<ElimitCriticalEdge>(curfunc,AM);
+      auto eliedg=RunImpl<ElimitCriticalEdge>(curfunc,AM);
     }
     // case pre: {
     //   dominance *d = new dominance(m_func, BList.size());
@@ -112,10 +112,10 @@ void _PassManager::RunOnTest(int argc, char *argv[]) {
     //   // m_pre->PrintPass();
     // }
     case constprop: {
-      // auto m_constprop=RunImpl<ConstantProp>(curfunc,AM); 
+      auto m_constprop=RunImpl<ConstantProp>(curfunc,AM); 
     }
     case dce: {
-      // auto m_dce=RunImpl<DCE>(curfunc,AM); 
+      auto m_dce=RunImpl<DCE>(curfunc,AM); 
     }
     case simplifycfg: {
       // auto m_cfgsimple=RunImpl<cfgSimplify>(curfunc,AM);
@@ -128,34 +128,25 @@ void _PassManager::RunOnTest(int argc, char *argv[]) {
       // m_dom->update();
       // m_cfgsimple->PrintPass();
     }
-    // case reassociate: {
-    //   PreWork(func);
-    //   m_reassociate->RunOnFunction();
-    // }
-    // case simplifycfg: {
-    //   PreWork(func);
-    //   dominance *d = new dominance(m_func, BList.size());
-    //   d->update();
-    //   m_cfgsimple = new cfgSimplify(m_func, d);
-    //   m_cfgsimple->RunOnFunction();
-    //   PreWork(func);
-    //   m_dom->update();
-    //   // m_cfgsimple->PrintPass();
-    // }
-    // case loopsimplify: {
-    //   PreWork(func);
-    //   dominance *d = new dominance(m_func, BList.size());
-    //   d->RunOnFunction();
-    //   m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
-    //   m_loopsimple->RunOnFunction();
-    //   m_loopsimple->PrintPass();
-    // }
-    // case Inline: {
-    //   m_inline->Run();
-    //   // m_inline->PrintPass();
-    // }
-    // case:
-    //   cse { m_cse->RunOnFunction(); }
+    case reassociate: {
+      // PreWork(func);
+      // m_reassociate->RunOnFunction();
+    }
+    case loopsimplify: {
+      // PreWork(func);
+      // dominance *d = new dominance(m_func, BList.size());
+      // d->RunOnFunction();
+      // m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
+      // m_loopsimple->RunOnFunction();
+      // m_loopsimple->PrintPass();
+    }
+    case Inline: {
+      // m_inline->Run();
+      // m_inline->PrintPass();
+    }
+    case cse: { 
+      // m_cse->RunOnFunction(); 
+    }
     default: {
       assert(0);
     }
