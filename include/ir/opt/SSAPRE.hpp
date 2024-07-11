@@ -5,15 +5,14 @@ by Thomas VanDrunen and Antony L. Hosking
 ----------------------------------------------------------------------------------------------------*/
 #pragma once
 #include <vector>
-
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
-#include "DealCriticalEdges.hpp"
 #include "IDF.hpp"
+#include "LoopSimplify.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 #include "dominant.hpp"
-
+class _AnalysisManager;
 enum RetStats { Delay, Changed, Unchanged };
 
 struct Expression {
@@ -165,7 +164,6 @@ public:
 
   PRE(Function *func, _AnalysisManager &_AM) : AM(_AM), m_func(func) {
     VN = new ValueTable();
-    m_dom = _AM.get<dominance>(func);
   }
   ~PRE() { delete VN; }
 

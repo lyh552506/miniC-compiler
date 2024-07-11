@@ -1,15 +1,27 @@
 #pragma once
-#include "CFG.hpp"
-#include "PassManagerBase.hpp"
-#include <any>
-#include <cstdlib>
+#include "../../yacc/parser.hpp"
 #include <getopt.h>
-#include <iostream>
+#include "CFG.hpp"
+#include "CSE.hpp"
+#include "ConstantFold.hpp"
+#include "ConstantProp.hpp"
+#include "DCE.hpp"
+#include "Global2Local.hpp"
+#include "IDF.hpp"
+#include "Inline.hpp"
+#include "LoopInfo.hpp"
+#include "LoopSimplify.hpp"
+#include "PassManagerBase.hpp"
+#include "PromoteMemtoRegister.hpp"
+#include "SSAPRE.hpp"
+#include "cfgSimplify.hpp"
+#include "dominant.hpp"
+#include "lcssa.hpp"
+#include "reassociate.hpp"
 #include <memory>
-#include <queue>
-#include <type_traits>
-#include <utility>
-#include <vector>
+#include "licm.hpp"
+#include "LoopRotate.hpp"
+#include "mem2reg.hpp"
 class FunctionPassManager;
 class ModulePassManager;
 enum OptLevel { O0=0, O1=1, O2=2, O3=3 };
@@ -30,20 +42,20 @@ enum PassName {
   looprotate
 };
 
-static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
-                                       {"pre", no_argument, 0, 1},
-                                       {"constprop", no_argument, 0, 2},
-                                       {"dce", no_argument, 0, 3},
-                                       {"loopsimplify", no_argument, 0, 4},
-                                       {"simplifycfg", no_argument, 0, 5},
-                                       {"ece", no_argument, 0, 6},
-                                       {"inline", no_argument, 0, 7},
-                                       {"global2local", no_argument, 0, 8},
-                                       {"reassociate", no_argument, 0, 9},
-                                       {"cse", no_argument, 0, 10},
-                                       {"lcssa", no_argument, 0, 11},
-                                       {"licm", no_argument, 0, 12},
-                                       {"loop-rotate", no_argument, 0, 13},
+static struct option long_options[] = {{"mem2reg", no_argument, 0, 4},
+                                       {"pre", no_argument, 0, 5},
+                                       {"constprop", no_argument, 0, 6},
+                                       {"dce", no_argument, 0, 7},
+                                       {"loopsimplify", no_argument, 0, 8},
+                                       {"simplifycfg", no_argument, 0, 9},
+                                       {"ece", no_argument, 0, 10},
+                                       {"inline", no_argument, 0, 11},
+                                       {"global2local", no_argument, 0, 12},
+                                       {"reassociate", no_argument, 0, 13},
+                                       {"cse", no_argument, 0, 14},
+                                       {"lcssa", no_argument, 0, 15},
+                                       {"licm", no_argument, 0, 16},
+                                       {"loop-rotate", no_argument, 0, 17},
                                        {0, 0, 0, 0}};
 
 class _AnalysisManager
@@ -104,4 +116,6 @@ private:
   OptLevel level;
   void AddPass(PassName pass) { EnablePass.push(pass); }
   std::queue<PassName> EnablePass;
+  Module* module;
+  Function* curfunc;
 };

@@ -1,10 +1,10 @@
+#pragma once
 #include <vector>
-
 #include "CFG.hpp"
-#include "LoopInfo.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "dominant.hpp"
+class _AnalysisManager;
+
 class LoopSimplify : public _PassManagerBase<LoopSimplify, Function> {
 public:
   LoopSimplify(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}

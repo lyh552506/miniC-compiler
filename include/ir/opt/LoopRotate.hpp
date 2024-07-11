@@ -7,7 +7,7 @@
 #include "dominant.hpp"
 #include "lcssa.hpp"
 #include <unordered_map>
-
+class _AnalysisManager;
 class LoopRotate : public _PassManagerBase<LoopRotate, Function> {
 public:
   LoopRotate(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}

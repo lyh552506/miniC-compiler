@@ -1,14 +1,13 @@
 #include "dominant.hpp"
-
 #include "CFG.hpp"
 #include "Singleton.hpp"
 #include <cassert>
 
 void dominance::init() {
   auto &bbs = thisFunc->GetBasicBlock();
-  block_num = thisFunc->Size();
-  node.resize(thisFunc->Size());
-  Dest.resize(thisFunc->Size());
+  // block_num = thisFunc->Size();
+  // node.resize(thisFunc->Size());
+  // Dest.resize(thisFunc->Size());
   for (auto bb : bbs)
     node[bb->num].init();
   for (auto bb : bbs) {
@@ -46,10 +45,9 @@ void dominance::RunOnFunction() {
     dsu[i].min_sdom = i;
   }
   dom_begin(); //标志开始函数
-  promoteMemoryToRegister(*thisFunc, *this);
 }
 
-void* dominance::GetResult(Function* func) {
+void *dominance::GetResult(Function *func) {
   init();
   for (int i = 1; i <= block_num; i++) {
     dsu[i].ancestor = i;

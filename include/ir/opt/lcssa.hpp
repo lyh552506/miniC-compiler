@@ -8,7 +8,7 @@
 #include <set>
 #include <unordered_map>
 #include <vector>
-
+class _AnalysisManager;
 class LcSSA : public _PassManagerBase<LcSSA, Function> {
 public:
   LcSSA(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}

@@ -191,6 +191,7 @@ void PRE::Elimination() {
 }
 
 bool PRE::Run() {
+  m_dom = AM.get<dominance>(m_func);
   BasicBlock *Entry = m_func->front();
   auto entrynode = &(m_dom->GetNode(Entry->num));
   m_func->init_visited_block();

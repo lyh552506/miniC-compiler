@@ -1,6 +1,8 @@
+#pragma once
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
+#include "LoopSimplify.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 #include "Singleton.hpp"
@@ -8,7 +10,7 @@
 #include "my_stl.hpp"
 #include <algorithm>
 #include <vector>
-
+class _AnalysisManager;
 class cfgSimplify : public _PassManagerBase<cfgSimplify, Function> {
 public:
   cfgSimplify(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}

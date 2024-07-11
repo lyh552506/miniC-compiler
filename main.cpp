@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
 
 #ifdef SYSY_ENABLE_MIDDLE_END
   auto PM = std::make_unique<_PassManager>();
+  PM->RunOnTest(argc,argv);
   PM->Run();
   Singleton<Module>().Test();
   fflush(stdout);

@@ -86,80 +86,73 @@ void _PassManager::RunOnLevel(OptLevel level) {
 
 ///@brief 执行Pass顺序会按照给定参数的顺序来
 void _PassManager::RunOnTest(int argc, char *argv[]) {
-  Init();
+  DecodeArgs(argc, argv);
+  _AnalysisManager AM;
   while (!EnablePass.empty()) {
     auto name = EnablePass.front();
     EnablePass.pop();
     switch (name) {
-      //   case mem2reg: {
-      //     m_dom->RunOnFunction();
-      //     // m_dom->PrintPass();
-      //     // if(m_func->GetName()=="main")
-      //     //   Singleton<Module>().Test();
-      //   }
-      //   case ece: {
-      //     m_eliedg->RunOnFunction();
-      //     PreWork(func);
-      //     m_dom->update();
-      //     // if(m_func->GetName()=="main")
-      //     //   Singleton<Module>().Test();
-      //   }
-      //   case pre: {
-      //     dominance *d = new dominance(m_func, BList.size());
-      //     d->update();
-      //     m_pre = std::make_unique<PRE>(d, m_func);
-      //     m_pre->RunOnFunction();
-      //     // m_pre->PrintPass();
-      //   }
-      //   case constprop: {
-      //     m_constprop->RunOnFunction();
-      //     // m_constprop->PrintPass();
-      //   }
-      //   case dce: {
-      //     m_dce->RunOnFunction();
-      //     // m_dce->PrintPass();
-      //   }
-      //   case simplifycfg: {
-      //     PreWork(func);
-      //     dominance *d = new dominance(m_func, BList.size());
-      //     d->update();
-      //     m_cfgsimple = new cfgSimplify(m_func, d);
-      //     m_cfgsimple->RunOnFunction();
-      //     PreWork(func);
-      //     m_dom->update();
-      //     // m_cfgsimple->PrintPass();
-      //   }
-      //   case reassociate: {
-      //     PreWork(func);
-      //     m_reassociate->RunOnFunction();
-      //   }
-      //   case simplifycfg: {
-      //     PreWork(func);
-      //     dominance *d = new dominance(m_func, BList.size());
-      //     d->update();
-      //     m_cfgsimple = new cfgSimplify(m_func, d);
-      //     m_cfgsimple->RunOnFunction();
-      //     PreWork(func);
-      //     m_dom->update();
-      //     // m_cfgsimple->PrintPass();
-      //   }
-      //   case loopsimplify: {
-      //     PreWork(func);
-      //     dominance *d = new dominance(m_func, BList.size());
-      //     d->RunOnFunction();
-      //     m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
-      //     m_loopsimple->RunOnFunction();
-      //     m_loopsimple->PrintPass();
-      //   }
-      //   case Inline: {
-      //     m_inline->Run();
-      //     // m_inline->PrintPass();
-      //   }
-      //   case:
-      //     cse { m_cse->RunOnFunction(); }
-      //   default: {
-      //     assert(0);
-      //   }
+    case mem2reg: {
+      auto Mem2regRes = RunImpl<Mem2reg>(curfunc, AM);
+    }
+    case ece: {
+      // auto eliedg=RunImpl<ElimitCriticalEdge>(curfunc,AM);
+    }
+    // case pre: {
+    //   dominance *d = new dominance(m_func, BList.size());
+    //   d->update();
+    //   m_pre = std::make_unique<PRE>(d, m_func);
+    //   m_pre->RunOnFunction();
+    //   // m_pre->PrintPass();
+    // }
+    case constprop: {
+      // auto m_constprop=RunImpl<ConstantProp>(curfunc,AM); 
+    }
+    case dce: {
+      // auto m_dce=RunImpl<DCE>(curfunc,AM); 
+    }
+    case simplifycfg: {
+      // auto m_cfgsimple=RunImpl<cfgSimplify>(curfunc,AM);
+      //  PreWork(func);
+      // dominance *d = new dominance(m_func, BList.size());
+      // d->update();
+      // m_cfgsimple = new cfgSimplify(m_func, d);
+      // m_cfgsimple->RunOnFunction();
+      // PreWork(func);
+      // m_dom->update();
+      // m_cfgsimple->PrintPass();
+    }
+    // case reassociate: {
+    //   PreWork(func);
+    //   m_reassociate->RunOnFunction();
+    // }
+    // case simplifycfg: {
+    //   PreWork(func);
+    //   dominance *d = new dominance(m_func, BList.size());
+    //   d->update();
+    //   m_cfgsimple = new cfgSimplify(m_func, d);
+    //   m_cfgsimple->RunOnFunction();
+    //   PreWork(func);
+    //   m_dom->update();
+    //   // m_cfgsimple->PrintPass();
+    // }
+    // case loopsimplify: {
+    //   PreWork(func);
+    //   dominance *d = new dominance(m_func, BList.size());
+    //   d->RunOnFunction();
+    //   m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
+    //   m_loopsimple->RunOnFunction();
+    //   m_loopsimple->PrintPass();
+    // }
+    // case Inline: {
+    //   m_inline->Run();
+    //   // m_inline->PrintPass();
+    // }
+    // case:
+    //   cse { m_cse->RunOnFunction(); }
+    default: {
+      assert(0);
+    }
     }
   }
 }

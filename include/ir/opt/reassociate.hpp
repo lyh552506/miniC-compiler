@@ -1,9 +1,11 @@
+#pragma once
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 #include "dominant.hpp"
 #include <vector>
+class _AnalysisManager;
 class Reassociate : public _PassManagerBase<Reassociate, Function> {
 public:
   Reassociate(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
