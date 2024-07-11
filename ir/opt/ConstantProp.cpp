@@ -1,18 +1,17 @@
 #include "../../include/ir/opt/ConstantProp.hpp"
 #include <set>
 
-void ConstantProp::RunOnFunction()
+bool ConstantProp::Run()
 {
+    bool modified = false;
     for(BasicBlock* block : *_func)
-        RunOnBlock(block);
+        modified |= RunOnBlock(block);
+    return modified;
 }
-void ConstantProp::PrintPass()
+
+bool ConstantProp::RunOnBlock(BasicBlock* block)
 {
-    std::cout << "--------constprop--------" << std::endl;
-    Singleton<Module>().Test();
-}
-void ConstantProp::RunOnBlock(BasicBlock* block)
-{
+    bool modified = false;
     std::vector<User*> wait_del;
     for(User* inst : *block)
     {
@@ -36,5 +35,7 @@ void ConstantProp::RunOnBlock(BasicBlock* block)
     {
         inst->ClearRelation();
         inst->EraseFromParent();
+        modified |= true;
     }
+    return modified;
 }

@@ -9,16 +9,18 @@
 #include <cassert>
 #include <set>
 
-void LoopSimplify::RunOnFunction() {
-  loopAnlay->RunOnFunction();
+bool LoopSimplify::Run() {
+  bool changed = false;
+  m_dom = AM.get<dominance>(m_func);
+  loopAnlay = AM.get<LoopAnalysis>(m_func, m_dom);
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
-    SimplifyLoopsImpl(*iter);
-  // for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
-  //   CaculateLoopInfo(*iter);
+    changed |= SimplifyLoopsImpl(*iter);
+  return true;
 }
 
-void LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {
+bool LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {
+  bool changed = false;
   std::vector<LoopInfo *> WorkLists;
   WorkLists.push_back(loop);
   //将子循环递归的加入进来
@@ -32,8 +34,10 @@ void LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {
     WorkLists.pop_back();
     // step 1: deal with preheader
     BasicBlock *preheader = loopAnlay->GetPreHeader(L);
-    if (!preheader)
+    if (!preheader) {
       InsertPreHeader(L);
+      changed |= true;
+    }
     // step 2: deal with exit
     auto exit = loopAnlay->GetExit(L);
     for (int index = 0; index < exit.size(); ++index) {
@@ -48,6 +52,7 @@ void LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {
     }
     for (int index = 0; index < exit.size(); index++) {
       FormatExit(L, exit[index]);
+      changed |= true;
       vec_pop(exit, index);
     }
     // step 3: deal with latch/back-edge
@@ -63,14 +68,13 @@ void LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {
     }
     assert(!Latch.empty());
     if (Latch.size() > 1) {
-      // if (Latch.size() < 8) {
-      //   SplitNewLoop(loop);
-      // }
       FormatLatch(loop, preheader, Latch);
+      changed |= true;
     } else {
       loop->setLatch(Latch[0]);
     }
   }
+  return changed;
 }
 
 void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
@@ -82,7 +86,6 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
   for (auto rev : m_dom->GetNode(Header->num).rev)
     if (contain.find(m_dom->GetNode(rev).thisBlock) == contain.end())
       OutSide.push_back(m_dom->GetNode(rev).thisBlock);
-  // assert(OutSide.size() > 1);
   //  phase 2: insert the preheader
   BasicBlock *preheader = new BasicBlock();
   preheader->SetName(preheader->GetName() + "_preheader");
@@ -93,8 +96,6 @@ void LoopSimplify::InsertPreHeader(LoopInfo *loop) {
   std::cerr << "insert a preheader: " << preheader->GetName() << std::endl;
 #endif
   // phase 3: update the rev and des
-  if (preheader->GetName() == ".5729_preheader")
-    int a = 0;
   for (auto target : OutSide) {
     auto condition = target->back();
     if (auto cond = dynamic_cast<CondInst *>(condition)) {
@@ -312,7 +313,7 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
   }
   m_dom->GetNode(head->num).rev.push_front(insert->num);
   m_dom->GetNode(insert->num).des.push_front(head->num);
-  UpdateLoopInfo(head, insert, loop, bbs);
+  UpdateLoopInfo(head, insert, bbs);
 }
 
 void LoopSimplify::CaculateLoopInfo(LoopInfo *loop) {
@@ -341,7 +342,6 @@ void LoopSimplify::CaculateLoopInfo(LoopInfo *loop) {
 }
 
 void LoopSimplify::UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,
-                                  LoopInfo *loop,
                                   const std::vector<BasicBlock *> &pred) {
   auto l = loopAnlay->LookUp(Old);
   if (!l)

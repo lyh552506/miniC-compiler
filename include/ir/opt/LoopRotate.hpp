@@ -2,16 +2,17 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
+#include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 #include "dominant.hpp"
 #include "lcssa.hpp"
 #include <unordered_map>
-
-class LoopRotate : public PassManagerBase {
+class _AnalysisManager;
+class LoopRotate : public _PassManagerBase<LoopRotate, Function> {
 public:
-  LoopRotate(Function *func, dominance *dom) : m_func(func), m_dom(dom) {}
-  void RunOnFunction() override;
-  void PrintPass() override{};
+  LoopRotate(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
+  bool Run();
+  void PrintPass();
 
 private:
   bool RotateLoop(LoopInfo *loop);
@@ -22,8 +23,11 @@ private:
                    std::unordered_map<Value *, Value *> &PreHeaderValue);
   void PreserveLcssa(BasicBlock *new_exit, BasicBlock *old_exit,
                      BasicBlock *pred);
+  void UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,
+                      const std::vector<BasicBlock *> &pred);
   LoopAnalysis *loopAnlasis;
   Function *m_func;
   dominance *m_dom;
+  _AnalysisManager &AM;
   const int Heuristic = 8;
 };

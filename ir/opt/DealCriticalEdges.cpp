@@ -1,14 +1,15 @@
 #include "../../include/ir/Analysis/DealCriticalEdges.hpp"
 
-void ElimitCriticalEdge::RunOnFunction(){
+bool ElimitCriticalEdge::Run() {
   DealCriticalEdges();
+  return false;
 }
 
-void ElimitCriticalEdge::PrintPass(){
-  #ifdef SYSY_MIDDLE_END_DEBUG
-  std::cout<<"-----------ElimitCriticalEdge------------\n";
+void ElimitCriticalEdge::PrintPass() {
+#ifdef SYSY_MIDDLE_END_DEBUG
+  std::cout << "-----------ElimitCriticalEdge------------\n";
   Singleton<Module>().Test();
-  #endif
+#endif
 }
 
 void ElimitCriticalEdge::DealCriticalEdges() {
@@ -37,10 +38,10 @@ void ElimitCriticalEdge::AddNullBlock(User *inst, int succ) {
   BasicBlock *CurrBB = inst->GetParent();
   BasicBlock *criticalbb = new BasicBlock();
   m_func->push_back(criticalbb);
-  
+
   //在关键边中插入block
   m_func->InsertBlock(CurrBB, DstBB, criticalbb);
-  criticalbb->num=++m_func->bb_num;
+  criticalbb->num = ++m_func->bb_num;
   m_func->push_bb(criticalbb);
   //还需要修改phi函数的incoming
   for (auto iter = DstBB->begin();
@@ -56,6 +57,6 @@ void ElimitCriticalEdge::AddNullBlock(User *inst, int succ) {
       continue;
     //将value对应的块信息更改
     it1->second.second = criticalbb;
-    phi->Blocks[it1->first]=criticalbb;
+    phi->Blocks[it1->first] = criticalbb;
   }
 }

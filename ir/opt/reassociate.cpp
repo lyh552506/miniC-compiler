@@ -7,12 +7,13 @@
 #include <utility>
 #include <vector>
 
-void Reassociate::RunOnFunction() {
+bool Reassociate::Run() {
   // first should caculate RPO
   bool changed = false;
   BasicBlock *EntryBB = m_func->front();
   m_func->init_visited_block();
-  PostOrderCFG(EntryBB);
+  auto m_dom = AM.get<dominance>(m_func);
+  PostOrderCFG(EntryBB, m_dom);
   std::reverse(RPO.begin(), RPO.end());
   BuildRankMap();
   // phase 1: build the rank map
@@ -21,7 +22,7 @@ void Reassociate::RunOnFunction() {
       changed |= OptimizeInst(I);
   }
   if (!changed)
-    return;
+    return false;
   std::vector<User *> Kill{RedoInst.begin(), RedoInst.end()};
   while (!Kill.empty()) {
     auto val = PopBack(Kill);
@@ -34,6 +35,7 @@ void Reassociate::RunOnFunction() {
     } else
       OptimizeInst(tar);
   }
+  return changed;
 }
 
 void Reassociate::BuildRankMap() {
@@ -292,7 +294,9 @@ Value *Reassociate::OptExp(BinaryInst *exp,
 }
 
 Value *Reassociate::OptMul(BinaryInst *MulInst,
-                           std::vector<std::pair<Value *, int>> &LinerizedOp) {return nullptr;}
+                           std::vector<std::pair<Value *, int>> &LinerizedOp) {
+  return nullptr;
+}
 
 bool Reassociate::IsOperandAssociate(Value *op, BinaryInst::Operation opcode) {
   auto bin = dynamic_cast<BinaryInst *>(op);
@@ -349,12 +353,12 @@ void Reassociate::LinearizeExp(BinaryInst *I,
   return;
 }
 
-void Reassociate::PostOrderCFG(BasicBlock *root) {
+void Reassociate::PostOrderCFG(BasicBlock *root, dominance *m_dom) {
   if (root->visited)
     return;
   root->visited = true;
   for (int tmp : m_dom->GetNode(root->num).des) {
-    PostOrderCFG(m_dom->GetNode(tmp).thisBlock);
+    PostOrderCFG(m_dom->GetNode(tmp).thisBlock, m_dom);
   }
   RPO.push_back(root);
 }

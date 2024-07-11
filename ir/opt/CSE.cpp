@@ -3,6 +3,7 @@
 
 bool CSE::RunOnFunction()
 {
+    AM.get<SideEffect>(&Singleton<Module>());
     bool modified = false;
     bool Changed = false;
     update();
@@ -101,7 +102,7 @@ void CSE::GetBlockLiveOut(BasicBlock* block)
         {
             size_t hash = HashTool::InstHash{}(inst);
             if(BlockLiveOut[block].Loads.find(hash) == BlockLiveOut[block].Loads.end())
-                BlockLiveOut[block].Loads[hash] = inst;
+                BlockLiveOut[block].Loads[hash] = std::make_pair(inst, inst);
             continue;
         }
 
@@ -131,9 +132,9 @@ void CSE::GetBlockLiveOut(BasicBlock* block)
                 if(BlockLiveOut[block].Loads.find(dst_hash) != BlockLiveOut[block].Loads.end() && !Dst->isGlobal())
                     BlockLiveOut[block].Loads.erase(dst_hash);
                 else if(BlockLiveOut[block].Loads.find(dst_hash) != BlockLiveOut[block].Loads.end() && Dst->isGlobal())
-                    BlockLiveOut[block].Loads[dst_hash] = Src;
+                    BlockLiveOut[block].Loads[dst_hash] = std::make_pair(Src, inst);
                 else if(BlockLiveOut[block].Loads.find(dst_hash) == BlockLiveOut[block].Loads.end() && Dst->isGlobal())
-                    BlockLiveOut[block].Loads[dst_hash] = Src;
+                    BlockLiveOut[block].Loads[dst_hash] = std::make_pair(Src, inst);
             }
             continue;
         }
@@ -217,7 +218,7 @@ void CSE::GetBlockLiveIn(BasicBlock* block)
         else
         {
             std::map<std::pair<size_t, User::OpID>, Value*> intersection_AEB_Binary;
-            std::map<size_t, Value*> intersection_Loads;
+            std::map<size_t, std::pair<Value*, User*>> intersection_Loads;
             std::map<size_t, Value*> intersection_Geps;
             std::set<Function*> intersection_Funcs;
             for(const auto& item : BlockLiveOut[pred].AEB_Binary)
@@ -232,8 +233,8 @@ void CSE::GetBlockLiveIn(BasicBlock* block)
             {
                 if(BlockLiveOut[block].Loads.find(item.first) != BlockLiveOut[block].Loads.end())
                 {
-                    if(item.second == BlockLiveOut[block].Loads[item.first])
-                        intersection_Loads[item.first] = item.second;
+                    if(item.second.first == BlockLiveOut[block].Loads[item.first].first)
+                        intersection_Loads[item.first] = BlockLiveOut[block].Loads[item.first];
                 }
             }
             for(const auto& item : BlockLiveOut[pred].Geps)
@@ -380,7 +381,7 @@ bool CSE::RunPass(BasicBlock* block)
             size_t Val = HashTool::InstHash{}(inst->Getuselist()[0]->usee);
             if(BlockLiveIn[block].Loads.find(Val) != BlockLiveIn[block].Loads.end())
             {
-                Value* val = BlockLiveIn[block].Loads[Val];
+                Value* val = BlockLiveIn[block].Loads[Val].first;
                 Function* change_func = Find_Change(inst->Getuselist()[0]->usee, BlockLiveIn[block]);
                 if(auto load = dynamic_cast<User*>(val))
                 {
@@ -388,6 +389,8 @@ bool CSE::RunPass(BasicBlock* block)
                     // {
                         if(!change_func)
                         {
+                            if(auto store = dynamic_cast<StoreInst*>(BlockLiveIn[block].Loads[Val].second))
+                                store->Used = true;
                             inst->RAUW(load);
                             wait_del.push_back(inst);
                             modified = true;
@@ -395,7 +398,7 @@ bool CSE::RunPass(BasicBlock* block)
                         else
                         {
                             BlockLiveIn[block].Funcs.erase(change_func);
-                            BlockLiveIn[block].Loads[Val] = inst;
+                            BlockLiveIn[block].Loads[Val] = std::make_pair(inst, inst);
                         }
                     // }
                 }
@@ -408,7 +411,7 @@ bool CSE::RunPass(BasicBlock* block)
             }
             else
             {
-                BlockLiveIn[block].Loads[Val] = inst;
+                BlockLiveIn[block].Loads[Val] = std::make_pair(inst, inst);
             }
             continue;
         }
@@ -435,6 +438,7 @@ bool CSE::RunPass(BasicBlock* block)
                             if(BlockLiveIn[block].Loads.find(load_hash) != BlockLiveIn[block].Loads.end())
                             {
                                 BlockLiveIn[block].Loads.erase(load_hash);
+                                // BlockLiveIn[block].Loads.erase(load_hash);
                             }
                         }
                     }
@@ -442,15 +446,40 @@ bool CSE::RunPass(BasicBlock* block)
 
                 if(BlockLiveIn[block].Loads.find(dst_hash) != BlockLiveIn[block].Loads.end() && !Dst->isGlobal())
                 {
-                    BlockLiveIn[block].Loads.erase(dst_hash);
+                    // BlockLiveIn[block].Loads.erase(dst_hash);
+                    if(auto store = dynamic_cast<StoreInst*>(BlockLiveIn[block].Loads[dst_hash].second))
+                    {
+                        if(!store->Used)
+                        {
+                            wait_del.push_back(store);
+                            modified |= true;
+                        }
+                    }
+                    BlockLiveIn[block].Loads[dst_hash] = std::make_pair(Src, inst);
                 }
                 else if(BlockLiveIn[block].Loads.find(dst_hash) != BlockLiveIn[block].Loads.end() && Dst->isGlobal())
                 {
-                    BlockLiveIn[block].Loads[dst_hash] = Src;
+                    if(auto store = dynamic_cast<StoreInst*>(BlockLiveIn[block].Loads[dst_hash].second))
+                    {
+                        if(!store->Used)
+                        {
+                            wait_del.push_back(store);
+                            modified |= true;
+                        }
+                    }
+                    BlockLiveIn[block].Loads[dst_hash] = std::make_pair(Src, inst);
                 }
                 else if(BlockLiveIn[block].Loads.find(dst_hash) == BlockLiveIn[block].Loads.end() && Dst->isGlobal())
                 {
-                    BlockLiveIn[block].Loads[dst_hash] = Src;
+                    if(auto store = dynamic_cast<StoreInst*>(BlockLiveIn[block].Loads[dst_hash].second))
+                    {
+                        if(!store->Used)
+                        {
+                            wait_del.push_back(store);
+                            modified |= true;
+                        }
+                    }
+                    BlockLiveIn[block].Loads[dst_hash] = std::make_pair(Src, inst);
                 }
             }
             // // Handle Src -> Gens

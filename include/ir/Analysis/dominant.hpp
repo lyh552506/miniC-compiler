@@ -16,7 +16,7 @@
 #include "PassManagerBase.hpp"
 #include "my_stl.hpp"
 
-class dominance : public PassManagerBase {
+class dominance : public _AnalysisManagerBase<dominance, Function> {
   friend class IDF;
 
 public:
@@ -80,7 +80,7 @@ public:
   Node &GetNode(int index) { return node[index]; }
   std::vector<std::vector<int>> &GetDest() { return Dest; }
   int &updateBlockNum() { return block_num; }
-  void RunOnFunction();
+  void *GetResult(Function *func);
   void UpdateRevDst(int current, int pred);
   const std::queue<Node *> &DFS_Dom();
 
@@ -120,17 +120,17 @@ public:
   /// @brief 判断bb1是否支配bb2
   bool dominates(BasicBlock *bb1, BasicBlock *bb2);
   bool needToUpdate = false;
-  void update();
+  void RunOnFunction();
   void PrintPass() {
 #ifdef SYSY_MIDDLE_END_DEBUG
     std::cerr << "--------mem2reg--------" << std::endl;
     Singleton<Module>().Test();
 #endif
   }
-  dominance(Function *Func, int blockNum)
-      : count{1}, node(blockNum), block_num(blockNum), dsu(20000),
+  dominance(Function *Func)
+      : count{1}, node(Func->Size()), block_num(Func->Size()), dsu(20000),
         // df(blockNum + 1),
-        thisFunc{Func}, Dest(blockNum + 1), IsDFSValid(false) {}
+        thisFunc{Func}, Dest(Func->Size() + 1), IsDFSValid(false) {}
   void dom_begin();
   ~dominance() {}
 };

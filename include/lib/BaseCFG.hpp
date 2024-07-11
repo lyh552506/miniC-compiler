@@ -140,7 +140,8 @@ class User:public Value,public list_node<BasicBlock,User>
         Call,
         Zext,
         FP2SI,
-        SI2FP
+        SI2FP,
+        BinaryUnknown
     };
     OpID id;
     using UsePtr=std::unique_ptr<Use>;

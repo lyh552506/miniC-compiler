@@ -1,22 +1,15 @@
 #include "../../include/ir/opt/DCE.hpp"
 #include "../../util/my_stl.hpp"
 #include <algorithm>
-void DCE::PrintPass()
+#include "SideEffect.hpp"
+bool DCE::Run()
 {
-    std::cout << "--------DCE--------" << std::endl;
-    Singleton<Module>().Test();
-}
-
-void DCE::RunOnFunction()
-{
-    CreateCallMap();
-    DetectRecursive();
-    CreateSideEffectFunc();
-    bool flag = FuncHasSideEffect(func);
+    AM.get<SideEffect>(&Singleton<Module>());
     Value* C = RVACC(func);
-    if(dynamic_cast<UndefValue*>(C) && !flag)
+    if(dynamic_cast<UndefValue*>(C) && !func->HasSideEffect)
     {
-        for(auto iter = func->rbegin(); iter != func->rend(); --iter)
+        for(auto iter = func->rbegin(); 
+        iter != func->rend(); --iter)
         {
             bool NDelBlock = false;
             for(auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1)
@@ -32,9 +25,9 @@ void DCE::RunOnFunction()
             if(!NDelBlock)
                 (*iter)->EraseFromParent();
         }
-        return;
+        return true;
     }
-    if(C && !flag)
+    if(C && !func->HasSideEffect)
     {
         for(auto user : func->GetUserlist())
         {
@@ -61,26 +54,28 @@ void DCE::RunOnFunction()
             func->add_block(Block);
             func->GetBasicBlock().push_back(Block);
         }
-        return;
+        return true;
     }
+    bool modified = false;
     std::vector<User*> WorkList;
     for(BasicBlock* block : *func)
     {
         for(auto inst = block->rbegin();inst != block->rend(); --inst)
         {
             if(std::find(WorkList.begin(), WorkList.end(), (*inst)) == WorkList.end())
-                DCEInst((*inst), WorkList);
+                modified |= DCEInst((*inst), WorkList);
         }
     }
     while(!WorkList.empty())
     {
         User* inst = WorkList.back();
         WorkList.pop_back();
-        DCEInst(inst, WorkList);
+        modified |= DCEInst(inst, WorkList);
     }
+    return modified;
 }
 
-void DCE::DCEInst(User* inst, std::vector<User*> &Worklist)
+bool DCE::DCEInst(User* inst, std::vector<User*> &Worklist)
 {
     if(isDeadInst(inst))
     {
@@ -95,7 +90,9 @@ void DCE::DCEInst(User* inst, std::vector<User*> &Worklist)
         }
         inst->ClearRelation();
         inst->EraseFromParent();
+        return true;
     }
+    return false;
 }
 
 bool DCE::isDeadInst(User* inst)
@@ -147,127 +144,4 @@ Value* DCE::RVACC(Function* func)
     if(RetVal && dynamic_cast<ConstantData*>(RetVal))
         return RetVal;
     return nullptr;
-}
-
-bool DCE::FuncHasSideEffect(Function* func)
-{
-    bool flag = false;
-    if(Recursive_Funcs.count(func))
-        flag = true;
-    auto &Params = func->GetParams();
-    for(auto &_param : Params)
-    {
-        if(_param->GetTypeEnum() == InnerDataType::IR_PTR)
-        {
-            for(Use* Use_ : _param->GetUserlist())
-            {
-                if(dynamic_cast<StoreInst*>(Use_->GetUser()))
-                {
-                    flag = true;
-                    func->Change_Val.insert(_param.get());
-                }
-
-                for(Use* Use__ : Use_->GetUser()->GetUserlist())
-                {
-                    if(dynamic_cast<StoreInst*>(Use__->GetUser()))
-                    {
-                        flag = true;
-                        func->Change_Val.insert(_param.get());
-                    }
-                }
-            }
-        }
-    }
-    for(BasicBlock* block : *func)
-    {
-        for(User* inst : *block)
-        {
-            if(dynamic_cast<CallInst*>(inst))
-            {
-                std::string name = inst->Getuselist()[0]->usee->GetName();
-                if(name =="getint" || name == "getch" || name == "getfloat" \
-                || name == "getfarray" || name == "putint" || name == "putfloat" \
-                || name == "putarray" || name == "putfarray" || name == "putf" || name == "getarray" \
-                || name == "putch" || name == "_sysy_starttime" || name == "_sysy_stoptime" \
-                || name == "llvm.memcpy.p0.p0.i32")
-                  flag = true;
-                Function* Func = dynamic_cast<Function*>(inst->Getuselist()[0]->usee);
-                if(Func && Singleton<Module>().Side_Effect_Funcs.count(Func))
-                    flag = true;
-            }
-            if(dynamic_cast<StoreInst*>(inst))
-            {
-                if(inst->Getuselist()[1]->usee->isGlobal())
-                {
-                    flag = true;
-                    func->Change_Val.insert(inst->Getuselist()[1]->usee);
-                }
-                if(auto gep = dynamic_cast<GetElementPtrInst*>(inst->Getuselist()[1]->usee))
-                {
-                    if(gep->Getuselist()[0]->usee->isGlobal())
-                     {
-                        flag = true;
-                        func->Change_Val.insert(gep->Getuselist()[0]->usee);
-                     }
-                }
-            }
-        }
-    }
-    return flag;
-}
-
-void DCE::DetectRecursive()
-{
-    std::set<Function*> visited;
-    VisitFunc(func, visited);
-}
-
-
-void DCE::VisitFunc(Function* entry, std::set<Function*>& visited)
-{
-    visited.insert(entry);
-    if(!entry->CallingFuncs.empty()){
-    for(Function* Succ : entry->CallingFuncs)
-    {
-        if(visited.find(Succ) != visited.end())
-            Recursive_Funcs.insert(Succ);
-        else
-            VisitFunc(Succ, visited);
-    }}
-    visited.erase(entry);
-}
-
-void DCE::CreateCallMap()
-{
-    for(Use* user_ : func->GetUserlist())
-    {
-        User* user = user_->GetUser();
-        if(dynamic_cast<CallInst*>(user))
-        {
-            Function* CallFunc = user->GetParent()->GetParent();
-            if(CallFunc)
-                func->CalleeFuncs.insert(CallFunc);
-        }
-    }
-    for(BasicBlock* block : *func)
-    {
-        for(User* inst : *block)
-        {
-            if(CallInst* call = dynamic_cast<CallInst*>(inst))
-            {
-                Function* Func = dynamic_cast<Function*>(call->Getuselist()[0]->usee);
-                if(Func)
-                    func->CallingFuncs.insert(Func);
-            }
-        }
-    }
-}
-
-void DCE::CreateSideEffectFunc()
-{
-    for(auto& func_ : Singleton<Module>().GetFuncTion())
-    {
-        if(FuncHasSideEffect(func_.get()))
-            Singleton<Module>().Side_Effect_Funcs.insert(func_.get());
-    }
 }

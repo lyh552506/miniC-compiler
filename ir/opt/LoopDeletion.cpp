@@ -10,21 +10,12 @@
 #include <optional>
 #include <set>
 #include <unordered_map>
-
-void LoopDeletion::RunOnFunction() {
+#include "SideEffect.hpp"
+bool LoopDeletion::Run() {
     bool changed = false;
-    loop = new LoopAnalysis(func, dom);
-    loop->RunOnFunction();
-    for (auto loop : *loop)
-    {
-      changed |= DetectDeadLoop(loop);
-    }
-}
-
-bool LoopDeletion::RunOnFunc() {
-    bool changed = false;
-    loop = new LoopAnalysis(func, dom);
-    loop->RunOnFunction();
+    dom = AM.get<dominance>(func);
+    loop = AM.get<LoopAnalysis>(func, dom);
+    AM.get<SideEffect>(&Singleton<Module>());
     for (auto loop_ : *loop)
       changed |= DetectDeadLoop(loop_);
     return changed;

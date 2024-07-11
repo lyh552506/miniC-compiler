@@ -3,20 +3,23 @@
 #include "../../include/ir/opt/LoopInfo.hpp"
 #include <cassert>
 
-void LICMPass::RunOnFunction() {
-  loop->RunOnFunction();
+bool LICMPass::Run() {
+  m_dom = AM.get<dominance>(m_func);
+  loop = AM.get<LoopAnalysis>(m_func, m_dom);
+  bool changed = false;
   for (auto l = loop->begin(); l != loop->end(); l++) {
-    RunOnLoop(*l);
+    changed |= RunOnLoop(*l);
   }
 }
 
-void LICMPass::RunOnLoop(LoopInfo *l) {
+bool LICMPass::RunOnLoop(LoopInfo *l) {
   std::set<BasicBlock *> contain{l->GetLoopBody().begin(),
                                  l->GetLoopBody().end()};
   contain.insert(l->GetHeader());
   auto head = l->GetHeader();
   change |= licmSink(contain, l, head);
   change |= licmHoist(contain, l, head);
+  return change;
 }
 // user在外部
 bool LICMPass::licmSink(const std::set<BasicBlock *> &contain, LoopInfo *l,
@@ -133,7 +136,6 @@ bool LICMPass::UserOutSideLoop(const std::set<BasicBlock *> &contain, User *I,
   }
   return true;
 }
-
 
 bool LICMPass::IsDomExit(User *I, std::vector<BasicBlock *> &exit) {
   assert(!exit.empty());

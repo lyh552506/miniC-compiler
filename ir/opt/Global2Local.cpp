@@ -2,15 +2,15 @@
 #include "../../include/lib/Trival.hpp"
 void Global2Local::init()
 {
-    createSuccFuncs();
-    CreateCallNum();
-    DetectRecursive();
-    CalGlobal2Funcs();
+    createSuccFuncs(module);
+    CreateCallNum(module);
+    DetectRecursive(module);
+    CalGlobal2Funcs(module);
 }  
 
-void Global2Local::createSuccFuncs()
+void Global2Local::createSuccFuncs(Module* module)
 {
-    for(auto& func_ : module.GetFuncTion())
+    for(auto& func_ : module->GetFuncTion())
     {
         Function* func = func_.get();
         for(Use* user : func->GetUserlist())
@@ -21,9 +21,9 @@ void Global2Local::createSuccFuncs()
     }
 }
 
-void Global2Local::DetectRecursive()
+void Global2Local::DetectRecursive(Module* module)
 {
-    Function* entry = module.GetMainFunction();
+    Function* entry = module->GetMainFunction();
     std::set<Function*> visited;
     visit(entry, visited);
 }
@@ -41,9 +41,9 @@ void Global2Local::visit(Function* entry, std::set<Function*>& visited)
     visited.erase(entry);
 }
 
-void Global2Local::CalGlobal2Funcs()
+void Global2Local::CalGlobal2Funcs(Module* module)
 {
-    for(auto & global_ptr : module.GetGlobalVariable())
+    for(auto & global_ptr : module->GetGlobalVariable())
     {
         Variable* global = global_ptr.get();
         for(Use* user_ : global->GetUserlist())
@@ -53,16 +53,17 @@ void Global2Local::CalGlobal2Funcs()
         }
     }
 }
-void Global2Local::RunOnModule()
+bool Global2Local::Run()
 {
-    init();
-    RunPass();
+    init(module);
+    RunPass(module);
+    return false;
 }
 
-void Global2Local::RunPass()
+void Global2Local::RunPass(Module* module)
 {
-    Function* main = module.GetMainFunction();
-    auto& globalvals = module.GetGlobalVariable();
+    Function* main = module->GetMainFunction();
+    auto& globalvals = module->GetGlobalVariable();
     bool Repeat = false;
     for(auto iter = globalvals.begin(); iter != globalvals.end(); )
     {
@@ -190,7 +191,7 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
 // void Global2Local::LocalGep(Variable* val, Function* func)
 // {
 //     BasicBlock* begin = func->front();
-//     Value* Val = module.GetValueByName(val->get_name());
+//     Value* Val = module->GetValueByName(val->get_name());
 //     GetElementPtrInst* gep = new GetElementPtrInst(Val);
 //     begin->GenerateGEPInst(gep);
 //     for(Use* use_ : Val->GetUserlist())
@@ -273,10 +274,8 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
                     {
                         BasicBlock* block = call->GetParent();
                         Function* func_ = block->GetParent();
-                        dom_info = std::make_unique<dominance>(func_, func_->GetBasicBlock().size());
-                        dom_info->RunOnFunction();
-                        loopAnalysis = std::make_unique<LoopAnalysis>(func_, dom_info.get());
-                        loopAnalysis->RunOnFunction();
+                        // dom_info = AM_.get<dominance>*(func);
+                        // loopAnalysis = AM_.get<LoopAnalysis>(func);
                         if(block->LoopDepth != 0)
                             return false;
                     }
@@ -314,10 +313,8 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
                             {
                                 BasicBlock* block = call->GetParent();
                                 Function* func_ = block->GetParent();
-                                dom_info = std::make_unique<dominance>(func_, func_->GetBasicBlock().size());
-                                dom_info->RunOnFunction();
-                                loopAnalysis = std::make_unique<LoopAnalysis>(func_, dom_info.get());
-                                loopAnalysis->RunOnFunction();
+                                // dom_info = AM.get<dominance>(func)
+                                // loopAnalysis = AM_.get<LoopAnalysis>(func);
                                 if(block->LoopDepth != 0)
                                     return false;
                             }
@@ -370,7 +367,7 @@ bool Global2Local::hasChanged(int index, Function* func)
 //     if((val->GetType()->GetTypeEnum() != InnerDataType::IR_ARRAY) && (val->GetType()->GetTypeEnum() != InnerDataType::IR_PTR) \
 //     && val->GetInitializer())
 //     {
-//     Value* Val = module.GetValueByName(val->get_name());
+//     Value* Val = module->GetValueByName(val->get_name());
 //     bool changed = false;
 //     for(Use* use_ : Val->GetUserlist())
 //     {
@@ -392,9 +389,9 @@ bool Global2Local::hasChanged(int index, Function* func)
 //         return false;
 // }
 
-void Global2Local::CreateCallNum()
+void Global2Local::CreateCallNum(Module* module)
 {
-    for(auto& func_ : module.GetFuncTion())
+    for(auto& func_ : module->GetFuncTion())
     {
         Function* func = func_.get();
         for(Use* user_ : func->GetUserlist())

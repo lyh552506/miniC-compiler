@@ -135,7 +135,6 @@ class mylist
     virtual iterator end(){return iterator(nullptr);}
     virtual iterator rbegin(){return iterator(this->tail);}
     virtual iterator rend(){return iterator(nullptr);}
-    int Size(){return this->size;}
     void collect(derived_list_node* _begin,derived_list_node* _end){
         assert(this->head==nullptr&&this->tail==nullptr&&"Used to Separte List");
         this->head=_begin;
@@ -164,7 +163,9 @@ class mylist
 
         return std::make_pair(_begin,_end);
     }
-
+    int Size(){
+        return size;
+    }
     // 以后再说
     // void merge(derived_mylist*& other){
     //     other=nullptr;
