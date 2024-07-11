@@ -1,8 +1,8 @@
 #include "SideEffect.hpp"
 
-bool SideEffect::RunOnModule(Module& module)
+bool SideEffect::RunOnModule(Module* module)
 {
-    for(auto& Func_Ptr : module.GetFuncTion())
+    for(auto& Func_Ptr : module->GetFuncTion())
         CreateCallMap(Func_Ptr.get());
     DetectRecursive();
     CreateSideEffectFunc();
@@ -39,7 +39,7 @@ void SideEffect::CreateCallMap(Function* func)
 void SideEffect::DetectRecursive()
 {
     std::set<Function*> visited;
-    for(auto& Func_Ptr : module.GetFuncTion())
+    for(auto& Func_Ptr : module->GetFuncTion())
         VisitFunc(Func_Ptr.get(), visited);
 }
 
@@ -59,7 +59,7 @@ void SideEffect::VisitFunc(Function* entry, std::set<Function*>& visited)
 
 void SideEffect::CreateSideEffectFunc()
 {
-    for(auto& func_ : module.GetFuncTion())
+    for(auto& func_ : module->GetFuncTion())
     {
         if(FuncHasSideEffect(func_.get()))
             func_->HasSideEffect = true;

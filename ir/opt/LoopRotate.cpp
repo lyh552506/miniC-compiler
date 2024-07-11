@@ -5,6 +5,7 @@
 #include "SideEffect.hpp"
 #include "LoopInfo.hpp"
 #include "PassManagerBase.hpp"
+#include "Singleton.hpp"
 #include "dominant.hpp"
 #include <algorithm>
 #include <cassert>
@@ -20,7 +21,7 @@
 bool LoopRotate::Run() {
   bool changed = false;
   m_dom = AM.get<dominance>(m_func);
-  auto sideeffect=AM.get<SideEffect>();
+  auto sideeffect=AM.get<SideEffect>(&Singleton<Module>());
   loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
   for (auto loop : *loopAnlasis) {
     changed |= RotateLoop(loop);

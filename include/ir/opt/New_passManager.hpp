@@ -91,7 +91,7 @@ public:
   Pass *get(Module *mod, Args &&...args) {
     std::unique_ptr<Pass> pass =
         std::make_unique<Pass>(mod, std::forward<Args>(args)...);
-    auto *result = pass->GetResult(mod);
+    auto *result = pass->GetResult();
     Contain.emplace_back(pass.release(),
                          [](void *ptr) { delete static_cast<Pass *>(ptr); });
     return static_cast<Pass *>(result);
@@ -123,6 +123,6 @@ private:
   OptLevel level;
   void AddPass(PassName pass) { EnablePass.push(pass); }
   std::queue<PassName> EnablePass;
-  Module& module;
+  Module* module;
   Function* curfunc;
 };
