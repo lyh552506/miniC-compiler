@@ -1,6 +1,6 @@
-#include "DeadArgsElimination.hpp"
-#include "CFG.hpp"
-#include "my_stl.hpp"
+#include "../../include/ir/opt/DeadArgsElimination.hpp"
+#include "../../lib/CFG.hpp"
+#include "../../util/my_stl.hpp"
 bool DeadArgsElimination::Run()
 {
     wait_del.clear();

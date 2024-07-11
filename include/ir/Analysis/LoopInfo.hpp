@@ -3,10 +3,10 @@
 #include <cassert>
 #include <vector>
 
-#include "CFG.hpp"
-#include "PassManagerBase.hpp"
-#include "dominant.hpp"
-#include "my_stl.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/ir/opt/PassManagerBase.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
+#include "../../util/my_stl.hpp"
 
 class LoopInfo {
 public:
@@ -83,7 +83,7 @@ class LoopAnalysis : public _AnalysisManagerBase<LoopAnalysis, Function> {
 public:
   using iterator = std::vector<LoopInfo *>::const_iterator;
   using reverse_iterator = std::vector<LoopInfo *>::const_reverse_iterator;
-  LoopAnalysis(Function *func,dominance *dom) : m_func(func), m_dom(dom) {
+  LoopAnalysis(Function *func, dominance *dom) : m_func(func), m_dom(dom) {
     setBBs();
     setDest();
   }

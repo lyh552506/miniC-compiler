@@ -1,5 +1,4 @@
-#include "AliasAnalysis.hpp"
-#include "CFG.hpp"
+#include "../../include/ir/Analysis/AliasAnalysis.hpp"
 #include <cassert>
 #include <functional>
 

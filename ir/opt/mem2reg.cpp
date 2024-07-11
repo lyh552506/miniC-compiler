@@ -1,5 +1,6 @@
 #include "../../include/ir/opt/PromoteMemtoRegister.hpp"
-#include "../../include/ir/opt/dominant.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
+#include "../../include/ir/opt/mem2reg.hpp"
 
 bool Mem2reg::promoteMemoryToRegister(Function &func) {
   auto dom = AM.get<dominance>(&func);

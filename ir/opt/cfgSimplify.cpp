@@ -1,5 +1,5 @@
 #include "../../include/ir/opt/cfgSimplify.hpp"
-#include "../../include/ir/opt/LoopInfo.hpp"
+#include "../../include/ir/Analysis/LoopInfo.hpp"
 #include <algorithm>
 #include <cassert>
 #include <memory>

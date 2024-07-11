@@ -1,6 +1,6 @@
 #include "../../include/ir/opt/Global2Local.hpp"
 #include "../../include/lib/Trival.hpp"
-void Global2Local::init()
+void Global2Local::init(Module* module)
 {
     createSuccFuncs(module);
     CreateCallNum(module);

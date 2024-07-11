@@ -1,4 +1,4 @@
-#include "SideEffect.hpp"
+#include "../../include/ir/Analysis/SideEffect.hpp"
 
 bool SideEffect::RunOnModule(Module* module)
 {

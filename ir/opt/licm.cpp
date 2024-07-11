@@ -1,6 +1,6 @@
 #include "../../include/ir/opt/licm.hpp"
 #include "../../include/lib/CFG.hpp"
-#include "../../include/ir/opt/LoopInfo.hpp"
+#include "../../include/ir/Analysis/LoopInfo.hpp"
 #include <cassert>
 
 bool LICMPass::Run() {

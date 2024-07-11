@@ -2,9 +2,9 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/ir/opt/ConstantFold.hpp"
-#include "../../include/ir/opt/LoopInfo.hpp"
+#include "../../include/ir/Analysis/LoopInfo.hpp"
 #include "../../include/ir/opt/PassManagerBase.hpp"
-#include "../../include/ir/opt/dominant.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
 #include <algorithm>
 #include <cassert>
 #include <optional>

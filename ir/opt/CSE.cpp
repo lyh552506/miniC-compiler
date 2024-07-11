@@ -1,7 +1,8 @@
-#include "CSE.hpp"
+#include "../../include/ir/opt/CSE.hpp"
 #include "../../include/ir/opt/ConstantFold.hpp"
+#include "../../include/ir/Analysis/SideEffect.hpp"
 
-bool CSE::RunOnFunction()
+bool CSE::Run()
 {
     AM.get<SideEffect>(&Singleton<Module>());
     bool modified = false;

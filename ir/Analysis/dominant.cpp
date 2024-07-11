@@ -1,4 +1,4 @@
-#include "../../include/ir/opt/dominant.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
 
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"

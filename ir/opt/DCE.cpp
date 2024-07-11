@@ -1,7 +1,7 @@
 #include "../../include/ir/opt/DCE.hpp"
 #include "../../util/my_stl.hpp"
 #include <algorithm>
-#include "SideEffect.hpp"
+#include "../../include/ir/Analysis/SideEffect.hpp"
 bool DCE::Run()
 {
     AM.get<SideEffect>(&Singleton<Module>());

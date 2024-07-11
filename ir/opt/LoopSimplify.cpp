@@ -1,9 +1,9 @@
 #include "../../include/ir/opt/LoopSimplify.hpp"
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
-#include "../../include/ir/opt/LoopInfo.hpp"
+#include "../../include/ir/Analysis/LoopInfo.hpp"
 #include "../../include/lib/Type.hpp"
-#include "../../include/ir/opt/dominant.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
 #include "../../util/my_stl.hpp"
 #include <algorithm>
 #include <cassert>
