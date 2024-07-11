@@ -19,6 +19,7 @@
 #include "SSAPRE.hpp"
 #include "Singleton.hpp"
 #include "StoreOnlyGlobalElimination.hpp"
+#include "any"
 #include "cfgSimplify.hpp"
 #include "dominant.hpp"
 #include "lcssa.hpp"
@@ -69,20 +70,18 @@ static struct option long_options[] = {{"mem2reg", no_argument, 0, 4},
 class _AnalysisManager
     : public _AnalysisManagerBase<_AnalysisManager, Function> {
 private:
-  std::vector<std::unique_ptr<void, void (*)(void *)>> Contain;
+  std::vector<std::any> Contain;
 
 public:
   _AnalysisManager() = default;
-  virtual ~_AnalysisManager() = default;
+  virtual ~_AnalysisManager()=default;
   template <typename Pass, typename... Args,
             typename name = std::enable_if_t<
                 std::is_base_of_v<_AnalysisManagerBase<Pass, Function>, Pass>>>
   Pass *get(Function *func, Args &&...args) {
-    std::unique_ptr<Pass> pass =
-        std::make_unique<Pass>(func, std::forward<Args>(args)...);
+    auto pass = new Pass(func, std::forward<Args>(args)...);
     auto *result = pass->GetResult(func);
-    Contain.emplace_back(pass.release(),
-                         [](void *ptr) { delete static_cast<Pass *>(ptr); });
+    Contain.emplace_back(pass);
     return static_cast<Pass *>(result);
   }
 
@@ -90,11 +89,9 @@ public:
             typename name = std::enable_if_t<
                 std::is_base_of_v<_AnalysisManagerBase<Pass, Module>, Pass>>>
   Pass *get(Module *mod, Args &&...args) {
-    std::unique_ptr<Pass> pass =
-        std::make_unique<Pass>(mod, std::forward<Args>(args)...);
+    auto pass = new Pass(mod, std::forward<Args>(args)...);
     auto *result = pass->GetResult();
-    Contain.emplace_back(pass.release(),
-                         [](void *ptr) { delete static_cast<Pass *>(ptr); });
+    Contain.emplace_back(pass);
     return static_cast<Pass *>(result);
   }
 };

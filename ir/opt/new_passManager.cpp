@@ -93,11 +93,11 @@ void _PassManager::RunOnTest() {
     EnablePass.pop();
     for (auto &func : module->GetFuncTion()) {
       curfunc = func.get();
-      int i = 0;
       //维护bbs关系
+      curfunc->bb_num = 0;
       curfunc->GetBasicBlock().clear();
       for (auto bb : *curfunc) {
-        bb->num = i++;
+        bb->num = curfunc->bb_num++;
         curfunc->GetBasicBlock().push_back(bb);
       }
       switch (name) {
@@ -107,6 +107,13 @@ void _PassManager::RunOnTest() {
       }
       case ece: {
         auto eliedg = RunImpl<ElimitCriticalEdge>(curfunc, AM);
+        //维护bbs关系
+        curfunc->bb_num = 0;
+        curfunc->GetBasicBlock().clear();
+        for (auto bb : *curfunc) {
+          bb->num = curfunc->bb_num++;
+          curfunc->GetBasicBlock().push_back(bb);
+        }
         break;
       }
       case pre: {
@@ -123,6 +130,13 @@ void _PassManager::RunOnTest() {
       }
       case simplifycfg: {
         auto m_cfgsimple = RunImpl<cfgSimplify>(curfunc, AM);
+        //维护bbs关系
+        curfunc->bb_num = 0;
+        curfunc->GetBasicBlock().clear();
+        for (auto bb : *curfunc) {
+          bb->num = curfunc->bb_num++;
+          curfunc->GetBasicBlock().push_back(bb);
+        }
         break;
       }
       case reassociate: {
@@ -130,15 +144,34 @@ void _PassManager::RunOnTest() {
         break;
       }
       case loopsimplify: {
+        //维护bbs关系
         auto m_loopsimple = RunImpl<LoopSimplify>(curfunc, AM);
+        curfunc->bb_num = 0;
+        curfunc->GetBasicBlock().clear();
+        for (auto bb : *curfunc) {
+          bb->num = curfunc->bb_num++;
+          curfunc->GetBasicBlock().push_back(bb);
+        }
         break;
       }
       case loopdeletion: {
         auto m_loopdeletion = RunImpl<LoopDeletion>(curfunc, AM);
+        curfunc->bb_num = 0;
+        curfunc->GetBasicBlock().clear();
+        for (auto bb : *curfunc) {
+          bb->num = curfunc->bb_num++;
+          curfunc->GetBasicBlock().push_back(bb);
+        }
         break;
       }
       case Inline: {
         auto m_inline = RunImpl<Inliner>(module, AM);
+        curfunc->bb_num = 0;
+        curfunc->GetBasicBlock().clear();
+        for (auto bb : *curfunc) {
+          bb->num = curfunc->bb_num++;
+          curfunc->GetBasicBlock().push_back(bb);
+        }
         break;
       }
       case cse: {
