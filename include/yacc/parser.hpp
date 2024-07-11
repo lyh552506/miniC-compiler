@@ -47,8 +47,8 @@
 // "%code requires" blocks.
 #line 4 "parser.y"
 
-#include "AST_NODE.hpp"
-#include "Singleton.hpp"
+#include "../../include/lib/AST_NODE.hpp"
+#include "../../include/lib/Singleton.hpp"
 
 #line 54 "parser.hpp"
 
