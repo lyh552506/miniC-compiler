@@ -11,7 +11,7 @@ add_definitions(-DSYSY_ENABLE_MIDDLE_END)
 add_definitions(-DTEST)
 #add_definitions(-DLEVEL)
 # add_definitions(-DDEBUG)
-# add_definitions(-DSYSY_ENABLE_BACKEND)
+add_definitions(-DSYSY_ENABLE_BACKEND)
 include(CTest)
 enable_testing()
 
