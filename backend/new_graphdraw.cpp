@@ -15,17 +15,14 @@ void GraphColor::RunOnFunc() {
   bool condition = true;
   GC_init();
   CaculateLiveness();
-  // PrintAnalysis();
   CaculateTopu(m_func->front());
   std::reverse(topu.begin(), topu.end());
   for (auto &[key, val] : IG) {
-    // AdjList[key].insert(val.begin(), val.end());
     Degree[key] = val.size();
   }
   while (condition) {
     condition = false;
     CaculateLiveness();
-    // PrintAnalysis();
     MakeWorklist();
     do {
       if (!simplifyWorkList.empty())
@@ -40,27 +37,7 @@ void GraphColor::RunOnFunc() {
              !freezeWorkList.empty() || !spillWorkList.empty());
     AssignColors();
     if (!spilledNodes.empty()) {
-      // if (m_func->GetName() == "main") {
-      //   PrintAnalysis();
-      //   ctx.print();
-      // }
       SpillNodeInMir();
-      // ctx.print();
-      // CaculateLiveness();
-      // return;
-      // if (m_func->GetName() == "main") {
-      //   static int x = 0;
-      //   x++;
-      //   if (x == 1) {
-      //     IG.clear();
-      //     CaculateLiveness();
-      //     // PrintPass();
-      //     PrintAnalysis();
-      //     ctx.print();
-      //     exit(0);
-      //   }
-      // }
-      // return;
       condition = true;
     }
   }
@@ -357,7 +334,8 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
 }
 
 void GraphColor::FreezeMoves(MOperand freeze) {
-  for (auto mov : MoveRelated(freeze)) {
+  auto tmp = MoveRelated(freeze);
+  for (auto mov : tmp) {
     // mov: dst<-src
     MOperand dst = dynamic_cast<MOperand>(mov->GetDef());
     MOperand src = dynamic_cast<MOperand>(mov->GetOperand(0));
@@ -383,7 +361,7 @@ void GraphColor::FreezeMoves(MOperand freeze) {
                          << value->GetName() << std::endl;)
         PushVecSingleVal(simplifyWorkList, value);
       } else if (value->GetType() == riscv_none) {
-        assert(0 && "appear riscv_none");
+        // assert(0 && "appear riscv_none");
       }
     }
   }
@@ -464,8 +442,8 @@ void GraphColor::coalesce() {
       m = std::make_pair(rd, rs);
     }
     vec_pop(worklistMoves, i);
-    moveList[rs].erase(mv);
-    moveList[rd].erase(mv);
+    // moveList[rs].erase(mv);
+    // moveList[rd].erase(mv);
     auto iter = std::find(IG[rs].begin(), IG[rs].end(), rd);
     std::unordered_set<MOperand> Adjset(IG[rs].begin(), IG[rs].end());
     for (auto tmp : IG[rd])
@@ -588,8 +566,7 @@ void GraphColor::SpillNodeInMir() {
                    << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
                    << " To Replace" << std::endl;)
         mir->SetDef(sd->GetOperand(0));
-      } else if (
-                 mir->GetDef() != nullptr &&
+      } else if (mir->GetDef() != nullptr &&
                  dynamic_cast<VirRegister *>(mir->GetDef()) &&
                  (spilledNodes.find(dynamic_cast<VirRegister *>(
                       mir->GetDef())) != spilledNodes.end())) {
@@ -607,8 +584,7 @@ void GraphColor::SpillNodeInMir() {
       }
       for (int i = 0; i < mir->GetOperandSize(); i++) {
         auto operand = mir->GetOperand(i);
-        if (
-            operand != nullptr && dynamic_cast<VirRegister *>(operand) &&
+        if (operand != nullptr && dynamic_cast<VirRegister *>(operand) &&
             (spilledNodes.find(dynamic_cast<VirRegister *>(operand)) !=
              spilledNodes.end()) &&
             AlreadySpill.find(dynamic_cast<VirRegister *>(operand)) ==
@@ -625,8 +601,7 @@ void GraphColor::SpillNodeInMir() {
                   << " To Replace" << std::endl;)
           mir->SetOperand(i, sd->GetOperand(0));
           // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
-        } else if (
-                   mir->GetOperand(i) != nullptr &&
+        } else if (mir->GetOperand(i) != nullptr &&
                    dynamic_cast<VirRegister *>(mir->GetOperand(i)) &&
                    (spilledNodes.find(dynamic_cast<VirRegister *>(
                         mir->GetOperand(i))) != spilledNodes.end())) {
