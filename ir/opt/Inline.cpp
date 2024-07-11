@@ -219,15 +219,15 @@ std::vector<BasicBlock *> Inliner::CopyBlocks(User *inst) {
   std::unordered_map<Operand, Operand> OperandMapping;
 
   std::vector<BasicBlock *> copied_bbs;
-  for (BasicBlock *block : *Func)
-    copied_bbs.push_back(block->clone(OperandMapping));
   int num = 1;
   for (auto &param : Func->GetParams()) {
     Value *Param = param.get();
     if (OperandMapping[Param])
-      OperandMapping[Param]->RAUW(inst->Getuselist()[num]->usee);
+      OperandMapping[Param]=inst->Getuselist()[num]->usee;
     num++;
   }
+  for (BasicBlock *block : *Func)
+    copied_bbs.push_back(block->clone(OperandMapping));
   return copied_bbs;
 }
 
