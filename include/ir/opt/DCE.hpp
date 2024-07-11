@@ -9,7 +9,7 @@ class DCE : public _PassManagerBase<DCE, Function>
 public:
     bool Run();
     static bool isDeadInst(User* inst);
-    DCE(Function* func_, _AnalysisManager &AM) : func(func_), AM(AM) {}
+    DCE(Function* func_, _AnalysisManager &AM) : func(func_), AM(AM) { }
 private:
     bool DelF = false;
     Function* func;

@@ -1,6 +1,6 @@
 #include "SideEffect.hpp"
 
-bool SideEffect::RunOnModule(Module& module, _AnalysisManager &AM)
+bool SideEffect::RunOnModule(Module& module)
 {
     for(auto& Func_Ptr : module.GetFuncTion())
         CreateCallMap(Func_Ptr.get());

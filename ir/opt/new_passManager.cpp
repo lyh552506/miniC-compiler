@@ -57,6 +57,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case deadargselimination:
       AddPass(deadargselimination);
       break;
+    case storeonlyglobalelimination:
+      AddPass(storeonlyglobalelimination);
+      break;
     case O0:
       level = O0;
       break;
@@ -140,12 +143,23 @@ void _PassManager::RunOnTest(int argc, char *argv[]) {
       // m_loopsimple->RunOnFunction();
       // m_loopsimple->PrintPass();
     }
-    case Inline: {
-      // m_inline->Run();
-      // m_inline->PrintPass();
+    case loopdeletion: {
+      auto m_loopdeletion = RunImpl<LoopDeletion>(curfunc, AM);
     }
-    case cse: { 
-      // m_cse->RunOnFunction(); 
+    case Inline: {
+      auto m_inline = RunImpl<Inliner>(module, AM);
+    }
+    case cse: {
+      auto m_cse = RunImpl<CSE>(curfunc, AM); 
+    }
+    case deadargselimination: {
+      auto m_deadargselimination = RunImpl<DeadArgsElimination>(module, AM);
+    }
+    case storeonlyglobalelimination: {
+      auto m_storeonlyglobalelimination = RunImpl<StoreOnlyGlobalElimination>(module, AM);
+    }
+    case global2local: {
+      auto m_global2local = RunImpl<Global2Local>(module, AM);
     }
     default: {
       assert(0);

@@ -1,7 +1,7 @@
 #include "CFG.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-class SideEffect : public _AnalysisManager
+class SideEffect : public _AnalysisManagerBase<SideEffect, Module>
 {
     std::map<Function*, std::set<Function*>> CalleeFuncs;
     std::map<Function*, std::set<Function*>> CallingFuncs;
@@ -13,6 +13,8 @@ private:
     void DetectRecursive();
     bool FuncHasSideEffect(Function* func);
     void CreateSideEffectFunc();
+    bool RunOnModule(Module& mod);
 public:
-    bool RunOnModule(Module& mod, _AnalysisManager &AM);
+    explicit SideEffect(Module& mod) : module(mod) {}
+    void* GetResult() { RunOnModule(module); return this; }
 };

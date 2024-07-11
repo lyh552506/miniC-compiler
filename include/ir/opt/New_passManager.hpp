@@ -23,6 +23,9 @@
 #include "LoopRotate.hpp"
 #include "mem2reg.hpp"
 #include "DealCriticalEdges.hpp"
+#include "StoreOnlyGlobalElimination.hpp"
+#include "DeadArgsElimination.hpp"
+#include "LoopDeletion.hpp"
 class FunctionPassManager;
 class ModulePassManager;
 enum OptLevel { O0=0, O1=1, O2=2, O3=3 };
@@ -42,7 +45,8 @@ enum PassName {
   licm,
   looprotate,
   loopdeletion,
-  deadargselimination
+  deadargselimination,
+  storeonlyglobalelimination
 };
 
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 4},
@@ -109,7 +113,7 @@ public:
   }
   template <typename Pass, typename name = std::enable_if_t<std::is_base_of_v<
                                _PassManagerBase<Pass, Module>, Pass>>>
-  bool RunImpl(Module *mod, _AnalysisManager &AM) {
+  bool RunImpl(Module &mod, _AnalysisManager &AM) {
     auto pass = std::make_unique<Pass>(mod, AM);
     return pass->Run();
   }
@@ -119,6 +123,6 @@ private:
   OptLevel level;
   void AddPass(PassName pass) { EnablePass.push(pass); }
   std::queue<PassName> EnablePass;
-  Module* module;
+  Module& module;
   Function* curfunc;
 };
