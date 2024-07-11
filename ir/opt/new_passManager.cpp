@@ -1,6 +1,4 @@
 #include "New_passManager.hpp"
-#include "LoopRotate.hpp"
-#include "licm.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -289,7 +287,8 @@ void _PassManager::RunOnTest() {
       }
       case global2local: {
         auto m_global2local = RunImpl<Global2Local>(module, AM);
-        break;}
+        break;
+      }
       case lcssa: {
         auto m_lcssa = RunImpl<LcSSA>(curfunc, AM);
         break;
