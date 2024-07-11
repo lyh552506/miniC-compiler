@@ -157,11 +157,13 @@ void GraphColor::CaculateLiveness() {
   RunOnFunction();
   //计算IG,并且添加precolored集合
   IG.clear();
+<<<<<<< HEAD
   // initial.clear();
+=======
+>>>>>>> main
   for (const auto b : *m_func) {
     CalInstLive(b);
     CalcmoveList(b);
-    CalcIG(b);
   }
   RunOnFunc_();
 }
@@ -468,9 +470,6 @@ void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     MOperand select = selectstack.back();
     RISCVType ty = select->GetType();
-    if(select->GetName()==".53"){
-      int a=0;
-    }
     selectstack.pop_back();
     std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),
                                             reglist.GetReglistInt().end()};
@@ -541,8 +540,8 @@ void GraphColor::SpillNodeInMir() {
                    << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
                    << " To Replace" << std::endl;)
         mir->SetDef(sd->GetOperand(0));
-        // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
       } else if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd &&
+                 mir->GetOpcode() != RISCVMIR::RISCVISA::_fsw &&
                  mir->GetDef() != nullptr &&
                  dynamic_cast<VirRegister *>(mir->GetDef()) &&
                  (spilledNodes.find(dynamic_cast<VirRegister *>(
@@ -561,8 +560,9 @@ void GraphColor::SpillNodeInMir() {
       }
       for (int i = 0; i < mir->GetOperandSize(); i++) {
         auto operand = mir->GetOperand(i);
-        if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd && operand != nullptr &&
-            dynamic_cast<VirRegister *>(operand) &&
+        if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd &&
+            mir->GetOpcode() != RISCVMIR::RISCVISA::_fsw &&
+            operand != nullptr && dynamic_cast<VirRegister *>(operand) &&
             (spilledNodes.find(dynamic_cast<VirRegister *>(operand)) !=
              spilledNodes.end()) &&
             AlreadySpill.find(dynamic_cast<VirRegister *>(operand)) ==
@@ -580,6 +580,7 @@ void GraphColor::SpillNodeInMir() {
           mir->SetOperand(i, sd->GetOperand(0));
           // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
         } else if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd &&
+                   mir->GetOpcode() != RISCVMIR::RISCVISA::_fsw &&
                    mir->GetOperand(i) != nullptr &&
                    dynamic_cast<VirRegister *>(mir->GetOperand(i)) &&
                    (spilledNodes.find(dynamic_cast<VirRegister *>(
@@ -617,7 +618,12 @@ RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
   assert(AlreadySpill.find(vreg) == AlreadySpill.end() && "no spill before");
   VirRegister *reg = new VirRegister(vreg->GetType());
   temps.insert(reg);
-  RISCVMIR *sd = new RISCVMIR(RISCVMIR::RISCVISA::_sd);
+  RISCVMIR *sd = nullptr;
+  if (spill->GetType() == RISCVType::riscv_i32 ||
+      spill->GetType() == RISCVType::riscv_ptr)
+    sd = new RISCVMIR(RISCVMIR::RISCVISA::_sd);
+  else if (spill->GetType() == RISCVType::riscv_float32)
+    sd = new RISCVMIR(RISCVMIR::RISCVISA::_fsw);
   sd->AddOperand(reg);
   auto spillnode = m_func->GetFrame()->spill(vreg);
   sd->AddOperand(spillnode);
@@ -632,7 +638,12 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
   assert(AlreadySpill.find(vreg) != AlreadySpill.end() && "no spill before");
   VirRegister *reg = new VirRegister(vreg->GetType());
   temps.insert(reg);
-  RISCVMIR *lw = new RISCVMIR(RISCVMIR::RISCVISA::_ld);
+  RISCVMIR *lw = nullptr;
+  if (load->GetType() == RISCVType::riscv_i32 ||
+      load->GetType() == RISCVType::riscv_ptr)
+    lw = new RISCVMIR(RISCVMIR::RISCVISA::_ld);
+  else if (load->GetType() == RISCVType::riscv_float32)
+    lw = new RISCVMIR(RISCVMIR::RISCVISA::_flw);
   auto loadnode = AlreadySpill[vreg]->GetOperand(1);
   lw->SetDef(reg);
   lw->AddOperand(loadnode);
@@ -714,7 +725,7 @@ PhyRegister *GraphColor::SelectPhyReg(MOperand vreg, RISCVType ty,
         if (auto p_def = dynamic_cast<PhyRegister *>(def))
           MoveTarget.insert(p_def);
       } else {
-        assert(0);
+        // assert(0);
       }
     }
   }

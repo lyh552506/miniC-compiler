@@ -118,7 +118,7 @@ private:
   //返回vector为0则不是move相关
   std::unordered_set<RISCVMIR *> MoveRelated(MOperand v);
   void CalcmoveList(RISCVBasicBlock *block);
-  void CalcIG(RISCVBasicBlock *block);
+  void CalcIG(RISCVMIR* inst);
   void CalInstLive(RISCVBasicBlock *block);
   void CaculateLiveness();
   void CaculateLiveInterval(RISCVBasicBlock *mbb);
