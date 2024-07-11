@@ -99,7 +99,7 @@ void RISCVISel::InstLowering(StoreInst* inst){
     else if(PointerType* ptrtype = dynamic_cast<PointerType*>(op0->GetType())) {
         ctx(Builder_withoutDef(RISCVMIR::_sd, inst));
     }
-    else assert("invalid store type");
+    else assert(0&&"invalid store type");
 }
 
 void RISCVISel::InstLowering(LoadInst* inst){
