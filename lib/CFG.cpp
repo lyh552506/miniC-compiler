@@ -74,6 +74,7 @@ void Initializer::print() {
 
 AllocaInst::AllocaInst(std::string str, Type *_tp)
     : User(PointerType::NewPointerTypeGet(_tp)) {
+      id = OpID::Alloca;
   // name=str;
   // name+="_";
   // name+=std::to_string(Singleton<Module>().IR_number(str));
@@ -101,6 +102,7 @@ StoreInst::StoreInst(Operand __src, Operand __des) {
   add_use(__src);
   add_use(__des);
   name = "StoreInst";
+  id = OpID::Store;
 }
 
 Operand StoreInst::GetDef() { return nullptr; }
@@ -126,6 +128,7 @@ LoadInst::LoadInst(Value *__src)
   assert(GetTypeEnum() == IR_Value_INT || GetTypeEnum() == IR_Value_Float ||
          GetTypeEnum() == IR_PTR);
   add_use(__src);
+  id = OpID::Load;
 }
 
 LoadInst *LoadInst::clone(std::unordered_map<Operand, Operand> &mapping) {
@@ -166,7 +169,7 @@ void FPTSI::print() {
   std::cout << "\n";
 }
 
-FPTSI::FPTSI(Operand __src) : User(IntType::NewIntTypeGet()) { add_use(__src); }
+FPTSI::FPTSI(Operand __src) : User(IntType::NewIntTypeGet()) { add_use(__src); id = OpID::FP2SI; }
 
 FPTSI *FPTSI::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<FPTSI>(this, mapping);
@@ -192,11 +195,12 @@ SITFP *SITFP::clone(std::unordered_map<Operand, Operand> &mapping) {
 
 SITFP::SITFP(Operand __src) : User(FloatType::NewFloatTypeGet()) {
   add_use(__src);
+  id = OpID::SI2FP;
 }
 
 Operand UnCondInst::GetDef() { return nullptr; }
 
-UnCondInst::UnCondInst(BasicBlock *__des) { add_use(__des); }
+UnCondInst::UnCondInst(BasicBlock *__des) { add_use(__des); id = OpID::UnCond; }
 
 UnCondInst *UnCondInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<UnCondInst>(this, mapping);
@@ -217,6 +221,7 @@ CondInst::CondInst(Operand __cond, BasicBlock *__istrue,
   add_use(__cond);
   add_use(__istrue);
   add_use(__isfalse);
+  id = OpID::Cond;
 }
 
 CondInst *CondInst::clone(std::unordered_map<Operand, Operand> &mapping) {
@@ -249,6 +254,7 @@ CallInst::CallInst(Value *_func, std::vector<Operand> &_args,
   add_use(_func);
   for (auto &i : _args)
     add_use(i);
+  id = OpID::Call;
 }
 
 CallInst *CallInst::clone(std::unordered_map<Operand, Operand> &mapping) {
@@ -273,9 +279,9 @@ void CallInst::print() {
   std::cout << ")\n";
 }
 
-RetInst::RetInst() {}
+RetInst::RetInst() {id = OpID::Ret;}
 
-RetInst::RetInst(Operand op) { add_use(op); }
+RetInst::RetInst(Operand op) { add_use(op);id = OpID::Ret; }
 
 RetInst *RetInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<RetInst>(this, mapping);
@@ -561,6 +567,7 @@ std::vector<Operand> GetElementPtrInst::GetIndexs() {
 
 ZextInst::ZextInst(Operand ptr) : User(IntType::NewIntTypeGet()) {
   add_use(ptr);
+  id = OpID::Zext;
 }
 
 ZextInst *ZextInst::clone(std::unordered_map<Operand, Operand> &mapping) {
@@ -1131,6 +1138,7 @@ PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB,
   }
   if (!Name.empty())
     tmp->SetName(Name);
+  tmp->id = OpID::Phi;
   return tmp;
 }
 
@@ -1146,6 +1154,7 @@ PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB, Type *ty,
   }
   if (!Name.empty())
     tmp->SetName(Name);
+  tmp->id = OpID::Phi;
   return tmp;
 }
 

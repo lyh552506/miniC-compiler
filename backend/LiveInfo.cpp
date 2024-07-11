@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <map>
 #include <regex>
+#include <set>
 using BlockInfo = BlockLiveInfo;
 using InterVal = LiveInterval;
 using OpType = RISCVMIR::RISCVISA;
@@ -36,7 +37,8 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
       continue;
     else if (Opcode == OpType::_beq || Opcode == OpType::_bne ||
              Opcode == OpType::_blt || Opcode == OpType::_bge ||
-             Opcode == OpType::_bltu || Opcode == OpType::_bgeu) {
+             Opcode == OpType::_bltu || Opcode == OpType::_bgeu ||
+             Opcode == OpType::_bgt || Opcode == OpType ::_ble) {
       RISCVMOperand *val1 = (*inst)->GetOperand(0);
       RISCVMOperand *val2 = (*inst)->GetOperand(1);
       UpdateInfo(val1, block);
@@ -55,12 +57,13 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
         }
       }
     } else if (Opcode == OpType::call) {
-      for (int i = 0; i < (*inst)->GetOperandSize(); i++) {
-        RISCVMOperand *val = (*inst)->GetOperand(i);
-        if (val) {
-          UpdateInfo(val, block);
-        }
-      }
+      // for (int i = 0; i < (*inst)->GetOperandSize(); i++) {
+      //   RISCVMOperand *val = (*inst)->GetOperand(i);
+      //   if (val) {
+      //     UpdateInfo(val, block);
+      //   }
+      // }
+      continue;
     } else if ((*inst)->GetOperandSize() == 1) {
       RISCVMOperand *_val = (*inst)->GetOperand(0);
       UpdateInfo(_val, block);
@@ -114,7 +117,8 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block) {
       SuccBlocks[block].push_front(_block_Succ);
     } else if (Opcode == OpType::_beq || Opcode == OpType::_bne ||
                Opcode == OpType::_blt || Opcode == OpType::_bge ||
-               Opcode == OpType::_bltu || Opcode == OpType::_bgeu) {
+               Opcode == OpType::_bltu || Opcode == OpType::_bgeu ||
+               Opcode == OpType::_bgt || Opcode == OpType::_ble) {
       RISCVBasicBlock *_block_Succ1 =
           dynamic_cast<RISCVBasicBlock *>(inst->GetOperand(2));
       BlockLiveout[block].insert(BlockLivein[_block_Succ1].begin(),
@@ -170,21 +174,21 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
       if (auto DefValue = _DefValue->ignoreLA()) {
         if (dynamic_cast<VirRegister *>(DefValue)) {
           if (!Count(DefValue))
+          {
             initial.insert(DefValue);
+          }
         }
 
         if (Count(DefValue)) {
-          Live.erase(color[DefValue]);
+          Live.erase(DefValue);
           color[color[DefValue]] = color[DefValue];
           Precolored.insert(color[DefValue]);
         } else {
-          if(auto phy = dynamic_cast<PhyRegister*>(DefValue))
-          {
+          if (auto phy = dynamic_cast<PhyRegister *>(DefValue)) {
             Precolored.insert(phy);
             color[phy] = phy;
             Live.erase(DefValue);
-          }
-          else
+          } else
             Live.erase(DefValue);
         }
       }
@@ -194,21 +198,38 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
       for (auto reg : reglist.GetReglistCaller()) {
         Precolored.insert(reg);
         color[reg] = reg;
-        InstLive[inst].insert(reg);
+        // InstLive[inst].insert(reg);
         Live.erase(reg);
       }
       for (int i = 0; i < inst->GetOperandSize(); i++) {
         RISCVMOperand *val = inst->GetOperand(i);
         if (auto reg = val->ignoreLA()) {
           if (reg) {
-            if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
-              Precolored.insert(phy);
-              color[phy] = phy;
+            // if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
+            //   Precolored.insert(phy);a
+            //   color[phy] = phy;
+            // }
+            if (Count(reg)) {
+              Precolored.insert(color[reg]);
+              color[color[reg]] = color[reg];
+              // Live.insert(reg);
+              // InstLive[inst].insert(reg);
+            } else {
+              // Live.insert(reg);
+              // InstLive[inst].insert(reg);
+              // initial.insert(reg);
+              if (auto phy = dynamic_cast<PhyRegister *>(reg)) {
+                Precolored.insert(phy);
+                color[phy] = phy;
+                initial.erase(reg);
+              }
             }
-            Live.insert(reg);
+            // Live.insert(reg);
+            // InstLive[inst].insert(reg);
           }
         }
       }
+      CalcIG(inst);
       continue;
     } else if (inst->GetOperandSize() == 1) {
       if (inst->GetOpcode() == OpType::ret) {
@@ -219,6 +240,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           Precolored.insert(Phy);
           color[Phy] = Phy;
           InstLive[inst] = Live;
+          CalcIG(inst);
           continue;
         }
       } else {
@@ -227,9 +249,11 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
           if (Count(val1)) {
             Precolored.insert(color[val1]);
             color[color[val1]] = color[val1];
-            Live.insert(color[val1]);
+            Live.insert(val1);
           } else {
             Live.insert(val1);
+                        if(val1->GetName() == ".130")
+              int b =1;
             initial.insert(val1);
             if (auto phy = dynamic_cast<PhyRegister *>(val1)) {
               Precolored.insert(phy);
@@ -246,9 +270,11 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
         if (Count(val1)) {
           Precolored.insert(color[val1]);
           color[color[val1]] = color[val1];
-          Live.insert(color[val1]);
+          Live.insert(val1);
         } else {
           Live.insert(val1);
+                      if(val1->GetName() == ".130")
+              int b =1;
           initial.insert(val1);
           if (auto phy = dynamic_cast<PhyRegister *>(val1)) {
             color[phy] = phy;
@@ -261,9 +287,11 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
         if (Count(val2)) {
           Precolored.insert(color[val2]);
           color[color[val2]] = color[val2];
-          Live.insert(color[val2]);
+          Live.insert(val2);
         } else {
           Live.insert(val2);
+                      if(val2->GetName() == ".130")
+              int b =1;
           initial.insert(val2);
           if (auto phy = dynamic_cast<PhyRegister *>(val2)) {
             color[phy] = phy;
@@ -274,6 +302,7 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
       }
     }
     InstLive[inst] = Live;
+    CalcIG(inst);
   }
 }
 void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
@@ -297,26 +326,26 @@ void GraphColor::CalcmoveList(RISCVBasicBlock *block) {
   }
 }
 
-void GraphColor::CalcIG(RISCVBasicBlock *block) {
-  for (RISCVMIR *inst : *block) {
-    if (inst->GetOpcode() == RISCVMIR::call) {
-      for (auto reg : reglist.GetReglistCaller())
-        InstLive[inst].insert(reg);
-    }
-    if (InstLive[inst].size() > 1) {
-      for (auto *Op1 : InstLive[inst]) {
-        for (auto *Op2 : InstLive[inst]) {
-          if (Op1 && Op2 && Op2 != Op1)
-            PushVecSingleVal(IG[Op1], Op2);
-        }
-      }
-    } else if (InstLive[inst].size() == 1) {
-      auto op1 = *InstLive[inst].begin();
-      if (op1)
-        IG[op1];
-    } else
-      continue;
+void GraphColor::CalcIG(RISCVMIR *inst) {
+  if (inst->GetOpcode() == RISCVMIR::call) {
+    for (auto reg : reglist.GetReglistCaller())
+      InstLive[inst].insert(reg);
   }
+  if (InstLive[inst].size() > 1) {
+    for (auto *Op1 : InstLive[inst]) {
+      for (auto *Op2 : InstLive[inst]) {
+        if (Op1->GetName() == ".101" || Op2->GetName() == ".101")
+          int c = 1;
+        if (Op1 && Op2 && Op2 != Op1)
+          PushVecSingleVal(IG[Op1], Op2);
+      }
+    }
+  } else if (InstLive[inst].size() == 1) {
+    auto op1 = *InstLive[inst].begin();
+    if (op1)
+      IG[op1];
+  } else
+    return;
 }
 void BlockInfo::PrintPass() {
   std::cout << "--------BlockLiveInfo--------" << std::endl;
@@ -534,4 +563,32 @@ void GraphColor::LiveInfoInit() {
   Defs.clear();
   InstLive.clear();
   IG.clear();
+  ValsInterval.clear();
+  freezeWorkList.clear();
+  worklistMoves.clear();
+  simplifyWorkList.clear();
+  spillWorkList.clear();
+  spillWorkList.clear();
+  spilledNodes.clear();
+  initial.clear();
+  coalescedNodes.clear();
+  constrainedMoves.clear();
+  coalescedMoves.clear();
+  frozenMoves.clear();
+  coloredNode.clear();
+  AdjList.clear();
+  selectstack.clear();
+  belongs.clear();
+  activeMoves.clear();
+  alias.clear();
+  RegType.clear();
+  AlreadySpill.clear();
+  InstLive.clear();
+  Precolored.clear();
+  color.clear();
+  moveList.clear();
+  IG.clear();
+  instNum.clear();
+  RegLiveness.clear();
+  assist.clear();
 }

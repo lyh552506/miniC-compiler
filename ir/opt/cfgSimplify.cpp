@@ -158,10 +158,10 @@ bool cfgSimplify::mergeSpecialBlock() {
       (*i)->EraseFromParent();
       pred->push_back(*i);
     }
-#ifdef DEBUG
-    std::cerr << "Merge bb :" << bb->GetName() << "to bb :" << pred->GetName()
-              << std::endl;
-#endif
+// #ifdef DEBUG
+//     std::cerr << "Merge bb :" << bb->GetName() << "to bb :" << pred->GetName()
+//               << std::endl;
+// #endif
     int length = m_func->GetBasicBlock().size();
     m_func->GetBasicBlock()[index - 1] = m_func->GetBasicBlock()[length - 1];
     m_func->GetBasicBlock().pop_back();

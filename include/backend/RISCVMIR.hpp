@@ -74,6 +74,8 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _beq,
         _bne,
         _blt,
+        _ble,
+        _bgt,
         _bge,
         _bltu,
         _bgeu,
@@ -169,6 +171,26 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         call,
         ret,
         li,
+
+        // LocalVariableAddr <- MOperand, no register allocation
+        //                      change after RA, use at most one temparary register
+        
+        // Other address, like Global or LocalArray
+        // In entry block, %vreg = LoadAddr{Global|Local}
+        // For liveness analyze, only define %vreg, use doesn't matter
+        // We SHOULD tell RA that this spill weight is generally low
+        // It should be about 1/10 lower?(Let's consider cache hit and the inst cycle it takes?)
+        // Spill : Do nothing
+        // Reload: LoadAddr{...}
+        // AddrLocal  <- vreg
+        // AddrGlobal <- vreg
+        // Before RA, we put all used address a LoadAddr in enrty block
+        // After RA, first we do a DCE, in which we will delete unnecessary LoadAddr{...}
+        // Then we change the LoadAddr into 
+        // Global: lui, addi
+        // Local : addi reg, sp, imm or li reg \ add reg reg sp 
+
+        // LocalVariable can do this too, but not necessary 
         EndMIRPseudo,
     }opcode;
     /// @note def in the front while use in the back

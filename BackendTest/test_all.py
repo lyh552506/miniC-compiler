@@ -6,17 +6,20 @@ from contextlib import contextmanager
 import signal
 import filecmp
 import difflib
+import shutil
+
 
 old_stdout = sys.stdout
 TestResult_path = "BackendTest/TestResult.txt"
 sys.stdout = open(TestResult_path, 'w')
 
 compiler_path = "./build/SYSY-compiler"
-# test_folder="./testcases"
 test_folder="testcases/functional"
 output_folder = "testcases/output"
 sylib_path = "BackendTest/sylib.o"
-pass_args=[] # "--mem2reg","--dce","--reassociate","--constprop","--ece","--simplifycfg","--loops","--lcssa"
+temp_path = "./function_temp_test"
+
+pass_args=[] # "--mem2reg","--constprop","--simplifycfg", "--dce","--reassociate","--ece","--loops","--lcssa"
 CE_list = [] # Compile Error
 AE_list = [] # Assembler Error
 LE_list = [] # Linker Error
@@ -26,6 +29,10 @@ WA_list = []
 TLE_list = []
 AC_list = []
 BadTest_list = []
+
+# No Bad Test Now
+
+
 # grab all the testcases
 # find files recursively
 test_list = []

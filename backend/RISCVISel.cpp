@@ -99,7 +99,7 @@ void RISCVISel::InstLowering(StoreInst* inst){
     else if(PointerType* ptrtype = dynamic_cast<PointerType*>(op0->GetType())) {
         ctx(Builder_withoutDef(RISCVMIR::_sd, inst));
     }
-    else assert("invalid store type");
+    else assert(0&&"invalid store type");
 }
 
 void RISCVISel::InstLowering(LoadInst* inst){
@@ -142,6 +142,58 @@ void RISCVISel::InstLowering(CondInst* inst){
     }
     else if(auto cond=inst->GetOperand(0)->as<BinaryInst>()) {
         assert((cond->GetDef()->GetType()==BoolType::NewBoolTypeGet())&&"Invalid Condition Type");
+        
+        bool onlyusr=cond->GetUserListSize()==1;
+        // CondInst is the only user of condition, and the condition is not float
+        if(onlyusr&&cond->GetOperand(0)->GetType()!=FloatType::NewFloatTypeGet()){
+            auto opcode=cond->getopration();
+            auto integer_cond_builder=[&](RISCVMIR::RISCVISA opcode){
+                ctx(Builder_withoutDef(opcode,{ctx.mapping(cond->GetOperand(0)),ctx.mapping(cond->GetOperand(1)),ctx.mapping(inst->GetOperand(1))}));
+                ctx(Builder_withoutDef(RISCVMIR::_j,{ctx.mapping(inst->GetOperand(2))}));
+            };
+            switch (opcode)
+            {
+            case BinaryInst::Op_L:
+            {
+                // blt
+                integer_cond_builder(RISCVMIR::_blt);
+                break;
+            }
+            case BinaryInst::Op_LE:
+            {
+                // ble
+                integer_cond_builder(RISCVMIR::_ble);
+                break;
+            }
+            case BinaryInst::Op_G:
+            {
+                // bgt
+                integer_cond_builder(RISCVMIR::_bgt);
+                break;
+            }
+            case BinaryInst::Op_GE:
+            {
+                // bge
+                integer_cond_builder(RISCVMIR::_bge);
+                break;
+            }
+            case BinaryInst::Op_E:
+            {
+                // beq
+                integer_cond_builder(RISCVMIR::_beq);
+                break;
+            }
+            case BinaryInst::Op_NE:
+            {
+                // bne
+                integer_cond_builder(RISCVMIR::_bne);
+                break;
+            }
+            default:
+                assert(0&&"Impossible");
+            }
+            return;
+        }
         
         ctx(Builder_withoutDef(RISCVMIR::_bne, {ctx.mapping(inst->GetOperand(0)), PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero), ctx.mapping(inst->GetOperand(1))}));
         ctx(Builder_withoutDef(RISCVMIR::_j,{ctx.mapping(inst->GetOperand(2))}));
@@ -277,19 +329,19 @@ void RISCVISel::InstLowering(BinaryInst* inst){
         case BinaryInst::Op_NE:
         {
             // unlikely
-            // if(inst->GetUserlist().is_empty())
-            //     break;
-            // int cond_count=0;
-            // for(auto us:inst->GetUserlist()){
-            //     auto usr=us->GetUser();
-            //     if(usr->as<CondInst>()==nullptr){
-            //         cond_count++;
-            //         break;
-            //     }
-            // }
-            // if(cond_count!=1)
-            // generate cond to register
-            condition_helper(inst);
+            if(inst->GetUserlist().is_empty())
+                break;
+            // if the only user is 
+            bool onlyusr=inst->GetUserListSize()==1;
+            bool condinst=false;
+            for(auto us:inst->GetUserlist()){
+                auto usr=us->GetUser();
+                if(usr->as<CondInst>()==nullptr)
+                    break;
+                else condinst=true;
+            }
+            if(!(onlyusr==true&&condinst==true&&inst->GetOperand(0)->GetType()!=FloatType::NewFloatTypeGet()))
+                condition_helper(inst);
             break;
         }
         default:
