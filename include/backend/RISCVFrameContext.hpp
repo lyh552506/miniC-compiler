@@ -64,6 +64,7 @@ class BegAddrRegister:public Register{
     RISCVFrameObject* frameobj;
     public:
     BegAddrRegister(RISCVFrameObject*);
+    // BegAddrRegister(size_t);
     void print()final;
     RISCVFrameObject*& GetFrameObj() {return frameobj;}
     std::string GetName() {return rname;}

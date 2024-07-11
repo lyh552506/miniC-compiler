@@ -74,6 +74,10 @@ void RISCVFrameObject::print(){
 
 BegAddrRegister::BegAddrRegister(RISCVFrameObject* _frameobj)
     : Register(riscv_i32), frameobj(_frameobj) {}
+
+// BegAddrRegister::BegAddrRegister(size_t offset)
+//     : Register(riscv_i32), frameobj(nullptr) {}
+
 void BegAddrRegister::print() {
     // should be the minus of the begin address
   std::cout << "-" << frameobj->GetBeginAddOff();
