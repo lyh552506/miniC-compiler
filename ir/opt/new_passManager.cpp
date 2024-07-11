@@ -102,6 +102,14 @@ void _PassManager::RunOnTest() {
       }
       switch (name) {
       case mem2reg: {
+        curfunc = func.get();
+        //维护bbs关系
+        curfunc->bb_num = 0;
+        curfunc->GetBasicBlock().clear();
+        for (auto bb : *curfunc) {
+          bb->num = curfunc->bb_num++;
+          curfunc->GetBasicBlock().push_back(bb);
+        }
         auto Mem2regRes = RunImpl<Mem2reg>(curfunc, AM);
         break;
       }
