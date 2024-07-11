@@ -213,9 +213,8 @@ bool LoopRotate::CanBeMove(User *I) {
     return true;
   } else if (auto gep = dynamic_cast<GetElementPtrInst *>(I)) {
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 void LoopRotate::PreservePhi(

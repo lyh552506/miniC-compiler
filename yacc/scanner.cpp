@@ -555,7 +555,7 @@ char *yytext;
 #line 1 "lex.l"
 #line 5 "lex.l"
 #define YY_DECL yy::parser::symbol_type yylex(void)
-#include "parser.hpp"
+#include "../include/yacc/parser.hpp"
 #include <iostream>
 #line 561 "scanner.cpp"
 

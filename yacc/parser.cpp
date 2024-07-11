@@ -38,7 +38,7 @@
 
 
 
-#include "parser.hpp"
+#include "../include/yacc/parser.hpp"
 
 
 // Unqualified %code blocks.
