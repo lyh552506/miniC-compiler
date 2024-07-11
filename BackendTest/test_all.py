@@ -19,7 +19,7 @@ output_folder = "testcases/output"
 sylib_path = "BackendTest/sylib.o"
 temp_path = "./function_temp_test"
 
-pass_args=[] # "--mem2reg","--constprop","--simplifycfg", "--dce","--reassociate","--ece","--loops","--lcssa"
+pass_args=["--constprop","--simplifycfg", "--dce"] # ,"--ece","--loops","--lcssa" "--mem2reg",,"--reassociate"
 CE_list = [] # Compile Error
 AE_list = [] # Assembler Error
 LE_list = [] # Linker Error

@@ -1,8 +1,8 @@
-#include "PhiElimination.hpp"
-#include "RISCVMIR.hpp"
+#include "../include/backend/PhiElimination.hpp"
+#include "../include/backend/RISCVMIR.hpp"
+#include "../include/backend/RISCVTrival.hpp"
 #include <forward_list>
 #include <queue>
-#include "RISCVTrival.hpp"
 
 RISCVBasicBlock* PhiElimination::find_copy_block(BasicBlock* from,BasicBlock* to){
     if(CopyBlockFinder.find(from)==CopyBlockFinder.end())

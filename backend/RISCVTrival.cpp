@@ -1,4 +1,4 @@
-#include "RISCVTrival.hpp"
+#include "../include/backend/RISCVTrival.hpp"
 
 RISCVMIR* RISCVTrival::CopyFrom(VirRegister* dst,RISCVMOperand* src){
     RISCVMIR* copyinst = nullptr;

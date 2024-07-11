@@ -1,5 +1,5 @@
-#include "PostRACalleeSavedLegalizer.hpp"
-#include "RISCVTrival.hpp"
+#include "../include/backend/PostRACalleeSavedLegalizer.hpp"
+#include "../include/backend/RISCVTrival.hpp"
 
 bool PostRACalleeSavedLegalizer::run(RISCVFunction* func){
     uint64_t grp=func->GetUsedPhyRegMask();

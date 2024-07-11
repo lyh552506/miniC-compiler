@@ -1,4 +1,4 @@
-#include "LegalizePass.hpp"
+#include "../include/backend/LegalizePass.hpp"
 Legalize::Legalize(RISCVLoweringContext& _ctx) :ctx(_ctx) {}
 
 void Legalize::run() {

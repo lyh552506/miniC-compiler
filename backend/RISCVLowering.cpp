@@ -1,7 +1,7 @@
-#include "RISCVLowering.hpp"
-#include "PhiElimination.hpp"
-#include "BuildInFunctionTransform.hpp"
-#include "PostRACalleeSavedLegalizer.hpp"
+#include "../include/backend/RISCVLowering.hpp"
+#include "../include/backend/PhiElimination.hpp"
+#include "../include/backend/BuildInFunctionTransform.hpp"
+#include "../include/backend/PostRACalleeSavedLegalizer.hpp"
 
 RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){

@@ -1,5 +1,5 @@
-#include "BuildInFunctionTransform.hpp"
-#include "Trival.hpp"
+#include "../include/backend/BuildInFunctionTransform.hpp"
+#include "../include/lib/Trival.hpp"
 
 bool BuildInFunctionTransform::run(Function* func){
     for(auto bb:*func)

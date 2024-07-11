@@ -1,8 +1,8 @@
-#include "RISCVMIR.hpp"
-#include "RISCVMOperand.hpp"
-#include "RISCVRegister.hpp"
-#include "RegAlloc.hpp"
-#include "my_stl.hpp"
+#include "../include/backend/RISCVMIR.hpp"
+#include "../include/backend/RISCVMOperand.hpp"
+#include "../include/backend/RISCVRegister.hpp"
+#include "../include/backend/RegAlloc.hpp"
+#include "../util/my_stl.hpp"
 #include <algorithm>
 #include <map>
 #include <regex>

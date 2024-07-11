@@ -193,12 +193,10 @@ floyd:
 	blt s1, t2, .LBB19
 	j .LBB20
 .LBB19:
-	ld a1, -52(s0)
-	lw a0, -36(s0)
+	ld a0, -52(s0)
+	lw a1, -36(s0)
 	lw s1, -28(s0)
 	lw t2, -32(s0)
-	mv a0, a1
-	mv a1, a0
 	mv a2, s1
 	mv a3, t2
 	call getvalue
@@ -291,12 +289,11 @@ floyd:
 	addi t2, t2, %lo(.G.temp)
 	add a0, zero, t2
 	lw s1, -36(s0)
-	lw a1, -24(s0)
+	lw a2, -24(s0)
 	lw t2, -32(s0)
 	addi t0, a0, 0
 	mv a0, t0
 	mv a1, s1
-	mv a2, a1
 	mv a3, t2
 	call getvalue
 	mv t2, a0
@@ -313,12 +310,11 @@ floyd:
 	add a0, zero, t2
 	lw t2, -36(s0)
 	lw s1, -24(s0)
-	lw a1, -20(s0)
+	lw a3, -20(s0)
 	addi t0, a0, 0
 	mv a0, t0
 	mv a1, t2
 	mv a2, s1
-	mv a3, a1
 	call getvalue
 	mv t2, a0
 	blt t2, zero, .LBB32
@@ -333,12 +329,11 @@ floyd:
 	addi t2, t2, %lo(.G.temp)
 	add a0, zero, t2
 	lw t2, -36(s0)
-	lw a1, -32(s0)
+	lw a2, -32(s0)
 	lw s1, -20(s0)
 	addi t0, a0, 0
 	mv a0, t0
 	mv a1, t2
-	mv a2, a1
 	mv a3, s1
 	call getvalue
 	mv t2, a0
@@ -350,25 +345,22 @@ floyd:
 	add a0, zero, t2
 	lw t2, -36(s0)
 	lw s1, -24(s0)
-	lw a1, -32(s0)
+	lw a3, -32(s0)
 	addi t0, a0, 0
 	mv a0, t0
 	mv a1, t2
 	mv a2, s1
-	mv a3, a1
 	call getvalue
 	mv s1, a0
 	lui t2, %hi(.G.temp)
 	addi t2, t2, %lo(.G.temp)
-	add a2, zero, t2
-	lw a0, -36(s0)
+	add a0, zero, t2
+	lw a1, -36(s0)
 	lw t2, -32(s0)
-	lw a1, -20(s0)
-	addi t0, a2, 0
+	lw a3, -20(s0)
+	addi t0, a0, 0
 	mv a0, t0
-	mv a1, a0
 	mv a2, t2
-	mv a3, a1
 	call getvalue
 	mv t2, a0
 	addw a1, s1, t2
@@ -416,28 +408,24 @@ floyd:
 	lw s1, 0(a0)
 	lui t2, %hi(.G.temp)
 	addi t2, t2, %lo(.G.temp)
-	add a2, zero, t2
-	lw a0, -36(s0)
+	add a0, zero, t2
+	lw a1, -36(s0)
 	lw t2, -24(s0)
-	lw a1, -32(s0)
-	addi t0, a2, 0
+	lw a3, -32(s0)
+	addi t0, a0, 0
 	mv a0, t0
-	mv a1, a0
 	mv a2, t2
-	mv a3, a1
 	call getvalue
 	mv s2, a0
 	lui t2, %hi(.G.temp)
 	addi t2, t2, %lo(.G.temp)
-	add a2, zero, t2
-	lw a0, -36(s0)
+	add a0, zero, t2
+	lw a1, -36(s0)
 	lw t2, -32(s0)
-	lw a1, -20(s0)
-	addi t0, a2, 0
+	lw a3, -20(s0)
+	addi t0, a0, 0
 	mv a0, t0
-	mv a1, a0
 	mv a2, t2
-	mv a3, a1
 	call getvalue
 	mv t2, a0
 	addw t2, s2, t2
@@ -451,25 +439,22 @@ floyd:
 	add a0, zero, t2
 	lw t2, -36(s0)
 	lw s1, -24(s0)
-	lw a1, -32(s0)
+	lw a3, -32(s0)
 	addi t0, a0, 0
 	mv a0, t0
 	mv a1, t2
 	mv a2, s1
-	mv a3, a1
 	call getvalue
 	mv s1, a0
 	lui t2, %hi(.G.temp)
 	addi t2, t2, %lo(.G.temp)
-	add a2, zero, t2
-	lw a0, -36(s0)
+	add a0, zero, t2
+	lw a1, -36(s0)
 	lw t2, -32(s0)
-	lw a1, -20(s0)
-	addi t0, a2, 0
+	lw a3, -20(s0)
+	addi t0, a0, 0
 	mv a0, t0
-	mv a1, a0
 	mv a2, t2
-	mv a3, a1
 	call getvalue
 	mv t2, a0
 	addw a1, s1, t2

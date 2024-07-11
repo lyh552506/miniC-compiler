@@ -1,5 +1,5 @@
-#include "RISCVRegister.hpp"
-#include "MagicEnum.hpp"
+#include "../include/backend/RISCVRegister.hpp"
+#include "../include/lib/MagicEnum.hpp"
 #include <sstream>
 #include <string>
 
