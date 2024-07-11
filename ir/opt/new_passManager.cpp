@@ -1,5 +1,4 @@
 #include "New_passManager.hpp"
-
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
