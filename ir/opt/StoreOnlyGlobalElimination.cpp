@@ -1,5 +1,5 @@
-#include "StoreOnlyGlobalElimination.hpp"
-#include "my_stl.hpp"
+#include "../../include/ir/opt/StoreOnlyGlobalElimination.hpp"
+#include "../../util/my_stl.hpp"
 bool StoreOnlyGlobalElimination::Run()
 {
     auto& globals = module->GetGlobalVariable();

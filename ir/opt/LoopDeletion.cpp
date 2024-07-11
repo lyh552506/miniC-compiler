@@ -10,7 +10,7 @@
 #include <optional>
 #include <set>
 #include <unordered_map>
-#include "SideEffect.hpp"
+#include "../../include/ir/Analysis/SideEffect.hpp"
 bool LoopDeletion::Run() {
     bool changed = false;
     dom = AM.get<dominance>(func);
