@@ -129,12 +129,18 @@ void Global2Local::RunPass(Module* module)
                 {
                     _DEBUG(std::cerr << "LocalGlobalVariable: " << global->GetName() << std::endl;)
                     LocalGlobalVariable(global, func);
-                    if(globalvals.size() == 1)
-                    {
-                        globalvals.erase(iter);
-                    }
+
+                    if(iter->get()->usage == Variable::Constant)
+                        ++iter;
                     else
-                        iter = globalvals.erase(iter);
+                    {
+                        if(globalvals.size() == 1)
+                        {
+                            globalvals.erase(iter);
+                        }
+                        else
+                            iter = globalvals.erase(iter);
+                    }
                 }
                 else
                     ++iter;
@@ -164,7 +170,21 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
     alloca->SetParent(begin);
     begin->push_front(alloca);
     if(!val->GetInitializer())
+    {
+        if(tp->GetSubType()->GetTypeEnum() != InnerDataType::IR_ARRAY)
+        {
+            auto iter = begin->begin();
+            for (; iter != begin->end(); ++iter) 
+            {
+                if (!dynamic_cast<AllocaInst*>(*iter))
+                    break;
+            }
+            StoreInst* store = new StoreInst(ConstIRInt::GetNewConstant(0), alloca);
+            iter.insert_before(store);
+            val->RAUW(alloca);
+        }
         val->RAUW(alloca);
+    }
     else
     {
         if(tp->GetSubType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
@@ -405,4 +425,5 @@ void Global2Local::CreateCallNum(Module* module)
             }
         }
     }
+    //TODO: 修复CallInst 在循环中的问题
 }
