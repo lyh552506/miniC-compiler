@@ -295,11 +295,6 @@ void _PassManager::RunOnTest() {
         auto m_lcssa = RunImpl<LcSSA>(curfunc, AM);
         break;
       }
-      case local2global:
-      {
-        auto m_local2global = RunImpl<Local2Global>(module, AM);
-        break;
-      }
       default: {
         assert(0);
       }
