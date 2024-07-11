@@ -209,8 +209,11 @@ void Legalize::OffsetLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator
         addi->AddOperand(sreg->GetReg());
         addi->AddOperand(imm);
         it.insert_before(addi);
-        sreg->SetOffset(mod);
-        sreg->SetReg(dynamic_cast<Register*>(addi->GetDef()));
+
+        StackRegister* newStackReg = new StackRegister(dynamic_cast<PhyRegister*>(addi->GetDef())->Getregenum(), mod);
+        inst->SetOperand(i, newStackReg);
+        // sreg->SetOffset(mod);
+        // sreg->SetReg(dynamic_cast<Register*>(addi->GetDef()));
     } 
 }
 
