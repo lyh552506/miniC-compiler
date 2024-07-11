@@ -1,5 +1,5 @@
-#include "ConstantFold.hpp"
-#include "InstructionSimplify.hpp"
+#include "../../include/ir/opt/ConstantFold.hpp"
+#include "../../include/ir/opt/InstructionSimplify.hpp"
 
 Value *ConstantFolding::ConstantFoldInst(User *inst) {
   if (auto PHiInst = dynamic_cast<PhiInst *>(inst))

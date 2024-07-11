@@ -1,4 +1,4 @@
-#include "InstructionSimplify.hpp"
+#include "../../include/ir/opt/InstructionSimplify.hpp"
 
 Value* SimplifyBinOp(BinaryInst::Operation Opcode, Value* LHS, Value* RHS)
 {

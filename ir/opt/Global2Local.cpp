@@ -1,5 +1,5 @@
-#include "Global2Local.hpp"
-#include "Trival.hpp"
+#include "../../include/ir/opt/Global2Local.hpp"
+#include "../../include/lib/Trival.hpp"
 void Global2Local::init()
 {
     createSuccFuncs();

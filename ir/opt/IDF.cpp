@@ -1,4 +1,4 @@
-#include "IDF.hpp"
+#include "../../include/ir/opt/IDF.hpp"
 
 void IDF::SetDefBB(std::set<BasicBlock *> &DefBlock) { DefineBlock = &DefBlock; }
 

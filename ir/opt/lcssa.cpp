@@ -1,7 +1,7 @@
-#include "lcssa.hpp"
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "my_stl.hpp"
+#include "../../include/ir/opt/lcssa.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../util/my_stl.hpp"
 #include <algorithm>
 #include <cassert>
 #include <set>
