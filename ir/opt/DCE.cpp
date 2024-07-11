@@ -1,5 +1,5 @@
-#include "DCE.hpp"
-#include "my_stl.hpp"
+#include "../../include/ir/opt/DCE.hpp"
+#include "../../util/my_stl.hpp"
 #include <algorithm>
 void DCE::PrintPass()
 {

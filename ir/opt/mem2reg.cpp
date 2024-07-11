@@ -1,5 +1,5 @@
-#include "PromoteMemtoRegister.hpp"
-#include "dominant.hpp"
+#include "../../include/ir/opt/PromoteMemtoRegister.hpp"
+#include "../../include/ir/opt/dominant.hpp"
 
 /// @note 支配树的根节点通过entryblock返回
 // mem2reg的开始函数

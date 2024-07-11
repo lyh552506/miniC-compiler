@@ -1,4 +1,4 @@
-#include "ConstantProp.hpp"
+#include "../../include/ir/opt/ConstantProp.hpp"
 #include <set>
 
 void ConstantProp::RunOnFunction()

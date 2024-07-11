@@ -1,9 +1,9 @@
-#include "passManager.hpp"
-#include "CFG.hpp"
-#include "PassManagerBase.hpp"
-#include "Singleton.hpp"
-#include "dominant.hpp"
-#include "lcssa.hpp"
+#include "../../include/ir/opt/passManager.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/ir/opt/PassManagerBase.hpp"
+#include "../../include/lib/Singleton.hpp"
+#include "../../include/ir/opt/dominant.hpp"
+#include "../../include/ir/opt/lcssa.hpp"
 #include <memory>
 
 void PassManager::InitPass() {

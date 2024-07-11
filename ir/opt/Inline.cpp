@@ -1,5 +1,5 @@
-#include "Inline.hpp"
-#include "CFG.hpp"
+#include "../../include/ir/opt/Inline.hpp"
+#include "../../include/lib/CFG.hpp"
 
 std::unique_ptr<InlineHeuristic> InlineHeuristic::get(Module &m) {
   auto heuristic = std::make_unique<InlineHeuristicManager>();

@@ -1,5 +1,5 @@
 #include "CSE.hpp"
-#include "ConstantFold.hpp"
+#include "../../include/ir/opt/ConstantFold.hpp"
 
 bool CSE::RunOnFunction()
 {

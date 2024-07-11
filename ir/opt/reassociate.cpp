@@ -1,10 +1,5 @@
-#include "reassociate.hpp"
-#include "AST_NODE.hpp"
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "ConstantFold.hpp"
-#include "Type.hpp"
-#include "my_stl.hpp"
+#include "../../include/ir/opt/reassociate.hpp"
+#include "../../include/ir/opt/ConstantFold.hpp"
 #include <algorithm>
 #include <cassert>
 #include <iostream>

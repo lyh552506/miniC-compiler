@@ -1,12 +1,12 @@
-#include "LoopInfo.hpp"
+#include "../../include/ir/opt/LoopInfo.hpp"
 #include <algorithm>
 #include <cassert>
 #include <set>
 #include <unordered_set>
 #include <vector>
 
-#include "CFG.hpp"
-#include "my_stl.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../util/my_stl.hpp"
 
 void LoopAnalysis::Analysis() {
   //此处后续遍历支配树

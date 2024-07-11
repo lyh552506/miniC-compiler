@@ -1,10 +1,10 @@
-#include "LoopRotate.hpp"
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "ConstantFold.hpp"
-#include "LoopInfo.hpp"
-#include "PassManagerBase.hpp"
-#include "dominant.hpp"
+#include "../../include/ir/opt/LoopRotate.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/ir/opt/ConstantFold.hpp"
+#include "../../include/ir/opt/LoopInfo.hpp"
+#include "../../include/ir/opt/PassManagerBase.hpp"
+#include "../../include/ir/opt/dominant.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstddef>

@@ -1,5 +1,4 @@
 #pragma once
-#include "../yacc/parser.hpp"
 #include "CFG.hpp"
 #include "PassManagerBase.hpp"
 #include "dominant.hpp"
