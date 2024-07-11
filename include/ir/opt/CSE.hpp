@@ -2,7 +2,8 @@
 #include "CFG.hpp"
 #include "my_stl.hpp"
 #include <unordered_set>
-
+#include "New_passManager.hpp"
+#include "PassManagerBase.hpp"
 namespace HashTool
 {
     struct InstHash
@@ -94,7 +95,7 @@ namespace HashTool
 struct info
 {
     std::map<std::pair<size_t, User::OpID>, Value*> AEB_Binary;
-    std::map<size_t, Value*> Loads;
+    std::map<size_t, std::pair<Value*, User*>> Loads;
     std::map<size_t, Value*> Geps;
     std::set<Function*> Funcs;
     bool operator==(const info& rhs) const
@@ -105,11 +106,13 @@ struct info
     }
 };
 
-class CSE
+class CSE : public _PassManagerBase<CSE, Function>
 {
     std::map<BasicBlock*, info> BlockLiveIn;
     std::map<BasicBlock*, info> BlockLiveOut;
     std::vector<User*> wait_del;
+    Function* m_func;
+    _AnalysisManager& AM;
 private:
     void GetBlockLiveOut(BasicBlock* block);
     void GetBlockLiveIn(BasicBlock* block);
@@ -118,14 +121,12 @@ private:
     std::map<BasicBlock*, bool> Unchanged;
     bool IsChanged = false;
     bool Changed = false;
-    Function* m_func;
     Function* Find_Change(Value* val, info Info);
     void RunOnFunc(Function* func);
     bool RunPass(BasicBlock* block);
-    dominance* DomTree;
 public:
-    bool RunOnFunction();
-    CSE(Function* func, dominance* m_dom) : m_func(func) , DomTree(m_dom) {}
+    bool Run();
+    CSE(Function* func_, _AnalysisManager& AM_) : m_func(func_), AM(AM_) {}
 };
 
 // class CSE

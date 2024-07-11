@@ -334,6 +334,7 @@ std::string BinaryInst::GetOperation() {
 BinaryInst *BinaryInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   auto tmp = normal_clone<BinaryInst>(this, mapping);
   tmp->op = op;
+  tmp->id = static_cast<User::OpID>(op + BaseEnumNum);
   return tmp;
 }
 
@@ -522,13 +523,14 @@ bool Variable::isGlobal() {
     return true;
 }
 
-GetElementPtrInst::GetElementPtrInst(Operand base_ptr) { add_use(base_ptr); }
+GetElementPtrInst::GetElementPtrInst(Operand base_ptr) { add_use(base_ptr); id = OpID::Gep; }
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr,
                                      std::vector<Operand> &args) {
   add_use(base_ptr);
   for (auto &&i : args)
     add_use(i);
+  id = OpID::Gep;
 }
 
 GetElementPtrInst *

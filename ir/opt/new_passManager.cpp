@@ -51,6 +51,12 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case looprotate:
       AddPass(looprotate);
       break;
+    case loopdeletion:
+      AddPass(loopdeletion);
+      break;
+    case deadargselimination:
+      AddPass(deadargselimination);
+      break;
     case O0:
       level = O0;
       break;

@@ -6,7 +6,6 @@
 #include "RISCVLowering.hpp"
 #include "dominant.hpp"
 #include "parser.hpp"
-// #include "passManager.hpp"
 #include "AliasAnalysis.hpp"
 #include <fstream>
 #include <getopt.h>

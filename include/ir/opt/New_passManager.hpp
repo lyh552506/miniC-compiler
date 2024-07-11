@@ -39,7 +39,9 @@ enum PassName {
   cse,
   lcssa,
   licm,
-  looprotate
+  looprotate,
+  loopdeletion,
+  deadargselimination
 };
 
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 4},

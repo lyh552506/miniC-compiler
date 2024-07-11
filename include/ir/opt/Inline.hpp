@@ -1,7 +1,8 @@
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
 #include "dominant.hpp"
-
+#include "New_passManager.hpp"
+#include "PassManagerBase.hpp"
 class InlineHeuristic{
     public:
     virtual bool CanBeInlined(CallInst*)=0;
@@ -32,20 +33,20 @@ class NoRecursive:public InlineHeuristic{
     NoRecursive(Module&);
 };
 
-class Inliner
+class Inliner : public _PassManagerBase<Inliner, Module>
 {
 public:
-    Inliner(Module& module):m(module){}
-    void Run();
-    void PrintPass();
-    void Inline();
+    bool Run();
+    void Inline(Module& m);
+    Inliner(Module& m, _AnalysisManager &AM) : m(m), AM(AM) {}
 private:
     std::vector<BasicBlock*> CopyBlocks(User* inst);
     void HandleVoidRet(BasicBlock* spiltBlock, std::vector<BasicBlock*>& blocks);
     void HandleRetPhi(BasicBlock* RetBlock, PhiInst* phi, std::vector<BasicBlock*>& blocks);
 private:
     Module& m;
+    _AnalysisManager &AM;
     // LoopAnalysis* loopAnalysis;
-    void init();
+    void init(Module& m);
     std::vector<User*> NeedInlineCall;
 };

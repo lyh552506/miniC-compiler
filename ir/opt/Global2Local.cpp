@@ -1,14 +1,14 @@
 #include "Global2Local.hpp"
 #include "Trival.hpp"
-void Global2Local::init()
+void Global2Local::init(Module& module)
 {
-    createSuccFuncs();
-    CreateCallNum();
-    DetectRecursive();
-    CalGlobal2Funcs();
+    createSuccFuncs(module);
+    CreateCallNum(module);
+    DetectRecursive(module);
+    CalGlobal2Funcs(module);
 }  
 
-void Global2Local::createSuccFuncs()
+void Global2Local::createSuccFuncs(Module& module)
 {
     for(auto& func_ : module.GetFuncTion())
     {
@@ -21,7 +21,7 @@ void Global2Local::createSuccFuncs()
     }
 }
 
-void Global2Local::DetectRecursive()
+void Global2Local::DetectRecursive(Module& module)
 {
     Function* entry = module.GetMainFunction();
     std::set<Function*> visited;
@@ -41,7 +41,7 @@ void Global2Local::visit(Function* entry, std::set<Function*>& visited)
     visited.erase(entry);
 }
 
-void Global2Local::CalGlobal2Funcs()
+void Global2Local::CalGlobal2Funcs(Module& module)
 {
     for(auto & global_ptr : module.GetGlobalVariable())
     {
@@ -53,13 +53,14 @@ void Global2Local::CalGlobal2Funcs()
         }
     }
 }
-void Global2Local::RunOnModule()
+bool Global2Local::Run()
 {
-    init();
-    RunPass();
+    init(module);
+    RunPass(module);
+    return false;
 }
 
-void Global2Local::RunPass()
+void Global2Local::RunPass(Module& module)
 {
     Function* main = module.GetMainFunction();
     auto& globalvals = module.GetGlobalVariable();
@@ -273,10 +274,8 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
                     {
                         BasicBlock* block = call->GetParent();
                         Function* func_ = block->GetParent();
-                        // dom_info = std::make_unique<dominance>(func_, func_->GetBasicBlock().size());
-                        // dom_info->RunOnFunction();
-                        // loopAnalysis = std::make_unique<LoopAnalysis>(func_, dom_info.get());
-                        // loopAnalysis->RunOnFunction();
+                        // dom_info = AM_.get<dominance>*(func);
+                        // loopAnalysis = AM_.get<LoopAnalysis>(func);
                         if(block->LoopDepth != 0)
                             return false;
                     }
@@ -314,10 +313,8 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
                             {
                                 BasicBlock* block = call->GetParent();
                                 Function* func_ = block->GetParent();
-                                // dom_info = std::make_unique<dominance>(func_, func_->GetBasicBlock().size());
-                                // dom_info->RunOnFunction();
-                                // loopAnalysis = std::make_unique<LoopAnalysis>(func_, dom_info.get());
-                                // loopAnalysis->RunOnFunction();
+                                // dom_info = AM.get<dominance>(func)
+                                // loopAnalysis = AM_.get<LoopAnalysis>(func);
                                 if(block->LoopDepth != 0)
                                     return false;
                             }
@@ -392,7 +389,7 @@ bool Global2Local::hasChanged(int index, Function* func)
 //         return false;
 // }
 
-void Global2Local::CreateCallNum()
+void Global2Local::CreateCallNum(Module& module)
 {
     for(auto& func_ : module.GetFuncTion())
     {

@@ -91,6 +91,7 @@ class StoreInst:public User
     StoreInst* clone(std::unordered_map<Operand,Operand>&)override;
     Operand GetDef()final;
     void print()final;
+    bool Used = false;
 };
 class LoadInst:public User
 {
@@ -167,7 +168,7 @@ class BinaryInst:public User
     private:
     Operation op;
     public:
-    BinaryInst(Type* _tp):User(_tp){};
+    BinaryInst(Type* _tp):User(_tp){id = OpID::BinaryUnknown;};
     BinaryInst(Operand _A,Operation __op,Operand _B);
     BinaryInst* clone(std::unordered_map<Operand,Operand>&)override;
     bool IsCmpInst(){return  (op-Op_Add) > 6;}
@@ -290,8 +291,6 @@ class Function:public Value,public mylist<Function,BasicBlock>
     std::vector<BasicBlock*> bbs;
     std::pair<size_t,size_t> inlineinfo;
     public:
-    std::set<Function*> CalleeFuncs; // The Function who calls this
-    std::set<Function*> CallingFuncs; // The Function that the func calls
     std::set<Value*> Change_Val; // Used for cse 
     std::pair<size_t,size_t>& GetInlineInfo();
     void InsertAlloca(AllocaInst* ptr);
@@ -312,6 +311,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void init_visited_block();
     void init_reach_block();
     int bb_num=0;
+    bool HasSideEffect = false;
 };
 class Module:public SymbolTable
 {

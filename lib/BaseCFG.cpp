@@ -199,7 +199,7 @@ bool User::HasSideEffect() {
     Function *func =
         dynamic_cast<Function *>(this->Getuselist()[0]->GetValue());
     if (func) {
-      if (Singleton<Module>().Side_Effect_Funcs.count(func))
+      if (func->HasSideEffect)
         return true;
       for (auto it = func->begin(); it != func->end(); ++it) {
         BasicBlock *block = *it;
@@ -207,7 +207,7 @@ bool User::HasSideEffect() {
           if (dynamic_cast<CallInst *>(*iter)) {
             Function *Func =
                 dynamic_cast<Function *>((*iter)->Getuselist()[0]->usee);
-            if (Func && Singleton<Module>().Side_Effect_Funcs.count(Func))
+            if (Func && Func->HasSideEffect)
               return true;
           }
         }

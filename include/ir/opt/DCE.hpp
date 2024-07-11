@@ -1,21 +1,16 @@
 #include "CFG.hpp"
-
-class DCE
+#include "New_passManager.hpp"
+#include "PassManagerBase.hpp"
+class DCE : public _PassManagerBase<DCE, Function>
 {
 public:
-    void RunOnFunction();
-    void PrintPass();
+    bool Run();
     static bool isDeadInst(User* inst);
-    DCE(Function* f) : func(f) {}
+    DCE(Function* func_, _AnalysisManager &AM) : func(func_), AM(AM) {}
 private:
-    std::set<Function*> Recursive_Funcs;
     bool DelF = false;
     Function* func;
-    void DCEInst(User* inst, std::vector<User*> &Worklist);
-    void DetectRecursive();
-    void VisitFunc(Function* entry, std::set<Function*>& visited);
+    bool DCEInst(User* inst, std::vector<User*> &Worklist);
     Value* RVACC(Function* func);
-    bool FuncHasSideEffect(Function* func);
-    void CreateCallMap();
-    void CreateSideEffectFunc();
+    _AnalysisManager& AM;
 };
