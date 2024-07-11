@@ -1,4 +1,5 @@
 #include "New_passManager.hpp"
+#include "CFG.hpp"
 
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
@@ -85,7 +86,7 @@ bool _PassManager::Run() {
 #endif
 }
 
-void _PassManager::RunOnLevel(OptLevel level) {
+void _PassManager::RunOnLevel() {
   if (level == O0)
     return;
   if (level == O1) {
@@ -93,8 +94,7 @@ void _PassManager::RunOnLevel(OptLevel level) {
 }
 
 ///@brief 执行Pass顺序会按照给定参数的顺序来
-void _PassManager::RunOnTest(int argc, char *argv[]) {
-  DecodeArgs(argc, argv);
+void _PassManager::RunOnTest() {
   _AnalysisManager AM;
   while (!EnablePass.empty()) {
     auto name = EnablePass.front();

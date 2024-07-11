@@ -1,3 +1,4 @@
+#include "AliasAnalysis.hpp"
 #include "CFG.hpp"
 #include "ConstantProp.hpp"
 #include "LoopInfo.hpp"
@@ -6,7 +7,6 @@
 #include "RISCVLowering.hpp"
 #include "dominant.hpp"
 #include "parser.hpp"
-#include "AliasAnalysis.hpp"
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -46,8 +46,14 @@ int main(int argc, char **argv) {
 
 #ifdef SYSY_ENABLE_MIDDLE_END
   auto PM = std::make_unique<_PassManager>();
-  PM->RunOnTest(argc,argv);
-  PM->Run();
+  PM->DecodeArgs(argc, argv);
+#ifdef TEST
+  PM->RunOnTest();
+#elif defined(LEVEL)
+  PM->RunOnLevel();
+#else
+  assert(0);
+#endif
   Singleton<Module>().Test();
   fflush(stdout);
   fclose(stdout);

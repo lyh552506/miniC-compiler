@@ -1,36 +1,37 @@
 #pragma once
 #include "../../yacc/parser.hpp"
-#include <getopt.h>
 #include "CFG.hpp"
 #include "CSE.hpp"
 #include "ConstantFold.hpp"
 #include "ConstantProp.hpp"
 #include "DCE.hpp"
+#include "DeadArgsElimination.hpp"
+#include "DealCriticalEdges.hpp"
 #include "Global2Local.hpp"
 #include "IDF.hpp"
 #include "Inline.hpp"
+#include "LoopDeletion.hpp"
 #include "LoopInfo.hpp"
+#include "LoopRotate.hpp"
 #include "LoopSimplify.hpp"
 #include "PassManagerBase.hpp"
 #include "PromoteMemtoRegister.hpp"
 #include "SSAPRE.hpp"
+#include "Singleton.hpp"
+#include "StoreOnlyGlobalElimination.hpp"
 #include "cfgSimplify.hpp"
 #include "dominant.hpp"
 #include "lcssa.hpp"
-#include "reassociate.hpp"
-#include <memory>
 #include "licm.hpp"
-#include "LoopRotate.hpp"
 #include "mem2reg.hpp"
-#include "DealCriticalEdges.hpp"
-#include "StoreOnlyGlobalElimination.hpp"
-#include "DeadArgsElimination.hpp"
-#include "LoopDeletion.hpp"
+#include "reassociate.hpp"
+#include <getopt.h>
+#include <memory>
 class FunctionPassManager;
 class ModulePassManager;
-enum OptLevel { O0=0, O1=1, O2=2, O3=3 };
+enum OptLevel { O0 = 0, O1 = 1, O2 = 2, O3 = 3 };
 enum PassName {
-  mem2reg=4,
+  mem2reg = 4,
   pre,
   constprop,
   dce,
@@ -100,11 +101,11 @@ public:
 
 class _PassManager : public _PassManagerBase<_PassManager, Function> {
 public:
-  _PassManager() = default;
+  _PassManager() { module = &Singleton<Module>(); }
   virtual ~_PassManager() = default;
   bool Run();
-  void RunOnLevel(OptLevel level);
-  void RunOnTest(int argc, char *argv[]);
+  void RunOnLevel();
+  void RunOnTest();
   template <typename Pass, typename name = std::enable_if_t<std::is_base_of_v<
                                _PassManagerBase<Pass, Function>, Pass>>>
   bool RunImpl(Function *func, _AnalysisManager &AM) {
@@ -118,11 +119,12 @@ public:
     return pass->Run();
   }
   void DecodeArgs(int argc, char *argv[]);
+
 private:
   void Init();
   OptLevel level;
   void AddPass(PassName pass) { EnablePass.push(pass); }
   std::queue<PassName> EnablePass;
-  Module* module;
-  Function* curfunc;
+  Module *module;
+  Function *curfunc;
 };
