@@ -1,5 +1,6 @@
-#include "../../include/ir/opt/New_passManager.hpp"
+#include "New_passManager.hpp"
 #include "CFG.hpp"
+#include "lcssa.hpp"
 
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
@@ -187,9 +188,14 @@ void _PassManager::RunOnTest() {
             RunImpl<StoreOnlyGlobalElimination>(module, AM);
         break;
       }
-      case global2local:{
+      case global2local: {
         auto m_global2local = RunImpl<Global2Local>(module, AM);
-        break;}
+        break;
+      }
+      case lcssa: {
+        auto m_lcssa = RunImpl<LcSSA>(curfunc, AM);
+        break;
+      }
       default: {
         assert(0);
       }
