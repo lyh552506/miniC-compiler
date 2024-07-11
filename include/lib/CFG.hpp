@@ -91,6 +91,7 @@ class StoreInst:public User
     StoreInst* clone(std::unordered_map<Operand,Operand>&)override;
     Operand GetDef()final;
     void print()final;
+    bool Used = false;
 };
 class LoadInst:public User
 {
@@ -167,7 +168,7 @@ class BinaryInst:public User
     private:
     Operation op;
     public:
-    BinaryInst(Type* _tp):User(_tp){};
+    BinaryInst(Type* _tp):User(_tp){id = OpID::BinaryUnknown;};
     BinaryInst(Operand _A,Operation __op,Operand _B);
     BinaryInst* clone(std::unordered_map<Operand,Operand>&)override;
     bool IsCmpInst(){return  (op-Op_Add) > 6;}

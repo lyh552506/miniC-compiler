@@ -95,7 +95,7 @@ namespace HashTool
 struct info
 {
     std::map<std::pair<size_t, User::OpID>, Value*> AEB_Binary;
-    std::map<size_t, Value*> Loads;
+    std::map<size_t, std::pair<Value*, User*>> Loads;
     std::map<size_t, Value*> Geps;
     std::set<Function*> Funcs;
     bool operator==(const info& rhs) const
