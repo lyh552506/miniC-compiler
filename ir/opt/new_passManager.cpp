@@ -187,6 +187,9 @@ void _PassManager::RunOnTest() {
             RunImpl<StoreOnlyGlobalElimination>(module, AM);
         break;
       }
+      case global2local:{
+        auto m_global2local = RunImpl<Global2Local>(module, AM);
+        break;}
       default: {
         assert(0);
       }

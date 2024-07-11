@@ -18,22 +18,22 @@ class Global2Local : public _PassManagerBase<Global2Local, Module>
     std::map<Variable*, std::set<Function*>> Global2Funcs;  // 哪些func 用了这个 globalvalue
     std::vector<User*> insert_insts;
     std::map<Function*, int> CallTimes;
-    Module& module;
+    Module* module;
     _AnalysisManager& AM;
     private:
-    void init(Module& module);
-    void createSuccFuncs(Module& module);
-    void DetectRecursive(Module& module);
-    void CalGlobal2Funcs(Module& module);
+    void init(Module* module);
+    void createSuccFuncs(Module* module);
+    void DetectRecursive(Module* module);
+    void CalGlobal2Funcs(Module* module);
     void visit(Function* func, std::set<Function*>& visited);
-    void RunPass(Module& module);
+    void RunPass(Module* module);
     void LocalGlobalVariable(Variable* val, Function* func);
     void LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* block);
     bool CanLocal(Variable* val, Function* func);
     bool CanLocal(Variable* val);
     bool hasChanged(int index, Function* func);
-    void CreateCallNum(Module& module);
+    void CreateCallNum(Module* module);
     public:
     bool Run();
-    Global2Local(Module& m, _AnalysisManager& AM) : module(m), AM(AM) {}
+    Global2Local(Module* m, _AnalysisManager& AM) : module(m), AM(AM) {}
 };

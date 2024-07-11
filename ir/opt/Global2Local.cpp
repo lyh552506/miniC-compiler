@@ -1,6 +1,6 @@
 #include "Global2Local.hpp"
 #include "Trival.hpp"
-void Global2Local::init(Module& module)
+void Global2Local::init(Module* module)
 {
     createSuccFuncs(module);
     CreateCallNum(module);
@@ -8,9 +8,9 @@ void Global2Local::init(Module& module)
     CalGlobal2Funcs(module);
 }  
 
-void Global2Local::createSuccFuncs(Module& module)
+void Global2Local::createSuccFuncs(Module* module)
 {
-    for(auto& func_ : module.GetFuncTion())
+    for(auto& func_ : module->GetFuncTion())
     {
         Function* func = func_.get();
         for(Use* user : func->GetUserlist())
@@ -21,9 +21,9 @@ void Global2Local::createSuccFuncs(Module& module)
     }
 }
 
-void Global2Local::DetectRecursive(Module& module)
+void Global2Local::DetectRecursive(Module* module)
 {
-    Function* entry = module.GetMainFunction();
+    Function* entry = module->GetMainFunction();
     std::set<Function*> visited;
     visit(entry, visited);
 }
@@ -41,9 +41,9 @@ void Global2Local::visit(Function* entry, std::set<Function*>& visited)
     visited.erase(entry);
 }
 
-void Global2Local::CalGlobal2Funcs(Module& module)
+void Global2Local::CalGlobal2Funcs(Module* module)
 {
-    for(auto & global_ptr : module.GetGlobalVariable())
+    for(auto & global_ptr : module->GetGlobalVariable())
     {
         Variable* global = global_ptr.get();
         for(Use* user_ : global->GetUserlist())
@@ -60,10 +60,10 @@ bool Global2Local::Run()
     return false;
 }
 
-void Global2Local::RunPass(Module& module)
+void Global2Local::RunPass(Module* module)
 {
-    Function* main = module.GetMainFunction();
-    auto& globalvals = module.GetGlobalVariable();
+    Function* main = module->GetMainFunction();
+    auto& globalvals = module->GetGlobalVariable();
     bool Repeat = false;
     for(auto iter = globalvals.begin(); iter != globalvals.end(); )
     {
@@ -191,7 +191,7 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
 // void Global2Local::LocalGep(Variable* val, Function* func)
 // {
 //     BasicBlock* begin = func->front();
-//     Value* Val = module.GetValueByName(val->get_name());
+//     Value* Val = module->GetValueByName(val->get_name());
 //     GetElementPtrInst* gep = new GetElementPtrInst(Val);
 //     begin->GenerateGEPInst(gep);
 //     for(Use* use_ : Val->GetUserlist())
@@ -367,7 +367,7 @@ bool Global2Local::hasChanged(int index, Function* func)
 //     if((val->GetType()->GetTypeEnum() != InnerDataType::IR_ARRAY) && (val->GetType()->GetTypeEnum() != InnerDataType::IR_PTR) \
 //     && val->GetInitializer())
 //     {
-//     Value* Val = module.GetValueByName(val->get_name());
+//     Value* Val = module->GetValueByName(val->get_name());
 //     bool changed = false;
 //     for(Use* use_ : Val->GetUserlist())
 //     {
@@ -389,9 +389,9 @@ bool Global2Local::hasChanged(int index, Function* func)
 //         return false;
 // }
 
-void Global2Local::CreateCallNum(Module& module)
+void Global2Local::CreateCallNum(Module* module)
 {
-    for(auto& func_ : module.GetFuncTion())
+    for(auto& func_ : module->GetFuncTion())
     {
         Function* func = func_.get();
         for(Use* user_ : func->GetUserlist())
