@@ -1,8 +1,10 @@
+#pragma once
 #include "CFG.hpp"
 #include "dominant.hpp"
 #include "LoopInfo.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
+class _AnalysisManager;
 class Global2Local : public _PassManagerBase<Global2Local, Module>
 {
     protected:

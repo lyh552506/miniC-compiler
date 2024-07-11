@@ -1,8 +1,10 @@
+#pragma once
 #include "CFG.hpp"
 #include "LoopInfo.hpp"
 #include "dominant.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
+class _AnalysisManager;
 class InlineHeuristic{
     public:
     virtual bool CanBeInlined(CallInst*)=0;

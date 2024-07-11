@@ -1,6 +1,9 @@
+#pragma once
 #include "CFG.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
+
+class _AnalysisManager;
 class DCE : public _PassManagerBase<DCE, Function>
 {
 public:

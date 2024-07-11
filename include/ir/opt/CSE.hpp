@@ -1,9 +1,11 @@
+#pragma once
 #include "dominant.hpp"
 #include "CFG.hpp"
 #include "my_stl.hpp"
 #include <unordered_set>
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
+class _AnalysisManager;
 namespace HashTool
 {
     struct InstHash
