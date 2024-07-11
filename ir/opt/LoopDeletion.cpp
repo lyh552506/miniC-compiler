@@ -10,11 +10,12 @@
 #include <optional>
 #include <set>
 #include <unordered_map>
-
+#include "SideEffect.hpp"
 bool LoopDeletion::Run() {
     bool changed = false;
     dom = AM.get<dominance>(func);
     loop = AM.get<LoopAnalysis>(func, dom);
+    AM.get<SideEffect>(&Singleton<Module>());
     for (auto loop_ : *loop)
       changed |= DetectDeadLoop(loop_);
     return changed;

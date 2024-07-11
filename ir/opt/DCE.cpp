@@ -1,9 +1,10 @@
 #include "DCE.hpp"
 #include "my_stl.hpp"
 #include <algorithm>
-
+#include "SideEffect.hpp"
 bool DCE::Run()
 {
+    AM.get<SideEffect>(&Singleton<Module>());
     Value* C = RVACC(func);
     if(dynamic_cast<UndefValue*>(C) && !func->HasSideEffect)
     {

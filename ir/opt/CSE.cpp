@@ -1,8 +1,9 @@
 #include "CSE.hpp"
 #include "ConstantFold.hpp"
-
+#include "SideEffect.hpp"
 bool CSE::Run()
 {
+    AM.get<SideEffect>(&Singleton<Module>());
     bool modified = false;
     bool Changed = false;
     update();
