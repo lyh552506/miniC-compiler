@@ -15,6 +15,7 @@ void GraphColor::RunOnFunc() {
   bool condition = true;
   GC_init();
   CaculateLiveness();
+  // PrintAnalysis();
   CaculateTopu(m_func->front());
   std::reverse(topu.begin(), topu.end());
   for (auto &[key, val] : IG) {
@@ -24,6 +25,7 @@ void GraphColor::RunOnFunc() {
   while (condition) {
     condition = false;
     CaculateLiveness();
+    // PrintAnalysis();
     MakeWorklist();
     do {
       if (!simplifyWorkList.empty())

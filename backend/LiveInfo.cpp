@@ -57,13 +57,13 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
         }
       }
     } else if (Opcode == OpType::call) {
-      // for (int i = 0; i < (*inst)->GetOperandSize(); i++) {
-      //   RISCVMOperand *val = (*inst)->GetOperand(i);
-      //   if (val) {
-      //     UpdateInfo(val, block);
-      //   }
-      // }
-      continue;
+      for (int i = 0; i < (*inst)->GetOperandSize(); i++) {
+        RISCVMOperand *val = (*inst)->GetOperand(i);
+        if (val) {
+          UpdateInfo(val, block);
+        }
+      }
+      // continue;
     } else if ((*inst)->GetOperandSize() == 1) {
       RISCVMOperand *_val = (*inst)->GetOperand(0);
       UpdateInfo(_val, block);
@@ -212,8 +212,8 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
             if (Count(reg)) {
               Precolored.insert(color[reg]);
               color[color[reg]] = color[reg];
-              // Live.insert(reg);
-              // InstLive[inst].insert(reg);
+              Live.insert(reg);
+              InstLive[inst].insert(reg);
             } else {
               // Live.insert(reg);
               // InstLive[inst].insert(reg);
@@ -222,6 +222,8 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
                 Precolored.insert(phy);
                 color[phy] = phy;
                 initial.erase(reg);
+                Live.insert(phy);
+                InstLive[inst].insert(phy);
               }
             }
             // Live.insert(reg);
