@@ -113,6 +113,23 @@ void Legalize::LegalizePass_before(mylist<RISCVBasicBlock, RISCVMIR>::iterator i
         RISCVFrameObject* framobj = dynamic_cast<RISCVFrameObject*>(oprand);
         StackRegister* sreg = dynamic_cast<StackRegister*>(oprand);
         if(framobj||sreg) {
+            StackAndFrameLegalize(i, it);
+        } 
+    }
+}
+
+void Legalize::LegalizePass_after(mylist<RISCVBasicBlock, RISCVMIR>::iterator it) {
+    using PhyReg = PhyRegister::PhyReg;
+    using ISA = RISCVMIR::RISCVISA;
+    RISCVMIR* inst = *it;
+    ISA opcode = inst->GetOpcode();
+    if(opcode==ISA::call||opcode==ISA::ret) {return;}
+    for(int i=0; i<inst->GetOperandSize(); i++){
+        RISCVMOperand* oprand = inst->GetOperand(i);
+        // StackReg and Frameobj out memory inst
+        RISCVFrameObject* framobj = dynamic_cast<RISCVFrameObject*>(oprand);
+        StackRegister* sreg = dynamic_cast<StackRegister*>(oprand);
+        if(framobj||sreg) {
             // load .1 offset(s0)
             //             ^
             if(i==0&&((opcode>ISA::BeginLoadMem&&opcode<ISA::EndLoadMem)\
@@ -125,19 +142,8 @@ void Legalize::LegalizePass_before(mylist<RISCVBasicBlock, RISCVMIR>::iterator i
             ||(opcode>ISA::BeginFloatStoreMem&&opcode<ISA::EndFloatStoreMem))) {
                 OffsetLegalize(i, it);
             }
-            else StackAndFrameLegalize(i, it);
         } 
-    } // End Operand For Loop
-}
 
-void Legalize::LegalizePass_after(mylist<RISCVBasicBlock, RISCVMIR>::iterator it) {
-    using PhyReg = PhyRegister::PhyReg;
-    using ISA = RISCVMIR::RISCVISA;
-    RISCVMIR* inst = *it;
-    ISA opcode = inst->GetOpcode();
-    if(opcode==ISA::call||opcode==ISA::ret) {return;}
-    for(int i=0; i<inst->GetOperandSize(); i++){
-        RISCVMOperand* oprand = inst->GetOperand(i);
         // Imm
         if(Imm* constdata = dynamic_cast<Imm*>(inst->GetOperand(i))) {
             // const int 
@@ -164,25 +170,18 @@ void Legalize::LegalizePass_after(mylist<RISCVBasicBlock, RISCVMIR>::iterator it
 void Legalize::StackAndFrameLegalize(int i,mylist<RISCVBasicBlock, RISCVMIR>::iterator& it) {
     RISCVMIR* inst = *it;
     StackRegister* sreg = nullptr;
-    RISCVMIR* addi = new RISCVMIR(RISCVMIR::_addi);
-    BegAddrRegister* breg1 = nullptr;
     if(sreg = dynamic_cast<StackRegister*>(inst->GetOperand(i))) {}
     else if(RISCVFrameObject* obj = dynamic_cast<RISCVFrameObject*>(inst->GetOperand(i))) {
         sreg = dynamic_cast<RISCVFrameObject*>(obj)->GetStackReg();
-        breg1 = new BegAddrRegister(obj);
     }
-    // PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
-    VirRegister* vreg = ctx.createVReg(riscv_ptr);
-    addi->SetDef(vreg);
-    // addi->SetDef(t0);
+    RISCVMIR* addi = new RISCVMIR(RISCVMIR::_addi);
+    PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
+    // VirRegister* vreg = ctx.createVReg(riscv_ptr);
+    // addi->SetDef(vreg);
+    addi->SetDef(t0);
     addi->AddOperand(sreg->GetReg());
-    if(breg1) {
-        addi->AddOperand(breg1);
-    }
-    else {
-        Imm* imm = new Imm(ConstIRInt::GetNewConstant(sreg->GetOffset()));
-        addi->AddOperand(imm);
-    }
+    Imm* imm = new Imm(ConstIRInt::GetNewConstant(sreg->GetOffset()));
+    addi->AddOperand(imm);
     it.insert_before(addi);
     inst->SetOperand(i, addi->GetDef());
 }
@@ -202,11 +201,11 @@ void Legalize::OffsetLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator
         int mod = offset%2047;
         offset = offset - mod;
         RISCVMIR* addi = new RISCVMIR(RISCVMIR::_addi);
-        VirRegister* vreg = ctx.createVReg(riscv_ptr);
-        // PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
+        // VirRegister* vreg = ctx.createVReg(riscv_ptr);
+        PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
         Imm* imm = new Imm(ConstIRInt::GetNewConstant(offset));
-        addi->SetDef(vreg);
-        // addi->SetDef(t0);
+        // addi->SetDef(vreg);
+        addi->SetDef(t0);
         addi->AddOperand(sreg->GetReg());
         addi->AddOperand(imm);
         it.insert_before(addi);

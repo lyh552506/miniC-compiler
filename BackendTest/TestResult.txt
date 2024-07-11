@@ -1,12 +1,13 @@
 Timeout: testcases/functional/86_long_code2.sy
 Timeout: testcases/functional/87_many_params.sy
-Timeout: testcases/functional/89_many_globals.sy
+Wrong Answer: testcases/output/93_nested_calls
+Wrong Answer: testcases/output/69_expr_eval
+Wrong Answer: testcases/output/65_color
 Compiler Error: Total: 0
 Assembler Error: Total: 0
-Linker Error: Total: 3
-TimeOut Function:3
-Wrong Answer: Total: 0
-Accecpt : Total: 97
-LE: testcases/output/89_many_globals.o
+Linker Error: Total: 2
+TimeOut Function:2
+Wrong Answer: Total: 3
+Accecpt : Total: 95
 LE: testcases/output/86_long_code2.o
 LE: testcases/output/87_many_params.o
