@@ -1,7 +1,7 @@
 #pragma once
 #include <cassert>
 #include <vector>
-#include "CFG.hpp"
+#include "../include/lib/CFG.hpp"
 namespace InstHashTool{
     struct InstHash
     {

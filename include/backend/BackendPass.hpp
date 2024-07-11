@@ -1,5 +1,5 @@
 #pragma once
-#include "CFG.hpp"
+#include "../../include/lib/CFG.hpp"
 template<typename T>
 class BackEndPass{
     public:

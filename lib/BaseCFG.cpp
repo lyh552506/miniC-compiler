@@ -1,5 +1,5 @@
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
+#include "../include/lib/BaseCFG.hpp"
+#include "../include/lib/CFG.hpp"
 #include <cassert>
 #include <sstream>
 

@@ -1,14 +1,14 @@
 #pragma once
-#include "BackendPass.hpp"
-#include "RISCVContext.hpp"
-#include "RISCVISel.hpp"
-#include "RISCVAsmPrinter.hpp"
-#include "RISCVISel.hpp"
-#include "RISCVRegister.hpp"
-#include "RegAlloc.hpp"
-#include "BaseCFG.hpp"
-#include "PhiElimination.hpp"
-#include "LegalizePass.hpp"
+#include "../../include/backend/BackendPass.hpp"
+#include "../../include/backend/RISCVContext.hpp"
+#include "../../include/backend/RISCVISel.hpp"
+#include "../../include/backend/RISCVAsmPrinter.hpp"
+#include "../../include/backend/RISCVISel.hpp"
+#include "../../include/backend/RISCVRegister.hpp"
+#include "../../include/backend/RegAlloc.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/backend/PhiElimination.hpp"
+#include "../../include/backend/LegalizePass.hpp"
 class RISCVModuleLowering:BackEndPass<Module>{
     // bool LoweringGlobalValue(Module*);
     RISCVLoweringContext ctx;

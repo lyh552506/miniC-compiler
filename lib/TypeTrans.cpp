@@ -1,4 +1,4 @@
-#include "TypeTrans.hpp"
+#include "../include/lib/TypeTrans.hpp"
 
 Operand Floater(Operand op,BasicBlock* bb){
     if(op->GetType()==FloatType::NewFloatTypeGet())

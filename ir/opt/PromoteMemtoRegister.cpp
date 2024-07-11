@@ -1,8 +1,8 @@
-#include "PromoteMemtoRegister.hpp"
+#include "../../include/ir/opt/PromoteMemtoRegister.hpp"
 #include <algorithm>
 
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/lib/CFG.hpp"
 
 void PromoteMem2Reg::RemoveFromAllocaList(int &index) {
   m_Allocas[index] = m_Allocas.back();

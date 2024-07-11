@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdarg.h>
 #include<sys/time.h>
-#include"sylib.h"
+#include"../RISCVLib/sylib.h"
 /* Input & output functions */
 int getint(){int t; scanf("%d",&t); return t; }
 int getch(){char c; scanf("%c",&c); return (int)c; }

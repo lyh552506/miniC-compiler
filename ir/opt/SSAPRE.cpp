@@ -1,4 +1,4 @@
-#include "SSAPRE.hpp"
+#include "../../include/ir/opt/SSAPRE.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -7,9 +7,9 @@
 #include <utility>
 #include <vector>
 
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "Singleton.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/lib/Singleton.hpp"
 
 /// @brief flag=1 -->GetLeftChild
 ///        flag=0 -->GetRightChild

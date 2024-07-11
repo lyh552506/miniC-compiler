@@ -1,7 +1,7 @@
-#include "dominant.hpp"
+#include "../../include/ir/opt/dominant.hpp"
 
-#include "CFG.hpp"
-#include "Singleton.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/lib/Singleton.hpp"
 #include <cassert>
 
 void dominance::init() {

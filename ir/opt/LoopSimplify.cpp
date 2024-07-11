@@ -1,10 +1,10 @@
-#include "LoopSimplify.hpp"
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "LoopInfo.hpp"
-#include "Type.hpp"
-#include "dominant.hpp"
-#include "my_stl.hpp"
+#include "../../include/ir/opt/LoopSimplify.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/ir/opt/LoopInfo.hpp"
+#include "../../include/lib/Type.hpp"
+#include "../../include/ir/opt/dominant.hpp"
+#include "../../util/my_stl.hpp"
 #include <algorithm>
 #include <cassert>
 #include <set>

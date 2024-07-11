@@ -1,5 +1,5 @@
 #pragma once
-#include "CFG.hpp"
+#include "../include/lib/CFG.hpp"
 #include <cassert>
 #include <vector>
 ///@brief 自定义宏，更加方便，需要什么自己加

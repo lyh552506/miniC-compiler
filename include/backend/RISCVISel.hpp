@@ -1,10 +1,10 @@
 #pragma once
-#include "BackendPass.hpp"
-#include "CFG.hpp"
-#include "RISCVContext.hpp"
-#include "RISCVRegister.hpp"
-#include "RISCVMIR.hpp"
-#include "BaseCFG.hpp"
+#include "../../include/backend/BackendPass.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/backend/RISCVContext.hpp"
+#include "../../include/backend/RISCVRegister.hpp"
+#include "../../include/backend/RISCVMIR.hpp"
+#include "../../include/lib/BaseCFG.hpp"
 #include <algorithm>
 
 void LowerFormalArguments(Function* func, RISCVLoweringContext& ctx);

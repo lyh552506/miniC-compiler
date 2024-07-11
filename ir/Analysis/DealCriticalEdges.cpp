@@ -1,4 +1,4 @@
-#include"DealCriticalEdges.hpp"
+#include "../../include/ir/Analysis/DealCriticalEdges.hpp"
 
 void ElimitCriticalEdge::RunOnFunction(){
   DealCriticalEdges();
