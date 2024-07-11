@@ -76,15 +76,7 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
   }
 }
 
-bool _PassManager::Run() {
-#ifdef TEST
-  int a = 0;
-#elif defined(LEVEL)
-  int a = 1;
-#else
-  int a = 3;
-#endif
-}
+bool _PassManager::Run() { return true; }
 
 void _PassManager::RunOnLevel() {
   if (level == O0)
@@ -99,53 +91,73 @@ void _PassManager::RunOnTest() {
   while (!EnablePass.empty()) {
     auto name = EnablePass.front();
     EnablePass.pop();
-    switch (name) {
-    case mem2reg: {
-      auto Mem2regRes = RunImpl<Mem2reg>(curfunc, AM);
-    }
-    case ece: {
-      auto eliedg = RunImpl<ElimitCriticalEdge>(curfunc, AM);
-    }
-    // case pre: {
-    //   dominance *d = new dominance(m_func, BList.size());
-    //   d->update();
-    //   m_pre = std::make_unique<PRE>(d, m_func);
-    //   m_pre->RunOnFunction();
-    //   // m_pre->PrintPass();
-    // }
-    case constprop: {
-      auto m_constprop = RunImpl<ConstantProp>(curfunc, AM);
-    }
-    case dce: {
-      auto m_dce = RunImpl<DCE>(curfunc, AM);
-    }
-    case simplifycfg: {
-      auto m_cfgsimple = RunImpl<cfgSimplify>(curfunc, AM);
-    }
-    case reassociate: {
-      auto m_reassociate = RunImpl<Reassociate>(curfunc, AM);
-    }
-    case loopsimplify: {
-      auto m_loopsimple = RunImpl<LoopSimplify>(curfunc, AM);
-    }
-    case loopdeletion: {
-      auto m_loopdeletion = RunImpl<LoopDeletion>(curfunc, AM);
-    }
-    case Inline: {
-      auto m_inline = RunImpl<Inliner>(module, AM);
-    }
-    case cse: {
-      auto m_cse = RunImpl<CSE>(curfunc, AM); 
-    }
-    case deadargselimination: {
-      auto m_deadargselimination = RunImpl<DeadArgsElimination>(module, AM);
-    }
-    case storeonlyglobalelimination: {
-      auto m_storeonlyglobalelimination = RunImpl<StoreOnlyGlobalElimination>(module, AM);
-    }
-    default: {
-      assert(0);
-    }
+    for (auto &func : module->GetFuncTion()) {
+      curfunc = func.get();
+      int i = 0;
+      //维护bbs关系
+      curfunc->GetBasicBlock().clear();
+      for (auto bb : *curfunc) {
+        bb->num = i++;
+        curfunc->GetBasicBlock().push_back(bb);
+      }
+      switch (name) {
+      case mem2reg: {
+        auto Mem2regRes = RunImpl<Mem2reg>(curfunc, AM);
+        break;
+      }
+      case ece: {
+        auto eliedg = RunImpl<ElimitCriticalEdge>(curfunc, AM);
+        break;
+      }
+      case pre: {
+        auto m_pre = RunImpl<PRE>(curfunc, AM);
+        break;
+      }
+      case constprop: {
+        auto m_constprop = RunImpl<ConstantProp>(curfunc, AM);
+        break;
+      }
+      case dce: {
+        auto m_dce = RunImpl<DCE>(curfunc, AM);
+        break;
+      }
+      case simplifycfg: {
+        auto m_cfgsimple = RunImpl<cfgSimplify>(curfunc, AM);
+        break;
+      }
+      case reassociate: {
+        auto m_reassociate = RunImpl<Reassociate>(curfunc, AM);
+        break;
+      }
+      case loopsimplify: {
+        auto m_loopsimple = RunImpl<LoopSimplify>(curfunc, AM);
+        break;
+      }
+      case loopdeletion: {
+        auto m_loopdeletion = RunImpl<LoopDeletion>(curfunc, AM);
+        break;
+      }
+      case Inline: {
+        auto m_inline = RunImpl<Inliner>(module, AM);
+        break;
+      }
+      case cse: {
+        auto m_cse = RunImpl<CSE>(curfunc, AM);
+        break;
+      }
+      case deadargselimination: {
+        auto m_deadargselimination = RunImpl<DeadArgsElimination>(module, AM);
+        break;
+      }
+      case storeonlyglobalelimination: {
+        auto m_storeonlyglobalelimination =
+            RunImpl<StoreOnlyGlobalElimination>(module, AM);
+        break;
+      }
+      default: {
+        assert(0);
+      }
+      }
     }
   }
 }

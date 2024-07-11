@@ -8,7 +8,6 @@
 bool Mem2reg::promoteMemoryToRegister(Function &func) {
   auto dom = AM.get<dominance>(&func);
   std::vector<AllocaInst *> Allocas;
-  AM.get<dominance>(&func);
   Allocas.clear();
   auto EntryBlock = func.front();
   For_inst_In(EntryBlock) {

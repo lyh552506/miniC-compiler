@@ -5,9 +5,9 @@
 
 void dominance::init() {
   auto &bbs = thisFunc->GetBasicBlock();
-  // block_num = thisFunc->Size();
-  // node.resize(thisFunc->Size());
-  // Dest.resize(thisFunc->Size());
+  block_num = thisFunc->Size();
+  node.resize(thisFunc->Size());
+  Dest.resize(thisFunc->Size());
   for (auto bb : bbs)
     node[bb->num].init();
   for (auto bb : bbs) {

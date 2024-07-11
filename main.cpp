@@ -41,9 +41,6 @@ int main(int argc, char **argv) {
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
-  Function *func = Singleton<Module>().GetFuncTion()[0].get();
-  Singleton<Module>().Test();
-
 #ifdef SYSY_ENABLE_MIDDLE_END
   auto PM = std::make_unique<_PassManager>();
   PM->DecodeArgs(argc, argv);
