@@ -134,7 +134,7 @@ private:
   MOperand HeuristicSpill();
   PhyRegister *SelectPhyReg(MOperand vreg,RISCVType ty, std::unordered_set<MOperand> &assist);
   bool GeorgeCheck(MOperand dst, MOperand src, RISCVType ty);
-  bool BriggsCheck(std::unordered_set<MOperand> target, RISCVType ty);
+  bool BriggsCheck(MOperand dst, MOperand src, RISCVType ty);
   void AddWorkList(MOperand v);
   void combine(MOperand rd, MOperand rs);
   MOperand GetAlias(MOperand v);
@@ -144,7 +144,7 @@ private:
   int GetRegNums(RISCVType ty);
   void GC_init();
   void LiveInfoInit();
-  void SimplifyMv();
+  std::set<MOperand> Adjacent(MOperand);
   RISCVMIR *CreateSpillMir(RISCVMOperand *spill,
                            std::unordered_set<VirRegister *> &temps);
   RISCVMIR *CreateLoadMir(RISCVMOperand *load,
@@ -176,6 +176,7 @@ private:
   //已成功着色的结点集合
   std::unordered_set<MOperand> coloredNode;
   std::unordered_map<MOperand, std::unordered_set<MOperand>> AdjList;
+  std::unordered_map<MOperand,int> Degree;
   // 从图中删除的临时变量的栈
   std::vector<MOperand> selectstack;
   //查询每个传送指令属于哪一个集合
