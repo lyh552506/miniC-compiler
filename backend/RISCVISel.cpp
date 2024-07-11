@@ -464,6 +464,9 @@ void RISCVISel::InstLowering(CallInst* inst){
     RISCVFunction* called_func;
     BuildInFunction* buildin_func;
     std::vector<int> spillnodes;
+    RISCVMIR* call = new RISCVMIR(RISCVMIR::call);
+    call->AddOperand(M(inst->GetOperand(0)));
+
     if(called_midfunc = dynamic_cast<Function*>(inst->GetOperand(0))) {
         called_func = dynamic_cast<RISCVFunction*>(M(called_midfunc));
         spillnodes = called_func->GetParamNeedSpill();
@@ -519,12 +522,12 @@ void RISCVISel::InstLowering(CallInst* inst){
             if(std::find(spillnodes.begin(), spillnodes.end(), index-1)!=spillnodes.end()) {
                 continue;
             }
-            
             else {
                 Operand op = inst->GetOperand(index);
                 if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(op)) {
                     auto li = new RISCVMIR(RISCVMIR::li);
                     PhyRegister* preg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint));
+                    call->AddOperand(preg);
                     li->SetDef(preg);
                     Imm* imm = new Imm(constint);
                     li->AddOperand(imm);
@@ -532,18 +535,17 @@ void RISCVISel::InstLowering(CallInst* inst){
                     ctx(li);
                     regint++;
                 }
-                else if(RISCVTyper(op->GetType())==riscv_i32) {
-                    ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint)),M(op)}));
-                    regint++;
-                }
-                else if(RISCVTyper(op->GetType())==riscv_ptr) {
-                    ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint)),M(op)}));
+                else if(RISCVTyper(op->GetType())==riscv_i32 || RISCVTyper(op->GetType())==riscv_ptr) {
+                    PhyRegister* preg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint));
+                    ctx(Builder(RISCVMIR::mv,{preg,M(op)}));
+                    call->AddOperand(preg);
                     regint++;
                 }
                 else if(ConstIRFloat* constfloat = dynamic_cast<ConstIRFloat*>(op)) {
                     auto load = new RISCVMIR(RISCVMIR::_fmv_s); 
                     // VirRegister* vreg = ctx.createVReg(RISCVTyper(op->GetType()));
                     PhyRegister* freg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regfloat));
+                    call->AddOperand(freg);
                     load->SetDef(freg);
                     Imm* imm = new Imm(constfloat);
                     load->AddOperand(imm);
@@ -552,15 +554,19 @@ void RISCVISel::InstLowering(CallInst* inst){
                     regfloat++;
                 }
                 else if(RISCVTyper(op->GetType())==riscv_float32) {
-                    ctx(Builder(RISCVMIR::_fmv_s,{PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regfloat)),M(op)}));
+                    PhyRegister* freg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regfloat));
+                    ctx(Builder(RISCVMIR::_fmv_s,{freg,M(op)}));
                     regfloat++;
                 }
                 else assert(0 && "CallInst selection illegal type");
             }
         }
     }
+
+    ctx(call);
+
     if(!inst->GetUserlist().is_empty()){
-        ctx(Builder_withoutDef(RISCVMIR::call, inst));
+        // ctx(Builder_withoutDef(RISCVMIR::call, inst));
         if(RISCVTyper(inst->GetOperand(0)->GetType())==RISCVType::riscv_float32) {
             ctx(Builder(RISCVMIR::_fmv_s, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0)}));
         }
@@ -571,8 +577,10 @@ void RISCVISel::InstLowering(CallInst* inst){
             // no return
         }
     }
-    else ctx(Builder_withoutDef(RISCVMIR::call, inst));
-    #undef M  
+    else {
+        // ctx(Builder_withoutDef(RISCVMIR::call, inst));
+    }
+    #undef M
 }
 
 void RISCVISel::InstLowering(RetInst* inst){
