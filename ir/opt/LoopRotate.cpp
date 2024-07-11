@@ -2,6 +2,7 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "ConstantFold.hpp"
+#include "SideEffect.hpp"
 #include "LoopInfo.hpp"
 #include "PassManagerBase.hpp"
 #include "dominant.hpp"
@@ -19,6 +20,7 @@
 bool LoopRotate::Run() {
   bool changed = false;
   m_dom = AM.get<dominance>(m_func);
+  auto sideeffect=AM.get<SideEffect>();
   loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
   for (auto loop : *loopAnlasis) {
     changed |= RotateLoop(loop);

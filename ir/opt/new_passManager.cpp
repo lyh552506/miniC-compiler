@@ -1,5 +1,4 @@
 #include "New_passManager.hpp"
-#include <cassert>
 
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
@@ -105,7 +104,7 @@ void _PassManager::RunOnTest(int argc, char *argv[]) {
       auto Mem2regRes = RunImpl<Mem2reg>(curfunc, AM);
     }
     case ece: {
-      auto eliedg=RunImpl<ElimitCriticalEdge>(curfunc,AM);
+      auto eliedg = RunImpl<ElimitCriticalEdge>(curfunc, AM);
     }
     // case pre: {
     //   dominance *d = new dominance(m_func, BList.size());
@@ -115,33 +114,19 @@ void _PassManager::RunOnTest(int argc, char *argv[]) {
     //   // m_pre->PrintPass();
     // }
     case constprop: {
-      auto m_constprop=RunImpl<ConstantProp>(curfunc,AM); 
+      auto m_constprop = RunImpl<ConstantProp>(curfunc, AM);
     }
     case dce: {
-      auto m_dce=RunImpl<DCE>(curfunc,AM); 
+      auto m_dce = RunImpl<DCE>(curfunc, AM);
     }
     case simplifycfg: {
-      // auto m_cfgsimple=RunImpl<cfgSimplify>(curfunc,AM);
-      //  PreWork(func);
-      // dominance *d = new dominance(m_func, BList.size());
-      // d->update();
-      // m_cfgsimple = new cfgSimplify(m_func, d);
-      // m_cfgsimple->RunOnFunction();
-      // PreWork(func);
-      // m_dom->update();
-      // m_cfgsimple->PrintPass();
+      auto m_cfgsimple = RunImpl<cfgSimplify>(curfunc, AM);
     }
     case reassociate: {
-      // PreWork(func);
-      // m_reassociate->RunOnFunction();
+      auto m_reassociate = RunImpl<Reassociate>(curfunc, AM);
     }
     case loopsimplify: {
-      // PreWork(func);
-      // dominance *d = new dominance(m_func, BList.size());
-      // d->RunOnFunction();
-      // m_loopsimple = std::make_unique<LoopSimplify>(m_func, d);
-      // m_loopsimple->RunOnFunction();
-      // m_loopsimple->PrintPass();
+      auto m_loopsimple = RunImpl<LoopSimplify>(curfunc, AM);
     }
     case loopdeletion: {
       auto m_loopdeletion = RunImpl<LoopDeletion>(curfunc, AM);
@@ -157,9 +142,6 @@ void _PassManager::RunOnTest(int argc, char *argv[]) {
     }
     case storeonlyglobalelimination: {
       auto m_storeonlyglobalelimination = RunImpl<StoreOnlyGlobalElimination>(module, AM);
-    }
-    case global2local: {
-      auto m_global2local = RunImpl<Global2Local>(module, AM);
     }
     default: {
       assert(0);
