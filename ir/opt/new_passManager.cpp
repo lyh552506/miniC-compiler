@@ -57,9 +57,6 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case deadargselimination:
       AddPass(deadargselimination);
       break;
-    case deadstoreelimination:
-      AddPass(deadstoreelimination);
-      break;
     case O0:
       level = O0;
       break;

@@ -29,8 +29,7 @@ enum PassName {
   licm,
   looprotate,
   loopdeletion,
-  deadargselimination,
-  deadstoreelimination
+  deadargselimination
 };
 
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
@@ -48,7 +47,6 @@ static struct option long_options[] = {{"mem2reg", no_argument, 0, 0},
                                        {"licm", no_argument, 0, 12},
                                        {"loop-rotate", no_argument, 0, 13},
                                        {"deadargselimination", no_argument, 0, 14},
-                                       {"deadstoreelimination", no_argument, 0, 15},
                                        {0, 0, 0, 0}};
 
 class _AnalysisManager
