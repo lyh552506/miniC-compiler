@@ -1,12 +1,7 @@
-#include "AliasAnalysis.hpp"
-#include "CFG.hpp"
-#include "ConstantProp.hpp"
-#include "LoopInfo.hpp"
-#include "New_passManager.hpp"
-#include "PassManagerBase.hpp"
-#include "RISCVLowering.hpp"
-#include "dominant.hpp"
-#include "parser.hpp"
+#include "./include/lib/CFG.hpp"
+#include "./include/ir/opt/New_passManager.hpp"
+#include "./include/backend/RISCVLowering.hpp"
+#include "./include/yacc/parser.hpp"
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
