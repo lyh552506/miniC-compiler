@@ -18,7 +18,8 @@ void GraphColor::RunOnFunc() {
   CaculateTopu(m_func->front());
   std::reverse(topu.begin(), topu.end());
   for (auto &[key, val] : IG) {
-    AdjList[key].insert(val.begin(), val.end());
+    // AdjList[key].insert(val.begin(), val.end());
+    Degree[key] = val.size();
   }
   while (condition) {
     condition = false;
@@ -37,7 +38,27 @@ void GraphColor::RunOnFunc() {
              !freezeWorkList.empty() || !spillWorkList.empty());
     AssignColors();
     if (!spilledNodes.empty()) {
+      // if (m_func->GetName() == "main") {
+      //   PrintAnalysis();
+      //   ctx.print();
+      // }
       SpillNodeInMir();
+      // ctx.print();
+      // CaculateLiveness();
+      // return;
+      // if (m_func->GetName() == "main") {
+      //   static int x = 0;
+      //   x++;
+      //   if (x == 1) {
+      //     IG.clear();
+      //     CaculateLiveness();
+      //     // PrintPass();
+      //     PrintAnalysis();
+      //     ctx.print();
+      //     exit(0);
+      //   }
+      // }
+      // return;
       condition = true;
     }
   }
@@ -84,7 +105,7 @@ MOperand GraphColor::GetAlias(MOperand v) {
 //实行George的启发式合并
 bool GraphColor::GeorgeCheck(MOperand dst, MOperand src, RISCVType ty) {
   if (ty == riscv_i32 || ty == riscv_ptr) {
-    for (auto tmp : IG[src]) {
+    for (auto tmp : Adjacent(src)) {
       bool ok = false;
       if (IG[tmp].size() < reglist.GetReglistInt().size())
         ok |= true;
@@ -98,7 +119,7 @@ bool GraphColor::GeorgeCheck(MOperand dst, MOperand src, RISCVType ty) {
         return false;
     }
   } else if (ty == riscv_float32) {
-    for (auto tmp : IG[src]) {
+    for (auto tmp : Adjacent(src)) {
       bool ok = false;
       if (IG[tmp].size() < reglist.GetReglistFloat().size())
         ok |= true;
@@ -117,8 +138,11 @@ bool GraphColor::GeorgeCheck(MOperand dst, MOperand src, RISCVType ty) {
   return true;
 }
 //实行Briggs的启发合并
-bool GraphColor::BriggsCheck(std::unordered_set<MOperand> target,
-                             RISCVType ty) {
+bool GraphColor::BriggsCheck(MOperand dst, MOperand src, RISCVType ty) {
+  auto tmp = Adjacent(dst);
+  std::unordered_set<MOperand> target{tmp.begin(), tmp.end()};
+  tmp = Adjacent(src);
+  target.insert(tmp.begin(), tmp.end());
   if (ty == riscv_i32 | ty == riscv_ptr) {
     int num = 0;
     for (auto node : target) {
@@ -251,40 +275,71 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
   for (auto mv : moveList[rs]) {
     moveList[rd].insert(mv);
   }
+  auto t = Adjacent(rs);
+  std::unordered_set<MOperand> tmp(t.begin(), t.end());
+  tmp.insert(rs);
+  // EnableMove
+  for (auto node : tmp)
+    for (auto mov : MoveRelated(node)) {
+      if (activeMoves.find(mov) != activeMoves.end()) {
+        activeMoves.erase(mov);
+        PushVecSingleVal(worklistMoves, mov);
+      }
+    }
   //更新已合并点的所有临边(DecrementDegree)
-  for (int i = 0; i != IG[rs].size(); i++) {
-    MOperand neighbor = IG[rs][i];
+  for (auto neighbor : Adjacent(rs)) {
     _DEBUG(std::cerr << "Push " << neighbor->GetName() << " Into IG["
                      << rd->GetName() << "]" << std::endl;)
     _DEBUG(std::cerr << "Push " << rd->GetName() << " Into IG["
                      << neighbor->GetName() << "]" << std::endl;)
     PushVecSingleVal(IG[rd], neighbor);
     PushVecSingleVal(IG[neighbor], rd);
-    auto iter = std::find(IG[neighbor].begin(), IG[neighbor].end(), rs);
-    if (iter == IG[neighbor].end())
-      assert(0 && "wrong with ig");
-    IG[neighbor].erase(iter);
-    vec_pop(IG[rs], i);
-    //减去边后度数恰好不是高度数
-    if (Precolored.find(neighbor) == Precolored.end() &&
-        IG[neighbor].size() == GetRegNums(rs) - 1) {
-      spillWorkList.erase(neighbor);
-      std::unordered_set<MOperand> tmp(IG[neighbor].begin(),
-                                       IG[neighbor].end());
-      tmp.insert(neighbor);
-      for (auto node : tmp)
-        for (auto mov : MoveRelated(node)) {
-          if (activeMoves.find(mov) != activeMoves.end()) {
-            activeMoves.erase(mov);
-            PushVecSingleVal(worklistMoves, mov);
+    Degree[rd]++;
+
+    //这里注意需要检查一下更新后的相邻边是否只有color-1
+    if (neighbor->GetType() == riscv_i32 || neighbor->GetType() == riscv_ptr) {
+      if (Degree[neighbor] == GetRegNums(riscv_i32) - 1) {
+        spillWorkList.erase(neighbor);
+        std::unordered_set<MOperand> tmp(Adjacent(neighbor).begin(),
+                                         Adjacent(neighbor).end());
+        tmp.insert(neighbor);
+        // EnableMove
+        for (auto node : tmp)
+          for (auto mov : MoveRelated(node)) {
+            if (activeMoves.find(mov) != activeMoves.end()) {
+              activeMoves.erase(mov);
+              PushVecSingleVal(worklistMoves, mov);
+            }
           }
+        if (MoveRelated(neighbor).size() != 0) {
+          freezeWorkList.insert(neighbor);
+        } else {
+          _DEBUG(std::cerr << "simplifyWorkList insert element: "
+                           << neighbor->GetName() << std::endl;)
+          simplifyWorkList.push_back(neighbor);
         }
-      if (!MoveRelated(neighbor).empty()) {
-        freezeWorkList.insert(neighbor);
-      } else {
-        _DEBUG(std::cerr << "simplifyWorkList insert element: "
-                         << neighbor->GetName() << std::endl;)
-        PushVecSingleVal(simplifyWorkList, neighbor);
+      }
+    } else if (neighbor->GetType() == riscv_float32) {
+      if (Degree[neighbor] == GetRegNums(riscv_float32) - 1) {
+        spillWorkList.erase(neighbor);
+        std::unordered_set<MOperand> tmp(Adjacent(neighbor).begin(),
+                                         Adjacent(neighbor).end());
+        tmp.insert(neighbor);
+        // EnableMove
+        for (auto node : tmp)
+          for (auto mov : MoveRelated(node)) {
+            if (activeMoves.find(mov) != activeMoves.end()) {
+              activeMoves.erase(mov);
+              PushVecSingleVal(worklistMoves, mov);
+            }
+          }
+        if (MoveRelated(neighbor).size() != 0) {
+          freezeWorkList.insert(neighbor);
+        } else {
+          _DEBUG(std::cerr << "simplifyWorkList insert element: "
+                           << neighbor->GetName() << std::endl;)
+          simplifyWorkList.push_back(neighbor);
+        }
       }
     }
   }
@@ -334,18 +389,15 @@ void GraphColor::simplify() {
   selectstack.push_back(val);
   _DEBUG(std::cerr << "SelectStack Insert: " << val->GetName() << std::endl;)
   //此时需要更新冲突图上和当前val相邻的边(DecrementDegree)
-  for (int i = 0; i < IG[val].size(); i++) {
-    auto target = IG[val][i];
-    auto iter = std::find(IG[target].begin(), IG[target].end(), val);
-    if (iter == IG[target].end())
-      assert(0 && "wrong with ig");
-    IG[target].erase(iter);
-    vec_pop(IG[val], i);
+  auto adj = Adjacent(val);
+  for (auto target : adj) {
+    Degree[target]--;
     //这里注意需要检查一下更新后的相邻边是否只有color-1
     if (target->GetType() == riscv_i32 || target->GetType() == riscv_ptr) {
-      if (IG[target].size() == GetRegNums(riscv_i32) - 1) {
+      if (Degree[target] == GetRegNums(riscv_i32) - 1) {
         spillWorkList.erase(target);
-        std::unordered_set<MOperand> tmp(IG[target].begin(), IG[target].end());
+        std::unordered_set<MOperand> tmp(Adjacent(target).begin(),
+                                         Adjacent(target).end());
         tmp.insert(target);
         // EnableMove
         for (auto node : tmp)
@@ -364,9 +416,10 @@ void GraphColor::simplify() {
         }
       }
     } else if (target->GetType() == riscv_float32) {
-      if (IG[target].size() == reglist.GetReglistFloat().size() - 1) {
+      if (Degree[target] == GetRegNums(riscv_float32) - 1) {
         spillWorkList.erase(target);
-        std::unordered_set<MOperand> tmp(IG[target].begin(), IG[target].end());
+        std::unordered_set<MOperand> tmp(Adjacent(target).begin(),
+                                         Adjacent(target).end());
         tmp.insert(target);
         // EnableMove
         for (auto node : tmp)
@@ -384,8 +437,6 @@ void GraphColor::simplify() {
           simplifyWorkList.push_back(target);
         }
       }
-    } else {
-      // assert(0 && "appear riscv_none");
     }
   }
 }
@@ -426,7 +477,7 @@ void GraphColor::coalesce() {
     } else if ((Precolored.find(m.first) != Precolored.end() &&
                 GeorgeCheck(m.second, m.first, m.second->GetType())) ||
                (Precolored.find(m.first) == Precolored.end() &&
-                BriggsCheck(Adjset, m.first->GetType()))) {
+                BriggsCheck(m.second, m.first, m.first->GetType()))) {
       coalescedMoves.push_back(mv);
       combine(m.first, m.second);
       AddWorkList(m.first);
@@ -468,7 +519,7 @@ void GraphColor::AssignColors() {
     std::unordered_set<MOperand> float_assist{reglist.GetReglistFloat().begin(),
                                               reglist.GetReglistFloat().end()};
     //遍历所有的冲突点，查看他们分配的颜色，保证我们分配的颜色一定是不同的
-    for (auto adj : AdjList[select])
+    for (auto adj : IG[select])
       if (coloredNode.find(GetAlias(adj)) != coloredNode.end() ||
           Precolored.find(GetAlias(adj)) != Precolored.end()) {
         if (color.find(dynamic_cast<MOperand>(GetAlias(adj))) == color.end())
@@ -504,9 +555,8 @@ void GraphColor::AssignColors() {
   }
 }
 
-std::unordered_set<VirRegister *> temps;
 void GraphColor::SpillNodeInMir() {
-  // AlreadySpill.clear();
+  std::unordered_set<VirRegister *> temps;
   for (const auto mbb : topu) {
     for (auto mir_begin = mbb->begin(), mir_end = mbb->end();
          mir_begin != mir_end;) {
@@ -532,8 +582,7 @@ void GraphColor::SpillNodeInMir() {
                    << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
                    << " To Replace" << std::endl;)
         mir->SetDef(sd->GetOperand(0));
-      } else if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd &&
-                 mir->GetOpcode() != RISCVMIR::RISCVISA::_fsw &&
+      } else if (
                  mir->GetDef() != nullptr &&
                  dynamic_cast<VirRegister *>(mir->GetDef()) &&
                  (spilledNodes.find(dynamic_cast<VirRegister *>(
@@ -552,8 +601,7 @@ void GraphColor::SpillNodeInMir() {
       }
       for (int i = 0; i < mir->GetOperandSize(); i++) {
         auto operand = mir->GetOperand(i);
-        if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd &&
-            mir->GetOpcode() != RISCVMIR::RISCVISA::_fsw &&
+        if (
             operand != nullptr && dynamic_cast<VirRegister *>(operand) &&
             (spilledNodes.find(dynamic_cast<VirRegister *>(operand)) !=
              spilledNodes.end()) &&
@@ -563,7 +611,7 @@ void GraphColor::SpillNodeInMir() {
           RISCVMIR *sd = CreateSpillMir(operand, temps);
           mir_begin.insert_after(sd);
           _DEBUG(
-              std::cerr
+              std::cout
                   << "Spilling "
                   << dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName()
                   << ", Use Vreg "
@@ -571,8 +619,7 @@ void GraphColor::SpillNodeInMir() {
                   << " To Replace" << std::endl;)
           mir->SetOperand(i, sd->GetOperand(0));
           // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
-        } else if (mir->GetOpcode() != RISCVMIR::RISCVISA::_sd &&
-                   mir->GetOpcode() != RISCVMIR::RISCVISA::_fsw &&
+        } else if (
                    mir->GetOperand(i) != nullptr &&
                    dynamic_cast<VirRegister *>(mir->GetOperand(i)) &&
                    (spilledNodes.find(dynamic_cast<VirRegister *>(
@@ -753,7 +800,7 @@ PhyRegister *GraphColor::SelectPhyReg(MOperand vreg, RISCVType ty,
 void GraphColor::Print() {
   for (auto v : color) {
     if (dynamic_cast<VirRegister *>(v.first))
-      std::cerr << "Replace " << v.first->GetName() << "  with  "
+      std::cout << "Replace " << v.first->GetName() << "  with  "
                 << v.second->GetName() << std::endl;
   }
 }
@@ -797,4 +844,16 @@ void GraphColor::GC_init() {
   RegLiveness.clear();
   assist.clear();
   topu.clear();
+}
+
+std::set<MOperand> GraphColor::Adjacent(MOperand val) {
+  std::set<MOperand> tmp;
+  for (auto _val : IG[val]) {
+    auto it_1 = std::find(selectstack.begin(), selectstack.end(), val);
+    if (it_1 == selectstack.end() &&
+        coalescedNodes.find(val) == coalescedNodes.end()) {
+      tmp.insert(_val);
+    }
+  }
+  return tmp;
 }
