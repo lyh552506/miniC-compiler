@@ -1,7 +1,7 @@
 #pragma once
-#include "RISCVMOperand.hpp"
-#include "RISCVRegister.hpp"
-#include "MagicEnum.hpp"
+#include "../../include/backend/RISCVMOperand.hpp"
+#include "../../include/backend/RISCVRegister.hpp"
+#include "../../include/lib/MagicEnum.hpp"
 class StackRegister;
 
 class NamedMOperand:public RISCVMOperand{

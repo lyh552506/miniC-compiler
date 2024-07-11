@@ -1,4 +1,4 @@
-#include "Trival.hpp"
+#include "../include/lib/Trival.hpp"
 
 bool Trival::check_builtin(std::string id){
     if(id=="getint")return true;

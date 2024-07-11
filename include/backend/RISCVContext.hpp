@@ -1,5 +1,5 @@
 #pragma once
-#include "RISCVMIR.hpp"
+#include "../../include/backend/RISCVMIR.hpp"
 class RISCVFunction;
 
 /// @note This class intend to store the context of the lowering process

@@ -1,8 +1,8 @@
 #pragma once
 #include <cassert>
 #include <vector>
-#include "CFG.hpp"
-#include "List.hpp"
+#include "../include/lib/CFG.hpp"
+#include "../include/lib/List.hpp"
 
 
 template <typename Key, typename Val>

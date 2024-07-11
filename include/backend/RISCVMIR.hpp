@@ -1,7 +1,7 @@
 #pragma once
-#include "Trival.hpp"
-#include "MagicEnum.hpp"
-#include "RISCVFrameContext.hpp"
+#include "../../include/lib/Trival.hpp"
+#include "../../include/lib/MagicEnum.hpp"
+#include "../../include/backend/RISCVFrameContext.hpp"
 class RISCVFrame;
 class RISCVFunction;
 class RISCVBasicBlock;

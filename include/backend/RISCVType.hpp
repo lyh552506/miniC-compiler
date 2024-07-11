@@ -1,5 +1,5 @@
 #pragma once
-#include "Type.hpp"
+#include "../../include/lib/Type.hpp"
 #include <cassert>
 
 /// riscv_ptr   :   a pointer to some address() 

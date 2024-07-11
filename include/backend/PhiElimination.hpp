@@ -1,6 +1,6 @@
 #pragma once
-#include "BackendPass.hpp"
-#include "RISCVContext.hpp"
+#include "../../include/backend/BackendPass.hpp"
+#include "../../include/backend/RISCVContext.hpp"
 
 /// @note use this after instruction selection
 /// @note do not change any piece of basicblock and their jump target

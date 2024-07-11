@@ -1,6 +1,6 @@
 #pragma once
-#include "RISCVMIR.hpp"
-#include "RISCVContext.hpp"
+#include "../../include/backend/RISCVMIR.hpp"
+#include "../../include/backend/RISCVContext.hpp"
 class LegalizeConstInt;
 
 class Legalize {

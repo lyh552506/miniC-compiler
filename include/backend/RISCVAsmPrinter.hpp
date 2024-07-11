@@ -2,11 +2,11 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include "RISCVFrameContext.hpp"
-#include "RISCVMIR.hpp"
-#include "RISCVISel.hpp"
-#include "FloatToDex.hpp"
-#include "MagicEnum.hpp"
+#include "../../include/backend/RISCVFrameContext.hpp"
+#include "../../include/backend/RISCVMIR.hpp"
+#include "../../include/backend/RISCVISel.hpp"
+#include "../../include/backend/FloatToDex.hpp"
+#include "../../include/lib/MagicEnum.hpp"
 class globlvar;
 class tempvar;
 class functionSegment;

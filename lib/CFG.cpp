@@ -1,7 +1,7 @@
-#include "CFG.hpp"
-#include "BaseCFG.hpp"
-#include "MagicEnum.hpp"
-#include "my_stl.hpp"
+#include "../include/lib/CFG.hpp"
+#include "../include/lib/BaseCFG.hpp"
+#include "../include/lib/MagicEnum.hpp"
+#include "../util/my_stl.hpp"
 #include <algorithm>
 #include <cassert>
 #include <iostream>
