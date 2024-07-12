@@ -60,6 +60,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case storeonlyglobalelimination:
       AddPass(storeonlyglobalelimination);
       break;
+    case local2global:
+      AddPass(local2global);
+      break;
     case O0:
       level = O0;
       break;
@@ -104,6 +107,9 @@ void _PassManager::RunOnLevel() {
     PassChangedBegin(curfunc)
     RunImpl<Mem2reg>(curfunc, AM);
     PassChangedEnd
+
+    // Local2Global
+    RunImpl<Local2Global>(module, AM);
 
     // constprop
     RunLevelPass(ConstantProp, curfunc);
@@ -288,6 +294,11 @@ void _PassManager::RunOnTest() {
         break;}
       case lcssa: {
         auto m_lcssa = RunImpl<LcSSA>(curfunc, AM);
+        break;
+      }
+      case local2global:
+      {
+        auto m_local2global = RunImpl<Local2Global>(module, AM);
         break;
       }
       default: {
