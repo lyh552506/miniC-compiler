@@ -1,6 +1,6 @@
 #include "../../include/ir/opt/New_passManager.hpp"
 #include "CFG.hpp"
-
+#include "my_stl.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -82,6 +82,71 @@ void _PassManager::RunOnLevel() {
   if (level == O0)
     return;
   if (level == O1) {
+    _AnalysisManager AM;
+    // DeadArgsElimination
+    RunImpl<DeadArgsElimination>(module, AM);
+    // StoreOnlyGlobalElimination
+    RunImpl<StoreOnlyGlobalElimination>(module, AM);
+    // global2local
+    RunImpl<Global2Local>(module, AM);
+    // mem2reg
+    PassBegin(curfunc)
+    RunImpl<Mem2reg>(curfunc, AM);
+    PassEnd
+    // inline TODO:Fix
+    // RunImpl<Inliner>(module, AM);
+    // mem2reg
+    PassBegin(curfunc)
+    RunImpl<Mem2reg>(curfunc, AM);
+    PassEnd
+    // constprop
+    RunImpl<ConstantProp>(curfunc, AM);
+    // simplifycfg
+    RunImpl<cfgSimplify>(curfunc, AM);
+    PassBegin(curfunc) PassEnd
+    // ece pre
+    // RunImpl<ElimitCriticalEdge>(curfunc, AM);
+    // PassBegin(curfunc) PassEnd
+    // RunImpl<PRE>(curfunc, AM);
+    // cse
+    RunImpl<CSE>(curfunc, AM);
+    // constprop
+    RunImpl<ConstantProp>(curfunc, AM);
+    // simplifycfg
+    RunImpl<cfgSimplify>(curfunc, AM);
+    PassBegin(curfunc) PassEnd
+    // reassociate
+    RunImpl<Reassociate>(curfunc, AM);
+    // loopsimplify
+    RunImpl<LoopSimplify>(curfunc, AM);
+    PassBegin(curfunc) PassEnd
+    // lcssa
+    RunImpl<LcSSA>(curfunc, AM);
+    // looprotate
+    RunImpl<LoopRotate>(curfunc, AM);
+    PassBegin(curfunc) PassEnd
+    // licm
+    // RunImpl<LICM>(curfunc, AM);
+    // PassBegin(curfunc) PassEnd
+    // cse
+    RunImpl<CSE>(curfunc, AM);
+    // constprop
+    RunImpl<ConstantProp>(curfunc, AM);
+    // simplifycfg
+    RunImpl<cfgSimplify>(curfunc, AM);
+    PassBegin(curfunc) PassEnd
+    // loopsimplify
+    RunImpl<LoopSimplify>(curfunc, AM);
+    PassBegin(curfunc) PassEnd
+    // lcssa
+    RunImpl<LcSSA>(curfunc, AM);
+    PassBegin(curfunc) PassEnd
+    // loopdeletion
+    RunImpl<LoopDeletion>(curfunc, AM);
+    PassBegin(curfunc) PassEnd
+    // loopsimplify
+    RunImpl<LoopSimplify>(curfunc, AM);
+    PassBegin(curfunc) PassEnd
   }
 }
 
@@ -198,6 +263,10 @@ void _PassManager::RunOnTest() {
       case global2local:{
         auto m_global2local = RunImpl<Global2Local>(module, AM);
         break;}
+      case lcssa: {
+        auto m_lcssa = RunImpl<LcSSA>(curfunc, AM);
+        break;
+      }
       default: {
         assert(0);
       }
