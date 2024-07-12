@@ -1,2 +1,0 @@
-varible -> 
-GEP: get stackreg

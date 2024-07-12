@@ -167,38 +167,66 @@ void dataSegment::PrintDataSegment_Tempvar() {
 
 void dataSegment::LegalizeGloablVar(RISCVLoweringContext& ctx) {
     using ISA = RISCVMIR::RISCVISA;
+    std::map<globlvar*, VirRegister*> attached_normal;
+    std::map<globlvar*, VirRegister*> attached_mem;
     RISCVFunction* cur_func = ctx.GetCurFunction();
     for(auto block: *cur_func) {
+        attached_normal.clear();
+        attached_mem.clear();
         for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {
             auto inst = *it;
             for(int i=0; i<inst->GetOperandSize(); i++) {
                 if(globlvar* gvar = dynamic_cast<globlvar*>(inst->GetOperand(i))) {
-                    if(inst->GetOpcode() == ISA::call) {continue;}
                     std::unique_ptr<RISCVFrame>& frame = cur_func->GetFrame();
                     ISA opcode = inst->GetOpcode();
+                    if(opcode == ISA::call) {continue;}
                     // lui .1, %hi(name)
                     // ld/sd .2, %lo(name)(.1)
-                    RISCVMIR* hi = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
-                    VirRegister* hi_vreg = ctx.createVReg(RISCVType::riscv_ptr); 
-                    frame->AddCantBeSpill(hi_vreg);
-                    LARegister* hi_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName());
-                    hi->SetDef(hi_vreg);
-                    hi->AddOperand(hi_lareg);
-                    it.insert_before(hi);
                     if((opcode>ISA::BeginMem&&opcode<ISA::EndMem) || (opcode>ISA::BeginFloatMem&&opcode<ISA::EndFloatMem)) {
-                        LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(),dynamic_cast<VirRegister*>(hi->GetDef()));
-                        inst->SetOperand(i, lo_lareg);
+                        if(attached_mem.find(gvar)!=attached_mem.end()) {
+                            LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(),dynamic_cast<VirRegister*>(attached_mem[gvar]));
+                            inst->SetOperand(i, lo_lareg);
+                        }
+                        else {
+                            RISCVMIR* hi = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
+                            VirRegister* hi_vreg = ctx.createVReg(RISCVType::riscv_ptr); 
+                            frame->AddCantBeSpill(hi_vreg);
+                            LARegister* hi_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName());
+                            hi->SetDef(hi_vreg);
+                            hi->AddOperand(hi_lareg);
+                            it.insert_before(hi);
+                            LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(),dynamic_cast<VirRegister*>(hi->GetDef()));
+                            inst->SetOperand(i, lo_lareg);
+                            attached_mem[gvar] = hi_vreg;
+                        }
                     }
+                    // lui .1, %hi(name)
+                    // addi .2, %lo(name)
                     else {
-                        RISCVMIR* lo = new RISCVMIR(ISA::_addi);
-                        VirRegister* lo_vreg = ctx.createVReg(RISCVType::riscv_ptr);
-                        frame->AddCantBeSpill(lo_vreg);
-                        LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(), LARegister::LAReg::lo);
-                        lo->SetDef(lo_vreg);
-                        lo->AddOperand(hi->GetDef());
-                        lo->AddOperand(lo_lareg);
-                        it.insert_before(lo);
-                        inst->SetOperand(i, lo_vreg);
+                        if(attached_normal.find(gvar)!=attached_normal.end()) {
+                            inst->SetOperand(i, attached_normal[gvar]);
+                        }
+                        else {
+                            RISCVMIR* hi = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
+                            VirRegister* hi_vreg = ctx.createVReg(RISCVType::riscv_ptr); 
+                            frame->AddCantBeSpill(hi_vreg);
+                            LARegister* hi_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName());
+                            hi->SetDef(hi_vreg);
+                            hi->AddOperand(hi_lareg);
+                            it.insert_before(hi);
+
+                            RISCVMIR* lo = new RISCVMIR(ISA::_addi);
+                            VirRegister* lo_vreg = ctx.createVReg(RISCVType::riscv_ptr);
+                            frame->AddCantBeSpill(lo_vreg);
+                            LARegister* lo_lareg = new LARegister(RISCVType::riscv_ptr, gvar->GetName(), LARegister::LAReg::lo);
+                            lo->SetDef(lo_vreg);
+                            lo->AddOperand(hi->GetDef());
+                            lo->AddOperand(lo_lareg);
+                            it.insert_before(lo);
+                            
+                            inst->SetOperand(i, lo_vreg);
+                            attached_normal[gvar] = lo_vreg;
+                        }
                     }
                 }   
             }
