@@ -12,6 +12,7 @@ bool cfgSimplify::Run() {
     keep_loop = false;
     keep_loop |= simplify_Block();
     keep_loop |= DealBrInst();
+    keep_loop |= simplify_Block();
     keep_loop |= DelSamePhis();
     keep_loop |= mergeSpecialBlock();
     keep_loop |= SimplifyUncondBr();
