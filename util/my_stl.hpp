@@ -68,3 +68,22 @@ template <typename T> T PopBack(std::vector<T> &vec) {
   vec.pop_back();
   return tmp;
 }
+
+#define PassChangedBegin(curfunc)                 \
+    for (auto &func : module->GetFuncTion()) {    \
+      curfunc = func.get();                       \
+      curfunc->bb_num = 0;                        \
+      curfunc->GetBasicBlock().clear();           \
+      for (auto bb : *curfunc) {                  \
+        bb->num = curfunc->bb_num++;              \
+        curfunc->GetBasicBlock().push_back(bb);   \
+      }                                           \
+
+#define PassChangedEnd }
+
+
+#define RunLevelPass(PassName, curfunc)                               \
+    for (auto &func : module->GetFuncTion()) {                \
+    curfunc = func.get();                                     \
+    RunImpl<PassName>(curfunc, AM);                           \
+    }

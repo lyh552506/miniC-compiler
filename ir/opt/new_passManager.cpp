@@ -1,6 +1,4 @@
-#include "../../include/ir/opt/New_passManager.hpp"
-#include "CFG.hpp"
-
+#include "New_passManager.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -82,6 +80,94 @@ void _PassManager::RunOnLevel() {
   if (level == O0)
     return;
   if (level == O1) {
+    _AnalysisManager AM;
+    // DeadArgsElimination
+    RunImpl<DeadArgsElimination>(module, AM);
+
+    // StoreOnlyGlobalElimination
+    RunImpl<StoreOnlyGlobalElimination>(module, AM);
+
+    // global2local
+    RunImpl<Global2Local>(module, AM);
+
+    // mem2reg
+    PassChangedBegin(curfunc)
+    RunImpl<Mem2reg>(curfunc, AM);
+    PassChangedEnd
+
+    // inline TODO:Fix
+    // RunImpl<Inliner>(module, AM);
+
+    // mem2reg
+    PassChangedBegin(curfunc)
+    RunImpl<Mem2reg>(curfunc, AM);
+    PassChangedEnd
+
+    // constprop
+    RunLevelPass(ConstantProp, curfunc);
+
+    // simplifycfg
+    RunLevelPass(cfgSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
+    // ece pre
+    // RunLevelPass(ElimitCriticalEdge, curfunc);
+    // PassChangedBegin(curfunc) PassChangedEnd
+    // RunLevelPass(PRE, curfunc);
+
+    // cse
+    RunLevelPass(CSE, curfunc);
+
+    // constprop
+    RunLevelPass(ConstantProp, curfunc);
+
+    // simplifycfg
+    RunLevelPass(cfgSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
+    // reassociate
+    RunLevelPass(Reassociate, curfunc);
+
+    // loopsimplify
+    RunLevelPass(LoopSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
+    // // lcssa
+    // RunLevelPass(LcSSA, curfunc);
+
+    // // looprotate
+    // RunLevelPass(LoopRotate, curfunc);
+    // PassChangedBegin(curfunc) PassChangedEnd
+
+    // licm
+    // RunLevelPass(LICM, curfunc);
+    // PassChangedBegin(curfunc) PassChangedEnd
+
+    // cse
+    RunLevelPass(CSE, curfunc);
+
+    // constprop
+    RunLevelPass(ConstantProp, curfunc);
+
+    // simplifycfg
+    RunLevelPass(cfgSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
+    // loopsimplify
+    RunLevelPass(LoopSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
+    // lcssa
+    // RunLevelPass(LcSSA, curfunc);
+    // PassChangedBegin(curfunc) PassChangedEnd
+
+    // loopdeletion
+    // RunLevelPass(LoopDeletion, curfunc);
+    // PassChangedBegin(curfunc) PassChangedEnd
+    
+    // loopsimplify
+    RunLevelPass(LoopSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
   }
 }
 
@@ -102,6 +188,14 @@ void _PassManager::RunOnTest() {
       }
       switch (name) {
       case mem2reg: {
+        curfunc = func.get();
+        //维护bbs关系
+        curfunc->bb_num = 0;
+        curfunc->GetBasicBlock().clear();
+        for (auto bb : *curfunc) {
+          bb->num = curfunc->bb_num++;
+          curfunc->GetBasicBlock().push_back(bb);
+        }
         auto Mem2regRes = RunImpl<Mem2reg>(curfunc, AM);
         break;
       }
@@ -187,9 +281,13 @@ void _PassManager::RunOnTest() {
             RunImpl<StoreOnlyGlobalElimination>(module, AM);
         break;
       }
-      case global2local:{
+      case global2local: {
         auto m_global2local = RunImpl<Global2Local>(module, AM);
         break;}
+      case lcssa: {
+        auto m_lcssa = RunImpl<LcSSA>(curfunc, AM);
+        break;
+      }
       default: {
         assert(0);
       }

@@ -12,7 +12,7 @@ class Global2Local : public _PassManagerBase<Global2Local, Module>
     LoopAnalysis* loopAnalysis;
     int MaxNum = 5;
     size_t CurrSize = 0;
-    size_t MaxSize = 7864320;
+    size_t MaxSize = 3064320;
     std::map<Function*, std::set<Function*>> SuccFuncs;
     std::set<Function*> RecursiveFunctions;
     std::map<Variable*, std::set<Function*>> Global2Funcs;  // 哪些func 用了这个 globalvalue

@@ -88,7 +88,8 @@ MOperand GraphColor::GetAlias(MOperand v) {
 //实行George的启发式合并
 bool GraphColor::GeorgeCheck(MOperand dst, MOperand src, RISCVType ty) {
   if (ty == riscv_i32 || ty == riscv_ptr) {
-    for (auto tmp : Adjacent(src)) {
+    auto x = Adjacent(src);
+    for (auto tmp : x) {
       bool ok = false;
       if (IG[tmp].size() < reglist.GetReglistInt().size())
         ok |= true;
@@ -102,7 +103,8 @@ bool GraphColor::GeorgeCheck(MOperand dst, MOperand src, RISCVType ty) {
         return false;
     }
   } else if (ty == riscv_float32) {
-    for (auto tmp : Adjacent(src)) {
+    auto x = Adjacent(src);
+    for (auto tmp : x) {
       bool ok = false;
       if (IG[tmp].size() < reglist.GetReglistFloat().size())
         ok |= true;
@@ -270,7 +272,8 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
       }
     }
   //更新已合并点的所有临边(DecrementDegree)
-  for (auto neighbor : Adjacent(rs)) {
+  auto x = Adjacent(rs);
+  for (auto neighbor : x) {
     _DEBUG(std::cerr << "Push " << neighbor->GetName() << " Into IG["
                      << rd->GetName() << "]" << std::endl;)
     _DEBUG(std::cerr << "Push " << rd->GetName() << " Into IG["
@@ -283,8 +286,8 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
     if (neighbor->GetType() == riscv_i32 || neighbor->GetType() == riscv_ptr) {
       if (Degree[neighbor] == GetRegNums(riscv_i32) - 1) {
         spillWorkList.erase(neighbor);
-        std::unordered_set<MOperand> tmp(Adjacent(neighbor).begin(),
-                                         Adjacent(neighbor).end());
+        auto x = Adjacent(neighbor);
+        std::unordered_set<MOperand> tmp(x.begin(), x.end());
         tmp.insert(neighbor);
         // EnableMove
         for (auto node : tmp)
@@ -305,8 +308,8 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
     } else if (neighbor->GetType() == riscv_float32) {
       if (Degree[neighbor] == GetRegNums(riscv_float32) - 1) {
         spillWorkList.erase(neighbor);
-        std::unordered_set<MOperand> tmp(Adjacent(neighbor).begin(),
-                                         Adjacent(neighbor).end());
+        auto x = Adjacent(neighbor);
+        std::unordered_set<MOperand> tmp(x.begin(), x.end());
         tmp.insert(neighbor);
         // EnableMove
         for (auto node : tmp)
@@ -380,8 +383,8 @@ void GraphColor::simplify() {
     if (target->GetType() == riscv_i32 || target->GetType() == riscv_ptr) {
       if (Degree[target] == GetRegNums(riscv_i32) - 1) {
         spillWorkList.erase(target);
-        std::unordered_set<MOperand> tmp(Adjacent(target).begin(),
-                                         Adjacent(target).end());
+        auto x = Adjacent(target);
+        std::unordered_set<MOperand> tmp(x.begin(), x.end());
         tmp.insert(target);
         // EnableMove
         for (auto node : tmp)
@@ -402,8 +405,8 @@ void GraphColor::simplify() {
     } else if (target->GetType() == riscv_float32) {
       if (Degree[target] == GetRegNums(riscv_float32) - 1) {
         spillWorkList.erase(target);
-        std::unordered_set<MOperand> tmp(Adjacent(target).begin(),
-                                         Adjacent(target).end());
+        auto x = Adjacent(target);
+        std::unordered_set<MOperand> tmp(x.begin(), x.end());
         tmp.insert(target);
         // EnableMove
         for (auto node : tmp)
@@ -830,9 +833,9 @@ void GraphColor::GC_init() {
 std::set<MOperand> GraphColor::Adjacent(MOperand val) {
   std::set<MOperand> tmp;
   for (auto _val : IG[val]) {
-    auto it_1 = std::find(selectstack.begin(), selectstack.end(), val);
+    auto it_1 = std::find(selectstack.begin(), selectstack.end(), _val);
     if (it_1 == selectstack.end() &&
-        coalescedNodes.find(val) == coalescedNodes.end()) {
+        coalescedNodes.find(_val) == coalescedNodes.end()) {
       tmp.insert(_val);
     }
   }
