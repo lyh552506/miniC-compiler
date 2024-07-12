@@ -68,6 +68,16 @@ class UserList
     iterator end(){return iterator(nullptr);}
     bool is_empty(){return head==nullptr;}
     Use*& Front(){return head;}
+    Use* back() {
+        if (is_empty()) {
+            return nullptr;
+        }
+        Use* current = head;
+        while (current->nxt != nullptr) {
+            current = current->nxt;
+        }
+        return current;
+    }
     int& GetSize(){return size;}
 };
 class Value
