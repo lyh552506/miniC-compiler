@@ -183,6 +183,8 @@ uint64_t RISCVFunction::GetUsedPhyRegMask(){
     uint64_t flag=0u;
     for(auto bb:*this){
         for(auto inst:*bb){
+            if(auto def=inst->GetDef()->as<PhyRegister>();def!=nullptr)
+                flag|=PhyRegMask::GetPhyRegMask(def);
             for(int i=0;i<inst->GetOperandSize();i++){
                 PhyRegister* reg=nullptr;
                 if(auto sR=inst->GetOperand(i)->as<StackRegister>())
