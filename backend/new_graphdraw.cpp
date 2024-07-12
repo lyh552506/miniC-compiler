@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstdlib>
 #include <iostream>
 #include <ostream>
 #include <unordered_set>
@@ -38,6 +39,8 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
+      ctx.print();
+      exit(0);
       condition = true;
     }
   }
@@ -554,71 +557,125 @@ void GraphColor::SpillNodeInMir() {
         continue;
       }
       if (mir->GetDef() != nullptr &&
-          dynamic_cast<VirRegister *>(mir->GetDef()) &&
-          (spilledNodes.find(dynamic_cast<VirRegister *>(mir->GetDef())) !=
-           spilledNodes.end()) &&
-          AlreadySpill.find(dynamic_cast<VirRegister *>(mir->GetDef())) ==
-              AlreadySpill.end()) {
+          (dynamic_cast<VirRegister *>(mir->GetDef()) ||
+           dynamic_cast<StackRegister *>(mir->GetDef()))) {
         //存在def并且def是一个准备spill节点
-        RISCVMIR *sd = CreateSpillMir(mir->GetDef(), temps);
-        mir_begin.insert_after(sd);
-        _DEBUG(std::cerr
-                   << "Spilling "
-                   << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
-                   << ", Use Vreg "
-                   << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
-                   << " To Replace" << std::endl;)
-        mir->SetDef(sd->GetOperand(0));
+        RISCVMIR *sd = nullptr;
+        if (auto st = dynamic_cast<StackRegister *>(mir->GetDef())) {
+          if (!st->isPhysical())
+            if (spilledNodes.find(st->GetVreg()) != spilledNodes.end() &&
+                AlreadySpill.find(st->GetVreg()) == AlreadySpill.end()) {
+              sd = CreateSpillMir(st->GetVreg(), temps);
+              mir_begin.insert_after(sd);
+              st->SetReg(dynamic_cast<MOperand>(sd->GetOperand(0)));
+            }
+        } else {
+          if (spilledNodes.find(dynamic_cast<VirRegister *>(mir->GetDef())) !=
+                  spilledNodes.end() &&
+              AlreadySpill.find(dynamic_cast<VirRegister *>(mir->GetDef())) ==
+                  AlreadySpill.end()) {
+            sd = CreateSpillMir(mir->GetDef(), temps);
+            mir_begin.insert_after(sd);
+            _DEBUG(
+                std::cerr
+                    << "Spilling "
+                    << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+                    << ", Use Vreg "
+                    << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
+                    << " To Replace" << std::endl;)
+            mir->SetDef(sd->GetOperand(0));
+          }
+        }
       } else if (mir->GetDef() != nullptr &&
-                 dynamic_cast<VirRegister *>(mir->GetDef()) &&
-                 (spilledNodes.find(dynamic_cast<VirRegister *>(
-                      mir->GetDef())) != spilledNodes.end())) {
+                 (dynamic_cast<VirRegister *>(mir->GetDef()) ||
+                  dynamic_cast<StackRegister *>(mir->GetDef()))) {
         //存在def并且def是一个已经spill节点
-        RISCVMIR *ld =
-            CreateLoadMir(dynamic_cast<VirRegister *>(mir->GetDef()), temps);
-        mir_begin.insert_before(ld);
-        _DEBUG(
-            std::cerr << "Find a Spilled Node "
-                      << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
-                      << ", Use Vreg "
-                      << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
-                      << " To Replace" << std::endl;)
-        mir->SetDef(ld->GetDef());
+        RISCVMIR *ld = nullptr;
+        if (auto st = dynamic_cast<StackRegister *>(mir->GetDef())) {
+          if (!st->isPhysical())
+            if (spilledNodes.find(st->GetVreg()) != spilledNodes.end()) {
+              ld = CreateLoadMir(st->GetVreg(), temps);
+              mir_begin.insert_before(ld);
+              st->SetReg(dynamic_cast<MOperand>(ld->GetDef()));
+            }
+        } else {
+          if (spilledNodes.find(dynamic_cast<VirRegister *>(mir->GetDef())) !=
+              spilledNodes.end()) {
+            ld = CreateLoadMir(dynamic_cast<VirRegister *>(mir->GetDef()),
+                               temps);
+            mir_begin.insert_before(ld);
+            _DEBUG(std::cerr
+                       << "Find a Spilled Node "
+                       << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+                       << ", Use Vreg "
+                       << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
+                       << " To Replace" << std::endl;)
+            mir->SetDef(ld->GetDef());
+          }
+        }
       }
       for (int i = 0; i < mir->GetOperandSize(); i++) {
         auto operand = mir->GetOperand(i);
-        if (operand != nullptr && dynamic_cast<VirRegister *>(operand) &&
-            (spilledNodes.find(dynamic_cast<VirRegister *>(operand)) !=
-             spilledNodes.end()) &&
-            AlreadySpill.find(dynamic_cast<VirRegister *>(operand)) ==
-                AlreadySpill.end()) {
+        if (operand != nullptr && (dynamic_cast<VirRegister *>(operand) ||
+                                   dynamic_cast<StackRegister *>(operand))) {
           //存在operand(i)并且operand(i)是一个准备spill节点
-          RISCVMIR *sd = CreateSpillMir(operand, temps);
-          mir_begin.insert_after(sd);
-          _DEBUG(
-              std::cout
-                  << "Spilling "
-                  << dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName()
-                  << ", Use Vreg "
-                  << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
-                  << " To Replace" << std::endl;)
-          mir->SetOperand(i, sd->GetOperand(0));
+          RISCVMIR *sd = nullptr;
+          if (auto st = dynamic_cast<StackRegister *>(operand)) {
+            if (!st->isPhysical())
+              if (spilledNodes.find(st->GetVreg()) != spilledNodes.end() &&
+                  AlreadySpill.find(st->GetVreg()) == AlreadySpill.end()) {
+                sd = CreateSpillMir(st->GetVreg(), temps);
+                mir_begin.insert_after(sd);
+                st->SetReg(dynamic_cast<MOperand>(sd->GetOperand(0)));
+              }
+          } else {
+            if (spilledNodes.find(dynamic_cast<VirRegister *>(operand)) !=
+                    spilledNodes.end() &&
+                AlreadySpill.find(dynamic_cast<VirRegister *>(operand)) ==
+                    AlreadySpill.end()) {
+              sd = CreateSpillMir(operand, temps);
+              mir_begin.insert_after(sd);
+              _DEBUG(std::cout
+                         << "Spilling "
+                         << dynamic_cast<VirRegister *>(mir->GetOperand(i))
+                                ->GetName()
+                         << ", Use Vreg "
+                         << dynamic_cast<VirRegister *>(sd->GetOperand(0))
+                                ->GetName()
+                         << " To Replace" << std::endl;)
+              mir->SetOperand(i, sd->GetOperand(0));
+            }
+          }
           // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
         } else if (mir->GetOperand(i) != nullptr &&
-                   dynamic_cast<VirRegister *>(mir->GetOperand(i)) &&
-                   (spilledNodes.find(dynamic_cast<VirRegister *>(
-                        mir->GetOperand(i))) != spilledNodes.end())) {
+                   (dynamic_cast<VirRegister *>(mir->GetOperand(i)) ||
+                    dynamic_cast<StackRegister *>(mir->GetOperand(i)))) {
           //存在operand(i)并且operand(i)是一个已经spill节点
-          RISCVMIR *ld = CreateLoadMir(mir->GetOperand(i), temps);
-          mir_begin.insert_before(ld);
-          _DEBUG(
-              std::cerr
-                  << "Find a Spilled Node "
-                  << dynamic_cast<VirRegister *>(mir->GetOperand(i))->GetName()
-                  << ", Use Vreg "
-                  << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
-                  << " To Replace" << std::endl;)
-          mir->SetOperand(i, ld->GetDef());
+          RISCVMIR *ld = nullptr;
+          if (auto st = dynamic_cast<StackRegister *>(
+                  dynamic_cast<VirRegister *>(mir->GetOperand(i)))) {
+            if (!st->isPhysical())
+              if (spilledNodes.find(st->GetVreg()) != spilledNodes.end()) {
+                ld = CreateLoadMir(st->GetVreg(), temps);
+                mir_begin.insert_before(ld);
+                st->SetReg(dynamic_cast<MOperand>(ld->GetDef()));
+              }
+          } else {
+            if (spilledNodes.find(dynamic_cast<VirRegister *>(
+                    dynamic_cast<VirRegister *>(mir->GetOperand(i)))) !=
+                spilledNodes.end()) {
+              ld = CreateLoadMir(mir->GetOperand(i), temps);
+              mir_begin.insert_before(ld);
+              _DEBUG(std::cerr
+                         << "Find a Spilled Node "
+                         << dynamic_cast<VirRegister *>(mir->GetOperand(i))
+                                ->GetName()
+                         << ", Use Vreg "
+                         << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
+                         << " To Replace" << std::endl;)
+              mir->SetOperand(i, ld->GetDef());
+            }
+          }
           // temps.insert(dynamic_cast<VirRegister *>(ld->GetDef()));
         }
       }
