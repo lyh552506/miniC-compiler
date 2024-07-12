@@ -39,8 +39,6 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
-      ctx.print();
-      exit(0);
       condition = true;
     }
   }
@@ -586,9 +584,10 @@ void GraphColor::SpillNodeInMir() {
             mir->SetDef(sd->GetOperand(0));
           }
         }
-      } else if (mir->GetDef() != nullptr &&
-                 (dynamic_cast<VirRegister *>(mir->GetDef()) ||
-                  dynamic_cast<StackRegister *>(mir->GetDef()))) {
+      }
+      if (mir->GetDef() != nullptr &&
+          (dynamic_cast<VirRegister *>(mir->GetDef()) ||
+           dynamic_cast<StackRegister *>(mir->GetDef()))) {
         //存在def并且def是一个已经spill节点
         RISCVMIR *ld = nullptr;
         if (auto st = dynamic_cast<StackRegister *>(mir->GetDef())) {
@@ -647,13 +646,13 @@ void GraphColor::SpillNodeInMir() {
             }
           }
           // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
-        } else if (mir->GetOperand(i) != nullptr &&
-                   (dynamic_cast<VirRegister *>(mir->GetOperand(i)) ||
-                    dynamic_cast<StackRegister *>(mir->GetOperand(i)))) {
+        }
+        if (mir->GetOperand(i) != nullptr &&
+            (dynamic_cast<VirRegister *>(mir->GetOperand(i)) ||
+             dynamic_cast<StackRegister *>(mir->GetOperand(i)))) {
           //存在operand(i)并且operand(i)是一个已经spill节点
           RISCVMIR *ld = nullptr;
-          if (auto st = dynamic_cast<StackRegister *>(
-                  dynamic_cast<VirRegister *>(mir->GetOperand(i)))) {
+          if (auto st = dynamic_cast<StackRegister *>(mir->GetOperand(i))) {
             if (!st->isPhysical())
               if (spilledNodes.find(st->GetVreg()) != spilledNodes.end()) {
                 ld = CreateLoadMir(st->GetVreg(), temps);
