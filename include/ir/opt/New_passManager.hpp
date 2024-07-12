@@ -26,6 +26,7 @@
 #include "licm.hpp"
 #include "mem2reg.hpp"
 #include "reassociate.hpp"
+#include "Local2Global.hpp"
 #include <getopt.h>
 #include <memory>
 class FunctionPassManager;
@@ -48,7 +49,8 @@ enum PassName {
   looprotate,
   loopdeletion,
   deadargselimination,
-  storeonlyglobalelimination
+  storeonlyglobalelimination,
+  local2global
 };
 
 static struct option long_options[] = {{"mem2reg", no_argument, 0, 4},
@@ -68,6 +70,7 @@ static struct option long_options[] = {{"mem2reg", no_argument, 0, 4},
                                        {"loop-deletion", no_argument, 0, 18},
                                        {"deadargselimination", no_argument, 0, 19},
                                        {"storeonlyglobalelimination", no_argument, 0, 20},
+                                       {"local2global", no_argument, 0, 21},
                                        {"O0", no_argument, 0, 0},
                                        {"O1", no_argument, 0, 1},
                                        {"O2", no_argument, 0, 2},
