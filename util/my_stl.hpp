@@ -69,7 +69,7 @@ template <typename T> T PopBack(std::vector<T> &vec) {
   return tmp;
 }
 
-#define PassChangedBegin(curfunc)                 \
+#define PassBegin(curfunc)                        \
     for (auto &func : module->GetFuncTion()) {    \
       curfunc = func.get();                       \
       curfunc->bb_num = 0;                        \
@@ -79,11 +79,4 @@ template <typename T> T PopBack(std::vector<T> &vec) {
         curfunc->GetBasicBlock().push_back(bb);   \
       }                                           \
 
-#define PassChangedEnd }
-
-
-#define RunLevelPass(PassName, curfunc)                               \
-    for (auto &func : module->GetFuncTion()) {                \
-    curfunc = func.get();                                     \
-    RunImpl<PassName>(curfunc, AM);                           \
-    }
+#define PassEnd }
