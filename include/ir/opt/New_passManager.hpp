@@ -68,10 +68,10 @@ static struct option long_options[] = {{"mem2reg", no_argument, 0, 4},
                                        {"loop-deletion", no_argument, 0, 18},
                                        {"deadargselimination", no_argument, 0, 19},
                                        {"storeonlyglobalelimination", no_argument, 0, 20},
-                                       {"O0", no_argument, 0, 21},
-                                       {"O1", no_argument, 0, 22},
-                                       {"O2", no_argument, 0, 23},
-                                       {"O3", no_argument, 0, 24},
+                                       {"O0", no_argument, 0, 0},
+                                       {"O1", no_argument, 0, 1},
+                                       {"O2", no_argument, 0, 2},
+                                       {"O3", no_argument, 0, 3},
                                        {0, 0, 0, 0}};
 
 class _AnalysisManager

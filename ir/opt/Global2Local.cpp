@@ -129,12 +129,18 @@ void Global2Local::RunPass(Module* module)
                 {
                     _DEBUG(std::cerr << "LocalGlobalVariable: " << global->GetName() << std::endl;)
                     LocalGlobalVariable(global, func);
-                    if(globalvals.size() == 1)
-                    {
-                        globalvals.erase(iter);
-                    }
+
+                    if(iter->get()->usage == Variable::Constant)
+                        ++iter;
                     else
-                        iter = globalvals.erase(iter);
+                    {
+                        if(globalvals.size() == 1)
+                        {
+                            globalvals.erase(iter);
+                        }
+                        else
+                            iter = globalvals.erase(iter);
+                    }
                 }
                 else
                     ++iter;
@@ -164,7 +170,20 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
     alloca->SetParent(begin);
     begin->push_front(alloca);
     if(!val->GetInitializer())
-        val->RAUW(alloca);
+    {
+        if(tp->GetSubType()->GetTypeEnum() != InnerDataType::IR_ARRAY)
+        {
+            auto iter = begin->begin();
+            for (; iter != begin->end(); ++iter) 
+            {
+                if (!dynamic_cast<AllocaInst*>(*iter))
+                    break;
+            }
+            StoreInst* store = new StoreInst(ConstIRInt::GetNewConstant(0), alloca);
+            iter.insert_before(store);
+        }
+            val->RAUW(alloca);
+    }
     else
     {
         if(tp->GetSubType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
@@ -210,7 +229,6 @@ void Global2Local::LocalArray(Variable* arr, AllocaInst* alloca, BasicBlock* blo
     Type* tp = arr->GetType();
     std::vector<Operand> args;
     arr->usage = Variable::Constant;
-    Operand src = arr;
     args.push_back(alloca);
     args.push_back(arr);
     if(auto subtp = dynamic_cast<HasSubType*>(tp)->GetSubType())
@@ -288,6 +306,22 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
     }
     else
     {
+        if(!val->GetInitializer())
+        {
+            if(auto gep = val->GetUserlist().back())
+            {
+                if(auto inst = dynamic_cast<GetElementPtrInst*>(gep->GetUser()))
+                {
+                    if(auto call = dynamic_cast<CallInst*>(inst->GetUserlist().back()->GetUser()))
+                    {
+                        if(!(call->Getuselist()[0]->usee->GetName() == "getfarray" || call->Getuselist()[0]->usee->GetName() == "getarray"))
+                            return false;
+                    }
+                    else if(!dynamic_cast<StoreInst*>(inst->GetUserlist().back()->GetUser()))
+                        return false;
+                }
+            }
+        }
         for(Use* use_ : val->GetUserlist())
         {
             if(GetElementPtrInst* inst = dynamic_cast<GetElementPtrInst*>(use_->GetUser()))
@@ -402,7 +436,21 @@ void Global2Local::CreateCallNum(Module* module)
                 Function* CallFunc = user->GetParent()->GetParent();
                 if(CallFunc)
                     CallTimes[func]++;
+                CallFunc->bb_num = 0;
+                CallFunc->GetBasicBlock().clear();
+                for (auto bb : *CallFunc) {
+                  bb->num = CallFunc->bb_num++;
+                  CallFunc->GetBasicBlock().push_back(bb);
+                }
+                dom_info = AM.get<dominance>(CallFunc);
+                loopAnalysis = AM.get<LoopAnalysis>(CallFunc, dom_info);
+                if(auto loop = loopAnalysis->LookUp(user->GetParent()))
+                {
+                    CallTimes[func] += 3;
+                    break;
+                }
             }
         }
     }
+    //TODO: 修复CallInst 在循环中的问题
 }
