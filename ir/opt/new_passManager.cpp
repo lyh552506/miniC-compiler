@@ -84,68 +84,91 @@ void _PassManager::RunOnLevel() {
     _AnalysisManager AM;
     // DeadArgsElimination
     RunImpl<DeadArgsElimination>(module, AM);
+
     // StoreOnlyGlobalElimination
     RunImpl<StoreOnlyGlobalElimination>(module, AM);
+
     // global2local
     RunImpl<Global2Local>(module, AM);
+
     // mem2reg
-    PassBegin(curfunc)
+    PassChangedBegin(curfunc)
     RunImpl<Mem2reg>(curfunc, AM);
-    PassEnd
+    PassChangedEnd
+
     // inline TODO:Fix
     // RunImpl<Inliner>(module, AM);
+
     // mem2reg
-    PassBegin(curfunc)
+    PassChangedBegin(curfunc)
     RunImpl<Mem2reg>(curfunc, AM);
-    PassEnd
+    PassChangedEnd
+
     // constprop
-    RunImpl<ConstantProp>(curfunc, AM);
+    RunLevelPass(ConstantProp, curfunc);
+
     // simplifycfg
-    RunImpl<cfgSimplify>(curfunc, AM);
-    PassBegin(curfunc) PassEnd
+    RunLevelPass(cfgSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
     // ece pre
-    // RunImpl<ElimitCriticalEdge>(curfunc, AM);
-    // PassBegin(curfunc) PassEnd
-    // RunImpl<PRE>(curfunc, AM);
+    // RunLevelPass(ElimitCriticalEdge, curfunc);
+    // PassChangedBegin(curfunc) PassChangedEnd
+    // RunLevelPass(PRE, curfunc);
+
     // cse
-    RunImpl<CSE>(curfunc, AM);
+    RunLevelPass(CSE, curfunc);
+
     // constprop
-    RunImpl<ConstantProp>(curfunc, AM);
+    RunLevelPass(ConstantProp, curfunc);
+
     // simplifycfg
-    RunImpl<cfgSimplify>(curfunc, AM);
-    PassBegin(curfunc) PassEnd
+    RunLevelPass(cfgSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
     // reassociate
-    RunImpl<Reassociate>(curfunc, AM);
+    RunLevelPass(Reassociate, curfunc);
+
     // loopsimplify
-    RunImpl<LoopSimplify>(curfunc, AM);
-    PassBegin(curfunc) PassEnd
-    // lcssa
-    RunImpl<LcSSA>(curfunc, AM);
-    // looprotate
-    RunImpl<LoopRotate>(curfunc, AM);
-    PassBegin(curfunc) PassEnd
+    RunLevelPass(LoopSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
+    // // lcssa
+    // RunLevelPass(LcSSA, curfunc);
+
+    // // looprotate
+    // RunLevelPass(LoopRotate, curfunc);
+    // PassChangedBegin(curfunc) PassChangedEnd
+
     // licm
-    // RunImpl<LICM>(curfunc, AM);
-    // PassBegin(curfunc) PassEnd
+    // RunLevelPass(LICM, curfunc);
+    // PassChangedBegin(curfunc) PassChangedEnd
+
     // cse
-    RunImpl<CSE>(curfunc, AM);
+    RunLevelPass(CSE, curfunc);
+
     // constprop
-    RunImpl<ConstantProp>(curfunc, AM);
+    RunLevelPass(ConstantProp, curfunc);
+
     // simplifycfg
-    RunImpl<cfgSimplify>(curfunc, AM);
-    PassBegin(curfunc) PassEnd
+    RunLevelPass(cfgSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
     // loopsimplify
-    RunImpl<LoopSimplify>(curfunc, AM);
-    PassBegin(curfunc) PassEnd
+    RunLevelPass(LoopSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
     // lcssa
-    RunImpl<LcSSA>(curfunc, AM);
-    PassBegin(curfunc) PassEnd
+    // RunLevelPass(LcSSA, curfunc);
+    // PassChangedBegin(curfunc) PassChangedEnd
+
     // loopdeletion
-    RunImpl<LoopDeletion>(curfunc, AM);
-    PassBegin(curfunc) PassEnd
+    // RunLevelPass(LoopDeletion, curfunc);
+    // PassChangedBegin(curfunc) PassChangedEnd
+    
     // loopsimplify
-    RunImpl<LoopSimplify>(curfunc, AM);
-    PassBegin(curfunc) PassEnd
+    RunLevelPass(LoopSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
   }
 }
 
