@@ -21,15 +21,6 @@ class RISCVSSAAlias{
 /// @brief IMM/LAREGISTER/OutSideDefine
 class RISCVSSAValue:public Value, public RISCVSSAAlias{
     public:
-    enum SSAValueUsage{
-        isIMM,
-        isLARegister,
-        isDefinedOutside,
-    };
-    private:
-    SSAValueUsage usage;
-    public:
-    SSAValueUsage getValueUsage();
     RISCVSSAValue(RISCVMOperand*);
 };
 
@@ -46,6 +37,7 @@ class RISCVSSAValue:public Value, public RISCVSSAAlias{
 class RISCVSSAInstruction:public User,public list_node<RISCVSSABasicBlock,RISCVSSAInstruction>,public RISCVSSAAlias{
     RISCVMIR::RISCVISA opcode;
     public:
+    RISCVMOperand* getAlias()override;
     void print()final;
     void setOpcode(RISCVMIR::RISCVISA);
     RISCVMIR::RISCVISA getOpcode();

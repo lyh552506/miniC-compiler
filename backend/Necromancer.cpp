@@ -1,6 +1,6 @@
 #include "Necromancer.hpp"
 
-RISCVMOperand* getRISCVSSAValueAlias(Value* val){
+static RISCVMOperand* getRISCVSSAValueAlias(Value* val){
     if(auto ssaval=val->as<RISCVSSAValue>()){
         return ssaval->getAlias();
     }
@@ -10,7 +10,43 @@ RISCVMOperand* getRISCVSSAValueAlias(Value* val){
     else assert(0);
 }
 
+static Type* RISCVType2TypePtr(RISCVType tp){
+    switch (tp)
+    {
+    case riscv_i32:
+        return IntType::NewIntTypeGet();
+    case riscv_float32:
+        return FloatType::NewFloatTypeGet();
+    case riscv_ptr:
+        return VoidType::NewVoidTypeGet();
+    default:
+        assert(0&&"Impossible");
+    }
+
+}
+
+void RISCVSSAAlias::setAlias(RISCVMOperand* _realname){
+    realname=_realname;
+}
+
+RISCVMOperand* RISCVSSAAlias::getAlias(){
+    return realname;
+}
+
+/*---RISCVSSAValue---*/
+
+RISCVSSAValue::RISCVSSAValue(RISCVMOperand* _realname):Value(RISCVType2TypePtr(_realname->GetType())){
+    setAlias(_realname);
+}
+
 /*---RISCVSSAInstruction---*/
+RISCVMOperand* RISCVSSAInstruction::getAlias(){
+    if(opcode==RISCVMIR::STACKREG){
+        /// @todo 从 use 里重新创建 stackreg
+            assert(0&&"Not Impl");
+    }
+    return RISCVSSAAlias::getAlias();
+}
 
 RISCVSSAInstruction::RISCVSSAInstruction(Type* _tp):User(_tp){}
 
@@ -50,23 +86,7 @@ RISCVSSAValue* RISCVSSABasicBlock::getSSAValue(RISCVMOperand* op){
 }
 
 RISCVSSAInstruction* RISCVSSABasicBlock::getSSAInstruction(RISCVMIR::RISCVISA opcode,RISCVMOperand* def){
-    RISCVSSAInstruction* newinst=nullptr;
-    switch (def->GetType())
-    {
-    case riscv_i32:
-        newinst=new RISCVSSAInstruction(IntType::NewIntTypeGet());
-        break;
-    case riscv_float32:
-        newinst=new RISCVSSAInstruction(FloatType::NewFloatTypeGet());
-        break;
-    case riscv_ptr:
-        newinst=new RISCVSSAInstruction(VoidType::NewVoidTypeGet());
-        break;
-    case riscv_none:
-        assert(0&&"what fuck?");
-    default:
-        break;
-    }
+    auto newinst=new RISCVSSAInstruction(RISCVType2TypePtr(def->GetType()));
     newinst->setOpcode(opcode);
     newinst->setAlias(def);
     MemoryManager.push_back(std::make_unique<Value*>(newinst));
@@ -125,6 +145,10 @@ void Necromancer::runOnBasicBlock(std::set<MOperand>& livein,std::set<MOperand>&
         if(auto stackreg=reg->as<StackRegister>()){
             // 好像不需要把这个东西放到 RegNamer 里...
             auto stackreginst=ssabb->getSSAInstruction(RISCVMIR::STACKREG,stackreg);
+
+            /// @todo 把 stagereg 的内容看作 use 扔进去
+            assert(0&&"Not Impl");
+
             ssabb->push_back(stackreginst);
         }
         return nullptr;
