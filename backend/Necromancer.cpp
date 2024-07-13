@@ -1,7 +1,85 @@
 #include "Necromancer.hpp"
 
+RISCVMOperand* getRISCVSSAValueAlias(Value* val){
+    if(auto ssaval=val->as<RISCVSSAValue>()){
+        return ssaval->getAlias();
+    }
+    else if(auto ssainstr=val->as<RISCVSSAInstruction>()){
+        return ssainstr->getAlias();
+    }
+    else assert(0);
+}
+
+/*---RISCVSSAInstruction---*/
+
+RISCVSSAInstruction::RISCVSSAInstruction(Type* _tp):User(_tp){}
+
+void RISCVSSAInstruction::print(){
+    assert(0**"Not Impl");
+}
+
+void RISCVSSAInstruction::setOpcode(RISCVMIR::RISCVISA opcode){
+    this->opcode=opcode;
+}
+
+RISCVMIR::RISCVISA RISCVSSAInstruction::getOpcode(){
+    return opcode;
+}
+
+RISCVMIR* RISCVSSAInstruction::reEmit(){
+    if(opcode==RISCVMIR::OUTSIDE_PLACEHOLDER||opcode==RISCVMIR::STACKREG){
+        return nullptr;
+    }
+    
+    auto newinst=new RISCVMIR(opcode);
+    newinst->SetDef(getAlias());
+    for(int i=0,size=Getuselist().size();i<size;i++){
+        auto op=GetOperand(i);
+        auto aliasuse=getRISCVSSAValueAlias(op);
+        newinst->AddOperand(aliasuse);
+    }
+    return newinst;
+}
 
 /*---RISCVSSABasicBlock---*/
+
+RISCVSSAValue* RISCVSSABasicBlock::getSSAValue(RISCVMOperand* op){
+    auto newval=new RISCVSSAValue(op);
+    MemoryManager.push_back(std::make_unique<Value*>(newval));
+    return newval;
+}
+
+RISCVSSAInstruction* RISCVSSABasicBlock::getSSAInstruction(RISCVMIR::RISCVISA opcode,RISCVMOperand* def){
+    RISCVSSAInstruction* newinst=nullptr;
+    switch (def->GetType())
+    {
+    case riscv_i32:
+        newinst=new RISCVSSAInstruction(IntType::NewIntTypeGet());
+        break;
+    case riscv_float32:
+        newinst=new RISCVSSAInstruction(FloatType::NewFloatTypeGet());
+        break;
+    case riscv_ptr:
+        newinst=new RISCVSSAInstruction(VoidType::NewVoidTypeGet());
+        break;
+    case riscv_none:
+        assert(0&&"what fuck?");
+    default:
+        break;
+    }
+    newinst->setOpcode(opcode);
+    newinst->setAlias(def);
+    MemoryManager.push_back(std::make_unique<Value*>(newinst));
+    return newinst;
+}
+
+RISCVSSAInstruction* RISCVSSABasicBlock::getSSAInstruction(RISCVMIR::RISCVISA opcode,Type* tp){
+    auto newinst=new RISCVSSAInstruction(tp);
+    newinst->setOpcode(opcode);
+    MemoryManager.push_back(std::make_unique<Value*>(newinst));
+    return newinst;
+}
+
 RISCVSSABasicBlock* Necromancer::getSSABasicBlock(RISCVBasicBlock* bb){
     if(auto it=storage.find(bb);it!=storage.end()){
         return it->second.get();
@@ -17,11 +95,13 @@ void RISCVSSABasicBlock::reEmit(){
 
     for(auto inst:*this){
         auto minst=inst->reEmit();
-        // 1. placeholder, 
         if(minst!=nullptr)
             curbb->push_back(minst);
     }
+}
 
+RISCVSSABasicBlock::RISCVSSABasicBlock(RISCVBasicBlock* bb){
+    setAlias(bb);
 }
 
 /*---Necromancer---*/

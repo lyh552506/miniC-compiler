@@ -14,7 +14,7 @@
 class RISCVSSAAlias{
     RISCVMOperand* realname;
     public:
-    RISCVMOperand* getAlias();
+    virtual RISCVMOperand* getAlias();
     void setAlias(RISCVMOperand*);
 };
 
@@ -46,6 +46,7 @@ class RISCVSSAValue:public Value, public RISCVSSAAlias{
 class RISCVSSAInstruction:public User,public list_node<RISCVSSABasicBlock,RISCVSSAInstruction>,public RISCVSSAAlias{
     RISCVMIR::RISCVISA opcode;
     public:
+    void print()final;
     void setOpcode(RISCVMIR::RISCVISA);
     RISCVMIR::RISCVISA getOpcode();
     RISCVSSAInstruction(Type*);
