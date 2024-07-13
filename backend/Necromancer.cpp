@@ -32,9 +32,19 @@ void Necromancer::runOnBasicBlock(std::set<MOperand>& livein,std::set<MOperand>&
 
 
     for(auto inst:*bb){
+        // 所有的 caller saved 都会被更新到 call 指令里
         if(inst->GetOpcode()==RISCVMIR::call){
-            // 全部更新一遍 ssa value
-            // 如果有返回值则更新成自己本身
+            auto ssainst=ssabb->getSSAInstruction(inst->GetOpcode(),VoidType::NewVoidTypeGet());
+            for(auto i=0,size=inst->GetOperandSize();i<size;i++){
+                auto reg=inst->GetOperand(i);
+                auto ssavalue=getRegVersion(reg);
+                ssainst->add_use(ssavalue);
+            }
+            for(auto i=0;i<64;i++){
+                auto phyreg=PhyRegMask::GetPhyReg(i);
+                if(phyreg->isCallerSaved())
+                    updateRegVersion(phyreg,ssainst);
+            }         
         }
         else{
             normal_visiter(inst);
