@@ -167,6 +167,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         BeginMIRPseudo,
         // used in Necromancer
         OUTSIDE_PLACEHOLDER,
+        STACKREG,
         mv,
         call,
         ret,

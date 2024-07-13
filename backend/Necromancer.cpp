@@ -1,9 +1,33 @@
 #include "Necromancer.hpp"
 
+
+/*---RISCVSSABasicBlock---*/
+RISCVSSABasicBlock* Necromancer::getSSABasicBlock(RISCVBasicBlock* bb){
+    if(auto it=storage.find(bb);it!=storage.end()){
+        return it->second.get();
+    }
+    assert(0&&"Could not be possible");
+}
+
+void RISCVSSABasicBlock::reEmit(){
+    auto curbb=getAlias()->as<RISCVBasicBlock>();
+    assert(curbb!=nullptr&&"Impossible");
+
+    curbb->clear();
+
+    for(auto inst:*this){
+        auto minst=inst->reEmit();
+        // 1. placeholder, 
+        if(minst!=nullptr)
+            curbb->push_back(minst);
+    }
+
+}
+
+/*---Necromancer---*/
 void Necromancer::runOnBasicBlock(std::set<MOperand>& livein,std::set<MOperand>& liveout,RISCVBasicBlock* bb){
     storage[bb]=std::make_unique<RISCVSSABasicBlock>(bb);
     auto& ssabb=storage[bb];
-    
     
     std::unordered_map<RISCVMOperand*,Value*> RegNamer;
     auto getRegVersion=[&](RISCVMOperand* mop){
@@ -12,22 +36,33 @@ void Necromancer::runOnBasicBlock(std::set<MOperand>& livein,std::set<MOperand>&
         return RegNamer[mop];
     };
 
-    auto updateRegVersion=[&RegNamer](RISCVMOperand* mop,Value* val){
+    auto updateRegVersion=[&](RISCVMOperand* mop,Value* val){
         RegNamer[mop]=val;
         return RegNamer[mop];
+    };
+
+    auto updateStackRegister=[&](RISCVMOperand* reg) -> Value* {
+        if(auto stackreg=reg->as<StackRegister>()){
+            // 好像不需要把这个东西放到 RegNamer 里...
+            auto stackreginst=ssabb->getSSAInstruction(RISCVMIR::STACKREG,stackreg);
+            ssabb->push_back(stackreginst);
+        }
+        return nullptr;
     };
 
     auto normal_visiter=[&](RISCVMIR* inst){
         auto ssainst=ssabb->getSSAInstruction(inst->GetOpcode(),inst->GetDef());
         for(auto i=0,size=inst->GetOperandSize();i<size;i++){
             auto reg=inst->GetOperand(i);
-            auto ssavalue=getRegVersion(reg);
+            Value* ssavalue;
+            if((ssavalue=updateStackRegister(reg))==nullptr)
+                ssavalue=getRegVersion(reg);
             ssainst->add_use(ssavalue);
         }
         auto def=inst->GetDef();
-        if(def!=nullptr){
+        if(def!=nullptr)
             updateRegVersion(def,ssainst);
-        }
+        ssabb->push_back(ssainst);
     };
 
 

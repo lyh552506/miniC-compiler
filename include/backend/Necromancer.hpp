@@ -43,22 +43,24 @@ class RISCVSSAValue:public Value, public RISCVSSAAlias{
 /// load store 和 call 需要强制确保相对顺序关系，类似 glue
 /// 如果不要glue的话，就没办法脱离mir完全变为dag形式
 /// ***或者沿用list形式保留一个RISCVSSABasicBlock的形式，也行***
-class RISCVSSAInstruction:public User,public list_node<RISCVSSABasicBlock,RISCVSSAInstruction>{
+class RISCVSSAInstruction:public User,public list_node<RISCVSSABasicBlock,RISCVSSAInstruction>,public RISCVSSAAlias{
     RISCVMIR::RISCVISA opcode;
     public:
     void setOpcode(RISCVMIR::RISCVISA);
     RISCVMIR::RISCVISA getOpcode();
     RISCVSSAInstruction(Type*);
+    RISCVMIR* reEmit();
 };
 
-class RISCVSSABasicBlock:public mylist<RISCVSSABasicBlock,RISCVSSAInstruction>{
+class RISCVSSABasicBlock:public mylist<RISCVSSABasicBlock,RISCVSSAInstruction>,public RISCVSSAAlias{
     // bro who is responsible the memory management
     std::vector<std::unique_ptr<Value*>> MemoryManager;
-
     public:
     RISCVSSAValue* getSSAValue(RISCVMOperand*);
     RISCVSSAInstruction* getSSAInstruction(RISCVMIR::RISCVISA,RISCVMOperand*);
     RISCVSSAInstruction* getSSAInstruction(RISCVMIR::RISCVISA,Type*);
+    
+    void reEmit();
     RISCVSSABasicBlock(RISCVBasicBlock*);
 };
 
