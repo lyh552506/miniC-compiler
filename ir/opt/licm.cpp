@@ -1,6 +1,6 @@
 #include "../../include/ir/opt/licm.hpp"
-#include "../../include/lib/CFG.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
+#include "../../include/lib/CFG.hpp"
 #include <cassert>
 
 bool LICMPass::Run() {
@@ -10,6 +10,7 @@ bool LICMPass::Run() {
   for (auto l = loop->begin(); l != loop->end(); l++) {
     changed |= RunOnLoop(*l);
   }
+  return changed;
 }
 
 bool LICMPass::RunOnLoop(LoopInfo *l) {

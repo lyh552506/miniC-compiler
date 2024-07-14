@@ -14,14 +14,17 @@ public:
   LcSSA(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
   bool Run();
   void PrintPass() {}
+
+private:
   bool DFSLoops(LoopInfo *l);
   bool FormalLcSSA(std::vector<User *> &FormingInsts);
   void InsertPhis(Use *u, std::set<BasicBlock *> &exit);
   void FindBBRecursive(std::set<BasicBlock *> &exit,
                        std::set<BasicBlock *> &target,
                        std::set<BasicBlock *> &visited, BasicBlock *bb);
-
-private:
+  void FindBBRoot(BasicBlock *src, BasicBlock *dst,
+                  std::set<BasicBlock *> &visited,
+                  std::stack<BasicBlock *> &assist);
   Function *m_func;
   LoopAnalysis *loops;
   dominance *m_dom;

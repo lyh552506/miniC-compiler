@@ -26,8 +26,8 @@ bool LcSSA::DFSLoops(LoopInfo *l) {
   for (auto sub : *l) {
     DFSLoops(sub);
   }
-  // _DEBUG(std::cerr << "Start To Formal Loop: " << l->GetHeader()->GetName()
-  //                  << std::endl;)
+  _DEBUG(std::cerr << "Start To Formal Loop: " << l->GetHeader()->GetName()
+                   << std::endl;)
   std::set<BasicBlock *> ContainBB{l->GetLoopBody().begin(),
                                    l->GetLoopBody().end()};
   ContainBB.insert(l->GetHeader());
@@ -76,9 +76,9 @@ bool LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
     for (auto ex : exit) {
       if (!m_dom->dominates(target->GetParent(), ex))
         continue;
-      // _DEBUG(std::cerr << "Insert a lcssa Phi: "
-      //                  << target->GetName() + ".lcssa." + std::to_string(x)
-      //                  << std::endl;);
+      _DEBUG(std::cerr << "Insert a lcssa Phi: "
+                       << target->GetName() + ".lcssa." + std::to_string(x)
+                       << std::endl;);
       auto phi = PhiInst::NewPhiNode(ex->front(), ex, target->GetType(),
                                      target->GetName() + ".lcssa." +
                                          std::to_string(x++));
@@ -172,12 +172,36 @@ void LcSSA::InsertPhis(Use *u, std::set<BasicBlock *> &exit) {
       }
     }
   } else if (target.size() > 1) {
-    auto phi = PhiInst::NewPhiNode(targetBB->front(), targetBB,
+    BasicBlock *b = nullptr;
+    for (auto bb : target) {
+      auto des_1 = m_dom->GetNode(bb->num).des.front();
+      if (!b) {
+        b = m_dom->GetNode(des_1).thisBlock;
+        continue;
+      }
+      if (b != m_dom->GetNode(des_1).thisBlock) {
+        b = nullptr;
+        continue;
+      }
+    }
+    assert(!b && "What happen?");
+    auto phi = PhiInst::NewPhiNode(b->front(), b,
                                    (*(target.begin()))->front()->GetType(),
                                    u->GetValue()->GetName() + ".phi.lcssa");
     InsertedPhis.insert(phi);
     for (auto bb : target)
       phi->updateIncoming(bb->front(), bb);
+    u->RemoveFromUserList(u->GetUser());
+    u->SetValue() = phi;
+    phi->GetUserlist().push_front(u);
+    if (auto _phi = dynamic_cast<PhiInst *>(u->GetUser())) {
+      //更新record
+      for (auto &[_1, val] : _phi->PhiRecord) {
+        if (val.first == _val) {
+          val.first = phi;
+        }
+      }
+    }
   }
 }
 
@@ -192,4 +216,17 @@ void LcSSA::FindBBRecursive(std::set<BasicBlock *> &exit,
       FindBBRecursive(exit, target, visited, predbb);
     }
   }
+}
+
+void LcSSA::FindBBRoot(BasicBlock *src, BasicBlock *dst,
+                       std::set<BasicBlock *> &visited,
+                       std::stack<BasicBlock *> &assist) {
+  for (auto des : m_dom->GetNode(src->num).des) {
+    auto succ = m_dom->GetNode(des).thisBlock;
+    if (visited.insert(succ).second && succ != dst) {
+      assist.push(succ);
+      FindBBRoot(succ, dst, visited, assist);
+    }
+  }
+  assist.pop();
 }
