@@ -6,6 +6,8 @@
 bool LICMPass::Run() {
   m_dom = AM.get<dominance>(m_func);
   loop = AM.get<LoopAnalysis>(m_func, m_dom);
+  alias = AM.get<AliasAnalysis>(m_func);
+  auto side = AM.get<SideEffect>(&Singleton<Module>());
   bool changed = false;
   for (auto l = loop->begin(); l != loop->end(); l++) {
     changed |= RunOnLoop(*l);
@@ -38,7 +40,7 @@ bool LICMPass::licmSink(const std::set<BasicBlock *> &contain, LoopInfo *l,
     return changed;
   for (auto iter = bb->rbegin(); iter != bb->rend(); --iter) {
     auto inst = *iter;
-    if (UserOutSideLoop(contain, inst, l) && CanBeMove(inst)) {
+    if (UserOutSideLoop(contain, inst, l) && CanBeMove(l, inst)) {
       _DEBUG(std::cerr << "LICM START TO SINK CODE: " << inst->GetName()
                        << std::endl;)
       std::map<BasicBlock *, User *> InsertNew; //记录每个exit对应的
@@ -84,7 +86,7 @@ bool LICMPass::licmHoist(const std::set<BasicBlock *> &contain, LoopInfo *l,
     return changed;
   for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
     auto inst = *iter;
-    if (LoopAnalysis::IsLoopInvariant(contain, inst, l) && CanBeMove(inst)) {
+    if (LoopAnalysis::IsLoopInvariant(contain, inst, l) && CanBeMove(l, inst)) {
       auto exit = loop->GetExit(l);
       if (!IsDomExit(inst, exit))
         continue;
@@ -148,17 +150,43 @@ bool LICMPass::IsDomExit(User *I, std::vector<BasicBlock *> &exit) {
   return true;
 }
 
-bool LICMPass::CanBeMove(User *I) {
+bool LICMPass::CanBeMove(LoopInfo *curloop, User *I) {
   if (auto ld = dynamic_cast<LoadInst *>(I)) {
-    // TODO 可能需要分析一下地址信息
+    bool HaveSideEffect = false;
+    for (auto use : ld->GetUserlist()) {
+      auto user = use->GetUser();
+      if (!curloop->Contain(user->GetParent()))
+        continue;
+      HaveSideEffect |= (!CanBeMove(curloop, user));
+      if (HaveSideEffect)
+        return false;
+    }
+    return HaveSideEffect;
   } else if (dynamic_cast<StoreInst *>(I)) {
     return false;
   } else if (auto call = dynamic_cast<CallInst *>(I)) {
     if (call->HasSideEffect())
       return false;
-  } else if (dynamic_cast<BinaryInst *>(I) ||
-             dynamic_cast<GetElementPtrInst *>(I)) {
+    auto func = dynamic_cast<Function *>(call->GetOperand(0));
+    for (auto &params : func->GetParams()) {
+      
+    }
+  } else if (dynamic_cast<BinaryInst *>(I)) {
     return true;
+  } else if (auto gep = dynamic_cast<GetElementPtrInst *>(I)) {
+    auto hash = AliasAnalysis::GetHash(gep);
+    auto ValueSet = alias->FindHashVal(hash);
+    bool HaveSideEffect = false;
+    for (auto g : ValueSet) {
+      for (auto use : g->GetUserlist()) {
+        auto user = use->GetUser();
+        if (!curloop->Contain(user->GetParent()))
+          continue;
+
+        HaveSideEffect |= !CanBeMove(curloop, user);
+      }
+    }
+    return HaveSideEffect;
   } else {
     return false;
   }

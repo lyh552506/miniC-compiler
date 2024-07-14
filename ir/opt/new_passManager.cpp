@@ -1,4 +1,6 @@
 #include "New_passManager.hpp"
+#include "LoopRotate.hpp"
+#include "licm.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -94,20 +96,18 @@ void _PassManager::RunOnLevel() {
     RunImpl<Global2Local>(module, AM);
 
     // mem2reg
-    PassChangedBegin(curfunc)
-    RunImpl<Mem2reg>(curfunc, AM);
+    PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
     PassChangedEnd
 
-    // inline TODO:Fix
-    // RunImpl<Inliner>(module, AM);
+        // inline TODO:Fix
+        // RunImpl<Inliner>(module, AM);
 
-    // mem2reg
-    PassChangedBegin(curfunc)
-    RunImpl<Mem2reg>(curfunc, AM);
+        // mem2reg
+        PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
     PassChangedEnd
 
-    // Local2Global
-    RunImpl<Local2Global>(module, AM);
+        // Local2Global
+        RunImpl<Local2Global>(module, AM);
 
     // constprop
     RunLevelPass(ConstantProp, curfunc);
@@ -116,41 +116,13 @@ void _PassManager::RunOnLevel() {
     RunLevelPass(cfgSimplify, curfunc);
     PassChangedBegin(curfunc) PassChangedEnd
 
-    // ece pre
-    // RunLevelPass(ElimitCriticalEdge, curfunc);
-    // PassChangedBegin(curfunc) PassChangedEnd
-    // RunLevelPass(PRE, curfunc);
+        // ece pre
+        // RunLevelPass(ElimitCriticalEdge, curfunc);
+        // PassChangedBegin(curfunc) PassChangedEnd
+        // RunLevelPass(PRE, curfunc);
 
-    // cse
-    RunLevelPass(CSE, curfunc);
-
-    // constprop
-    RunLevelPass(ConstantProp, curfunc);
-
-    // simplifycfg
-    RunLevelPass(cfgSimplify, curfunc);
-    PassChangedBegin(curfunc) PassChangedEnd
-
-    // reassociate
-    RunLevelPass(Reassociate, curfunc);
-
-    // loopsimplify
-    RunLevelPass(LoopSimplify, curfunc);
-    PassChangedBegin(curfunc) PassChangedEnd
-
-    // // lcssa
-    // RunLevelPass(LcSSA, curfunc);
-
-    // // looprotate
-    // RunLevelPass(LoopRotate, curfunc);
-    // PassChangedBegin(curfunc) PassChangedEnd
-
-    // licm
-    // RunLevelPass(LICM, curfunc);
-    // PassChangedBegin(curfunc) PassChangedEnd
-
-    // cse
-    RunLevelPass(CSE, curfunc);
+        // cse
+        RunLevelPass(CSE, curfunc);
 
     // constprop
     RunLevelPass(ConstantProp, curfunc);
@@ -159,20 +131,48 @@ void _PassManager::RunOnLevel() {
     RunLevelPass(cfgSimplify, curfunc);
     PassChangedBegin(curfunc) PassChangedEnd
 
+        // reassociate
+        RunLevelPass(Reassociate, curfunc);
+
     // loopsimplify
     RunLevelPass(LoopSimplify, curfunc);
     PassChangedBegin(curfunc) PassChangedEnd
 
-    // lcssa
-    // RunLevelPass(LcSSA, curfunc);
-    // PassChangedBegin(curfunc) PassChangedEnd
+        // // lcssa
+        // RunLevelPass(LcSSA, curfunc);
 
-    // loopdeletion
-    // RunLevelPass(LoopDeletion, curfunc);
-    // PassChangedBegin(curfunc) PassChangedEnd
-    
-    // loopsimplify
-    RunLevelPass(LoopSimplify, curfunc);
+        // // looprotate
+        // RunLevelPass(LoopRotate, curfunc);
+        // PassChangedBegin(curfunc) PassChangedEnd
+
+        // licm
+        // RunLevelPass(LICM, curfunc);
+        // PassChangedBegin(curfunc) PassChangedEnd
+
+        // cse
+        RunLevelPass(CSE, curfunc);
+
+    // constprop
+    RunLevelPass(ConstantProp, curfunc);
+
+    // simplifycfg
+    RunLevelPass(cfgSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
+        // loopsimplify
+        RunLevelPass(LoopSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
+        // lcssa
+        // RunLevelPass(LcSSA, curfunc);
+        // PassChangedBegin(curfunc) PassChangedEnd
+
+        // loopdeletion
+        // RunLevelPass(LoopDeletion, curfunc);
+        // PassChangedBegin(curfunc) PassChangedEnd
+
+        // loopsimplify
+        RunLevelPass(LoopSimplify, curfunc);
     PassChangedBegin(curfunc) PassChangedEnd
   }
 }
@@ -295,11 +295,19 @@ void _PassManager::RunOnTest() {
         auto m_lcssa = RunImpl<LcSSA>(curfunc, AM);
         break;
       }
-      case local2global:
-      {
+      case local2global: {
         auto m_local2global = RunImpl<Local2Global>(module, AM);
         break;
       }
+      case licm: {
+        auto m_licm = RunImpl<LICMPass>(curfunc, AM);
+        break;
+      }
+      case looprotate: {
+        auto m_ro = RunImpl<LoopRotate>(curfunc, AM);
+        break;
+      }
+
       default: {
         assert(0);
       }
