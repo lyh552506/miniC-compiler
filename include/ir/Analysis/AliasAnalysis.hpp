@@ -1,9 +1,9 @@
+#pragma once
 #include "../../include/ir/opt/New_passManager.hpp"
 #include "../../include/ir/opt/PassManagerBase.hpp"
 #include "../../include/lib/CFG.hpp"
 #include <cstddef>
 #include <unordered_map>
-
 enum InstTy {
   Load = 131,
   Gep = 231,
@@ -13,7 +13,8 @@ class AliasAnalysis : public _AnalysisManagerBase<AliasAnalysis, Function> {
 public:
   explicit AliasAnalysis(Function *func) : m_func(func) {}
   void *GetResult(Function *func);
-  size_t GetHash(Value *val);
+  static size_t GetHash(Value *val);
+  std::set<Value *> FindHashVal(size_t hs);
 
 private:
   void run();

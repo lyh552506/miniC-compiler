@@ -11,15 +11,13 @@ void AliasAnalysis::run() {
         auto target = ld->GetOperand(0);
         auto hash = std::hash<Value *>()(target);
         hash = std::hash<int>()(Load) + hash;
-        if (AliasTable.find(hash) == AliasTable.end())
-          AliasTable[hash].insert(ld);
+        AliasTable[hash].insert(ld);
       } else if (auto gep = dynamic_cast<GetElementPtrInst *>(inst)) {
         auto hash = std::hash<int>()(Gep);
         for (int i = 0; i < gep->Getuselist().size(); i++) {
           hash += std::hash<Value *>()(gep->GetOperand(i));
         }
-        if (AliasTable.find(hash) == AliasTable.end())
-          AliasTable[hash].insert(ld);
+        AliasTable[hash].insert(gep);
       }
     }
 }
@@ -43,7 +41,13 @@ size_t AliasAnalysis::GetHash(Value *val) {
 }
 
 void *AliasAnalysis::GetResult(Function *func) {
-    AliasTable.clear();
-    run();
-    return this;
+  AliasTable.clear();
+  run();
+  return this;
+}
+
+std::set<Value *> AliasAnalysis::FindHashVal(size_t hs) {
+  if (AliasTable.find(hs) != AliasTable.end())
+    return AliasTable[hs];
+  return std::set<Value *>{};
 }
