@@ -264,94 +264,99 @@ void Legalize::constintLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterat
         return;
     }
     else {
-        int mod = inttemp % 4096;
-        if(mod==0) {
-            if(inst->GetOpcode() == RISCVMIR::RISCVISA::li) {
-                return;
-            }
-            else if(inst->GetOpcode() == RISCVMIR::RISCVISA::_addi ||\
-                    inst->GetOpcode() == RISCVMIR::RISCVISA::_addiw) {
-                RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
-                // VirRegister* vreg = new VirRegister(RISCVType::riscv_i32);
-                li->SetDef(t0);
-                li->AddOperand(constdata);
-                it.insert_before(li);
-                for(int i=0; i<inst->GetOperandSize(); i++) {
-                    if(Imm* imm = dynamic_cast<Imm*>(inst->GetOperand(i))) {
-                        if(imm->Getdata()==constdata->Getdata()) {
-                            inst->SetOperand(i,t0);
-                            break;
-                        }
-                    } 
-                }
-                MOpcodeLegalize(inst);
-            }
-            else {
-                inst->SetMopcode(RISCVMIR::RISCVISA::li);
-            }
-            return;
+        auto mir= new RISCVMIR(RISCVMIR::li);
+        mir->SetDef(PhyRegister::GetPhyReg(PhyRegister::t0));
+        mir->AddOperand(constdata);
+        it.insert_before(mir);
+        inst->SetOperand(i, PhyRegister::GetPhyReg(PhyRegister::t0));
+        // int mod = inttemp % 4096;
+        // if(mod==0) {
+        //     if(inst->GetOpcode() == RISCVMIR::RISCVISA::li) {
+        //         return;
+        //     }
+        //     else if(inst->GetOpcode() == RISCVMIR::RISCVISA::_addi ||\
+        //             inst->GetOpcode() == RISCVMIR::RISCVISA::_addiw) {
+        //         RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
+        //         // VirRegister* vreg = new VirRegister(RISCVType::riscv_i32);
+        //         li->SetDef(t0);
+        //         li->AddOperand(constdata);
+        //         it.insert_before(li);
+        //         for(int i=0; i<inst->GetOperandSize(); i++) {
+        //             if(Imm* imm = dynamic_cast<Imm*>(inst->GetOperand(i))) {
+        //                 if(imm->Getdata()==constdata->Getdata()) {
+        //                     inst->SetOperand(i,t0);
+        //                     break;
+        //                 }
+        //             } 
+        //         }
+        //         MOpcodeLegalize(inst);
+        //     }
+        //     else {
+        //         inst->SetMopcode(RISCVMIR::RISCVISA::li);
+        //     }
+        //     return;
 
-        } else if((mod>0&&mod<2048)||(mod>=-2048&&mod<0)) {
-            // VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
-            Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod));
-            RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
-            li->SetDef(t0);
-            li->AddOperand(const_imm);
-            it.insert_before(li);
-            Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod));
-            RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addi);
-            addi->SetDef(t0);
-            addi->AddOperand(t0);
-            addi->AddOperand(mod_imm);
-            it.insert_before(addi);
-            MOpcodeLegalize(inst);
-            for(int i=0; i<inst->GetOperandSize(); i++) {
-                while(inst->GetOperand(i)==constdata) {
-                    inst->SetOperand(i,t0);
-                    return;
-                }
-            }
-        } else if (mod >=2048 && mod <4096) {
-            // VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
-            Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod+4096));
-            RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
-            li->SetDef(t0);
-            li->AddOperand(const_imm);
-            it.insert_before(li);
-            Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod-4096));
-            RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addi);
-            addi->SetDef(t0);
-            addi->AddOperand(t0);
-            addi->AddOperand(mod_imm);
-            it.insert_before(addi);
-            MOpcodeLegalize(inst);
-            for(int i=0; i<inst->GetOperandSize(); i++) {
-                while(inst->GetOperand(i)==constdata) {
-                    inst->SetOperand(i,t0);
-                    return;
-                }
-            }
-        } else if (mod>=-4095&&mod<-2048) {
-            // VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
-            Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod-4096));
-            RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
-            li->SetDef(t0);
-            li->AddOperand(const_imm);
-            it.insert_before(li);
-            Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod+4096));
-            RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addi);
-            addi->SetDef(t0);
-            addi->AddOperand(t0);
-            addi->AddOperand(mod_imm);
-            it.insert_before(addi);
-            MOpcodeLegalize(inst);
-            for(int i=0; i<inst->GetOperandSize(); i++) {
-                while(inst->GetOperand(i)==constdata) {
-                    inst->SetOperand(i,t0);
-                    return;
-                }
-            }
-        } else assert(0&&"error imm");
+        // } else if((mod>0&&mod<2048)||(mod>=-2048&&mod<0)) {
+        //     // VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+        //     Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod));
+        //     RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
+        //     li->SetDef(t0);
+        //     li->AddOperand(const_imm);
+        //     it.insert_before(li);
+        //     Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod));
+        //     RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addi);
+        //     addi->SetDef(t0);
+        //     addi->AddOperand(t0);
+        //     addi->AddOperand(mod_imm);
+        //     it.insert_before(addi);
+        //     MOpcodeLegalize(inst);
+        //     for(int i=0; i<inst->GetOperandSize(); i++) {
+        //         while(inst->GetOperand(i)==constdata) {
+        //             inst->SetOperand(i,t0);
+        //             return;
+        //         }
+        //     }
+        // } else if (mod >=2048 && mod <4096) {
+        //     // VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+        //     Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod+4096));
+        //     RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
+        //     li->SetDef(t0);
+        //     li->AddOperand(const_imm);
+        //     it.insert_before(li);
+        //     Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod-4096));
+        //     RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addi);
+        //     addi->SetDef(t0);
+        //     addi->AddOperand(t0);
+        //     addi->AddOperand(mod_imm);
+        //     it.insert_before(addi);
+        //     MOpcodeLegalize(inst);
+        //     for(int i=0; i<inst->GetOperandSize(); i++) {
+        //         while(inst->GetOperand(i)==constdata) {
+        //             inst->SetOperand(i,t0);
+        //             return;
+        //         }
+        //     }
+        // } else if (mod>=-4095&&mod<-2048) {
+        //     // VirRegister* vreg = ctx.createVReg(RISCVType::riscv_i32);
+        //     Imm* const_imm = new Imm(ConstIRInt::GetNewConstant(inttemp-mod-4096));
+        //     RISCVMIR* li = new RISCVMIR(RISCVMIR::RISCVISA::li);
+        //     li->SetDef(t0);
+        //     li->AddOperand(const_imm);
+        //     it.insert_before(li);
+        //     Imm* mod_imm = new Imm(ConstIRInt::GetNewConstant(mod+4096));
+        //     RISCVMIR* addi = new RISCVMIR(RISCVMIR::RISCVISA::_addi);
+        //     addi->SetDef(t0);
+        //     addi->AddOperand(t0);
+        //     addi->AddOperand(mod_imm);
+        //     it.insert_before(addi);
+        //     MOpcodeLegalize(inst);
+        //     for(int i=0; i<inst->GetOperandSize(); i++) {
+        //         while(inst->GetOperand(i)==constdata) {
+        //             inst->SetOperand(i,t0);
+        //             return;
+        //         }
+        //     }
+        // } else assert(0&&"error imm");
     }
 }
 
