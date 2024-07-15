@@ -184,6 +184,7 @@ void RISCVISel::InstLowering(CondInst* inst){
 }
 
 void RISCVISel::InstLowering(BinaryInst* inst){
+    assert(!(inst->GetOperand(0)->isConst()&&inst->GetOperand(1)->isConst()));
     Operand temp = inst->GetOperand(0);
     if(inst->getopration()<BinaryInst::Op_And||inst->getopration()>BinaryInst::Op_Or){
         RISCVMIR* result;
