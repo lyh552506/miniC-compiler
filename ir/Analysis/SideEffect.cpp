@@ -3,7 +3,10 @@
 bool SideEffect::RunOnModule(Module* module)
 {
     for(auto& Func_Ptr : module->GetFuncTion())
+    {
+        Func_Ptr->Change_Val.clear();
         CreateCallMap(Func_Ptr.get());
+    }
     DetectRecursive();
     CreateSideEffectFunc();
     return false;   
