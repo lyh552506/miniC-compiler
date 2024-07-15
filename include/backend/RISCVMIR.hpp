@@ -201,6 +201,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         // li t0 illegal_offset
         // add vreg vreg t0
         AddLocalOffset,
+        LoadROFloat32,
         EndMIRPseudo,
     }opcode;
     /// @note def in the front while use in the back

@@ -82,19 +82,7 @@ void RISCVISel::InstLowering(StoreInst* inst){
         }
     }
     else if(op0->GetType()==FloatType::NewFloatTypeGet()) {
-        if(ConstIRFloat* Floatconst = dynamic_cast<ConstIRFloat*>(op0)) {
-            auto minst=new RISCVMIR(RISCVMIR::_fsw);
-            minst->AddOperand(new Imm(Floatconst));
-            minst->AddOperand(ctx.mapping(inst->GetOperand(1)));
-            ctx(minst);
-        }
-        else {
-            ctx(Builder_withoutDef(RISCVMIR::_fsw,inst));
-            // auto minst=new RISCVMIR(RISCVMIR::_fsw);
-            // for(int i=0;i<inst->Getuselist().size();i++)
-            //     minst->AddOperand(ctx.mapping(inst->GetOperand(i)));
-            // ctx(minst);
-        }
+        ctx(Builder_withoutDef(RISCVMIR::_fsw,inst));
     }
     else if(PointerType* ptrtype = dynamic_cast<PointerType*>(op0->GetType())) {
         ctx(Builder_withoutDef(RISCVMIR::_sd, inst));
@@ -529,7 +517,7 @@ void RISCVISel::InstLowering(CallInst* inst){
                     PhyRegister* preg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint));
                     call->AddOperand(preg);
                     li->SetDef(preg);
-                    Imm* imm = new Imm(constint);
+                    Imm* imm = Imm::GetImm(constint);
                     li->AddOperand(imm);
                     ctx.insert_val2mop(constint, imm);
                     ctx(li);
@@ -541,21 +529,10 @@ void RISCVISel::InstLowering(CallInst* inst){
                     call->AddOperand(preg);
                     regint++;
                 }
-                else if(ConstIRFloat* constfloat = dynamic_cast<ConstIRFloat*>(op)) {
-                    auto load = new RISCVMIR(RISCVMIR::_fmv_s); 
-                    // VirRegister* vreg = ctx.createVReg(RISCVTyper(op->GetType()));
-                    PhyRegister* freg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regfloat));
-                    call->AddOperand(freg);
-                    load->SetDef(freg);
-                    Imm* imm = new Imm(constfloat);
-                    load->AddOperand(imm);
-                    ctx.insert_val2mop(constint, imm);
-                    ctx(load);
-                    regfloat++;
-                }
                 else if(RISCVTyper(op->GetType())==riscv_float32) {
                     PhyRegister* freg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regfloat));
                     ctx(Builder(RISCVMIR::_fmv_s,{freg,M(op)}));
+                    call->AddOperand(freg);
                     regfloat++;
                 }
                 else assert(0 && "CallInst selection illegal type");
@@ -568,9 +545,11 @@ void RISCVISel::InstLowering(CallInst* inst){
     if(!inst->GetUserlist().is_empty()){
         // ctx(Builder_withoutDef(RISCVMIR::call, inst));
         if(RISCVTyper(inst->GetOperand(0)->GetType())==RISCVType::riscv_float32) {
+            call->SetDef(PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0));
             ctx(Builder(RISCVMIR::_fmv_s, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0)}));
         }
         else if(RISCVTyper(inst->GetOperand(0)->GetType())==RISCVType::riscv_i32){
+            call->SetDef(PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0));
             ctx(Builder(RISCVMIR::mv, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
         }
         else {
@@ -591,11 +570,13 @@ void RISCVISel::InstLowering(RetInst* inst){
     }
     else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
         ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
-        ctx(Builder_withoutDef(RISCVMIR::ret,inst));
+        auto minst=new RISCVMIR(RISCVMIR::ret);
+        minst->AddOperand(PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0));
     }
     else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
         ctx(Builder(RISCVMIR::_fmv_s,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0),M(inst->GetOperand(0))}));
-        ctx(Builder_withoutDef(RISCVMIR::ret,inst));
+        auto minst=new RISCVMIR(RISCVMIR::ret);
+        minst->AddOperand(PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0));
     }
     else 
         assert(0&&"Invalid return type");

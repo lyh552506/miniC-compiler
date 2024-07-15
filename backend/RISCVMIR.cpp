@@ -61,14 +61,23 @@ void RISCVMIR::printfull(){
 }
 
 VirRegister* RISCVFunction::GetUsedGlobalMapping(RISCVMOperand* val) {
-    // assert it is a globalvar here?
     if(usedGlobals.find(val)==usedGlobals.end()) {
-        VirRegister* vreg = new VirRegister(riscv_ptr);
+        VirRegister* vreg = nullptr;
+        RISCVMIR* mir=nullptr;
+        // 浮点常量 
+        if(val->as<Imm>()){
+            vreg=new VirRegister(riscv_float32);
+            mir=new RISCVMIR(RISCVMIR::LoadROFloat32);
+        }
+        // 全局变量
+        else{
+            vreg=new VirRegister(riscv_ptr);
+            mir=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
+        }
         usedGlobals[val] = vreg;
         // Push into the entry block
         // FIXME: Currently we put it before the copy of the lowering local arguments.
         auto entryblock=front();
-        auto mir=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
         mir->SetDef(vreg);
         mir->AddOperand(val);
         entryblock->push_front(mir);
