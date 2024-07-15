@@ -1,20 +1,19 @@
 #include "../../include/ir/opt/DCE.hpp"
+#include "../../include/ir/Analysis/SideEffect.hpp"
 #include "../../util/my_stl.hpp"
 #include <algorithm>
-#include "../../include/ir/Analysis/SideEffect.hpp"
 bool DCE::Run()
 {
     AM.get<SideEffect>(&Singleton<Module>());
-    Value* C = RVACC(func);
-    if(dynamic_cast<UndefValue*>(C) && !func->HasSideEffect)
+    Value *C = RVACC(func);
+    if (dynamic_cast<UndefValue *>(C) && !func->HasSideEffect)
     {
-        for(auto iter = func->rbegin(); 
-        iter != func->rend(); --iter)
+        for (auto iter = func->rbegin(); iter != func->rend(); --iter)
         {
             bool NDelBlock = false;
-            for(auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1)
+            for (auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1)
             {
-                if(!dynamic_cast<RetInst*>(*iter1))
+                if (!dynamic_cast<RetInst *>(*iter1))
                 {
                     (*iter1)->ClearRelation();
                     (*iter1)->EraseFromParent();
@@ -22,24 +21,25 @@ bool DCE::Run()
                 else
                     NDelBlock = true;
             }
-            if(!NDelBlock)
+            if (!NDelBlock)
                 (*iter)->EraseFromParent();
         }
         return true;
     }
-    if(C && !func->HasSideEffect)
+    if (C && !func->HasSideEffect)
     {
-        for(auto user : func->GetUserlist())
+        for (auto user : func->GetUserlist())
         {
-            User* inst = user->GetUser();
-            if(dynamic_cast<CallInst*>(inst))
+            User *inst = user->GetUser();
+            if (dynamic_cast<CallInst *>(inst))
             {
                 inst->RAUW(C);
-                _DEBUG(std::cerr<< "Delete Inst:" << inst->GetName() << "In Func:" << inst->GetParent()->GetParent()->GetName() <<std::endl;)
+                _DEBUG(std::cerr << "Delete Inst:" << inst->GetName()
+                                 << "In Func:" << inst->GetParent()->GetParent()->GetName() << std::endl;)
                 delete inst;
             }
         }
-        if(func->GetUserlist().is_empty())
+        if (func->GetUserlist().is_empty())
         {
             // for(auto iter = func->rbegin(); iter != func->rend(); --iter)
             // {
@@ -57,34 +57,34 @@ bool DCE::Run()
         return true;
     }
     bool modified = false;
-    std::vector<User*> WorkList;
-    for(BasicBlock* block : *func)
+    std::vector<User *> WorkList;
+    for (BasicBlock *block : *func)
     {
-        for(auto inst = block->rbegin();inst != block->rend(); --inst)
+        for (auto inst = block->rbegin(); inst != block->rend(); --inst)
         {
-            if(std::find(WorkList.begin(), WorkList.end(), (*inst)) == WorkList.end())
+            if (std::find(WorkList.begin(), WorkList.end(), (*inst)) == WorkList.end())
                 modified |= DCEInst((*inst), WorkList);
         }
     }
-    while(!WorkList.empty())
+    while (!WorkList.empty())
     {
-        User* inst = WorkList.back();
+        User *inst = WorkList.back();
         WorkList.pop_back();
         modified |= DCEInst(inst, WorkList);
     }
     return modified;
 }
 
-bool DCE::DCEInst(User* inst, std::vector<User*> &Worklist)
+bool DCE::DCEInst(User *inst, std::vector<User *> &Worklist)
 {
-    if(isDeadInst(inst))
+    if (isDeadInst(inst))
     {
-        for(auto& use_ : inst->Getuselist())
+        for (auto &use_ : inst->Getuselist())
         {
-            Value* op = use_->usee;
-            if(User* inst_ = dynamic_cast<User*>(op))
+            Value *op = use_->usee;
+            if (User *inst_ = dynamic_cast<User *>(op))
             {
-                if(isDeadInst(inst_))
+                if (isDeadInst(inst_))
                     Worklist.push_back(inst_);
             }
         }
@@ -95,53 +95,104 @@ bool DCE::DCEInst(User* inst, std::vector<User*> &Worklist)
     return false;
 }
 
-bool DCE::isDeadInst(User* inst)
+bool DCE::isDeadInst(User *inst)
 {
-    if(!inst->GetUserlist().is_empty() || inst->IsTerminateInst())
+    if (auto phi = dynamic_cast<PhiInst *>(inst))
+    {
+        if (HandlePhi(phi))
+        {
+            _DEBUG(std::cerr << "Handle Phi:" << phi->GetName() << "in func :" << func->GetName() << std::endl;)
+            return true;
+        }
         return false;
-    if(!inst->HasSideEffect())
+    }
+    if (!inst->GetUserlist().is_empty() || inst->IsTerminateInst())
+        return false;
+    if (!inst->HasSideEffect())
         return true;
     return false;
 }
 
-Value* DCE::RVACC(Function* func)
+Value *DCE::RVACC(Function *func)
 {
-    Value* RetVal = nullptr;
-    for(BasicBlock* block : *func)
+    Value *RetVal = nullptr;
+    for (BasicBlock *block : *func)
     {
-        for(User* inst : *block)
+        for (User *inst : *block)
         {
-            if(auto PHiInst = dynamic_cast<PhiInst*>(inst))
+            if (auto PHiInst = dynamic_cast<PhiInst *>(inst))
             {
-                Value* CommonValue = nullptr;
-                for(Value* income : PHiInst->GetAllPhiVal())
+                Value *CommonValue = nullptr;
+                for (Value *income : PHiInst->GetAllPhiVal())
                 {
-                    if(auto _UndefValue = dynamic_cast<UndefValue*>(income))
+                    if (auto _UndefValue = dynamic_cast<UndefValue *>(income))
                         return nullptr;
-                    if(CommonValue && income != CommonValue)
+                    if (CommonValue && income != CommonValue)
                         return nullptr;
                     CommonValue = income;
                 }
-                if(CommonValue)
+                if (CommonValue)
                     inst->RAUW(CommonValue);
             }
-        
-            if(auto REtInst = dynamic_cast<RetInst*>(inst))
+
+            if (auto REtInst = dynamic_cast<RetInst *>(inst))
             {
-                if(inst->Getuselist().size() == 0)
+                if (inst->Getuselist().size() == 0)
                     RetVal = nullptr;
                 else
                 {
-                    Value* Val = inst->Getuselist()[0]->usee;
-                    if(RetVal && RetVal != Val)
+                    Value *Val = inst->Getuselist()[0]->usee;
+                    if (RetVal && RetVal != Val)
                         return nullptr;
                     RetVal = Val;
                 }
             }
-
         }
     }
-    if(RetVal && dynamic_cast<ConstantData*>(RetVal))
+    if (RetVal && dynamic_cast<ConstantData *>(RetVal))
         return RetVal;
     return nullptr;
+}
+
+bool DCE::HandlePhi(PhiInst *inst)
+{
+    if (inst->GetUserlist().GetSize() == 0)
+        return true;
+    if (inst->GetUserlist().GetSize() == 1)
+    {
+        User *user = inst->GetUserlist().Front()->GetUser();
+        if (auto phi = dynamic_cast<PhiInst *>(user))
+        {
+            std::set<PhiInst *> PotentiallyDeadPhis;
+            PotentiallyDeadPhis.insert(inst);
+            if (DeadPhiCycle(phi, PotentiallyDeadPhis))
+                inst->RAUW(UndefValue::get(inst->GetType()));
+        }
+
+        if (user->GetUserlist().GetSize() == 1 &&
+            (dynamic_cast<BinaryInst *>(user) || dynamic_cast<GetElementPtrInst *>(user)) &&
+            user->GetUserlist().Front()->GetUser() == inst)
+        {
+            inst->RAUW(UndefValue::get(inst->GetType()));
+            return true;
+        }
+        return false;
+    }
+    return false;
+}
+bool DCE::DeadPhiCycle(PhiInst *phi, std::set<PhiInst *> &PotentiallyDeadPhis)
+{
+    if (phi->GetUserlist().is_empty())
+        return true;
+    if (phi->GetUserlist().GetSize() != 1)
+        return false;
+
+    if (!PotentiallyDeadPhis.insert(phi).second)
+        return true;
+    if (PotentiallyDeadPhis.size() == 16)
+        return false;
+    User *user = phi->GetUserlist().Front()->GetUser();
+    if (auto phi_ = dynamic_cast<PhiInst *>(user))
+        return DeadPhiCycle(phi_, PotentiallyDeadPhis);
+    return false;
 }

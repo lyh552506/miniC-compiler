@@ -227,7 +227,7 @@ void _PassManager::RunOnTest() {
         break;
       }
       case dce: {
-        auto m_dce = RunImpl<DCE>(curfunc, AM);
+        ContinueRunPassOnTest(DCE, curfunc)
         break;
       }
       case simplifycfg: {

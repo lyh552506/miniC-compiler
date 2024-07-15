@@ -4,9 +4,9 @@
 #include <vector>
 ///@brief 自定义宏，更加方便，需要什么自己加
 
-#define SDOM(x) node[x].sdom        //获取x对应结点的sdom
-#define MIN_SDOM(x) dsu[x].min_sdom //获取结点最近的sdom的index
-#define IDOM(x) node[x].idom        //获取结点的idom
+#define SDOM(x) node[x].sdom        // 获取x对应结点的sdom
+#define MIN_SDOM(x) dsu[x].min_sdom // 获取结点最近的sdom的index
+#define IDOM(x) node[x].idom        // 获取结点的idom
 
 #ifdef DEBUG
 #define _DEBUG(x) x
@@ -22,23 +22,22 @@
 #endif
 
 /// @brief 遍历一个function,每个bb是一个智能指针BasicBlockPtr
-#define For_bb_In(function)                                                    \
-  assert(dynamic_cast<Function *>(function) &&                                 \
-         "incoing must be a function* type");                                  \
-  auto &BB = function->GetBasicBlock();                                        \
-  for (auto &bb : BB)
+#define For_bb_In(function)                                                                                            \
+    assert(dynamic_cast<Function *>(function) && "incoing must be a function* type");                                  \
+    auto &BB = function->GetBasicBlock();                                                                              \
+    for (auto &bb : BB)
 
 /// @brief 遍历一个BB,每个inst是一个User*，
-#define For_inst_In(BB)                                                        \
-  assert(dynamic_cast<BasicBlock *>(BB) &&                                     \
-         "incoing must be a BasicBlock* type");                                \
-  for (auto inst : *(BB))
+#define For_inst_In(BB)                                                                                                \
+    assert(dynamic_cast<BasicBlock *>(BB) && "incoing must be a BasicBlock* type");                                    \
+    for (auto inst : *(BB))
 
 /// @brief 获取指令的操作数
-template <typename T> Value *GetOperand(T inst, int i) {
-  User *user = dynamic_cast<User *>(inst);
-  assert(user);
-  return user->Getuselist()[i]->GetValue();
+template <typename T> Value *GetOperand(T inst, int i)
+{
+    User *user = dynamic_cast<User *>(inst);
+    assert(user);
+    return user->Getuselist()[i]->GetValue();
 }
 
 ///@brief 获取后继结点个数
@@ -49,41 +48,54 @@ template <typename T> Value *GetOperand(T inst, int i) {
 #define GetPredNum(BB) BB->GetUserListSize()
 
 ///@brief 实现vector元素的pop
-template <typename T> void vec_pop(std::vector<T> &vec, int &index) {
-  assert(index < vec.size() && "index can not bigger than size");
-  vec[index] = vec[vec.size() - 1];
-  vec.pop_back();
-  index--;
+template <typename T> void vec_pop(std::vector<T> &vec, int &index)
+{
+    assert(index < vec.size() && "index can not bigger than size");
+    vec[index] = vec[vec.size() - 1];
+    vec.pop_back();
+    index--;
 }
 ///@brief 实现vec没有重复元素
-template <typename T> void PushVecSingleVal(std::vector<T> &vec, T v) {
-  auto iter = std::find(vec.begin(), vec.end(), v);
-  if (iter != vec.end())
-    return;
-  vec.push_back(v);
+template <typename T> void PushVecSingleVal(std::vector<T> &vec, T v)
+{
+    auto iter = std::find(vec.begin(), vec.end(), v);
+    if (iter != vec.end())
+        return;
+    vec.push_back(v);
 }
 
-template <typename T> T PopBack(std::vector<T> &vec) {
-  T tmp = vec.back();
-  vec.pop_back();
-  return tmp;
+template <typename T> T PopBack(std::vector<T> &vec)
+{
+    T tmp = vec.back();
+    vec.pop_back();
+    return tmp;
 }
 
-#define PassChangedBegin(curfunc)                 \
-    for (auto &func : module->GetFuncTion()) {    \
-      curfunc = func.get();                       \
-      curfunc->bb_num = 0;                        \
-      curfunc->GetBasicBlock().clear();           \
-      for (auto bb : *curfunc) {                  \
-        bb->num = curfunc->bb_num++;              \
-        curfunc->GetBasicBlock().push_back(bb);   \
-      }                                           \
+#define PassChangedBegin(curfunc)                                                                                      \
+    for (auto &func : module->GetFuncTion())                                                                           \
+    {                                                                                                                  \
+        curfunc = func.get();                                                                                          \
+        curfunc->bb_num = 0;                                                                                           \
+        curfunc->GetBasicBlock().clear();                                                                              \
+        for (auto bb : *curfunc)                                                                                       \
+        {                                                                                                              \
+            bb->num = curfunc->bb_num++;                                                                               \
+            curfunc->GetBasicBlock().push_back(bb);                                                                    \
+        }
 
 #define PassChangedEnd }
 
+#define RunLevelPass(PassName, curfunc)                                                                                \
+    for (auto &func : module->GetFuncTion())                                                                           \
+    {                                                                                                                  \
+        curfunc = func.get();                                                                                          \
+        RunImpl<PassName>(curfunc, AM);                                                                                \
+    }
 
-#define RunLevelPass(PassName, curfunc)                               \
-    for (auto &func : module->GetFuncTion()) {                \
-    curfunc = func.get();                                     \
-    RunImpl<PassName>(curfunc, AM);                           \
+#define ContinueRunPassOnTest(PassName, curfunc)                                                                       \
+    bool modified = true;                                                                                              \
+    while (modified)                                                                                                   \
+    {                                                                                                                  \
+        modified = false;                                                                                              \
+        modified = RunImpl<PassName>(curfunc, AM);                                                                     \
     }
