@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <cassert>
 /// @brief 设计的先发劣势，要写什么自己加，最简单的一集
 /// @tparam T 
 template<typename T>
