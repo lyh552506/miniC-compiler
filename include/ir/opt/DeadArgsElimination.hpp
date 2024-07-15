@@ -10,9 +10,10 @@ private:
   std::vector<std::pair<Value *, int>> wait_del;
   Module *mod;
   _AnalysisManager &AM;
-
+  bool Detect_Dead_Args(Function *func);
+  void NormalHandle(Function* func);
+  void Handle_SameArgs(Function* func);
 public:
   bool Run();
-  bool Detect_Dead_Args(Function *func);
   DeadArgsElimination(Module *m, _AnalysisManager &AM) : mod(m), AM(AM) {}
 };
