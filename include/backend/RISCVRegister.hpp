@@ -101,7 +101,7 @@ class LARegister:public Register{
     } regnum;
     LARegister(RISCVType, std::string);
     LARegister(RISCVType, std::string, LAReg);
-    LARegister(RISCVType, std::string, VirRegister*);
+    LARegister(RISCVType, std::string, Register*);
     void print()final;
     Register*& GetVreg();
     void SetReg(PhyRegister*&);

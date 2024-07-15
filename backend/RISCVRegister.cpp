@@ -79,7 +79,7 @@ LARegister::LARegister(RISCVType _type, std::string _name)
     : Register(_type,_name), regnum(LAReg::hi) {}
 LARegister::LARegister(RISCVType _type, std::string _name, LAReg _regenum)
     : Register(_type,_name), regnum(_regenum) {}
-LARegister::LARegister(RISCVType _type, std::string _name, VirRegister *_vreg)
+LARegister::LARegister(RISCVType _type, std::string _name, Register *_vreg)
     : Register(_type,_name), regnum(LAReg::lo), vreg(_vreg) {}
 
 Register*& LARegister::GetVreg() { return vreg; }

@@ -1,7 +1,121 @@
 #include "../include/backend/LegalizePass.hpp"
+#include "../include/backend/RISCVAsmPrinter.hpp"
 Legalize::Legalize(RISCVLoweringContext& _ctx) :ctx(_ctx) {}
 
 void Legalize::run() {
+    // fold 2 stackreg
+    {
+        auto func=ctx.GetCurFunction();
+        for(auto block:*func){
+            for(auto inst:*block){
+                auto opcode=inst->GetOpcode();
+                if(RISCVMIR::BeginLoadMem<opcode&&opcode<RISCVMIR::EndLoadMem
+                ||RISCVMIR::BeginFloatLoadMem<opcode&&opcode<RISCVMIR::EndFloatLoadMem){
+                    if(auto preg=inst->GetOperand(0)->as<PhyRegister>()){
+                        // turn it into stackreg
+                        auto sreg=new StackRegister(preg->Getregenum(),0);
+                        inst->SetOperand(0,sreg);
+                    }
+                }
+                else if(RISCVMIR::BeginStoreMem<opcode&&opcode<RISCVMIR::EndStoreMem
+                ||RISCVMIR::BeginFloatStoreMem<opcode&&opcode<RISCVMIR::EndFloatStoreMem){
+                    if(auto preg=inst->GetOperand(1)->as<PhyRegister>()){
+                        // turn it into stackreg
+                        auto sreg=new StackRegister(preg->Getregenum(),0);
+                        inst->SetOperand(1,sreg);
+                    }
+                }
+            }
+        }
+    }
+
+    // 伪指令变成非伪指令
+    {
+        auto func=ctx.GetCurFunction();
+        for(auto block:*func){
+            for(auto it=block->begin();it!=block->end();){
+                auto inst=*it;
+                auto opcode=inst->GetOpcode();
+                switch (opcode)
+                {
+                case RISCVMIR::LoadGlobalAddr:
+                {
+                    // reg = LoadGlobalAddr globalvar
+                    // lui reg, %hi(globalvar)
+                    // addi reg, reg, %lo(globalvar)
+                    auto glob=inst->GetOperand(0)->as<globlvar>();
+                    assert(glob!=nullptr);
+                    auto name=glob->GetName();
+                    auto hi=new LARegister(riscv_ptr,name,LARegister::hi);
+                    auto lo=new LARegister(riscv_ptr,name,LARegister::lo);
+                    auto reg=inst->GetDef()->as<PhyRegister>();
+                    assert(reg!=nullptr);
+                    RISCVMIR* lui=new RISCVMIR(RISCVMIR::_lui);
+                    lui->SetDef(reg);
+                    lui->AddOperand(hi);
+                    RISCVMIR* addi=new RISCVMIR(RISCVMIR::_addi);
+                    addi->SetDef(reg);
+                    addi->AddOperand(reg);
+                    addi->AddOperand(lo);
+                    it.insert_before(lui);
+                    it.insert_before(addi);
+                    it=mylist<RISCVBasicBlock,RISCVMIR>::iterator(addi);
+                    delete inst;
+                    break;
+                }
+                case RISCVMIR::LoadLocalAddr:
+                {
+                    // reg = LoadLocalAddr frameobj
+                    // addi reg, s0, offset
+                    auto frameobj=inst->GetOperand(0)->as<RISCVFrameObject>();
+                    auto stackreg=frameobj->GetStackReg();
+                    auto reg=inst->GetDef()->as<PhyRegister>();
+                    assert(reg!=nullptr);
+                    RISCVMIR* addi=new RISCVMIR(RISCVMIR::_addi);
+                    addi->SetDef(reg);
+                    addi->AddOperand(stackreg->GetReg());
+                    addi->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(stackreg->GetOffset())));
+                    break;
+                }
+                case RISCVMIR::LoadImm2Reg:
+                {
+                    // 整数，直接换成li
+                    // 浮点数，使用的是floatvar
+                    // floatvar->Getname();
+                    auto tempfloat=inst->GetOperand(0)->as<tempvar>();
+                    if(tempfloat!=nullptr){
+                        std::string name = tempfloat->Getname();
+                        PhyRegister* lui_rd = PhyRegister::GetPhyReg(PhyRegister::t0);
+                        LARegister* lui_rs = new LARegister(RISCVType::riscv_ptr, name);
+                        PhyRegister* flw_rd = inst->GetDef()->as<PhyRegister>();
+                        LARegister* flw_rs = new LARegister(RISCVType::riscv_ptr, name, lui_rd);
+
+                        RISCVMIR* lui = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
+                        lui->SetDef(lui_rd);
+                        lui->AddOperand(lui_rs);
+
+                        RISCVMIR* flw = new RISCVMIR(RISCVMIR::RISCVISA::_flw);
+                        flw->SetDef(flw_rd);
+                        flw->AddOperand(flw_rs);
+
+                        it.insert_before(lui);
+                        it.insert_before(flw);
+                        it=mylist<RISCVBasicBlock,RISCVMIR>::iterator(flw);
+                        delete inst;
+                        break;
+                    }
+                    else{
+                        inst->SetMopcode(RISCVMIR::li);
+                    }
+                }
+                default:
+                    break;
+                }
+                ++it;
+            }
+        }
+    }
+
     // Legalize StackReg and StackReg in FrameObj outof memory inst
     // Offset Legalize of StackReg and StackReg in FrameObj
 
