@@ -307,19 +307,6 @@ void RISCVFrame::GenerateFrame() {
         int off = 0 - (int)(obj->GetBeginAddOff());
         obj->GenerateStackRegister(off);
     }
-
-    // Replace BegAddrRegister to Imm for the LegalConst pass is useful.
-    for(auto block: *parent) {
-        for(auto inst: *block) {
-            if(inst->GetOperandSize()==2) {
-                if(BegAddrRegister* breg = dynamic_cast<BegAddrRegister*>(inst->GetOperand(1))) {
-                    int bregin_address = static_cast<int>(breg->GetFrameObj()->GetBeginAddOff()); 
-                    Imm* imm = new Imm(ConstIRInt::GetNewConstant(0-bregin_address));
-                    inst->SetOperand(1,imm);
-                }
-            }
-        }
-    }
 }
 
 void RISCVFrame::GenerateFrameHead() {

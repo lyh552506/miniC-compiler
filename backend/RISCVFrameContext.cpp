@@ -72,18 +72,6 @@ void RISCVFrameObject::print(){
     reg->print();
 }
 
-BegAddrRegister::BegAddrRegister(RISCVFrameObject* _frameobj)
-    : Register(riscv_i32), frameobj(_frameobj) {}
-
-// BegAddrRegister::BegAddrRegister(size_t offset)
-//     : Register(riscv_i32), frameobj(nullptr) {}
-
-void BegAddrRegister::print() {
-    // should be the minus of the begin address
-  std::cout << "-" << frameobj->GetBeginAddOff();
-}
-
-
 StackRegister::StackRegister(RISCVFrameObject* obj, PhyRegister::PhyReg _regenum, int _offset)
     : Register(riscv_ptr), offset(_offset), parent(obj) {
   reg = PhyRegister::GetPhyReg(_regenum);
