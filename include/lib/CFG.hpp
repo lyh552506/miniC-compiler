@@ -310,6 +310,8 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void InsertBlock(BasicBlock* curr,BasicBlock* insert);
     void init_visited_block();
     void init_reach_block();
+    bool MemWrite();
+    bool MemRead();
     int bb_num=0;
     bool HasSideEffect = false;
 };

@@ -74,7 +74,7 @@ void Initializer::print() {
 
 AllocaInst::AllocaInst(std::string str, Type *_tp)
     : User(PointerType::NewPointerTypeGet(_tp)) {
-      id = OpID::Alloca;
+  id = OpID::Alloca;
   // name=str;
   // name+="_";
   // name+=std::to_string(Singleton<Module>().IR_number(str));
@@ -169,7 +169,10 @@ void FPTSI::print() {
   std::cout << "\n";
 }
 
-FPTSI::FPTSI(Operand __src) : User(IntType::NewIntTypeGet()) { add_use(__src); id = OpID::FP2SI; }
+FPTSI::FPTSI(Operand __src) : User(IntType::NewIntTypeGet()) {
+  add_use(__src);
+  id = OpID::FP2SI;
+}
 
 FPTSI *FPTSI::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<FPTSI>(this, mapping);
@@ -200,7 +203,10 @@ SITFP::SITFP(Operand __src) : User(FloatType::NewFloatTypeGet()) {
 
 Operand UnCondInst::GetDef() { return nullptr; }
 
-UnCondInst::UnCondInst(BasicBlock *__des) { add_use(__des); id = OpID::UnCond; }
+UnCondInst::UnCondInst(BasicBlock *__des) {
+  add_use(__des);
+  id = OpID::UnCond;
+}
 
 UnCondInst *UnCondInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<UnCondInst>(this, mapping);
@@ -279,9 +285,12 @@ void CallInst::print() {
   std::cout << ")\n";
 }
 
-RetInst::RetInst() {id = OpID::Ret;}
+RetInst::RetInst() { id = OpID::Ret; }
 
-RetInst::RetInst(Operand op) { add_use(op);id = OpID::Ret; }
+RetInst::RetInst(Operand op) {
+  add_use(op);
+  id = OpID::Ret;
+}
 
 RetInst *RetInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<RetInst>(this, mapping);
@@ -523,7 +532,10 @@ bool Variable::isGlobal() {
     return true;
 }
 
-GetElementPtrInst::GetElementPtrInst(Operand base_ptr) { add_use(base_ptr); id = OpID::Gep; }
+GetElementPtrInst::GetElementPtrInst(Operand base_ptr) {
+  add_use(base_ptr);
+  id = OpID::Gep;
+}
 
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr,
                                      std::vector<Operand> &args) {
@@ -804,7 +816,10 @@ void Function::print() {
   std::cout << "}\n";
 }
 
-void Function::push_bb(BasicBlock *bb) { bbs.push_back(bb);push_back(bb); }
+void Function::push_bb(BasicBlock *bb) {
+  bbs.push_back(bb);
+  push_back(bb);
+}
 
 void Function::InsertAlloca(AllocaInst *ptr) { front()->push_back(ptr); }
 
@@ -1343,10 +1358,24 @@ void Function::add_block(BasicBlock *bb) { push_back(bb); }
 
 std::vector<std::unique_ptr<Value>> &Function::GetParams() { return params; }
 
-// void Module::visit(std::function<void(Function*)> call_back){
-//     for(auto&i:ls)
-//         call_back(i.get());
-// }
+bool Function::MemWrite() {
+  for (auto bb : *this)
+    for (auto inst : *bb) {
+      if (dynamic_cast<StoreInst *>(inst))
+        return true;
+    }
+  return false;
+}
+
+bool Function::MemRead() {
+  for (auto bb : *this)
+    for (auto inst : *bb) {
+      if (dynamic_cast<LoadInst *>(inst) ||
+          dynamic_cast<GetElementPtrInst *>(inst))
+        return true;
+    }
+  return false;
+}
 void Module::Test() {
   for (auto &i : globalvaribleptr)
     i->print();

@@ -164,13 +164,16 @@ bool LICMPass::CanBeMove(LoopInfo *curloop, User *I) {
     return HaveSideEffect;
   } else if (dynamic_cast<StoreInst *>(I)) {
     return false;
+  } else if (dynamic_cast<PhiInst *>(I)) {
+    return false;
   } else if (auto call = dynamic_cast<CallInst *>(I)) {
+    auto target_func = dynamic_cast<Function *>(call->GetOperand(0));
     if (call->HasSideEffect())
       return false;
-    auto func = dynamic_cast<Function *>(call->GetOperand(0));
-    for (auto &params : func->GetParams()) {
-      
-    }
+    if (target_func->MemRead())
+      return false;
+    if (target_func->MemWrite())
+      return false;
   } else if (dynamic_cast<BinaryInst *>(I)) {
     return true;
   } else if (auto gep = dynamic_cast<GetElementPtrInst *>(I)) {
@@ -184,6 +187,8 @@ bool LICMPass::CanBeMove(LoopInfo *curloop, User *I) {
           continue;
 
         HaveSideEffect |= !CanBeMove(curloop, user);
+        if (HaveSideEffect)
+          return false;
       }
     }
     return HaveSideEffect;
