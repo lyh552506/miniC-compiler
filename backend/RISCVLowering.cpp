@@ -43,11 +43,9 @@ bool RISCVFunctionLowering::run(Function* m){
     PhiElimination phi(ctx);
     phi.run(m);
 
-    // 打印头部
     asmprinter->SetTextSegment(new textSegment(ctx));
-    // 只读数据段的打印， 同时legalize浮点数
     asmprinter->GetData()->GenerateTempvarList(ctx);
-    asmprinter->GetData()->LegalizeGloablVar(ctx);
+    // asmprinter->GetData()->LegalizeGloablVar(ctx);
 
     Legalize legal(ctx);
     // legal.run_beforeRA();

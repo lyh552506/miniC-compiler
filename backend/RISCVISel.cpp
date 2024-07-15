@@ -335,7 +335,7 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
             // addi newreg, normal, offset
             if(offset!=0){
                 auto newreg=ctx.createVReg(RISCVType::riscv_ptr);
-                ctx(Builder(RISCVMIR::_addi,{newreg,normal,Imm::GetImm(ConstSize_t::GetNewConstant(offset))})); 
+                ctx(Builder(RISCVMIR::_addi,{newreg,normal,Imm::GetImm(ConstIRInt::GetNewConstant(offset))})); 
                 ctx.insert_val2mop(inst,newreg);
             }
             else ctx.insert_val2mop(inst,normal);
@@ -346,7 +346,7 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
             auto newreg=ctx.createVReg(RISCVType::riscv_ptr);
             ctx(Builder(RISCVMIR::_add,{newreg,normal,vreg}));
             if(offset!=0)
-                ctx(Builder(RISCVMIR::_addi,{newreg,newreg,Imm::GetImm(ConstSize_t::GetNewConstant(offset))}));
+                ctx(Builder(RISCVMIR::_addi,{newreg,newreg,Imm::GetImm(ConstIRInt::GetNewConstant(offset))}));
             ctx.insert_val2mop(inst,newreg);
         }
     }
