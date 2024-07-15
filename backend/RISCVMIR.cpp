@@ -66,11 +66,12 @@ VirRegister* RISCVFunction::GetUsedGlobalMapping(RISCVMOperand* val) {
         VirRegister* vreg = new VirRegister(riscv_ptr);
         usedGlobals[val] = vreg;
         // Push into the entry block
-        auto enrtyblock=front();
+        // FIXME: Currently we put it before the copy of the lowering local arguments.
+        auto entryblock=front();
         auto mir=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
         mir->SetDef(vreg);
         mir->AddOperand(val);
-        enrtyblock->push_before_branch(mir);
+        entryblock->push_front(mir);
     }
     return usedGlobals[val];
 }
