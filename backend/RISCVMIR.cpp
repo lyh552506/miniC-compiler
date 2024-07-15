@@ -60,6 +60,21 @@ void RISCVMIR::printfull(){
     } 
 }
 
+VirRegister* RISCVFunction::GetUsedGlobalMapping(RISCVMOperand* val) {
+    // assert it is a globalvar here?
+    if(usedGlobals.find(val)==usedGlobals.end()) {
+        VirRegister* vreg = new VirRegister(riscv_ptr);
+        usedGlobals[val] = vreg;
+        // Push into the entry block
+        auto enrtyblock=front();
+        auto mir=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
+        mir->SetDef(vreg);
+        mir->AddOperand(val);
+        enrtyblock->push_before_branch(mir);
+    }
+    return usedGlobals[val];
+}
+
 std::unique_ptr<RISCVFrame>& RISCVFunction::GetFrame() {
     return frame;
 }

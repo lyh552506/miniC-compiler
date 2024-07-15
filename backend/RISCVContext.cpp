@@ -51,6 +51,11 @@ void RISCVLoweringContext::change_mapping(RISCVMOperand* old, RISCVMOperand* new
 }
 
 RISCVMOperand* RISCVLoweringContext::mapping(Value* val){
+    // If the value is a global value, we should refer to the local version.
+    if(cur_func!=nullptr&&val->isGlobal()){
+        assert(val2mop.find(val)!=val2mop.end());
+        return cur_func->GetUsedGlobalMapping(val2mop[val]);
+    }
     if(val2mop.find(val)==val2mop.end())
         val2mop[val]=Create(val);
     return val2mop[val];

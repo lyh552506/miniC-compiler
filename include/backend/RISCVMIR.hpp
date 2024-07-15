@@ -171,6 +171,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         call,
         ret,
         li,
+        LoadGlobalAddr,
 
         // LocalVariableAddr <- MOperand, no register allocation
         //                      change after RA, use at most one temparary register
@@ -234,7 +235,10 @@ class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBa
     size_t max_param_size=0;
     /// @brief save the index of the params of func's paramlist that should be spilled
     std::vector<int> param_need_spill;
+
+    std::unordered_map<RISCVMOperand*,VirRegister*> usedGlobals;
     public:
+    VirRegister* GetUsedGlobalMapping(RISCVMOperand*);
     RISCVFunction(Value*);
     RISCVframe& GetFrame();
     size_t GetMaxParamSize();
