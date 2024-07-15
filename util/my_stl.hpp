@@ -4,9 +4,9 @@
 #include <vector>
 ///@brief 自定义宏，更加方便，需要什么自己加
 
-#define SDOM(x) node[x].sdom        //获取x对应结点的sdom
-#define MIN_SDOM(x) dsu[x].min_sdom //获取结点最近的sdom的index
-#define IDOM(x) node[x].idom        //获取结点的idom
+#define SDOM(x) node[x].sdom        // 获取x对应结点的sdom
+#define MIN_SDOM(x) dsu[x].min_sdom // 获取结点最近的sdom的index
+#define IDOM(x) node[x].idom        // 获取结点的idom
 
 #ifdef DEBUG
 #define _DEBUG(x) x
@@ -69,14 +69,20 @@ template <typename T> T PopBack(std::vector<T> &vec) {
   return tmp;
 }
 
-#define PassBegin(curfunc)                        \
-    for (auto &func : module->GetFuncTion()) {    \
-      curfunc = func.get();                       \
-      curfunc->bb_num = 0;                        \
-      curfunc->GetBasicBlock().clear();           \
-      for (auto bb : *curfunc) {                  \
-        bb->num = curfunc->bb_num++;              \
-        curfunc->GetBasicBlock().push_back(bb);   \
-      }                                           \
+#define PassChangedBegin(curfunc)                                              \
+  for (auto &func : module->GetFuncTion()) {                                   \
+    curfunc = func.get();                                                      \
+    curfunc->bb_num = 0;                                                       \
+    curfunc->GetBasicBlock().clear();                                          \
+    for (auto bb : *curfunc) {                                                 \
+      bb->num = curfunc->bb_num++;                                             \
+      curfunc->GetBasicBlock().push_back(bb);                                  \
+    }
 
-#define PassEnd }
+#define PassChangedEnd }
+
+#define RunLevelPass(PassName, curfunc, changed)                               \
+  for (auto &func : module->GetFuncTion()) {                                   \
+    curfunc = func.get();                                                      \
+    changed |= RunImpl<PassName>(curfunc, AM);                                 \
+  }

@@ -16,7 +16,7 @@ bool LoopSimplify::Run() {
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
     changed |= SimplifyLoopsImpl(*iter);
-  return true;
+  return false;
 }
 
 bool LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {
