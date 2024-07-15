@@ -192,15 +192,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         // LocalVariable can do this too, but not necessary 
         LoadGlobalAddr,
-        // final_addr = baseptr + gep_offset
-        // baseptr = s0 + const_offset
-        // vreg=AddLocalOffset(gep_offset,frameobj)
-        // =>
-        // vreg = s0 + gep_offset
-        // addi vreg vreg const_offset
-        // li t0 illegal_offset
-        // add vreg vreg t0
-        AddLocalOffset,
+        LoadLocalAddr,
         LoadROFloat32,
         EndMIRPseudo,
     }opcode;

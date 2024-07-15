@@ -5,6 +5,11 @@ RISCVMOperand* RISCVLoweringContext::Create(Value* val){
         if(auto alloca=dynamic_cast<AllocaInst*>(inst)){
             auto& frameobjs=cur_func->GetFrame()->GetFrameObjs();
             frameobjs.emplace_back(new RISCVFrameObject(inst));
+            auto subtype=dynamic_cast<HasSubType*>(inst->GetType())->GetSubType();
+            if(dynamic_cast<ArrayType*>(subtype)){
+                // 是个数组，加载首地址到一个虚拟寄存器
+                return cur_func->GetUsedGlobalMapping(frameobjs.back().get());
+            }
             return frameobjs.back().get(); 
         }
         else if(auto store=dynamic_cast<StoreInst*>(inst))

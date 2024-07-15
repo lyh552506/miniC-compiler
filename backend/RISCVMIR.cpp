@@ -64,10 +64,15 @@ VirRegister* RISCVFunction::GetUsedGlobalMapping(RISCVMOperand* val) {
     if(usedGlobals.find(val)==usedGlobals.end()) {
         VirRegister* vreg = nullptr;
         RISCVMIR* mir=nullptr;
-        // 浮点常量 
+        // 常量 
         if(val->as<Imm>()){
             vreg=new VirRegister(riscv_float32);
             mir=new RISCVMIR(RISCVMIR::LoadROFloat32);
+        }
+        // 局部变量(数组)
+        else if(val->as<RISCVFrameObject>()){
+            vreg=new VirRegister(riscv_ptr);
+            mir=new RISCVMIR(RISCVMIR::LoadLocalAddr);
         }
         // 全局变量
         else{

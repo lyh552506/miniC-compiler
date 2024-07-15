@@ -340,44 +340,11 @@ void RISCVISel::InstLowering(BinaryInst* inst){
 
 void RISCVISel::InstLowering(GetElementPtrInst* inst){
     #define M(x) ctx.mapping(x)
-    // cast it to multiple add and mul first 
-    /// @todo 循环不变量外提很重要了这里，之后会做一个循环不变量外提的优化
     int limi=inst->Getuselist().size();
-    auto baseptr=M(inst->GetOperand(0));
     auto hasSubtype=dynamic_cast<HasSubType*>(inst->GetOperand(0)->GetType());
     size_t offset=0;
-    using PhyReg=PhyRegister::PhyReg;
-    using ISA = RISCVMIR::RISCVISA;
-    PhyRegister* s0 = PhyRegister::GetPhyReg(PhyReg::s0);
-    // PhyRegister* t0 = PhyRegister::GetPhyReg(PhyReg::t0);
-    VirRegister* vreg= new VirRegister(RISCVType::riscv_i32);
-    PhyRegister* zero = PhyRegister::GetPhyReg(PhyReg::zero);
-    RISCVMIR* inst1 = nullptr;
-    if(RISCVFrameObject* frameobj = dynamic_cast<RISCVFrameObject*>(baseptr)) {
-        // addi .1 s0 beginaddregister
-        inst1 = new RISCVMIR(ISA::_addi);
-        BegAddrRegister* breg1 = new BegAddrRegister(frameobj);
-        inst1->SetDef(vreg);
-        inst1->AddOperand(s0);
-        inst1->AddOperand(breg1);
-        ctx(inst1);
-    }
-    else if (RISCVGlobalObject* globl = dynamic_cast<RISCVGlobalObject*>(baseptr)) {
-        inst1 = new RISCVMIR(ISA::_add);
-        inst1->SetDef(vreg);
-        inst1->AddOperand(zero);
-        inst1->AddOperand(baseptr);
-        ctx(inst1);
-    }
-    else {
-        // add .1 s0, .x
-        inst1 = new RISCVMIR(ISA::_add);
-        inst1->SetDef(vreg);
-        // inst1->AddOperand(s0);
-        inst1->AddOperand(zero);
-        inst1->AddOperand(baseptr);
-        ctx(inst1);
-    }
+
+    VirRegister* vreg=nullptr;
 
     for(int i=1;i<limi;i++){
         // just make sure
@@ -390,50 +357,42 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
             else assert("?Impossible Here");
         }
         else{
-            // mul and add inst to compute to offset.
-            // li .1 imm
-            // mul .2 .x .1
-            ConstIRInt* _size = ConstIRInt::GetNewConstant(int(size)); 
-            auto li=Builder(RISCVMIR::li,{ctx.createVReg(RISCVType::riscv_i32), Imm::GetImm(_size)});
+            ConstSize_t* _size = ConstSize_t::GetNewConstant(size); 
+            auto li=Builder(RISCVMIR::li,{ctx.createVReg(RISCVType::riscv_ptr), Imm::GetImm(_size)});
             ctx(li);
             auto mul=Builder(RISCVMIR::_mulw,{ctx.createVReg(RISCVType::riscv_ptr),M(index), li->GetDef()});
             ctx(mul);
-            // add .base .base .2
-            ctx(Builder(RISCVMIR::_add,{inst1->GetDef(),inst1->GetDef(),mul->GetDef()}));
+            if(vreg!=nullptr){
+                auto newreg=ctx.createVReg(RISCVType::riscv_ptr);
+                ctx(Builder(RISCVMIR::_add,{newreg,vreg,mul->GetDef()}));
+                vreg=newreg;
+            }
+            else vreg=mul->GetDef()->as<VirRegister>();
         }
         hasSubtype=dynamic_cast<HasSubType*>(hasSubtype->GetSubType());
     }
     #undef M
-
-    StackRegister* stackreg = nullptr;
-    stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
-    // stackreg = new StackRegister(dynamic_cast<PhyRegister*>(inst1->GetDef())->Getregenum(), offset);
-    
-    // if (RISCVGlobalObject* globl = dynamic_cast<RISCVGlobalObject*>(baseptr)) {
-    //     stackreg = new StackRegister(PhyRegister::t0, offset);
-    // }
-    // else {
-    //     stackreg = new StackRegister(dynamic_cast<PhyRegister*>(inst1->GetDef())->Getregenum(), offset);
-    // }
-
-    /// @details Legalize StackRegister's offset togeter in LegalizePass
-    // if(offset <= 2047) {
-    //     stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), offset);
-    // }
-    // else if(offset >2047) {
-    //     int mod = offset % 2047;
-    //     offset-=mod;
-    //     VirRegister* vreg2 = ctx.createVReg(riscv_i32);
-    //     Imm* imm2 = new Imm(ConstIRInt::GetNewConstant(offset));
-    //     auto inst2=Builder(ISA::_addi, {vreg2,vreg2, imm2});
-    //     ctx(inst2);
-
-    //     stackreg = new StackRegister(dynamic_cast<VirRegister*>(inst1->GetDef()), mod);
-    // }
-    // else assert(0&&"error offset in GetElement inst");
-
-    // replace the GetElementptr inst with stackreg (off(.1))
-    ctx.change_mapping(ctx.mapping(inst->GetDef()), stackreg);
+    if(auto normal=ctx.mapping(inst->GetOperand(0))->as<VirRegister>()){
+        if(vreg==nullptr){
+            // addi newreg, normal, offset
+            if(offset!=0){
+                auto newreg=ctx.createVReg(RISCVType::riscv_ptr);
+                ctx(Builder(RISCVMIR::_addi,{newreg,normal,Imm::GetImm(ConstSize_t::GetNewConstant(offset))})); 
+                ctx.insert_val2mop(inst,newreg);
+            }
+            else ctx.insert_val2mop(inst,normal);
+        }
+        else{
+            // add newreg, normal, vreg
+            // addi vreg offset
+            auto newreg=ctx.createVReg(RISCVType::riscv_ptr);
+            ctx(Builder(RISCVMIR::_add,{newreg,normal,vreg}));
+            if(offset!=0)
+                ctx(Builder(RISCVMIR::_addi,{newreg,newreg,Imm::GetImm(ConstSize_t::GetNewConstant(offset))}));
+            ctx.insert_val2mop(inst,newreg);
+        }
+    }
+    else assert(0);
 }
 
 void RISCVISel::InstLowering(PhiInst* inst){
