@@ -48,7 +48,7 @@ void Legalize::run() {
                     auto name=glob->GetName();
                     auto hi=new LARegister(riscv_ptr,name,LARegister::hi);
                     auto lo=new LARegister(riscv_ptr,name,LARegister::lo);
-                    auto reg=inst->GetDef()->as<PhyRegister>();
+                    auto reg=inst->GetDef()->as<Register>();
                     assert(reg!=nullptr);
                     RISCVMIR* lui=new RISCVMIR(RISCVMIR::_lui);
                     lui->SetDef(reg);
@@ -69,15 +69,18 @@ void Legalize::run() {
                     // addi reg, s0, offset
                     auto frameobj=inst->GetOperand(0)->as<RISCVFrameObject>();
                     auto stackreg=frameobj->GetStackReg();
-                    auto reg=inst->GetDef()->as<PhyRegister>();
+                    auto reg=inst->GetDef()->as<Register>();
                     assert(reg!=nullptr);
                     RISCVMIR* addi=new RISCVMIR(RISCVMIR::_addi);
                     addi->SetDef(reg);
                     addi->AddOperand(stackreg->GetReg());
                     addi->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(stackreg->GetOffset())));
+                    it.insert_before(addi);
+                    it=mylist<RISCVBasicBlock,RISCVMIR>::iterator(addi);
+                    delete inst;
                     break;
                 }
-                case RISCVMIR::LoadImm2Reg:
+                case RISCVMIR::LoadImmReg:
                 {
                     // 整数，直接换成li
                     // 浮点数，使用的是floatvar
@@ -87,7 +90,7 @@ void Legalize::run() {
                         std::string name = tempfloat->Getname();
                         PhyRegister* lui_rd = PhyRegister::GetPhyReg(PhyRegister::t0);
                         LARegister* lui_rs = new LARegister(RISCVType::riscv_ptr, name);
-                        PhyRegister* flw_rd = inst->GetDef()->as<PhyRegister>();
+                        Register* flw_rd = inst->GetDef()->as<Register>();
                         LARegister* flw_rs = new LARegister(RISCVType::riscv_ptr, name, lui_rd);
 
                         RISCVMIR* lui = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
@@ -383,6 +386,7 @@ void Legalize::constintLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterat
         mir->AddOperand(constdata);
         it.insert_before(mir);
         inst->SetOperand(i, PhyRegister::GetPhyReg(PhyRegister::t0));
+        MOpcodeLegalize(inst);
         // int mod = inttemp % 4096;
         // if(mod==0) {
         //     if(inst->GetOpcode() == RISCVMIR::RISCVISA::li) {

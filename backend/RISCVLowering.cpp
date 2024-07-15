@@ -52,7 +52,7 @@ bool RISCVFunctionLowering::run(Function* m){
 
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
-    // regalloc.RunGCpass();
+    regalloc.RunGCpass();
 
     // Generate Frame of current Function
     // And generate the head and tail of frame here

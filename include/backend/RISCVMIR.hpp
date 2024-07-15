@@ -192,8 +192,8 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         // LocalVariable can do this too, but not necessary 
         LoadGlobalAddr,
+        LoadImmReg,
         LoadLocalAddr,
-        LoadImm2Reg,
         EndMIRPseudo,
     }opcode;
     /// @note def in the front while use in the back

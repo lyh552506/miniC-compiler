@@ -490,11 +490,13 @@ void RISCVISel::InstLowering(RetInst* inst){
         ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
         auto minst=new RISCVMIR(RISCVMIR::ret);
         minst->AddOperand(PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0));
+        ctx(minst);
     }
     else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==FloatType::NewFloatTypeGet()) {
         ctx(Builder(RISCVMIR::_fmv_s,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0),M(inst->GetOperand(0))}));
         auto minst=new RISCVMIR(RISCVMIR::ret);
         minst->AddOperand(PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0));
+        ctx(minst);
     }
     else 
         assert(0&&"Invalid return type");
