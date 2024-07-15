@@ -65,9 +65,9 @@ VirRegister* RISCVFunction::GetUsedGlobalMapping(RISCVMOperand* val) {
         VirRegister* vreg = nullptr;
         RISCVMIR* mir=nullptr;
         // 常量 
-        if(val->as<Imm>()){
-            vreg=new VirRegister(riscv_float32);
-            mir=new RISCVMIR(RISCVMIR::LoadROFloat32);
+        if(auto imm=val->as<Imm>()){
+            vreg=new VirRegister(imm->GetType());
+            mir=new RISCVMIR(RISCVMIR::LoadImm2Reg);
         }
         // 局部变量(数组)
         else if(val->as<RISCVFrameObject>()){
