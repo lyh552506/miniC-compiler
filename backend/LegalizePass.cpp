@@ -198,22 +198,20 @@ void Legalize::OffsetLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::iterator
         return;
     }
     else {
-        int mod = offset%2047;
-        offset = offset - mod;
-        RISCVMIR* addi = new RISCVMIR(RISCVMIR::_addi);
-        // VirRegister* vreg = ctx.createVReg(riscv_ptr);
-        PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
-        Imm* imm = new Imm(ConstIRInt::GetNewConstant(offset));
-        // addi->SetDef(vreg);
-        addi->SetDef(t0);
-        addi->AddOperand(sreg->GetReg());
-        addi->AddOperand(imm);
-        it.insert_before(addi);
+        RISCVMIR* li = new RISCVMIR(RISCVMIR::li);
+        li->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(offset)));
+        li->SetDef(PhyRegister::GetPhyReg(PhyRegister::t0));
 
-        StackRegister* newStackReg = new StackRegister(dynamic_cast<PhyRegister*>(addi->GetDef())->Getregenum(), mod);
+        RISCVMIR* add = new RISCVMIR(RISCVMIR::_add);
+        add->AddOperand(li->GetDef());
+        add->AddOperand(sreg->GetReg());
+        add->SetDef(PhyRegister::GetPhyReg(PhyRegister::t0));
+
+        it.insert_before(li);
+        it.insert_before(add);
+
+        StackRegister* newStackReg = new StackRegister(PhyRegister::t0,0);
         inst->SetOperand(i, newStackReg);
-        // sreg->SetOffset(mod);
-        // sreg->SetReg(dynamic_cast<Register*>(addi->GetDef()));
     } 
 }
 
