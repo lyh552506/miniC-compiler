@@ -22,6 +22,8 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _slliw,
         _srl,
         _srli,
+        _srlw,
+        _srliw,
         // shift right arithmetic
         _sra,
         _srai,
