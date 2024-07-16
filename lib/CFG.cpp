@@ -501,10 +501,10 @@ Variable::Variable(UsageTag tag, Type *_tp, std::string _id)
 }
 
 Value *Variable::clone(std::unordered_map<Operand, Operand> &mapping) {
-  if(this->usage == Variable::Constant || this->usage == Variable::GlobalVariable )
+  if (this->usage == Variable::Constant ||
+      this->usage == Variable::GlobalVariable)
     return this;
-  else
-  {
+  else {
     assert(mapping.find(this) != mapping.end() && "variable not copied!");
     return mapping[this];
   }
@@ -1136,7 +1136,7 @@ BasicBlock *BasicBlock::clone(std::unordered_map<Operand, Operand> &mapping) {
   auto tmp = new BasicBlock();
   mapping[this] = tmp;
   for (auto i : (*this))
-    tmp->push_back(dynamic_cast<User*>(i->clone(mapping)));
+    tmp->push_back(dynamic_cast<User *>(i->clone(mapping)));
   return tmp;
 }
 
@@ -1408,6 +1408,22 @@ void Module::EraseFunction(Function *func) {
       break;
     }
   }
+}
+
+bool Module::EraseDeadFunc() {
+  std::vector<Function *> erase;
+  bool changed = false;
+  for (auto &func : ls) {
+    if (func->GetUserListSize() == 0) {
+      erase.push_back(func.get());
+      changed = true;
+    }
+  }
+  if (!erase.empty())
+    for (auto func : erase) {
+      EraseFunction(func);
+    }
+  return changed;
 }
 
 Function *Module::GetMainFunction() {

@@ -333,5 +333,6 @@ class Module:public SymbolTable
     std::vector<GlobalVariblePtr>& GetGlobalVariable();
     void Test();
     void EraseFunction(Function* func);
+    bool EraseDeadFunc();
     Function* GetMainFunction();
 };
