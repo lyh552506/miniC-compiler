@@ -60,12 +60,15 @@ void RISCVMIR::printfull(){
     } 
 }
 
-VirRegister* RISCVFunction::GetUsedGlobalMapping(RISCVMOperand* val) {
+Register* RISCVFunction::GetUsedGlobalMapping(RISCVMOperand* val) {
     if(usedGlobals.find(val)==usedGlobals.end()) {
         VirRegister* vreg = nullptr;
         RISCVMIR* mir=nullptr;
         // 常量 
         if(auto imm=val->as<Imm>()){
+            if(auto immi32=imm->Getdata()->as<ConstIRInt>())
+                if(immi32->GetVal()==0)
+                    return PhyRegister::GetPhyReg(PhyRegister::zero);
             vreg=new VirRegister(imm->GetType());
             mir=new RISCVMIR(RISCVMIR::LoadImmReg);
         }

@@ -482,6 +482,7 @@ void Legalize::MOpcodeLegalize(RISCVMIR* inst) {
     using ISA = RISCVMIR::RISCVISA;
     ISA& opcode = inst->GetOpcode();
     if(opcode == ISA::_slli) inst->SetMopcode(ISA::_sll);
+    else if(opcode == ISA::_slliw) inst->SetMopcode(ISA::_sllw);
     else if(opcode == ISA::_srli) inst->SetMopcode(ISA::_srl);
     else if(opcode == ISA::_srai) inst->SetMopcode(ISA::_sra);
     else if(opcode == ISA::_addi) inst->SetMopcode(ISA::_add);
@@ -499,6 +500,7 @@ void Legalize::MOpcodeLegalize(RISCVMIR* inst) {
 bool Legalize::isImminst(RISCVMIR::RISCVISA opcode)
 {
     if(opcode == RISCVMIR::_slli ||
+       opcode == RISCVMIR::_slliw ||
        opcode == RISCVMIR::_srli ||
        opcode == RISCVMIR::_srai ||
        opcode == RISCVMIR::_addi ||
