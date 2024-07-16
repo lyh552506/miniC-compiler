@@ -3,10 +3,17 @@
 #include <cassert>
 #include <vector>
 
-#include "../../include/lib/CFG.hpp"
-#include "../../include/ir/opt/PassManagerBase.hpp"
 #include "../../include/ir/Analysis/dominant.hpp"
+#include "../../include/ir/opt/PassManagerBase.hpp"
+#include "../../include/lib/CFG.hpp"
 #include "../../util/my_stl.hpp"
+
+struct LoopTrait {
+  Value *boundary = nullptr;
+  Value *initial = nullptr;
+  int step = 0;
+  PhiInst *indvar = nullptr; // eg: i++
+};
 
 class LoopInfo {
 public:
@@ -33,8 +40,6 @@ public:
   }
   BasicBlock *GetHeader() { return Header; }
   LoopInfo *GetParent() { return Parent; }
-
-  bool IsLoopIntTp() { return IsInt; }
   int GetLoopDepth() { return LoopDepth; }
   int LoopBodyNum() { return ContainBlocks.size(); }
   void InsertLoopBody(BasicBlock *bb) { PushVecSingleVal(ContainBlocks, bb); }
@@ -43,10 +48,6 @@ public:
   void AddLoopDepth(int depth) { LoopDepth += depth; }
   bool IsVisited() { return visited; }
   void setVisited(bool v) { visited = v; }
-  void setLoopFpTp() { IsInt = false; }
-  void setBound(float b) { boundary = b; };
-  void setInitial(float init) { initial = init; }
-  void setStep(float st) { step = st; }
   bool Contain(BasicBlock *bb);
   bool Contain(LoopInfo *loop);
   iterator begin() { return SubLoops.begin(); }
@@ -60,6 +61,7 @@ public:
     LoopDepth = 0;
   }
   int RotateTimes = 0;
+  LoopTrait trait;
 
 private:
   BasicBlock *Header = nullptr;
@@ -73,10 +75,6 @@ private:
   int LoopDepth = 0;    //嵌套深度
   bool visited = false; //辅助
   bool CanUnroll = false;
-  bool IsInt = true;
-  float boundary = 0;
-  float initial = 0;
-  float step = 0;
 };
 
 class LoopAnalysis : public _AnalysisManagerBase<LoopAnalysis, Function> {
