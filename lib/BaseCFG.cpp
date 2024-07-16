@@ -134,7 +134,7 @@ void User::add_use(Value *__data) {
 
 User::User() : Value(VoidType::NewVoidTypeGet()) {}
 
-User *User::clone(std::unordered_map<Operand, Operand> &mapping) {
+Value *User::clone(std::unordered_map<Operand, Operand> &mapping) {
   // this method is responsible for copying uselist
   assert(mapping.find(this) != mapping.end() && "User not copied!");
   auto to = dynamic_cast<User *>(mapping[this]);

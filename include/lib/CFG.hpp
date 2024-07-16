@@ -63,6 +63,7 @@ class Variable:public User
         }
         return uselist[0]->usee;
     };
+    virtual Value* clone(std::unordered_map<Operand,Operand>&) override;
 };
 
 class UndefValue:public ConstantData{

@@ -163,7 +163,7 @@ class User:public Value,public list_node<BasicBlock,User>
     virtual ~User()=default;
     User();
     User(Type* tp);
-    virtual User* clone(std::unordered_map<Operand,Operand>&)override;
+    virtual Value* clone(std::unordered_map<Operand,Operand>&)override;
     virtual Operand GetDef();
     void ClearRelation();//在EraseFromBasic()前调用
     bool IsTerminateInst();

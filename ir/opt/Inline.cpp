@@ -165,7 +165,6 @@ void Inliner::Inline(Module* m) {
     BasicBlock::mylist<Function, BasicBlock>::iterator Block_Pos(block);
     Block_Pos.insert_after(SplitBlock);
     ++Block_Pos;
-
     std::vector<BasicBlock *> blocks = CopyBlocks(inst);
     UnCondInst *Br = new UnCondInst(blocks[0]);
     block->push_back(Br);
@@ -223,8 +222,7 @@ std::vector<BasicBlock *> Inliner::CopyBlocks(User *inst) {
   int num = 1;
   for (auto &param : Func->GetParams()) {
     Value *Param = param.get();
-    if (OperandMapping[Param])
-      OperandMapping[Param]=inst->Getuselist()[num]->usee;
+    OperandMapping[Param]=inst->Getuselist()[num]->usee;
     num++;
   }
   for (BasicBlock *block : *Func)

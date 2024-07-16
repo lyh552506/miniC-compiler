@@ -181,7 +181,33 @@ void _PassManager::RunOnTest() {
   while (!EnablePass.empty()) {
     auto name = EnablePass.front();
     EnablePass.pop();
-    for (auto &func : module->GetFuncTion()) {
+    switch (name)
+    {
+      case deadargselimination: {
+        auto m_deadargselimination = RunImpl<DeadArgsElimination>(module, AM);
+        break;
+      }
+      case Inline: {
+        auto m_inline = RunImpl<Inliner>(module, AM);
+        curfunc->bb_num = 0;
+        curfunc->GetBasicBlock().clear();
+        for (auto bb : *curfunc) {
+          bb->num = curfunc->bb_num++;
+          curfunc->GetBasicBlock().push_back(bb);
+        }
+        break;
+      }
+      case storeonlyglobalelimination: {
+        auto m_storeonlyglobalelimination =
+            RunImpl<StoreOnlyGlobalElimination>(module, AM);
+        break;
+      }
+      case global2local: {
+        auto m_global2local = RunImpl<Global2Local>(module, AM);
+        break;
+      }
+      default: {
+        for (auto &func : module->GetFuncTion()) {
       curfunc = func.get();
       //维护bbs关系
       curfunc->bb_num = 0;
@@ -262,31 +288,8 @@ void _PassManager::RunOnTest() {
         }
         break;
       }
-      case Inline: {
-        auto m_inline = RunImpl<Inliner>(module, AM);
-        curfunc->bb_num = 0;
-        curfunc->GetBasicBlock().clear();
-        for (auto bb : *curfunc) {
-          bb->num = curfunc->bb_num++;
-          curfunc->GetBasicBlock().push_back(bb);
-        }
-        break;
-      }
       case cse: {
         auto m_cse = RunImpl<CSE>(curfunc, AM);
-        break;
-      }
-      case deadargselimination: {
-        auto m_deadargselimination = RunImpl<DeadArgsElimination>(module, AM);
-        break;
-      }
-      case storeonlyglobalelimination: {
-        auto m_storeonlyglobalelimination =
-            RunImpl<StoreOnlyGlobalElimination>(module, AM);
-        break;
-      }
-      case global2local: {
-        auto m_global2local = RunImpl<Global2Local>(module, AM);
         break;
       }
       case lcssa: {
@@ -298,6 +301,9 @@ void _PassManager::RunOnTest() {
       }
       }
     }
+      }
+    }
+    
   }
 }
 
