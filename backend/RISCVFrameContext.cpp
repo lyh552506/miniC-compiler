@@ -23,7 +23,9 @@ void RISCVGlobalObject::print(){
 RISCVTempFloatObject::RISCVTempFloatObject(std::string _name):RISCVObject(FloatType::NewFloatTypeGet(), _name){
     local=true;
 }
-void RISCVTempFloatObject::print() {}
+void RISCVTempFloatObject::print() {
+  std::cout<<GetName();
+}
 
 // RISCVFrameObject::RISCVFrameObject(Type* _tp,std::string _name):RISCVObject(_tp,_name){
 //     local=true;
