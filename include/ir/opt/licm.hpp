@@ -9,7 +9,7 @@
 #include "dominant.hpp"
 #include <vector>
 class AliasAnalysis;
-class LICMPass : _PassManagerBase<LICMPass, Function> {
+class LICMPass :public _PassManagerBase<LICMPass, Function> {
 public:
   LICMPass(Function *func, _AnalysisManager &_AM) : AM(_AM), m_func(func) {}
   bool Run();
