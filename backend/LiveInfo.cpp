@@ -128,18 +128,31 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block) {
   }
 }
 
-void BlockInfo::RunOnFunction() {
-  for (RISCVBasicBlock *_block : *m_func) {
-    BlockLivein[_block].clear();
-    BlockLiveout[_block].clear();
-    GetBlockLivein(_block);
-    GetBlockLiveout(_block);
-  }
-  iterate(m_func);
-  while (isChanged)
-    iterate(m_func);
+void BlockInfo::RunOnFunction()
+{
+    for(RISCVBasicBlock* block : *m_func)
+    {
+        BlockLivein[block].clear();
+        BlockLiveout[block].clear();
+        GetBlockLivein(block);
+        GetBlockLiveout(block);
+    }
+    bool modified = true;
+    while(modified)
+    {
+        modified = false;
+        for(auto block = m_func->rbegin(); block != m_func->rend(); --block)
+        {
+            RISCVBasicBlock* cur = *block;
+            std::set<MOperand> oldin = BlockLivein[cur];
+            GetBlockLiveout(cur);
+            BlockLivein[cur] = BlockLiveout[cur];
+            GetBlockLivein(cur);
+            if(BlockLivein[cur] != oldin)
+                modified = true;
+        }
+    }
 }
-
 void BlockInfo::iterate(RISCVFunction *func) {
   RunOnFunc(func);
   isChanged = false;
