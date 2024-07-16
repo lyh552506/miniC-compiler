@@ -1136,12 +1136,7 @@ BasicBlock *BasicBlock::clone(std::unordered_map<Operand, Operand> &mapping) {
   auto tmp = new BasicBlock();
   mapping[this] = tmp;
   for (auto i : (*this))
-  {
-    if(i->GetName() == ".96at0")
-      int  c = 1;
     tmp->push_back(dynamic_cast<User*>(i->clone(mapping)));
-
-  }
   return tmp;
 }
 
