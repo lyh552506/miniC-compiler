@@ -1414,7 +1414,7 @@ bool Module::EraseDeadFunc() {
   std::vector<Function *> erase;
   bool changed = false;
   for (auto &func : ls) {
-    if (func->GetUserListSize() == 0) {
+    if (func->GetUserListSize() == 0 && func->GetName() != "main") {
       erase.push_back(func.get());
       changed = true;
     }
