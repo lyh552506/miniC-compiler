@@ -500,6 +500,15 @@ Variable::Variable(UsageTag tag, Type *_tp, std::string _id)
   Singleton<Module>().PushVariable(this);
 }
 
+Value *Variable::clone(std::unordered_map<Operand, Operand> &mapping) {
+  if(this->usage == Variable::Constant || this->usage == Variable::GlobalVariable )
+    return this;
+  else
+  {
+    assert(mapping.find(this) != mapping.end() && "variable not copied!");
+    return mapping[this];
+  }
+}
 void Variable::print() {
   Value::print();
   if (usage == GlobalVariable)
@@ -1127,7 +1136,7 @@ BasicBlock *BasicBlock::clone(std::unordered_map<Operand, Operand> &mapping) {
   auto tmp = new BasicBlock();
   mapping[this] = tmp;
   for (auto i : (*this))
-    tmp->push_back(i->clone(mapping));
+    tmp->push_back(dynamic_cast<User*>(i->clone(mapping)));
   return tmp;
 }
 
