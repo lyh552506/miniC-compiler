@@ -18,6 +18,8 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         // shift left logical
         _sll,
         _slli,
+        _sllw,
+        _slliw,
         _srl,
         _srli,
         // shift right arithmetic
@@ -240,7 +242,7 @@ class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBa
 
     std::unordered_map<RISCVMOperand*,VirRegister*> usedGlobals;
     public:
-    VirRegister* GetUsedGlobalMapping(RISCVMOperand*);
+    Register* GetUsedGlobalMapping(RISCVMOperand*);
     RISCVFunction(Value*);
     RISCVframe& GetFrame();
     size_t GetMaxParamSize();

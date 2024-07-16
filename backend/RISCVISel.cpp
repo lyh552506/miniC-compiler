@@ -232,6 +232,29 @@ void RISCVISel::InstLowering(BinaryInst* inst){
         {
             if(inst->GetType()==IntType::NewIntTypeGet()) {
                 if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
+                    auto i32val=constint->GetVal();
+                    if(i32val==0){
+                        ctx.insert_val2mop(inst,PhyRegister::GetPhyReg(PhyRegister::zero));
+                        return;
+                    }
+                    else if(i32val==1){
+                        ctx.insert_val2mop(inst,ctx.mapping(inst->GetOperand(0)));
+                        return;
+                    }
+                    else{
+                        for(int i=0;;i++){
+                            int val=1<<i;
+                            if(val==i32val){
+                                auto minst=new RISCVMIR(RISCVMIR::_slliw);
+                                minst->SetDef(ctx.mapping(inst->GetDef()));
+                                minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                                minst->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(i)));
+                                ctx(minst);
+                                return;
+                            }
+                            if(val==1073741824)break;
+                        }
+                    }
                     auto minst=new RISCVMIR(RISCVMIR::_mulw);
                     minst->SetDef(ctx.mapping(inst->GetDef()));
                     minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
@@ -319,14 +342,27 @@ void RISCVISel::InstLowering(GetElementPtrInst* inst){
             else assert("?Impossible Here");
         }
         else{
-            auto mul=Builder(RISCVMIR::_mul,{ctx.createVReg(RISCVType::riscv_ptr),M(index), ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(ConstIRInt::GetNewConstant(size)))});
-            ctx(mul);
+            RISCVMIR* minst=nullptr;
+            for(auto i=0;;i++){
+                auto val=1<<i;
+                if(val==size){
+                    minst=Builder(RISCVMIR::_slli,{ctx.createVReg(RISCVType::riscv_ptr),M(index),Imm::GetImm(ConstIRInt::GetNewConstant(i))});
+                    ctx(minst);
+                }
+                if(val==1073741824)break;
+            }
+
+            if(minst==nullptr){
+                minst=Builder(RISCVMIR::_mul,{ctx.createVReg(RISCVType::riscv_ptr),M(index), ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(ConstIRInt::GetNewConstant(size)))});
+                ctx(minst);
+            }
+
             if(vreg!=nullptr){
                 auto newreg=ctx.createVReg(RISCVType::riscv_ptr);
-                ctx(Builder(RISCVMIR::_add,{newreg,vreg,mul->GetDef()}));
+                ctx(Builder(RISCVMIR::_add,{newreg,vreg,minst->GetDef()}));
                 vreg=newreg;
             }
-            else vreg=mul->GetDef()->as<VirRegister>();
+            else vreg=minst->GetDef()->as<VirRegister>();
         }
         hasSubtype=dynamic_cast<HasSubType*>(hasSubtype->GetSubType());
     }
