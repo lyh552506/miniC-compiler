@@ -142,7 +142,7 @@ void BlockInfo::RunOnFunction() {
 
 void BlockInfo::iterate(RISCVFunction *func) {
   RunOnFunc(func);
-  bool isChanged = false;
+  isChanged = false;
   for (RISCVBasicBlock *_block : *func) {
     if (!UnChanged[_block]) {
       isChanged = true;
