@@ -165,7 +165,6 @@ void GraphColor::CaculateLiveness() {
   IG.clear();
   for (const auto b : *m_func) {
     CalInstLive(b);
-    CalcmoveList(b);
   }
   RunOnFunc_();
 }
@@ -229,7 +228,7 @@ int GraphColor::GetRegNums(MOperand v) {
   else if (v->GetType() == riscv_none) {
     auto preg = dynamic_cast<PhyRegister *>(v);
     auto tp = RegType[preg];
-    assert(tp == 0 && "error");
+    assert(tp != RISCVType::riscv_none && "error");
     return tp == riscv_i32 ? reglist.GetReglistInt().size()
                            : reglist.GetReglistFloat().size();
   }
