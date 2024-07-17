@@ -216,7 +216,7 @@ void GraphColor::CalcIG(RISCVMIR *inst)
             for (auto *Op2 : InstLive[inst])
             {
                 if (Op1 && Op2 && Op2 != Op1)
-                    PushVecSingleVal(IG[Op1], Op2);
+                    TmpIG[Op1].insert(Op2);
             }
         }
     }
@@ -224,7 +224,7 @@ void GraphColor::CalcIG(RISCVMIR *inst)
     {
         auto op1 = *InstLive[inst].begin();
         if (op1)
-            IG[op1];
+            TmpIG[op1];
     }
     else
         return;
@@ -434,6 +434,7 @@ void InterVal::RunOnFunc_()
 
 void GraphColor::LiveInfoInit()
 {
+    TmpIG.clear();
     BlockLivein.clear();
     BlockLiveout.clear();
     BlockInfo.clear();

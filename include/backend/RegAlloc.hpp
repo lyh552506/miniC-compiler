@@ -69,6 +69,7 @@ public:
   std::unordered_map<MOperand, std::unordered_set<RISCVMIR *>>
       moveList;                                           // reg2mov
                                                           // interference graph
+  std::unordered_map<MOperand, std::unordered_set<MOperand>> TmpIG;
   std::unordered_map<MOperand, std::vector<MOperand>> IG; // reg2reg IG[op]
   void RunOnFunction();
   void PrintPass();

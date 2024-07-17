@@ -166,6 +166,8 @@ void GraphColor::CaculateLiveness() {
   for (const auto b : *m_func) {
     CalInstLive(b);
   }
+  for(auto& [key, val] : TmpIG)
+    IG[key].insert(IG[key].end(), val.begin(), val.end());
   RunOnFunc_();
 }
 
