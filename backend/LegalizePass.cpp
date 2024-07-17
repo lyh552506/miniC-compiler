@@ -213,7 +213,8 @@ void Legalize::LegalizePass(mylist<RISCVBasicBlock, RISCVMIR>::iterator it) {
                     noImminstLegalize(i, it);
                     continue;
                 }
-                constintLegalize(i, it);
+                if(opcode!=RISCVMIR::li)
+                    constintLegalize(i, it);
             }
         }
     } // End Operand For Loop
