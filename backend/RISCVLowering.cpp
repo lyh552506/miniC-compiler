@@ -2,11 +2,11 @@
 #include "../include/backend/PhiElimination.hpp"
 #include "../include/backend/BuildInFunctionTransform.hpp"
 #include "../include/backend/PostRACalleeSavedLegalizer.hpp"
-
+extern std::string asmoutput_path;
 RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
     // need file name
-    asmprinter = new RISCVAsmPrinter("file", m, ctx);
+    asmprinter = new RISCVAsmPrinter(asmoutput_path, m, ctx);
 }
 
 bool RISCVModuleLowering::run(Module* m){
