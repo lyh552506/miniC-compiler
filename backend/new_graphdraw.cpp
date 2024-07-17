@@ -166,14 +166,16 @@ void GraphColor::CaculateLiveness() {
   for (const auto b : *m_func) {
     CalInstLive(b);
   }
-  for(auto& [key, val] : TmpIG)
+  for (auto &[key, val] : TmpIG)
     IG[key].insert(IG[key].end(), val.begin(), val.end());
   RunOnFunc_();
+  for (const auto b : *m_func) {
+    CaculateLiveInterval(b);
+  }
 }
 
 void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
   //计算区间并存入
-  RunOnFunc_();
   auto &IntervInfo = GetRegLiveInterval(mbb);
   for (auto &[val, vec] : IntervInfo) {
     unsigned int length = 0;
@@ -191,25 +193,34 @@ void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
   3.是否需要考虑loopcounter循环嵌套数
 */
 MOperand GraphColor::HeuristicSpill() {
-  int max = 0;
+  float max = 0;
+  Register *sp = nullptr;
   for (auto spill : spillWorkList) {
     auto vspill = dynamic_cast<VirRegister *>(spill);
     if (AlreadySpill.find(vspill) != AlreadySpill.end())
       continue;
-    return spill;
+    // return spill;
     float weight = 0;
     //考虑degree
-    int degree = IG[spill].size();
-    weight += (degree * DegreeWeight) << 2;
+    int degree = Degree[spill];
+    weight += (degree * DegreeWeight) * 2;
     //考虑interval区间
     int intervalLength = ValsInterval[spill];
-    weight += (intervalLength * livenessWeight) << 3;
+    weight += (intervalLength * livenessWeight) * 3;
     //考虑嵌套层数
     int loopdepth; // TODO
+    if (max < weight) {
+      max = weight;
+      sp = spill;
+      continue;
+    }
     // weight /= std::pow(LoopWeight, loopdepth);
   }
-  for (auto spill : spillWorkList)
-    return spill;
+  if (!sp)
+    for (auto spill : spillWorkList)
+      return spill;
+  return sp;
+
   assert(0);
 }
 

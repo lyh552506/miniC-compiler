@@ -192,7 +192,7 @@ private:
   std::vector<RISCVBasicBlock*> topu;
   std::set<RISCVBasicBlock*> assist;
   RegisterList &reglist;
-  int LoopWeight = 1;
-  int livenessWeight = 1;
-  int DegreeWeight = 1;
+  float LoopWeight = 1;
+  float livenessWeight = 2;
+  float DegreeWeight = 1;
 };
