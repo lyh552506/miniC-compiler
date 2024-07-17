@@ -17,7 +17,6 @@ void RISCVGlobalObject::print(){
     // std::cout<<"GlobalObject:";
     NamedMOperand::print();
     // std::cout<<"***\n";
-    std::cout<<"\n";
 }
 
 RISCVTempFloatObject::RISCVTempFloatObject(std::string _name):RISCVObject(FloatType::NewFloatTypeGet(), _name){

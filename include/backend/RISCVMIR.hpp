@@ -245,7 +245,16 @@ class RISCVFunction:public RISCVGlobalObject,public mylist<RISCVFunction,RISCVBa
     std::vector<int> param_need_spill;
 
     std::unordered_map<RISCVMOperand*,VirRegister*> usedGlobals;
-    public:
+    std::unordered_map<VirRegister *, RISCVMOperand *> specialusage_remapping;
+
+  public:
+    RISCVMIR *CreateSpecialUsageMIR(RISCVMOperand *);
+    inline RISCVMOperand *GetSpecialUsageMOperand(VirRegister *vreg) {
+      if (specialusage_remapping.find(vreg) != specialusage_remapping.end())
+        return specialusage_remapping[vreg];
+      return nullptr;
+    };
+
     Register* GetUsedGlobalMapping(RISCVMOperand*);
     RISCVFunction(Value*);
     RISCVframe& GetFrame();

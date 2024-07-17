@@ -14,7 +14,10 @@ PhyRegister *PhyRegister::GetPhyReg(PhyReg _regnum) {
     it = registry.emplace(_regnum, new PhyRegister(_regnum)).first;
   return it->second;
 }
-VirRegister::VirRegister(RISCVType tp) : Register(tp) {
+VirRegister::VirRegister(RISCVType tp, uint32_t _spill, uint32_t _reload)
+    : Register(tp) {
+  penalty_spill = _spill;
+  penalty_reload = _reload;
   static int cnt = 0;
   counter = cnt++;
   //set name

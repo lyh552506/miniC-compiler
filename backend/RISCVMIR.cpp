@@ -41,6 +41,7 @@ void RISCVMIR::printfull(){
     std::cout<<"\t"<< name <<" ";
     if (name=="call") {
         operands[0]->print();
+        std::cout<<"\n";
     }
     else { 
         if(def!=nullptr) {
@@ -60,35 +61,47 @@ void RISCVMIR::printfull(){
     } 
 }
 
+RISCVMIR *RISCVFunction::CreateSpecialUsageMIR(RISCVMOperand *val) {
+  VirRegister *vreg = nullptr;
+  RISCVMIR *mir = nullptr;
+  // 常量
+  if (auto imm = val->as<Imm>()) {
+    if (imm->GetType() == riscv_float32)
+      vreg = new VirRegister(riscv_float32);
+    else
+      vreg = new VirRegister(imm->GetType(), 0, 2);
+    mir = new RISCVMIR(RISCVMIR::LoadImmReg);
+  }
+  // 局部变量(数组)
+  else if (val->as<RISCVFrameObject>()) {
+    vreg = new VirRegister(riscv_ptr, 0, 2);
+    mir = new RISCVMIR(RISCVMIR::LoadLocalAddr);
+  }
+  // 全局变量
+  else {
+    vreg = new VirRegister(riscv_ptr, 0, 2);
+    mir = new RISCVMIR(RISCVMIR::LoadGlobalAddr);
+  }
+  if (vreg->GetType() != riscv_float32)
+    specialusage_remapping[vreg] = val;
+  // Push into the entry block
+  // FIXME: Currently we put it before the copy of the lowering local arguments.
+  mir->SetDef(vreg);
+  mir->AddOperand(val);
+
+  return mir;
+}
+
 Register* RISCVFunction::GetUsedGlobalMapping(RISCVMOperand* val) {
-    if(usedGlobals.find(val)==usedGlobals.end()) {
-        VirRegister* vreg = nullptr;
-        RISCVMIR* mir=nullptr;
-        // 常量 
-        if(auto imm=val->as<Imm>()){
-            if(auto immi32=imm->Getdata()->as<ConstIRInt>())
-                if(immi32->GetVal()==0)
-                    return PhyRegister::GetPhyReg(PhyRegister::zero);
-            vreg=new VirRegister(imm->GetType());
-            mir=new RISCVMIR(RISCVMIR::LoadImmReg);
-        }
-        // 局部变量(数组)
-        else if(val->as<RISCVFrameObject>()){
-            vreg=new VirRegister(riscv_ptr);
-            mir=new RISCVMIR(RISCVMIR::LoadLocalAddr);
-        }
-        // 全局变量
-        else{
-            vreg=new VirRegister(riscv_ptr);
-            mir=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
-        }
-        usedGlobals[val] = vreg;
-        // Push into the entry block
-        // FIXME: Currently we put it before the copy of the lowering local arguments.
-        auto entryblock=front();
-        mir->SetDef(vreg);
-        mir->AddOperand(val);
-        entryblock->push_front(mir);
+  if (auto imm = val->as<Imm>())
+    if (auto immi32 = imm->Getdata()->as<ConstIRInt>())
+      if (immi32->GetVal() == 0)
+        return PhyRegister::GetPhyReg(PhyRegister::zero);
+  if (usedGlobals.find(val) == usedGlobals.end()) {
+    auto mir = CreateSpecialUsageMIR(val);
+    usedGlobals[val] = mir->GetDef()->as<VirRegister>();
+    auto entryblock = front();
+    entryblock->push_front(mir);
     }
     return usedGlobals[val];
 }
