@@ -1,4 +1,5 @@
 #pragma once
+#include "../../yacc/parser.hpp"
 #include "CFG.hpp"
 #include "CSE.hpp"
 #include "ConstantFold.hpp"
@@ -9,11 +10,9 @@
 #include "Global2Local.hpp"
 #include "IDF.hpp"
 #include "Inline.hpp"
-#include "Local2Global.hpp"
 #include "LoopDeletion.hpp"
 #include "LoopInfo.hpp"
 #include "LoopRotate.hpp"
-#include "LoopParallel.hpp"
 #include "LoopSimplify.hpp"
 #include "PassManagerBase.hpp"
 #include "PromoteMemtoRegister.hpp"
@@ -27,6 +26,7 @@
 #include "licm.hpp"
 #include "mem2reg.hpp"
 #include "reassociate.hpp"
+#include "Local2Global.hpp"
 #include <getopt.h>
 #include <memory>
 class FunctionPassManager;
@@ -50,35 +50,32 @@ enum PassName {
   loopdeletion,
   deadargselimination,
   storeonlyglobalelimination,
-  local2global,
-  parallel,
+  local2global
 };
 
-static struct option long_options[] = {
-    {"mem2reg", no_argument, 0, 4},
-    {"pre", no_argument, 0, 5},
-    {"constprop", no_argument, 0, 6},
-    {"dce", no_argument, 0, 7},
-    {"loopsimplify", no_argument, 0, 8},
-    {"simplifycfg", no_argument, 0, 9},
-    {"ece", no_argument, 0, 10},
-    {"inline", no_argument, 0, 11},
-    {"global2local", no_argument, 0, 12},
-    {"reassociate", no_argument, 0, 13},
-    {"cse", no_argument, 0, 14},
-    {"lcssa", no_argument, 0, 15},
-    {"licm", no_argument, 0, 16},
-    {"loop-rotate", no_argument, 0, 17},
-    {"loop-deletion", no_argument, 0, 18},
-    {"deadargselimination", no_argument, 0, 19},
-    {"storeonlyglobalelimination", no_argument, 0, 20},
-    {"local2global", no_argument, 0, 21},
-    {"parallel", no_argument, 0, 22},
-    {"O0", no_argument, 0, 0},
-    {"O1", no_argument, 0, 1},
-    {"O2", no_argument, 0, 2},
-    {"O3", no_argument, 0, 3},
-    {0, 0, 0, 0}};
+static struct option long_options[] = {{"mem2reg", no_argument, 0, 4},
+                                       {"pre", no_argument, 0, 5},
+                                       {"constprop", no_argument, 0, 6},
+                                       {"dce", no_argument, 0, 7},
+                                       {"loopsimplify", no_argument, 0, 8},
+                                       {"simplifycfg", no_argument, 0, 9},
+                                       {"ece", no_argument, 0, 10},
+                                       {"inline", no_argument, 0, 11},
+                                       {"global2local", no_argument, 0, 12},
+                                       {"reassociate", no_argument, 0, 13},
+                                       {"cse", no_argument, 0, 14},
+                                       {"lcssa", no_argument, 0, 15},
+                                       {"licm", no_argument, 0, 16},
+                                       {"loop-rotate", no_argument, 0, 17},
+                                       {"loop-deletion", no_argument, 0, 18},
+                                       {"deadargselimination", no_argument, 0, 19},
+                                       {"storeonlyglobalelimination", no_argument, 0, 20},
+                                       {"local2global", no_argument, 0, 21},
+                                       {"O0", no_argument, 0, 0},
+                                       {"O1", no_argument, 0, 1},
+                                       {"O2", no_argument, 0, 2},
+                                       {"O3", no_argument, 0, 3},
+                                       {0, 0, 0, 0}};
 
 class _AnalysisManager
     : public _AnalysisManagerBase<_AnalysisManager, Function> {
@@ -87,7 +84,7 @@ private:
 
 public:
   _AnalysisManager() = default;
-  virtual ~_AnalysisManager() = default;
+  virtual ~_AnalysisManager()=default;
   template <typename Pass, typename... Args,
             typename name = std::enable_if_t<
                 std::is_base_of_v<_AnalysisManagerBase<Pass, Function>, Pass>>>

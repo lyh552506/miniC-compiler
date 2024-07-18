@@ -106,8 +106,8 @@ class mylist
                 data->next=ptr;
                 ptr->prev=data;
                 data->prev->next=data;
-                ptr->fat->size++;
             }
+            ptr->fat->size++;
             return iterator(data);
         }
         iterator insert_after(derived_list_node* data){
@@ -120,8 +120,8 @@ class mylist
                 data->prev=ptr;
                 ptr->next=data;
                 data->next->prev=data;
-                ptr->fat->size++;
             }
+            ptr->fat->size++;
             return iterator(data);
         }
 
