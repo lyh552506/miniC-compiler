@@ -301,6 +301,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void print();
     void add_block(BasicBlock*);
     void push_param(std::string,Variable*);
+    void PushMyParam(Variable*);
     void init_bbs(){ bbs.clear();}
     void push_bb(BasicBlock* bb);
     std::vector<ParamPtr>& GetParams();
@@ -331,8 +332,10 @@ class Module:public SymbolTable
     void PushVariable(Variable* ptr);
     std::vector<FunctionPtr>& GetFuncTion();
     std::vector<GlobalVariblePtr>& GetGlobalVariable();
+    void Push_Func(Function* func);
     void Test();
     void EraseFunction(Function* func);
     bool EraseDeadFunc();
+    std::string GetFuncNameEnum(std::string="");
     Function* GetMainFunction();
 };

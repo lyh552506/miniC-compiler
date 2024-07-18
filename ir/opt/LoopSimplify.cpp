@@ -16,7 +16,7 @@ bool LoopSimplify::Run() {
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++) {
     changed |= SimplifyLoopsImpl(*iter);
-    CaculateLoopInfo(*iter);
+    CaculateLoopInfo(*iter, loopAnlay);
   }
   return changed;
 }
@@ -318,14 +318,14 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
   UpdateLoopInfo(head, insert, bbs);
 }
 
-void LoopSimplify::CaculateLoopInfo(LoopInfo *loop) {
+void LoopSimplify::CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay) {
   const auto Header = loop->GetHeader();
-  const auto Latch = loopAnlay->GetLatch(loop);
+  const auto Latch = Anlay->GetLatch(loop);
   const auto br = dynamic_cast<CondInst *>(*(Header->rbegin()));
   assert(br);
   const auto cmp = dynamic_cast<BinaryInst *>(GetOperand(br, 0));
   PhiInst *indvar = nullptr;
-  for (auto& use : cmp->Getuselist()) {
+  for (auto &use : cmp->Getuselist()) {
     if (auto phi = dynamic_cast<PhiInst *>(use->GetValue())) {
       if (!indvar)
         indvar = phi;
@@ -336,13 +336,12 @@ void LoopSimplify::CaculateLoopInfo(LoopInfo *loop) {
     }
   }
   loop->trait.indvar = indvar;
-  for(;;){
-    auto val=indvar->ReturnValIn(loopAnlay->GetPreHeader(loop));
-  }
-  loop->trait.initial = indvar->ReturnValIn(loopAnlay->GetPreHeader(loop));
-  auto increase = dynamic_cast<User*>(indvar->ReturnValIn(loopAnlay->GetLatch(loop)));
+  auto val = indvar->ReturnValIn(Anlay->GetPreHeader(loop));
+  loop->trait.initial = indvar->ReturnValIn(Anlay->GetPreHeader(loop));
+  auto increase =
+      dynamic_cast<User *>(indvar->ReturnValIn(Anlay->GetLatch(loop)));
   assert(dynamic_cast<BinaryInst *>(increase));
-  for (auto& use : increase->Getuselist()) {
+  for (auto &use : increase->Getuselist()) {
     if (dynamic_cast<PhiInst *>(use->GetValue()))
       continue;
     if (auto con = dynamic_cast<ConstIRInt *>(use->GetValue()))
