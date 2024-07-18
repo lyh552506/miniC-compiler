@@ -30,6 +30,7 @@ void RISCVMIR::SetMopcode(RISCVISA isa) {
 
 void RISCVMIR::printfull(){
     std::string name(magic_enum::enum_name(opcode));
+    if(name=="MarkDead")name="#"+name;
     if (name.find('_') != std::string::npos) name.erase(0,1);
     size_t pos=0;
     while((pos=name.find('_'))!=std::string::npos) name.replace(pos, 1, ".");
