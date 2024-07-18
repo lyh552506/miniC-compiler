@@ -471,7 +471,17 @@ void RISCVISel::InstLowering(CallInst* inst){
                 default:
                     assert(0&&"Error param type");
             }
-            store->AddOperand(M(inst->GetOperand(index)));
+            if(inst->GetOperand(index)->isConst()&&inst->GetOperand(index)->GetType()!=FloatType::NewFloatTypeGet()) {
+                auto li = new RISCVMIR(RISCVMIR::li);
+                auto vreg = ctx.createVReg(RISCVTyper(inst->GetOperand(index)->GetType()));
+                li->SetDef(vreg);
+                li->AddOperand(Imm::GetImm(inst->GetOperand(index)->as<ConstantData>()));
+                ctx(li);
+                store->AddOperand(vreg);
+            }
+            else {
+                store->AddOperand(M(inst->GetOperand(index)));
+            }
             store->AddOperand(sreg);
             ctx(store);
 
