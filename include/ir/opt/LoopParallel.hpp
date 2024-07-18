@@ -9,10 +9,12 @@ class LoopParallel : public _PassManagerBase<LoopParallel, Function> {
 public:
   LoopParallel(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
   bool Run();
-  void ExtractLoopParallelBody(LoopInfo* loop);
+  void ExtractLoopParallelBody(LoopInfo *loop);
+
 private:
   LoopAnalysis *loop;
   Function *m_func;
   dominance *dom;
   _AnalysisManager &AM;
+  LoopAnalysis *loopAnaly;
 };

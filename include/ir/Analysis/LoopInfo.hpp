@@ -13,6 +13,7 @@ struct LoopTrait {
   Value *initial = nullptr;
   int step = 0;
   PhiInst *indvar = nullptr; // eg: i++
+  Value *change = nullptr;
 };
 
 class LoopInfo {
@@ -79,6 +80,10 @@ private:
 
 class LoopAnalysis : public _AnalysisManagerBase<LoopAnalysis, Function> {
 public:
+  enum Flag{
+    Strict,
+    Loose,
+  };
   using iterator = std::vector<LoopInfo *>::const_iterator;
   using reverse_iterator = std::vector<LoopInfo *>::const_reverse_iterator;
   LoopAnalysis(Function *func, dominance *dom) : m_func(func), m_dom(dom) {
@@ -90,7 +95,7 @@ public:
   bool IsLoopIncludeBB(LoopInfo *loop, BasicBlock *bb);
   bool IsLoopExiting(LoopInfo *loop, BasicBlock *bb);
   BasicBlock *GetLatch(LoopInfo *loop);
-  BasicBlock *GetPreHeader(LoopInfo *loopinfo);
+  BasicBlock *GetPreHeader(LoopInfo *loopinfo,Flag f=Strict);
   std::vector<BasicBlock *> GetExitingBlock(LoopInfo *loopinfo);
   std::vector<BasicBlock *> GetExit(LoopInfo *loopinfo);
   void setBBs() { bbs = &(m_func->GetBasicBlock()); }

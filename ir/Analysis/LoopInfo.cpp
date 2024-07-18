@@ -164,7 +164,7 @@ void LoopAnalysis::CalculateLoopDepth(LoopInfo *loop, int depth) {
   return;
 }
 
-BasicBlock *LoopAnalysis::GetPreHeader(LoopInfo *loopinfo) {
+BasicBlock *LoopAnalysis::GetPreHeader(LoopInfo *loopinfo, Flag f) {
   BasicBlock *preheader = nullptr;
   if (loopinfo->Pre_Header != nullptr)
     return loopinfo->Pre_Header;
@@ -182,7 +182,7 @@ BasicBlock *LoopAnalysis::GetPreHeader(LoopInfo *loopinfo) {
       }
     }
   }
-  if (preheader) {
+  if (preheader && f == Strict) {
     for (auto des : m_dom->GetNode(preheader->num).des)
       if (GetCorrespondBlock(des) != header) {
         preheader = nullptr;

@@ -16,7 +16,7 @@ bool LoopSimplify::Run() {
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++) {
     changed |= SimplifyLoopsImpl(*iter);
-    CaculateLoopInfo(*iter, loopAnlay);
+    // CaculateLoopInfo(*iter, loopAnlay);
   }
   return changed;
 }
@@ -325,28 +325,39 @@ void LoopSimplify::CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay) {
   assert(br);
   const auto cmp = dynamic_cast<BinaryInst *>(GetOperand(br, 0));
   PhiInst *indvar = nullptr;
+  auto indvarJudge = [](User *val) -> PhiInst * {
+    for (auto &use : val->Getuselist()) {
+      if (auto phi = dynamic_cast<PhiInst *>(use->GetValue()))
+        return phi;
+    }
+    return nullptr;
+  };
   for (auto &use : cmp->Getuselist()) {
-    if (auto phi = dynamic_cast<PhiInst *>(use->GetValue())) {
-      if (!indvar)
-        indvar = phi;
-      else
-        assert(0 && "What happen?");
-    } else {
+    if (auto user = dynamic_cast<User *>(use->GetValue())) {
+      if (auto phi = indvarJudge(user)) {
+        if (!indvar) {
+          indvar = phi;
+          auto bin = dynamic_cast<BinaryInst *>(use->GetValue());
+          loop->trait.change = bin;
+          for (auto &use : bin->Getuselist()) {
+            if (dynamic_cast<PhiInst *>(use->GetValue()))
+              continue;
+            if (auto con = dynamic_cast<ConstIRInt *>(use->GetValue()))
+              loop->trait.step = con->GetVal();
+          }
+          continue;
+        }
+        if (indvar)
+          assert(0 && "What happen?");
+      }
+    }
+    if (use->GetValue() != loop->trait.change) {
       loop->trait.boundary = use->GetValue();
     }
   }
   loop->trait.indvar = indvar;
-  auto val = indvar->ReturnValIn(Anlay->GetPreHeader(loop));
-  loop->trait.initial = indvar->ReturnValIn(Anlay->GetPreHeader(loop));
-  auto increase =
-      dynamic_cast<User *>(indvar->ReturnValIn(Anlay->GetLatch(loop)));
-  assert(dynamic_cast<BinaryInst *>(increase));
-  for (auto &use : increase->Getuselist()) {
-    if (dynamic_cast<PhiInst *>(use->GetValue()))
-      continue;
-    if (auto con = dynamic_cast<ConstIRInt *>(use->GetValue()))
-      loop->trait.step = con->GetVal();
-  }
+  loop->trait.initial =
+      indvar->ReturnValIn(Anlay->GetPreHeader(loop, LoopAnalysis::Loose));
 }
 
 void LoopSimplify::UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,

@@ -16,9 +16,8 @@ bool LoopParallel::Run() {
   if (m_func->GetName() != "main")
     return false;
   dom = AM.get<dominance>(m_func);
-  auto loopAnalysis = AM.get<LoopAnalysis>(m_func, dom);
-  for (auto loop : *loopAnalysis) {
-    LoopSimplify::CaculateLoopInfo(loop, loopAnalysis);
+  loopAnaly = AM.get<LoopAnalysis>(m_func, dom);
+  for (auto loop : *loopAnaly) {
     ExtractLoopParallelBody(loop);
   }
   return changed;
@@ -43,6 +42,7 @@ void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
       break;
     }
   }
+  LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   InnerDataType ty = InnerDataType::IR_Value_VOID;
   if (res)
     ty = res->GetTypeEnum();
