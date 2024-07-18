@@ -363,7 +363,8 @@ void Legalize::noImminstLegalize(int i, mylist<RISCVBasicBlock, RISCVMIR>::itera
     }
     RISCVMIR* li = new RISCVMIR(RISCVMIR::li);
     // VirRegister* vreg = ctx.createVReg(riscv_i32);
-    PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t0);
+    // t1 here
+    PhyRegister* t0 = PhyRegister::GetPhyReg(PhyRegister::t1);
     li->SetDef(t0);
     li->AddOperand(constdata);
     it.insert_before(li);
