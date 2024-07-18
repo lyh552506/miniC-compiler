@@ -1354,6 +1354,8 @@ void Function::push_param(std::string realname, Variable *var) {
   params.emplace_back(var);
 }
 
+void Function::PushMyParam(Variable *var) { params.emplace_back(var); }
+
 void Function::init_visited_block() {
   for (auto bb : bbs)
     bb->visited = false;
@@ -1399,6 +1401,11 @@ Function &Module::GenerateFunction(InnerDataType _tp, std::string _id) {
   return *ls.back();
 }
 
+void Module::Push_Func(Function *func) {
+  Register(func->GetName(), func);
+  ls.push_back(FunctionPtr(func));
+}
+
 void Module::EraseFunction(Function *func) {
   for (auto iter = ls.begin(); iter != ls.end(); iter++) {
     auto &Ptr = *iter;
@@ -1432,6 +1439,20 @@ Function *Module::GetMainFunction() {
       return i.get();
   }
   return nullptr;
+}
+
+std::string Module::GetFuncNameEnum(std::string name) {
+  for (int i = 0;; i++) {
+    bool HaveSameName = false;
+    for (auto &func : ls) {
+      if (func->GetName() == (name + "_" + std::to_string(i))) {
+        HaveSameName = true;
+        break;
+      }
+    }
+    if (!HaveSameName)
+      return (name + "_" + std::to_string(i));
+  }
 }
 
 std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() { return ls; }
