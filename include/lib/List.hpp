@@ -49,6 +49,8 @@ class list_node
         if(this->next!=nullptr)this->next->prev=this->prev;
         fat->size--;
         fat=nullptr;
+        this->prev=nullptr;
+        this->next=nullptr;
     }
     virtual derived_mylist* GetParent(){return this->fat;};
 
