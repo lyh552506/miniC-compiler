@@ -280,21 +280,31 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                         return;
                     }
                     else{
+                        bool negtive = 0;
+                        if(i32val<0) {
+                            i32val = -i32val;
+                            negtive = 1;
+                        }
                         for(int i=0;i<=30;i++){
                             int val=1<<i;
                             if(val==i32val){
-                                // sraiw	vreg1,op0,31
                                 auto vreg1=ctx.createVReg(riscv_i32);
-                                auto minst_sraiw = new RISCVMIR(RISCVMIR::_sraiw);
-                                minst_sraiw->SetDef(vreg1);
-                                minst_sraiw->AddOperand(ctx.mapping(inst->GetOperand(0)));
-                                minst_sraiw->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(31)));
-                                ctx(minst_sraiw);
+                                if(val != 2) {
+                                    // sraiw	vreg1,op0,31
+                                    auto minst_sraiw = new RISCVMIR(RISCVMIR::_sraiw);
+                                    minst_sraiw->SetDef(vreg1);
+                                    minst_sraiw->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                                    minst_sraiw->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(31)));
+                                    ctx(minst_sraiw);
+                                }
 
                                 // srliw vreg1,vreg1,32-i
                                 auto minst_srliw =  new RISCVMIR(RISCVMIR::_srliw);
                                 minst_srliw->SetDef(vreg1);
-                                minst_srliw->AddOperand(vreg1);
+                                if(val == 2)
+                                    minst_srliw->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                                else
+                                    minst_srliw->AddOperand(vreg1);
                                 minst_srliw->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(32-i)));
                                 ctx(minst_srliw);
 
@@ -310,6 +320,14 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                                 minst->AddOperand(vreg1);
                                 minst->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(i)));
                                 ctx(minst);
+
+                                if(negtive) {
+                                    auto minst_subw = new RISCVMIR(RISCVMIR::_subw);
+                                    minst_subw->SetDef(vreg1);
+                                    minst_subw->AddOperand(PhyRegister::GetPhyReg(PhyRegister::zero));
+                                    minst_subw->AddOperand(vreg1);
+                                    ctx(minst_subw);
+                                }
                                 ctx.insert_val2mop(inst,vreg1);
                                 return;
                             }
