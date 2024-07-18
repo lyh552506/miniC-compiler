@@ -283,35 +283,34 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                         for(int i=0;i<=30;i++){
                             int val=1<<i;
                             if(val==i32val){
-                                VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_i32);
-                                if(val != 2) {
-                                    // slli	a4,a5,1
-                                    auto minst_sraiw =  new RISCVMIR(RISCVMIR::_slli);
-                                    minst_sraiw->SetDef(vreg1);
-                                    minst_sraiw->AddOperand(ctx.mapping(inst->GetOperand(0)));
-                                    minst_sraiw->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(1)));
-                                    ctx(minst_sraiw);
-                                }
+                                // sraiw	vreg1,op0,31
+                                auto vreg1=ctx.createVReg(riscv_i32);
+                                auto minst_sraiw = new RISCVMIR(RISCVMIR::_sraiw);
+                                minst_sraiw->SetDef(vreg1);
+                                minst_sraiw->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                                minst_sraiw->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(31)));
+                                ctx(minst_sraiw);
 
-                                // srli	a4,a4,59
-                                auto minst_srliw =  new RISCVMIR(RISCVMIR::_srli);
+                                // srliw vreg1,vreg1,32-i
+                                auto minst_srliw =  new RISCVMIR(RISCVMIR::_srliw);
                                 minst_srliw->SetDef(vreg1);
                                 minst_srliw->AddOperand(vreg1);
-                                minst_srliw->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(64-i)));
+                                minst_srliw->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(32-i)));
                                 ctx(minst_srliw);
 
-                                // addw	a5,a4,a5
-                                auto minst_addw =  new RISCVMIR(RISCVMIR::_addw);
-                                minst_addw->SetDef(ctx.mapping(inst->GetOperand(0)));
+                                // addw vreg1,vreg1,op0
+                                auto minst_addw = new RISCVMIR(RISCVMIR::_addw);
+                                minst_addw->SetDef(vreg1);
                                 minst_addw->AddOperand(vreg1);
                                 minst_addw->AddOperand(ctx.mapping(inst->GetOperand(0)));
                                 ctx(minst_addw);
 
                                 auto minst=new RISCVMIR(RISCVMIR::_sraiw);
-                                minst->SetDef(ctx.mapping(inst->GetDef()));
-                                minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                                minst->SetDef(vreg1);
+                                minst->AddOperand(vreg1);
                                 minst->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(i)));
                                 ctx(minst);
+                                ctx.insert_val2mop(inst,vreg1);
                                 return;
                             }
                             // if(val==1073741824)break;
