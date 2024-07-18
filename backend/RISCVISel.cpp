@@ -280,9 +280,33 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                         return;
                     }
                     else{
-                        for(int i=0;;i++){
+                        for(int i=0;i<=30;i++){
                             int val=1<<i;
                             if(val==i32val){
+                                VirRegister* vreg1 = ctx.createVReg(RISCVType::riscv_i32);
+                                if(val != 2) {
+                                    // slli	a4,a5,1
+                                    auto minst_sraiw =  new RISCVMIR(RISCVMIR::_slli);
+                                    minst_sraiw->SetDef(vreg1);
+                                    minst_sraiw->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                                    minst_sraiw->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(1)));
+                                    ctx(minst_sraiw);
+                                }
+
+                                // srli	a4,a4,59
+                                auto minst_srliw =  new RISCVMIR(RISCVMIR::_srli);
+                                minst_srliw->SetDef(vreg1);
+                                minst_srliw->AddOperand(vreg1);
+                                minst_srliw->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(64-i)));
+                                ctx(minst_srliw);
+
+                                // addw	a5,a4,a5
+                                auto minst_addw =  new RISCVMIR(RISCVMIR::_addw);
+                                minst_addw->SetDef(ctx.mapping(inst->GetOperand(0)));
+                                minst_addw->AddOperand(vreg1);
+                                minst_addw->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                                ctx(minst_addw);
+
                                 auto minst=new RISCVMIR(RISCVMIR::_sraiw);
                                 minst->SetDef(ctx.mapping(inst->GetDef()));
                                 minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
@@ -290,7 +314,7 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                                 ctx(minst);
                                 return;
                             }
-                            if(val==1073741824)break;
+                            // if(val==1073741824)break;
                         }
                     }
                     auto minst=new RISCVMIR(RISCVMIR::_divw);
