@@ -714,9 +714,11 @@ RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
   assert(AlreadySpill.find(vreg) == AlreadySpill.end() && "no spill before");
 
   if (auto specialmop = m_func->GetSpecialUsageMOperand(vreg)) {
-    AlreadySpill[vreg] = nullptr;
     auto mir = new RISCVMIR(RISCVMIR::MarkDead);
-    mir->AddOperand(spill);
+    auto newreg=ctx.createVReg(vreg->GetType());
+    mir->AddOperand(newreg);
+    temps.insert(newreg);
+    AlreadySpill[vreg] = mir;
     return mir;
   }
 
