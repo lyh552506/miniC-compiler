@@ -585,15 +585,18 @@ void GraphColor::SpillNodeInMir() {
               AlreadySpill.find(dynamic_cast<VirRegister *>(mir->GetDef())) ==
                   AlreadySpill.end()) {
             sd = CreateSpillMir(mir->GetDef(), temps);
-            mir_begin.insert_after(sd);
-            _DEBUG(
-                std::cerr
-                    << "Spilling "
-                    << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
-                    << ", Use Vreg "
-                    << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
-                    << " To Replace" << std::endl;)
-            mir->SetDef(sd->GetOperand(0));
+            if (sd != nullptr) {
+              mir_begin.insert_after(sd);
+              _DEBUG(
+                  std::cerr
+                      << "Spilling "
+                      << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+                      << ", Use Vreg "
+                      << dynamic_cast<VirRegister *>(sd->GetOperand(0))
+                             ->GetName()
+                      << " To Replace" << std::endl;)
+              mir->SetDef(sd->GetOperand(0));
+            }
           }
         }
       }
@@ -612,16 +615,16 @@ void GraphColor::SpillNodeInMir() {
         } else {
           if (spilledNodes.find(dynamic_cast<VirRegister *>(mir->GetDef())) !=
               spilledNodes.end()) {
-            ld = CreateLoadMir(dynamic_cast<VirRegister *>(mir->GetDef()),
-                               temps);
-            mir_begin.insert_before(ld);
-            _DEBUG(std::cerr
-                       << "Find a Spilled Node "
-                       << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
-                       << ", Use Vreg "
-                       << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
-                       << " To Replace" << std::endl;)
-            mir->SetDef(ld->GetDef());
+            // ld = CreateLoadMir(dynamic_cast<VirRegister *>(mir->GetDef()),
+            //                    temps);
+            // mir_begin.insert_before(ld);
+            // _DEBUG(std::cerr
+            //            << "Find a Spilled Node "
+            //            << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+            //            << ", Use Vreg "
+            //            << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
+            //            << " To Replace" << std::endl;)
+            // mir->SetDef(ld->GetDef());
           }
         }
       }
@@ -645,16 +648,18 @@ void GraphColor::SpillNodeInMir() {
                 AlreadySpill.find(dynamic_cast<VirRegister *>(operand)) ==
                     AlreadySpill.end()) {
               sd = CreateSpillMir(operand, temps);
-              mir_begin.insert_after(sd);
-              _DEBUG(std::cout
-                         << "Spilling "
-                         << dynamic_cast<VirRegister *>(mir->GetOperand(i))
-                                ->GetName()
-                         << ", Use Vreg "
-                         << dynamic_cast<VirRegister *>(sd->GetOperand(0))
-                                ->GetName()
-                         << " To Replace" << std::endl;)
-              mir->SetOperand(i, sd->GetOperand(0));
+              if(sd!=nullptr){
+                mir_begin.insert_after(sd);
+                _DEBUG(std::cout
+                           << "Spilling "
+                           << dynamic_cast<VirRegister *>(mir->GetOperand(i))
+                                  ->GetName()
+                           << ", Use Vreg "
+                           << dynamic_cast<VirRegister *>(sd->GetOperand(0))
+                                  ->GetName()
+                           << " To Replace" << std::endl;)
+                mir->SetOperand(i, sd->GetOperand(0));
+              }
             }
           }
           // temps.insert(dynamic_cast<VirRegister *>(sd->GetOperand(0)));
@@ -707,6 +712,12 @@ RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
   auto vreg = dynamic_cast<VirRegister *>(spill);
   assert(vreg && "the chosen operand must be a vreg");
   assert(AlreadySpill.find(vreg) == AlreadySpill.end() && "no spill before");
+
+  if (auto specialmop = m_func->GetSpecialUsageMOperand(vreg)) {
+    AlreadySpill[vreg] = nullptr;
+    return nullptr;
+  }
+
   VirRegister *reg = new VirRegister(vreg->GetType());
   temps.insert(reg);
   RISCVMIR *sd = nullptr;
@@ -727,6 +738,13 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
   auto vreg = dynamic_cast<VirRegister *>(load);
   assert(vreg && "the chosen operand must be a vreg");
   assert(AlreadySpill.find(vreg) != AlreadySpill.end() && "no spill before");
+
+  if (auto specialmop = m_func->GetSpecialUsageMOperand(vreg)) {
+    auto mir = m_func->CreateSpecialUsageMIR(specialmop);
+    temps.insert(mir->GetDef()->as<VirRegister>());
+    return mir;
+  }
+
   VirRegister *reg = new VirRegister(vreg->GetType());
   temps.insert(reg);
   RISCVMIR *lw = nullptr;
