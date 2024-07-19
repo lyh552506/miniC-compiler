@@ -60,16 +60,6 @@ class RISCVFrameObject:public RISCVMOperand{
     void print()override;
 };
 
-class BegAddrRegister:public Register{
-    RISCVFrameObject* frameobj;
-    public:
-    BegAddrRegister(RISCVFrameObject*);
-    void print()final;
-    RISCVFrameObject*& GetFrameObj() {return frameobj;}
-    std::string GetName() {return rname;}
-    bool isPhysical()final{return true;}
-};
-
 class StackRegister:public Register{
     int offset;
     Register* reg=nullptr;

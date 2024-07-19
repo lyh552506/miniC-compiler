@@ -14,7 +14,10 @@ PhyRegister *PhyRegister::GetPhyReg(PhyReg _regnum) {
     it = registry.emplace(_regnum, new PhyRegister(_regnum)).first;
   return it->second;
 }
-VirRegister::VirRegister(RISCVType tp) : Register(tp) {
+VirRegister::VirRegister(RISCVType tp, uint32_t _spill, uint32_t _reload)
+    : Register(tp) {
+  penalty_spill = _spill;
+  penalty_reload = _reload;
   static int cnt = 0;
   counter = cnt++;
   //set name
@@ -79,7 +82,7 @@ LARegister::LARegister(RISCVType _type, std::string _name)
     : Register(_type,_name), regnum(LAReg::hi) {}
 LARegister::LARegister(RISCVType _type, std::string _name, LAReg _regenum)
     : Register(_type,_name), regnum(_regenum) {}
-LARegister::LARegister(RISCVType _type, std::string _name, VirRegister *_vreg)
+LARegister::LARegister(RISCVType _type, std::string _name, Register *_vreg)
     : Register(_type,_name), regnum(LAReg::lo), vreg(_vreg) {}
 
 Register*& LARegister::GetVreg() { return vreg; }

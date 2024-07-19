@@ -5,6 +5,11 @@ RISCVMOperand* RISCVLoweringContext::Create(Value* val){
         if(auto alloca=dynamic_cast<AllocaInst*>(inst)){
             auto& frameobjs=cur_func->GetFrame()->GetFrameObjs();
             frameobjs.emplace_back(new RISCVFrameObject(inst));
+            auto subtype=dynamic_cast<HasSubType*>(inst->GetType())->GetSubType();
+            if(dynamic_cast<ArrayType*>(subtype)){
+                // 是个数组，加载首地址到一个虚拟寄存器
+                return cur_func->GetUsedGlobalMapping(frameobjs.back().get());
+            }
             return frameobjs.back().get(); 
         }
         else if(auto store=dynamic_cast<StoreInst*>(inst))
@@ -51,6 +56,16 @@ void RISCVLoweringContext::change_mapping(RISCVMOperand* old, RISCVMOperand* new
 }
 
 RISCVMOperand* RISCVLoweringContext::mapping(Value* val){
+    // If the value is a global value, we should refer to the local version.
+    if(val->isGlobal()){
+        assert(cur_func!=nullptr&&val2mop.find(val)!=val2mop.end());
+        return cur_func->GetUsedGlobalMapping(val2mop[val]);
+    }
+    if(val->isConst()&&val->GetType()==FloatType::NewFloatTypeGet()){
+        assert(cur_func!=nullptr&&val->as<ConstantData>()!=nullptr);
+        auto imm=Imm::GetImm(val->as<ConstantData>());
+        return cur_func->GetUsedGlobalMapping(imm);
+    }
     if(val2mop.find(val)==val2mop.end())
         val2mop[val]=Create(val);
     return val2mop[val];

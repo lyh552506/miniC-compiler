@@ -10,7 +10,7 @@
 extern FILE *yyin;
 extern int optind, opterr, optopt;
 extern char *optargi;
-
+std::string asmoutput_path;
 void copyFile(const std::string &sourcePath,
               const std::string &destinationPath) {
   std::ifstream source(sourcePath, std::ios::binary);
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
   size_t lastSlashPos = filename.find_last_of("/\\") + 1;
   filename = filename.substr(lastSlashPos);
 
-  std::string asmoutput_path = argv[1];
+  asmoutput_path = argv[1];
   size_t lastPointPos = asmoutput_path.find_last_of(".");
   asmoutput_path = asmoutput_path.substr(0, lastPointPos) + ".s";
 

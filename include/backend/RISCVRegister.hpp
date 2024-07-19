@@ -84,8 +84,13 @@ namespace PhyRegMask{
 
 class VirRegister:public Register{
     int counter;
-    public:
-    VirRegister(RISCVType);
+    uint32_t penalty_spill;
+    uint32_t penalty_reload;
+
+  public:
+    inline uint32_t GetPenaltySpill() { return penalty_spill; };
+    inline uint32_t GetPenaltyReload() { return penalty_reload; };
+    VirRegister(RISCVType, uint32_t = 6, uint32_t = 6);
     std::string GetName();
     void print()final;
     bool isPhysical()final{return false;};
@@ -101,7 +106,7 @@ class LARegister:public Register{
     } regnum;
     LARegister(RISCVType, std::string);
     LARegister(RISCVType, std::string, LAReg);
-    LARegister(RISCVType, std::string, VirRegister*);
+    LARegister(RISCVType, std::string, Register*);
     void print()final;
     Register*& GetVreg();
     void SetReg(PhyRegister*&);

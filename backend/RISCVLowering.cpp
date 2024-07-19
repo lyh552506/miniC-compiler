@@ -2,11 +2,11 @@
 #include "../include/backend/PhiElimination.hpp"
 #include "../include/backend/BuildInFunctionTransform.hpp"
 #include "../include/backend/PostRACalleeSavedLegalizer.hpp"
-
+extern std::string asmoutput_path;
 RISCVAsmPrinter* asmprinter=nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module* m){
     // need file name
-    asmprinter = new RISCVAsmPrinter("file", m, ctx);
+    asmprinter = new RISCVAsmPrinter(asmoutput_path, m, ctx);
 }
 
 bool RISCVModuleLowering::run(Module* m){
@@ -45,14 +45,14 @@ bool RISCVFunctionLowering::run(Function* m){
 
     asmprinter->SetTextSegment(new textSegment(ctx));
     asmprinter->GetData()->GenerateTempvarList(ctx);
-    asmprinter->GetData()->LegalizeGloablVar(ctx);
+    // asmprinter->GetData()->LegalizeGloablVar(ctx);
 
     Legalize legal(ctx);
     // legal.run_beforeRA();
 
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
-    // regalloc.RunGCpass();
+    regalloc.RunGCpass();
 
     // Generate Frame of current Function
     // And generate the head and tail of frame here
