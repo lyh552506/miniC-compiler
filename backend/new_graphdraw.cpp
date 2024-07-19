@@ -765,7 +765,9 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
 
 void GraphColor::RewriteProgram() {
   for (const auto mbb : topu) {
-    for (auto mir : *mbb) {
+    for (auto mirit=mbb->begin();mirit!=mbb->end();) {
+      auto mir=*mirit;
+      ++mirit;
       if (mir->GetOpcode() == RISCVMIR::call)
         continue;
       if (mir->GetDef() != nullptr &&
