@@ -1,14 +1,17 @@
 #include "../../include/ir/opt/cfgSimplify.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
+#include "CFG.hpp"
+#include "Singleton.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 #include <memory>
 
 bool cfgSimplify::Run() {
-  m_dom = AM.get<dominance>(m_func);
-  loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
   bool keep_loop = true;
   while (keep_loop) {
+    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
     keep_loop = false;
     keep_loop |= simplify_Block();
     keep_loop |= DealBrInst();
@@ -154,14 +157,14 @@ bool cfgSimplify::mergeSpecialBlock() {
     User *cond = pred->back();
     delete cond;
     //将后续的指令转移
-    for (auto i = bb->begin(); i != bb->end(); ++i) {
-      (*i)->EraseFromParent();
-      pred->push_back(*i);
+    for (auto i = bb->begin(); i != bb->end();) {
+      auto inst = *i;
+      ++i;
+      inst->EraseFromParent();
+      pred->push_back(inst);
     }
-// #ifdef DEBUG
-//     std::cerr << "Merge bb :" << bb->GetName() << "to bb :" << pred->GetName()
-//               << std::endl;
-// #endif
+    _DEBUG(std::cerr << "Merge bb :" << bb->GetName()
+                     << "to bb :" << pred->GetName() << std::endl;);
     int length = m_func->GetBasicBlock().size();
     m_func->GetBasicBlock()[index - 1] = m_func->GetBasicBlock()[length - 1];
     m_func->GetBasicBlock().pop_back();
@@ -499,8 +502,9 @@ void cfgSimplify::DeletDeadBlock(BasicBlock *bb) {
     BasicBlock *succ = m_dom->GetNode(des).thisBlock;
     succ->RemovePredBB(bb);
   }
-  for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
+  for (auto iter = bb->begin(); iter != bb->end();) {
     User *inst = *iter;
+    ++iter;
     inst->RAUW(UndefValue::get(inst->GetType()));
   }
   updateDTinfo(bb);
