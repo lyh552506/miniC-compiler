@@ -39,11 +39,6 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
-      // if(m_func->GetName()=="main"){
-      //   CaculateLiveness();
-      //   PrintAnalysis();
-      //   ctx.print();
-      // }
       condition = true;
     }
   }
