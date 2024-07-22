@@ -2,10 +2,12 @@
 #include "../../include/ir/Analysis/LoopInfo.hpp"
 #include "CFG.hpp"
 #include "Singleton.hpp"
+#include "my_stl.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <memory>
+#include <ostream>
 
 bool cfgSimplify::Run() {
   bool keep_loop = true;
@@ -43,6 +45,8 @@ bool cfgSimplify::EliminateDeadLoop() {
     }
     // dead loop
     if (ShoudDelet) {
+      _DEBUG(std::cerr << "EliminateLoop: " << loop->GetHeader()->GetName()
+                       << std::endl;)
       for (auto loopbody : loop->GetLoopBody()) {
         auto it = std::find(m_func->GetBasicBlock().begin(),
                             m_func->GetBasicBlock().end(), loopbody);

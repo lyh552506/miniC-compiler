@@ -35,8 +35,6 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   if (loop->GetLoopBody().size() == 1)
     return false;
   loop->RotateTimes++;
-  static int a = 0;
-  a++;
   bool changed = false;
   m_dom = AM.get<dominance>(m_func);
   loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
@@ -104,10 +102,6 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     }
   }
   delete *It;
-  if (a == 1) {
-    Singleton<Module>().Test();
-    exit(0);
-  }
   prehead->back()->RSUW(1, New_header);
   prehead->back()->RSUW(2, Exit);
   m_dom->GetNode(Exit->num).rev.push_front(prehead->num);

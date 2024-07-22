@@ -2,8 +2,8 @@
 #include "../../include/ir/opt/InstructionSimplify.hpp"
 
 Value *ConstantFolding::ConstantFoldInst(User *inst) {
-  if (auto PHiInst = dynamic_cast<PhiInst *>(inst))
-    return ConstantFoldPhiInst(PHiInst);
+  // if (auto PHiInst = dynamic_cast<PhiInst *>(inst))
+  //   return ConstantFoldPhiInst(PHiInst);
   if (auto BInaryInst = dynamic_cast<BinaryInst *>(inst))
     return ConstantFoldBinaryInst(BInaryInst);
   if (auto _SITFP = dynamic_cast<SITFP *>(inst))
@@ -15,21 +15,21 @@ Value *ConstantFolding::ConstantFoldInst(User *inst) {
   return nullptr;
 }
 
-Value *ConstantFolding::ConstantFoldPhiInst(PhiInst *inst) {
-  Value *CommonValue = nullptr;
-  for (Value *income : inst->GetAllPhiVal()) {
-    if (auto _UndefValue = dynamic_cast<UndefValue *>(income))
-      return nullptr;
-    if (!dynamic_cast<ConstantData *>(income))
-      return nullptr;
-    if (CommonValue && income != CommonValue)
-      return nullptr;
-    CommonValue = income;
-  }
-  if (CommonValue)
-    return CommonValue;
-  assert(0&&"Unreachable");
-}
+// Value *ConstantFolding::ConstantFoldPhiInst(PhiInst *inst) {
+//   Value *CommonValue = nullptr;
+//   for (Value *income : inst->GetAllPhiVal()) {
+//     if (auto _UndefValue = dynamic_cast<UndefValue *>(income))
+//       return nullptr;
+//     if (!dynamic_cast<ConstantData *>(income))
+//       return nullptr;
+//     if (CommonValue && income != CommonValue)
+//       return nullptr;
+//     CommonValue = income;
+//   }
+//   if (CommonValue)
+//     return CommonValue;
+//   assert(0&&"Unreachable");
+// }
 
 Value *ConstantFolding::ConstantFoldBinaryInst(BinaryInst *inst) {
   Value *LHS = inst->Getuselist()[0]->usee;
