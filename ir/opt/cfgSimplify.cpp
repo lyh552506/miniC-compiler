@@ -6,8 +6,10 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <ostream>
+#include <vector>
 
 bool cfgSimplify::Run() {
   bool keep_loop = true;
@@ -24,10 +26,11 @@ bool cfgSimplify::Run() {
 
     keep_loop |= simplify_Block();
     FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    keep_loop |= DeleteUnReachable();
+    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
     keep_loop |= EliminateDeadLoop();
     FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
     keep_loop |= DelSamePhis();
-
     loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
     keep_loop |= mergeSpecialBlock();
 
@@ -535,4 +538,40 @@ void cfgSimplify::PrintPass() {
   std::cout << "-------cfgsimplify--------\n";
   Singleton<Module>().Test();
 #endif
+}
+
+bool cfgSimplify::DeleteUnReachable() {
+  bool changed = false;
+  std::vector<BasicBlock *> Erase;
+  std::set<BasicBlock *> visited;
+  std::vector<BasicBlock *> assist;
+  assist.push_back(m_func->front());
+  visited.insert(m_func->front());
+  while (!assist.empty()) {
+    auto bb = PopBack(assist);
+    auto condition = bb->back();
+    if (auto cond = dynamic_cast<CondInst *>(condition)) {
+      auto nxt_1 = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
+      auto nxt_2 = dynamic_cast<BasicBlock *>(cond->GetOperand(2));
+      if (visited.insert(nxt_1).second)
+        assist.push_back(nxt_1);
+      if (visited.insert(nxt_2).second)
+        assist.push_back(nxt_2);
+    } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
+      auto nxt = dynamic_cast<BasicBlock *>(uncond->GetOperand(0));
+      if (visited.insert(nxt).second)
+        assist.push_back(nxt);
+    }
+  }
+  for (auto it = m_func->begin(); it != m_func->end();) {
+    auto bb = *it;
+    ++it;
+    if (visited.find(bb) == visited.end()) {
+      _DEBUG(std::cerr << "Delete Unreachable block: " << bb->GetName()
+                       << std::endl;)
+      DeletDeadBlock(bb);
+      changed = true;
+    }
+  }
+  return changed;
 }

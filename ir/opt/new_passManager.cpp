@@ -101,12 +101,9 @@ void _PassManager::RunOnLevel() {
     PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
     PassChangedEnd
 
-        // inline TODO:Fix
-        RunImpl<Inliner>(module, AM);
         // mem2reg
-        PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
-    PassChangedEnd
-    
+        PassChangedBegin(curfunc);
+    PassChangedEnd RunLevelPass(Mem2reg, curfunc)
         // Local2Global
         RunImpl<Local2Global>(module, AM);
 
@@ -114,7 +111,18 @@ void _PassManager::RunOnLevel() {
     RunLevelPass(ConstantProp, curfunc);
 
     // simplifycfg
-    // return;
+  
+    RunLevelPass(cfgSimplify, curfunc);
+    PassChangedBegin(curfunc) PassChangedEnd
+
+        // inline TODO:Fix
+        RunImpl<Inliner>(module, AM);
+    RunLevelPass(ConstantProp, curfunc);
+    // if (this->curfunc->GetName() == "main") {
+    //   Singleton<Module>().Test();
+    //   exit(0);
+    // }
+      
     RunLevelPass(cfgSimplify, curfunc);
     PassChangedBegin(curfunc) PassChangedEnd
 
@@ -135,7 +143,7 @@ void _PassManager::RunOnLevel() {
 
         // reassociate
         RunLevelPass(Reassociate, curfunc);
-
+return;
     // loopsimplify
     RunLevelPass(LoopSimplify, curfunc);
     PassChangedBegin(curfunc) PassChangedEnd

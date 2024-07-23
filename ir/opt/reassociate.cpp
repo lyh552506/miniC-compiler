@@ -85,6 +85,9 @@ bool Reassociate::OptimizeInst(Value *I) {
   auto bin = dynamic_cast<BinaryInst *>(I);
   if (!bin || bin->IsCmpInst())
     return false;
+  if(bin->GetName()==".2879"){
+    int a=0;
+  }
   //如果是可交换（可重组）指令，尝试将含有const的操作数移动到右边
   if (IsCommutative(bin->getopration()))
     FormalBinaryInst(bin);
