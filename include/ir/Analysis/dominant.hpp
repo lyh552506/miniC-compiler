@@ -71,7 +71,7 @@ private:
   std::vector<DSU> dsu;           //辅助数据结构实现路径压缩
   // std::vector<DF> df;                  //存储每个结点的必经结点边界
   std::vector<std::vector<int>> Dest; // CFG中的后继
-  std::queue<Node *> dfs_dom;
+  std::vector<Node *> dfs_dom;
   Function *thisFunc;
   int block_num, count; // count是当前的dfs序号
   bool IsDFSValid;
@@ -88,7 +88,7 @@ public:
   int &updateBlockNum() { return block_num; }
   void *GetResult(Function *func);
   void UpdateRevDst(int current, int pred);
-  const std::queue<Node *> &DFS_Dom();
+  std::vector<Node *> DFS_Dom();
 
 private:
   void init();

@@ -3,6 +3,7 @@
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
 #include <cassert>
+#include <vector>
 
 void dominance::init() {
   auto &bbs = thisFunc->GetBasicBlock();
@@ -143,7 +144,7 @@ void dominance::DfsDominator(int root) {
   std::vector<std::pair<int, std::forward_list<int>::iterator>> worklists;
   std::forward_list<int>::iterator it1 = node[root].idom_child.begin();
   worklists.push_back(std::make_pair(root, it1));
-  dfs_dom.push(&GetNode(root));
+  dfs_dom.push_back(&GetNode(root));
   node[root].DfsIn = DfsNum++;
 
   while (!worklists.empty()) {
@@ -156,15 +157,15 @@ void dominance::DfsDominator(int root) {
       int nxt = *it;
       ++worklists.back().second;
       worklists.push_back(std::make_pair(nxt, node[nxt].idom_child.begin()));
-      dfs_dom.push(&GetNode(nxt));
+      dfs_dom.push_back(&GetNode(nxt));
       node[nxt].DfsIn = DfsNum++;
     }
   }
   IsDFSValid = true;
 }
 
-const std::queue<dominance::Node *> &dominance::DFS_Dom() {
-  FunctionChange(thisFunc) std::queue<dominance::Node *> tmp;
+std::vector<dominance::Node *> dominance::DFS_Dom() {
+  FunctionChange(thisFunc) std::vector<dominance::Node *> tmp;
   dfs_dom.swap(tmp);
   DfsDominator(0);
   return dfs_dom;
