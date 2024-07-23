@@ -957,8 +957,10 @@ void BasicBlock::RemovePredBB(BasicBlock *pred) {
           //   %54 =phi [%23,%1]
           //   %.23 = add i32 %.54, 2
           // After RAUW:  %.23 = add i32 %.23, 2; which is not SSA form
-          // for (auto use : phi->GetUserlist()) {
-          //   auto user = use->GetUser();
+          // for (auto it = phi->GetUserlist().begin();
+          //      it != phi->GetUserlist().end();) {
+          //   auto user = (*it)->GetUser();
+          //   ++it;
           //   if (user->GetDef() != nullptr && user->GetDef() == repl) {
           //     auto New = user->CloneInst();
           //     for (auto iter = user->GetParent()->begin();
@@ -969,13 +971,11 @@ void BasicBlock::RemovePredBB(BasicBlock *pred) {
           //       }
           //     }
           //     user->RAUW(New);
-          //     repl=(*(phi->PhiRecord.begin())).second.first;
+          //     repl = (*(phi->PhiRecord.begin())).second.first;
           //     delete user;
           //   }
           // }
           phi->RAUW(repl);
-          // phi->ClearRelation();
-          // phi->EraseFromParent();
           delete phi;
         }
       }

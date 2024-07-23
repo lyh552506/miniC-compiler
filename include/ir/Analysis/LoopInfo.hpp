@@ -128,7 +128,7 @@ public:
                 return a1->LoopDepth > a2->LoopDepth;
               });
     AlreadyGetInfo = true;
-    _DEBUG(PrintPass();)
+    // _DEBUG(PrintPass();)
     return this;
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }

@@ -13,24 +13,37 @@ bool cfgSimplify::Run() {
   bool keep_loop = true;
   while (keep_loop) {
     FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
-    loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
     keep_loop = false;
-    keep_loop |= simplify_Block();
-    keep_loop |= DealBrInst();
-    keep_loop |= simplify_Block();
-    keep_loop |= DelSamePhis();
-    keep_loop |= mergeSpecialBlock();
-    keep_loop |= SimplifyUncondBr();
-    keep_loop |= mergeRetBlock();
-    keep_loop |= EliminateDeadLoop();
     if (m_dom != nullptr)
       keep_loop |= simplifyPhiInst();
+    keep_loop |= simplify_Block();
+    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    keep_loop |= DealBrInst();
+    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
+
+    keep_loop |= simplify_Block();
+    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    keep_loop |= EliminateDeadLoop();
+    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    keep_loop |= DelSamePhis();
+
+    loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
+    keep_loop |= mergeSpecialBlock();
+
+    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    keep_loop |= SimplifyUncondBr();
+    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    keep_loop |= mergeRetBlock();
+    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    keep_loop |= EliminateDeadLoop();
   }
   return false;
 }
 
 bool cfgSimplify::EliminateDeadLoop() {
   bool changed = false;
+  loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
   for (auto iter = loopAnlaysis->begin(); iter != loopAnlaysis->end(); iter++) {
     auto loop = *iter;
     auto header = loop->GetHeader();

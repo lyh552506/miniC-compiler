@@ -102,12 +102,11 @@ void _PassManager::RunOnLevel() {
     PassChangedEnd
 
         // inline TODO:Fix
-        // RunImpl<Inliner>(module, AM);
-
+        RunImpl<Inliner>(module, AM);
         // mem2reg
         PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
     PassChangedEnd
-
+    
         // Local2Global
         RunImpl<Local2Global>(module, AM);
 
@@ -115,6 +114,7 @@ void _PassManager::RunOnLevel() {
     RunLevelPass(ConstantProp, curfunc);
 
     // simplifycfg
+    // return;
     RunLevelPass(cfgSimplify, curfunc);
     PassChangedBegin(curfunc) PassChangedEnd
 
