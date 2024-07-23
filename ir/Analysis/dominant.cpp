@@ -164,7 +164,7 @@ void dominance::DfsDominator(int root) {
 }
 
 const std::queue<dominance::Node *> &dominance::DFS_Dom() {
-  std::queue<dominance::Node *> tmp;
+  FunctionChange(thisFunc) std::queue<dominance::Node *> tmp;
   dfs_dom.swap(tmp);
   DfsDominator(0);
   return dfs_dom;
