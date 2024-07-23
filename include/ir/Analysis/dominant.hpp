@@ -77,7 +77,13 @@ private:
   bool IsDFSValid;
 
 public:
-  Node &GetNode(int index) { return node[index]; }
+  Node &GetNode(int index) {
+    static Node error{};
+    error.thisBlock = nullptr;
+    if (index >= node.size())
+      return error;
+    return node[index];
+  }
   std::vector<std::vector<int>> &GetDest() { return Dest; }
   int &updateBlockNum() { return block_num; }
   void *GetResult(Function *func);
