@@ -1,9 +1,9 @@
 #include "../../include/ir/opt/LoopSimplify.hpp"
+#include "../../include/ir/Analysis/LoopInfo.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
-#include "../../include/ir/Analysis/LoopInfo.hpp"
 #include "../../include/lib/Type.hpp"
-#include "../../include/ir/Analysis/dominant.hpp"
 #include "../../util/my_stl.hpp"
 #include <algorithm>
 #include <cassert>
@@ -14,9 +14,11 @@ bool LoopSimplify::Run() {
   m_dom = AM.get<dominance>(m_func);
   loopAnlay = AM.get<LoopAnalysis>(m_func, m_dom);
   //先处理内层循环
-  for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++)
+  for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++) {
     changed |= SimplifyLoopsImpl(*iter);
-  return true;
+    // CaculateLoopInfo(*iter, loopAnlay);
+  }
+  return changed;
 }
 
 bool LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {
@@ -316,29 +318,46 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
   UpdateLoopInfo(head, insert, bbs);
 }
 
-void LoopSimplify::CaculateLoopInfo(LoopInfo *loop) {
+void LoopSimplify::CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay) {
   const auto Header = loop->GetHeader();
-  const auto Latch = loopAnlay->GetLatch(loop);
+  const auto Latch = Anlay->GetLatch(loop);
   const auto br = dynamic_cast<CondInst *>(*(Header->rbegin()));
   assert(br);
   const auto cmp = dynamic_cast<BinaryInst *>(GetOperand(br, 0));
-  if (cmp->GetTypeEnum() == IR_Value_Float)
-    loop->setLoopFpTp();
-  Value *initial = nullptr;
-  //在reassociate合法化完成后做
-  if (!dynamic_cast<ConstantData *>(GetOperand(cmp, 1)))
-    return;
-  auto constdata = dynamic_cast<ConstantData *>(GetOperand(cmp, 1));
-  if (auto constint = dynamic_cast<ConstIRInt *>(constdata))
-    loop->setBound(constint->GetVal());
-  if (auto constfloat = dynamic_cast<ConstIRFloat *>(constdata))
-    loop->setBound(constfloat->GetVal());
-  initial = GetOperand(cmp, 0);
-  if (auto sitfp = dynamic_cast<SITFP *>(initial))
-    initial = GetOperand(sitfp, 0);
-  if (auto fptsi = dynamic_cast<FPTSI *>(initial))
-    initial = GetOperand(fptsi, 0);
-  // assert(dynamic_cast<PhiInst *>(initial));
+  PhiInst *indvar = nullptr;
+  auto indvarJudge = [](User *val) -> PhiInst * {
+    for (auto &use : val->Getuselist()) {
+      if (auto phi = dynamic_cast<PhiInst *>(use->GetValue()))
+        return phi;
+    }
+    return nullptr;
+  };
+  for (auto &use : cmp->Getuselist()) {
+    if (auto user = dynamic_cast<User *>(use->GetValue())) {
+      if (auto phi = indvarJudge(user)) {
+        if (!indvar) {
+          indvar = phi;
+          auto bin = dynamic_cast<BinaryInst *>(use->GetValue());
+          loop->trait.change = bin;
+          for (auto &use : bin->Getuselist()) {
+            if (dynamic_cast<PhiInst *>(use->GetValue()))
+              continue;
+            if (auto con = dynamic_cast<ConstIRInt *>(use->GetValue()))
+              loop->trait.step = con->GetVal();
+          }
+          continue;
+        }
+        if (indvar)
+          assert(0 && "What happen?");
+      }
+    }
+    if (use->GetValue() != loop->trait.change) {
+      loop->trait.boundary = use->GetValue();
+    }
+  }
+  loop->trait.indvar = indvar;
+  loop->trait.initial =
+      indvar->ReturnValIn(Anlay->GetPreHeader(loop, LoopAnalysis::Loose));
 }
 
 void LoopSimplify::UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,

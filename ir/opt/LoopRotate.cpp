@@ -1,11 +1,12 @@
 #include "../../include/ir/opt/LoopRotate.hpp"
+#include "../../include/ir/Analysis/LoopInfo.hpp"
+#include "../../include/ir/Analysis/SideEffect.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
+#include "../../include/ir/opt/ConstantFold.hpp"
+#include "../../include/ir/opt/PassManagerBase.hpp"
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
-#include "../../include/ir/opt/ConstantFold.hpp"
-#include "../../include/ir/Analysis/LoopInfo.hpp"
-#include "../../include/ir/opt/PassManagerBase.hpp"
-#include "../../include/ir/Analysis/dominant.hpp"
-#include "../../include/ir/Analysis/SideEffect.hpp"
+#include "Singleton.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -20,7 +21,7 @@
 bool LoopRotate::Run() {
   bool changed = false;
   m_dom = AM.get<dominance>(m_func);
-  auto sideeffect=AM.get<SideEffect>(&Singleton<Module>());
+  auto sideeffect = AM.get<SideEffect>(&Singleton<Module>());
   loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
   for (auto loop : *loopAnlasis) {
     changed |= RotateLoop(loop);
@@ -35,6 +36,8 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     return false;
   loop->RotateTimes++;
   bool changed = false;
+  m_dom = AM.get<dominance>(m_func);
+  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
   auto prehead = loopAnlasis->GetPreHeader(loop);
   auto header = loop->GetHeader();
   auto latch = loopAnlasis->GetLatch(loop);
@@ -65,6 +68,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     if (LoopAnalysis::IsLoopInvariant(contain, inst, loop) && CanBeMove(inst)) {
       inst->EraseFromParent();
       It.insert_before(inst);
+      It = prehead->rbegin();
       continue;
     } else {
       auto new_inst = inst->CloneInst();
@@ -93,14 +97,11 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
         PreHeaderValue[inst] = new_inst;
         new_inst->SetParent(prehead);
         It.insert_before(new_inst);
+        It = prehead->rbegin();
       }
     }
   }
   delete *It;
-  // if (header->GetName() == ".196wc49") {
-  //   Singleton<Module>().Test();
-  //   exit(0);
-  // }
   prehead->back()->RSUW(1, New_header);
   prehead->back()->RSUW(2, Exit);
   m_dom->GetNode(Exit->num).rev.push_front(prehead->num);
@@ -112,67 +113,70 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   // Deal With Phi In header
   PreservePhi(header, loop, prehead, New_header, PreHeaderValue);
 
+  // if (dynamic_cast<CondInst *>(prehead->back()) &&
+  //     !dynamic_cast<ConstIRBoolean *>(prehead->back()->GetOperand(0))) {
+
+  //   auto lr_ph = new BasicBlock();
+  //   lr_ph->SetName(lr_ph->GetName() + ".lr_ph");
+  //   m_func->push_bb(lr_ph);
+  //   auto parent = loopAnlasis->LookUp(prehead);
+  //   while (parent) {
+  //     parent->InsertLoopBody(lr_ph);
+  //     parent = parent->GetParent();
+  //   }
+  //   //补充dom里面的node信息
+  //   auto node = new dominance::Node;
+  //   node->init();
+  //   node->thisBlock = lr_ph;
+  //   lr_ph->num = m_dom->node.size();
+  //   node->des.push_front(New_header->num);
+  //   node->rev.push_front(prehead->num);
+  //   m_dom->GetNode(prehead->num).des.push_front(m_dom->node.size());
+  //   m_dom->GetNode(New_header->num).rev.push_front(m_dom->node.size());
+  //   m_dom->node.push_back(*node);
+
+  //   m_func->InsertBlock(prehead, New_header, lr_ph);
+  //   for (auto iter = New_header->begin();
+  //        iter != New_header->end() && dynamic_cast<PhiInst *>(*iter) !=
+  //        nullptr;
+  //        ++iter) {
+  //     auto phi = dynamic_cast<PhiInst *>(*iter);
+  //     phi->ModifyBlock(prehead, lr_ph);
+  //   }
+  //   // Form Exit
+  //   std::vector<int> revToModify;
+  //   for (auto rev : m_dom->GetNode(Exit->num).rev) {
+  //     auto l = loopAnlasis->LookUp(m_dom->GetNode(rev).thisBlock);
+  //     if (!l || l->Contain(Exit))
+  //       continue;
+  //     revToModify.push_back(rev);
+  //   }
+  //   for (auto rev : revToModify) {
+  //     auto loopexit = new BasicBlock();
+  //     loopexit->SetName(loopexit->GetName() + ".loopexit");
+  //     m_func->push_bb(loopexit);
+  //     m_func->InsertBlock(header, Exit, loopexit);
+  //     auto parent = loopAnlasis->LookUp(Exit);
+  //     while (parent) {
+  //       parent->InsertLoopBody(loopexit);
+  //       parent = parent->GetParent();
+  //     }
+  //     PreserveLcssa(loopexit, Exit, m_dom->GetNode(rev).thisBlock);
+  //     auto Node = new dominance::Node;
+  //     Node->init();
+  //     Node->thisBlock = loopexit;
+  //     loopexit->num = m_dom->node.size();
+  //     Node->des.push_front(Exit->num);
+  //     Node->rev.push_front(header->num);
+  //     m_dom->GetNode(header->num).des.remove(Exit->num);
+  //     m_dom->GetNode(Exit->num).rev.remove(header->num);
+  //     m_dom->GetNode(Exit->num).rev.push_front(loopexit->num);
+  //     m_dom->GetNode(header->num).des.push_front(loopexit->num);
+  //     m_dom->node.push_back(*Node);
+  //   }
+  // } else if (dynamic_cast<CondInst *>(prehead->back())) {
   if (dynamic_cast<CondInst *>(prehead->back()) &&
-      !dynamic_cast<ConstIRBoolean *>(prehead->back()->GetOperand(0))) {
-
-    auto lr_ph = new BasicBlock();
-    lr_ph->SetName(lr_ph->GetName() + ".lr_ph");
-    m_func->push_bb(lr_ph);
-    auto parent = loopAnlasis->LookUp(prehead);
-    while (parent) {
-      parent->InsertLoopBody(lr_ph);
-      parent = parent->GetParent();
-    }
-    //补充dom里面的node信息
-    auto node = new dominance::Node;
-    node->init();
-    node->thisBlock = lr_ph;
-    lr_ph->num = m_dom->node.size();
-    node->des.push_front(New_header->num);
-    node->rev.push_front(prehead->num);
-    m_dom->GetNode(prehead->num).des.push_front(m_dom->node.size());
-    m_dom->GetNode(New_header->num).rev.push_front(m_dom->node.size());
-    m_dom->node.push_back(*node);
-
-    m_func->InsertBlock(prehead, New_header, lr_ph);
-    for (auto iter = New_header->begin();
-         iter != New_header->end() && dynamic_cast<PhiInst *>(*iter) != nullptr;
-         ++iter) {
-      auto phi = dynamic_cast<PhiInst *>(*iter);
-      phi->ModifyBlock(prehead, lr_ph);
-    }
-    // Form Exit
-    std::vector<int> revToModify;
-    for (auto rev : m_dom->GetNode(Exit->num).rev) {
-      auto l = loopAnlasis->LookUp(m_dom->GetNode(rev).thisBlock);
-      if (!l || l->Contain(Exit))
-        continue;
-      revToModify.push_back(rev);
-    }
-    for (auto rev : revToModify) {
-      auto loopexit = new BasicBlock();
-      loopexit->SetName(loopexit->GetName() + ".loopexit");
-      m_func->push_bb(loopexit);
-      m_func->InsertBlock(header, Exit, loopexit);
-      auto parent = loopAnlasis->LookUp(Exit);
-      while (parent) {
-        parent->InsertLoopBody(loopexit);
-        parent = parent->GetParent();
-      }
-      PreserveLcssa(loopexit, Exit, m_dom->GetNode(rev).thisBlock);
-      auto Node = new dominance::Node;
-      Node->init();
-      Node->thisBlock = loopexit;
-      loopexit->num = m_dom->node.size();
-      Node->des.push_front(Exit->num);
-      Node->rev.push_front(header->num);
-      m_dom->GetNode(header->num).des.remove(Exit->num);
-      m_dom->GetNode(Exit->num).rev.remove(header->num);
-      m_dom->GetNode(Exit->num).rev.push_front(loopexit->num);
-      m_dom->GetNode(header->num).des.push_front(loopexit->num);
-      m_dom->node.push_back(*Node);
-    }
-  } else if (dynamic_cast<CondInst *>(prehead->back())) {
+      dynamic_cast<ConstIRBoolean *>(prehead->back()->GetOperand(0))) {
     auto cond = dynamic_cast<CondInst *>(prehead->back());
     auto Bool =
         dynamic_cast<ConstIRBoolean *>(cond->Getuselist()[0]->GetValue());
@@ -197,8 +201,6 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
     m_dom->GetNode(prehead->num).des.remove(ignore->num);
     prehead->rbegin().insert_before(uncond);
     delete cond;
-  } else {
-    assert(0);
   }
   loop->setHeader(New_header);
   SimplifyBlocks(header, loop);
@@ -359,6 +361,7 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
                       m_func->GetBasicBlock().end(), Header);
   m_func->GetBasicBlock().erase(it);
   delete Header;
+  FunctionChange(m_func)
 }
 
 void LoopRotate::PreserveLcssa(BasicBlock *new_exit, BasicBlock *old_exit,

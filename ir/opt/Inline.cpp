@@ -126,6 +126,7 @@ bool NoRecursive::CanBeInlined(CallInst *call) {
 bool Inliner::Run() {
   init(m);
   Inline(m);
+  m->EraseDeadFunc();
   return false;
 }
 

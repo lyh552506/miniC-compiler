@@ -16,7 +16,7 @@ public:
   cfgSimplify(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
   bool Run();
   void PrintPass();
-  ~cfgSimplify() { delete loopAnlaysis; }
+  ~cfgSimplify() = default;
 
 private:
   bool mergeRetBlock();
