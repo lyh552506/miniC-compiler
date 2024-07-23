@@ -1,7 +1,6 @@
 #include "../include/backend/RISCVISel.hpp"
 #include "../include/backend/RISCVMIR.hpp"
 #include "../include/backend/RISCVFrameContext.hpp"
-#include "../include/ir/opt/New_passManager.hpp"
 RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,User* inst){
     auto minst=new RISCVMIR(_isa);
     minst->SetDef(ctx.mapping(inst));
@@ -45,16 +44,10 @@ bool RISCVISel::run(Function* m){
         uncondinst->AddOperand(ctx.mapping(m->front())->as<RISCVBasicBlock>());
         entry->push_back(uncondinst);
     }
-    // change it to dom here for GEP need
-    auto AM=new _AnalysisManager();
-    auto m_dom=AM->get<dominance>(m);
-    auto que=m_dom->DFS_Dom();
-    while(!que.empty()){
-        auto bb=que.front()->thisBlock;
-        ctx(ctx.mapping(bb)->as<RISCVBasicBlock>());
-        for(auto inst:*bb)
+    for(auto i:*m){
+        ctx(ctx.mapping(i)->as<RISCVBasicBlock>());
+        for(auto inst:*i)
             InstLowering(inst);
-        que.pop();
     }
     return true;
 }
