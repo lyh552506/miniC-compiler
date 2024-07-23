@@ -1,8 +1,8 @@
 #pragma once
-#include <vector>
 #include "CFG.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
+#include <vector>
 class _AnalysisManager;
 
 class LoopSimplify : public _PassManagerBase<LoopSimplify, Function> {
@@ -10,6 +10,7 @@ public:
   LoopSimplify(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
   bool Run();
   void PrintPass();
+  static void CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay);
 
 private:
   bool SimplifyLoopsImpl(LoopInfo *loop);
@@ -22,7 +23,6 @@ private:
   LoopInfo *SplitNewLoop(LoopInfo *L);
   void UpdateInfo(std::vector<BasicBlock *> &bbs, BasicBlock *insert,
                   BasicBlock *head, LoopInfo *loop);
-  void CaculateLoopInfo(LoopInfo *loop);
   void UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,
                       const std::vector<BasicBlock *> &pred);
   LoopAnalysis *loopAnlay;

@@ -17,13 +17,14 @@ void RISCVGlobalObject::print(){
     // std::cout<<"GlobalObject:";
     NamedMOperand::print();
     // std::cout<<"***\n";
-    std::cout<<"\n";
 }
 
 RISCVTempFloatObject::RISCVTempFloatObject(std::string _name):RISCVObject(FloatType::NewFloatTypeGet(), _name){
     local=true;
 }
-void RISCVTempFloatObject::print() {}
+void RISCVTempFloatObject::print() {
+  std::cout<<GetName();
+}
 
 // RISCVFrameObject::RISCVFrameObject(Type* _tp,std::string _name):RISCVObject(_tp,_name){
 //     local=true;
@@ -71,18 +72,6 @@ void RISCVFrameObject::print(){
     // std::cout<<"---";
     reg->print();
 }
-
-BegAddrRegister::BegAddrRegister(RISCVFrameObject* _frameobj)
-    : Register(riscv_i32), frameobj(_frameobj) {}
-
-// BegAddrRegister::BegAddrRegister(size_t offset)
-//     : Register(riscv_i32), frameobj(nullptr) {}
-
-void BegAddrRegister::print() {
-    // should be the minus of the begin address
-  std::cout << "-" << frameobj->GetBeginAddOff();
-}
-
 
 StackRegister::StackRegister(RISCVFrameObject* obj, PhyRegister::PhyReg _regenum, int _offset)
     : Register(riscv_ptr), offset(_offset), parent(obj) {

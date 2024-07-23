@@ -39,6 +39,11 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
+      // if(m_func->GetName()=="main"){
+      //   CaculateLiveness();
+      //   PrintAnalysis();
+      //   ctx.print();
+      // }
       condition = true;
     }
   }
@@ -165,14 +170,17 @@ void GraphColor::CaculateLiveness() {
   IG.clear();
   for (const auto b : *m_func) {
     CalInstLive(b);
-    CalcmoveList(b);
   }
+  for (auto &[key, val] : TmpIG)
+    IG[key].insert(IG[key].end(), val.begin(), val.end());
   RunOnFunc_();
+  for (const auto b : *m_func) {
+    CaculateLiveInterval(b);
+  }
 }
 
 void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
   //计算区间并存入
-  RunOnFunc_();
   auto &IntervInfo = GetRegLiveInterval(mbb);
   for (auto &[val, vec] : IntervInfo) {
     unsigned int length = 0;
@@ -190,25 +198,34 @@ void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
   3.是否需要考虑loopcounter循环嵌套数
 */
 MOperand GraphColor::HeuristicSpill() {
-  int max = 0;
+  float max = 0;
+  Register *sp = nullptr;
   for (auto spill : spillWorkList) {
     auto vspill = dynamic_cast<VirRegister *>(spill);
     if (AlreadySpill.find(vspill) != AlreadySpill.end())
       continue;
-    return spill;
+    // return spill;
     float weight = 0;
     //考虑degree
-    int degree = IG[spill].size();
-    weight += (degree * DegreeWeight) << 2;
+    int degree = Degree[spill];
+    weight += (degree * DegreeWeight) * 2;
     //考虑interval区间
     int intervalLength = ValsInterval[spill];
-    weight += (intervalLength * livenessWeight) << 3;
+    weight += (intervalLength * livenessWeight) * 3;
     //考虑嵌套层数
     int loopdepth; // TODO
+    if (max < weight) {
+      max = weight;
+      sp = spill;
+      continue;
+    }
     // weight /= std::pow(LoopWeight, loopdepth);
   }
-  for (auto spill : spillWorkList)
-    return spill;
+  if (!sp)
+    for (auto spill : spillWorkList)
+      return spill;
+  return sp;
+
   assert(0);
 }
 
@@ -229,7 +246,7 @@ int GraphColor::GetRegNums(MOperand v) {
   else if (v->GetType() == riscv_none) {
     auto preg = dynamic_cast<PhyRegister *>(v);
     auto tp = RegType[preg];
-    assert(tp == 0 && "error");
+    assert(tp != RISCVType::riscv_none && "error");
     return tp == riscv_i32 ? reglist.GetReglistInt().size()
                            : reglist.GetReglistFloat().size();
   }
@@ -600,16 +617,16 @@ void GraphColor::SpillNodeInMir() {
         } else {
           if (spilledNodes.find(dynamic_cast<VirRegister *>(mir->GetDef())) !=
               spilledNodes.end()) {
-            ld = CreateLoadMir(dynamic_cast<VirRegister *>(mir->GetDef()),
-                               temps);
-            mir_begin.insert_before(ld);
-            _DEBUG(std::cerr
-                       << "Find a Spilled Node "
-                       << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
-                       << ", Use Vreg "
-                       << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
-                       << " To Replace" << std::endl;)
-            mir->SetDef(ld->GetDef());
+            // ld = CreateLoadMir(dynamic_cast<VirRegister *>(mir->GetDef()),
+            //                    temps);
+            // mir_begin.insert_before(ld);
+            // _DEBUG(std::cerr
+            //            << "Find a Spilled Node "
+            //            << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+            //            << ", Use Vreg "
+            //            << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
+            //            << " To Replace" << std::endl;)
+            // mir->SetDef(ld->GetDef());
           }
         }
       }
@@ -695,6 +712,16 @@ RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
   auto vreg = dynamic_cast<VirRegister *>(spill);
   assert(vreg && "the chosen operand must be a vreg");
   assert(AlreadySpill.find(vreg) == AlreadySpill.end() && "no spill before");
+
+  if (auto specialmop = m_func->GetSpecialUsageMOperand(vreg)) {
+    auto mir = new RISCVMIR(RISCVMIR::MarkDead);
+    auto newreg=ctx.createVReg(vreg->GetType());
+    mir->AddOperand(newreg);
+    temps.insert(newreg);
+    AlreadySpill[vreg] = mir;
+    return mir;
+  }
+
   VirRegister *reg = new VirRegister(vreg->GetType());
   temps.insert(reg);
   RISCVMIR *sd = nullptr;
@@ -715,6 +742,13 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
   auto vreg = dynamic_cast<VirRegister *>(load);
   assert(vreg && "the chosen operand must be a vreg");
   assert(AlreadySpill.find(vreg) != AlreadySpill.end() && "no spill before");
+
+  if (auto specialmop = m_func->GetSpecialUsageMOperand(vreg)) {
+    auto mir = m_func->CreateSpecialUsageMIR(specialmop);
+    temps.insert(mir->GetDef()->as<VirRegister>());
+    return mir;
+  }
+
   VirRegister *reg = new VirRegister(vreg->GetType());
   temps.insert(reg);
   RISCVMIR *lw = nullptr;
@@ -731,7 +765,9 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
 
 void GraphColor::RewriteProgram() {
   for (const auto mbb : topu) {
-    for (auto mir : *mbb) {
+    for (auto mirit=mbb->begin();mirit!=mbb->end();) {
+      auto mir=*mirit;
+      ++mirit;
       if (mir->GetOpcode() == RISCVMIR::call)
         continue;
       if (mir->GetDef() != nullptr &&

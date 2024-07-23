@@ -114,8 +114,9 @@ void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
                                 this->num_lable++;
                                 tempvar_list.push_back(tempfloat); 
                             }
+                            machineinst->SetOperand(i,tempfloat);
                             //在代码中修改加载方式；
-                            Change_LoadConstFloat(machineinst, tempfloat, it, used);
+                            // Change_LoadConstFloat(machineinst, tempfloat, it, used);
                         }
                     }
                 }

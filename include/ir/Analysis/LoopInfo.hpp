@@ -3,10 +3,18 @@
 #include <cassert>
 #include <vector>
 
-#include "../../include/lib/CFG.hpp"
-#include "../../include/ir/opt/PassManagerBase.hpp"
 #include "../../include/ir/Analysis/dominant.hpp"
+#include "../../include/ir/opt/PassManagerBase.hpp"
+#include "../../include/lib/CFG.hpp"
 #include "../../util/my_stl.hpp"
+
+struct LoopTrait {
+  Value *boundary = nullptr;
+  Value *initial = nullptr;
+  int step = 0;
+  PhiInst *indvar = nullptr; // eg: i++
+  Value *change = nullptr;
+};
 
 class LoopInfo {
 public:
@@ -33,8 +41,6 @@ public:
   }
   BasicBlock *GetHeader() { return Header; }
   LoopInfo *GetParent() { return Parent; }
-
-  bool IsLoopIntTp() { return IsInt; }
   int GetLoopDepth() { return LoopDepth; }
   int LoopBodyNum() { return ContainBlocks.size(); }
   void InsertLoopBody(BasicBlock *bb) { PushVecSingleVal(ContainBlocks, bb); }
@@ -43,10 +49,6 @@ public:
   void AddLoopDepth(int depth) { LoopDepth += depth; }
   bool IsVisited() { return visited; }
   void setVisited(bool v) { visited = v; }
-  void setLoopFpTp() { IsInt = false; }
-  void setBound(float b) { boundary = b; };
-  void setInitial(float init) { initial = init; }
-  void setStep(float st) { step = st; }
   bool Contain(BasicBlock *bb);
   bool Contain(LoopInfo *loop);
   iterator begin() { return SubLoops.begin(); }
@@ -60,6 +62,7 @@ public:
     LoopDepth = 0;
   }
   int RotateTimes = 0;
+  LoopTrait trait;
 
 private:
   BasicBlock *Header = nullptr;
@@ -73,14 +76,14 @@ private:
   int LoopDepth = 0;    //嵌套深度
   bool visited = false; //辅助
   bool CanUnroll = false;
-  bool IsInt = true;
-  float boundary = 0;
-  float initial = 0;
-  float step = 0;
 };
 
 class LoopAnalysis : public _AnalysisManagerBase<LoopAnalysis, Function> {
 public:
+  enum Flag{
+    Strict,
+    Loose,
+  };
   using iterator = std::vector<LoopInfo *>::const_iterator;
   using reverse_iterator = std::vector<LoopInfo *>::const_reverse_iterator;
   LoopAnalysis(Function *func, dominance *dom) : m_func(func), m_dom(dom) {
@@ -92,7 +95,7 @@ public:
   bool IsLoopIncludeBB(LoopInfo *loop, BasicBlock *bb);
   bool IsLoopExiting(LoopInfo *loop, BasicBlock *bb);
   BasicBlock *GetLatch(LoopInfo *loop);
-  BasicBlock *GetPreHeader(LoopInfo *loopinfo);
+  BasicBlock *GetPreHeader(LoopInfo *loopinfo,Flag f=Strict);
   std::vector<BasicBlock *> GetExitingBlock(LoopInfo *loopinfo);
   std::vector<BasicBlock *> GetExit(LoopInfo *loopinfo);
   void setBBs() { bbs = &(m_func->GetBasicBlock()); }
@@ -125,7 +128,7 @@ public:
                 return a1->LoopDepth > a2->LoopDepth;
               });
     AlreadyGetInfo = true;
-    _DEBUG(PrintPass();)
+    // _DEBUG(PrintPass();)
     return this;
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }

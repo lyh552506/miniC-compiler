@@ -11,7 +11,7 @@ static ConstantData* ConstantFoldLoadFromConstPtr(ConstantData* Ptr, Type* tp);
 static ConstantData* ConstFoldBinary(BinaryInst::Operation Opcode, ConstantData* LHS, ConstantData* RHS);
 private:
 // Handle PhiInst
-Value* ConstantFoldPhiInst(PhiInst* inst);
+// Value* ConstantFoldPhiInst(PhiInst* inst);
 // Handle BinaryInst
 Value* ConstantFoldBinaryInst(BinaryInst* inst);
 // For ConsantFoldBinaryInst 

@@ -49,6 +49,8 @@ class list_node
         if(this->next!=nullptr)this->next->prev=this->prev;
         fat->size--;
         fat=nullptr;
+        this->prev=nullptr;
+        this->next=nullptr;
     }
     virtual derived_mylist* GetParent(){return this->fat;};
 
@@ -106,8 +108,8 @@ class mylist
                 data->next=ptr;
                 ptr->prev=data;
                 data->prev->next=data;
+                ptr->fat->size++;
             }
-            ptr->fat->size++;
             return iterator(data);
         }
         iterator insert_after(derived_list_node* data){
@@ -120,8 +122,8 @@ class mylist
                 data->prev=ptr;
                 ptr->next=data;
                 data->next->prev=data;
+                ptr->fat->size++;
             }
-            ptr->fat->size++;
             return iterator(data);
         }
 

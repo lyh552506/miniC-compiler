@@ -20,8 +20,7 @@ void PromoteMem2Reg::run() {
     // do some basic opt
     if (!AI->IsUsed()) // if not used,then delete
     {
-      AI->ClearRelation();
-      AI->EraseFromParent();
+      delete AI;
       RemoveFromAllocaList(i);
       continue;
     }
@@ -74,10 +73,10 @@ void PromoteMem2Reg::run() {
   } while (!WorkLists.empty());
 
   //替换phi之后前面的alloca可能已经没有user了，需要删除
-  for (AllocaInst *clean : m_Allocas) {
+  for (int i = 0; i < m_Allocas.size(); i++) {
+    auto clean = m_Allocas[i];
     if (!clean->IsUsed()) {
-      clean->ClearRelation();
-      clean->EraseFromParent();
+      delete clean;
     }
   }
   int isEliminate = 1;
@@ -131,8 +130,7 @@ void PromoteMem2Reg::SimplifyPhi(int &isEliminate,
           continue;
       Erase.push_back(phis);
       phis->RAUW(origin);
-      phis->ClearRelation();
-      phis->EraseFromParent();
+      delete phis;
       isEliminate = 1;
       continue;
     }
@@ -170,22 +168,21 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
     //		那么就会变成：
     //		store i32 5, i32* %1
     //		else分支中的store同上，做完这一切之后，删除相对应的load和store
-    for (auto inst = BB->begin(); inst != BB->end(); ++inst) {
+    for (auto inst = BB->begin(); inst != BB->end();) {
       User *user = *inst;
+      ++inst;
       if (LoadInst *LI = dynamic_cast<LoadInst *>(user)) {
         Value *Src = GetOperand(LI, 0);
         AllocaInst *AI = dynamic_cast<AllocaInst *>(Src); // src---->%a
         if (!AI)
           continue;
-
         auto it = AllocaToIndex.find(AI);
         if (it == AllocaToIndex.end())
           continue;
 
         Value *RepL = IncomingVal[it->second]; //使用Alloca的value来替换
         LI->RAUW(RepL);
-        LI->ClearRelation();
-        LI->EraseFromParent();
+        delete LI;
       } else if (StoreInst *ST = dynamic_cast<StoreInst *>(user)) {
         auto &des = ST->Getuselist();
         Value *Des = des[1]->GetValue(); //获取Store的第二个操作数
@@ -200,8 +197,7 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
         Value *RepL =
             ST->Getuselist()[0]->GetValue(); //使用Store的第一个操作数来替换
         IncomingVal[it->second] = RepL; //--->更新前面初始化的undef
-        ST->ClearRelation();
-        ST->EraseFromParent();
+        delete ST;
       }
     }
 
@@ -270,18 +266,16 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
           [](const std::pair<int, StoreInst *> &T1,
              const std::pair<int, StoreInst *> &T2) -> bool {
             return T1.first < T2.first;
-          }); // find the first value which index is bigger(or equal) than the inst in
-              // container
+          }); // find the first value which index is bigger(or equal) than the
+              // inst in container
       if (it == StoreInstWithIndex.begin()) {
         if (StoreInstWithIndex.empty()) // no stores
           LI->RAUW(UndefValue::get(LI->GetType()));
-        else            // no store before load
-          return false; 
+        else // no store before load
+          return false;
       } else
         LI->RAUW(std::prev(it)->second->Getuselist()[0]->GetValue());
-
-      LI->ClearRelation();
-      LI->EraseFromParent();
+      delete LI;
       BBInfo.DeleteIndex(LI);
     }
   }
@@ -289,13 +283,10 @@ bool PromoteMem2Reg::Rewrite_IO_SingleBlock(AllocaInfo &Info, AllocaInst *AI,
   for (Use *use : AI->GetUserlist()) {
     assert(dynamic_cast<StoreInst *>(use->fat) && "must be a StoreInst");
     StoreInst *st = dynamic_cast<StoreInst *>(use->fat);
-    st->ClearRelation();
-    st->EraseFromParent();
+    delete st;
     BBInfo.DeleteIndex(st);
   }
-
-  AI->ClearRelation();
-  AI->EraseFromParent();
+  delete AI;
   BBInfo.DeleteIndex(AI);
 
   return true;
@@ -366,17 +357,14 @@ bool PromoteMem2Reg::RewriteSingleStoreAlloca(AllocaInfo &Info, AllocaInst *AI,
       }
     }
     LI->RAUW(val);
-    LI->ClearRelation();
-    LI->EraseFromParent(); //可以将这个LoadInstruction删除了
+    delete LI; //可以将这个LoadInstruction删除了
     BBInfo.DeleteIndex(LI);
   }
   if (!Info.UsingBlocks.empty())
     return false;
-  OnlySt->ClearRelation();
-  OnlySt->EraseFromParent(); //结束后删除alloca和store
+  delete OnlySt; //结束后删除alloca和store
   BBInfo.DeleteIndex(OnlySt);
-  AI->ClearRelation();
-  AI->EraseFromParent();
+  delete AI;
   BBInfo.DeleteIndex(AI);
   return true;
 }

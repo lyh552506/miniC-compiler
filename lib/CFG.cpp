@@ -501,10 +501,10 @@ Variable::Variable(UsageTag tag, Type *_tp, std::string _id)
 }
 
 Value *Variable::clone(std::unordered_map<Operand, Operand> &mapping) {
-  if(this->usage == Variable::Constant || this->usage == Variable::GlobalVariable )
+  if (this->usage == Variable::Constant ||
+      this->usage == Variable::GlobalVariable)
     return this;
-  else
-  {
+  else {
     assert(mapping.find(this) != mapping.end() && "variable not copied!");
     return mapping[this];
   }
@@ -957,8 +957,10 @@ void BasicBlock::RemovePredBB(BasicBlock *pred) {
           //   %54 =phi [%23,%1]
           //   %.23 = add i32 %.54, 2
           // After RAUW:  %.23 = add i32 %.23, 2; which is not SSA form
-          // for (auto use : phi->GetUserlist()) {
-          //   auto user = use->GetUser();
+          // for (auto it = phi->GetUserlist().begin();
+          //      it != phi->GetUserlist().end();) {
+          //   auto user = (*it)->GetUser();
+          //   ++it;
           //   if (user->GetDef() != nullptr && user->GetDef() == repl) {
           //     auto New = user->CloneInst();
           //     for (auto iter = user->GetParent()->begin();
@@ -969,13 +971,11 @@ void BasicBlock::RemovePredBB(BasicBlock *pred) {
           //       }
           //     }
           //     user->RAUW(New);
-          //     repl=(*(phi->PhiRecord.begin())).second.first;
+          //     repl = (*(phi->PhiRecord.begin())).second.first;
           //     delete user;
           //   }
           // }
           phi->RAUW(repl);
-          // phi->ClearRelation();
-          // phi->EraseFromParent();
           delete phi;
         }
       }
@@ -1136,7 +1136,7 @@ BasicBlock *BasicBlock::clone(std::unordered_map<Operand, Operand> &mapping) {
   auto tmp = new BasicBlock();
   mapping[this] = tmp;
   for (auto i : (*this))
-    tmp->push_back(dynamic_cast<User*>(i->clone(mapping)));
+    tmp->push_back(dynamic_cast<User *>(i->clone(mapping)));
   return tmp;
 }
 
@@ -1354,6 +1354,8 @@ void Function::push_param(std::string realname, Variable *var) {
   params.emplace_back(var);
 }
 
+void Function::PushMyParam(Variable *var) { params.emplace_back(var); }
+
 void Function::init_visited_block() {
   for (auto bb : bbs)
     bb->visited = false;
@@ -1399,6 +1401,11 @@ Function &Module::GenerateFunction(InnerDataType _tp, std::string _id) {
   return *ls.back();
 }
 
+void Module::Push_Func(Function *func) {
+  Register(func->GetName(), func);
+  ls.push_back(FunctionPtr(func));
+}
+
 void Module::EraseFunction(Function *func) {
   for (auto iter = ls.begin(); iter != ls.end(); iter++) {
     auto &Ptr = *iter;
@@ -1410,12 +1417,42 @@ void Module::EraseFunction(Function *func) {
   }
 }
 
+bool Module::EraseDeadFunc() {
+  std::vector<Function *> erase;
+  bool changed = false;
+  for (auto &func : ls) {
+    if (func->GetUserListSize() == 0 && func->GetName() != "main") {
+      erase.push_back(func.get());
+      changed = true;
+    }
+  }
+  if (!erase.empty())
+    for (auto func : erase) {
+      EraseFunction(func);
+    }
+  return changed;
+}
+
 Function *Module::GetMainFunction() {
   for (auto &i : ls) {
     if (i->GetName() == "main")
       return i.get();
   }
   return nullptr;
+}
+
+std::string Module::GetFuncNameEnum(std::string name) {
+  for (int i = 0;; i++) {
+    bool HaveSameName = false;
+    for (auto &func : ls) {
+      if (func->GetName() == (name + "_" + std::to_string(i))) {
+        HaveSameName = true;
+        break;
+      }
+    }
+    if (!HaveSameName)
+      return (name + "_" + std::to_string(i));
+  }
 }
 
 std::vector<std::unique_ptr<Function>> &Module::GetFuncTion() { return ls; }

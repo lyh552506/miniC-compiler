@@ -1,4 +1,5 @@
 #include "New_passManager.hpp"
+#include "licm.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -61,6 +62,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case local2global:
       AddPass(local2global);
       break;
+    case parallel:
+      AddPass(parallel);
+      break;
     case O0:
       level = O0;
       break;
@@ -98,12 +102,11 @@ void _PassManager::RunOnLevel() {
     PassChangedEnd
 
         // inline TODO:Fix
-        // RunImpl<Inliner>(module, AM);
-
+        RunImpl<Inliner>(module, AM);
         // mem2reg
         PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
     PassChangedEnd
-
+    
         // Local2Global
         RunImpl<Local2Global>(module, AM);
 
@@ -111,6 +114,7 @@ void _PassManager::RunOnLevel() {
     RunLevelPass(ConstantProp, curfunc);
 
     // simplifycfg
+    // return;
     RunLevelPass(cfgSimplify, curfunc);
     PassChangedBegin(curfunc) PassChangedEnd
 
@@ -181,43 +185,32 @@ void _PassManager::RunOnTest() {
   while (!EnablePass.empty()) {
     auto name = EnablePass.front();
     EnablePass.pop();
-    switch (name)
-    {
-      case deadargselimination: {
-        auto m_deadargselimination = RunImpl<DeadArgsElimination>(module, AM);
-        break;
-      }
-      case Inline: {
-        auto m_inline = RunImpl<Inliner>(module, AM);
-        curfunc->bb_num = 0;
-        curfunc->GetBasicBlock().clear();
-        for (auto bb : *curfunc) {
-          bb->num = curfunc->bb_num++;
-          curfunc->GetBasicBlock().push_back(bb);
-        }
-        break;
-      }
-      case storeonlyglobalelimination: {
-        auto m_storeonlyglobalelimination =
-            RunImpl<StoreOnlyGlobalElimination>(module, AM);
-        break;
-      }
-      case global2local: {
-        auto m_global2local = RunImpl<Global2Local>(module, AM);
-        break;
-      }
-      default: {
-        for (auto &func : module->GetFuncTion()) {
-      curfunc = func.get();
-      //维护bbs关系
+    switch (name) {
+    case deadargselimination: {
+      auto m_deadargselimination = RunImpl<DeadArgsElimination>(module, AM);
+      break;
+    }
+    case Inline: {
+      auto m_inline = RunImpl<Inliner>(module, AM);
       curfunc->bb_num = 0;
       curfunc->GetBasicBlock().clear();
       for (auto bb : *curfunc) {
         bb->num = curfunc->bb_num++;
         curfunc->GetBasicBlock().push_back(bb);
       }
-      switch (name) {
-      case mem2reg: {
+      break;
+    }
+    case storeonlyglobalelimination: {
+      auto m_storeonlyglobalelimination =
+          RunImpl<StoreOnlyGlobalElimination>(module, AM);
+      break;
+    }
+    case global2local: {
+      auto m_global2local = RunImpl<Global2Local>(module, AM);
+      break;
+    }
+    default: {
+      for (auto &func : module->GetFuncTion()) {
         curfunc = func.get();
         //维护bbs关系
         curfunc->bb_num = 0;
@@ -226,84 +219,104 @@ void _PassManager::RunOnTest() {
           bb->num = curfunc->bb_num++;
           curfunc->GetBasicBlock().push_back(bb);
         }
-        auto Mem2regRes = RunImpl<Mem2reg>(curfunc, AM);
-        break;
-      }
-      case ece: {
-        auto eliedg = RunImpl<ElimitCriticalEdge>(curfunc, AM);
-        //维护bbs关系
-        curfunc->bb_num = 0;
-        curfunc->GetBasicBlock().clear();
-        for (auto bb : *curfunc) {
-          bb->num = curfunc->bb_num++;
-          curfunc->GetBasicBlock().push_back(bb);
+        switch (name) {
+        case mem2reg: {
+          curfunc = func.get();
+          //维护bbs关系
+          curfunc->bb_num = 0;
+          curfunc->GetBasicBlock().clear();
+          for (auto bb : *curfunc) {
+            bb->num = curfunc->bb_num++;
+            curfunc->GetBasicBlock().push_back(bb);
+          }
+          auto Mem2regRes = RunImpl<Mem2reg>(curfunc, AM);
+          break;
         }
-        break;
-      }
-      case pre: {
-        auto m_pre = RunImpl<PRE>(curfunc, AM);
-        break;
-      }
-      case constprop: {
-        auto m_constprop = RunImpl<ConstantProp>(curfunc, AM);
-        break;
-      }
-      case dce: {
-        ContinueRunPassOnTest(DCE, curfunc)
-        break;
-      }
-      case simplifycfg: {
-        auto m_cfgsimple = RunImpl<cfgSimplify>(curfunc, AM);
-        //维护bbs关系
-        curfunc->bb_num = 0;
-        curfunc->GetBasicBlock().clear();
-        for (auto bb : *curfunc) {
-          bb->num = curfunc->bb_num++;
-          curfunc->GetBasicBlock().push_back(bb);
+        case ece: {
+          auto eliedg = RunImpl<ElimitCriticalEdge>(curfunc, AM);
+          //维护bbs关系
+          curfunc->bb_num = 0;
+          curfunc->GetBasicBlock().clear();
+          for (auto bb : *curfunc) {
+            bb->num = curfunc->bb_num++;
+            curfunc->GetBasicBlock().push_back(bb);
+          }
+          break;
         }
-        break;
-      }
-      case reassociate: {
-        auto m_reassociate = RunImpl<Reassociate>(curfunc, AM);
-        break;
-      }
-      case loopsimplify: {
-        //维护bbs关系
-        auto m_loopsimple = RunImpl<LoopSimplify>(curfunc, AM);
-        curfunc->bb_num = 0;
-        curfunc->GetBasicBlock().clear();
-        for (auto bb : *curfunc) {
-          bb->num = curfunc->bb_num++;
-          curfunc->GetBasicBlock().push_back(bb);
+        case pre: {
+          auto m_pre = RunImpl<PRE>(curfunc, AM);
+          break;
         }
-        break;
-      }
-      case loopdeletion: {
-        auto m_loopdeletion = RunImpl<LoopDeletion>(curfunc, AM);
-        curfunc->bb_num = 0;
-        curfunc->GetBasicBlock().clear();
-        for (auto bb : *curfunc) {
-          bb->num = curfunc->bb_num++;
-          curfunc->GetBasicBlock().push_back(bb);
+        case constprop: {
+          auto m_constprop = RunImpl<ConstantProp>(curfunc, AM);
+          break;
         }
-        break;
-      }
-      case cse: {
-        auto m_cse = RunImpl<CSE>(curfunc, AM);
-        break;
-      }
-      case lcssa: {
-        auto m_lcssa = RunImpl<LcSSA>(curfunc, AM);
-        break;
-      }
-      default: {
-        assert(0);
-      }
+        case dce: {
+          ContinueRunPassOnTest(DCE, curfunc) break;
+        }
+        case simplifycfg: {
+          auto m_cfgsimple = RunImpl<cfgSimplify>(curfunc, AM);
+          //维护bbs关系
+          curfunc->bb_num = 0;
+          curfunc->GetBasicBlock().clear();
+          for (auto bb : *curfunc) {
+            bb->num = curfunc->bb_num++;
+            curfunc->GetBasicBlock().push_back(bb);
+          }
+          break;
+        }
+        case reassociate: {
+          auto m_reassociate = RunImpl<Reassociate>(curfunc, AM);
+          break;
+        }
+        case loopsimplify: {
+          //维护bbs关系
+          auto m_loopsimple = RunImpl<LoopSimplify>(curfunc, AM);
+          curfunc->bb_num = 0;
+          curfunc->GetBasicBlock().clear();
+          for (auto bb : *curfunc) {
+            bb->num = curfunc->bb_num++;
+            curfunc->GetBasicBlock().push_back(bb);
+          }
+          break;
+        }
+        case loopdeletion: {
+          auto m_loopdeletion = RunImpl<LoopDeletion>(curfunc, AM);
+          curfunc->bb_num = 0;
+          curfunc->GetBasicBlock().clear();
+          for (auto bb : *curfunc) {
+            bb->num = curfunc->bb_num++;
+            curfunc->GetBasicBlock().push_back(bb);
+          }
+          break;
+        }
+        case cse: {
+          auto m_cse = RunImpl<CSE>(curfunc, AM);
+          break;
+        }
+        case lcssa: {
+          auto m_lcssa = RunImpl<LcSSA>(curfunc, AM);
+          break;
+        }
+        case looprotate: {
+          auto m_looprotate = RunImpl<LoopRotate>(curfunc, AM);
+          break;
+        }
+        case parallel: {
+          auto parallel = RunImpl<LoopParallel>(curfunc, AM);
+          break;
+        }
+        case licm: {
+          auto m_licm = RunImpl<LICMPass>(curfunc, AM);
+          break;
+        }
+        default: {
+          assert(0);
+        }
+        }
       }
     }
-      }
     }
-    
   }
 }
 
