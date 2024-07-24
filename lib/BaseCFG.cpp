@@ -185,8 +185,11 @@ bool User::HasSideEffect() {
     Value *op = this->Getuselist()[1]->usee;
     if (op->isGlobal())
       return true;
-    if (op->GetTypeEnum() == InnerDataType::IR_PTR)
-      return true;
+    if(auto val = dynamic_cast<Variable*>(op))
+      if(val->usage == Variable::Param)
+        return true;
+    if(op->GetUserlist().GetSize() == 1)
+      return false;
   }
   if (dynamic_cast<CallInst *>(this)) {
     std::string name = this->Getuselist()[0]->usee->GetName();
