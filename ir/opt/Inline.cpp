@@ -21,7 +21,7 @@ bool InlineHeuristicManager::CanBeInlined(CallInst *call) {
 SizeLimit::SizeLimit() {}
 
 bool SizeLimit::CanBeInlined(CallInst *call) {
-  static size_t cost = 0;
+  // static size_t cost = 0;
   auto master = call->GetParent()->GetParent();
   auto inline_func = call->GetOperand(0)->as<Function>();
   assert(master != nullptr && inline_func != nullptr);
@@ -118,7 +118,7 @@ NoRecursive::NoRecursive(Module *_m) : m(_m) {
 bool NoRecursive::CanBeInlined(CallInst *call) {
   auto &&slave = call->GetOperand(0)->as<Function>();
   auto &&master = call->GetParent()->GetParent();
-  if (master != slave)
+  if (!master->isRecursive() && !slave->isRecursive())
     return true;
   return false;
 }
@@ -127,6 +127,8 @@ bool Inliner::Run() {
   init(m);
   Inline(m);
   m->EraseDeadFunc();
+  for(auto &func:m->GetFuncTion())
+      func->ClearInlineInfo();
   return false;
 }
 
