@@ -165,7 +165,7 @@ void dominance::DfsDominator(int root) {
 }
 
 std::vector<dominance::Node *> dominance::DFS_Dom() {
-  FunctionChange(thisFunc) std::vector<dominance::Node *> tmp;
+  std::vector<dominance::Node *> tmp;
   dfs_dom.swap(tmp);
   DfsDominator(0);
   return dfs_dom;

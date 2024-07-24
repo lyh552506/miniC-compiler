@@ -1,6 +1,7 @@
 #include "../include/backend/RISCVISel.hpp"
 #include "../include/backend/RISCVMIR.hpp"
 #include "../include/backend/RISCVFrameContext.hpp"
+#include "../include/ir/opt/New_passManager.hpp"
 RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,User* inst){
     auto minst=new RISCVMIR(_isa);
     minst->SetDef(ctx.mapping(inst));
@@ -44,9 +45,13 @@ bool RISCVISel::run(Function* m){
         uncondinst->AddOperand(ctx.mapping(m->front())->as<RISCVBasicBlock>());
         entry->push_back(uncondinst);
     }
-    for(auto i:*m){
-        ctx(ctx.mapping(i)->as<RISCVBasicBlock>());
-        for(auto inst:*i)
+    auto AM=_AnalysisManager();
+    FunctionChange(m)
+    auto mdom=AM.get<dominance>(m);
+    for(auto i:mdom->DFS_Dom()){
+        auto bb=i->thisBlock;
+        ctx(ctx.mapping(bb)->as<RISCVBasicBlock>());
+        for(auto inst:*bb)
             InstLowering(inst);
     }
     return true;
