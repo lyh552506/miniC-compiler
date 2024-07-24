@@ -127,6 +127,8 @@ void _PassManager::RunOnLevel() {
       RunLevelPass(cfgSimplify, curfunc, modified);
       PassChangedBegin(curfunc) PassChangedEnd
 
+      RunLevelPass(DCE, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd
           // ece pre
           // RunLevelPass(ElimitCriticalEdge, curfunc);
           // PassChangedBegin(curfunc) PassChangedEnd
