@@ -129,8 +129,6 @@ void _PassManager::RunOnLevel() {
       
       RunLevelPass(DCE, curfunc, modified);
       PassChangedBegin(curfunc) PassChangedEnd
-          
-          return;
           // ece pre
           // RunLevelPass(ElimitCriticalEdge, curfunc);
           // PassChangedBegin(curfunc) PassChangedEnd
