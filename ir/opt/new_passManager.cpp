@@ -97,6 +97,7 @@ void _PassManager::RunOnLevel() {
     // global2local
     RunImpl<Global2Local>(module, AM);
     while (modified) {
+    Iteration:
       modified = false;
       // mem2reg
       PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
@@ -116,18 +117,11 @@ void _PassManager::RunOnLevel() {
       RunLevelPass(cfgSimplify, curfunc, modified);
       PassChangedBegin(curfunc) PassChangedEnd
 
-          // inline TODO:Fix
-          RunImpl<Inliner>(module, AM);
-      RunLevelPass(ConstantProp, curfunc, modified);
-      // if (this->curfunc->GetName() == "main") {
-      //   Singleton<Module>().Test();
-      //   exit(0);
-      // }
-
+          RunLevelPass(ConstantProp, curfunc, modified);
       RunLevelPass(cfgSimplify, curfunc, modified);
       PassChangedBegin(curfunc) PassChangedEnd
-      
-      RunLevelPass(DCE, curfunc, modified);
+
+          RunLevelPass(DCE, curfunc, modified);
       PassChangedBegin(curfunc) PassChangedEnd
           // ece pre
           // RunLevelPass(ElimitCriticalEdge, curfunc);
@@ -164,6 +158,9 @@ void _PassManager::RunOnLevel() {
       RunLevelPass(cfgSimplify, curfunc, modified);
       PassChangedBegin(curfunc) PassChangedEnd
     }
+
+    if (RunImpl<Inliner>(module, AM))
+      goto Iteration;
     // Loops
     {
       // RunLevelPass(LoopSimplify, curfunc, modified);
@@ -174,11 +171,11 @@ void _PassManager::RunOnLevel() {
       // PassChangedBegin(curfunc) PassChangedEnd
 
       // loop-rotate
-      
+
       // licm
       // RunLevelPass(LICM, curfunc);
       // PassChangedBegin(curfunc) PassChangedEnd
-      
+
       // loopdeletion
       // RunLevelPass(LoopDeletion, curfunc);
       // PassChangedBegin(curfunc) PassChangedEnd
