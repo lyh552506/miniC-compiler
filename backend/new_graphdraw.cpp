@@ -39,11 +39,6 @@ void GraphColor::RunOnFunc() {
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
-      // if(m_func->GetName()=="main"){
-      //   CaculateLiveness();
-      //   PrintAnalysis();
-      //   ctx.print();
-      // }
       condition = true;
     }
   }
@@ -211,7 +206,7 @@ MOperand GraphColor::HeuristicSpill() {
     weight += (degree * DegreeWeight) * 2;
     //考虑interval区间
     int intervalLength = ValsInterval[spill];
-    weight += (intervalLength * livenessWeight) * 3;
+    weight += (intervalLength * livenessWeight) * 6;
     //考虑嵌套层数
     int loopdepth; // TODO
     if (max < weight) {
@@ -622,9 +617,11 @@ void GraphColor::SpillNodeInMir() {
             // mir_begin.insert_before(ld);
             // _DEBUG(std::cerr
             //            << "Find a Spilled Node "
-            //            << dynamic_cast<VirRegister *>(mir->GetDef())->GetName()
+            //            << dynamic_cast<VirRegister
+            //            *>(mir->GetDef())->GetName()
             //            << ", Use Vreg "
-            //            << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
+            //            << dynamic_cast<VirRegister
+            //            *>(ld->GetDef())->GetName()
             //            << " To Replace" << std::endl;)
             // mir->SetDef(ld->GetDef());
           }
@@ -715,7 +712,7 @@ RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
 
   if (auto specialmop = m_func->GetSpecialUsageMOperand(vreg)) {
     auto mir = new RISCVMIR(RISCVMIR::MarkDead);
-    auto newreg=ctx.createVReg(vreg->GetType());
+    auto newreg = ctx.createVReg(vreg->GetType());
     mir->AddOperand(newreg);
     temps.insert(newreg);
     AlreadySpill[vreg] = mir;
@@ -765,8 +762,8 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
 
 void GraphColor::RewriteProgram() {
   for (const auto mbb : topu) {
-    for (auto mirit=mbb->begin();mirit!=mbb->end();) {
-      auto mir=*mirit;
+    for (auto mirit = mbb->begin(); mirit != mbb->end();) {
+      auto mir = *mirit;
       ++mirit;
       if (mir->GetOpcode() == RISCVMIR::call)
         continue;
