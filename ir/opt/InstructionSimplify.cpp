@@ -91,7 +91,12 @@ Value *SimplifyDivInst(Value *LHS, Value *RHS) {
     return LHS;
   // X / X -> 1
   if (LHS == RHS)
-    return ConstIRInt::GetNewConstant(1);
+  {
+    if(dynamic_cast<ConstIRInt*>(LHS) && dynamic_cast<ConstIRInt*>(RHS))
+      return ConstIRInt::GetNewConstant(1);
+    else if(dynamic_cast<ConstIRFloat*>(LHS) && dynamic_cast<ConstIRFloat*>(RHS))
+      return ConstIRFloat::GetNewConstant(1);
+  }
   return nullptr;
 }
 
