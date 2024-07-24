@@ -1231,8 +1231,8 @@ void PhiInst::Phiprop(Value *origin, Value *newval) {
   BasicBlock *block = iter->second.second;
   int Num = iter->first;
   PhiRecord[Num] = std::make_pair(newval, block);
-  if (IsGetIncomings == true)
-    Incomings[Num] = newval;
+  // if (IsGetIncomings == true)
+  //   Incomings[Num] = newval;
 }
 
 void PhiInst::Del_Incomes(int CurrentNum) {
