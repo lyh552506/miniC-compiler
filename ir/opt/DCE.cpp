@@ -21,6 +21,7 @@ bool DCE::Run() {
     return true;
   }
   if (C && !func->HasSideEffect) {
+    bool changed = false;
     for (auto user : func->GetUserlist()) {
       User *inst = user->GetUser();
       if (dynamic_cast<CallInst *>(inst)) {
@@ -29,6 +30,7 @@ bool DCE::Run() {
                          << inst->GetParent()->GetParent()->GetName()
                          << std::endl;)
         delete inst;
+        changed = true;
       }
     }
     if (func->GetUserlist().is_empty() && func->GetBasicBlock().size() > 1) {
@@ -44,8 +46,9 @@ bool DCE::Run() {
       Block->push_back(ret);
       func->add_block(Block);
       func->GetBasicBlock().push_back(Block);
+      changed = true;
     }
-    return true;
+    return changed;
   }
   bool modified = false;
   std::vector<User *> WorkList;
