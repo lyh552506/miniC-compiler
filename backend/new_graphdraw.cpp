@@ -612,18 +612,20 @@ void GraphColor::SpillNodeInMir() {
         } else {
           if (spilledNodes.find(dynamic_cast<VirRegister *>(mir->GetDef())) !=
               spilledNodes.end()) {
-            // ld = CreateLoadMir(dynamic_cast<VirRegister *>(mir->GetDef()),
-            //                    temps);
-            // mir_begin.insert_before(ld);
-            // _DEBUG(std::cerr
-            //            << "Find a Spilled Node "
-            //            << dynamic_cast<VirRegister
-            //            *>(mir->GetDef())->GetName()
-            //            << ", Use Vreg "
-            //            << dynamic_cast<VirRegister
-            //            *>(ld->GetDef())->GetName()
-            //            << " To Replace" << std::endl;)
-            // mir->SetDef(ld->GetDef());
+            //需要将值存入到内存
+            RISCVMIR *sd = nullptr;
+            if (mir->GetDef()->GetType() == RISCVType::riscv_i32 ||
+                mir->GetDef()->GetType() == RISCVType::riscv_ptr)
+              sd = new RISCVMIR(RISCVMIR::RISCVISA::_sd);
+            else if (mir->GetDef()->GetType() == RISCVType::riscv_float32)
+              sd = new RISCVMIR(RISCVMIR::RISCVISA::_fsw);
+            sd->AddOperand(mir->GetDef());
+            auto spillnode =
+                AlreadySpill[dynamic_cast<VirRegister *>(mir->GetDef())]
+                    ->GetOperand(1);
+            sd->AddOperand(spillnode);
+            mir_begin.insert_after(sd);
+            ++mir_begin;
           }
         }
       }

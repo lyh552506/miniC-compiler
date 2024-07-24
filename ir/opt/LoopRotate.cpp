@@ -310,8 +310,9 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
   }
   assert(Latch && "Must Have One Latch!");
   for (auto iter = Header->begin();
-       iter != Header->end() && dynamic_cast<PhiInst *>(*iter); ++iter) {
+       iter != Header->end() && dynamic_cast<PhiInst *>(*iter);) {
     auto phi = dynamic_cast<PhiInst *>(*iter);
+    ++iter;
     if (phi->PhiRecord.size() == 1) {
       auto repl = (*(phi->PhiRecord.begin())).second.first;
       if (repl != phi) {
