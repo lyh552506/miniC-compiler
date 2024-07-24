@@ -23,6 +23,7 @@ class SizeLimit:public InlineHeuristic{
     // if we use inline, we should consider some optimization effect, for maybe the size will shrink dramatically
     const size_t maxframesize=7864320;// 7.5MB
     const size_t maxsize=10000;
+    size_t cost=0;
     public:
     bool CanBeInlined(CallInst*)override;
     SizeLimit();
