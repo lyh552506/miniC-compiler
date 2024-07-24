@@ -96,86 +96,91 @@ void _PassManager::RunOnLevel() {
 
     // global2local
     RunImpl<Global2Local>(module, AM);
+    while (modified) {
+      modified = false;
+      // mem2reg
+      PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
+      PassChangedEnd
 
-    // mem2reg
-    PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
-    PassChangedEnd
+          // mem2reg
+          PassChangedBegin(curfunc);
+      PassChangedEnd RunLevelPass(Mem2reg, curfunc, modified)
+          // Local2Global
+          RunImpl<Local2Global>(module, AM);
 
-        // inline TODO:Fix
-        RunImpl<Inliner>(module, AM);
-        // mem2reg
-        PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
-    PassChangedEnd
-    
-        // Local2Global
-        RunImpl<Local2Global>(module, AM);
+      // constprop
+      RunLevelPass(ConstantProp, curfunc, modified);
 
-    // constprop
-    RunLevelPass(ConstantProp, curfunc);
+      // simplifycfg
 
-    // simplifycfg
-    // return;
-    RunLevelPass(cfgSimplify, curfunc);
-    PassChangedBegin(curfunc) PassChangedEnd
+      RunLevelPass(cfgSimplify, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd
 
-        // ece pre
-        // RunLevelPass(ElimitCriticalEdge, curfunc);
-        // PassChangedBegin(curfunc) PassChangedEnd
-        // RunLevelPass(PRE, curfunc);
+          // inline TODO:Fix
+          RunImpl<Inliner>(module, AM);
+      RunLevelPass(ConstantProp, curfunc, modified);
+      // if (this->curfunc->GetName() == "main") {
+      //   Singleton<Module>().Test();
+      //   exit(0);
+      // }
 
-        // cse
-        RunLevelPass(CSE, curfunc);
+      RunLevelPass(cfgSimplify, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd
 
-    // constprop
-    RunLevelPass(ConstantProp, curfunc);
+          // ece pre
+          // RunLevelPass(ElimitCriticalEdge, curfunc);
+          // PassChangedBegin(curfunc) PassChangedEnd
+          // RunLevelPass(PRE, curfunc);
 
-    // simplifycfg
-    RunLevelPass(cfgSimplify, curfunc);
-    PassChangedBegin(curfunc) PassChangedEnd
+          // cse
+          // RunLevelPass(CSE, curfunc, modified);
 
-        // reassociate
-        RunLevelPass(Reassociate, curfunc);
+          // constprop
+          RunLevelPass(ConstantProp, curfunc, modified);
 
-    // loopsimplify
-    RunLevelPass(LoopSimplify, curfunc);
-    PassChangedBegin(curfunc) PassChangedEnd
+      // simplifycfg
+      RunLevelPass(cfgSimplify, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd
 
-        // // lcssa
-        // RunLevelPass(LcSSA, curfunc);
+          // reassociate
+          RunLevelPass(Reassociate, curfunc, modified);
 
-        // // looprotate
-        // RunLevelPass(LoopRotate, curfunc);
-        // PassChangedBegin(curfunc) PassChangedEnd
+      // // lcssa
+      // RunLevelPass(LcSSA, curfunc);
 
-        // licm
-        // RunLevelPass(LICM, curfunc);
-        // PassChangedBegin(curfunc) PassChangedEnd
+      // // looprotate
+      // RunLevelPass(LoopRotate, curfunc);
+      // PassChangedBegin(curfunc) PassChangedEnd
 
-        // cse
-        RunLevelPass(CSE, curfunc);
+      // cse
+      // RunLevelPass(CSE, curfunc, modified);
 
-    // constprop
-    RunLevelPass(ConstantProp, curfunc);
+      // constprop
+      RunLevelPass(ConstantProp, curfunc, modified);
 
-    // simplifycfg
-    RunLevelPass(cfgSimplify, curfunc);
-    PassChangedBegin(curfunc) PassChangedEnd
+      // simplifycfg
+      RunLevelPass(cfgSimplify, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd
+    }
+    // Loops
+    {
+      // RunLevelPass(LoopSimplify, curfunc, modified);
+      // PassChangedBegin(curfunc) PassChangedEnd
 
-        // loopsimplify
-        RunLevelPass(LoopSimplify, curfunc);
-    PassChangedBegin(curfunc) PassChangedEnd
+      // lcssa
+      //     RunLevelPass(LcSSA, curfunc, modified);
+      // PassChangedBegin(curfunc) PassChangedEnd
 
-        // lcssa
-        // RunLevelPass(LcSSA, curfunc);
-        // PassChangedBegin(curfunc) PassChangedEnd
-
-        // loopdeletion
-        // RunLevelPass(LoopDeletion, curfunc);
-        // PassChangedBegin(curfunc) PassChangedEnd
-
-        // loopsimplify
-        RunLevelPass(LoopSimplify, curfunc);
-    PassChangedBegin(curfunc) PassChangedEnd
+      // loop-rotate
+      
+      // licm
+      // RunLevelPass(LICM, curfunc);
+      // PassChangedBegin(curfunc) PassChangedEnd
+      
+      // loopdeletion
+      // RunLevelPass(LoopDeletion, curfunc);
+      // PassChangedBegin(curfunc) PassChangedEnd
+    }
   }
 }
 
@@ -212,7 +217,7 @@ void _PassManager::RunOnTest() {
     default: {
       for (auto &func : module->GetFuncTion()) {
         curfunc = func.get();
-        //维护bbs关系
+        // 维护bbs关系
         curfunc->bb_num = 0;
         curfunc->GetBasicBlock().clear();
         for (auto bb : *curfunc) {
@@ -222,7 +227,7 @@ void _PassManager::RunOnTest() {
         switch (name) {
         case mem2reg: {
           curfunc = func.get();
-          //维护bbs关系
+          // 维护bbs关系
           curfunc->bb_num = 0;
           curfunc->GetBasicBlock().clear();
           for (auto bb : *curfunc) {
@@ -234,7 +239,7 @@ void _PassManager::RunOnTest() {
         }
         case ece: {
           auto eliedg = RunImpl<ElimitCriticalEdge>(curfunc, AM);
-          //维护bbs关系
+          // 维护bbs关系
           curfunc->bb_num = 0;
           curfunc->GetBasicBlock().clear();
           for (auto bb : *curfunc) {
@@ -256,7 +261,7 @@ void _PassManager::RunOnTest() {
         }
         case simplifycfg: {
           auto m_cfgsimple = RunImpl<cfgSimplify>(curfunc, AM);
-          //维护bbs关系
+          // 维护bbs关系
           curfunc->bb_num = 0;
           curfunc->GetBasicBlock().clear();
           for (auto bb : *curfunc) {
@@ -270,7 +275,7 @@ void _PassManager::RunOnTest() {
           break;
         }
         case loopsimplify: {
-          //维护bbs关系
+          // 维护bbs关系
           auto m_loopsimple = RunImpl<LoopSimplify>(curfunc, AM);
           curfunc->bb_num = 0;
           curfunc->GetBasicBlock().clear();

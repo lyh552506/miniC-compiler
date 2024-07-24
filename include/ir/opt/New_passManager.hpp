@@ -137,4 +137,5 @@ private:
   std::queue<PassName> EnablePass;
   Module *module;
   Function *curfunc;
+  bool modified = true;
 };

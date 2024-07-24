@@ -32,6 +32,7 @@ private:
   void DeletDeadBlock(BasicBlock *bb);
   bool simplifyPhiInst();
   bool EliminateDeadLoop();
+  bool DeleteUnReachable();
   Function *m_func;
   dominance *m_dom;
   _AnalysisManager &AM;
