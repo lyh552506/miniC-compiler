@@ -182,14 +182,7 @@ bool User::IsBinary() {
 
 bool User::HasSideEffect() {
   if (dynamic_cast<StoreInst *>(this)) {
-    Value *op = this->Getuselist()[1]->usee;
-    if (op->isGlobal())
-      return true;
-    if(auto val = dynamic_cast<Variable*>(op))
-      if(val->usage == Variable::Param)
-        return true;
-    if(op->GetUserlist().GetSize() == 1)
-      return false;
+    return true;
   }
   if (dynamic_cast<CallInst *>(this)) {
     std::string name = this->Getuselist()[0]->usee->GetName();
