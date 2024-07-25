@@ -1347,14 +1347,15 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
 
 bool Function::isRecursive(){
   static std::unordered_map<Function*,bool> visited;
-  if(visited.find(this)!=visited.end()){
+  if(visited.find(this)==visited.end()){
     auto usrlist=GetUserlist();
     bool suc=false;
     for(auto use:usrlist){
       if(auto call=use->GetUser()->as<CallInst>()){
-        if(call->GetParent()->GetParent()==this)
+        if(call->GetParent()->GetParent()==this){
           suc=true;
           break;
+        }
       }
       // unexpected
     }
