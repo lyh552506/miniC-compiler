@@ -40,7 +40,7 @@ class Inliner : public _PassManagerBase<Inliner, Module>
 {
 public:
     bool Run();
-    void Inline(Module* m);
+    bool Inline(Module* m);
     Inliner(Module* m, _AnalysisManager &AM) : m(m), AM(AM) {}
 private:
     std::vector<BasicBlock*> CopyBlocks(User* inst);

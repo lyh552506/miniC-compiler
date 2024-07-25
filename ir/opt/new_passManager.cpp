@@ -129,7 +129,7 @@ void _PassManager::RunOnLevel() {
           // RunLevelPass(PRE, curfunc);
 
           // cse
-          // RunLevelPass(CSE, curfunc, modified);
+          RunLevelPass(CSE, curfunc, modified);
 
           // constprop
           RunLevelPass(ConstantProp, curfunc, modified);
@@ -147,9 +147,8 @@ void _PassManager::RunOnLevel() {
       // // looprotate
       // RunLevelPass(LoopRotate, curfunc);
       // PassChangedBegin(curfunc) PassChangedEnd
-
       // cse
-      // RunLevelPass(CSE, curfunc, modified);
+      RunLevelPass(CSE, curfunc, modified);
 
       // constprop
       RunLevelPass(ConstantProp, curfunc, modified);

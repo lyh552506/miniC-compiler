@@ -124,12 +124,13 @@ bool NoRecursive::CanBeInlined(CallInst *call) {
 }
 
 bool Inliner::Run() {
+  bool modified = false;
   init(m);
-  Inline(m);
+  modified |= Inline(m);
   m->EraseDeadFunc();
   for(auto &func:m->GetFuncTion())
       func->ClearInlineInfo();
-  return false;
+  return modified;
 }
 
 void Inliner::init(Module* m) {
@@ -155,8 +156,10 @@ void Inliner::init(Module* m) {
   }
 }
 
-void Inliner::Inline(Module* m) {
+bool Inliner::Inline(Module* m) {
+  bool modified = false;
   while (!NeedInlineCall.empty()) {
+    modified |= true;
     User *inst = NeedInlineCall.front();
     // std::cout<<";";
     // inst->print();
@@ -215,6 +218,7 @@ void Inliner::Inline(Module* m) {
       m->EraseFunction(inlined_func);
     delete inst;
   }
+  return modified;
 }
 
 std::vector<BasicBlock *> Inliner::CopyBlocks(User *inst) {
