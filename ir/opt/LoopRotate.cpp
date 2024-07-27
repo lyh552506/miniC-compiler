@@ -351,10 +351,11 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     if (iter == Header->end())
       break;
     auto inst = *iter;
-    auto insert_iter = Latch->rbegin();
+    // auto insert_iter = Latch->rbegin();
     inst->EraseFromParent();
     inst->SetParent(Latch);
-    insert_iter.insert_after(inst);
+    Latch->push_back(inst);
+    // insert_iter.insert_after(inst);
   }
   loopAnlasis->DeleteBlock(Header);
   // Header->EraseFromParent();

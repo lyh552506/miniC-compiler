@@ -184,7 +184,7 @@ void LcSSA::InsertPhis(Use *u, std::set<BasicBlock *> &exit) {
         continue;
       }
     }
-    assert(!b && "What happen?");
+    assert(b && "What happen?");
     auto phi = PhiInst::NewPhiNode(b->front(), b,
                                    (*(target.begin()))->front()->GetType(),
                                    u->GetValue()->GetName() + ".phi.lcssa");

@@ -333,11 +333,13 @@ void LoopSimplify::CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay) {
     return nullptr;
   };
   for (auto &use : cmp->Getuselist()) {
-    if (auto user = dynamic_cast<User *>(use->GetValue())) {
-      if (auto phi = indvarJudge(user)) {
+    if (auto val = dynamic_cast<User *>(use->GetValue())) {
+      if (auto phi = indvarJudge(val)) {
         if (!indvar) {
           indvar = phi;
           auto bin = dynamic_cast<BinaryInst *>(use->GetValue());
+          if (!bin)
+            return;
           loop->trait.change = bin;
           for (auto &use : bin->Getuselist()) {
             if (dynamic_cast<PhiInst *>(use->GetValue()))

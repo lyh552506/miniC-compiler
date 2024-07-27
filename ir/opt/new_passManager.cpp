@@ -103,43 +103,27 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
       PassChangedEnd
 
-          // mem2reg
-          PassChangedBegin(curfunc);
-      PassChangedEnd RunLevelPass(Mem2reg, curfunc, modified)
           // Local2Global
           RunImpl<Local2Global>(module, AM);
 
-      // constprop
+      // simplifycfg
       RunLevelPass(ConstantProp, curfunc, modified);
 
-      // simplifycfg
-
-      RunLevelPass(cfgSimplify, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
-
-          RunLevelPass(ConstantProp, curfunc, modified);
-      RunLevelPass(cfgSimplify, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
-
-          RunLevelPass(DCE, curfunc, modified);
+      RunLevelPass(DCE, curfunc, modified);
       PassChangedBegin(curfunc) PassChangedEnd
           // ece pre
           // RunLevelPass(ElimitCriticalEdge, curfunc);
           // PassChangedBegin(curfunc) PassChangedEnd
           // RunLevelPass(PRE, curfunc);
-
+          RunLevelPass(cfgSimplify, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd
           // cse
           RunLevelPass(CSE, curfunc, modified);
 
-          // constprop
-          RunLevelPass(ConstantProp, curfunc, modified);
-
-      // simplifycfg
-      RunLevelPass(cfgSimplify, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
-
-          // reassociate
-          RunLevelPass(Reassociate, curfunc, modified);
+      // constprop
+      RunLevelPass(ConstantProp, curfunc, modified);
+      // reassociate
+      RunLevelPass(Reassociate, curfunc, modified);
 
       // // lcssa
       // RunLevelPass(LcSSA, curfunc);
@@ -149,13 +133,11 @@ void _PassManager::RunOnLevel() {
       // PassChangedBegin(curfunc) PassChangedEnd
       // cse
       RunLevelPass(CSE, curfunc, modified);
-
-      // constprop
-      RunLevelPass(ConstantProp, curfunc, modified);
-
-      // simplifycfg
-      RunLevelPass(cfgSimplify, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
+      static int a = 0;
+      a++;
+      if (a == 3) {
+        return;
+      }
     }
 
     if (RunImpl<Inliner>(module, AM))

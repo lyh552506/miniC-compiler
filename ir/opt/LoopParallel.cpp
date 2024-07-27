@@ -1,6 +1,4 @@
 #include "LoopParallel.hpp"
-#include "CFG.hpp"
-#include "Singleton.hpp"
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
@@ -25,8 +23,9 @@ bool LoopParallel::Run() {
 
 void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   auto &body = loop->GetLoopBody();
+  LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   auto header = loop->GetHeader();
-  PhiInst *res = nullptr;
+  PhiInst *res = nullptr; // result += const ....
   int cnt = 0;
   for (auto inst : *header) {
     if (auto phi = dynamic_cast<PhiInst *>(inst)) {
@@ -42,7 +41,6 @@ void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
       break;
     }
   }
-  LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   InnerDataType ty = InnerDataType::IR_Value_VOID;
   if (res)
     ty = res->GetTypeEnum();
@@ -82,7 +80,9 @@ void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   auto substitute = new BasicBlock();
   substitute->SetName(substitute->GetName() + ".Substitute");
   m_func->add_block(substitute);
-  for (auto inst : *header) {
+  for (auto it = header->begin(); it != header->end();) {
+    auto inst = *it;
+    ++it;
     if (dynamic_cast<PhiInst *>(inst)) {
       inst->EraseFromParent();
       substitute->push_back(inst);
@@ -90,5 +90,29 @@ void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
       break;
     }
   }
+  std::vector<Value *> args;
+  for (const auto &[val, arg] : Val2Arg)
+    args.push_back(val);
+  auto callinst = new CallInst(ParallFunc, args);
+  substitute->push_back(callinst);
+  auto loopchange = dynamic_cast<User *>(loop->trait.change);
+  assert(loopchange);
+  auto change = loopchange->CloneInst();
+  substitute->push_back(change);
+  auto loopcmp = dynamic_cast<User *>(loop->GetHeader()->back()->GetOperand(0));
+  assert(loopcmp);
+  auto cmp = loopcmp->CloneInst();
+  substitute->push_back(cmp);
+  auto latch = loopAnaly->GetLatch(loop);
+  BasicBlock *exit = nullptr;
+  if (auto cond = dynamic_cast<CondInst *>(latch->back()))
+    for (int i = 1; i < 3; i++) {
+      if (cond->GetOperand(i) != latch)
+        exit = dynamic_cast<BasicBlock *>(cond->GetOperand(i));
+    }
+  assert(exit);
+  auto br = new CondInst(cmp, substitute, exit);
+  substitute->push_back(br);
+  //修改header和exit
   
 }
