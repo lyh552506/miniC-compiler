@@ -50,7 +50,13 @@ Value *SimplifySubInst(Value *LHS, Value *RHS)
         return LHS;
     // X - X -> 0
     if (LHS == RHS)
-        return ConstIRInt::GetNewConstant(0);
+    {
+        if (LHS->GetType()->GetTypeEnum() == InnerDataType::IR_Value_INT)
+            return ConstIRInt::GetNewConstant(0);
+        else if (LHS->GetType()->GetTypeEnum() == InnerDataType::IR_Value_Float)
+            return ConstIRFloat::GetNewConstant(0);
+    }
+
     return nullptr;
 }
 
@@ -58,11 +64,21 @@ Value *SimplifyMulInst(Value *LHS, Value *RHS)
 {
     // X * undef -> 0
     if (LHS->isUndefVal() || RHS->isUndefVal())
-        return ConstIRInt::GetNewConstant(0);
+    {
+        if (dynamic_cast<ConstIRFloat *>(LHS))
+            return ConstIRFloat::GetNewConstant(0);
+        else if (dynamic_cast<ConstIRInt *>(LHS))
+            return ConstIRInt::GetNewConstant(0);
+    }
 
     // X * 0 -> 0
     if (LHS->isConstZero() || RHS->isConstZero())
-        return ConstIRInt::GetNewConstant(0);
+    {
+        if (dynamic_cast<ConstIRFloat *>(LHS))
+            return ConstIRFloat::GetNewConstant(0);
+        else if (dynamic_cast<ConstIRInt *>(LHS))
+            return ConstIRInt::GetNewConstant(0);
+    }
 
     // X * 1 -> X
     if (LHS->isConstOne())
@@ -72,37 +88,48 @@ Value *SimplifyMulInst(Value *LHS, Value *RHS)
     return nullptr;
 }
 
-Value *SimplifyDivInst(Value *LHS, Value *RHS) {
-  // X / undef -> undef
-  if (RHS->isUndefVal() && !LHS->isUndefVal())
-    return UndefValue::get(RHS->GetType());
-  // undef / 0 -> undef
-  if (LHS->isUndefVal() && RHS->isConstZero())
-    return UndefValue::get(RHS->GetType());
-  // undef / undef -> undef
-  if (LHS->isUndefVal() && RHS->isUndefVal())
-    return UndefValue::get(RHS->GetType());
-  // X / 0 -> undef ,we don't need to preserve faults!
-  if (!LHS->isConstZero() && RHS->isConstZero())
-    return UndefValue::get(RHS->GetType());
-  // undef / X -> 0
-  if (LHS->isUndefVal() && !RHS->isUndefVal())
-    return ConstIRInt::GetNewConstant(0);
-  // 0 / X -> 0
-  if (LHS->isConstOne() && !RHS->isConstOne())
-    return ConstIRInt::GetNewConstant(0);
-  // X / 1 -> X
-  if (RHS->isConstOne())
-    return LHS;
-  // X / X -> 1
-  if (LHS == RHS)
-  {
-    if(dynamic_cast<ConstIRInt*>(LHS) && dynamic_cast<ConstIRInt*>(RHS))
-      return ConstIRInt::GetNewConstant(1);
-    else if(dynamic_cast<ConstIRFloat*>(LHS) && dynamic_cast<ConstIRFloat*>(RHS))
-      return ConstIRFloat::GetNewConstant(1);
-  }
-  return nullptr;
+Value *SimplifyDivInst(Value *LHS, Value *RHS)
+{
+    // X / undef -> undef
+    if (RHS->isUndefVal() && !LHS->isUndefVal())
+        return UndefValue::get(RHS->GetType());
+    // undef / 0 -> undef
+    if (LHS->isUndefVal() && RHS->isConstZero())
+        return UndefValue::get(RHS->GetType());
+    // undef / undef -> undef
+    if (LHS->isUndefVal() && RHS->isUndefVal())
+        return UndefValue::get(RHS->GetType());
+    // X / 0 -> undef ,we don't need to preserve faults!
+    if (!LHS->isConstZero() && RHS->isConstZero())
+        return UndefValue::get(RHS->GetType());
+    // undef / X -> 0
+    if (LHS->isUndefVal() && !RHS->isUndefVal())
+    {
+        if (dynamic_cast<ConstIRFloat *>(LHS))
+            return ConstIRFloat::GetNewConstant(0);
+        else if (dynamic_cast<ConstIRInt *>(LHS))
+            return ConstIRInt::GetNewConstant(0);
+    }
+    // 0 / X -> 0
+    if (LHS->isConstZero() && !RHS->isConstZero())
+    {
+        if (dynamic_cast<ConstIRFloat *>(LHS))
+            return ConstIRFloat::GetNewConstant(0);
+        else if (dynamic_cast<ConstIRInt *>(LHS))
+            return ConstIRInt::GetNewConstant(0);
+    }
+    // X / 1 -> X
+    if (RHS->isConstOne())
+        return LHS;
+    // X / X -> 1
+    if (LHS == RHS)
+    {
+        if (dynamic_cast<ConstIRInt *>(LHS) && dynamic_cast<ConstIRInt *>(RHS))
+            return ConstIRInt::GetNewConstant(1);
+        else if (dynamic_cast<ConstIRFloat *>(LHS) && dynamic_cast<ConstIRFloat *>(RHS))
+            return ConstIRFloat::GetNewConstant(1);
+    }
+    return nullptr;
 }
 
 Value *SimplifyModInst(Value *LHS, Value *RHS)
@@ -115,16 +142,31 @@ Value *SimplifyModInst(Value *LHS, Value *RHS)
         return ConstIRInt::GetNewConstant(0);
     // 0 % X -> 0
     if (LHS->isConstZero())
-        return ConstIRInt::GetNewConstant(0);
+    {
+        if (dynamic_cast<ConstIRFloat *>(LHS))
+            return ConstIRFloat::GetNewConstant(0);
+        else if (dynamic_cast<ConstIRInt *>(LHS))
+            return ConstIRInt::GetNewConstant(0);
+    }
     // X % 0 -> undef
     if (RHS->isConstZero())
         return UndefValue::get(RHS->GetType());
     // X % 1 -> 0
     if (RHS->isConstOne())
-        return ConstIRInt::GetNewConstant(0);
+    {
+        if (dynamic_cast<ConstIRFloat *>(LHS))
+            return ConstIRFloat::GetNewConstant(0);
+        else if (dynamic_cast<ConstIRInt *>(LHS))
+            return ConstIRInt::GetNewConstant(0);
+    }
     // X % X -> 0
     if (RHS == LHS)
-        return ConstIRInt::GetNewConstant(0);
+    {
+        if (dynamic_cast<ConstIRFloat *>(LHS))
+            return ConstIRFloat::GetNewConstant(0);
+        else if (dynamic_cast<ConstIRInt *>(LHS))
+            return ConstIRInt::GetNewConstant(0);
+    }
     return nullptr;
 }
 
