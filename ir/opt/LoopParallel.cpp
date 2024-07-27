@@ -1,4 +1,6 @@
 #include "LoopParallel.hpp"
+#include "BaseCFG.hpp"
+#include "CFG.hpp"
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
@@ -17,6 +19,7 @@ bool LoopParallel::Run() {
   loopAnaly = AM.get<LoopAnalysis>(m_func, dom);
   for (auto loop : *loopAnaly) {
     ExtractLoopParallelBody(loop);
+    return false;
   }
   return changed;
 }
@@ -47,6 +50,7 @@ void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   auto ParallFunc =
       new Function(ty, Singleton<Module>().GetFuncNameEnum("Loop_Body"));
   Singleton<Module>().Push_Func(ParallFunc);
+  ParallFunc->clear();
   std::unordered_map<Value *, Variable *> Val2Arg;
   auto indvar = loop->trait.indvar;
   Val2Arg[indvar] = new Variable(Variable::Param, indvar->GetType(), "");
@@ -99,6 +103,7 @@ void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   assert(loopchange);
   auto change = loopchange->CloneInst();
   substitute->push_back(change);
+  loop->trait.change = change;
   auto loopcmp = dynamic_cast<User *>(loop->GetHeader()->back()->GetOperand(0));
   assert(loopcmp);
   auto cmp = loopcmp->CloneInst();
@@ -114,5 +119,61 @@ void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   auto br = new CondInst(cmp, substitute, exit);
   substitute->push_back(br);
   //修改header和exit
-  
+  for (auto rev : dom->GetNode(loop->GetHeader()->num).rev)
+    if (dom->GetNode(rev).thisBlock != latch) {
+      auto prehead = dom->GetNode(rev).thisBlock;
+      if (auto cond = dynamic_cast<CondInst *>(prehead->back())) {
+        for (int i = 1; i < 3; i++) {
+          if (cond->GetOperand(i) == header)
+            cond->RSUW(i, substitute);
+        }
+      } else if (auto uncond = dynamic_cast<UnCondInst *>(prehead->back())) {
+        uncond->RSUW(0, substitute);
+      }
+    }
+
+  for (auto des : dom->GetNode(latch->num).des)
+    if (dom->GetNode(des).thisBlock != header)
+      for (auto it = dom->GetNode(des).thisBlock->begin();
+           it != dom->GetNode(des).thisBlock->end() &&
+           dynamic_cast<PhiInst *>(*it);
+           ++it) {
+        auto phi = dynamic_cast<PhiInst *>(*it);
+        phi->ModifyBlock(latch, substitute);
+      }
+  delete latch->back();
+  if (res) {
+    auto ret = new RetInst(res->ReturnValIn(latch));
+    latch->push_back(ret);
+  } else {
+    auto ret = new RetInst();
+    latch->push_back(ret);
+  }
+  // deal phi
+  for (auto it = substitute->begin();
+       it != substitute->end() && dynamic_cast<PhiInst *>(*it); ++it) {
+    auto phi = dynamic_cast<PhiInst *>(*it);
+    for (int i = 0; i < phi->PhiRecord.size(); i++) {
+      if (phi->PhiRecord[i].second == latch)
+        phi->Del_Incomes(i);
+    }
+  }
+
+  if (res)
+    res->updateIncoming(callinst, substitute);
+  loop->trait.indvar->updateIncoming(loop->trait.change, substitute);
+  //转移
+  std::unordered_map<Value *, Value *> tmp;
+  for (auto &Arg : m_func->GetParams()) {
+    tmp[Arg.get()] = Arg.get();
+  }
+}
+
+void LoopParallel::ClearLoop(LoopInfo *loop) {
+  auto &body = loop->GetLoopBody();
+  for (auto it = body.begin(); it != body.end();) {
+    auto contain = *it;
+    ++it;
+    delete contain;
+  }
 }

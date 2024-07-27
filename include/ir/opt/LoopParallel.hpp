@@ -10,7 +10,7 @@ public:
   LoopParallel(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
   bool Run();
   void ExtractLoopParallelBody(LoopInfo *loop);
-
+  void ClearLoop(LoopInfo* loop);
 private:
   LoopAnalysis *loop;
   Function *m_func;
