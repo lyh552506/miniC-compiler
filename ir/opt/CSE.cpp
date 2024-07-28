@@ -171,8 +171,8 @@ bool CSE::ProcessNode(CSENode *node)
             {
                 _DEBUG(std::cerr << "Can delete StoreInst: " << inst->GetName() << std::endl;)
                 wait_del.push_back(val);
+                node->DelStoreValue(store, CurGeneration);
                 modified |= true;
-                continue;
             }
             ++CurGeneration;
             node->SetStoreValue(store, CurGeneration);
