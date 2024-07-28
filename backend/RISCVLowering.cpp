@@ -49,10 +49,16 @@ bool RISCVFunctionLowering::run(Function* m){
 
     Legalize legal(ctx);
     // legal.run_beforeRA();
-
+    
+    // Backend DCE before RA
+    BackendDCE dcebefore(mfunc, ctx);
+    dcebefore.RunImpl();
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
+    // Backend DCE after RA
+    BackendDCE dceafter(mfunc, ctx);
+    dceafter.RunImpl();
 
     // Generate Frame of current Function
     // And generate the head and tail of frame here
