@@ -7,6 +7,7 @@
 #include "dominant.hpp"
 #include "lcssa.hpp"
 #include <unordered_map>
+#include <vector>
 class _AnalysisManager;
 class LoopRotate : public _PassManagerBase<LoopRotate, Function> {
 public:
@@ -16,18 +17,21 @@ public:
 
 private:
   bool RotateLoop(LoopInfo *loop);
+  bool TryRotate(LoopInfo *loop);
   bool CanBeMove(User *I);
   void SimplifyBlocks(BasicBlock *Header, LoopInfo *loop);
   void PreservePhi(BasicBlock *header, LoopInfo *loop, BasicBlock *preheader,
                    BasicBlock *new_header,
-                   std::unordered_map<Value *, Value *> &PreHeaderValue);
+                   std::unordered_map<Value *, Value *> &PreHeaderValue,
+                   LoopAnalysis *loopAnlasis);
   void PreserveLcssa(BasicBlock *new_exit, BasicBlock *old_exit,
                      BasicBlock *pred);
   void UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,
                       const std::vector<BasicBlock *> &pred);
-  LoopAnalysis *loopAnlasis;
+  LoopAnalysis *m_loopAnlasis;
   Function *m_func;
   dominance *m_dom;
   _AnalysisManager &AM;
+  std::unordered_map<Value *, Value *> CloneMap;
   const int Heuristic = 8;
 };

@@ -118,6 +118,10 @@ void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   assert(exit);
   auto br = new CondInst(cmp, substitute, exit);
   substitute->push_back(br);
+  for (auto &use : cmp->Getuselist()) {
+    if (use->GetValue() == loopchange)
+      cmp->RSUW(use.get(), change);
+  }
   //修改header和exit
   for (auto rev : dom->GetNode(loop->GetHeader()->num).rev)
     if (dom->GetNode(rev).thisBlock != latch) {
@@ -139,7 +143,22 @@ void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
            dynamic_cast<PhiInst *>(*it);
            ++it) {
         auto phi = dynamic_cast<PhiInst *>(*it);
-        phi->ModifyBlock(latch, substitute);
+        auto it1 = std::find_if(
+            phi->PhiRecord.begin(), phi->PhiRecord.end(),
+            [latch](
+                const std::pair<int, std::pair<Value *, BasicBlock *>> &ele) {
+              return ele.second.second == latch;
+            });
+        if (it1 != phi->PhiRecord.end()) {
+          it1->second.second = substitute;
+          if (it1->second.first == loopchange)
+            it1->second.first = change;
+          else if (res && it1->second.first == res->ReturnValIn(latch))
+            it1->second.first = callinst;
+          else {
+            assert(0 && "what happened?");
+          }
+        }
       }
   delete latch->back();
   if (res) {
@@ -166,6 +185,10 @@ void LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   std::unordered_map<Value *, Value *> tmp;
   for (auto &Arg : m_func->GetParams()) {
     tmp[Arg.get()] = Arg.get();
+  }
+  for (auto bb : body) {
+    bb->EraseFromParent();
+    ParallFunc->push_bb(bb);
   }
 }
 

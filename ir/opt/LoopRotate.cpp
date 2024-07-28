@@ -7,23 +7,17 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "Singleton.hpp"
-#include <algorithm>
 #include <cassert>
-#include <cstddef>
 #include <cstdlib>
-#include <optional>
-#include <set>
-#include <unistd.h>
-#include <unordered_map>
-#include <utility>
-#include <variant>
+#include <iterator>
 
 bool LoopRotate::Run() {
   bool changed = false;
   m_dom = AM.get<dominance>(m_func);
   auto sideeffect = AM.get<SideEffect>(&Singleton<Module>());
-  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
-  for (auto loop : *loopAnlasis) {
+  m_loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
+  for (auto loop : *m_loopAnlasis) {
+    changed |= TryRotate(loop);
     changed |= RotateLoop(loop);
   }
   return changed;
@@ -37,7 +31,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   loop->RotateTimes++;
   bool changed = false;
   m_dom = AM.get<dominance>(m_func);
-  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
+  auto loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
   auto prehead = loopAnlasis->GetPreHeader(loop);
   auto header = loop->GetHeader();
   auto latch = loopAnlasis->GetLatch(loop);
@@ -77,7 +71,6 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
       for (int i = 0; i < new_inst->Getuselist().size(); i++) {
         auto &use = new_inst->Getuselist()[i];
         if (PreHeaderValue.count(use->GetValue())) {
-          // use->RemoveFromUserList(use->GetUser());
           auto tmp = PreHeaderValue[use->GetValue()];
           new_inst->RSUW(i, tmp);
         }
@@ -93,11 +86,13 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
       if (simplify) {
         delete new_inst;
         PreHeaderValue[inst] = simplify;
+        CloneMap[inst] = simplify;
       } else {
         PreHeaderValue[inst] = new_inst;
         new_inst->SetParent(prehead);
         It.insert_before(new_inst);
         It = prehead->rbegin();
+        CloneMap[inst] = new_inst;
       }
     }
   }
@@ -111,70 +106,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   m_dom->GetNode(New_header->num).rev.push_front(prehead->num);
   m_dom->GetNode(prehead->num).des.push_front(New_header->num);
   // Deal With Phi In header
-  PreservePhi(header, loop, prehead, New_header, PreHeaderValue);
-
-  // if (dynamic_cast<CondInst *>(prehead->back()) &&
-  //     !dynamic_cast<ConstIRBoolean *>(prehead->back()->GetOperand(0))) {
-
-  //   auto lr_ph = new BasicBlock();
-  //   lr_ph->SetName(lr_ph->GetName() + ".lr_ph");
-  //   m_func->push_bb(lr_ph);
-  //   auto parent = loopAnlasis->LookUp(prehead);
-  //   while (parent) {
-  //     parent->InsertLoopBody(lr_ph);
-  //     parent = parent->GetParent();
-  //   }
-  //   //补充dom里面的node信息
-  //   auto node = new dominance::Node;
-  //   node->init();
-  //   node->thisBlock = lr_ph;
-  //   lr_ph->num = m_dom->node.size();
-  //   node->des.push_front(New_header->num);
-  //   node->rev.push_front(prehead->num);
-  //   m_dom->GetNode(prehead->num).des.push_front(m_dom->node.size());
-  //   m_dom->GetNode(New_header->num).rev.push_front(m_dom->node.size());
-  //   m_dom->node.push_back(*node);
-
-  //   m_func->InsertBlock(prehead, New_header, lr_ph);
-  //   for (auto iter = New_header->begin();
-  //        iter != New_header->end() && dynamic_cast<PhiInst *>(*iter) !=
-  //        nullptr;
-  //        ++iter) {
-  //     auto phi = dynamic_cast<PhiInst *>(*iter);
-  //     phi->ModifyBlock(prehead, lr_ph);
-  //   }
-  //   // Form Exit
-  //   std::vector<int> revToModify;
-  //   for (auto rev : m_dom->GetNode(Exit->num).rev) {
-  //     auto l = loopAnlasis->LookUp(m_dom->GetNode(rev).thisBlock);
-  //     if (!l || l->Contain(Exit))
-  //       continue;
-  //     revToModify.push_back(rev);
-  //   }
-  //   for (auto rev : revToModify) {
-  //     auto loopexit = new BasicBlock();
-  //     loopexit->SetName(loopexit->GetName() + ".loopexit");
-  //     m_func->push_bb(loopexit);
-  //     m_func->InsertBlock(header, Exit, loopexit);
-  //     auto parent = loopAnlasis->LookUp(Exit);
-  //     while (parent) {
-  //       parent->InsertLoopBody(loopexit);
-  //       parent = parent->GetParent();
-  //     }
-  //     PreserveLcssa(loopexit, Exit, m_dom->GetNode(rev).thisBlock);
-  //     auto Node = new dominance::Node;
-  //     Node->init();
-  //     Node->thisBlock = loopexit;
-  //     loopexit->num = m_dom->node.size();
-  //     Node->des.push_front(Exit->num);
-  //     Node->rev.push_front(header->num);
-  //     m_dom->GetNode(header->num).des.remove(Exit->num);
-  //     m_dom->GetNode(Exit->num).rev.remove(header->num);
-  //     m_dom->GetNode(Exit->num).rev.push_front(loopexit->num);
-  //     m_dom->GetNode(header->num).des.push_front(loopexit->num);
-  //     m_dom->node.push_back(*Node);
-  //   }
-  // } else if (dynamic_cast<CondInst *>(prehead->back())) {
+  PreservePhi(header, loop, prehead, New_header, PreHeaderValue, loopAnlasis);
   if (dynamic_cast<CondInst *>(prehead->back()) &&
       dynamic_cast<ConstIRBoolean *>(prehead->back()->GetOperand(0))) {
     auto cond = dynamic_cast<CondInst *>(prehead->back());
@@ -222,9 +154,11 @@ bool LoopRotate::CanBeMove(User *I) {
 void LoopRotate::PreservePhi(
     BasicBlock *header, LoopInfo *loop, BasicBlock *preheader,
     BasicBlock *new_header,
-    std::unordered_map<Value *, Value *> &PreHeaderValue) {
+    std::unordered_map<Value *, Value *> &PreHeaderValue,
+    LoopAnalysis *loopAnlasis) {
   // bool = true ---> outside the loop
   std::map<PhiInst *, std::map<bool, Value *>> RecordPhi;
+  std::map<Value *, PhiInst *> NewInsertPhi;
   std::map<PhiInst *, PhiInst *> PhiInsert;
   for (auto des : m_dom->GetNode(header->num).des) {
     auto succ = m_dom->GetNode(des).thisBlock;
@@ -279,11 +213,9 @@ void LoopRotate::PreservePhi(
             else
               new_phi->updateIncoming(RecordPhi[phi][flag], header);
           }
-          // use->SetValue() = new_phi;
           user->RSUW(use, new_phi);
           PhiInsert[phi] = new_phi;
         } else {
-          // use->SetValue() = PhiInsert[phi];
           user->RSUW(use, PhiInsert[phi]);
         }
         if (auto p = dynamic_cast<PhiInst *>(use->GetUser())) {
@@ -292,6 +224,49 @@ void LoopRotate::PreservePhi(
               p->PhiRecord[i].first = use->SetValue();
             }
           }
+        }
+        for (auto ex : loopAnlasis->GetExit(loop))
+          for (auto _inst : *ex)
+            if (auto p = dynamic_cast<PhiInst *>(_inst)) {
+              auto it = std::find_if(
+                  p->PhiRecord.begin(), p->PhiRecord.end(),
+                  [new_header](
+                      const std::pair<const int,
+                                      std::pair<Value *, BasicBlock *>> &ele) {
+                    return ele.second.second == new_header;
+                  });
+              if (it != p->PhiRecord.end()) {
+                p->RSUW(it->first, PhiInsert[phi]);
+                it->second.first = PhiInsert[phi];
+                continue;
+              }
+              for (int i = 0; i < p->PhiRecord.size(); i++)
+                if (p->PhiRecord[i].first == inst &&
+                    p->PhiRecord[i].second != header) {
+                  p->RSUW(i, PhiInsert[phi]);
+                  p->PhiRecord[i].first = PhiInsert[phi];
+                }
+            }
+      } else {
+        auto usee = use->GetValue();
+        if (NewInsertPhi.find(usee) == NewInsertPhi.end()) {
+          auto cloned = CloneMap[usee];
+          if (!cloned)
+            continue;
+          auto tmp = header;
+          while (std::distance(m_dom->GetNode(tmp->num).rev.begin(),
+                               m_dom->GetNode(tmp->num).rev.end()) == 1) {
+            tmp = m_dom->GetNode((m_dom->GetNode(tmp->num).rev.front()))
+                      .thisBlock;
+          }
+          auto new_phi =
+              PhiInst::NewPhiNode(tmp->front(), tmp, inst->GetType());
+          new_phi->updateIncoming(cloned, preheader);
+          new_phi->updateIncoming(usee, header);
+          user->RSUW(use, new_phi);
+          NewInsertPhi[usee] = new_phi;
+        } else {
+          user->RSUW(use, NewInsertPhi[usee]);
         }
       }
     }
@@ -340,10 +315,7 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     }
   }
   Header->RAUW(Latch);
-  // for(auto des:m_dom->GetNode(Header->num).des){
-  //   auto succ=m_dom->GetNode(des).thisBlock;
-  //   for()
-  // }
+
   delete *(Latch->rbegin());
   auto iter = Header->begin();
   for (;;) {
@@ -351,14 +323,12 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     if (iter == Header->end())
       break;
     auto inst = *iter;
-    // auto insert_iter = Latch->rbegin();
     inst->EraseFromParent();
     inst->SetParent(Latch);
     Latch->push_back(inst);
-    // insert_iter.insert_after(inst);
   }
-  loopAnlasis->DeleteBlock(Header);
-  // Header->EraseFromParent();
+  m_loopAnlasis->DeleteBlock(Header);
+
   auto it = std::find(m_func->GetBasicBlock().begin(),
                       m_func->GetBasicBlock().end(), Header);
   m_func->GetBasicBlock().erase(it);
@@ -380,4 +350,65 @@ void LoopRotate::PreserveLcssa(BasicBlock *new_exit, BasicBlock *old_exit,
           phi->ModifyBlock(val.second, new_exit);
           phi->PhiRecord[_1] = std::make_pair(Insert, new_exit);
         }
+}
+
+bool LoopRotate::TryRotate(LoopInfo *loop) {
+  bool Legal = false;
+  auto latch = m_loopAnlasis->GetLatch(loop);
+  auto head = loop->GetHeader();
+  assert(latch);
+  int pred = std::distance(m_dom->GetNode(latch->num).rev.begin(),
+                           m_dom->GetNode(latch->num).rev.end());
+  if (pred != 1)
+    return false;
+  auto PredBB =
+      m_dom->GetNode(m_dom->GetNode(latch->num).rev.front()).thisBlock;
+  for (auto des : m_dom->GetNode(PredBB->num).des) {
+    auto succ = m_dom->GetNode(des).thisBlock;
+    if (!loop->Contain(succ))
+      Legal = true;
+  }
+  if (!Legal)
+    return false;
+  Legal = false;
+  for (auto iter = latch->begin(); iter != latch->end();) {
+    auto inst = *iter;
+    ++iter;
+    if (dynamic_cast<BinaryInst *>(inst))
+      for (auto use : inst->GetUserlist()) {
+        auto user = use->GetUser();
+        if (loop->Contain(user->GetParent()))
+          Legal = true;
+      }
+  }
+  if (!Legal)
+    return false;
+  for (auto inst : *latch) {
+    if (dynamic_cast<CondInst *>(inst) || dynamic_cast<UnCondInst *>(inst))
+      break;
+    auto it = PredBB->rbegin();
+    inst->EraseFromParent();
+    it.insert_before(inst);
+  }
+  auto cond = dynamic_cast<CondInst *>(PredBB->back());
+  assert(cond);
+  for (int i = 0; i < cond->Getuselist().size(); i++) {
+    if (cond->GetOperand(i) == latch) {
+      cond->RSUW(i, PredBB);
+      m_loopAnlasis->DeleteBlock(latch);
+      m_dom->GetNode(PredBB->num).des.remove(latch->num);
+      m_dom->GetNode(head->num).rev.remove(latch->num);
+      m_dom->GetNode(head->num).rev.push_front(PredBB->num);
+      m_dom->GetNode(PredBB->num).des.push_front(head->num);
+      for (auto inst : *head)
+        if (auto phi = dynamic_cast<PhiInst *>(inst))
+          phi->ModifyBlock(latch, PredBB);
+      break;
+    }
+  }
+  auto iter = std::find(m_func->GetBasicBlock().begin(),
+                        m_func->GetBasicBlock().end(), latch);
+  m_func->GetBasicBlock().erase(iter);
+  delete latch;
+  FunctionChange(m_func) return true;
 }
