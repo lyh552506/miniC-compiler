@@ -56,6 +56,16 @@ bool RISCVFunctionLowering::run(Function* m){
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
+
+    for(auto block:*mfunc){
+        for(auto it=block->begin();it!=block->end();){
+            auto inst=*it;
+            ++it;
+            if(inst->GetOpcode()==RISCVMIR::RISCVISA::MarkDead)
+                delete inst;
+        }
+    }
+
     // Backend DCE after RA
     BackendDCE dceafter(mfunc, ctx);
     dceafter.RunImpl();

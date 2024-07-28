@@ -73,14 +73,9 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block) {
         BlockLivein[block].insert(val2);
     } else if (Opcode == OpType::ret) {
       if ((*inst)->GetOperandSize() != 0) {
-        RISCVMOperand *val = (*inst)->GetOperand(0);
-        if (val->GetType() == RISCVType::riscv_i32) {
-          PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
-          BlockLivein[block].insert(Phy);
-        } else if (val->GetType() == RISCVType::riscv_float32) {
-          PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0);
-          BlockLivein[block].insert(Phy);
-        }
+        auto phy = (*inst)->GetOperand(0)->as<PhyRegister>();
+        assert(phy!=nullptr&&(phy->Getregenum()==PhyRegister::a0||phy->Getregenum()==PhyRegister::fa0));
+        BlockLivein[block].insert(phy);
       }
     } else {
       for (int i = 0; i < (*inst)->GetOperandSize(); i++) {
@@ -109,9 +104,6 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block) {
     if (op == OpType::ret) {
       if (cur->GetOperandSize() > 0) {
         Live.insert(static_cast<Register *>(cur->GetOperand(0)));
-      } else {
-        PhyRegister *Phy = PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0);
-        Live.insert(Phy);
       }
     } else if (op == OpType::call) {
       InstLive[cur] = Live;
