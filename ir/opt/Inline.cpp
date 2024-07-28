@@ -21,7 +21,7 @@ bool InlineHeuristicManager::CanBeInlined(CallInst *call) {
 SizeLimit::SizeLimit() {}
 
 bool SizeLimit::CanBeInlined(CallInst *call) {
-  static size_t cost = 0;
+  // static size_t cost = 0;
   auto master = call->GetParent()->GetParent();
   auto inline_func = call->GetOperand(0)->as<Function>();
   assert(master != nullptr && inline_func != nullptr);
@@ -118,16 +118,19 @@ NoRecursive::NoRecursive(Module *_m) : m(_m) {
 bool NoRecursive::CanBeInlined(CallInst *call) {
   auto &&slave = call->GetOperand(0)->as<Function>();
   auto &&master = call->GetParent()->GetParent();
-  if (master != slave)
+  if (!master->isRecursive() && !slave->isRecursive())
     return true;
   return false;
 }
 
 bool Inliner::Run() {
+  bool modified = false;
   init(m);
-  Inline(m);
+  modified |= Inline(m);
   m->EraseDeadFunc();
-  return false;
+  for(auto &func:m->GetFuncTion())
+      func->ClearInlineInfo();
+  return modified;
 }
 
 void Inliner::init(Module* m) {
@@ -153,8 +156,10 @@ void Inliner::init(Module* m) {
   }
 }
 
-void Inliner::Inline(Module* m) {
+bool Inliner::Inline(Module* m) {
+  bool modified = false;
   while (!NeedInlineCall.empty()) {
+    modified |= true;
     User *inst = NeedInlineCall.front();
     // std::cout<<";";
     // inst->print();
@@ -213,6 +218,7 @@ void Inliner::Inline(Module* m) {
       m->EraseFunction(inlined_func);
     delete inst;
   }
+  return modified;
 }
 
 std::vector<BasicBlock *> Inliner::CopyBlocks(User *inst) {

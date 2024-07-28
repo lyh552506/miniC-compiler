@@ -95,9 +95,10 @@ template <typename T> T PopBack(std::vector<T> &vec) {
     modified |= RunImpl<PassName>(curfunc, AM);                                \
   }
 
-#define ContinueRunPassOnTest(PassName, curfunc)                               \
-  bool modified = true;                                                        \
-  while (modified) {                                                           \
-    modified = false;                                                          \
-    modified = RunImpl<PassName>(curfunc, AM);                                 \
-  }
+#define ContinueRunPassOnTest(PassName, curfunc)                                                                       \
+    bool modified = true;                                                                                              \
+    while (modified)                                                                                                   \
+    {                                                                                                                  \
+        modified = false;                                                                                              \
+        modified = RunImpl<PassName>(curfunc, AM);                                                                     \
+    }

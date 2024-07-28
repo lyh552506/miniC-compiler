@@ -182,11 +182,7 @@ bool User::IsBinary() {
 
 bool User::HasSideEffect() {
   if (dynamic_cast<StoreInst *>(this)) {
-    Value *op = this->Getuselist()[1]->usee;
-    if (op->isGlobal())
-      return true;
-    if (op->GetTypeEnum() == InnerDataType::IR_PTR)
-      return true;
+    return true;
   }
   if (dynamic_cast<CallInst *>(this)) {
     std::string name = this->Getuselist()[0]->usee->GetName();

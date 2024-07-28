@@ -294,8 +294,9 @@ class Function:public Value,public mylist<Function,BasicBlock>
     public:
     std::set<Value*> Change_Val; // Used for cse 
     std::pair<size_t,size_t>& GetInlineInfo();
+    inline void ClearInlineInfo(){inlineinfo.first=inlineinfo.second=0;};
+    bool isRecursive();
     void InsertAlloca(AllocaInst* ptr);
-    public:
     virtual Function* clone(std::unordered_map<Operand,Operand>&) override{return this;};
     Function(InnerDataType _tp,std::string _id);
     void print();

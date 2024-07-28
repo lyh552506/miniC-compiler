@@ -1345,6 +1345,25 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
   return inlineinfo;
 }
 
+bool Function::isRecursive(){
+  static std::unordered_map<Function*,bool> visited;
+  if(visited.find(this)==visited.end()){
+    auto usrlist=GetUserlist();
+    bool suc=false;
+    for(auto use:usrlist){
+      if(auto call=use->GetUser()->as<CallInst>()){
+        if(call->GetParent()->GetParent()==this){
+          suc=true;
+          break;
+        }
+      }
+      // unexpected
+    }
+    visited[this]=suc;
+  }
+  return visited[this];
+}
+
 void Function::push_param(std::string realname, Variable *var) {
   auto alloca = new AllocaInst(PointerType::NewPointerTypeGet(var->GetType()));
   auto store = new StoreInst(var, alloca);

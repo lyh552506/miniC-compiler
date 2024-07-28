@@ -18,6 +18,7 @@ bool cfgSimplify::Run() {
     keep_loop = false;
     if (m_dom != nullptr)
       keep_loop |= simplifyPhiInst();
+    loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
     keep_loop |= simplify_Block();
     FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
     keep_loop |= DealBrInst();
