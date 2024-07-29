@@ -45,22 +45,16 @@ protected:
 using MOperand = Register *;
 class BlockLiveInfo {
 private:
+  void CalCulateSucc(RISCVBasicBlock* block);
   void GetBlockLivein(RISCVBasicBlock *block);
   void GetBlockLiveout(RISCVBasicBlock *block);
-  void iterate(RISCVFunction *func);
-  void RunOnFunc(RISCVFunction *func);
-  void UpdateInfo(RISCVMOperand *val, RISCVBasicBlock *block);
-  std::map<RISCVBasicBlock *, bool> UnChanged;
-  bool isChanged = false;
   RISCVFunction *m_func;
 
 public:
-  std::map<RISCVBasicBlock*, std::list<RISCVBasicBlock*>> SuccBlocks;
-  std::map<RISCVBasicBlock *, std::unordered_set<MOperand>> Uses; // block uses
-  std::map<RISCVBasicBlock *, std::unordered_set<MOperand>> Defs; // block defs
-  std::map<RISCVBasicBlock *, std::set<MOperand>> BlockLivein;
-  std::map<RISCVBasicBlock *, std::set<MOperand>> BlockLiveout;
-  std::map<RISCVMIR *, std::set<MOperand>> InstLive;
+  std::unordered_map<RISCVBasicBlock*, std::list<RISCVBasicBlock*>> SuccBlocks;
+  std::unordered_map<RISCVBasicBlock *, std::unordered_set<MOperand>> BlockLivein;
+  std::unordered_map<RISCVBasicBlock *, std::unordered_set<MOperand>> BlockLiveout;
+  std::unordered_map<RISCVMIR *, std::unordered_set<MOperand>> InstLive;
   // 机器寄存器的集合，每个寄存器都预先指派了一种颜色
   std::unordered_set<MOperand> Precolored; // reg
                                            //算法最后为每一个operand选择的颜色

@@ -16,15 +16,16 @@ class BackendDCE : public BlockLiveInfo, BackEndPass<RISCVFunction>
   private:
     RISCVLoweringContext &ctx;
     RISCVFunction *func;
-    std::vector<RISCVMIR*> wait_del;
-    bool CanHandle(RISCVMIR* inst);
+    std::vector<RISCVMIR *> wait_del;
+    bool CanHandle(RISCVMIR *inst);
     bool RunOnBlock(RISCVBasicBlock *block);
-    bool TryDeleteInst(RISCVMIR *inst, std::set<MOperand> &live);
-    void UpdateLive(RISCVMIR *inst, std::set<MOperand> &live);
-    bool run(RISCVFunction* func);
+    bool TryDeleteInst(RISCVMIR *inst, std::unordered_set<MOperand> &live);
+    void UpdateLive(RISCVMIR *inst, std::unordered_set<MOperand> &live);
+    bool run(RISCVFunction *func);
+
   public:
     bool RunImpl();
-    BackendDCE(RISCVFunction *func_, RISCVLoweringContext &_ctx) : BlockLiveInfo(func_), ctx(_ctx), func(func_) 
+    BackendDCE(RISCVFunction *func_, RISCVLoweringContext &_ctx) : BlockLiveInfo(func_), ctx(_ctx), func(func_)
     {
     }
 };

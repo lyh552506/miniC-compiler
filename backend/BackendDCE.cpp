@@ -24,7 +24,7 @@ bool DCE::run(RISCVFunction *func)
 
 bool DCE::RunOnBlock(RISCVBasicBlock *block)
 {
-    std::set<MOperand> live = BlockLiveout[block];
+    std::unordered_set<MOperand> live = BlockLiveout[block];
     bool modified = false;
     for (auto it = block->rbegin(); it != block->rend();)
     {
@@ -41,7 +41,7 @@ bool DCE::RunOnBlock(RISCVBasicBlock *block)
     return modified;
 }
 
-void DCE::UpdateLive(RISCVMIR *inst, std::set<MOperand> &live)
+void DCE::UpdateLive(RISCVMIR *inst, std::unordered_set<MOperand> &live)
 {
     if (inst->GetOpcode() == RISCVMIR::RISCVISA::ret)
     {
@@ -63,7 +63,7 @@ void DCE::UpdateLive(RISCVMIR *inst, std::set<MOperand> &live)
     }
 }
 
-bool DCE::TryDeleteInst(RISCVMIR *inst, std::set<MOperand> &live)
+bool DCE::TryDeleteInst(RISCVMIR *inst, std::unordered_set<MOperand> &live)
 {
     if (inst->GetDef()->ignoreLA() && !live.count(inst->GetDef()->ignoreLA()))
         return true;
