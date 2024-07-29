@@ -1,22 +1,26 @@
 #include "../include/backend/RISCVLowering.hpp"
-#include "../include/backend/PhiElimination.hpp"
 #include "../include/backend/BuildInFunctionTransform.hpp"
+#include "../include/backend/PhiElimination.hpp"
 #include "../include/backend/PostRACalleeSavedLegalizer.hpp"
 extern std::string asmoutput_path;
-RISCVAsmPrinter* asmprinter=nullptr;
-void RISCVModuleLowering::LowerGlobalArgument(Module* m){
+RISCVAsmPrinter *asmprinter = nullptr;
+void RISCVModuleLowering::LowerGlobalArgument(Module *m)
+{
     // need file name
     asmprinter = new RISCVAsmPrinter(asmoutput_path, m, ctx);
 }
 
-bool RISCVModuleLowering::run(Module* m){
+bool RISCVModuleLowering::run(Module *m)
+{
     LowerGlobalArgument(m);
     RISCVFunctionLowering funclower(ctx);
-    auto& funcS=m->GetFuncTion();
-    for(auto &func:funcS){
-        if(funclower.run(func.get())){
+    auto &funcS = m->GetFuncTion();
+    for (auto &func : funcS)
+    {
+        if (funclower.run(func.get()))
+        {
             func->print();
-            std::cerr<<"FUNC Lowering failed\n";
+            std::cerr << "FUNC Lowering failed\n";
         }
     }
 
@@ -25,16 +29,17 @@ bool RISCVModuleLowering::run(Module* m){
     return false;
 }
 
-bool RISCVFunctionLowering::run(Function* m){
+bool RISCVFunctionLowering::run(Function *m)
+{
     /// @note this function is used to lower buildin function to the correct form
     /// @note and in order to solving user function which have the same name as buildin function
     BuildInFunctionTransform buildin;
     buildin.run(m);
-    /// @note after isel, all insts will be User with an opcode. Only call, ret is not dealt with after this 
+    /// @note after isel, all insts will be User with an opcode. Only call, ret is not dealt with after this
     /// @todo deal with alloca and imm
     /// @todo a scheduler can be added here, before or when emitting code to 3-address code
     /// @note This is destory SSA form to 3-address code with mixture of phy and vir regs
-    auto mfunc=ctx.mapping(m)->as<RISCVFunction>();
+    auto mfunc = ctx.mapping(m)->as<RISCVFunction>();
     ctx(mfunc);
 
     RISCVISel isel(ctx);
@@ -49,32 +54,40 @@ bool RISCVFunctionLowering::run(Function* m){
 
     Legalize legal(ctx);
     // legal.run_beforeRA();
-    
     // Backend DCE before RA
-    BackendDCE dcebefore(mfunc, ctx);
-    dcebefore.RunImpl();
+    bool modified = true;
+    while (modified)
+    {
+        modified = false;
+        BackendDCE dcebefore(mfunc, ctx);
+        modified |= dcebefore.RunImpl();
+    }
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
-
-    for(auto block:*mfunc){
-        for(auto it=block->begin();it!=block->end();){
-            auto inst=*it;
+    for (auto block : *mfunc)
+    {
+        for (auto it = block->begin(); it != block->end();)
+        {
+            auto inst = *it;
             ++it;
-            if(inst->GetOpcode()==RISCVMIR::RISCVISA::MarkDead)
+            if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
                 delete inst;
         }
     }
-
+    modified = true;
     // Backend DCE after RA
-    BackendDCE dceafter(mfunc, ctx);
-    dceafter.RunImpl();
-
-    // Generate Frame of current Function
-    // And generate the head and tail of frame here
+    while (modified)
+    {
+        modified = false;
+        BackendDCE dceafter(mfunc, ctx);
+        modified |= dceafter.RunImpl();
+    }
+    // // Generate Frame of current Function
+    // // And generate the head and tail of frame here
     PostRACalleeSavedLegalizer callee_saved_legalizer;
     callee_saved_legalizer.run(mfunc);
-    
+
     auto& frame = mfunc->GetFrame();
     frame->GenerateFrame();
     frame->GenerateFrameHead();
@@ -85,4 +98,3 @@ bool RISCVFunctionLowering::run(Function* m){
 
     return false;
 }
-
