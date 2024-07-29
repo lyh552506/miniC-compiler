@@ -107,10 +107,10 @@ class CSE : public _PassManagerBase<CSE, Function>
         std::forward_list<int>::iterator Enditer;
         bool Processed = false;
         dominance *DomTree;
-        std::map<size_t, Value *> Values;
-        std::map<Value *, std::set<loadinfo *>> Loads;
-        std::map<size_t, std::set<callinfo *>> Calls;
-        std::map<Value *, std::set<storeinfo *>> Stores;
+        std::unordered_map<size_t, Value *> Values;
+        std::unordered_map<Value *, std::set<loadinfo *>> Loads;
+        std::unordered_map<size_t, std::set<callinfo *>> Calls;
+        std::unordered_map<Value *, std::set<storeinfo *>> Stores;
 
       public:
         unsigned int GetCurGeneration()
@@ -281,9 +281,29 @@ class CSE : public _PassManagerBase<CSE, Function>
             }
             return nullptr;
         };
+        std::unordered_map<Value *, std::set<loadinfo *>> GetLoads()
+        {
+            return Loads;
+        }
+        std::unordered_map<size_t, Value *> GetValues()
+        {
+            return Values;
+        }
+        std::unordered_map<size_t, std::set<callinfo *>> GetCalls()
+        {
+            return Calls;
+        }
+        std::unordered_map<Value *, std::set<storeinfo *>> GetStores()
+        {
+            return Stores;
+        }
         CSENode(dominance *dom, dominance::Node *node, std::forward_list<int>::iterator child,
-                std::forward_list<int>::iterator end, unsigned int gens)
-            : DomTree(dom), dom_node(node), Curiter(child), Enditer(end), CurGens(gens), ChildGens(gens)
+                std::forward_list<int>::iterator end, unsigned int gens, std::unordered_map<size_t, Value *> Values_,
+                std::unordered_map<Value *, std::set<loadinfo *>> Loads_,
+                std::unordered_map<size_t, std::set<callinfo *>> Calls_,
+                std::unordered_map<Value *, std::set<storeinfo *>> Stores_)
+            : DomTree(dom), dom_node(node), Curiter(child), Enditer(end), CurGens(gens), ChildGens(gens),
+              Values(Values_), Loads(Loads_), Calls(Calls_), Stores(Stores_)
         {
             block = node->thisBlock;
         }

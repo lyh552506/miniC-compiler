@@ -17,7 +17,8 @@ bool CSE::Run()
     bool modified = false;
     std::deque<CSENode *> WorkList;
     WorkList.push_back(new CSENode(DomTree, &(DomTree->GetNode(0)), DomTree->GetNode(0).idom_child.begin(),
-                                   DomTree->GetNode(0).idom_child.end(), 0));
+                                   DomTree->GetNode(0).idom_child.end(), 0, std::unordered_map<size_t, Value *>(), std::unordered_map<Value *, std::set<loadinfo *>>(),
+                                   std::unordered_map<size_t, std::set<callinfo *>>(), std::unordered_map<Value *, std::set<storeinfo *>>()));
     while (!WorkList.empty())
     {
         CSE::CSENode *cur = WorkList.back();
@@ -32,7 +33,7 @@ bool CSE::Run()
             auto node = cur->NextChild();
             WorkList.push_back(new CSENode(DomTree, &(DomTree->GetNode(*node)),
                                            DomTree->GetNode(*node).idom_child.begin(),
-                                           DomTree->GetNode(*node).idom_child.end(), cur->GetCurGeneration()));
+                                           DomTree->GetNode(*node).idom_child.end(), cur->GetCurGeneration(), cur->GetValues(), cur->GetLoads(), cur->GetCalls(), cur->GetStores()));
         }
         else
         {
