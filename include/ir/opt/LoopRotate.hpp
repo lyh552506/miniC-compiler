@@ -16,7 +16,7 @@ public:
   void PrintPass();
 
 private:
-  bool RotateLoop(LoopInfo *loop);
+  bool RotateLoop(LoopInfo *loop,bool Succ);
   bool TryRotate(LoopInfo *loop);
   bool CanBeMove(User *I);
   void SimplifyBlocks(BasicBlock *Header, LoopInfo *loop);
@@ -26,9 +26,7 @@ private:
                    LoopAnalysis *loopAnlasis);
   void PreserveLcssa(BasicBlock *new_exit, BasicBlock *old_exit,
                      BasicBlock *pred);
-  void UpdateLoopInfo(BasicBlock *Old, BasicBlock *New,
-                      const std::vector<BasicBlock *> &pred);
-  LoopAnalysis *m_loopAnlasis;
+  LoopAnalysis *loopAnlasis;
   Function *m_func;
   dominance *m_dom;
   _AnalysisManager &AM;

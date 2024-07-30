@@ -13,17 +13,20 @@
 
 bool LoopRotate::Run() {
   bool changed = false;
-  m_dom = AM.get<dominance>(m_func);
   auto sideeffect = AM.get<SideEffect>(&Singleton<Module>());
-  m_loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
-  for (auto loop : *m_loopAnlasis) {
-    changed |= TryRotate(loop);
-    changed |= RotateLoop(loop);
+  m_dom = AM.get<dominance>(m_func);
+  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
+  for (auto loop : *loopAnlasis) {
+    m_dom = AM.get<dominance>(m_func);
+    loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
+    bool Success = false;
+    Success |= TryRotate(loop);
+    changed |= RotateLoop(loop, Success);
   }
   return changed;
 }
 
-bool LoopRotate::RotateLoop(LoopInfo *loop) {
+bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
   if (loop->RotateTimes > 8)
     return false;
   if (loop->GetLoopBody().size() == 1)
@@ -31,7 +34,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   loop->RotateTimes++;
   bool changed = false;
   m_dom = AM.get<dominance>(m_func);
-  auto loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
+  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
   auto prehead = loopAnlasis->GetPreHeader(loop);
   auto header = loop->GetHeader();
   auto latch = loopAnlasis->GetLatch(loop);
@@ -39,6 +42,8 @@ bool LoopRotate::RotateLoop(LoopInfo *loop) {
   if (!loopAnlasis->IsLoopExiting(loop, header)) {
     return false;
   }
+  if (loopAnlasis->IsLoopExiting(loop, latch) && !Succ)
+    return false;
   auto cond = dynamic_cast<CondInst *>(header->back());
   assert(cond && "Header Must have 2 succ: One is exit ,another is body");
   auto New_header = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
@@ -228,18 +233,24 @@ void LoopRotate::PreservePhi(
         for (auto ex : loopAnlasis->GetExit(loop))
           for (auto _inst : *ex)
             if (auto p = dynamic_cast<PhiInst *>(_inst)) {
-              auto it = std::find_if(
-                  p->PhiRecord.begin(), p->PhiRecord.end(),
-                  [new_header](
-                      const std::pair<const int,
-                                      std::pair<Value *, BasicBlock *>> &ele) {
-                    return ele.second.second == new_header;
-                  });
-              if (it != p->PhiRecord.end()) {
-                p->RSUW(it->first, PhiInsert[phi]);
-                it->second.first = PhiInsert[phi];
-                continue;
-              }
+              // auto it = std::find_if(
+              //     p->PhiRecord.begin(), p->PhiRecord.end(),
+              //     [new_header](
+              //         const std::pair<const int,
+              //                         std::pair<Value *, BasicBlock *>> &ele)
+              //                         {
+              //       return ele.second.second == new_header;
+              //     });
+              // if (it != p->PhiRecord.end()) {
+              //   p->RSUW(it->first, PhiInsert[phi]);
+              //   it->second.first = PhiInsert[phi];
+              // }
+              // for(auto& use:p->Getuselist()){
+              //   if(use->GetValue()==phi)
+              //   {
+
+              //   }
+              // }
               for (int i = 0; i < p->PhiRecord.size(); i++)
                 if (p->PhiRecord[i].first == inst &&
                     p->PhiRecord[i].second != header) {
@@ -284,6 +295,8 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     }
   }
   assert(Latch && "Must Have One Latch!");
+  if (dynamic_cast<CondInst *>(Latch->back()))
+    return;
   for (auto iter = Header->begin();
        iter != Header->end() && dynamic_cast<PhiInst *>(*iter);) {
     auto phi = dynamic_cast<PhiInst *>(*iter);
@@ -298,17 +311,24 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
   }
   for (auto des : m_dom->GetNode(Header->num).des) {
     auto succ = m_dom->GetNode(des).thisBlock;
-    for (auto inst : *succ) {
+    for (auto iter = succ->begin(); iter != succ->end();) {
+      auto inst = *iter;
+      ++iter;
       if (auto phi = dynamic_cast<PhiInst *>(inst)) {
-        // if (phi->GetName() == ".89.lcssa.0") {
-        //   int a = 0;
-        // }
-        auto iter = std::find_if(
+        auto iter_header = std::find_if(
             phi->PhiRecord.begin(), phi->PhiRecord.end(),
             [Header](auto &ele) { return ele.second.second == Header; });
-        if (iter == phi->PhiRecord.end())
+        auto iter_latch = std::find_if(
+            phi->PhiRecord.begin(), phi->PhiRecord.end(),
+            [Latch](auto &ele) { return ele.second.second == Latch; });
+        if (iter_header == phi->PhiRecord.end())
           continue;
-        iter->second.second = Latch;
+        if (iter_latch != phi->PhiRecord.end() &&
+            iter_header != phi->PhiRecord.end()) {
+          phi->Del_Incomes(iter_header->first);
+          continue;
+        }
+        iter_header->second.second = Latch;
       } else {
         break;
       }
@@ -327,7 +347,7 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     inst->SetParent(Latch);
     Latch->push_back(inst);
   }
-  m_loopAnlasis->DeleteBlock(Header);
+  loopAnlasis->DeleteBlock(Header);
 
   auto it = std::find(m_func->GetBasicBlock().begin(),
                       m_func->GetBasicBlock().end(), Header);
@@ -354,7 +374,7 @@ void LoopRotate::PreserveLcssa(BasicBlock *new_exit, BasicBlock *old_exit,
 
 bool LoopRotate::TryRotate(LoopInfo *loop) {
   bool Legal = false;
-  auto latch = m_loopAnlasis->GetLatch(loop);
+  auto latch = loopAnlasis->GetLatch(loop);
   auto head = loop->GetHeader();
   assert(latch);
   int pred = std::distance(m_dom->GetNode(latch->num).rev.begin(),
@@ -370,20 +390,44 @@ bool LoopRotate::TryRotate(LoopInfo *loop) {
   }
   if (!Legal)
     return false;
-  Legal = false;
+  int times = 0;
+  auto exiting = loopAnlasis->GetExitingBlock(loop);
   for (auto iter = latch->begin(); iter != latch->end();) {
     auto inst = *iter;
     ++iter;
-    if (dynamic_cast<BinaryInst *>(inst))
+    if (dynamic_cast<UnCondInst *>(inst) || dynamic_cast<CondInst *>(inst))
+      break;
+    if (dynamic_cast<BinaryInst *>(inst)) {
+      if (times > 0)
+        return false;
+      times++;
+      if (exiting.size() > 1) {
+        auto lhs = inst->GetOperand(0);
+        for (auto use : lhs->GetUserlist()) {
+          auto user = use->GetUser();
+          if (!loop->Contain(user->GetParent())) {
+            Legal = false;
+            break;
+          }
+        }
+      }
       for (auto use : inst->GetUserlist()) {
         auto user = use->GetUser();
-        if (loop->Contain(user->GetParent()))
-          Legal = true;
+        if (!loop->Contain(user->GetParent())) {
+          Legal = false;
+          break;
+        }
       }
+    } else {
+      Legal = false;
+      break;
+    }
   }
   if (!Legal)
     return false;
-  for (auto inst : *latch) {
+  for (auto iter = latch->begin(); iter != latch->end();) {
+    auto inst = *iter;
+    ++iter;
     if (dynamic_cast<CondInst *>(inst) || dynamic_cast<UnCondInst *>(inst))
       break;
     auto it = PredBB->rbegin();
@@ -394,8 +438,8 @@ bool LoopRotate::TryRotate(LoopInfo *loop) {
   assert(cond);
   for (int i = 0; i < cond->Getuselist().size(); i++) {
     if (cond->GetOperand(i) == latch) {
-      cond->RSUW(i, PredBB);
-      m_loopAnlasis->DeleteBlock(latch);
+      cond->RSUW(i, head);
+      loop->DeleteBlock(latch);
       m_dom->GetNode(PredBB->num).des.remove(latch->num);
       m_dom->GetNode(head->num).rev.remove(latch->num);
       m_dom->GetNode(head->num).rev.push_front(PredBB->num);
