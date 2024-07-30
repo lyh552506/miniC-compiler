@@ -17,7 +17,8 @@ bool CSE::Run()
     bool modified = false;
     std::deque<CSENode *> WorkList;
     WorkList.push_back(new CSENode(DomTree, &(DomTree->GetNode(0)), DomTree->GetNode(0).idom_child.begin(),
-                                   DomTree->GetNode(0).idom_child.end(), 0));
+                                   DomTree->GetNode(0).idom_child.end(), 0, std::unordered_map<size_t, Value *>(), std::unordered_map<Value *, std::set<loadinfo *>>(),
+                                   std::unordered_map<size_t, std::set<callinfo *>>(), std::unordered_map<Value *, std::set<storeinfo *>>()));
     while (!WorkList.empty())
     {
         CSE::CSENode *cur = WorkList.back();
@@ -32,7 +33,7 @@ bool CSE::Run()
             auto node = cur->NextChild();
             WorkList.push_back(new CSENode(DomTree, &(DomTree->GetNode(*node)),
                                            DomTree->GetNode(*node).idom_child.begin(),
-                                           DomTree->GetNode(*node).idom_child.end(), cur->GetCurGeneration()));
+                                           DomTree->GetNode(*node).idom_child.end(), cur->GetCurGeneration(), cur->GetValues(), cur->GetLoads(), cur->GetCalls(), cur->GetStores()));
         }
         else
         {
@@ -66,21 +67,20 @@ bool CSE::ProcessNode(CSENode *node)
         {
             auto cond = (BrInst->Getuselist()[1]->usee == block) ? ConstIRBoolean::GetNewConstant(true)
                                                                  : ConstIRBoolean::GetNewConstant(false);
-            _DEBUG(std::cerr << "Can Handle BranchInst: " << inst->GetName() << "as Value:" << cond->GetName()
+            _DEBUG(std::cerr << "Can Handle BranchInst: " << BrInst->GetName() << " as Value:" << cond->GetName()
                              << std::endl;)
             node->SetValue(cond, BrInst);
         }
     }
 
-    User *LastStore = nullptr;
-
     for (User *inst : *block)
     {
         if (auto binary = dynamic_cast<BinaryInst *>(inst))
         {
+            node->DelStoreValue(binary, CurGeneration);
             if (Value *val = SimplifyBinOp(binary->getopration(), binary->GetOperand(0), binary->GetOperand(1)))
             {
-                _DEBUG(std::cerr << "Can Handle BinaryInst: " << inst->GetName() << "as Value:" << val->GetName()
+                _DEBUG(std::cerr << "Can Handle BinaryInst: " << inst->GetName() << " as Value:" << val->GetName()
                                  << std::endl;)
                 inst->RAUW(val);
                 wait_del.push_back(inst);
@@ -89,7 +89,7 @@ bool CSE::ProcessNode(CSENode *node)
             }
             if (auto val = node->LookUp(inst))
             {
-                _DEBUG(std::cerr << "Can Handle BinaryInst: " << inst->GetName() << "as Value:" << val->GetName()
+                _DEBUG(std::cerr << "Can Handle BinaryInst: " << inst->GetName() << " as Value:" << val->GetName()
                                  << std::endl;)
                 inst->RAUW(val);
                 wait_del.push_back(inst);
@@ -102,9 +102,10 @@ bool CSE::ProcessNode(CSENode *node)
 
         if (CanHandle(inst) && !dynamic_cast<CallInst *>(inst))
         {
+            node->DelStoreValue(inst, CurGeneration);
             if (auto val = node->LookUp(inst))
             {
-                _DEBUG(std::cerr << "Can Handle Inst: " << inst->GetName() << "as Value:" << val->GetName()
+                _DEBUG(std::cerr << "Can Handle Inst: " << inst->GetName() << " as Value:" << val->GetName()
                                  << std::endl;)
                 inst->RAUW(val);
                 modified |= true;
@@ -117,55 +118,66 @@ bool CSE::ProcessNode(CSENode *node)
 
         if (dynamic_cast<LoadInst *>(inst))
         {
+            node->DelStoreValue(inst, CurGeneration);
             if (auto load_val = node->LookUpLoad(inst->Getuselist()[0]->usee, CurGeneration))
             {
-                _DEBUG(std::cerr << "Can Handle Load: " << inst->GetName() << "as Value:" << load_val->GetName()
+                _DEBUG(std::cerr << "Can Handle Load: " << inst->GetName() << " as Value:" << load_val->GetName()
                                  << std::endl;)
                 inst->RAUW(load_val);
                 wait_del.push_back(inst);
                 modified |= true;
-                LastStore = nullptr;
                 continue;
             }
             node->SetLoadValue(inst->Getuselist()[0]->usee, inst, CurGeneration);
             _DEBUG(std::cerr << "Add Load Value for:" << inst->Getuselist()[0]->usee->GetName() << ", info for it: ("
-                             << inst->GetName() << "," << CurGeneration << ")" << std::endl;)
-            LastStore = nullptr;
+                             << inst->GetName() << ", " << CurGeneration << ")" << std::endl;)
             continue;
         }
 
         if (dynamic_cast<CallInst *>(inst) && CanHandle(inst))
         {
+            node->DelStoreValue(inst, CurGeneration);
             if (auto val = node->LookUpCall(inst, CurGeneration))
             {
-                _DEBUG(std::cerr << "Can Handle CallInst: " << inst->GetName() << "as Value:" << val->GetName()
+                _DEBUG(std::cerr << "Can Handle CallInst: " << inst->GetName() << " as Value:" << val->GetName()
                                  << std::endl;)
                 wait_del.push_back(inst);
                 modified |= true;
                 continue;
             }
             node->SetCallValue(inst, inst, CurGeneration);
-            LastStore = nullptr;
             continue;
         }
-        else if(dynamic_cast<CallInst*>(inst) && inst->HasSideEffect())
+        else if (dynamic_cast<CallInst *>(inst) && inst->HasSideEffect())
         {
             CurGeneration++;
             continue;
         }
-        // TODO:DSE
-        
-        if(dynamic_cast<StoreInst*>(inst))
+
+        if (auto store = dynamic_cast<StoreInst *>(inst))
         {
+            // eliminate store-load same value
+            if (auto load = node->StoreSame(store))
+            {
+                _DEBUG(std::cerr << "Find Same Store: " << store->GetName() << " and Load: " << load->GetName()
+                                 << std::endl;)
+                // wait_del.push_back(load);
+                // wait_del.push_back(dynamic_cast<User*>(inst->Getuselist()[1]->usee));
+                wait_del.push_back(store);
+                node->DelLoadValue(load->Getuselist()[0]->usee, load, CurGeneration);
+                modified |= true;
+                continue;
+            }
+            if (auto val = node->LookUpStore(store, CurGeneration))
+            {
+                _DEBUG(std::cerr << "Can delete StoreInst: " << inst->GetName() << std::endl;)
+                wait_del.push_back(val);
+                node->DelStoreValue(store, CurGeneration);
+                modified |= true;
+            }
             ++CurGeneration;
-            // if(LastStore)
-            // {
-            //     wait_del.push_back(LastStore);
-            //     modified |= true;
-            //     LastStore = nullptr;
-            // }
+            node->SetStoreValue(store, CurGeneration);
             node->SetLoadValue(inst->GetOperand(1), inst->GetOperand(0), CurGeneration);
-            // LastStore = inst;
         }
     }
     return modified;

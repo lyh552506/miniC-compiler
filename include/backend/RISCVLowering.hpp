@@ -9,6 +9,7 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/backend/PhiElimination.hpp"
 #include "../../include/backend/LegalizePass.hpp"
+#include "../../include/backend/BackendDCE.hpp"
 class RISCVModuleLowering:BackEndPass<Module>{
     // bool LoweringGlobalValue(Module*);
     RISCVLoweringContext ctx;

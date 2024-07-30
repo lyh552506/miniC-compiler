@@ -6,7 +6,6 @@
 #include "my_stl.hpp"
 #include <unordered_set>
 class _AnalysisManager;
-
 namespace HashTool
 {
 struct InstHash
@@ -85,6 +84,18 @@ class CSE : public _PassManagerBase<CSE, Function>
         {
         }
     } callinfo;
+
+    typedef struct StoreValue
+    {
+        StoreInst *store;
+        unsigned int StoreGeneration;
+        StoreValue() : store(nullptr), StoreGeneration(0)
+        {
+        }
+        StoreValue(StoreInst *inst, unsigned int gen) : store(inst), StoreGeneration(gen)
+        {
+        }
+    } storeinfo;
     class CSENode
     {
       private:
@@ -96,9 +107,11 @@ class CSE : public _PassManagerBase<CSE, Function>
         std::forward_list<int>::iterator Enditer;
         bool Processed = false;
         dominance *DomTree;
-        std::map<size_t, Value *> Values;
-        std::map<Value*, std::set<loadinfo*>> Loads;
-        std::map<size_t, std::set<callinfo*>> Calls;
+        std::unordered_map<size_t, Value *> Values;
+        std::unordered_map<Value *, std::set<loadinfo *>> Loads;
+        std::unordered_map<size_t, std::set<callinfo *>> Calls;
+        std::unordered_map<Value *, std::set<storeinfo *>> Stores;
+
       public:
         unsigned int GetCurGeneration()
         {
@@ -143,30 +156,30 @@ class CSE : public _PassManagerBase<CSE, Function>
             size_t hash = HashTool::InstHash{}(inst);
             Values[hash] = val;
         }
-        Value* LookUp(User* inst)
+        Value *LookUp(User *inst)
         {
             size_t hash = HashTool::InstHash{}(inst);
-            if(Values.find(hash) != Values.end())
+            if (Values.find(hash) != Values.end())
                 return Values[hash];
             return nullptr;
         }
-        Value* LookUpLoad(Value* val, unsigned int gen)
+        Value *LookUpLoad(Value *val, unsigned int gen)
         {
-            if(Loads.find(val) != Loads.end())
+            if (Loads.find(val) != Loads.end())
             {
-                for(auto load : Loads[val])
+                for (auto load : Loads[val])
                 {
-                    if(load->LoadGeneration == gen)
+                    if (load->LoadGeneration == gen)
                         return load->before;
                 }
             }
             return nullptr;
         }
-        void SetLoadValue(Value* val, Value* before, unsigned int gen)
+        void SetLoadValue(Value *val, Value *before, unsigned int gen)
         {
-            if(Loads.find(val) == Loads.end())
+            if (Loads.find(val) == Loads.end())
             {
-                Loads[val] = std::set<loadinfo*>();
+                Loads[val] = std::set<loadinfo *>();
                 Loads[val].insert(new loadinfo(before, gen));
             }
             else
@@ -174,25 +187,39 @@ class CSE : public _PassManagerBase<CSE, Function>
                 Loads[val].insert(new loadinfo(before, gen));
             }
         }
-        Value* LookUpCall(User* inst, unsigned int gen)
+        void DelLoadValue(Value *val, Value *before, unsigned int gen)
+        {
+            if (Loads.find(val) != Loads.end())
+            {
+                for (auto load : Loads[val])
+                {
+                    if (load->before == before && load->LoadGeneration == gen)
+                    {
+                        Loads[val].erase(load);
+                        break;
+                    }
+                }
+            }
+        }
+        Value *LookUpCall(User *inst, unsigned int gen)
         {
             size_t hash = HashTool::InstHash{}(inst);
-            if(Calls.find(hash) != Calls.end())
+            if (Calls.find(hash) != Calls.end())
             {
-                for(auto call : Calls[hash])
+                for (auto call : Calls[hash])
                 {
-                    if(call->CallGeneration == gen)
+                    if (call->CallGeneration == gen)
                         return call->before;
                 }
             }
             return nullptr;
         }
-        void SetCallValue(User* inst, Value* before, unsigned int gen)
+        void SetCallValue(User *inst, Value *before, unsigned int gen)
         {
             size_t hash = HashTool::InstHash{}(inst);
-            if(Calls.find(hash) == Calls.end())
+            if (Calls.find(hash) == Calls.end())
             {
-                Calls[hash] = std::set<callinfo*>();
+                Calls[hash] = std::set<callinfo *>();
                 Calls[hash].insert(new callinfo(before, gen));
             }
             else
@@ -200,9 +227,83 @@ class CSE : public _PassManagerBase<CSE, Function>
                 Calls[hash].insert(new callinfo(before, gen));
             }
         }
+
+        void SetStoreValue(StoreInst *inst, unsigned int gen)
+        {
+            if (Stores.find(inst->GetOperand(1)) == Stores.end())
+            {
+                Stores[inst->GetOperand(1)] = std::set<storeinfo *>();
+                Stores[inst->GetOperand(1)].insert(new storeinfo(inst, gen));
+            }
+            else
+            {
+                Stores[inst->GetOperand(1)].insert(new storeinfo(inst, gen));
+            }
+        }
+
+        void DelStoreValue(User *inst, unsigned int gen)
+        {
+            for (auto &use : inst->Getuselist())
+            {
+                Value *val = use->usee;
+                if (Stores.find(val) != Stores.end())
+                {
+                    for (auto storeinfo : Stores[val])
+                    {
+                        if (storeinfo->StoreGeneration == gen)
+                        {
+                            Stores[val].erase(storeinfo);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        User *LookUpStore(StoreInst *inst, unsigned int gen)
+        {
+            if (Stores.find(inst->GetOperand(1)) != Stores.end())
+            {
+                for (auto storeinfo : Stores[inst->GetOperand(1)])
+                {
+                    if (storeinfo->StoreGeneration == gen)
+                        return storeinfo->store;
+                }
+            }
+            return nullptr;
+        }
+        User *StoreSame(StoreInst *inst)
+        {
+            if (auto load = dynamic_cast<LoadInst *>(inst->Getuselist()[0]->usee))
+            {
+                if (load->Getuselist()[0]->usee == inst->Getuselist()[1]->usee)
+                    return load;
+            }
+            return nullptr;
+        };
+        std::unordered_map<Value *, std::set<loadinfo *>> GetLoads()
+        {
+            return Loads;
+        }
+        std::unordered_map<size_t, Value *> GetValues()
+        {
+            return Values;
+        }
+        std::unordered_map<size_t, std::set<callinfo *>> GetCalls()
+        {
+            return Calls;
+        }
+        std::unordered_map<Value *, std::set<storeinfo *>> GetStores()
+        {
+            return Stores;
+        }
         CSENode(dominance *dom, dominance::Node *node, std::forward_list<int>::iterator child,
-                std::forward_list<int>::iterator end, unsigned int gens)
-            : DomTree(dom), dom_node(node), Curiter(child), Enditer(end), CurGens(gens), ChildGens(gens)
+                std::forward_list<int>::iterator end, unsigned int gens, std::unordered_map<size_t, Value *> Values_,
+                std::unordered_map<Value *, std::set<loadinfo *>> Loads_,
+                std::unordered_map<size_t, std::set<callinfo *>> Calls_,
+                std::unordered_map<Value *, std::set<storeinfo *>> Stores_)
+            : DomTree(dom), dom_node(node), Curiter(child), Enditer(end), CurGens(gens), ChildGens(gens),
+              Values(Values_), Loads(Loads_), Calls(Calls_), Stores(Stores_)
         {
             block = node->thisBlock;
         }
@@ -213,10 +314,11 @@ class CSE : public _PassManagerBase<CSE, Function>
     Function *func;
     unsigned int CurGeneration;
     _AnalysisManager &AM;
-    std::vector<User*> wait_del;
+    std::vector<User *> wait_del;
     bool ProcessNode(CSENode *node);
     void init();
-    bool CanHandle(User* inst);
+    bool CanHandle(User *inst);
+
   public:
     CSE(Function *func, _AnalysisManager &AM) : func(func), AM(AM)
     {
