@@ -50,8 +50,11 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
   auto Exit = dynamic_cast<BasicBlock *>(cond->GetOperand(2));
   std::unordered_map<Value *, Value *> PreHeaderValue;
   // phase1: change th edge
-  if (loop->Contain(Exit))
+  bool revert = false;
+  if (loop->Contain(Exit)) {
     std::swap(New_header, Exit);
+    revert = true;
+  }
   auto It = prehead->rbegin();
   assert(dynamic_cast<UnCondInst *>(*It));
   for (auto iter = header->begin(); iter != header->end();) {
@@ -102,8 +105,13 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
     }
   }
   delete *It;
-  prehead->back()->RSUW(1, New_header);
-  prehead->back()->RSUW(2, Exit);
+  if (revert) {
+    prehead->back()->RSUW(1, Exit);
+    prehead->back()->RSUW(2, New_header);
+  } else {
+    prehead->back()->RSUW(1, New_header);
+    prehead->back()->RSUW(2, Exit);
+  }
   m_dom->GetNode(Exit->num).rev.push_front(prehead->num);
   m_dom->GetNode(prehead->num).des.push_front(Exit->num);
   m_dom->GetNode(prehead->num).des.remove(header->num);
