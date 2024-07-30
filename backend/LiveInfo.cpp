@@ -17,7 +17,6 @@ void BlockInfo::RunOnFunction()
     {
         BlockLivein[block].clear();
         BlockLiveout[block].clear();
-        CalCulateSucc(block);
         GetBlockLivein(block);
         GetBlockLiveout(block);
     }

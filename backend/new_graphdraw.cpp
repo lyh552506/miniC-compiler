@@ -15,15 +15,16 @@
 void GraphColor::RunOnFunc() {
   bool condition = true;
   GC_init();
-  CaculateLiveness();
+  for (auto b : *m_func)
+    CalCulateSucc(b);
   CaculateTopu(m_func->front());
   std::reverse(topu.begin(), topu.end());
-  for (auto &[key, val] : IG) {
-    Degree[key] = val.size();
-  }
   while (condition) {
     condition = false;
     CaculateLiveness();
+    for (auto &[key, val] : IG) {
+      Degree[key] = val.size();
+    }
     MakeWorklist();
     do {
       if (!simplifyWorkList.empty())
@@ -203,10 +204,12 @@ MOperand GraphColor::HeuristicSpill() {
     float weight = 0;
     //考虑degree
     int degree = Degree[spill];
-    weight += (degree * DegreeWeight) * 2;
+    if (degree < 0)
+      assert(0);
+    weight += (degree * DegreeWeight);
     //考虑interval区间
     int intervalLength = ValsInterval[spill];
-    weight += (intervalLength * livenessWeight) * 6;
+    weight += (intervalLength * livenessWeight);
     //考虑嵌套层数
     int loopdepth; // TODO
     if (max < weight) {
@@ -220,8 +223,6 @@ MOperand GraphColor::HeuristicSpill() {
     for (auto spill : spillWorkList)
       return spill;
   return sp;
-
-  assert(0);
 }
 
 // TODO选择freeze node的启发式函数
@@ -294,10 +295,10 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
     PushVecSingleVal(IG[rd], neighbor);
     PushVecSingleVal(IG[neighbor], rd);
     Degree[rd]++;
-
+    Degree[neighbor]++;
     //这里注意需要检查一下更新后的相邻边是否只有color-1
     if (neighbor->GetType() == riscv_i32 || neighbor->GetType() == riscv_ptr) {
-      if (Degree[neighbor] == GetRegNums(riscv_i32) - 1) {
+      if (Degree[neighbor] == (GetRegNums(riscv_i32) - 1)) {
         spillWorkList.erase(neighbor);
         auto x = Adjacent(neighbor);
         std::unordered_set<MOperand> tmp(x.begin(), x.end());
@@ -319,7 +320,7 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
         }
       }
     } else if (neighbor->GetType() == riscv_float32) {
-      if (Degree[neighbor] == GetRegNums(riscv_float32) - 1) {
+      if (Degree[neighbor] == (GetRegNums(riscv_float32) - 1)) {
         spillWorkList.erase(neighbor);
         auto x = Adjacent(neighbor);
         std::unordered_set<MOperand> tmp(x.begin(), x.end());
@@ -394,7 +395,7 @@ void GraphColor::simplify() {
     Degree[target]--;
     //这里注意需要检查一下更新后的相邻边是否只有color-1
     if (target->GetType() == riscv_i32 || target->GetType() == riscv_ptr) {
-      if (Degree[target] == GetRegNums(riscv_i32) - 1) {
+      if (Degree[target] == (GetRegNums(riscv_i32) - 1)) {
         spillWorkList.erase(target);
         auto x = Adjacent(target);
         std::unordered_set<MOperand> tmp(x.begin(), x.end());
@@ -416,7 +417,7 @@ void GraphColor::simplify() {
         }
       }
     } else if (target->GetType() == riscv_float32) {
-      if (Degree[target] == GetRegNums(riscv_float32) - 1) {
+      if (Degree[target] == (GetRegNums(riscv_float32) - 1)) {
         spillWorkList.erase(target);
         auto x = Adjacent(target);
         std::unordered_set<MOperand> tmp(x.begin(), x.end());
@@ -511,9 +512,9 @@ void GraphColor::spill() {
 
 void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
-    MOperand select = selectstack.back();
+    MOperand select = selectstack.front();
     RISCVType ty = select->GetType();
-    selectstack.pop_back();
+    selectstack.erase(selectstack.begin());
     std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),
                                             reglist.GetReglistInt().end()};
     std::unordered_set<MOperand> float_assist{reglist.GetReglistFloat().begin(),
@@ -562,7 +563,8 @@ void GraphColor::SpillNodeInMir() {
          mir_begin != mir_end;) {
       auto mir = *mir_begin;
       if (mir->GetOpcode() == RISCVMIR::call ||
-          mir->GetOpcode() == RISCVMIR::ret) {
+          mir->GetOpcode() == RISCVMIR::ret ||
+          mir->GetOpcode() == RISCVMIR::_j) {
         ++mir_begin;
         continue;
       }
@@ -650,7 +652,7 @@ void GraphColor::SpillNodeInMir() {
                     AlreadySpill.end()) {
               sd = CreateSpillMir(operand, temps);
               mir_begin.insert_after(sd);
-              _DEBUG(std::cout
+              _DEBUG(std::cerr
                          << "Spilling "
                          << dynamic_cast<VirRegister *>(mir->GetOperand(i))
                                 ->GetName()

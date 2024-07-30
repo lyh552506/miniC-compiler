@@ -65,36 +65,36 @@ bool RISCVFunctionLowering::run(Function *m)
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
-    for (auto block : *mfunc)
-    {
-        for (auto it = block->begin(); it != block->end();)
-        {
-            auto inst = *it;
-            ++it;
-            if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
-                delete inst;
-        }
-    }
-    modified = true;
-    // Backend DCE after RA
-    while (modified)
-    {
-        modified = false;
-        BackendDCE dceafter(mfunc, ctx);
-        modified |= dceafter.RunImpl();
-    }
-    // // Generate Frame of current Function
-    // // And generate the head and tail of frame here
-    PostRACalleeSavedLegalizer callee_saved_legalizer;
-    callee_saved_legalizer.run(mfunc);
+    // for (auto block : *mfunc)
+    // {
+    //     for (auto it = block->begin(); it != block->end();)
+    //     {
+    //         auto inst = *it;
+    //         ++it;
+    //         if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
+    //             delete inst;
+    //     }
+    // }
+    // modified = true;
+    // // Backend DCE after RA
+    // while (modified)
+    // {
+    //     modified = false;
+    //     BackendDCE dceafter(mfunc, ctx);
+    //     modified |= dceafter.RunImpl();
+    // }
+    // // // Generate Frame of current Function
+    // // // And generate the head and tail of frame here
+    // PostRACalleeSavedLegalizer callee_saved_legalizer;
+    // callee_saved_legalizer.run(mfunc);
 
-    auto& frame = mfunc->GetFrame();
-    frame->GenerateFrame();
-    frame->GenerateFrameHead();
-    frame->GenerateFrameTail();
+    // auto& frame = mfunc->GetFrame();
+    // frame->GenerateFrame();
+    // frame->GenerateFrameHead();
+    // frame->GenerateFrameTail();
 
-    // legal.run_afterRA();
-    legal.run();
+    // // legal.run_afterRA();
+    // legal.run();
 
     return false;
 }

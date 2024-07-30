@@ -111,10 +111,7 @@ void _PassManager::RunOnLevel() {
 
       RunLevelPass(DCE, curfunc, modified);
       PassChangedBegin(curfunc) PassChangedEnd
-          // ece pre
-          // RunLevelPass(ElimitCriticalEdge, curfunc);
-          // PassChangedBegin(curfunc) PassChangedEnd
-          // RunLevelPass(PRE, curfunc);
+
           RunLevelPass(cfgSimplify, curfunc, modified);
       PassChangedBegin(curfunc) PassChangedEnd
           // cse
@@ -125,23 +122,16 @@ void _PassManager::RunOnLevel() {
       // reassociate
       RunLevelPass(Reassociate, curfunc, modified);
 
-      // // lcssa
-      // RunLevelPass(LcSSA, curfunc);
-
-      // // looprotate
-      // RunLevelPass(LoopRotate, curfunc);
-      // PassChangedBegin(curfunc) PassChangedEnd
       // cse
       RunLevelPass(CSE, curfunc, modified);
-      static int a = 0;
-      a++;
-      if (a == 3) {
-        return;
-      }
     }
 
-    if (RunImpl<Inliner>(module, AM))
+    if (RunImpl<Inliner>(module, AM)) {
+      RunImpl<DeadArgsElimination>(module, AM);
+      RunImpl<StoreOnlyGlobalElimination>(module, AM);
+      RunImpl<Global2Local>(module, AM);
       goto Iteration;
+    }
     // Loops
     {
       // RunLevelPass(LoopSimplify, curfunc, modified);
