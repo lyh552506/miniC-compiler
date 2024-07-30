@@ -16,7 +16,7 @@ void PromoteMem2Reg::run() {
   IDF idf(m_dom);
   // starting to deal alloca with promotable,this place are method3,method4
   for (int i = 0; i != m_Allocas.size(); i++) {
-    AllocaInst *AI = m_Allocas[i];
+    auto AI = m_Allocas[i];
     // do some basic opt
     if (!AI->IsUsed()) // if not used,then delete
     {
@@ -145,15 +145,17 @@ void PromoteMem2Reg::Rename(BasicBlock *BB, BasicBlock *Pred,
     if (PhiInst *Phi = dynamic_cast<PhiInst *>(*(BB->begin()))) {
       if (PhiToAlloca.count(Phi)) {
         for (auto Inst = BB->begin(); Inst != BB->end();) {
-          int Allocanum = PhiToAlloca[Phi];
-          Phi->updateIncoming(IncomingVal[Allocanum], Pred);
-
-          IncomingVal[Allocanum] = Phi;
-
-          ++Inst;
-          Phi = dynamic_cast<PhiInst *>(*Inst);
-          if (!Phi)
+          if (ThisPassInsert.find(Phi) != ThisPassInsert.end()) {
+            int Allocanum = PhiToAlloca[Phi];
+            Phi->updateIncoming(IncomingVal[Allocanum], Pred);
+            IncomingVal[Allocanum] = Phi;
+            ++Inst;
+            Phi = dynamic_cast<PhiInst *>(*Inst);
+            if (!Phi)
+              break;
+          } else {
             break;
+          }
         }
       }
     }
@@ -236,6 +238,7 @@ bool PromoteMem2Reg::InsertPhiNode(BasicBlock *bb, int AllocaNum) {
       bb->front(), bb,
       dynamic_cast<HasSubType *>(target->GetType())->GetSubType());
   PhiToAlloca[Phi] = AllocaNum;
+  ThisPassInsert.insert(Phi);
   return true;
 }
 

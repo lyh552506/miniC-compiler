@@ -89,20 +89,19 @@ void _PassManager::RunOnLevel() {
   if (level == O1) {
     _AnalysisManager AM;
     // DeadArgsElimination
-    RunImpl<DeadArgsElimination>(module, AM);
+    // RunImpl<DeadArgsElimination>(module, AM);
 
     // StoreOnlyGlobalElimination
-    RunImpl<StoreOnlyGlobalElimination>(module, AM);
+    // RunImpl<StoreOnlyGlobalElimination>(module, AM);
 
     // global2local
-    RunImpl<Global2Local>(module, AM);
+    // RunImpl<Global2Local>(module, AM);
     while (modified) {
     Iteration:
       modified = false;
       // mem2reg
       PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
       PassChangedEnd
-
           // Local2Global
           RunImpl<Local2Global>(module, AM);
 
@@ -127,6 +126,7 @@ void _PassManager::RunOnLevel() {
     }
 
     if (RunImpl<Inliner>(module, AM)) {
+      RunLevelPass(cfgSimplify, curfunc, modified)
       RunImpl<DeadArgsElimination>(module, AM);
       RunImpl<StoreOnlyGlobalElimination>(module, AM);
       RunImpl<Global2Local>(module, AM);

@@ -1,30 +1,29 @@
 #pragma once
 #include "../../yacc/parser.hpp"
+#include "CFG.hpp"
 #include "IDF.hpp"
 #include "dominant.hpp"
+#include <set>
+#include <unordered_map>
 
 //记录alloca
 class AllocaInfo {
- public:
+public:
   std::vector<BasicBlock *> DefineBlocks;
   std::vector<BasicBlock *> UsingBlocks;
 
-  BasicBlock *OnlyBlock;  //只存在一个basicblock里
-  StoreInst *OnlyStore;   //如果整个cfg只存在一个store语句
-  bool IO_OnlySingleBlock;  // ALLOC出来的局部变量的读或者写都只存在一个基本块中
+  BasicBlock *OnlyBlock; //只存在一个basicblock里
+  StoreInst *OnlyStore;  //如果整个cfg只存在一个store语句
+  bool IO_OnlySingleBlock; // ALLOC出来的局部变量的读或者写都只存在一个基本块中
   Value *
-      AllocaPtrValue;  //如果当前的alloca语句存在storeinst中，那么记录下赋值给alloca出的虚拟寄存器的值的指针
+      AllocaPtrValue; //如果当前的alloca语句存在storeinst中，那么记录下赋值给alloca出的虚拟寄存器的值的指针
 
   void AnalyzeAlloca(AllocaInst *AI);
   /// @brief 对所有变量进行初始化
 
   AllocaInfo()
-      : DefineBlocks{},
-        UsingBlocks{},
-        OnlyBlock(nullptr),
-        IO_OnlySingleBlock(true),
-        AllocaPtrValue(nullptr),
-        OnlyStore(nullptr) {}
+      : DefineBlocks{}, UsingBlocks{}, OnlyBlock(nullptr),
+        IO_OnlySingleBlock(true), AllocaPtrValue(nullptr), OnlyStore(nullptr) {}
   void init() {
     DefineBlocks.clear();
     UsingBlocks.clear();
@@ -54,9 +53,8 @@ struct RenamePass {
       : CurBlock(CurrentBB), Pred(Pred), IncomingVal(IncomingVal) {}
 
   RenamePass(RenamePass &&other)
-      : IncomingVal(other.IncomingVal),
-        Pred(other.Pred),
-        CurBlock(other.CurBlock) {  //避免重新创建类
+      : IncomingVal(other.IncomingVal), Pred(other.Pred),
+        CurBlock(other.CurBlock) { //避免重新创建类
     other.Pred = nullptr;
     other.CurBlock = nullptr;
   }
@@ -67,13 +65,12 @@ struct RenamePass {
 };
 
 class PromoteMem2Reg {
- public:
+public:
   PromoteMem2Reg(dominance &dom, std::vector<AllocaInst *> Allocas,
                  Function &func)
-      : m_dom(dom),
-        Func(func),
+      : m_dom(dom), Func(func),
         m_Allocas(Allocas.begin(),
-                  Allocas.end())  //不能直接赋值，这样会转移所有权
+                  Allocas.end()) //不能直接赋值，这样会转移所有权
   {}
 
   void run();
@@ -103,17 +100,19 @@ class PromoteMem2Reg {
   void Rename(BasicBlock *BB, BasicBlock *Pred,
               std::vector<Value *> &IncomingVal,
               std::vector<RenamePass> &WorkLists);
-  /// @brief 处理生成的phi：查看他的incoming，看是否只有一个，如果只有一个，那么就直接替换
-  void SimplifyPhi(int& isEliminate,std::vector<PhiInst*>& Erase);
+  /// @brief
+  /// 处理生成的phi：查看他的incoming，看是否只有一个，如果只有一个，那么就直接替换
+  void SimplifyPhi(int &isEliminate, std::vector<PhiInst *> &Erase);
 
   dominance &m_dom;
-  std::vector<AllocaInst *> m_Allocas;        // index->AllocaInst的映射
-  std::map<AllocaInst *, int> AllocaToIndex;  // AllocaInst->index的映射
+  std::vector<AllocaInst *> m_Allocas;       // index->AllocaInst的映射
+  std::map<AllocaInst *, int> AllocaToIndex; // AllocaInst->index的映射
   Function &Func;
   std::map<std::pair<int, int>, PhiInst *>
-      PrePhiNode;  //由[Block,AllocaNum]到PhiNode的映射
-  std::map<PhiInst *, int> PhiToAlloca;  // Phi函数对应的Alloca指令
-  std::set<BasicBlock *> RenameVisited;  //记录重命名时访问过的Block
+      PrePhiNode; //由[Block,AllocaNum]到PhiNode的映射
+  std::map<PhiInst *, int> PhiToAlloca; // Phi函数对应的Alloca指令
+  std::set<BasicBlock *> RenameVisited; //记录重命名时访问过的Block
+  std::unordered_set<PhiInst *> ThisPassInsert;
 };
 
 /// @brief 检验送入的alloca指令能否被promote
