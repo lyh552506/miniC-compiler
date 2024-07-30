@@ -628,6 +628,8 @@ void GraphColor::SpillNodeInMir() {
             sd->AddOperand(spillnode);
             mir_begin.insert_after(sd);
             ++mir_begin;
+            ++mir_begin;
+            continue;
           }
         }
       }
