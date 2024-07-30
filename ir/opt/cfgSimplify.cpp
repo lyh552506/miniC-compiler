@@ -13,41 +13,34 @@
 
 bool cfgSimplify::Run() {
   bool keep_loop = true;
+  FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
   while (keep_loop) {
-    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    static int i = 0;
+    i++;
+
     keep_loop = false;
     if (m_dom != nullptr)
       keep_loop |= simplifyPhiInst();
-    loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
     keep_loop |= simplify_Block();
-    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+
     keep_loop |= DealBrInst();
-    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
-    loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
-
     keep_loop |= simplify_Block();
-    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
     keep_loop |= DeleteUnReachable();
-    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
-    keep_loop |= EliminateDeadLoop();
-    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    // keep_loop |= EliminateDeadLoop();
     keep_loop |= DelSamePhis();
-    loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
-    keep_loop |= mergeSpecialBlock();
 
-    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
+    keep_loop |= mergeSpecialBlock();
     keep_loop |= SimplifyUncondBr();
-    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
     keep_loop |= mergeRetBlock();
-    FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
-    keep_loop |= EliminateDeadLoop();
+    // if (i == 24)
+    //   return false;
+    // keep_loop |= EliminateDeadLoop();
   }
   return false;
 }
 
 bool cfgSimplify::EliminateDeadLoop() {
   bool changed = false;
-  loopAnlaysis = AM.get<LoopAnalysis>(m_func, m_dom);
   for (auto iter = loopAnlaysis->begin(); iter != loopAnlaysis->end(); iter++) {
     auto loop = *iter;
     auto header = loop->GetHeader();
@@ -150,6 +143,8 @@ bool cfgSimplify::mergeSpecialBlock() {
     if (iter != m_dom->GetNode(bb->num).des.end())
       continue;
     if (bb->back()->IsCondInst()) {
+      if (dynamic_cast<PhiInst *>(bb->front()))
+        continue;
       auto cond = dynamic_cast<CondInst *>(bb->back());
       BasicBlock *succ_1 =
           dynamic_cast<BasicBlock *>(cond->Getuselist()[1]->GetValue());
@@ -340,8 +335,6 @@ bool cfgSimplify::mergeRetBlock() {
     if (ret->Getuselist().size() == 0 ||
         ret->Getuselist()[0]->GetValue() ==
             RetBlock->back()->Getuselist()[0]->GetValue()) {
-      // bbs->RAUW(RetBlock);
-      // BasicBlock* PredBB=nullptr;
       std::vector<BasicBlock *> pred;
       std::vector<std::pair<User *, int>> Erase;
       for (auto list = bbs->GetUserlist().begin();
@@ -473,6 +466,7 @@ bool cfgSimplify::DealBrInst() {
 #endif
           delete cond;
           ignore->RemovePredBB(pred);
+
           //更新m_dom相关参数
           m_dom->GetNode(ignore->num).rev.remove(pred->num);
           m_dom->GetNode(pred->num).des.remove(ignore->num);
@@ -529,7 +523,7 @@ void cfgSimplify::DeletDeadBlock(BasicBlock *bb) {
     inst->RAUW(UndefValue::get(inst->GetType()));
   }
   updateDTinfo(bb);
-  loopAnlaysis->DeleteBlock(bb);
+  // loopAnlaysis->DeleteBlock(bb);
   bb->Delete();
   m_dom->updateBlockNum()--;
 }

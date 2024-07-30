@@ -120,14 +120,12 @@ void _PassManager::RunOnLevel() {
       RunLevelPass(ConstantProp, curfunc, modified);
       // reassociate
       RunLevelPass(Reassociate, curfunc, modified);
-
       // cse
-      RunLevelPass(CSE, curfunc, modified);
+      RunLevelPass(CSE, curfunc, modified)
     }
-
     if (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
-      RunImpl<DeadArgsElimination>(module, AM);
+          RunImpl<DeadArgsElimination>(module, AM);
       RunImpl<StoreOnlyGlobalElimination>(module, AM);
       RunImpl<Global2Local>(module, AM);
       goto Iteration;
