@@ -12,8 +12,8 @@
 #include "Local2Global.hpp"
 #include "LoopDeletion.hpp"
 #include "LoopInfo.hpp"
-#include "LoopRotate.hpp"
 #include "LoopParallel.hpp"
+#include "LoopRotate.hpp"
 #include "LoopSimplify.hpp"
 #include "PassManagerBase.hpp"
 #include "PromoteMemtoRegister.hpp"
@@ -52,6 +52,7 @@ enum PassName {
   storeonlyglobalelimination,
   local2global,
   parallel,
+  loopUnroll,
 };
 
 static struct option long_options[] = {
@@ -74,6 +75,7 @@ static struct option long_options[] = {
     {"storeonlyglobalelimination", no_argument, 0, 20},
     {"local2global", no_argument, 0, 21},
     {"parallel", no_argument, 0, 22},
+    {"loopUnroll", no_argument, 0, 23},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},

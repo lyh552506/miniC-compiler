@@ -193,6 +193,7 @@ private:
   std::set<RISCVBasicBlock *> assist;
   RegisterList &reglist;
   float LoopWeight = 1;
-  float livenessWeight = 5;
-  float DegreeWeight = 1;
+  float livenessWeight = 2.5;
+  float DegreeWeight = 3;
+  float SpillWeight = 5;
 };

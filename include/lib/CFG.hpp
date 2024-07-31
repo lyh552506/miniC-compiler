@@ -293,6 +293,12 @@ class Function:public Value,public mylist<Function,BasicBlock>
     std::vector<BasicBlock*> bbs;
     std::pair<size_t,size_t> inlineinfo;
     public:
+    enum Tag{
+        Normal,
+        UnrollBody,
+        ParallelBody,
+    };
+    Tag tag=Normal;
     std::set<Value*> Change_Val; // Used for cse 
     std::pair<size_t,size_t>& GetInlineInfo();
     inline void ClearInlineInfo(){inlineinfo.first=inlineinfo.second=0;};

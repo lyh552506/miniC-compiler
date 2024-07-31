@@ -295,9 +295,12 @@ bool LoopAnalysis::IsLoopInvariant(const std::set<BasicBlock *> &contain,
       std::all_of(I->Getuselist().begin(), I->Getuselist().end(),
                   [curloop, &contain](auto &ele) {
                     auto val = ele->GetValue();
-                    if (auto user = dynamic_cast<User *>(val))
+                    if (auto user = dynamic_cast<User *>(val)) {
+                      if(user->isParam())
+                        return true;
                       if (contain.find(user->GetParent()) != contain.end())
                         return false;
+                    }
                     return true;
                   });
   return res;

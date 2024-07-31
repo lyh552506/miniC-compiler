@@ -15,26 +15,17 @@ bool cfgSimplify::Run() {
   bool keep_loop = true;
   FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
   while (keep_loop) {
-    static int i = 0;
-    i++;
-
     keep_loop = false;
     if (m_dom != nullptr)
       keep_loop |= simplifyPhiInst();
     keep_loop |= simplify_Block();
-
     keep_loop |= DealBrInst();
     keep_loop |= simplify_Block();
     keep_loop |= DeleteUnReachable();
-    // keep_loop |= EliminateDeadLoop();
     keep_loop |= DelSamePhis();
-
     keep_loop |= mergeSpecialBlock();
     keep_loop |= SimplifyUncondBr();
     keep_loop |= mergeRetBlock();
-    // if (i == 24)
-    //   return false;
-    // keep_loop |= EliminateDeadLoop();
   }
   return false;
 }
