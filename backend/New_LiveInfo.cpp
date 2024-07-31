@@ -168,6 +168,13 @@ void BlockInfo::Build()
             }
             else if (op == OpType::call)
             {
+                // for (auto reg : reglist.GetReglistCaller())
+                // {
+                //     for (auto v : live)
+                //         AddEdge(reg, v);
+                // }
+                for (auto reg : reglist.GetReglistCaller())
+                    live.insert(reg);
                 for (auto reg : reglist.GetReglistCaller())
                 {
                     for (auto v : live)
@@ -193,7 +200,20 @@ void BlockInfo::Build()
         }
     }
 }
-
+void BlockInfo::PrintEdge()
+{
+    for (auto &[key, val] : adjSet)
+    {
+        std::cout << "--------%" << key->GetName() << " Edge --------" << std::endl;
+        int count = 0;
+        for (auto v : val)
+        {
+            if (dynamic_cast<VirRegister *>(v))
+                std::cout << "%" << v->GetName() << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 void BlockInfo::AddEdge(Register *u, Register *v)
 {
     if (u == v)

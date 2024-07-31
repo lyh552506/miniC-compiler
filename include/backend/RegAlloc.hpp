@@ -80,6 +80,7 @@ public:
   RegisterList &reglist;
   void RunOnFunction();
   void PrintPass();
+  void PrintEdge();
   void Build();
   void AddEdge(Register *u, Register *v);
   bool count(MOperand Op, RISCVMIR *inst) { return InstLive[inst].count(Op); }
