@@ -68,12 +68,23 @@ public:
                 // interference graph
   std::unordered_map<MOperand, std::unordered_set<MOperand>> TmpIG;
   std::unordered_map<MOperand, std::vector<MOperand>> IG; // reg2reg IG[op]
+    // 有可能合并的传送指令
+  std::vector<RISCVMIR *> worklistMoves;
+  // 图中冲突边(u,v)的集合。如果 (u,v)\in adjset, 那 (v,u) \in adjset
+  std::unordered_map<MOperand, std::unordered_set<MOperand>> adjSet; 
+  // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
+  std::unordered_set<MOperand> initial;
+  std::unordered_map<MOperand, std::unordered_set<MOperand>> AdjList;
+  std::unordered_map<MOperand, int> Degree;
+  RegisterList &reglist;
   void RunOnFunction();
   void PrintPass();
+  void Build();
+  void AddEdge(Register* v, std::unordered_set<MOperand>& us);
   bool count(MOperand Op, RISCVMIR *inst) { return InstLive[inst].count(Op); }
   bool Count(Register *op);
   BlockLiveInfo(RISCVFunction *f)
-      : m_func(f), BlockLivein{}, BlockLiveout{}, InstLive{} {}
+      : m_func(f), BlockLivein{}, BlockLiveout{}, InstLive{}, reglist(RegisterList::GetPhyRegList()) {}
 };
 class LiveInterval : public BlockLiveInfo {
   using Interval = RegAllocImpl::RegLiveInterval;
@@ -108,8 +119,8 @@ public:
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
   GraphColor(RISCVFunction *func, RISCVLoweringContext &_ctx)
-      : LiveInterval(func), ctx(_ctx), m_func(func),
-        reglist(RegisterList::GetPhyRegList()) {}
+      : LiveInterval(func), ctx(_ctx), m_func(func)
+        {}
   void RunOnFunc();
 
 private:
@@ -156,16 +167,12 @@ private:
   enum MoveState { coalesced, constrained, frozen, worklist, active };
   // 低度数的传送有关节点表
   std::unordered_set<MOperand> freezeWorkList;
-  // 有可能合并的传送指令
-  std::vector<RISCVMIR *> worklistMoves;
   // 低度数的传送无关节点表
   std::vector<MOperand> simplifyWorkList;
   // 高度数的节点表
   std::unordered_set<MOperand> spillWorkList;
   // 本轮中要溢出的节点集合
   std::unordered_set<MOperand> spilledNodes;
-  // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
-  std::unordered_set<MOperand> initial;
   // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
   std::unordered_set<MOperand> coalescedNodes;
   //源操作数和目标操作数冲突的传送指令集合
@@ -176,8 +183,6 @@ private:
   std::unordered_set<RISCVMIR *> frozenMoves;
   //已成功着色的结点集合
   std::unordered_set<MOperand> coloredNode;
-  std::unordered_map<MOperand, std::unordered_set<MOperand>> AdjList;
-  std::unordered_map<MOperand, int> Degree;
   // 从图中删除的临时变量的栈
   std::vector<MOperand> selectstack;
   //查询每个传送指令属于哪一个集合
@@ -191,7 +196,6 @@ private:
   std::unordered_map<VirRegister *, RISCVMIR *> AlreadySpill;
   std::vector<RISCVBasicBlock *> topu;
   std::set<RISCVBasicBlock *> assist;
-  RegisterList &reglist;
   float LoopWeight = 1;
   float livenessWeight = 2;
   float DegreeWeight = 1;

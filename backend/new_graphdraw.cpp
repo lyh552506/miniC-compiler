@@ -163,12 +163,13 @@ void GraphColor::CaculateLiveness() {
   LiveInfoInit();
   RunOnFunction();
   //计算IG,并且添加precolored集合
-  IG.clear();
-  for (const auto b : *m_func) {
-    CalInstLive(b);
-  }
-  for (auto &[key, val] : TmpIG)
-    IG[key].insert(IG[key].end(), val.begin(), val.end());
+  // IG.clear();
+  // for (const auto b : *m_func) {
+  //   CalInstLive(b);
+  // }
+  Build();
+  // for (auto &[key, val] : TmpIG)
+    // IG[key].insert(IG[key].end(), val.begin(), val.end());
   RunOnFunc_();
   for (const auto b : *m_func) {
     CaculateLiveInterval(b);
