@@ -170,14 +170,17 @@ void BlockInfo::Build()
             {
                 for (auto reg : reglist.GetReglistCaller())
                 {
-                    AddEdge(reg, live);
-                    live.erase(reg);
+                    for (auto v : live)
+                        AddEdge(reg, v);
                 }
+                for (auto reg : reglist.GetReglistCaller())
+                    live.erase(reg);
             }
             if (auto def = inst->GetDef()->ignoreLA())
             {
                 live.insert(def);
-                AddEdge(def, live);
+                for (auto v : live)
+                    AddEdge(def, v);
                 live.erase(def);
             }
             for (int i = 0; i < inst->GetOperandSize(); i++)
@@ -191,73 +194,23 @@ void BlockInfo::Build()
     }
 }
 
-void BlockInfo::AddEdge(Register *v, std::unordered_set<MOperand> &us)
-{
-    if (adjSet.find(v) == adjSet.end())
-    {
-        bool flag = false;
-        if (Precolored.find(v) == Precolored.end())
-            flag = true;
-        for (auto u : us)
-        {
-            if (v == u)
-                continue;
-            adjSet[v].insert(u);
-            adjSet[u].insert(v);
-            if (flag)
-            {
-                AdjList[v].insert(u);
-                Degree[v]++;
-            }
-            if (Precolored.find(u) == Precolored.end())
-            {
-                AdjList[u].insert(v);
-                Degree[u]++;
-            }
-        }
-    }
-    else
-    {
-        bool flag = false;
-        if (Precolored.find(v) == Precolored.end())
-            flag = true;
-        for (auto u : us)
-        {
-            if (!adjSet[v].count(u) && v != u)
-            {
-                adjSet[v].insert(u);
-                adjSet[u].insert(v);
-                if (flag)
-                {
-                    AdjList[v].insert(u);
-                    Degree[v]++;
-                }
-                if (Precolored.find(u) == Precolored.end())
-                {
-                    AdjList[u].insert(v);
-                    Degree[u]++;
-                }
-            }
-        }
-    }
-}
-
 void BlockInfo::AddEdge(Register *u, Register *v)
 {
-    if (!adjSet[u].count(v) && u != v)
+    if (u == v)
+        return;
+    if (adjSet[u].count(v))
+        return;
+    adjSet[v].insert(u);
+    adjSet[u].insert(v);
+    if (Precolored.find(v) == Precolored.end())
     {
-        adjSet[v].insert(u);
-        adjSet[u].insert(v);
-        if (Precolored.find(v) == Precolored.end())
-        {
-            AdjList[v].insert(u);
-            Degree[v]++;
-        }
-        if (Precolored.find(u) == Precolored.end())
-        {
-            AdjList[u].insert(v);
-            Degree[u]++;
-        }
+        AdjList[v].insert(u);
+        Degree[v]++;
+    }
+    if (Precolored.find(u) == Precolored.end())
+    {
+        AdjList[u].insert(v);
+        Degree[u]++;
     }
 }
 

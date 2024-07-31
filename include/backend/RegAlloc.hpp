@@ -81,8 +81,7 @@ public:
   void RunOnFunction();
   void PrintPass();
   void Build();
-  void AddEdge(Register *v, std::unordered_set<MOperand> &us);
-  void AddEdge(Register *v, Register *u);
+  void AddEdge(Register *u, Register *v);
   bool count(MOperand Op, RISCVMIR *inst) { return InstLive[inst].count(Op); }
   bool Count(Register *op);
   BlockLiveInfo(RISCVFunction *f)
