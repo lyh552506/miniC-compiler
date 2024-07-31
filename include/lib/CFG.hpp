@@ -54,6 +54,7 @@ class Variable:public User
         GlobalVariable,Constant,Param
     }usage;
     bool isGlobal()final;
+    bool isParam()final;
     /// @warning the type should be the inner type like alloca  
     Variable(UsageTag,Type*,std::string);
     void print();
