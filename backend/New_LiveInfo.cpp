@@ -218,6 +218,28 @@ void BlockInfo::AddEdge(Register *v, std::unordered_set<MOperand> &us)
     }
 }
 
+
+void BlockInfo::AddEdge(Register *u, Register *v)
+{
+    if (adjSet.find(v) == adjSet.end())
+    {
+        if (v == u)
+            return;
+        adjSet[v].insert(u);
+        adjSet[u].insert(v);
+        if(Precolored.find(v) == Precolored.end())
+        {
+            AdjList[v].insert(u);
+            Degree[v]++;
+        }
+        if(Precolored.find(u) == Precolored.end())
+        {
+            AdjList[u].insert(v);
+            Degree[u]++;
+        }
+    }
+}
+
 void BlockInfo::PrintPass()
 {
     std::cout << "--------BlockLiveInfo--------" << std::endl;

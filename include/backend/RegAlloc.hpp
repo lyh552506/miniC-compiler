@@ -67,11 +67,12 @@ public:
       moveList; // reg2mov
                 // interference graph
   std::unordered_map<MOperand, std::unordered_set<MOperand>> TmpIG;
-  std::unordered_map<MOperand, std::vector<MOperand>> IG; // reg2reg IG[op]
-    // 有可能合并的传送指令
+  std::unordered_map<MOperand, std::vector<MOperand>>
+      IG; // reg2reg IG[op]
+          // 有可能合并的传送指令
   std::vector<RISCVMIR *> worklistMoves;
   // 图中冲突边(u,v)的集合。如果 (u,v)\in adjset, 那 (v,u) \in adjset
-  std::unordered_map<MOperand, std::unordered_set<MOperand>> adjSet; 
+  std::unordered_map<MOperand, std::unordered_set<MOperand>> adjSet;
   // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
   std::unordered_set<MOperand> initial;
   std::unordered_map<MOperand, std::unordered_set<MOperand>> AdjList;
@@ -80,11 +81,13 @@ public:
   void RunOnFunction();
   void PrintPass();
   void Build();
-  void AddEdge(Register* v, std::unordered_set<MOperand>& us);
+  void AddEdge(Register *v, std::unordered_set<MOperand> &us);
+  void AddEdge(Register *v, Register *u);
   bool count(MOperand Op, RISCVMIR *inst) { return InstLive[inst].count(Op); }
   bool Count(Register *op);
   BlockLiveInfo(RISCVFunction *f)
-      : m_func(f), BlockLivein{}, BlockLiveout{}, InstLive{}, reglist(RegisterList::GetPhyRegList()) {}
+      : m_func(f), BlockLivein{}, BlockLiveout{}, InstLive{},
+        reglist(RegisterList::GetPhyRegList()) {}
 };
 class LiveInterval : public BlockLiveInfo {
   using Interval = RegAllocImpl::RegLiveInterval;
@@ -119,8 +122,7 @@ public:
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
   GraphColor(RISCVFunction *func, RISCVLoweringContext &_ctx)
-      : LiveInterval(func), ctx(_ctx), m_func(func)
-        {}
+      : LiveInterval(func), ctx(_ctx), m_func(func) {}
   void RunOnFunc();
 
 private:
@@ -141,6 +143,7 @@ private:
   void SpillNodeInMir();
   void RewriteProgram();
   void CaculateTopu(RISCVBasicBlock *mbb);
+  void DecrementDegree(MOperand target);
   MOperand HeuristicFreeze();
   MOperand HeuristicSpill();
   PhyRegister *SelectPhyReg(MOperand vreg, RISCVType ty,
