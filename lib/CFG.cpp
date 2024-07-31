@@ -541,6 +541,13 @@ bool Variable::isGlobal() {
     return true;
 }
 
+bool Variable::isParam() {
+  if (usage == Param)
+    return true;
+  else
+    return false;
+}
+
 GetElementPtrInst::GetElementPtrInst(Operand base_ptr) {
   add_use(base_ptr);
   id = OpID::Gep;

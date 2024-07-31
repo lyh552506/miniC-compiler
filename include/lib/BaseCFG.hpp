@@ -104,6 +104,7 @@ class Value
     virtual std::string GetName();
     UserList& GetUserlist(){return userlist;};
     virtual bool isGlobal();
+    virtual inline bool isParam(){return false;};
     bool isUndefVal();
     bool isConstZero();
     bool isConstOne();
