@@ -166,7 +166,7 @@ void BlockInfo::Build()
                     moveList[def].insert(inst);
                 worklistMoves.push_back(inst);
             }
-            else if(op == OpType::call)
+            else if (op == OpType::call)
             {
                 for (auto reg : reglist.GetReglistCaller())
                 {
@@ -204,35 +204,56 @@ void BlockInfo::AddEdge(Register *v, std::unordered_set<MOperand> &us)
                 continue;
             adjSet[v].insert(u);
             adjSet[u].insert(v);
-            if(flag)
+            if (flag)
             {
                 AdjList[v].insert(u);
                 Degree[v]++;
             }
-            if(Precolored.find(u) == Precolored.end())
+            if (Precolored.find(u) == Precolored.end())
             {
                 AdjList[u].insert(v);
                 Degree[u]++;
             }
         }
     }
+    else
+    {
+        bool flag = false;
+        if (Precolored.find(v) == Precolored.end())
+            flag = true;
+        for (auto u : us)
+        {
+            if (!adjSet[v].count(u) && v != u)
+            {
+                adjSet[v].insert(u);
+                adjSet[u].insert(v);
+                if (flag)
+                {
+                    AdjList[v].insert(u);
+                    Degree[v]++;
+                }
+                if (Precolored.find(u) == Precolored.end())
+                {
+                    AdjList[u].insert(v);
+                    Degree[u]++;
+                }
+            }
+        }
+    }
 }
-
 
 void BlockInfo::AddEdge(Register *u, Register *v)
 {
-    if (adjSet.find(v) == adjSet.end())
+    if (!adjSet[u].count(v) && u != v)
     {
-        if (v == u)
-            return;
         adjSet[v].insert(u);
         adjSet[u].insert(v);
-        if(Precolored.find(v) == Precolored.end())
+        if (Precolored.find(v) == Precolored.end())
         {
             AdjList[v].insert(u);
             Degree[v]++;
         }
-        if(Precolored.find(u) == Precolored.end())
+        if (Precolored.find(u) == Precolored.end())
         {
             AdjList[u].insert(v);
             Degree[u]++;
