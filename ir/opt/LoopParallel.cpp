@@ -1,6 +1,6 @@
-#include "LoopParallel.hpp"
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
+#include "../../include/ir/opt/LoopParallel.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/lib/CFG.hpp"
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
@@ -13,10 +13,12 @@
 // only analysis main function, so inline must take place before this pass
 bool LoopParallel::Run() {
   bool changed = false;
-  if (m_func->GetName() != "main")
-    return false;
   dom = AM.get<dominance>(m_func);
   loopAnaly = AM.get<LoopAnalysis>(m_func, dom);
+
+  if (m_func->GetName() != "main")
+    return false;
+
   for (auto loop : *loopAnaly) {
     ExtractLoopParallelBody(loop);
     return false;

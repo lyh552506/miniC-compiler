@@ -1,9 +1,9 @@
 #pragma once
-#include "CFG.hpp"
+#include "../../lib/CFG.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 #include "PromoteMemtoRegister.hpp"
-#include "dominant.hpp"
+#include "../Analysis/dominant.hpp"
 class _AnalysisManager;
 /// @note 支配树的根节点通过entryblock返回
 // mem2reg的开始函数

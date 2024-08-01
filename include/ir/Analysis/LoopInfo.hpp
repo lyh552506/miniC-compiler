@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cassert>
+#include <set>
 #include <vector>
 
 #include "../../include/ir/Analysis/dominant.hpp"
@@ -21,7 +22,12 @@ public:
   friend class LoopAnalysis;
   using iterator = std::vector<LoopInfo *>::const_iterator;
   using reverse_iterator = std::vector<LoopInfo *>::const_reverse_iterator;
-
+  enum Tag {
+    Normal,
+    Simplified,
+    Lcssa,
+    Rotate,
+  };
   LoopInfo() = default;
   LoopInfo(BasicBlock *_Header) : Header(_Header) {
     ContainBlocks.push_back(_Header);
@@ -33,6 +39,10 @@ public:
   void setLatch(BasicBlock *bb) {
     Latch = bb;
     InsertLoopBody(bb);
+  }
+  bool CantCalcTrait() {
+    return (!trait.boundary) || (!trait.initial) || (!trait.indvar) ||
+           (!trait.change);
   }
   void DeleteBlock(BasicBlock *bb) {
     auto iter = std::find(ContainBlocks.begin(), ContainBlocks.end(), bb);
@@ -63,6 +73,7 @@ public:
   }
   int RotateTimes = 0;
   LoopTrait trait;
+  std::set<Tag> LoopForm{Normal};
 
 private:
   BasicBlock *Header = nullptr;
@@ -75,12 +86,11 @@ private:
   std::vector<LoopInfo *> SubLoops;
   int LoopDepth = 0;    //嵌套深度
   bool visited = false; //辅助
-  bool CanUnroll = false;
 };
 
 class LoopAnalysis : public _AnalysisManagerBase<LoopAnalysis, Function> {
 public:
-  enum Flag{
+  enum Flag {
     Strict,
     Loose,
   };
@@ -95,7 +105,7 @@ public:
   bool IsLoopIncludeBB(LoopInfo *loop, BasicBlock *bb);
   bool IsLoopExiting(LoopInfo *loop, BasicBlock *bb);
   BasicBlock *GetLatch(LoopInfo *loop);
-  BasicBlock *GetPreHeader(LoopInfo *loopinfo,Flag f=Strict);
+  BasicBlock *GetPreHeader(LoopInfo *loopinfo, Flag f = Strict);
   std::vector<BasicBlock *> GetExitingBlock(LoopInfo *loopinfo);
   std::vector<BasicBlock *> GetExit(LoopInfo *loopinfo);
   void setBBs() { bbs = &(m_func->GetBasicBlock()); }
@@ -110,6 +120,7 @@ public:
   void ExpandSubLoops();
   void DeleteLoop(LoopInfo *loop);
   void DeleteBlock(BasicBlock *bb);
+  std::vector<LoopInfo *> GetLoops() { return LoopRecord; }
   bool CanBeOpt() { return LoopRecord.size() != 0; }
   static bool IsLoopInvariant(const std::set<BasicBlock *> &contain, User *I,
                               LoopInfo *curloop);
@@ -136,6 +147,7 @@ public:
   iterator end() { return LoopRecord.end(); }
   reverse_iterator rbegin() { return LoopRecord.rbegin(); }
   reverse_iterator rend() { return LoopRecord.rend(); }
+
   ~LoopAnalysis() {
     for (auto i : LoopRecord)
       delete i;

@@ -1,10 +1,10 @@
 #pragma once
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "LoopInfo.hpp"
+#include "../../lib/BaseCFG.hpp"
+#include "../../lib/CFG.hpp"
+#include "../Analysis/LoopInfo.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "dominant.hpp"
+#include "../Analysis/dominant.hpp"
 #include <set>
 #include <unordered_map>
 #include <vector>

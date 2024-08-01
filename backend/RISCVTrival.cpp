@@ -2,7 +2,11 @@
 
 RISCVMIR* RISCVTrival::CopyFrom(VirRegister* dst,RISCVMOperand* src){
     RISCVMIR* copyinst = nullptr;
-    if(dst->GetType()==RISCVType::riscv_i32 && src->GetType()==RISCVType::riscv_i32) {
+    if(auto imm=src->as<Imm>()){
+        assert(imm->GetType()==RISCVType::riscv_i32);
+        copyinst=new RISCVMIR(RISCVMIR::li);
+    }
+    else if(dst->GetType()==RISCVType::riscv_i32 && src->GetType()==RISCVType::riscv_i32) {
         copyinst=new RISCVMIR(RISCVMIR::mv);
     }
     else if(dst->GetType()==RISCVType::riscv_float32 && src->GetType()==RISCVType::riscv_float32) {

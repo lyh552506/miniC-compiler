@@ -274,10 +274,12 @@ class RISCVFrame{
     std::vector<std::unique_ptr<RISCVFrameObject>> frameobjs;
     size_t frame_size;
     std::vector<RISCVMOperand*> cantbespill;
+    
+    std::unordered_map<VirRegister*,StackRegister*> spillmap;
     public:
     RISCVFrame(RISCVFunction*);
     StackRegister* spill(VirRegister*);
-    StackRegister* spill(Value*);
+    // StackRegister* spill(Value*);
     RISCVMIR* spill(PhyRegister*);
     RISCVMIR* load_to_preg(StackRegister*,PhyRegister*);
     std::vector<std::unique_ptr<RISCVFrameObject>>& GetFrameObjs();

@@ -1,12 +1,12 @@
 #pragma once
-#include "AliasAnalysis.hpp"
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "SideEffect.hpp"
-#include "LoopInfo.hpp"
+#include "../Analysis/AliasAnalysis.hpp"
+#include "../../lib/BaseCFG.hpp"
+#include "../../lib/CFG.hpp"
+#include "../Analysis/SideEffect.hpp"
+#include "../Analysis/LoopInfo.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "dominant.hpp"
+#include "../Analysis/dominant.hpp"
 #include <vector>
 class AliasAnalysis;
 class LICMPass :public _PassManagerBase<LICMPass, Function> {

@@ -12,9 +12,9 @@
 #include <utility>
 #include <vector>
 
-#include "CFG.hpp"
-#include "PassManagerBase.hpp"
-#include "my_stl.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../opt/PassManagerBase.hpp"
+#include "../../../util/my_stl.hpp"
 
 class dominance : public _AnalysisManagerBase<dominance, Function> {
   friend class IDF;

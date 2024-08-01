@@ -1,11 +1,11 @@
 #pragma once
-#include "CFG.hpp"
+#include "../../lib/CFG.hpp"
 #include "CSE.hpp"
 #include "PassManagerBase.hpp"
 #include "New_passManager.hpp"
-#include "dominant.hpp"
-#include "my_stl.hpp"
-#include "LoopInfo.hpp"
+#include "../Analysis/dominant.hpp"
+#include "../../../util/my_stl.hpp"
+#include "../Analysis/LoopInfo.hpp"
 class _AnalysisManager;
 
 class LoopDeletion : public _PassManagerBase<LoopDeletion, Function>

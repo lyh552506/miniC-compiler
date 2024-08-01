@@ -1,5 +1,5 @@
 #pragma once
-#include "CFG.hpp"
+#include "../../lib/CFG.hpp"
 #include "ConstantProp.hpp"
 
 Value* SimplifyBinOp(BinaryInst::Operation Opcode, Value* LHS, Value* RHS);

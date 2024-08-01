@@ -1,8 +1,6 @@
 #pragma once
-#include "../../yacc/parser.hpp"
-#include "CFG.hpp"
-#include "IDF.hpp"
-#include "dominant.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
+#include "../../include/lib/CFG.hpp"
 #include <set>
 #include <unordered_map>
 
