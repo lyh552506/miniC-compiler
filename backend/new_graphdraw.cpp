@@ -268,7 +268,7 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
   // EnableMove
   for (auto node : tmp) {
     // Add Edge
-    AddEdge(node, rs);
+    AddEdge(node, rd);
     DecrementDegree(node);
   }
   if (Degree[rd] >= GetRegNums(rs) &&
