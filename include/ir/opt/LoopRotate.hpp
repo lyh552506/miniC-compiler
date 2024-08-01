@@ -1,10 +1,10 @@
 #pragma once
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "LoopInfo.hpp"
+#include "../../lib/BaseCFG.hpp"
+#include "../../lib/CFG.hpp"
+#include "../Analysis/LoopInfo.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "dominant.hpp"
+#include "../Analysis/dominant.hpp"
 #include "lcssa.hpp"
 #include <unordered_map>
 #include <vector>
@@ -16,12 +16,12 @@ public:
   void PrintPass();
 
 private:
-  bool RotateLoop(LoopInfo *loop,bool Succ);
+  bool RotateLoop(LoopInfo *loop, bool Succ);
   bool TryRotate(LoopInfo *loop);
   bool CanBeMove(User *I);
   void SimplifyBlocks(BasicBlock *Header, LoopInfo *loop);
-  void PreservePhi(BasicBlock *header, LoopInfo *loop, BasicBlock *preheader,
-                   BasicBlock *new_header,
+  void PreservePhi(BasicBlock *header, BasicBlock *Latch, LoopInfo *loop,
+                   BasicBlock *preheader, BasicBlock *new_header,
                    std::unordered_map<Value *, Value *> &PreHeaderValue,
                    LoopAnalysis *loopAnlasis);
   void PreserveLcssa(BasicBlock *new_exit, BasicBlock *old_exit,

@@ -1,5 +1,4 @@
-#include "New_passManager.hpp"
-#include "licm.hpp"
+#include "../../include/ir/opt/New_passManager.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -64,6 +63,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
       break;
     case parallel:
       AddPass(parallel);
+      break;
+    case loopUnroll:
+      AddPass(loopUnroll);
       break;
     case O0:
       level = O0;
@@ -183,7 +185,11 @@ void _PassManager::RunOnTest() {
       break;
     }
     default: {
-      for (auto &func : module->GetFuncTion()) {
+      for (int i = 0; i < module->GetFuncTion().size(); i++) {
+        auto &func = module->GetFuncTion()[i];
+        if (func->tag == Function::UnrollBody ||
+            func->tag == Function::ParallelBody)
+          continue;
         curfunc = func.get();
         // 维护bbs关系
         curfunc->bb_num = 0;
@@ -281,6 +287,10 @@ void _PassManager::RunOnTest() {
         }
         case licm: {
           auto m_licm = RunImpl<LICMPass>(curfunc, AM);
+          break;
+        }
+        case loopUnroll: {
+          auto m_LoopUnroll = RunImpl<LoopUnroll>(curfunc, AM);
           break;
         }
         default: {

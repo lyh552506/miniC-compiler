@@ -1,5 +1,5 @@
 #pragma once
-#include "CFG.hpp"
+#include "../../include/lib/CFG.hpp"
 
 template <typename Pass, typename DerivedT> class _AnalysisManagerBase {
 private:

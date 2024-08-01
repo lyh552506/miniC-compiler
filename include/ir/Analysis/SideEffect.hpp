@@ -1,7 +1,7 @@
 #pragma once
-#include "CFG.hpp"
-#include "New_passManager.hpp"
-#include "PassManagerBase.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../opt/New_passManager.hpp"
+#include "../opt/PassManagerBase.hpp"
 class SideEffect : public _AnalysisManagerBase<SideEffect, Module>
 {
     std::map<Function*, std::set<Function*>> CalleeFuncs;

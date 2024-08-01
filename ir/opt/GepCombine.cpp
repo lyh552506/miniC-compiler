@@ -11,7 +11,7 @@ bool GepCombine::Run()
     bool modified = false;
     std::deque<HandleNode *> WorkList;
     WorkList.push_back(new HandleNode(DomTree, &(DomTree->GetNode(0)), DomTree->GetNode(0).idom_child.begin(),
-                                      DomTree->GetNode(0).idom_child.end()));
+                                      DomTree->GetNode(0).idom_child.end(), std::unordered_map<Value*, std::unordered_set<gepinfo*>>()));
     while (!WorkList.empty())
     {
         GepCombine::HandleNode *cur = WorkList.back();
@@ -25,7 +25,7 @@ bool GepCombine::Run()
             auto node = cur->NextChild();
             WorkList.push_back(new HandleNode(DomTree, &(DomTree->GetNode(*node)),
                                               DomTree->GetNode(*node).idom_child.begin(),
-                                              DomTree->GetNode(*node).idom_child.end()));
+                                              DomTree->GetNode(*node).idom_child.end(), cur->GetGeps()));
         }
         else
         {
@@ -34,4 +34,12 @@ bool GepCombine::Run()
         }
     }
     return modified;
+}
+
+bool GepCombine::ProcessNode(HandleNode *node)
+{
+    bool modified = false;
+    BasicBlock *block = node->GetBlock();
+    _DEBUG(std::cerr << "Processing Node: " << block->GetName() << std::endl;)
+
 }

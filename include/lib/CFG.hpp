@@ -54,6 +54,7 @@ class Variable:public User
         GlobalVariable,Constant,Param
     }usage;
     bool isGlobal()final;
+    bool isParam()final;
     /// @warning the type should be the inner type like alloca  
     Variable(UsageTag,Type*,std::string);
     void print();
@@ -280,18 +281,18 @@ class BuildInFunction:public Value
 class Function:public Value,public mylist<Function,BasicBlock>
 {
     friend class InlineCost;
-    enum InlineLevel
-    {
-        AlwaysInline,
-        NeverInline,
-        VaiableInline
-    };
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
     std::vector<BasicBlock*> bbs;
     std::pair<size_t,size_t> inlineinfo;
     public:
+    enum Tag{
+        Normal,
+        UnrollBody,
+        ParallelBody,
+    };
+    Tag tag=Normal;
     std::set<Value*> Change_Val; // Used for cse 
     std::pair<size_t,size_t>& GetInlineInfo();
     inline void ClearInlineInfo(){inlineinfo.first=inlineinfo.second=0;};
@@ -311,6 +312,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);
     //curr ==>  insert -> curr
     void InsertBlock(BasicBlock* curr,BasicBlock* insert);
+    void InlineCall(CallInst* call);
     void init_visited_block();
     void init_reach_block();
     bool MemWrite();

@@ -16,7 +16,9 @@ bool LcSSA::Run() {
   if (!loops->CanBeOpt())
     return changed;
   for (auto l = loops->begin(); l != loops->end(); l++) {
-    changed |= DFSLoops(*l);
+    auto loop = *l;
+    changed |= DFSLoops(loop);
+    loop->LoopForm.insert(LoopInfo::Lcssa);
   }
   return changed;
 }

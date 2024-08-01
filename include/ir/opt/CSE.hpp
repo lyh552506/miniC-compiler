@@ -1,9 +1,9 @@
 #pragma once
-#include "CFG.hpp"
-#include "New_passManager.hpp"
+#include "../../lib/CFG.hpp"
 #include "PassManagerBase.hpp"
-#include "dominant.hpp"
-#include "my_stl.hpp"
+#include "New_passManager.hpp"
+#include "../Analysis/dominant.hpp"
+#include "../../../util/my_stl.hpp"
 #include <unordered_set>
 class _AnalysisManager;
 namespace HashTool
@@ -267,7 +267,15 @@ class CSE : public _PassManagerBase<CSE, Function>
                 for (auto storeinfo : Stores[inst->GetOperand(1)])
                 {
                     if (storeinfo->StoreGeneration == gen)
+                    {
+                        if(auto call = dynamic_cast<CallInst*>(storeinfo->store->Getuselist()[0]->usee))
+                        {
+                            std::string name = call->Getuselist()[0]->usee->GetName();
+                            if(name == "getch" || name =="getint" || name == "getfloat" || name == "getarray" || name=="getfarray")
+                                return nullptr;
+                        }
                         return storeinfo->store;
+                    }
                 }
             }
             return nullptr;

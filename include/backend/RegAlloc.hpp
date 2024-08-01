@@ -6,7 +6,7 @@
 #include "../../include/backend/RISCVType.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../util/my_stl.hpp"
-#include "BaseCFG.hpp"
+#include "../../include/lib/BaseCFG.hpp"
 #include <algorithm>
 #include <cmath>
 #include <list>
@@ -65,15 +65,26 @@ public:
   // 从一个结点到与该节点相关的传送指令表的映射
   std::unordered_map<MOperand, std::unordered_set<RISCVMIR *>>
       moveList; // reg2mov
-                // interference graph
-  std::unordered_map<MOperand, std::unordered_set<MOperand>> TmpIG;
-  std::unordered_map<MOperand, std::vector<MOperand>> IG; // reg2reg IG[op]
+  std::unordered_set<RISCVMIR *> NotMove;
+  // 有可能合并的传送指令
+  std::vector<RISCVMIR *> worklistMoves;
+  // 图中冲突边(u,v)的集合。如果 (u,v)\in adjset, 那 (v,u) \in adjset
+  std::unordered_map<MOperand, std::unordered_set<MOperand>> adjSet;
+  // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
+  std::unordered_set<MOperand> initial;
+  std::unordered_map<MOperand, std::unordered_set<MOperand>> AdjList;
+  std::unordered_map<MOperand, int> Degree;
+  RegisterList &reglist;
   void RunOnFunction();
   void PrintPass();
+  void PrintEdge();
+  void Build();
+  void AddEdge(Register *u, Register *v);
   bool count(MOperand Op, RISCVMIR *inst) { return InstLive[inst].count(Op); }
   bool Count(Register *op);
   BlockLiveInfo(RISCVFunction *f)
-      : m_func(f), BlockLivein{}, BlockLiveout{}, InstLive{} {}
+      : m_func(f), BlockLivein{}, BlockLiveout{}, InstLive{},
+        reglist(RegisterList::GetPhyRegList()) {}
 };
 class LiveInterval : public BlockLiveInfo {
   using Interval = RegAllocImpl::RegLiveInterval;
@@ -108,8 +119,7 @@ public:
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
   GraphColor(RISCVFunction *func, RISCVLoweringContext &_ctx)
-      : LiveInterval(func), ctx(_ctx), m_func(func),
-        reglist(RegisterList::GetPhyRegList()) {}
+      : LiveInterval(func), ctx(_ctx), m_func(func) {}
   void RunOnFunc();
 
 private:
@@ -119,6 +129,7 @@ private:
   std::unordered_set<RISCVMIR *> MoveRelated(MOperand v);
   void CalcmoveList(RISCVBasicBlock *block);
   void CalcIG(RISCVMIR *inst);
+  void New_CalcIG(MOperand u, MOperand v);
   void CalInstLive(RISCVBasicBlock *block);
   void CaculateLiveness();
   void CaculateLiveInterval(RISCVBasicBlock *mbb);
@@ -130,6 +141,7 @@ private:
   void SpillNodeInMir();
   void RewriteProgram();
   void CaculateTopu(RISCVBasicBlock *mbb);
+  void DecrementDegree(MOperand target);
   MOperand HeuristicFreeze();
   MOperand HeuristicSpill();
   PhyRegister *SelectPhyReg(MOperand vreg, RISCVType ty,
@@ -151,21 +163,18 @@ private:
   RISCVMIR *CreateLoadMir(RISCVMOperand *load,
                           std::unordered_set<VirRegister *> &temps);
   void Print();
+  std::vector<MOperand> SpillStack;
   //保证Interval vector的顺序
   std::unordered_map<MOperand, IntervalLength> ValsInterval;
   enum MoveState { coalesced, constrained, frozen, worklist, active };
   // 低度数的传送有关节点表
   std::unordered_set<MOperand> freezeWorkList;
-  // 有可能合并的传送指令
-  std::vector<RISCVMIR *> worklistMoves;
   // 低度数的传送无关节点表
   std::vector<MOperand> simplifyWorkList;
   // 高度数的节点表
   std::unordered_set<MOperand> spillWorkList;
   // 本轮中要溢出的节点集合
   std::unordered_set<MOperand> spilledNodes;
-  // 临时寄存器集合，其中的元素既没有预着色，也没有被处理
-  std::unordered_set<MOperand> initial;
   // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
   std::unordered_set<MOperand> coalescedNodes;
   //源操作数和目标操作数冲突的传送指令集合
@@ -176,8 +185,6 @@ private:
   std::unordered_set<RISCVMIR *> frozenMoves;
   //已成功着色的结点集合
   std::unordered_set<MOperand> coloredNode;
-  std::unordered_map<MOperand, std::unordered_set<MOperand>> AdjList;
-  std::unordered_map<MOperand, int> Degree;
   // 从图中删除的临时变量的栈
   std::vector<MOperand> selectstack;
   //查询每个传送指令属于哪一个集合
@@ -188,11 +195,11 @@ private:
   std::unordered_map<MOperand, MOperand> alias;
   std::unordered_map<PhyRegister *, RISCVType> RegType;
   //记录已经重写的spill node
-  std::unordered_map<VirRegister *, RISCVMIR *> AlreadySpill;
+  // std::unordered_map<VirRegister *, RISCVMIR *> AlreadySpill;
   std::vector<RISCVBasicBlock *> topu;
   std::set<RISCVBasicBlock *> assist;
-  RegisterList &reglist;
   float LoopWeight = 1;
-  float livenessWeight = 2;
-  float DegreeWeight = 1;
+  float livenessWeight = 2.5;
+  float DegreeWeight = 3;
+  float SpillWeight = 5;
 };

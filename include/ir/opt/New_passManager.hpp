@@ -1,33 +1,33 @@
 #pragma once
-#include "CFG.hpp"
-#include "CSE.hpp"
-#include "ConstantFold.hpp"
-#include "ConstantProp.hpp"
-#include "DCE.hpp"
-#include "DeadArgsElimination.hpp"
-#include "DealCriticalEdges.hpp"
-#include "Global2Local.hpp"
-#include "IDF.hpp"
-#include "Inline.hpp"
-#include "Local2Global.hpp"
-#include "LoopDeletion.hpp"
-#include "LoopInfo.hpp"
-#include "LoopRotate.hpp"
-#include "LoopParallel.hpp"
-#include "LoopSimplify.hpp"
-#include "PassManagerBase.hpp"
-#include "PromoteMemtoRegister.hpp"
-#include "SSAPRE.hpp"
-#include "Singleton.hpp"
-#include "StoreOnlyGlobalElimination.hpp"
-#include "any"
-#include "cfgSimplify.hpp"
-#include "dominant.hpp"
-#include "lcssa.hpp"
-#include "licm.hpp"
-#include "mem2reg.hpp"
-#include "reassociate.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/ir/opt/CSE.hpp"
+#include "../../include/ir/opt/ConstantFold.hpp"
+#include "../../include/ir/opt/ConstantProp.hpp"
+#include "../../include/ir/opt/DCE.hpp"
+#include "../../include/ir/opt/DeadArgsElimination.hpp"
+#include "../../include/ir/opt/DealCriticalEdges.hpp"
+#include "../../include/ir/opt/Global2Local.hpp"
+#include "../../include/ir/opt/Inline.hpp"
+#include "../../include/ir/opt/Local2Global.hpp"
+#include "../../include/ir/opt/LoopDeletion.hpp"
+#include "../../include//ir/Analysis/LoopInfo.hpp"
+#include "../../include/ir/opt/LoopParallel.hpp"
+#include "../../include/ir/opt/LoopRotate.hpp"
+#include "../../include/ir/opt/LoopSimplify.hpp"
+#include "../../include/ir/opt/PassManagerBase.hpp"
+#include "../../include/ir/opt/PromoteMemtoRegister.hpp"
+#include "../../include/ir/opt/SSAPRE.hpp"
+#include "../../include/lib/Singleton.hpp"
+#include "../../include/ir/opt/StoreOnlyGlobalElimination.hpp"
+#include "../../include/ir/opt/cfgSimplify.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
+#include "../../include/ir/opt/lcssa.hpp"
+#include "../../include/ir/opt/licm.hpp"
+#include "../../include/ir/opt/mem2reg.hpp"
+#include "../../include/ir/opt/reassociate.hpp"
+#include "../../include/ir/opt/LoopUnroll.hpp"
 #include <getopt.h>
+#include <any>
 #include <memory>
 class FunctionPassManager;
 class ModulePassManager;
@@ -52,6 +52,7 @@ enum PassName {
   storeonlyglobalelimination,
   local2global,
   parallel,
+  loopUnroll,
 };
 
 static struct option long_options[] = {
@@ -74,6 +75,7 @@ static struct option long_options[] = {
     {"storeonlyglobalelimination", no_argument, 0, 20},
     {"local2global", no_argument, 0, 21},
     {"parallel", no_argument, 0, 22},
+    {"loopUnroll", no_argument, 0, 23},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},

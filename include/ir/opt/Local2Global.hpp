@@ -1,9 +1,9 @@
 #pragma once
-#include "CFG.hpp"
-#include "LoopInfo.hpp"
+#include "../../lib/CFG.hpp"
+#include "../Analysis/LoopInfo.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "dominant.hpp"
+#include "../Analysis/dominant.hpp"
 class _AnalysisManager;
 
 class Local2Global : public _PassManagerBase<Local2Global, Module>

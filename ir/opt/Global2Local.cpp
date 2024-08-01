@@ -181,8 +181,13 @@ void Global2Local::LocalGlobalVariable(Variable* val, Function* func)
             }
             StoreInst* store = new StoreInst(ConstIRInt::GetNewConstant(0), alloca);
             iter.insert_before(store);
-        }
             val->RAUW(alloca);
+        }
+        else
+        {
+            val->RAUW(alloca);
+            LocalArray(val, alloca, begin);
+        }
     }
     else
     {
@@ -255,6 +260,13 @@ bool Global2Local::CanLocal(Variable* val, Function* func)
         CurrSize += size;
         if(CurrSize > MaxSize)
             return false;
+        /*
+        return false;
+        */
+       /*
+       if(!val->GetInitializer())
+            return false;
+       */
     }
     if(RecursiveFunctions.find(func) != RecursiveFunctions.end())
         return false;

@@ -15,8 +15,9 @@ bool LoopSimplify::Run() {
   loopAnlay = AM.get<LoopAnalysis>(m_func, m_dom);
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++) {
-    changed |= SimplifyLoopsImpl(*iter);
-    // CaculateLoopInfo(*iter, loopAnlay);
+    auto loop = *iter;
+    changed |= SimplifyLoopsImpl(loop);
+    loop->LoopForm.insert(LoopInfo::Simplified);
   }
   return changed;
 }
@@ -321,19 +322,27 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
 void LoopSimplify::CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay) {
   const auto Header = loop->GetHeader();
   const auto Latch = Anlay->GetLatch(loop);
-  const auto br = dynamic_cast<CondInst *>(*(Header->rbegin()));
+  const auto br = dynamic_cast<CondInst *>(*(Latch->rbegin()));
   assert(br);
   const auto cmp = dynamic_cast<BinaryInst *>(GetOperand(br, 0));
   PhiInst *indvar = nullptr;
-  auto indvarJudge = [](User *val) -> PhiInst * {
+  auto indvarJudge = [&](User *val) -> PhiInst * {
+    if (auto phi = dynamic_cast<PhiInst *>(val))
+      return phi;
     for (auto &use : val->Getuselist()) {
-      if (auto phi = dynamic_cast<PhiInst *>(use->GetValue()))
+      if (auto phi = dynamic_cast<PhiInst *>(use->GetValue())) {
+        if (phi->GetParent() != Header)
+          return nullptr;
         return phi;
+      }
     }
     return nullptr;
   };
   for (auto &use : cmp->Getuselist()) {
     if (auto val = dynamic_cast<User *>(use->GetValue())) {
+      if (dynamic_cast<PhiInst *>(val) && val->GetParent() != Header) {
+        return;
+      }
       if (auto phi = indvarJudge(val)) {
         if (!indvar) {
           indvar = phi;
@@ -353,6 +362,8 @@ void LoopSimplify::CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay) {
           assert(0 && "What happen?");
       }
     }
+    if (!indvar)
+      return;
     if (use->GetValue() != loop->trait.change) {
       loop->trait.boundary = use->GetValue();
     }

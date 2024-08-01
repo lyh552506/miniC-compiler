@@ -254,15 +254,11 @@ uint64_t RISCVFunction::GetUsedPhyRegMask(){
 // RISCVFrame::RISCVFrame() {}
 RISCVFrame::RISCVFrame(RISCVFunction* func) : parent(func) {}
 StackRegister* RISCVFrame::spill(VirRegister* mop) {
-    /// @todo 
-    // put the spilled element to the same block in the stack
-    // for (auto& obj : frameobjs) {
-    //     // if (obj->GetName() == mop->GetName()) {
-    //     //     return obj->Get;
-    //     // }
-    // }
-    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
-    return frameobjs.back().get()->GetStackReg();
+    if(spillmap.find(mop)==spillmap.end()){
+        frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
+        spillmap[mop]=frameobjs.back().get()->GetStackReg();
+    }
+    return spillmap[mop];
 }
 RISCVMIR* RISCVFrame::spill(PhyRegister* mop) {
     int type = mop->Getregenum();
@@ -280,6 +276,7 @@ RISCVMIR* RISCVFrame::spill(PhyRegister* mop) {
     store->AddOperand(sreg);
     return store;
 }
+
 RISCVMIR* RISCVFrame::load_to_preg(StackRegister* sreg,PhyRegister* mop) {
     int type = mop->Getregenum();
     RISCVMIR* load;
@@ -294,10 +291,11 @@ RISCVMIR* RISCVFrame::load_to_preg(StackRegister* sreg,PhyRegister* mop) {
     load->AddOperand(sreg);
     return load;
 }
-StackRegister* RISCVFrame::spill(Value* val) {
-    frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
-    return frameobjs.back().get()->GetStackReg();
-}
+
+// StackRegister* RISCVFrame::spill(Value* val) {
+//     frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(val));
+//     return frameobjs.back().get()->GetStackReg();
+// }
 
 std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFrame::GetFrameObjs() {return frameobjs;}
 

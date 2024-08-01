@@ -1,5 +1,5 @@
-#include "Local2Global.hpp"
-#include "my_stl.hpp"
+#include "../../include/ir/opt/Global2Local.hpp"
+#include "../../util/my_stl.hpp"
 bool Local2Global::Run()
 {
     CreateHoist();
