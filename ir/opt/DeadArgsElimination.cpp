@@ -1,5 +1,5 @@
 #include "../../include/ir/opt/DeadArgsElimination.hpp"
-#include "../../lib/CFG.hpp"
+#include "../../include/lib/CFG.hpp"
 #include "../../util/my_stl.hpp"
 #include "../../include/ir/Analysis/SideEffect.hpp"
 bool DeadArgsElimination::Run()
