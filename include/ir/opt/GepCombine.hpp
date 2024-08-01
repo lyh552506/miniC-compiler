@@ -8,16 +8,34 @@ class _AnalysisManager;
 
 class GepCombine : public _PassManagerBase<GepCombine, Function>
 {
+    typedef struct GepInfo
+    {
+        Value *base;
+        Value *offset;
+        std::vector<Value *> index;
+        std::vector<ConstantData *> const_index;
+        bool ConstIndex = false;
+        GepInfo()
+            : base(nullptr), offset(nullptr), index(std::vector<Value *>()), const_index(std::vector<ConstantData *>()),
+              ConstIndex(false)
+        {
+        }
+        GepInfo(Value *base_, Value *offset_, std::vector<Value *> index_, std::vector<ConstantData *> const_index_,
+                bool flag)
+            : base(base_), offset(offset_), index(index_), const_index(const_index_), ConstIndex(flag)
+        {
+        }
+    } gepinfo;
     class HandleNode
     {
       private:
         BasicBlock *block;
+        dominance *DomTree;
         dominance::Node *dom_node;
+        bool Processed = false;
         std::forward_list<int>::iterator Curiter;
         std::forward_list<int>::iterator Enditer;
-        bool Processed = false;
-        dominance *DomTree;
-
+        std::unordered_map<Value*, std::unordered_set<gepinfo*>> Geps;
       public:
         std::forward_list<int>::iterator Child()
         {
@@ -45,9 +63,13 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
         {
             return block;
         }
+        std::unordered_map<Value*, std::unordered_set<gepinfo*>> GetGeps()
+        {
+            return Geps;
+        }
         HandleNode(dominance *dom, dominance::Node *node, std::forward_list<int>::iterator child,
-                   std::forward_list<int>::iterator end)
-            : DomTree(dom), dom_node(node), Curiter(child), Enditer(end)
+                   std::forward_list<int>::iterator end, std::unordered_map<Value*, std::unordered_set<gepinfo*>> geps)
+            : DomTree(dom), dom_node(node), Curiter(child), Enditer(end), Geps(geps)
         {
             block = node->thisBlock;
         }
