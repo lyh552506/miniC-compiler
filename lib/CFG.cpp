@@ -870,6 +870,78 @@ void Function::InsertBlock(BasicBlock *curr, BasicBlock *insert) {
   this->push_bb(insert);
 }
 
+void Function::InlineCall(CallInst* inst)
+{
+  BasicBlock *block = inst->GetParent();
+  Function* func = block->GetParent();
+  BasicBlock *SplitBlock = block->SplitAt(inst);
+  BasicBlock::mylist<Function, BasicBlock>::iterator Block_Pos(block);
+  Block_Pos.insert_after(SplitBlock);
+  ++Block_Pos;
+  std::vector<BasicBlock*> blocks;
+  std::unordered_map<Operand, Operand> OperandMapping;  int num = 1;
+  for (auto &param : func->GetParams()) {
+    Value *Param = param.get();
+    OperandMapping[Param]=inst->Getuselist()[num]->usee;
+    num++;
+  }
+  for (BasicBlock *block : *func)
+    blocks.push_back(block->clone(OperandMapping));
+  UnCondInst *Br = new UnCondInst(blocks[0]);
+  block->push_back(Br);
+  for (auto it = blocks[0]->begin(); it != blocks[0]->end();) {
+    auto shouldmvinst = dynamic_cast<AllocaInst *>(*it);
+    ++it;
+    if (shouldmvinst) {
+      BasicBlock *front_block = func->front();
+      shouldmvinst->EraseFromParent();
+      front_block->push_front(shouldmvinst);
+    }
+  }
+  for (BasicBlock *block_ : blocks)
+    Block_Pos.insert_before(block_);
+  if (inst->GetTypeEnum() != InnerDataType::IR_Value_VOID) {
+    // if(SSALevel)
+    // {
+    PhiInst *Phi =
+        PhiInst::NewPhiNode(SplitBlock->front(), SplitBlock, inst->GetType());
+
+    for(BasicBlock* block : blocks)
+    {
+    User *inst = block->back();
+    if (dynamic_cast<RetInst *>(inst)) {
+      Phi->updateIncoming(inst->Getuselist()[0]->usee, block);
+      UnCondInst *Br = new UnCondInst(SplitBlock);
+      inst->ClearRelation();
+      inst->EraseFromParent();
+      block->push_back(Br);
+    }
+    }
+
+
+    if (Phi->Getuselist().size() == 1) {
+      Value *val = Phi->Getuselist()[0]->usee;
+      inst->RAUW(val);
+    } else
+      inst->RAUW(Phi);
+  }else
+  {
+    for (BasicBlock *block_ : blocks)
+    {
+    User *inst = block->back();
+    if (dynamic_cast<RetInst *>(inst)) {
+      UnCondInst *Br = new UnCondInst(SplitBlock);
+      inst->ClearRelation();
+      inst->EraseFromParent();
+      block->push_back(Br);
+    }
+    }
+  }
+  auto &&inlined_func = inst->GetOperand(0)->as<Function>();
+  if (inlined_func->GetUserListSize() == 0)
+      Singleton<Module>().EraseFunction(inlined_func);
+}
+
 BuildInFunction::BuildInFunction(Type *tp, std::string _id) : Value(tp) {
   name = _id;
   if (name == "starttime" || name == "stoptime")

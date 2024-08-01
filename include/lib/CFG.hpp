@@ -281,12 +281,6 @@ class BuildInFunction:public Value
 class Function:public Value,public mylist<Function,BasicBlock>
 {
     friend class InlineCost;
-    enum InlineLevel
-    {
-        AlwaysInline,
-        NeverInline,
-        VaiableInline
-    };
     using ParamPtr=std::unique_ptr<Value>;
     using BasicBlockPtr=std::unique_ptr<BasicBlock>;
     std::vector<ParamPtr> params;//存放形式参数
@@ -318,6 +312,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);
     //curr ==>  insert -> curr
     void InsertBlock(BasicBlock* curr,BasicBlock* insert);
+    void InlineCall(CallInst* call);
     void init_visited_block();
     void init_reach_block();
     bool MemWrite();
