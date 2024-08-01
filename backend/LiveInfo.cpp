@@ -133,6 +133,8 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block)
             if (cur->GetOperandSize() > 0)
             {
                 Live.insert(static_cast<Register *>(cur->GetOperand(0)));
+                for (auto u : Live)
+                    New_CalcIG(u, static_cast<Register *>(cur->GetOperand(0)));
             }
         }
         else if (op == OpType::call)
@@ -144,6 +146,11 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block)
                 color[reg] = reg;
                 Live.erase(reg);
                 InstLive[cur].insert(reg);
+            }
+            for (auto reg : reglist.GetReglistCaller())
+            {
+                for (auto u : InstLive[cur])
+                    New_CalcIG(u, reg);
             }
             for (int i = 0; i < cur->GetOperandSize(); i++)
             {
@@ -157,9 +164,11 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block)
                     }
                     Live.insert(reg);
                     InstLive[cur].insert(reg);
+                    for (auto u : InstLive[cur])
+                        New_CalcIG(u, reg);
                 }
             }
-            CalcIG(cur);
+            // CalcIG(cur);
             continue;
         }
         else if (op == OpType::mv || op == OpType::_fmv_s)
@@ -176,6 +185,8 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block)
                     color[reg1] = phy;
                 }
                 Live.insert(reg1);
+                for (auto u : Live)
+                    New_CalcIG(u, reg1);
                 if (reg2)
                 {
                     if (dynamic_cast<VirRegister *>(reg2))
@@ -201,14 +212,25 @@ void GraphColor::CalInstLive(RISCVBasicBlock *block)
                         initial.erase(reg);
                     }
                     Live.insert(reg);
+                    for (auto u : Live)
+                        New_CalcIG(u, reg);
                 }
             }
         }
         InstLive[cur] = Live;
-        CalcIG(cur);
+        // CalcIG(cur);
     }
 }
 
+void GraphColor::New_CalcIG(MOperand u, MOperand v)
+{
+    if (u == v)
+        return;
+    if (TmpIG[u].count(v))
+        return;
+    TmpIG[u].insert(v);
+    TmpIG[v].insert(u);
+}
 void GraphColor::CalcIG(RISCVMIR *inst)
 {
     if (InstLive[inst].size() > 1)

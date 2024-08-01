@@ -119,6 +119,7 @@ private:
   std::unordered_set<RISCVMIR *> MoveRelated(MOperand v);
   void CalcmoveList(RISCVBasicBlock *block);
   void CalcIG(RISCVMIR *inst);
+  void New_CalcIG(MOperand u, MOperand v);
   void CalInstLive(RISCVBasicBlock *block);
   void CaculateLiveness();
   void CaculateLiveInterval(RISCVBasicBlock *mbb);
