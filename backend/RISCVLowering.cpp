@@ -55,13 +55,13 @@ bool RISCVFunctionLowering::run(Function *m)
     Legalize legal(ctx);
     // legal.run_beforeRA();
     // Backend DCE before RA
-    bool modified = true;
-    while (modified)
-    {
-        modified = false;
-        BackendDCE dcebefore(mfunc, ctx);
-        modified |= dcebefore.RunImpl();
-    }
+    // bool modified = true;
+    // while (modified)
+    // {
+    //     modified = false;
+    //     BackendDCE dcebefore(mfunc, ctx);
+    //     modified |= dcebefore.RunImpl();
+    // }
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();

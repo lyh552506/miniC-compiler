@@ -584,7 +584,12 @@ void RISCVISel::InstLowering(RetInst* inst){
         ctx(minst);
     }
     else if(inst->GetOperand(0)&&inst->GetOperand(0)->GetType()==IntType::NewIntTypeGet()) {
-        ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
+        if(inst->GetOperand(0)->isConst()){
+            ctx(Builder(RISCVMIR::li,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
+        }
+        else{
+            ctx(Builder(RISCVMIR::mv,{PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0),M(inst->GetOperand(0))}));
+        }
         auto minst=new RISCVMIR(RISCVMIR::ret);
         minst->AddOperand(PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0));
         ctx(minst);

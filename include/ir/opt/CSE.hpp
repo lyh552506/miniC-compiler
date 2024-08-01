@@ -267,7 +267,15 @@ class CSE : public _PassManagerBase<CSE, Function>
                 for (auto storeinfo : Stores[inst->GetOperand(1)])
                 {
                     if (storeinfo->StoreGeneration == gen)
+                    {
+                        if(auto call = dynamic_cast<CallInst*>(storeinfo->store->Getuselist()[0]->usee))
+                        {
+                            std::string name = call->Getuselist()[0]->usee->GetName();
+                            if(name == "getch" || name =="getint" || name == "getfloat" || name == "getarray" || name=="getfarray")
+                                return nullptr;
+                        }
                         return storeinfo->store;
+                    }
                 }
             }
             return nullptr;
