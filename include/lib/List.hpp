@@ -96,6 +96,7 @@ class mylist
         using reference = derived_list_node*&;
         derived_list_node* ptr;
         public:
+        iterator():ptr(nullptr){}
         iterator(derived_list_node* _ptr):ptr(_ptr){}
         iterator& operator++(){
             ptr=ptr->next;

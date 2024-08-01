@@ -1,11 +1,9 @@
 #pragma once
-#include <unordered_map>
 #include <iostream>
 #include <vector>
-#include <queue>
 #include <unordered_map>
 #include <unordered_set>
-#include "RISCVMIR.hpp"
+#include "../backend/RISCVMIR.hpp"
 // The Sunit, including attributes of Latency, MaxLatency, height and depth,
 // is the unit of the scheduling algorithm.
 class Sunit {
@@ -31,12 +29,15 @@ public:
 };
 
 class SchedRegion {
+    friend class Pre_RA_Scheduler;
+    friend class Post_RA_Scheduler;
     RISCVBasicBlock* block;
     mylist<RISCVBasicBlock,RISCVMIR>::iterator begin;
     mylist<RISCVBasicBlock,RISCVMIR>::iterator end;
 public:
     SchedRegion(RISCVBasicBlock* block);
     bool NextRegion();
+    bool isboundary(RISCVMIR*);
 };
 
 
