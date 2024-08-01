@@ -158,21 +158,28 @@ void BlockInfo::Build()
 {
     for (RISCVBasicBlock *block : *m_func)
     {
+        if(block->GetName() == ".LBB14")
+            int c = 1;
         std::unordered_set<MOperand> live = BlockLiveout[block];
         for (auto inst_ = block->rbegin(); inst_ != block->rend();)
         {
             RISCVMIR *inst = *inst_;
             OpType op = inst->GetOpcode();
-            if (op == OpType::mv || op == OpType::_fmv_s)
+                        if (op == OpType::mv || op == OpType::_fmv_s)
             {
                 if (auto val = inst->GetOperand(0)->ignoreLA())
                 {
                     live.erase(val);
-                    moveList[val].insert(inst);
+                    if(!NotMove.count(inst))
+                        moveList[val].insert(inst);
                 }
                 if (auto def = inst->GetDef()->ignoreLA())
-                    moveList[def].insert(inst);
-                worklistMoves.push_back(inst);
+                {
+                    if(!NotMove.count(inst))
+                        moveList[def].insert(inst);
+                }
+                if(!NotMove.count(inst))
+                    worklistMoves.push_back(inst);
             }
             else if (op == OpType::call)
             {
@@ -446,14 +453,12 @@ void InterVal::RunOnFunc_()
 
 void GraphColor::LiveInfoInit()
 {
-    TmpIG.clear();
     BlockLivein.clear();
     BlockLiveout.clear();
     BlockInfo.clear();
     RegLiveness.clear();
     instNum.clear();
     InstLive.clear();
-    IG.clear();
     ValsInterval.clear();
     freezeWorkList.clear();
     worklistMoves.clear();
@@ -478,7 +483,6 @@ void GraphColor::LiveInfoInit()
     Precolored.clear();
     color.clear();
     moveList.clear();
-    IG.clear();
     instNum.clear();
     RegLiveness.clear();
     assist.clear();
