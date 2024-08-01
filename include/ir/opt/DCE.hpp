@@ -1,5 +1,5 @@
 #pragma once
-#include "../../include/lib/CFG.hpp"
+#include "../../lib/CFG.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 

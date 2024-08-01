@@ -1,5 +1,5 @@
 #pragma once
-#include "../../include/lib/CFG.hpp"
+#include "../../lib/CFG.hpp"
 #include "../opt/New_passManager.hpp"
 #include "../opt/PassManagerBase.hpp"
 class SideEffect : public _AnalysisManagerBase<SideEffect, Module>

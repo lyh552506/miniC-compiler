@@ -1,6 +1,6 @@
 #pragma once
-#include "../../include/ir/Analysis/dominant.hpp"
-#include "../../include/lib/CFG.hpp"
+#include "../../ir/Analysis/dominant.hpp"
+#include "../../lib/CFG.hpp"
 #include <set>
 #include <unordered_map>
 

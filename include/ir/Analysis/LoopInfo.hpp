@@ -6,7 +6,7 @@
 
 #include "../../include/ir/Analysis/dominant.hpp"
 #include "../../include/ir/opt/PassManagerBase.hpp"
-#include "../../include/lib/CFG.hpp"
+#include "../../lib/CFG.hpp"
 #include "../../util/my_stl.hpp"
 
 struct LoopTrait {
