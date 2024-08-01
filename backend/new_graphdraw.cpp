@@ -44,7 +44,13 @@ void GraphColor::RunOnFunc() {
     selectstack.insert(selectstack.end(), SpillStack.begin(), SpillStack.end());
     AssignColors();
     if (!spilledNodes.empty()) {
+      // PrintEdge();
+      // ctx.print();
       SpillNodeInMir();
+      // CaculateLiveness();
+      // PrintEdge();
+      // ctx.print();
+      // std::cout << std::endl;
       condition = true;
     }
   }
@@ -461,6 +467,9 @@ void GraphColor::SpillNodeInMir() {
                    << dynamic_cast<VirRegister *>(sd->GetOperand(0))->GetName()
                    << " To Replace" << std::endl;)
         mir->SetDef(sd->GetOperand(0));
+        if (mir->GetOpcode() == RISCVMIR::RISCVISA::mv ||
+            mir->GetOpcode() == RISCVMIR::RISCVISA::_fmv_s)
+          NotMove.insert(mir);
       }
       for (int i = 0; i < mir->GetOperandSize(); i++) {
         auto operand = mir->GetOperand(i);
@@ -479,6 +488,9 @@ void GraphColor::SpillNodeInMir() {
                   << dynamic_cast<VirRegister *>(ld->GetDef())->GetName()
                   << " To Replace" << std::endl;)
           mir->SetOperand(i, ld->GetDef());
+          if (mir->GetOpcode() == RISCVMIR::RISCVISA::mv ||
+              mir->GetOpcode() == RISCVMIR::RISCVISA::_fmv_s)
+            NotMove.insert(mir);
         }
       }
       ++mir_begin;
