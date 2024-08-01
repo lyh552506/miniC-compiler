@@ -5,11 +5,11 @@ by Thomas VanDrunen and Antony L. Hosking
 ----------------------------------------------------------------------------------------------------*/
 #pragma once
 #include <vector>
-#include "CFG.hpp"
+#include "../../include/lib/CFG.hpp"
 #include "LoopSimplify.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "dominant.hpp"
+#include "../Analysis/dominant.hpp"
 class _AnalysisManager;
 enum RetStats { Delay, Changed, Unchanged };
 

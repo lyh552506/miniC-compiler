@@ -6,7 +6,7 @@
 #include "../../include/backend/RISCVType.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../util/my_stl.hpp"
-#include "BaseCFG.hpp"
+#include "../../include/lib/BaseCFG.hpp"
 #include <algorithm>
 #include <cmath>
 #include <list>

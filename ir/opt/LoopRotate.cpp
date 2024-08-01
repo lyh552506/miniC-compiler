@@ -6,7 +6,7 @@
 #include "../../include/ir/opt/PassManagerBase.hpp"
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
-#include "Singleton.hpp"
+#include "../../include/lib/Singleton.hpp"
 #include <cassert>
 #include <cstdlib>
 #include <iterator>
