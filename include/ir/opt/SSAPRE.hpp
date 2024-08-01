@@ -5,9 +5,7 @@ by Thomas VanDrunen and Antony L. Hosking
 ----------------------------------------------------------------------------------------------------*/
 #pragma once
 #include <vector>
-#include "BaseCFG.hpp"
 #include "CFG.hpp"
-#include "IDF.hpp"
 #include "LoopSimplify.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"

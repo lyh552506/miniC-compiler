@@ -1,6 +1,6 @@
-#include "LoopParallel.hpp"
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
+#include "../../include/ir/opt/LoopParallel.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/lib/CFG.hpp"
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
