@@ -8,24 +8,30 @@
 // is the unit of the scheduling algorithm.
 class Sunit {
 private:
-    RISCVMIR* inst;
     uint32_t latency;
     uint32_t maxLatency;
     uint32_t height;
     uint32_t depth;
 public:
-    Sunit(RISCVMIR* inst): inst(inst) {}
+    Sunit() = default;
 };
 
 // DependencyGraph
 class DependencyGraph {
 private:
-    std::unordered_map<Sunit*, std::unordered_set<Sunit*>> adjList; 
+    std::unordered_map<Sunit*, std::set<Sunit*>> adjList; 
     std::unordered_map<Sunit*, uint32_t> inDegree;
 
+    using MOp2StackMap = std::unordered_map<RISCVMOperand*, std::stack<RISCVMIR*>>;
+    MOp2StackMap def2inst;
+    MOp2StackMap use2inst;
+    using RealSunit = std::pair<RISCVMIR*, Sunit*>;
+    std::list<RealSunit> inst2sunit;
 public:
     void BuildGraph(mylist<RISCVBasicBlock,RISCVMIR>::iterator, mylist<RISCVBasicBlock,RISCVMIR>::iterator);
-    void addDependency(const Sunit*, const Sunit*);
+    void addDependency(Sunit*, Sunit*);
+    void ComputeHeight();
+    void ComputeDepth();
 };
 
 class SchedRegion {

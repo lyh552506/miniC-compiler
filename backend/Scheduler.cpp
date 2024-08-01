@@ -17,7 +17,12 @@ void Pre_RA_Scheduler::ScheduleOnBlock(RISCVBasicBlock* block) {
     }
 }
 
-void Pre_RA_Scheduler::ScheduleOnRegion(mylist<RISCVBasicBlock,RISCVMIR>::iterator, mylist<RISCVBasicBlock,RISCVMIR>::iterator) {
+void Pre_RA_Scheduler::ScheduleOnRegion(mylist<RISCVBasicBlock,RISCVMIR>::iterator begin, mylist<RISCVBasicBlock,RISCVMIR>::iterator end) {
+    // Build dependency graph, and compute info on graph.
+    DependencyGraph depGraph;
+    depGraph.BuildGraph(begin, end);
+    depGraph.ComputeHeight();
+
 
 }
 

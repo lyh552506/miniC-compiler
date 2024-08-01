@@ -1,14 +1,58 @@
-#pragma once 
 #include "../include/backend/Sched.hpp"
+using mylist_iterator = mylist<RISCVBasicBlock,RISCVMIR>::iterator;
+void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
+    for(mylist_iterator it = begin; it != end; ++it) {
+        RISCVMIR* inst = *it;
+        Sunit* sunit = new Sunit();
+        inst2sunit.push_back(std::make_pair(inst, sunit));
 
+        if(inst->GetDef() != nullptr) {
+            def2inst[inst->GetDef()].push(inst);
+        }
+        for(int i=0; i<inst->GetOperandSize(); i++) {
+            if(inst->GetOperand(i) != nullptr) {
+                use2inst[inst->GetOperand(i)].push(inst);
+            }
+        }
+    }
+    auto GetSunit = [&](RISCVMIR* inst) {
+        for(auto pair : inst2sunit) {
+            if(pair.first == inst)
+                return pair.second;
+        }
+        assert(0 && "impossible");
+    };
 
-void DependencyGraph::BuildGraph(mylist<RISCVBasicBlock,RISCVMIR>::iterator begin, mylist<RISCVBasicBlock,RISCVMIR>::iterator end){
-
+    for(auto it = inst2sunit.rbegin(); it != inst2sunit.rend(); --it) {
+        RISCVMIR*& inst = it->first;
+        Sunit*& sunit = it->second;
+        for(int i=0; i<inst->GetOperandSize(); i++) {
+            if(inst->GetOperand(i) != nullptr) {
+                if(!def2inst[inst->GetOperand(i)].empty()) {
+                    addDependency(GetSunit(inst), GetSunit(def2inst[inst->GetOperand(i)].top()));
+                }
+            }
+            if(inst->GetDef() != nullptr) {
+                def2inst[inst->GetDef()].pop();
+            }
+        }
+    }
 }
-void DependencyGraph::addDependency(const Sunit* a, const Sunit* b){
-
+// use sunit point to def sunit
+void DependencyGraph::addDependency(Sunit* use, Sunit* def){
+    if(adjList[use].find(def) == adjList[def].end()) {
+        adjList[use].insert(def);
+        inDegree[def]++;
+    }
 }
 
+void DependencyGraph::ComputeHeight() {
+    
+}
+
+void DependencyGraph::ComputeDepth() {
+    
+}
 
 SchedRegion::SchedRegion(RISCVBasicBlock* BasicBlock) {
     this->block = BasicBlock;
@@ -21,6 +65,10 @@ bool SchedRegion::NextRegion() {
     begin = end;
     if(begin == block->begin()) {
         // Start division region.
+        if(isboundary(*begin)) {
+            ++begin;
+            ++end;
+        }
     }
     else if(begin == block->end()) {
         return false;
@@ -29,11 +77,11 @@ bool SchedRegion::NextRegion() {
         ++begin;
         ++end;
     }
-    RISCVMIR* inst = *end;
-    while(!isboundary(inst) || end != block->end()) {
-        ++end;
+    while(end != block->end()) { 
+        if(!isboundary(*end)) ++end;
+        else return true;
     }
-    return true;
+    return false;
 }
 using ISA = RISCVMIR::RISCVISA;
 bool SchedRegion::isboundary(RISCVMIR* inst) {
