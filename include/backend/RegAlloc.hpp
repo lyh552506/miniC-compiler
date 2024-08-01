@@ -65,11 +65,8 @@ public:
   // 从一个结点到与该节点相关的传送指令表的映射
   std::unordered_map<MOperand, std::unordered_set<RISCVMIR *>>
       moveList; // reg2mov
-                // interference graph
-  std::unordered_map<MOperand, std::unordered_set<MOperand>> TmpIG;
-  std::unordered_map<MOperand, std::vector<MOperand>>
-      IG; // reg2reg IG[op]
-          // 有可能合并的传送指令
+  std::unordered_set<RISCVMIR *> NotMove;
+  // 有可能合并的传送指令
   std::vector<RISCVMIR *> worklistMoves;
   // 图中冲突边(u,v)的集合。如果 (u,v)\in adjset, 那 (v,u) \in adjset
   std::unordered_map<MOperand, std::unordered_set<MOperand>> adjSet;

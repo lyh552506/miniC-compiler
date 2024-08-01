@@ -44,13 +44,7 @@ void GraphColor::RunOnFunc() {
     selectstack.insert(selectstack.end(), SpillStack.begin(), SpillStack.end());
     AssignColors();
     if (!spilledNodes.empty()) {
-      // PrintEdge();
-      // ctx.print();
       SpillNodeInMir();
-      // CaculateLiveness();
-      // PrintEdge();
-      // ctx.print();
-      // std::cout << std::endl;
       condition = true;
     }
   }
