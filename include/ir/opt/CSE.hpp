@@ -1,9 +1,9 @@
 #pragma once
-#include "CFG.hpp"
-#include "New_passManager.hpp"
+#include "../../lib/CFG.hpp"
 #include "PassManagerBase.hpp"
-#include "dominant.hpp"
-#include "my_stl.hpp"
+#include "New_passManager.hpp"
+#include "../Analysis/dominant.hpp"
+#include "../../../util/my_stl.hpp"
 #include <unordered_set>
 class _AnalysisManager;
 namespace HashTool

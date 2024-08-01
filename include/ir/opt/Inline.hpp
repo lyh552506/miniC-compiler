@@ -1,7 +1,7 @@
 #pragma once
-#include "CFG.hpp"
-#include "LoopInfo.hpp"
-#include "dominant.hpp"
+#include "../../lib/CFG.hpp"
+#include "../Analysis/LoopInfo.hpp"
+#include "../Analysis/dominant.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 class _AnalysisManager;

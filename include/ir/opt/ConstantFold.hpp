@@ -1,6 +1,6 @@
 #pragma once
-#include "CFG.hpp"
-#include "dominant.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../Analysis/dominant.hpp"
 #include <unordered_map>
 using DNode=dominance::Node*;
 class ConstantFolding

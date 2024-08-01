@@ -1,6 +1,6 @@
 #pragma once
 #include<queue>
-#include"dominant.hpp"
+#include "../Analysis/dominant.hpp"
 #include<set>
 class dominance;
 

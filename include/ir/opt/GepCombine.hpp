@@ -1,9 +1,9 @@
 #pragma once
-#include "CFG.hpp"
+#include "../../lib/CFG.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "dominant.hpp"
-#include "my_stl.hpp"
+#include "../Analysis/dominant.hpp"
+#include "../../../util/my_stl.hpp"
 class _AnalysisManager;
 
 class GepCombine : public _PassManagerBase<GepCombine, Function>
