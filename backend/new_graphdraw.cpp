@@ -22,7 +22,7 @@ void GraphColor::RunOnFunc() {
   while (condition) {
     condition = false;
     CaculateLiveness();
-    MakeWorklist();    
+    MakeWorklist();
     do {
       if (!simplifyWorkList.empty())
         simplify();
@@ -34,6 +34,14 @@ void GraphColor::RunOnFunc() {
         spill();
     } while (!simplifyWorkList.empty() || !worklistMoves.empty() ||
              !freezeWorkList.empty() || !spillWorkList.empty());
+    for (auto sp : SpillStack) {
+      auto it = std::find(selectstack.begin(), selectstack.end(), sp);
+      if (it == selectstack.end())
+        assert(0);
+      selectstack.erase(it);
+    }
+    std::reverse(SpillStack.begin(), SpillStack.end());
+    selectstack.insert(selectstack.end(), SpillStack.begin(), SpillStack.end());
     AssignColors();
     if (!spilledNodes.empty()) {
       SpillNodeInMir();
@@ -266,7 +274,7 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
   auto t = Adjacent(rs);
   std::unordered_set<MOperand> tmp(t.begin(), t.end());
   // EnableMove
-  for (auto node : tmp) {
+  for (auto node : AdjList[rs]) {
     // Add Edge
     AddEdge(node, rd);
     DecrementDegree(node);
@@ -313,7 +321,7 @@ void GraphColor::simplify() {
   selectstack.push_back(val);
   _DEBUG(std::cerr << "SelectStack Insert: " << val->GetName() << std::endl;)
   //此时需要更新冲突图上和当前val相邻的边(DecrementDegree)
-  auto adj = Adjacent(val);
+  auto adj = AdjList[val];
   for (auto target : adj) {
     DecrementDegree(target);
   }
@@ -375,6 +383,7 @@ void GraphColor::spill() {
   spillWorkList.erase(spill);
   _DEBUG(std::cerr << "Choose To Spill element: " << spill->GetName()
                    << std::endl;)
+  SpillStack.push_back(spill);
   PushVecSingleVal(simplifyWorkList, spill);
   FreezeMoves(spill);
 }
@@ -421,6 +430,8 @@ void GraphColor::AssignColors() {
     }
   }
   for (auto caols : coalescedNodes) {
+    if (caols->GetName() == ".32")
+      int i = 0;
     color[caols] = color[GetAlias(caols)];
   }
 }

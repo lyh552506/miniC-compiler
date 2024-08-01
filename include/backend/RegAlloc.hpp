@@ -166,6 +166,7 @@ private:
   RISCVMIR *CreateLoadMir(RISCVMOperand *load,
                           std::unordered_set<VirRegister *> &temps);
   void Print();
+  std::vector<MOperand> SpillStack;
   //保证Interval vector的顺序
   std::unordered_map<MOperand, IntervalLength> ValsInterval;
   enum MoveState { coalesced, constrained, frozen, worklist, active };

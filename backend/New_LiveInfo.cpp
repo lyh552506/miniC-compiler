@@ -484,4 +484,5 @@ void GraphColor::LiveInfoInit()
     assist.clear();
     Degree.clear();
     adjSet.clear();
+    SpillStack.clear();
 }
