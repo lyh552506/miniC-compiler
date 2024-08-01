@@ -5,7 +5,6 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
         RISCVMIR* inst = *it;
         Sunit* sunit = new Sunit();
         inst2sunit.push_back(std::make_pair(inst, sunit));
-
         if(inst->GetDef() != nullptr) {
             def2inst[inst->GetDef()].push(inst);
         }
@@ -23,19 +22,41 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
         assert(0 && "impossible");
     };
 
+    auto GetWriteReg = [&](RISCVMIR* inst) {
+        return SchedInfo(inst->GetOpcode()).WriteRes;
+    };
+    auto GetReadAdvance = [&](RISCVMIR* inst) {
+        return SchedInfo(inst->GetOpcode()).ReadAdvance;
+    };
+
     for(auto it = inst2sunit.rbegin(); it != inst2sunit.rend(); --it) {
         RISCVMIR*& inst = it->first;
         Sunit*& sunit = it->second;
+        // def
+        if(inst->GetDef() != nullptr) {
+            def2inst[inst->GetDef()].pop();
+        }
+        // use
+        using ISA = RISCVMIR::RISCVISA;
         for(int i=0; i<inst->GetOperandSize(); i++) {
-            if(inst->GetOperand(i) != nullptr) {
+            RISCVMOperand*& op = inst->GetOperand(i);
+            if(op != nullptr) {
                 if(!def2inst[inst->GetOperand(i)].empty()) {
-                    addDependency(GetSunit(inst), GetSunit(def2inst[inst->GetOperand(i)].top()));
+                    RISCVMIR* definst = def2inst[inst->GetOperand(i)].top();
+                    addDependency(GetSunit(inst), GetSunit(definst));
+                    sunit->latency = GetWriteReg(definst) > sunit->latency ? GetWriteReg(definst): sunit->latency;
+                    int a=0;                
+                }
+                else if(Imm* imm = dynamic_cast<Imm*>(op)) {
+                    // loadimm32 is a special case.
+                    sunit->latency = SchedInfo(ISA::LoadImm32).WriteRes;
                 }
             }
-            if(inst->GetDef() != nullptr) {
-                def2inst[inst->GetDef()].pop();
-            }
         }
+        sunit->latency -= GetReadAdvance(inst);
+        
+        inst->printfull();
+        std::cout << std::flush;
     }
 }
 // use sunit point to def sunit
@@ -100,18 +121,18 @@ bool SchedRegion::isboundary(RISCVMIR* inst) {
         // The division of block is strict, so we don't need to 
         // consider these insts anymore.
 
-        // case ISA::ret :
-        // case ISA::_j :
-        // case ISA::_beq:
-        // case ISA::_bne:
-        // case ISA::_blt:
-        // case ISA::_bge:
-        // case ISA::_ble:
-        // case ISA::_bgt:
-        // case ISA::_bgeu:
-        // case ISA::_bltu:
-        // case ISA::_jal:
-        // case ISA::_jalr:
+        case ISA::ret :
+        case ISA::_j :
+        case ISA::_beq:
+        case ISA::_bne:
+        case ISA::_blt:
+        case ISA::_bge:
+        case ISA::_ble:
+        case ISA::_bgt:
+        case ISA::_bgeu:
+        case ISA::_bltu:
+        case ISA::_jal:
+        case ISA::_jalr:
         case ISA::call:
             return true;
         default :

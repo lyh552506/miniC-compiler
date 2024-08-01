@@ -9,6 +9,7 @@ enum PIPELINE : uint32_t{
     PipelineFDiv = 1 << 3
 };
 class SchedInfo {
+    friend class DependencyGraph;
 private:
     uint32_t WriteRes;
     uint32_t ReadAdvance;
@@ -144,6 +145,16 @@ public:
         }
         else if(op==ISA::MarkDead) {
             assert(0 && "MarkDead not supported");
+        }
+        else if(op==ISA::LoadImm12) {
+            WriteRes = 1;
+            ReadAdvance = 0;
+            Pipeline = PipelineAB;
+        }
+        else if(op==ISA::LoadImm32) {
+            WriteRes = 3;
+            ReadAdvance = 0;
+            Pipeline = PipelineAB;
         }
     }
 };

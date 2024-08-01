@@ -1,6 +1,5 @@
 #pragma once 
 #include "../backend/Sched.hpp"
-#include "../backend/SchedInfo.hpp"
 #include "../backend/RISCVContext.hpp"
 class Scheduler {
     std::list<Sunit*> Sequence;

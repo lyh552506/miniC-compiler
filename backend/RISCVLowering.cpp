@@ -111,13 +111,5 @@ bool RISCVFunctionLowering::run(Function *m)
     // // legal.run_afterRA();
     // legal.run();
 
-    auto dbd=DeleteDeadBlock();
-    dbd.run(mfunc);
-
-    // auto layout=CodeLayout();
-    // layout.run(mfunc);
-
-
-
-    return false;
+    // return false;
 }
