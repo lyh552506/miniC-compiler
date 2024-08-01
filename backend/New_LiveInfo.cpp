@@ -128,6 +128,14 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block)
         }
         else
         {
+            if(Opcode == OpType::call)
+            {
+                for(auto reg : reglist.GetReglistCaller())
+                {
+                    Precolored.insert(reg);
+                    color[reg]=reg;
+                }
+            }
             for (int i = 0; i < (*inst)->GetOperandSize(); i++)
             {
                 if (auto reg = (*inst)->GetOperand(i)->ignoreLA())
