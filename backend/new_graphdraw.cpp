@@ -274,7 +274,7 @@ void GraphColor::combine(MOperand rd, MOperand rs) {
   auto t = Adjacent(rs);
   std::unordered_set<MOperand> tmp(t.begin(), t.end());
   // EnableMove
-  for (auto node : AdjList[rs]) {
+  for (auto node : t) {
     // Add Edge
     AddEdge(node, rd);
     DecrementDegree(node);
@@ -321,7 +321,7 @@ void GraphColor::simplify() {
   selectstack.push_back(val);
   _DEBUG(std::cerr << "SelectStack Insert: " << val->GetName() << std::endl;)
   //此时需要更新冲突图上和当前val相邻的边(DecrementDegree)
-  auto adj = AdjList[val];
+  auto adj = Adjacent(val);
   for (auto target : adj) {
     DecrementDegree(target);
   }
