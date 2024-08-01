@@ -64,47 +64,50 @@ bool RISCVFunctionLowering::run(Function *m)
         modified |= dcebefore.RunImpl();
     }
 
+    asmprinter->printAsm();
+    
     Pre_RA_Scheduler pre_scheduler;
     pre_scheduler.ScheduleOnModule(ctx);
 
-    // Register Allocation
-    RegAllocImpl regalloc(mfunc, ctx);
-    regalloc.RunGCpass();
-    for (auto block : *mfunc)
-    {
-        for (auto it = block->begin(); it != block->end();)
-        {
-            auto inst = *it;
-            ++it;
-            if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
-                delete inst;
-        }
-    }
-    modified = true;
-    // Backend DCE after RA
-    while (modified)
-    {
-        modified = false;
-        BackendDCE dceafter(mfunc, ctx);
-        modified |= dceafter.RunImpl();
-    }
 
-    // Post_RA_Scheduler 
-    // Post_RA_Scheduler post_scheduler;
-    // post_scheduler.ScheduleOnModule(ctx);
+    // // Register Allocation
+    // RegAllocImpl regalloc(mfunc, ctx);
+    // regalloc.RunGCpass();
+    // for (auto block : *mfunc)
+    // {
+    //     for (auto it = block->begin(); it != block->end();)
+    //     {
+    //         auto inst = *it;
+    //         ++it;
+    //         if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
+    //             delete inst;
+    //     }
+    // }
+    // modified = true;
+    // // Backend DCE after RA
+    // while (modified)
+    // {
+    //     modified = false;
+    //     BackendDCE dceafter(mfunc, ctx);
+    //     modified |= dceafter.RunImpl();
+    // }
 
-    // Generate Frame of current Function
-    // And generate the head and tail of frame here
-    PostRACalleeSavedLegalizer callee_saved_legalizer;
-    callee_saved_legalizer.run(mfunc);
+    // // Post_RA_Scheduler 
+    // // Post_RA_Scheduler post_scheduler;
+    // // post_scheduler.ScheduleOnModule(ctx);
 
-    auto& frame = mfunc->GetFrame();
-    frame->GenerateFrame();
-    frame->GenerateFrameHead();
-    frame->GenerateFrameTail();
+    // // Generate Frame of current Function
+    // // And generate the head and tail of frame here
+    // PostRACalleeSavedLegalizer callee_saved_legalizer;
+    // callee_saved_legalizer.run(mfunc);
 
-    // legal.run_afterRA();
-    legal.run();
+    // auto& frame = mfunc->GetFrame();
+    // frame->GenerateFrame();
+    // frame->GenerateFrameHead();
+    // frame->GenerateFrameTail();
+
+    // // legal.run_afterRA();
+    // legal.run();
 
     return false;
 }
