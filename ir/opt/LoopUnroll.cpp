@@ -1,10 +1,10 @@
 #include "../../include/ir/opt/LoopUnroll.hpp"
 #include "../../include/ir/opt/PassManagerBase.hpp"
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "LoopInfo.hpp"
-#include "Singleton.hpp"
-#include "dominant.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/ir/Analysis/LoopInfo.hpp"
+#include "../../include/lib/Singleton.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
 #include <vector>
 
 bool LoopUnroll::Run() {
