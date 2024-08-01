@@ -199,6 +199,11 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         LoadLocalAddr,
         EndMIRPseudo,
         MarkDead,
+
+        BeginPipeline,
+        LoadImm12,
+        LoadImm32,
+        EndPipeline
       } opcode;
       /// @note def in the front while use in the back
       // RISCVMIR(RISCVISA,User* inst);

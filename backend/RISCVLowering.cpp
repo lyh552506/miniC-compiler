@@ -109,5 +109,5 @@ bool RISCVFunctionLowering::run(Function *m)
     // // legal.run_afterRA();
     // legal.run();
 
-    return false;
+    // return false;
 }
