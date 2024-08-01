@@ -198,7 +198,7 @@ private:
   std::unordered_map<MOperand, MOperand> alias;
   std::unordered_map<PhyRegister *, RISCVType> RegType;
   //记录已经重写的spill node
-  std::unordered_map<VirRegister *, RISCVMIR *> AlreadySpill;
+  // std::unordered_map<VirRegister *, RISCVMIR *> AlreadySpill;
   std::vector<RISCVBasicBlock *> topu;
   std::set<RISCVBasicBlock *> assist;
   float LoopWeight = 1;

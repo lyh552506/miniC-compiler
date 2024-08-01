@@ -473,7 +473,7 @@ void GraphColor::LiveInfoInit()
     activeMoves.clear();
     alias.clear();
     RegType.clear();
-    AlreadySpill.clear();
+    // AlreadySpill.clear();
     InstLive.clear();
     Precolored.clear();
     color.clear();
