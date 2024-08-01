@@ -10,18 +10,24 @@
 #include <cassert>
 #include <cstdlib>
 #include <iterator>
+#include <unordered_set>
+#include <vector>
 
 bool LoopRotate::Run() {
   bool changed = false;
   auto sideeffect = AM.get<SideEffect>(&Singleton<Module>());
   m_dom = AM.get<dominance>(m_func);
   loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
-  for (auto loop : *loopAnlasis) {
+  auto loops = loopAnlasis->GetLoops();
+  for (auto loop : loops) {
     m_dom = AM.get<dominance>(m_func);
     loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
     bool Success = false;
     Success |= TryRotate(loop);
-    changed |= RotateLoop(loop, Success);
+    if (RotateLoop(loop, Success)) {
+      changed |= true;
+      loop->LoopForm.insert(LoopInfo::Rotate);
+    }
   }
   return changed;
 }
@@ -119,7 +125,8 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
   m_dom->GetNode(New_header->num).rev.push_front(prehead->num);
   m_dom->GetNode(prehead->num).des.push_front(New_header->num);
   // Deal With Phi In header
-  PreservePhi(header, loop, prehead, New_header, PreHeaderValue, loopAnlasis);
+  PreservePhi(header, latch, loop, prehead, New_header, PreHeaderValue,
+              loopAnlasis);
   if (dynamic_cast<CondInst *>(prehead->back()) &&
       dynamic_cast<ConstIRBoolean *>(prehead->back()->GetOperand(0))) {
     auto cond = dynamic_cast<CondInst *>(prehead->back());
@@ -165,8 +172,8 @@ bool LoopRotate::CanBeMove(User *I) {
 }
 
 void LoopRotate::PreservePhi(
-    BasicBlock *header, LoopInfo *loop, BasicBlock *preheader,
-    BasicBlock *new_header,
+    BasicBlock *header, BasicBlock *Latch, LoopInfo *loop,
+    BasicBlock *preheader, BasicBlock *new_header,
     std::unordered_map<Value *, Value *> &PreHeaderValue,
     LoopAnalysis *loopAnlasis) {
   // bool = true ---> outside the loop
@@ -202,91 +209,107 @@ void LoopRotate::PreservePhi(
   //去掉preheader到header的边之后，现在loop有两个是数据流入口，需要更新phi
   // lcssa保证user在loop内
   for (auto inst : *header) {
-    for (auto iter = inst->GetUserlist().begin();
-         iter != inst->GetUserlist().end();) {
-      auto use = *iter;
-      ++iter;
-      auto user = use->GetUser();
-      auto targetBB = user->GetParent();
-      if (targetBB == header)
-        continue;
-      if (!loop->Contain(targetBB))
-        continue;
-      if (targetBB == preheader) {
-        continue;
+    if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+      for (auto iter = inst->GetUserlist().begin();
+           iter != inst->GetUserlist().end();) {
+        auto use = *iter;
+        ++iter;
+        auto user = use->GetUser();
+        auto targetBB = user->GetParent();
+        if (targetBB == header)
+          continue;
+        if (!loop->Contain(targetBB))
+          continue;
+        if (targetBB == preheader) {
+          continue;
+        }
+        if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+          if (PhiInsert.find(phi) == PhiInsert.end()) {
+            assert(phi->PhiRecord.size() == 1);
+            auto new_phi = PhiInst::NewPhiNode(new_header->front(), new_header,
+                                               inst->GetType());
+            for (auto [flag, val] : RecordPhi[phi]) {
+              if (flag)
+                new_phi->updateIncoming(RecordPhi[phi][flag], preheader);
+              else
+                new_phi->updateIncoming(RecordPhi[phi][flag], header);
+            }
+            user->RSUW(use, new_phi);
+            PhiInsert[phi] = new_phi;
+          } else {
+            user->RSUW(use, PhiInsert[phi]);
+          }
+          if (auto p = dynamic_cast<PhiInst *>(use->GetUser())) {
+            for (int i = 0; i < p->PhiRecord.size(); i++) {
+              if (p->PhiRecord[i].first == phi) {
+                p->PhiRecord[i].first = use->SetValue();
+              }
+            }
+          }
+          for (auto ex : loopAnlasis->GetExit(loop))
+            for (auto _inst : *ex)
+              if (auto p = dynamic_cast<PhiInst *>(_inst)) {
+                for (int i = 0; i < p->PhiRecord.size(); i++)
+                  if (p->PhiRecord[i].first == inst &&
+                      p->PhiRecord[i].second != header) {
+                    p->RSUW(i, PhiInsert[phi]);
+                    p->PhiRecord[i].first = PhiInsert[phi];
+                  }
+              }
+        }
       }
-      if (auto phi = dynamic_cast<PhiInst *>(use->GetValue())) {
-        if (PhiInsert.find(phi) == PhiInsert.end()) {
-          assert(phi->PhiRecord.size() == 1);
-          auto new_phi = PhiInst::NewPhiNode(new_header->front(), new_header,
-                                             inst->GetType());
-          for (auto [flag, val] : RecordPhi[phi]) {
-            if (flag)
-              new_phi->updateIncoming(RecordPhi[phi][flag], preheader);
-            else
-              new_phi->updateIncoming(RecordPhi[phi][flag], header);
-          }
-          user->RSUW(use, new_phi);
-          PhiInsert[phi] = new_phi;
-        } else {
-          user->RSUW(use, PhiInsert[phi]);
+      // auto usee = use->GetValue();
+      // if (NewInsertPhi.find(usee) == NewInsertPhi.end()) {
+      //   auto cloned = CloneMap[usee];
+      //   if (!cloned)
+      //     continue;
+      //   auto tmp = header;
+      //   while (std::distance(m_dom->GetNode(tmp->num).rev.begin(),
+      //                        m_dom->GetNode(tmp->num).rev.end()) == 1) {
+      //     tmp = m_dom->GetNode((m_dom->GetNode(tmp->num).rev.front()))
+      //               .thisBlock;
+      //   }
+      //   auto new_phi =
+      //       PhiInst::NewPhiNode(tmp->front(), tmp, inst->GetType());
+      //   new_phi->updateIncoming(cloned, preheader);
+      //   new_phi->updateIncoming(usee, tmp);
+      //   user->RSUW(use, new_phi);
+      //   NewInsertPhi[usee] = new_phi;
+      // } else {
+      //   user->RSUW(use, NewInsertPhi[usee]);
+      // }
+    } else {
+      std::vector<Use *> Rewrite;
+      for (auto iter = inst->GetUserlist().begin();
+           iter != inst->GetUserlist().end();) {
+        auto use = *iter;
+        ++iter;
+        auto user = use->GetUser();
+        auto targetBB = user->GetParent();
+        if (targetBB == header)
+          continue;
+        if (!loop->Contain(targetBB))
+          continue;
+        if (targetBB == preheader) {
+          continue;
         }
-        if (auto p = dynamic_cast<PhiInst *>(use->GetUser())) {
-          for (int i = 0; i < p->PhiRecord.size(); i++) {
-            if (p->PhiRecord[i].first == phi) {
-              p->PhiRecord[i].first = use->SetValue();
-            }
-          }
-        }
-        for (auto ex : loopAnlasis->GetExit(loop))
-          for (auto _inst : *ex)
-            if (auto p = dynamic_cast<PhiInst *>(_inst)) {
-              // auto it = std::find_if(
-              //     p->PhiRecord.begin(), p->PhiRecord.end(),
-              //     [new_header](
-              //         const std::pair<const int,
-              //                         std::pair<Value *, BasicBlock *>> &ele)
-              //                         {
-              //       return ele.second.second == new_header;
-              //     });
-              // if (it != p->PhiRecord.end()) {
-              //   p->RSUW(it->first, PhiInsert[phi]);
-              //   it->second.first = PhiInsert[phi];
-              // }
-              // for(auto& use:p->Getuselist()){
-              //   if(use->GetValue()==phi)
-              //   {
-
-              //   }
-              // }
-              for (int i = 0; i < p->PhiRecord.size(); i++)
-                if (p->PhiRecord[i].first == inst &&
-                    p->PhiRecord[i].second != header) {
-                  p->RSUW(i, PhiInsert[phi]);
-                  p->PhiRecord[i].first = PhiInsert[phi];
-                }
-            }
-      } else {
-        auto usee = use->GetValue();
-        if (NewInsertPhi.find(usee) == NewInsertPhi.end()) {
-          auto cloned = CloneMap[usee];
-          if (!cloned)
-            continue;
-          auto tmp = header;
-          while (std::distance(m_dom->GetNode(tmp->num).rev.begin(),
-                               m_dom->GetNode(tmp->num).rev.end()) == 1) {
-            tmp = m_dom->GetNode((m_dom->GetNode(tmp->num).rev.front()))
-                      .thisBlock;
-          }
-          auto new_phi =
-              PhiInst::NewPhiNode(tmp->front(), tmp, inst->GetType());
-          new_phi->updateIncoming(cloned, preheader);
-          new_phi->updateIncoming(usee, header);
-          user->RSUW(use, new_phi);
-          NewInsertPhi[usee] = new_phi;
-        } else {
-          user->RSUW(use, NewInsertPhi[usee]);
-        }
+        Rewrite.push_back(use);
+      }
+      if (Rewrite.empty())
+        continue;
+      auto cloned = CloneMap[inst];
+      if (!cloned)
+        continue;
+      auto ty = inst->GetType();
+      if (auto ld = dynamic_cast<LoadInst *>(inst))
+        ty = ld->GetOperand(0)->GetType();
+      auto new_phi =
+          PhiInst::NewPhiNode(new_header->front(), new_header, inst->GetType());
+      new_phi->updateIncoming(cloned, preheader);
+      new_phi->updateIncoming(inst, Latch);
+      for (auto use : Rewrite) {
+        auto user = use->GetUser();
+        user->RSUW(use, new_phi);
       }
     }
   }

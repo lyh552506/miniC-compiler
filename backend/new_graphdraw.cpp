@@ -191,6 +191,8 @@ MOperand GraphColor::HeuristicSpill() {
     //考虑interval区间
     int intervalLength = ValsInterval[spill];
     weight += (intervalLength * livenessWeight);
+    weight +=
+        (vspill->GetPenaltySpill() + vspill->GetPenaltyReload()) * SpillWeight;
     //考虑嵌套层数
     int loopdepth; // TODO
     if (max < weight) {
@@ -495,6 +497,8 @@ void GraphColor::SpillNodeInMir() {
             sd->AddOperand(spillnode);
             mir_begin.insert_after(sd);
             ++mir_begin;
+            ++mir_begin;
+            continue;
           }
         }
       }

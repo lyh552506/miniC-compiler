@@ -201,6 +201,7 @@ private:
   std::vector<RISCVBasicBlock *> topu;
   std::set<RISCVBasicBlock *> assist;
   float LoopWeight = 1;
-  float livenessWeight = 2;
-  float DegreeWeight = 1;
+  float livenessWeight = 2.5;
+  float DegreeWeight = 3;
+  float SpillWeight = 5;
 };
