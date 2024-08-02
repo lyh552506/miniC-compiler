@@ -1,8 +1,6 @@
 #pragma once
 #include "../../include/ir/opt/New_passManager.hpp"
 #include "../../include/ir/opt/PassManagerBase.hpp"
-#include "CFG.hpp"
-#include "LoopInfo.hpp"
 #include <vector>
 
 struct ProbEdge {
