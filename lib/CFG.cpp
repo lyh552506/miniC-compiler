@@ -1403,6 +1403,18 @@ void PhiInst::ModifyBlock(BasicBlock *Old, BasicBlock *New) {
   it1->second.second = New;
 }
 
+void PhiInst::EraseRecordByBlock(BasicBlock* block)
+{
+  for(auto& [index,record] : PhiRecord)
+  {
+    if(record.second==block)
+    {
+      PhiRecord.erase(index);
+      break;
+    }
+  }
+}
+
 std::pair<size_t, size_t> &Function::GetInlineInfo() {
   // codesize,framesize
   if (inlineinfo.first == 0) {
