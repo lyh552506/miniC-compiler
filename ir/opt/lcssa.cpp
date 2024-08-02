@@ -2,6 +2,7 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../util/my_stl.hpp"
+#include "New_passManager.hpp"
 #include <algorithm>
 #include <cassert>
 #include <set>
@@ -18,7 +19,7 @@ bool LcSSA::Run() {
   for (auto l = loops->begin(); l != loops->end(); l++) {
     auto loop = *l;
     changed |= DFSLoops(loop);
-    loop->LoopForm.insert(LoopInfo::Lcssa);
+    AM.AddAttr(loop->GetHeader(), Lcssa);
   }
   return changed;
 }
