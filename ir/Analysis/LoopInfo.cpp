@@ -215,9 +215,6 @@ std::vector<BasicBlock *> LoopAnalysis::GetExitingBlock(LoopInfo *loopinfo) {
   std::vector<BasicBlock *> exiting;
   for (auto bb : exit) {
     for (auto rev : m_dom->GetNode(bb->num).rev) {
-      // auto iter =
-      //     std::find(loopinfo->ContainBlocks.begin(),
-      //               loopinfo->ContainBlocks.end(), GetCorrespondBlock(succ));
       if (IsLoopIncludeBB(loopinfo, rev))
         PushVecSingleVal(exiting, m_dom->GetNode(rev).thisBlock);
     }
