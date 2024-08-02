@@ -66,6 +66,14 @@ class list_node
         this->next=nullptr;
         this->fat=nullptr;
     }
+
+    derived_list_node* nextListNode(){
+        return next;
+    }
+
+    derived_list_node* prevListNode(){
+        return prev;
+    }
 };
 
 template<typename derived_mylist,typename derived_list_node>

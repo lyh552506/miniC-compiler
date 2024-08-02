@@ -1431,9 +1431,10 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
   return inlineinfo;
 }
 
-bool Function::isRecursive() {
+bool Function::isRecursive(bool useMem) {
   static std::unordered_map<Function *, bool> visited;
-  if (visited.find(this) == visited.end()) {
+
+  auto calcOnce=[&](){
     auto usrlist = GetUserlist();
     bool suc = false;
     for (auto use : usrlist) {
@@ -1443,10 +1444,12 @@ bool Function::isRecursive() {
           break;
         }
       }
-      // unexpected
     }
-    visited[this] = suc;
-  }
+    return suc;
+  };
+
+  if (!useMem||visited.find(this) == visited.end())
+    visited[this] = calcOnce();
   return visited[this];
 }
 

@@ -7,6 +7,7 @@
 #include "../../include/ir/opt/DeadArgsElimination.hpp"
 #include "../../include/ir/opt/DealCriticalEdges.hpp"
 #include "../../include/ir/opt/Global2Local.hpp"
+#include "../../include/ir/opt/TailRecurseElimination.hpp"
 #include "../../include/ir/opt/Inline.hpp"
 #include "../../include/ir/opt/Local2Global.hpp"
 #include "../../include/ir/opt/LoopDeletion.hpp"
