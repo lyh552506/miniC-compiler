@@ -873,6 +873,7 @@ void Function::InsertBlock(BasicBlock *curr, BasicBlock *insert) {
 void Function::InlineCall(CallInst *inst) {
   BasicBlock *block = inst->GetParent();
   Function *func = block->GetParent();
+  Function* inlined_func = inst->GetOperand(0)->as<Function>();
   BasicBlock *SplitBlock = block->SplitAt(inst);
   BasicBlock::mylist<Function, BasicBlock>::iterator Block_Pos(block);
   Block_Pos.insert_after(SplitBlock);
@@ -880,12 +881,12 @@ void Function::InlineCall(CallInst *inst) {
   std::vector<BasicBlock *> blocks;
   std::unordered_map<Operand, Operand> OperandMapping;
   int num = 1;
-  for (auto &param : func->GetParams()) {
+  for (auto &param : inlined_func->GetParams()) {
     Value *Param = param.get();
     OperandMapping[Param] = inst->Getuselist()[num]->usee;
     num++;
   }
-  for (BasicBlock *block : *func)
+  for (BasicBlock *block : *inlined_func)
     blocks.push_back(block->clone(OperandMapping));
   UnCondInst *Br = new UnCondInst(blocks[0]);
   block->push_back(Br);
@@ -901,15 +902,10 @@ void Function::InlineCall(CallInst *inst) {
   for (BasicBlock *block_ : blocks)
     Block_Pos.insert_before(block_);
   if (inst->GetTypeEnum() != InnerDataType::IR_Value_VOID) {
-    // if(SSALevel)
-    // {
-    PhiInst *Phi =
-        PhiInst::NewPhiNode(SplitBlock->front(), SplitBlock, inst->GetType());
-
+    Value* Ret_Val = nullptr;
     for (BasicBlock *block : blocks) {
       User *inst = block->back();
       if (dynamic_cast<RetInst *>(inst)) {
-        Phi->updateIncoming(inst->Getuselist()[0]->usee, block);
         UnCondInst *Br = new UnCondInst(SplitBlock);
         inst->ClearRelation();
         inst->EraseFromParent();
@@ -917,11 +913,8 @@ void Function::InlineCall(CallInst *inst) {
       }
     }
 
-    if (Phi->Getuselist().size() == 1) {
-      Value *val = Phi->Getuselist()[0]->usee;
-      inst->RAUW(val);
-    } else
-      inst->RAUW(Phi);
+    if (Ret_Val)
+      inst->RAUW(Ret_Val);
   } else {
     for (BasicBlock *block_ : blocks) {
       User *inst = block->back();
@@ -933,7 +926,6 @@ void Function::InlineCall(CallInst *inst) {
       }
     }
   }
-  auto &&inlined_func = inst->GetOperand(0)->as<Function>();
   if (inlined_func->GetUserListSize() == 0)
     Singleton<Module>().EraseFunction(inlined_func);
 }
