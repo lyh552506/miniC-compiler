@@ -242,6 +242,7 @@ struct Terminator{
   void RotateCondition();
   bool isReturn();
   void makeFallthrough(RISCVBasicBlock*);
+  void SetProb(double);
 };
 
 /// should we save return type here? I suppose not.
