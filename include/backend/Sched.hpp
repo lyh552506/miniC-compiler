@@ -19,6 +19,11 @@ private:
     uint32_t depth;
 public:
     Sunit() = default;
+    inline uint32_t get_latency() {return latency;}
+    inline uint32_t get_maxLatency() {return maxLatency;}
+    inline uint32_t get_height() {return height;}
+    inline uint32_t get_depth() {return depth;}
+    inline bool set_maxLatency(uint32_t laten) {maxLatency = laten;}
 };
 
 using MOp2StackMap = std::unordered_map<RISCVMOperand*, std::stack<RISCVMIR*>>;
@@ -41,6 +46,8 @@ private:
     std::unordered_map<Sunit*, uint32_t> inDegree;
 
 public:
+    friend class Scheduler;
+    friend class Pre_RA_Scheduler;
     DependencyGraph(BlockDepInfo* depInfo): depInfo(depInfo){};
     void BuildGraph(mylist<RISCVBasicBlock,RISCVMIR>::iterator, mylist<RISCVBasicBlock,RISCVMIR>::iterator);
     void addDependency(Sunit*, Sunit*);
@@ -64,6 +71,7 @@ public:
 };
 
 bool isboundary(RISCVMIR*);
+
 #ifdef DEBUG_SCHED
     static std::string Sched_debuginfo = "BackendTest/Sched.buginfo";
     static std::ofstream Sched_debugfile(Sched_debuginfo);
