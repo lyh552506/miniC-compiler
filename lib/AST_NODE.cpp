@@ -502,7 +502,11 @@ void FuncDef::codegen(){
     auto end_block=function_body->GetInst(state);
     if(!end_block->EndWithBranch()){
         if(f.GetType()->GetTypeEnum()==IR_Value_VOID)end_block->GenerateRetInst();
-        else end_block->GenerateRetInst(UndefValue::get(f.GetType()));
+        else{
+            if(f.GetName()=="main")
+                end_block->GenerateRetInst(ConstIRInt::GetNewConstant(0));
+            else end_block->GenerateRetInst(UndefValue::get(f.GetType()));
+        }
     }
     Singleton<Module>().layer_decrease();
 }
