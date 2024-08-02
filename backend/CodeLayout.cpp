@@ -68,7 +68,7 @@ bool CodeLayout::run(RISCVFunction* func){
     
     for(auto bb:*func){
         auto terminator=bb->getTerminator();
-        if(terminator.isReturn())continue;
+        if(terminator.isRet())continue;
         auto u=getNum(bb);
         auto v=getNum(terminator.trueblock);
         add_edge(u,v,terminator.prob2true);
@@ -94,7 +94,7 @@ bool CodeLayout::run(RISCVFunction* func){
     std::vector<EdgeInfo> edgeinfo;
     for(auto bb:*func){
         auto terminator=bb->getTerminator();
-        if(terminator.isReturn())continue;
+        if(terminator.isRet())continue;
         auto u=getNum(bb);
         auto v=getNum(terminator.trueblock);
         edgeinfo.push_back({freq[u]*terminator.prob2true,u,v});
@@ -150,7 +150,7 @@ bool CodeLayout::run(RISCVFunction* func){
         auto bb=getBB(*it);
         auto bestnext=getBB(*nxt);
         auto terminator=bb->getTerminator();
-        if(terminator.isReturn())continue;
+        if(terminator.isRet())continue;
         if(terminator.trueblock==bestnext||terminator.falseblock==bestnext)
             terminator.makeFallthrough(bestnext);
     }

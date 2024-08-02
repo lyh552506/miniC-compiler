@@ -183,6 +183,33 @@ void RISCVBasicBlock::replace_succ(RISCVBasicBlock* from,RISCVBasicBlock* to){
     assert(0&&"IMPOSSIBLE");
 }
 
+Terminator& RISCVBasicBlock::getTerminator() {
+    if(term.implictly==true)return term;
+    auto inst_size=Size();
+    assert(inst_size>0&&"Bro is definitely mad");
+    for(auto it=rbegin();it!=rend();--it){
+      auto minst=*it;
+      if(minst->GetOpcode()==RISCVMIR::ret){
+        term.branchinst=nullptr;
+        break;
+      }
+      if(RISCVMIR::BeginBranch<minst->GetOpcode()&&minst->GetOpcode()<RISCVMIR::EndBranch){
+        if(minst->GetOpcode()==RISCVMIR::_j){
+          term.branchinst=minst;
+          term.trueblock=minst->GetOperand(0)->as<RISCVBasicBlock>();
+        }
+        else{
+          term.branchinst=minst;
+          term.falseblock=minst->GetOperand(1)->as<RISCVBasicBlock>();
+          std::swap(term.trueblock,term.falseblock);
+          break;
+        }
+      }
+    }
+    if(term.isUncond())term.SetProb(1);
+    return term;
+}
+
 void RISCVBasicBlock::push_before_branch(RISCVMIR* minst) {
     assert(this->Size()!=0 && "Empty BasicBlock"); 
     for(auto it=this->rbegin(); it!=this->rend(); --it) {

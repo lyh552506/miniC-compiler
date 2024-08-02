@@ -65,6 +65,7 @@ bool RISCVISel::run(Function* m){
         auto succ=ctx.mapping(edge.In)->as<RISCVBasicBlock>();
         auto prob=edge.Prob;
         auto terminator=pred->getTerminator();
+        assert(terminator.trueblock==succ||terminator.falseblock==succ);
         if(terminator.falseblock==succ)prob=1-prob;
         terminator.SetProb(prob);
     }
