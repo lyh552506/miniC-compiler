@@ -906,6 +906,8 @@ void Function::InlineCall(CallInst *inst) {
     for (BasicBlock *block : blocks) {
       User *inst = block->back();
       if (dynamic_cast<RetInst *>(inst)) {
+        if(auto val = inst->GetOperand(0))
+          Ret_Val = val;
         UnCondInst *Br = new UnCondInst(SplitBlock);
         inst->ClearRelation();
         inst->EraseFromParent();
