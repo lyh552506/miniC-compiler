@@ -768,8 +768,8 @@ BasicBlock *BasicBlock::GenerateNewBlock() {
 }
 
 BasicBlock *BasicBlock::SplitAt(User *inst) {
-  auto call_inst = dynamic_cast<CallInst *>(inst);
-  assert(call_inst != nullptr && "CallInst Is Expected Here");
+  // auto call_inst = dynamic_cast<CallInst *>(inst);
+  // assert(call_inst != nullptr && "CallInst Is Expected Here");
   auto tmp = new BasicBlock();
 
   // other block:
