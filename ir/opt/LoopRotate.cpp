@@ -312,9 +312,10 @@ void LoopRotate::PreservePhi(
       new_phi->updateIncoming(inst, Latch);
       for (auto use : Rewrite) {
         auto user = use->GetUser();
-        if (auto phi = dynamic_cast<PhiInst *>(user))
-          phi->ReplaceVal(use, new_phi);
-        else
+        if (auto phi = dynamic_cast<PhiInst *>(user)) {
+          if (phi->ReturnBBIn(use) != header)
+            phi->ReplaceVal(use, new_phi);
+        } else
           user->RSUW(use, new_phi);
       }
     }
