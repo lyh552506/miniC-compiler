@@ -1,9 +1,9 @@
 #pragma once
-#include "../../lib/CFG.hpp"
-#include "PassManagerBase.hpp"
-#include "New_passManager.hpp"
-#include "../Analysis/dominant.hpp"
 #include "../../../util/my_stl.hpp"
+#include "../../lib/CFG.hpp"
+#include "../Analysis/dominant.hpp"
+#include "New_passManager.hpp"
+#include "PassManagerBase.hpp"
 #include <unordered_set>
 class _AnalysisManager;
 namespace HashTool
@@ -19,37 +19,47 @@ struct InstHash
         }
         if (auto inst = dynamic_cast<User *>(val))
         {
-            if (inst->GetInstId() == User::OpID::G)
+            if (auto binary = dynamic_cast<BinaryInst *>(inst))
             {
-                HashValue += std::hash<User::OpID>{}(User::OpID::G);
-                HashValue += std::hash<Value *>{}(inst->GetOperand(0)) * 3;
-                HashValue += std::hash<Value *>{}(inst->GetOperand(1)) * 5;
-            }
-            else if (inst->GetInstId() == User::OpID::Le)
-            {
-                HashValue += std::hash<User::OpID>{}(User::OpID::G);
-                HashValue += std::hash<Value *>{}(inst->GetOperand(0)) * 5;
-                HashValue += std::hash<Value *>{}(inst->GetOperand(1)) * 3;
-            }
-            else if (inst->GetInstId() == User::OpID::L)
-            {
-                HashValue += std::hash<User::OpID>{}(User::OpID::L);
-                HashValue += std::hash<Value *>{}(inst->GetOperand(0)) * 3;
-                HashValue += std::hash<Value *>{}(inst->GetOperand(1)) * 5;
-            }
-            else if (inst->GetInstId() == User::OpID::Ge)
-            {
-                HashValue += std::hash<User::OpID>{}(User::OpID::L);
-                HashValue += std::hash<Value *>{}(inst->GetOperand(0)) * 5;
-                HashValue += std::hash<Value *>{}(inst->GetOperand(1)) * 3;
+                if (binary->getopration() == BinaryInst::Op_G)
+                {
+                    HashValue += std::hash<BinaryInst::Operation>{}(BinaryInst::Op_G);
+                    HashValue += std::hash<Value *>{}(inst->GetOperand(0)) << 11;
+                    HashValue += 21;
+                    HashValue += std::hash<Value *>{}(inst->GetOperand(1)) << 7;
+                    HashValue += 29;
+                }
+                else if (binary->getopration() == BinaryInst::Op_LE)
+                {
+                    HashValue += std::hash<BinaryInst::Operation>{}(BinaryInst::Op_G);
+                    HashValue += std::hash<Value *>{}(inst->GetOperand(0)) << 7;
+                    HashValue += 29;
+                    HashValue += std::hash<Value *>{}(inst->GetOperand(1)) << 11;
+                    HashValue += 21;
+                }
+                else if (binary->getopration() == BinaryInst::Op_L)
+                {
+                    HashValue += std::hash<BinaryInst::Operation>{}(BinaryInst::Op_L);
+                    HashValue += std::hash<Value *>{}(inst->GetOperand(0)) << 7;
+                    HashValue += 33;
+                    HashValue += std::hash<Value *>{}(inst->GetOperand(1)) << 11;
+                    HashValue += 53;
+                }
+                else if (binary->getopration() == BinaryInst::Op_GE)
+                {
+                    HashValue += std::hash<BinaryInst::Operation>{}(BinaryInst::Op_L);
+                    HashValue += std::hash<Value *>{}(inst->GetOperand(0)) << 11;
+                    HashValue += 53;
+                    HashValue += std::hash<Value *>{}(inst->GetOperand(1)) << 7;
+                    HashValue += 33;
+                }
             }
             else
             {
-                HashValue = std::hash<User::OpID>{}(inst->GetInstId());
                 for (auto &Use_ : inst->Getuselist())
                 {
                     Value *Val = Use_->usee;
-                    HashValue = HashValue * 111 + std::hash<Value *>{}(Val);
+                    HashValue = HashValue * 111 + std::hash<Value *>{}(Val) << 3;
                 }
             }
             return HashValue;
@@ -268,10 +278,11 @@ class CSE : public _PassManagerBase<CSE, Function>
                 {
                     if (storeinfo->StoreGeneration == gen)
                     {
-                        if(auto call = dynamic_cast<CallInst*>(storeinfo->store->Getuselist()[0]->usee))
+                        if (auto call = dynamic_cast<CallInst *>(storeinfo->store->Getuselist()[0]->usee))
                         {
                             std::string name = call->Getuselist()[0]->usee->GetName();
-                            if(name == "getch" || name =="getint" || name == "getfloat" || name == "getarray" || name=="getfarray")
+                            if (name == "getch" || name == "getint" || name == "getfloat" || name == "getarray" ||
+                                name == "getfarray")
                                 return nullptr;
                         }
                         return storeinfo->store;
