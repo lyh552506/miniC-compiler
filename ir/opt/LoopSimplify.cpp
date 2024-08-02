@@ -5,6 +5,7 @@
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Type.hpp"
 #include "../../util/my_stl.hpp"
+#include "New_passManager.hpp"
 #include <algorithm>
 #include <cassert>
 #include <set>
@@ -17,7 +18,7 @@ bool LoopSimplify::Run() {
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++) {
     auto loop = *iter;
     changed |= SimplifyLoopsImpl(loop);
-    loop->LoopForm.insert(LoopInfo::Simplified);
+    AM.AddAttr(loop->GetHeader(), Simplified);
   }
   return changed;
 }

@@ -7,7 +7,6 @@
 #include <unordered_set>
 #include <vector>
 
-std::set<LoopInfo::Tag> LoopInfo::LoopForm = {LoopInfo::Normal};
 void LoopAnalysis::Analysis() {
   //此处后续遍历支配树
   for (auto curbb : PostOrder) {

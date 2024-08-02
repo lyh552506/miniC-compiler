@@ -5,6 +5,8 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
+#include "New_passManager.hpp"
+#include <cstdlib>
 #include <vector>
 
 bool LoopUnroll::Run() {
@@ -14,12 +16,16 @@ bool LoopUnroll::Run() {
   for (auto iter = loopAnaly->begin(); iter != loopAnaly->end();) {
     auto loop = *iter;
     ++iter;
-    if (loop->LoopForm.find(LoopInfo::Rotate) != loop->LoopForm.end()) {
+    if (AM.FindAttr(loop->GetHeader(), Rotate)) {
       auto unrollbody = ExtractLoopBody(loop);
       if (unrollbody) {
-        changed |= true;
-        Unroll(loop, unrollbody);
-        delete unrollbody;
+        // static int a = 0;
+        // a++;
+        // if (a == 4)
+        //   return false;
+        // changed |= true;
+        // Unroll(loop, unrollbody);
+        // delete unrollbody;
       }
     }
   }
@@ -27,6 +33,10 @@ bool LoopUnroll::Run() {
 }
 
 CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
+  if (loop->GetHeader()->GetName() == ".1441") {
+    Singleton<Module>().Test();
+    exit(0);
+  }
   auto &body = loop->GetLoopBody();
   LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   if (loop->CantCalcTrait())
@@ -117,14 +127,14 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
   assert(loopcmp);
   auto cmp = loopcmp->CloneInst();
   substitute->push_back(cmp);
-  BasicBlock *exit = nullptr;
+  BasicBlock *_exit = nullptr;
   if (auto cond = dynamic_cast<CondInst *>(latch->back()))
     for (int i = 1; i < 3; i++) {
       if (cond->GetOperand(i) != latch)
-        exit = dynamic_cast<BasicBlock *>(cond->GetOperand(i));
+        _exit = dynamic_cast<BasicBlock *>(cond->GetOperand(i));
     }
-  assert(exit);
-  auto br = new CondInst(cmp, substitute, exit);
+  assert(_exit);
+  auto br = new CondInst(cmp, substitute, _exit);
   substitute->push_back(br);
   for (auto &use : cmp->Getuselist()) {
     if (use->GetValue() == loopchange)
@@ -143,7 +153,6 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
         uncond->RSUW(0, substitute);
       }
     }
-
   for (auto des : dom->GetNode(latch->num).des)
     if (dom->GetNode(des).thisBlock != header)
       for (auto it = dom->GetNode(des).thisBlock->begin();
@@ -159,11 +168,13 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
             });
         if (it1 != phi->PhiRecord.end()) {
           it1->second.second = substitute;
-          if (it1->second.first == loopchange)
+          if (it1->second.first == loopchange) {
+            phi->RSUW(it1->first, change);
             it1->second.first = change;
-          else if (res && it1->second.first == res->ReturnValIn(latch))
+          } else if (res && it1->second.first == res->ReturnValIn(latch)) {
+            phi->RSUW(it1->first, callinst);
             it1->second.first = callinst;
-          else {
+          } else {
             assert(0 && "what happened?");
           }
         }
@@ -181,28 +192,39 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
        it != substitute->end() && dynamic_cast<PhiInst *>(*it); ++it) {
     auto phi = dynamic_cast<PhiInst *>(*it);
     for (int i = 0; i < phi->PhiRecord.size(); i++) {
-      if (phi->PhiRecord[i].second == latch)
-        phi->Del_Incomes(i);
+      if (phi->PhiRecord[i].second == latch) {
+        phi->Del_Incomes(i--);
+        phi->FormatPhi();
+      }
     }
   }
   for (auto bb : body)
     for (auto inst : *bb) {
       for (auto &use : inst->Getuselist()) {
-        if (Val2Arg.find(use->GetValue()) != Val2Arg.end())
-          inst->RSUW(use.get(), Val2Arg[use->GetValue()]);
+        if (Val2Arg.find(use->GetValue()) != Val2Arg.end()) {
+          if (auto phi = dynamic_cast<PhiInst *>(inst))
+            phi->ReplaceVal(use.get(), Val2Arg[use->GetValue()]);
+          else
+            inst->RSUW(use.get(), Val2Arg[use->GetValue()]);
+        }
       }
     }
   if (res)
     res->updateIncoming(callinst, substitute);
   loop->trait.indvar->updateIncoming(loop->trait.change, substitute);
   //转移
-  for (auto bb : body) {
-    if (bb != header)
-      loopAnaly->DeleteBlock(bb);
-    else
-      loopAnaly->ReplBlock(bb, substitute);
+  std::vector<BasicBlock *> tmp{body.begin(), body.end()};
+  for (auto iter = tmp.begin(); iter != tmp.end();) {
+    auto bb = *iter;
+    ++iter;
     bb->EraseFromParent();
     UnrollFunc->push_bb(bb);
+    if (bb != header)
+      loopAnaly->DeleteBlock(bb);
+    else {
+      loopAnaly->ReplBlock(bb, substitute);
+      loopAnaly->setLoop(substitute, loop);
+    }
   }
   return callinst;
 }
