@@ -9,10 +9,12 @@ class LoopUnroll : public _PassManagerBase<LoopUnroll, Function> {
 public:
   LoopUnroll(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
   bool Run();
-  Function* ExtractLoopBody(LoopInfo *loop);
+
 private:
+  CallInst *ExtractLoopBody(LoopInfo *loop);
+  void Unroll(LoopInfo *loop, CallInst *UnrollBody);
   Function *m_func;
-  dominance* dom;
-  LoopAnalysis* loopAnaly;
+  dominance *dom;
+  LoopAnalysis *loopAnaly;
   _AnalysisManager &AM;
 };
