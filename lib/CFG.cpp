@@ -1599,5 +1599,6 @@ PhiInst *PhiInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   for (auto &[i, data] : PhiRecord) {
     to->updateIncoming(data.first->clone(mapping), data.second->clone(mapping));
   }
+  to->FormatPhi();
   return to;
 }
