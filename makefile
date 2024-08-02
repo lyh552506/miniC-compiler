@@ -1,6 +1,6 @@
 # Compiler and flags
-CXX = g++
-CXXFLAGS = -std=c++20 -O2 -fsanitize=address -lm -lpthread -L/extlibs
+CXX = clang++
+CXXFLAGS = -std=c++20 -O2 -lm -lpthread -L/extlibs -g
 INCLUDES = -I/extlibs -I./util -I./include/backend -I./include/yacc -I./include/lib -I./include/ir/opt -I./include/Analysis
 
 # Directories to search for source files
