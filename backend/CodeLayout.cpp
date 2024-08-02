@@ -2,21 +2,32 @@
 #include <cmath>
 
 std::vector<double> CodeLayout::getFreq(std::vector<std::vector<double>>& mat,int size){
+    auto dumpMat=[&](){
+        std::cerr<<"-----\n";
+        for(auto i=0;i<size;i++){
+            for(auto j=0;j<=size;j++)
+                std::cerr<<mat[i][j]<<" ";
+            std::cerr<<"\n";
+        }
+        std::cerr<<"-----\n";
+    };
+
+    
     const double eps=1e-6;
     int Rank=0;
     for(int j=0;j<size;j++){
-		int loc=0;
+        // dumpMat();
+		int loc=-1;
 		for(int i=Rank;i<size;i++){
 			if(fabs(mat[i][j])>eps){
 				loc=i;
 				break;
 			}
 		}
-		if(!loc)
+		if(loc==-1)
 			continue;
         if(Rank!=loc)
             swap(mat[Rank],mat[loc]);
-		Rank++;
 
 		for(int i=0;i<size;i++){
 			if(i==Rank)continue;
@@ -24,9 +35,11 @@ std::vector<double> CodeLayout::getFreq(std::vector<std::vector<double>>& mat,in
 			for(int jj=j;jj<=size;jj++)
 				mat[i][jj]+=temp*mat[Rank][jj];
 		}
+
+        Rank++;
 	}
 
-    assert(Rank==size-1&&"Matrix is not full rank");
+    assert(Rank==size&&"Matrix is not full rank");
 
     auto freq=std::vector<double>(size);
     
@@ -112,8 +125,11 @@ bool CodeLayout::run(RISCVFunction* func){
         return fat[x]=findFat(fat[x]);
     };
     
-    for(auto i=0;i<size;i++)
+    for(auto i=0;i<size;i++){
         fat[i]=i;
+        chains[i].chain.push_back(i);
+        chains[i].prio=size<<1;
+    }
 
     std::sort(edgeinfo.begin(),edgeinfo.end(),[](auto a,auto b){return a.weight>b.weight;});
 
@@ -138,7 +154,7 @@ bool CodeLayout::run(RISCVFunction* func){
     std::list<int> bestorder;
     for(auto& chain:chains){
         if(chain.chain.empty())break;
-        bestorder.emplace_back(chain.chain.begin(),chain.chain.end());
+        bestorder.splice(bestorder.end(),chain.chain);
     }
     /* end get order */
     // make sure entry block will be the first

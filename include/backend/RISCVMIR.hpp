@@ -229,8 +229,8 @@ struct Terminator{
   inline void SetProb(double _p){prob2true=_p;};
   inline bool isUncond(){return falseblock==nullptr;};
   inline bool isRet(){return branchinst==nullptr;};
-  inline void RotateCondition();
-  inline void makeFallthrough(RISCVBasicBlock* _candidate);
+  void RotateCondition();
+  void makeFallthrough(RISCVBasicBlock* _candidate);
 };
 
 class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMIR>,public list_node<RISCVFunction,RISCVBasicBlock>

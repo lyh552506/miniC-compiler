@@ -2,6 +2,8 @@
 #include "../include/backend/BuildInFunctionTransform.hpp"
 #include "../include/backend/PhiElimination.hpp"
 #include "../include/backend/PostRACalleeSavedLegalizer.hpp"
+#include "../include/backend/CodeLayout.hpp"
+
 extern std::string asmoutput_path;
 RISCVAsmPrinter *asmprinter = nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module *m)
@@ -95,6 +97,9 @@ bool RISCVFunctionLowering::run(Function *m)
 
     // legal.run_afterRA();
     legal.run();
+
+    auto layout=CodeLayout();
+    layout.run(mfunc);
 
     return false;
 }
