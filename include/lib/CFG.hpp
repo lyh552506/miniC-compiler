@@ -216,6 +216,7 @@ public:
   Value* ReturnValIn(BasicBlock* bb);
   BasicBlock* ReturnBBIn(Use* use);
   void Phiprop(Value* origin,Value* newval);
+  void ReplaceVal(Use* use,Value* new_val);
 public:
   PhiInst* clone(std::unordered_map<Operand,Operand>&)override;
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block

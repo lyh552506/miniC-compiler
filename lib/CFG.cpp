@@ -870,19 +870,19 @@ void Function::InsertBlock(BasicBlock *curr, BasicBlock *insert) {
   this->push_bb(insert);
 }
 
-void Function::InlineCall(CallInst* inst)
-{
+void Function::InlineCall(CallInst *inst) {
   BasicBlock *block = inst->GetParent();
-  Function* func = block->GetParent();
+  Function *func = block->GetParent();
   BasicBlock *SplitBlock = block->SplitAt(inst);
   BasicBlock::mylist<Function, BasicBlock>::iterator Block_Pos(block);
   Block_Pos.insert_after(SplitBlock);
   ++Block_Pos;
-  std::vector<BasicBlock*> blocks;
-  std::unordered_map<Operand, Operand> OperandMapping;  int num = 1;
+  std::vector<BasicBlock *> blocks;
+  std::unordered_map<Operand, Operand> OperandMapping;
+  int num = 1;
   for (auto &param : func->GetParams()) {
     Value *Param = param.get();
-    OperandMapping[Param]=inst->Getuselist()[num]->usee;
+    OperandMapping[Param] = inst->Getuselist()[num]->usee;
     num++;
   }
   for (BasicBlock *block : *func)
@@ -906,40 +906,36 @@ void Function::InlineCall(CallInst* inst)
     PhiInst *Phi =
         PhiInst::NewPhiNode(SplitBlock->front(), SplitBlock, inst->GetType());
 
-    for(BasicBlock* block : blocks)
-    {
-    User *inst = block->back();
-    if (dynamic_cast<RetInst *>(inst)) {
-      Phi->updateIncoming(inst->Getuselist()[0]->usee, block);
-      UnCondInst *Br = new UnCondInst(SplitBlock);
-      inst->ClearRelation();
-      inst->EraseFromParent();
-      block->push_back(Br);
+    for (BasicBlock *block : blocks) {
+      User *inst = block->back();
+      if (dynamic_cast<RetInst *>(inst)) {
+        Phi->updateIncoming(inst->Getuselist()[0]->usee, block);
+        UnCondInst *Br = new UnCondInst(SplitBlock);
+        inst->ClearRelation();
+        inst->EraseFromParent();
+        block->push_back(Br);
+      }
     }
-    }
-
 
     if (Phi->Getuselist().size() == 1) {
       Value *val = Phi->Getuselist()[0]->usee;
       inst->RAUW(val);
     } else
       inst->RAUW(Phi);
-  }else
-  {
-    for (BasicBlock *block_ : blocks)
-    {
-    User *inst = block->back();
-    if (dynamic_cast<RetInst *>(inst)) {
-      UnCondInst *Br = new UnCondInst(SplitBlock);
-      inst->ClearRelation();
-      inst->EraseFromParent();
-      block->push_back(Br);
-    }
+  } else {
+    for (BasicBlock *block_ : blocks) {
+      User *inst = block->back();
+      if (dynamic_cast<RetInst *>(inst)) {
+        UnCondInst *Br = new UnCondInst(SplitBlock);
+        inst->ClearRelation();
+        inst->EraseFromParent();
+        block->push_back(Br);
+      }
     }
   }
   auto &&inlined_func = inst->GetOperand(0)->as<Function>();
   if (inlined_func->GetUserListSize() == 0)
-      Singleton<Module>().EraseFunction(inlined_func);
+    Singleton<Module>().EraseFunction(inlined_func);
 }
 
 BuildInFunction::BuildInFunction(Type *tp, std::string _id) : Value(tp) {
@@ -1312,6 +1308,13 @@ void PhiInst::Phiprop(Value *origin, Value *newval) {
   PhiRecord[Num] = std::make_pair(newval, block);
 }
 
+void PhiInst::ReplaceVal(Use *use, Value *new_val) {
+  assert(UseToRecord.find(use) != UseToRecord.end());
+  auto index = UseToRecord[use];
+  RSUW(use, new_val);
+  PhiRecord[index].first = new_val;
+}
+
 void PhiInst::Del_Incomes(int CurrentNum) {
   if (PhiRecord.find(CurrentNum) != PhiRecord.end()) {
     auto iter = std::find_if(
@@ -1422,21 +1425,21 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
   return inlineinfo;
 }
 
-bool Function::isRecursive(){
-  static std::unordered_map<Function*,bool> visited;
-  if(visited.find(this)==visited.end()){
-    auto usrlist=GetUserlist();
-    bool suc=false;
-    for(auto use:usrlist){
-      if(auto call=use->GetUser()->as<CallInst>()){
-        if(call->GetParent()->GetParent()==this){
-          suc=true;
+bool Function::isRecursive() {
+  static std::unordered_map<Function *, bool> visited;
+  if (visited.find(this) == visited.end()) {
+    auto usrlist = GetUserlist();
+    bool suc = false;
+    for (auto use : usrlist) {
+      if (auto call = use->GetUser()->as<CallInst>()) {
+        if (call->GetParent()->GetParent() == this) {
+          suc = true;
           break;
         }
       }
       // unexpected
     }
-    visited[this]=suc;
+    visited[this] = suc;
   }
   return visited[this];
 }
