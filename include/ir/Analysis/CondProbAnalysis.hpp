@@ -6,6 +6,8 @@
 #include <vector>
 
 struct ProbEdge {
+  ProbEdge(BasicBlock *_Out, BasicBlock *_In, double prob)
+      : Out(_Out), In(_In), Prob(prob) {}
   BasicBlock *Out;
   BasicBlock *In;
   double Prob;
@@ -15,10 +17,10 @@ class ProbAnalysis : public _AnalysisManagerBase<ProbAnalysis, Function> {
 public:
   ProbAnalysis(LoopAnalysis *loopAnaly) : m_loopAnaly(loopAnaly) {}
   void *GetResult(Function *func);
-  std::vector<ProbEdge> &GetProb() { return Prob; }
+  std::vector<ProbEdge> GetProb() { return m_Prob; }
 
 private:
   LoopAnalysis *m_loopAnaly;
-  std::vector<ProbEdge> Prob;
+  std::vector<ProbEdge> m_Prob;
   double possible = 0.995;
 };

@@ -12,7 +12,7 @@ void *ProbAnalysis::GetResult(Function *func) {
     auto preheader = m_loopAnaly->GetPreHeader(loop, LoopAnalysis::Loose);
     auto header = loop->GetHeader();
     if (dynamic_cast<UnCondInst *>(preheader->back())) {
-      Prob.emplace_back(preheader, header, possible);
+      m_Prob.emplace_back(preheader, header, possible);
     } else {
       //大概率不会跳入这
       auto cond = dynamic_cast<UnCondInst *>(preheader->back());
@@ -24,15 +24,15 @@ void *ProbAnalysis::GetResult(Function *func) {
         int rhs_contain = m_loopAnaly->LookUp(rhs)->GetLoopDepth() +
                           m_loopAnaly->LookUp(rhs)->GetSubLoop().size();
         if (lhs_contain > rhs_contain)
-          Prob.emplace_back(preheader, lhs, possible);
+          m_Prob.emplace_back(preheader, lhs, possible);
         else if (rhs_contain > lhs_contain)
-          Prob.emplace_back(preheader, rhs, possible);
+          m_Prob.emplace_back(preheader, rhs, possible);
         else
-          Prob.emplace_back(preheader, lhs, 0.5);
+          m_Prob.emplace_back(preheader, lhs, 0.5);
       } else if (m_loopAnaly->LookUp(lhs) && !m_loopAnaly->LookUp(rhs)) {
-        Prob.emplace_back(preheader, lhs, possible);
+        m_Prob.emplace_back(preheader, lhs, possible);
       } else if (!m_loopAnaly->LookUp(lhs) && m_loopAnaly->LookUp(rhs)) {
-        Prob.emplace_back(preheader, rhs, possible);
+        m_Prob.emplace_back(preheader, rhs, possible);
       }
     }
     for (auto ex : exiting) {
@@ -44,14 +44,14 @@ void *ProbAnalysis::GetResult(Function *func) {
         std::swap(block_in, block_out);
       if (!loop->CantCalcTrait() &&
           !dynamic_cast<ConstIRInt *>(loop->trait.boundary)) {
-        Prob.emplace_back(ex, block_in, possible);
+        m_Prob.emplace_back(ex, block_in, possible);
       } else {
         auto constint = dynamic_cast<ConstIRInt *>(loop->trait.boundary);
         auto bound = constint->GetVal();
         if (bound > 100000)
           bound = 100000;
         auto p = 1 - (1.0 / bound);
-        Prob.emplace_back(ex, block_in, p);
+        m_Prob.emplace_back(ex, block_in, p);
       }
     }
   }
