@@ -47,8 +47,11 @@ void DCE::UpdateLive(RISCVMIR *inst, std::unordered_set<MOperand> &live) {
     }
     return;
   }
-  if (auto def = inst->GetDef()->ignoreLA())
-    live.erase(def);
+  if (auto def = inst->GetDef())
+  {
+    if(auto val = def->ignoreLA())
+      live.erase(val);
+  }
   for (int i = 0; i < inst->GetOperandSize(); i++) {
     if (auto op = inst->GetOperand(i)->ignoreLA())
       live.insert(op);
@@ -56,8 +59,15 @@ void DCE::UpdateLive(RISCVMIR *inst, std::unordered_set<MOperand> &live) {
 }
 
 bool DCE::TryDeleteInst(RISCVMIR *inst, std::unordered_set<MOperand> &live) {
-  if (inst->GetDef()->ignoreLA() && !live.count(inst->GetDef()->ignoreLA()))
-    return true;
+  if(auto def = inst->GetDef())
+  {
+    if(auto val = def->ignoreLA())
+    {
+      if(!live.count(val))
+        return true;
+    }
+    return false;
+  }
   return false;
 }
 

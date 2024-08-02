@@ -30,33 +30,33 @@ int main(int argc, char **argv) {
   size_t lastPointPos = asmoutput_path.find_last_of(".");
   asmoutput_path = asmoutput_path.substr(0, lastPointPos) + ".s";
 
-  freopen(output_path.c_str(), "a", stdout);
   copyFile("runtime.ll", output_path);
+  freopen(output_path.c_str(), "a", stdout);
   yyin = fopen(argv[1], "r");
   yy::parser parse;
   parse();
   Singleton<CompUnit *>()->codegen();
-#ifdef SYSY_ENABLE_MIDDLE_END
+// #ifdef SYSY_ENABLE_MIDDLE_END
   auto PM = std::make_unique<_PassManager>();
   PM->DecodeArgs(argc, argv);
-#ifdef TEST
-  PM->RunOnTest();
-#elif defined(LEVEL)
+// #ifdef TEST
+  // PM->RunOnTest();
+// #elif defined(LEVEL)
   PM->RunOnLevel();
-#else
-  assert(0);
-#endif
+// #else
+  // assert(0);
+// #endif
   Singleton<Module>().Test();
   fflush(stdout);
   fclose(stdout);
-#endif
-#ifdef SYSY_ENABLE_BACKEND
+// #endif
+// #ifdef SYSY_ENABLE_BACKEND
   freopen(asmoutput_path.c_str(), "w", stdout);
   RISCVModuleLowering RISCVAsm;
   RISCVAsm.run(&Singleton<Module>());
   fflush(stdout);
   fclose(stdout);
-#endif
+// #endif
   // freopen("dev/tty", "w", stdout);
 
   return 0;

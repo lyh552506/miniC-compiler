@@ -1,24 +1,32 @@
 #include "../../include/ir/opt/LoopUnroll.hpp"
+#include "../../include/ir/Analysis/LoopInfo.hpp"
+#include "../../include/ir/Analysis/dominant.hpp"
 #include "../../include/ir/opt/PassManagerBase.hpp"
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
-#include "../../include/ir/Analysis/LoopInfo.hpp"
 #include "../../include/lib/Singleton.hpp"
-#include "../../include/ir/Analysis/dominant.hpp"
 #include <vector>
 
 bool LoopUnroll::Run() {
+  bool changed = false;
   dom = AM.get<dominance>(m_func);
   loopAnaly = AM.get<LoopAnalysis>(m_func, dom);
   for (auto iter = loopAnaly->begin(); iter != loopAnaly->end();) {
     auto loop = *iter;
     ++iter;
-    if (loop->LoopForm.find(LoopInfo::Rotate) != loop->LoopForm.end())
-      auto unroll = ExtractLoopBody(loop);
+    if (loop->LoopForm.find(LoopInfo::Rotate) != loop->LoopForm.end()) {
+      auto unrollbody = ExtractLoopBody(loop);
+      if (unrollbody) {
+        changed |= true;
+        Unroll(loop, unrollbody);
+        delete unrollbody;
+      }
+    }
   }
+  return changed;
 }
 
-Function *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
+CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
   auto &body = loop->GetLoopBody();
   LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   if (loop->CantCalcTrait())
@@ -189,8 +197,16 @@ Function *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
   loop->trait.indvar->updateIncoming(loop->trait.change, substitute);
   //转移
   for (auto bb : body) {
+    if (bb != header)
+      loopAnaly->DeleteBlock(bb);
+    else
+      loopAnaly->ReplBlock(bb, substitute);
     bb->EraseFromParent();
     UnrollFunc->push_bb(bb);
   }
-  return UnrollFunc;
+  return callinst;
+}
+
+void LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
+  m_func->InlineCall(UnrollBody);
 }

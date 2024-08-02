@@ -196,6 +196,7 @@ bool Inliner::Inline(Module* m) {
       if (Phi->Getuselist().size() == 1) {
         Value *val = Phi->Getuselist()[0]->usee;
         inst->RAUW(val);
+        delete Phi;
       } else
         inst->RAUW(Phi);
       // }

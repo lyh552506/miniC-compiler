@@ -1,13 +1,13 @@
 #include "../../include/ir/Analysis/LoopInfo.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../util/my_stl.hpp"
 #include <algorithm>
 #include <cassert>
 #include <set>
 #include <unordered_set>
 #include <vector>
 
-#include "../../include/lib/CFG.hpp"
-#include "../../util/my_stl.hpp"
-
+std::set<LoopInfo::Tag> LoopInfo::LoopForm = {LoopInfo::Normal};
 void LoopAnalysis::Analysis() {
   //此处后续遍历支配树
   for (auto curbb : PostOrder) {
@@ -215,9 +215,6 @@ std::vector<BasicBlock *> LoopAnalysis::GetExitingBlock(LoopInfo *loopinfo) {
   std::vector<BasicBlock *> exiting;
   for (auto bb : exit) {
     for (auto rev : m_dom->GetNode(bb->num).rev) {
-      // auto iter =
-      //     std::find(loopinfo->ContainBlocks.begin(),
-      //               loopinfo->ContainBlocks.end(), GetCorrespondBlock(succ));
       if (IsLoopIncludeBB(loopinfo, rev))
         PushVecSingleVal(exiting, m_dom->GetNode(rev).thisBlock);
     }
@@ -289,6 +286,17 @@ void LoopAnalysis::DeleteBlock(BasicBlock *bb) {
   }
 }
 
+void LoopAnalysis::ReplBlock(BasicBlock *Old, BasicBlock *New) {
+  auto loop = LookUp(Old);
+  if (!loop)
+    return;
+  while (loop) {
+    loop->DeleteBlock(Old);
+    loop->InsertLoopBody(New);
+    loop = loop->GetParent();
+  }
+}
+
 bool LoopAnalysis::IsLoopInvariant(const std::set<BasicBlock *> &contain,
                                    User *I, LoopInfo *curloop) {
   bool res =
@@ -296,7 +304,7 @@ bool LoopAnalysis::IsLoopInvariant(const std::set<BasicBlock *> &contain,
                   [curloop, &contain](auto &ele) {
                     auto val = ele->GetValue();
                     if (auto user = dynamic_cast<User *>(val)) {
-                      if(user->isParam())
+                      if (user->isParam())
                         return true;
                       if (contain.find(user->GetParent()) != contain.end())
                         return false;
