@@ -24,7 +24,7 @@ bool LoopRotate::Run() {
     loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
     bool Success = false;
     Success |= TryRotate(loop);
-    if (RotateLoop(loop, Success)) {
+    if (RotateLoop(loop, Success) || Success) {
       changed |= true;
       loop->LoopForm.insert(LoopInfo::Rotate);
     }
@@ -38,7 +38,6 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
   if (loop->GetLoopBody().size() == 1)
     return false;
   loop->RotateTimes++;
-  bool changed = false;
   m_dom = AM.get<dominance>(m_func);
   loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
   auto prehead = loopAnlasis->GetPreHeader(loop);
@@ -156,7 +155,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
   }
   loop->setHeader(New_header);
   SimplifyBlocks(header, loop);
-  return changed;
+  return true;
 }
 
 bool LoopRotate::CanBeMove(User *I) {
@@ -288,8 +287,8 @@ void LoopRotate::PreservePhi(
         auto targetBB = user->GetParent();
         if (targetBB == header)
           continue;
-        if (!loop->Contain(targetBB))
-          continue;
+        // if (!loop->Contain(targetBB))
+        //   continue;
         if (targetBB == preheader) {
           continue;
         }
@@ -309,7 +308,10 @@ void LoopRotate::PreservePhi(
       new_phi->updateIncoming(inst, Latch);
       for (auto use : Rewrite) {
         auto user = use->GetUser();
-        user->RSUW(use, new_phi);
+        if (auto phi = dynamic_cast<PhiInst *>(user))
+          phi->ReplaceVal(use, new_phi);
+        else
+          user->RSUW(use, new_phi);
       }
     }
   }

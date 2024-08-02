@@ -198,12 +198,15 @@ void BlockInfo::Build()
                 for (auto reg : reglist.GetReglistCaller())
                     live.erase(reg);
             }
-            if (auto def = inst->GetDef()->ignoreLA())
+            if (auto def_val = inst->GetDef())
             {
+                if(auto def = def_val->ignoreLA())
+                {
                 live.insert(def);
                 for (auto v : live)
                     AddEdge(def, v);
                 live.erase(def);
+                }
             }
             for (int i = 0; i < inst->GetOperandSize(); i++)
             {

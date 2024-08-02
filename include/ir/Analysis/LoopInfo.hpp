@@ -73,7 +73,7 @@ public:
   }
   int RotateTimes = 0;
   LoopTrait trait;
-  std::set<Tag> LoopForm{Normal};
+  static std::set<Tag> LoopForm;
 
 private:
   BasicBlock *Header = nullptr;
@@ -120,6 +120,7 @@ public:
   void ExpandSubLoops();
   void DeleteLoop(LoopInfo *loop);
   void DeleteBlock(BasicBlock *bb);
+  void ReplBlock(BasicBlock *Old, BasicBlock *New);
   std::vector<LoopInfo *> GetLoops() { return LoopRecord; }
   bool CanBeOpt() { return LoopRecord.size() != 0; }
   static bool IsLoopInvariant(const std::set<BasicBlock *> &contain, User *I,

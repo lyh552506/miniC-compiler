@@ -175,6 +175,10 @@ void _PassManager::RunOnTest() {
       }
       break;
     }
+    case local2global: {
+      auto m_local2global = RunImpl<Local2Global>(module, AM);
+      break;
+    }
     case storeonlyglobalelimination: {
       auto m_storeonlyglobalelimination =
           RunImpl<StoreOnlyGlobalElimination>(module, AM);

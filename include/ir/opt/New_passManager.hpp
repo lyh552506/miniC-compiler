@@ -29,6 +29,7 @@
 #include <getopt.h>
 #include <any>
 #include <memory>
+#include <vector>
 class FunctionPassManager;
 class ModulePassManager;
 enum OptLevel { O0 = 0, O1 = 1, O2 = 2, O3 = 3 };
@@ -86,7 +87,7 @@ class _AnalysisManager
     : public _AnalysisManagerBase<_AnalysisManager, Function> {
 private:
   std::vector<std::any> Contain;
-
+  std::vector<LoopInfo*> loops;
 public:
   _AnalysisManager() = default;
   virtual ~_AnalysisManager() = default;

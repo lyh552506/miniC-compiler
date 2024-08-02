@@ -128,8 +128,8 @@ class mylist
             return iterator(data);
         }
 
-        bool operator==(const iterator& other){return ptr==other.ptr;}
-        bool operator!=(const iterator& other){return ptr!=other.ptr;}
+        bool operator==(const iterator& other)const{return ptr==other.ptr;}
+        bool operator!=(const iterator& other)const{return ptr!=other.ptr;}
     };
     mylist(){
         this->head=nullptr;

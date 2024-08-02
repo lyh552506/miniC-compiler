@@ -61,8 +61,8 @@ class UserList
         // }
 
         Use* operator*(){return ptr;}
-        bool operator==(const iterator& other){return ptr==other.ptr;}
-        bool operator!=(const iterator& other){return ptr!=other.ptr;}
+        bool operator==(const iterator& other)const{return ptr==other.ptr;}
+        bool operator!=(const iterator& other)const{return ptr!=other.ptr;}
     };
     iterator begin(){return iterator(this->head);}
     iterator end(){return iterator(nullptr);}
