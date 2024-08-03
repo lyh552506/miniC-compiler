@@ -34,8 +34,6 @@ bool LoopRotate::Run() {
 }
 
 bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
-  if (loop->GetHeader()->GetName() == ".451")
-    int a = 0;
   if (loop->RotateTimes > 8)
     return false;
   if (loop->GetLoopBody().size() == 1)
