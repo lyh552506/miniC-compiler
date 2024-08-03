@@ -19,6 +19,7 @@ bool LoopDeletion::Run()
     AM.get<SideEffect>(&Singleton<Module>());
     for (auto loop_ : *loop)
         changed |= DetectDeadLoop(loop_);
+    changed |= DeleteUnReachable();
     return changed;
 }
 
@@ -237,4 +238,71 @@ bool LoopDeletion::IsSafeToMove(User *inst)
         instid == User::OpID::Ret || instid == User::OpID::UnCond || instid == User::OpID::Cond)
         return false;
     return true;
+}
+
+bool LoopDeletion::DeleteUnReachable() {
+  bool changed = false;
+  std::vector<BasicBlock *> Erase;
+  std::set<BasicBlock *> visited;
+  std::vector<BasicBlock *> assist;
+  assist.push_back(func->front());
+  visited.insert(func->front());
+  while (!assist.empty()) {
+    auto bb = PopBack(assist);
+    auto condition = bb->back();
+    if (auto cond = dynamic_cast<CondInst *>(condition)) {
+      auto nxt_1 = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
+      auto nxt_2 = dynamic_cast<BasicBlock *>(cond->GetOperand(2));
+      if (visited.insert(nxt_1).second)
+        assist.push_back(nxt_1);
+      if (visited.insert(nxt_2).second)
+        assist.push_back(nxt_2);
+    } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
+      auto nxt = dynamic_cast<BasicBlock *>(uncond->GetOperand(0));
+      if (visited.insert(nxt).second)
+        assist.push_back(nxt);
+    }
+  }
+  for (auto it = func->begin(); it != func->end();) {
+    auto bb = *it;
+    ++it;
+    if (visited.find(bb) == visited.end()) {
+      _DEBUG(std::cerr << "Delete Unreachable block: " << bb->GetName()
+                       << std::endl;)
+      DeletDeadBlock(bb);
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+void LoopDeletion::DeletDeadBlock(BasicBlock *bb) {
+  auto &node = dom->GetNode(bb->num);
+  //维护后续的phi关系
+  for (int des : node.des) {
+    BasicBlock *succ = dom->GetNode(des).thisBlock;
+    succ->RemovePredBB(bb);
+  }
+  for (auto iter = bb->begin(); iter != bb->end();) {
+    User *inst = *iter;
+    ++iter;
+    inst->RAUW(UndefValue::get(inst->GetType()));
+  }
+  updateDTinfo(bb);
+  // loopAnlaysis->DeleteBlock(bb);
+  bb->Delete();
+  dom->updateBlockNum()--;
+}
+
+void LoopDeletion::updateDTinfo(BasicBlock *bb) {
+  auto &node = dom->GetNode(bb->num);
+  std::vector<int> Erase;
+  for (int rev : node.rev) {
+    auto &pred = dom->GetNode(rev);
+    pred.des.remove(bb->num);
+  }
+  for (int des : node.des) {
+    auto &succ = dom->GetNode(des);
+    succ.rev.remove(bb->num);
+  }
 }
