@@ -217,21 +217,6 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
     void printfull();
 };
 
-struct Terminator;
-
-class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMIR>,public list_node<RISCVFunction,RISCVBasicBlock>
-{    
-    Terminator term;
-    public:
-    // RISCVBasicBlock();
-    RISCVBasicBlock(std::string);
-    static RISCVBasicBlock* CreateRISCVBasicBlock();
-    void push_before_branch(RISCVMIR*);
-    void printfull();
-    void replace_succ(RISCVBasicBlock*,RISCVBasicBlock*);
-    Terminator& getTerminator();
-};
-
 /// \p ret branchinst=nullptr
 /// \p uncond falseblock=nullptr
 struct Terminator{
@@ -244,29 +229,21 @@ struct Terminator{
   inline void SetProb(double _p){prob2true=_p;};
   inline bool isUncond(){return falseblock==nullptr;};
   inline bool isRet(){return branchinst==nullptr;};
-  inline void RotateCondition(){
-    assert(RISCVMIR::BeginBranch<branchinst->GetOpcode()&&branchinst->GetOpcode()<RISCVMIR::EndBranch&&branchinst->GetOpcode()!=RISCVMIR::_j&&"Bro is definitely mad");
-    branchinst->SetMopcode(static_cast<RISCVMIR::RISCVISA>(branchinst->GetOpcode()^1));
-    branchinst->SetOperand(2,falseblock);
-    auto it=mylist<RISCVBasicBlock,RISCVMIR>::iterator(branchinst);
-    ++it;
-    assert(it!=branchinst->GetParent()->end());
-    auto nxt_inst=*it;
-    assert(nxt_inst->GetOpcode()==RISCVMIR::_j);
-    nxt_inst->SetOperand(0,trueblock);
-    std::swap(trueblock,falseblock);
-  };
-  inline void makeFallthrough(RISCVBasicBlock* _candidate){
-    if(trueblock==_candidate||falseblock==_candidate){
-      if(!isUncond())
-        if(trueblock==_candidate)
-          RotateCondition();
-        implictly=true;
-        auto j=branchinst->GetParent()->back();
-        delete j;
-    }
-  };
+  inline void RotateCondition();
+  inline void makeFallthrough(RISCVBasicBlock* _candidate);
+};
 
+class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMIR>,public list_node<RISCVFunction,RISCVBasicBlock>
+{    
+    Terminator term;
+    public:
+    // RISCVBasicBlock();
+    RISCVBasicBlock(std::string);
+    static RISCVBasicBlock* CreateRISCVBasicBlock();
+    void push_before_branch(RISCVMIR*);
+    void printfull();
+    void replace_succ(RISCVBasicBlock*,RISCVBasicBlock*);
+    Terminator& getTerminator();
 };
 
 /// should we save return type here? I suppose not.

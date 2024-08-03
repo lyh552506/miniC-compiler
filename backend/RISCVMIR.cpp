@@ -156,7 +156,29 @@ std::vector<int>& RISCVFunction::GetParamNeedSpill() {return this->param_need_sp
 // std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects(){
 //     return frame;
 // }
+void Terminator::RotateCondition(){
+    assert(RISCVMIR::BeginBranch<branchinst->GetOpcode()&&branchinst->GetOpcode()<RISCVMIR::EndBranch&&branchinst->GetOpcode()!=RISCVMIR::_j&&"Bro is definitely mad");
+    branchinst->SetMopcode(static_cast<RISCVMIR::RISCVISA>(branchinst->GetOpcode()^1));
+    branchinst->SetOperand(2,falseblock);
+    auto it=mylist<RISCVBasicBlock,RISCVMIR>::iterator(branchinst);
+    ++it;
+    assert(it!=branchinst->GetParent()->end());
+    auto nxt_inst=*it;
+    assert(nxt_inst->GetOpcode()==RISCVMIR::_j);
+    nxt_inst->SetOperand(0,trueblock);
+    std::swap(trueblock,falseblock);
+}
 
+void Terminator::makeFallthrough(RISCVBasicBlock* _candidate){
+    if(trueblock==_candidate||falseblock==_candidate){
+        if(!isUncond())
+            if(trueblock==_candidate)
+                RotateCondition();
+        implictly=true;
+        auto j=branchinst->GetParent()->back();
+        delete j;
+    }
+}
 
 RISCVBasicBlock::RISCVBasicBlock(std::string _name):NamedMOperand(_name,RISCVType::riscv_none){}
 

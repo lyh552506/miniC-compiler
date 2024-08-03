@@ -167,4 +167,5 @@ bool CodeLayout::run(RISCVFunction* func){
         func->push_back(bb);
     }
     /* end rotate branches and reordering */
+    return false;
 }
