@@ -57,19 +57,19 @@ bool RISCVISel::run(Function* m){
     }
 
     /// @note get branch prob to fix terminator
-    auto loopinfo=AM.get<LoopAnalysis>(m,mdom);
-    auto condprob=AM.get<ProbAnalysis>(m,loopinfo);
-    auto probedge=condprob->GetProb();
+    // auto loopinfo=AM.get<LoopAnalysis>(m,mdom);
+    // auto condprob=AM.get<ProbAnalysis>(m,loopinfo);
+    // auto probedge=condprob->GetProb();
 
-    for(auto& edge:probedge){
-        auto pred=ctx.mapping(edge.Out)->as<RISCVBasicBlock>();
-        auto succ=ctx.mapping(edge.In)->as<RISCVBasicBlock>();
-        auto prob=edge.Prob;
-        auto terminator=pred->getTerminator();
-        assert(terminator.trueblock==succ||terminator.falseblock==succ);
-        if(terminator.falseblock==succ)prob=1-prob;
-        terminator.SetProb(prob);
-    }
+    // for(auto& edge:probedge){
+    //     auto pred=ctx.mapping(edge.Out)->as<RISCVBasicBlock>();
+    //     auto succ=ctx.mapping(edge.In)->as<RISCVBasicBlock>();
+    //     auto prob=edge.Prob;
+    //     auto terminator=pred->getTerminator();
+    //     assert(terminator.trueblock==succ||terminator.falseblock==succ);
+    //     if(terminator.falseblock==succ)prob=1-prob;
+    //     terminator.SetProb(prob);
+    // }
 
     return true;
 }
