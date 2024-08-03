@@ -15,6 +15,7 @@ struct LoopTrait {
   int step = 0;
   PhiInst *indvar = nullptr; // eg: i++
   Value *change = nullptr;
+  PhiInst *res = nullptr;
 };
 
 class LoopInfo {

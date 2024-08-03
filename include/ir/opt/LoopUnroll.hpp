@@ -13,11 +13,14 @@ public:
 private:
   CallInst *ExtractLoopBody(LoopInfo *loop);
   void Unroll(LoopInfo *loop, CallInst *UnrollBody);
-  void CanBeUnroll();
+  bool CanBeUnroll(LoopInfo *loop);
   Function *m_func;
   dominance *dom;
   LoopAnalysis *loopAnaly;
   _AnalysisManager &AM;
+  std::unordered_map<Value *, Variable *> Val2Arg;
   int cost = 0; // gep: 4 ; load: 4 ;binary: 1; phi: 2
-  const int MaxCost = 800;
+  const int MaxInstCost = 800;
+  const int MaxBlock = 128;
+  const int MaxIteration = 500;
 };

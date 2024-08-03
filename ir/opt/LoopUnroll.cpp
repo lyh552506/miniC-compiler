@@ -6,7 +6,9 @@
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
 #include "New_passManager.hpp"
+#include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
 #include <vector>
 
@@ -17,16 +19,13 @@ bool LoopUnroll::Run() {
   for (auto iter = loopAnaly->begin(); iter != loopAnaly->end();) {
     auto loop = *iter;
     ++iter;
-    if (AM.FindAttr(loop->GetHeader(), Rotate)) {
+    if (AM.FindAttr(loop->GetHeader(), Rotate) && CanBeUnroll(loop)) {
       auto unrollbody = ExtractLoopBody(loop);
       if (unrollbody) {
-        // static int a = 0;
-        // a++;
-        // if (a == 4)
-        //   return false;
-        // changed |= true;
-        // Unroll(loop, unrollbody);
+        changed |= true;
+        Unroll(loop, unrollbody);
         // delete unrollbody;
+        return false;
       }
     }
   }
@@ -35,12 +34,7 @@ bool LoopUnroll::Run() {
 
 CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
   auto &body = loop->GetLoopBody();
-  LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
-  if (loop->CantCalcTrait())
-    return nullptr;
-  if (!dynamic_cast<ConstantData *>(loop->trait.initial) ||
-      !dynamic_cast<ConstantData *>(loop->trait.boundary))
-    return nullptr;
+  Val2Arg.clear();
   auto header = loop->GetHeader();
   auto latch = loopAnaly->GetLatch(loop);
   PhiInst *res = nullptr; // result += const ....
@@ -59,6 +53,7 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
       break;
     }
   }
+  loop->trait.res = res;
   InnerDataType ty = InnerDataType::IR_Value_VOID;
   if (res)
     ty = res->GetTypeEnum();
@@ -67,7 +62,6 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
   Singleton<Module>().Push_Func(UnrollFunc);
   UnrollFunc->clear();
   UnrollFunc->tag = Function::UnrollBody;
-  std::unordered_map<Value *, Variable *> Val2Arg;
   auto indvar = loop->trait.indvar;
   Val2Arg[indvar] = new Variable(Variable::Param, indvar->GetType(), "");
   if (res)
@@ -196,18 +190,49 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
           }
         }
       }
-  delete latch->back();
+  RetInst *ret = nullptr;
   if (res && !NoUse) {
-    auto ret = new RetInst(res->ReturnValIn(latch));
-    latch->push_back(ret);
+    ret = new RetInst(res->ReturnValIn(latch));
   } else if (res && NoUse) {
     assert(res->GetParent() == latch);
-    auto ret = new RetInst(res);
-    latch->push_back(ret);
+    ret = new RetInst(res);
   } else {
-    auto ret = new RetInst();
-    latch->push_back(ret);
+    ret = new RetInst();
   }
+  // auto Findexitbb = [&](CondInst *cond) -> BasicBlock * {
+  //   for (int i = 1; i < 3; i++) {
+  //     auto bb = dynamic_cast<BasicBlock *>(cond->GetOperand(i));
+  //     if (!loop->Contain(bb))
+  //       return bb;
+  //   }
+  //   return nullptr;
+  // };
+  // auto FindexitIndex = [&](CondInst *cond) -> int {
+  //   for (int i = 1; i < 3; i++) {
+  //     auto bb = dynamic_cast<BasicBlock *>(cond->GetOperand(i));
+  //     if (!loop->Contain(bb))
+  //       return i;
+  //   }
+  //   return -1;
+  // };
+  // BasicBlock *RetBlock = nullptr;
+  // auto head_out = dynamic_cast<CondInst *>(header->back());
+  // auto latch_out = dynamic_cast<CondInst *>(latch->back());
+  // if (header != latch && Findexitbb(head_out) != nullptr) {
+  //   auto ex_head = Findexitbb(head_out);
+  //   auto ex_latch = Findexitbb(latch_out);
+  //   assert(ex_head == ex_latch);
+  //   assert(head_out);
+  //   assert(latch_out);
+  //   RetBlock = new BasicBlock();
+  //   RetBlock->SetName(RetBlock->GetName() + ".Ret");
+  //   head_out->RSUW(FindexitIndex(head_out), RetBlock);
+  //   latch_out->RSUW(FindexitIndex(latch_out), RetBlock);
+  //   RetBlock->push_back(ret);
+  // } else {
+  delete latch->back();
+  latch->push_back(ret);
+  // }
   // deal phi
   for (auto it = substitute->begin();
        it != substitute->end() && dynamic_cast<PhiInst *>(*it); ++it) {
@@ -244,6 +269,7 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
       loopAnaly->DeleteBlock(bb);
     else {
       loopAnaly->ReplBlock(bb, substitute);
+      loop->setHeader(substitute);
       loopAnaly->setLoop(substitute, loop);
     }
   }
@@ -251,5 +277,61 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
 }
 
 void LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
+  auto iteration = 0;
+  auto initial = dynamic_cast<ConstIRInt *>(loop->trait.initial)->GetVal();
+  auto bound = dynamic_cast<ConstIRInt *>(loop->trait.boundary)->GetVal();
+  auto bin = dynamic_cast<BinaryInst *>(loop->trait.change);
+  assert(bin);
+  auto op = bin->getopration();
+  auto step = loop->trait.step;
+  switch (op) {
+  case BinaryInst::Op_Add:
+    iteration = (bound - initial) / step;
+    break;
+  case BinaryInst::Op_Sub:
+    iteration = (initial - bound) / step;
+    break;
+  case BinaryInst::Op_Mul:
+    iteration = std::log(bound / initial) / std::log(step);
+    break;
+  case BinaryInst::Op_Div:
+    iteration = std::log(initial / bound) / std::log(step);
+    break;
+  default:
+    assert(0 && "what op?");
+  }
+  BasicBlock::mylist<BasicBlock, User>::iterator call_pos(UnrollBody);
+  for (int i = 1; i < iteration; i++) {
+    auto cloned = UnrollBody->CloneInst();
+    for (int i = 1; i < cloned->Getuselist().size(); i++) {
+      auto arg = cloned->GetOperand(i);
+      if (auto phi = dynamic_cast<PhiInst *>(arg)) {
+        if (phi == loop->trait.indvar) {
+
+        } else if (phi == loop->trait.res) {
+
+        } else {
+          assert(0 && "What phi?");
+        }
+      }
+    }
+    call_pos = call_pos.insert_after(cloned);
+  }
   m_func->InlineCall(UnrollBody);
+  return;
+}
+
+bool LoopUnroll::CanBeUnroll(LoopInfo *loop) {
+  const auto body = loop->GetLoopBody();
+  LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
+  if (loop->CantCalcTrait())
+    return false;
+  auto header = loop->GetHeader();
+  auto latch = loopAnaly->GetLatch(loop);
+  if (header != latch)
+    return false;
+  if (!dynamic_cast<ConstIRInt *>(loop->trait.initial) ||
+      !dynamic_cast<ConstIRInt *>(loop->trait.boundary))
+    return false;
+  return true;
 }
