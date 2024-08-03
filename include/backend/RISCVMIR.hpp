@@ -216,8 +216,11 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
     void printfull();
 };
 
+struct Terminator;
+
 class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMIR>,public list_node<RISCVFunction,RISCVBasicBlock>
 {    
+    Terminator term;
     public:
     // RISCVBasicBlock();
     RISCVBasicBlock(std::string);
@@ -225,6 +228,18 @@ class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMI
     void push_before_branch(RISCVMIR*);
     void printfull();
     void replace_succ(RISCVBasicBlock*,RISCVBasicBlock*);
+    inline Terminator& getTerminator(){return term;};
+};
+
+/// \p ret branchinst=nullptr
+/// \p uncond falseblock=nullptr
+struct Terminator{
+  double prob2true;
+  RISCVMIR* branchinst;
+  RISCVBasicBlock* trueblock;
+  RISCVBasicBlock* falseblock;
+  // This will rotate the condition and update THIS terminator
+  void RotateCondition();
 };
 
 /// should we save return type here? I suppose not.
