@@ -240,6 +240,8 @@ struct Terminator{
   RISCVBasicBlock* falseblock;
   // This will rotate the condition and update THIS terminator
   void RotateCondition();
+  bool isReturn();
+  void makeFallthrough(RISCVBasicBlock*);
 };
 
 /// should we save return type here? I suppose not.
