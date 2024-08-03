@@ -222,7 +222,7 @@ Terminator& RISCVBasicBlock::getTerminator() {
         }
         else{
           term.branchinst=minst;
-          term.falseblock=minst->GetOperand(1)->as<RISCVBasicBlock>();
+          term.falseblock=minst->GetOperand(2)->as<RISCVBasicBlock>();
           std::swap(term.trueblock,term.falseblock);
           break;
         }

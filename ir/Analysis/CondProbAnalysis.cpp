@@ -39,7 +39,7 @@ void *ProbAnalysis::GetResult(Function *func) {
       auto block_out = dynamic_cast<BasicBlock *>(cond->GetOperand(2));
       if (!loop->Contain(block_in))
         std::swap(block_in, block_out);
-      if (!loop->CantCalcTrait() &&
+      if (!loop->CantCalcTrait() ||
           !dynamic_cast<ConstIRInt *>(loop->trait.boundary)) {
         m_Prob.emplace_back(ex, block_in, possible);
       } else {

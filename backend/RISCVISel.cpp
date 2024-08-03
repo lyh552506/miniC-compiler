@@ -57,7 +57,8 @@ bool RISCVISel::run(Function* m){
     }
 
     /// @note get branch prob to fix terminator
-    auto condprob=AM.get<ProbAnalysis>(m);
+    auto loopinfo=AM.get<LoopAnalysis>(m,mdom);
+    auto condprob=AM.get<ProbAnalysis>(m,loopinfo);
     auto probedge=condprob->GetProb();
 
     for(auto& edge:probedge){
