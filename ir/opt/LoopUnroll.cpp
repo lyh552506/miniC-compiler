@@ -6,6 +6,7 @@
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
 #include "New_passManager.hpp"
+#include <cassert>
 #include <cstdlib>
 #include <vector>
 
@@ -33,10 +34,6 @@ bool LoopUnroll::Run() {
 }
 
 CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
-  if (loop->GetHeader()->GetName() == ".1441") {
-    Singleton<Module>().Test();
-    exit(0);
-  }
   auto &body = loop->GetLoopBody();
   LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   if (loop->CantCalcTrait())
@@ -77,6 +74,13 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
     Val2Arg[res] = new Variable(Variable::Param, res->GetType(), "");
   auto judge = [&](Value *target) {
     if (dynamic_cast<BasicBlock *>(target) || dynamic_cast<Function *>(target))
+      return false;
+    auto name = target->GetName();
+    if (name == "getint" || name == "getch" || name == "getfloat" ||
+        name == "getfarray" || name == "putint" || name == "putfloat" ||
+        name == "putarray" || name == "putfarray" || name == "putf" ||
+        name == "getarray" || name == "putch" || name == "_sysy_starttime" ||
+        name == "_sysy_stoptime" || name == "llvm.memcpy.p0.p0.i32")
       return false;
     if (Val2Arg.count(target))
       return false;
@@ -153,6 +157,8 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
         uncond->RSUW(0, substitute);
       }
     }
+
+  bool NoUse = false;
   for (auto des : dom->GetNode(latch->num).des)
     if (dom->GetNode(des).thisBlock != header)
       for (auto it = dom->GetNode(des).thisBlock->begin();
@@ -174,14 +180,29 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
           } else if (res && it1->second.first == res->ReturnValIn(latch)) {
             phi->RSUW(it1->first, callinst);
             it1->second.first = callinst;
+          } else if (!res && dynamic_cast<PhiInst *>(it1->second.first)) {
+            auto phi_res = dynamic_cast<PhiInst *>(it1->second.first);
+            if (phi_res->GetParent() == latch) {
+              // res only have store, no use
+              res = phi_res;
+              UnrollFunc->SetType(res->GetType());
+              callinst->SetType(res->GetType());
+              phi_res->RSUW(it1->first, callinst);
+              it1->second.first = callinst;
+              NoUse = true;
+            }
           } else {
             assert(0 && "what happened?");
           }
         }
       }
   delete latch->back();
-  if (res) {
+  if (res && !NoUse) {
     auto ret = new RetInst(res->ReturnValIn(latch));
+    latch->push_back(ret);
+  } else if (res && NoUse) {
+    assert(res->GetParent() == latch);
+    auto ret = new RetInst(res);
     latch->push_back(ret);
   } else {
     auto ret = new RetInst();
@@ -209,7 +230,7 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
         }
       }
     }
-  if (res)
+  if (res && !NoUse)
     res->updateIncoming(callinst, substitute);
   loop->trait.indvar->updateIncoming(loop->trait.change, substitute);
   //转移
