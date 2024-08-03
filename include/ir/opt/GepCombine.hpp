@@ -26,6 +26,32 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
         {
         }
     } gepinfo;
+
+    typedef struct BinaryInfo
+    {
+        User* inst;
+        Value* op1;
+        Value* op2;
+        User::OpID op;
+        bool LHS_Const = false;
+        bool RHS_Const = false;
+        ConstantData* LHS_ConstVal;
+        ConstantData* RHS_ConstVal;
+        BinaryInfo(User* inst) : inst(inst), op1(inst->GetOperand(0)), op2(inst->GetOperand(1)), op(inst->GetInstId())
+        {
+            assert(dynamic_cast<BinaryInst*>(inst) && "Not a binary operator");
+            if (dynamic_cast<ConstantData*>(op1))
+            {
+                LHS_Const = true;
+                LHS_ConstVal = dynamic_cast<ConstantData*>(op1);
+            }
+            if (dynamic_cast<ConstantData*>(op2))
+            {
+                RHS_Const = true;
+                RHS_ConstVal = dynamic_cast<ConstantData*>(op2);
+            }
+        }
+    } binaryinfo;
     class HandleNode
     {
       private:
@@ -36,6 +62,7 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
         std::forward_list<int>::iterator Curiter;
         std::forward_list<int>::iterator Enditer;
         std::unordered_map<Value*, std::unordered_set<gepinfo*>> Geps;
+        std::unordered_set<binaryinfo*> Binarys;
       public:
         std::forward_list<int>::iterator Child()
         {
@@ -67,9 +94,13 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
         {
             return Geps;
         }
+        std::unordered_set<binaryinfo*> GetBinarys()
+        {
+            return Binarys;
+        }
         HandleNode(dominance *dom, dominance::Node *node, std::forward_list<int>::iterator child,
-                   std::forward_list<int>::iterator end, std::unordered_map<Value*, std::unordered_set<gepinfo*>> geps)
-            : DomTree(dom), dom_node(node), Curiter(child), Enditer(end), Geps(geps)
+                   std::forward_list<int>::iterator end, std::unordered_map<Value*, std::unordered_set<gepinfo*>> geps, std::unordered_set<binaryinfo*> binarys)
+            : DomTree(dom), dom_node(node), Curiter(child), Enditer(end), Geps(geps), Binarys(binarys)
         {
             block = node->thisBlock;
         }
@@ -82,7 +113,7 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
     bool ProcessNode(HandleNode *node);
     void init();
     bool CanHandle(User *inst);
-
+    Value* SimplifyGepInst(GetElementPtrInst* inst);
   public:
     GepCombine(Function *func, _AnalysisManager &AM_) : func(func), AM(AM_)
     {
