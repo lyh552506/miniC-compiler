@@ -2,6 +2,7 @@
 #include "../include/backend/RISCVMIR.hpp"
 #include "../include/backend/RISCVFrameContext.hpp"
 #include "../include/ir/opt/New_passManager.hpp"
+#include "../include/ir/Analysis/CondProbAnalysis.hpp"
 RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,User* inst){
     auto minst=new RISCVMIR(_isa);
     minst->SetDef(ctx.mapping(inst));
@@ -54,6 +55,20 @@ bool RISCVISel::run(Function* m){
         for(auto inst:*bb)
             InstLowering(inst);
     }
+
+    /// @note get branch prob to fix terminator
+    auto condprob=AM.get<ProbAnalysis>(m);
+    auto probedge=condprob->GetProb();
+
+    for(auto& edge:probedge){
+        auto pred=ctx.mapping(edge.Out)->as<RISCVBasicBlock>();
+        auto succ=ctx.mapping(edge.In)->as<RISCVBasicBlock>();
+        auto prob=edge.Prob;
+        auto terminator=pred->getTerminator();
+        if(terminator.falseblock==succ)prob=1-prob;
+        terminator.SetProb(prob);
+    }
+
     return true;
 }
 
