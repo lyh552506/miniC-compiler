@@ -76,12 +76,13 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         BeginBranch,
         _j, // equals jal x0 ...
-        _beq,
+        /// @warning !!!CAUSION!!! condition can make it ^ 1 to get the opposite
+        _beq=74,
         _bne,
         _blt,
+        _bge,
         _ble,
         _bgt,
-        _bge,
         _bltu,
         _bgeu,
         EndBranch,
@@ -228,21 +229,44 @@ class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMI
     void push_before_branch(RISCVMIR*);
     void printfull();
     void replace_succ(RISCVBasicBlock*,RISCVBasicBlock*);
-    inline Terminator& getTerminator(){return term;};
+    Terminator& getTerminator();
 };
 
 /// \p ret branchinst=nullptr
 /// \p uncond falseblock=nullptr
 struct Terminator{
-  double prob2true;
-  RISCVMIR* branchinst;
-  RISCVBasicBlock* trueblock;
-  RISCVBasicBlock* falseblock;
+  bool implictly=false;
+  double prob2true=0.5;
+  RISCVMIR* branchinst=nullptr;
+  RISCVBasicBlock* trueblock=nullptr;
+  RISCVBasicBlock* falseblock=nullptr;
   // This will rotate the condition and update THIS terminator
-  void RotateCondition();
-  bool isReturn();
-  void makeFallthrough(RISCVBasicBlock*);
-  void SetProb(double);
+  inline void SetProb(double _p){prob2true=_p;};
+  inline bool isUncond(){return falseblock==nullptr;};
+  inline bool isRet(){return branchinst==nullptr;};
+  inline void RotateCondition(){
+    assert(RISCVMIR::BeginBranch<branchinst->GetOpcode()&&branchinst->GetOpcode()<RISCVMIR::EndBranch&&branchinst->GetOpcode()!=RISCVMIR::_j&&"Bro is definitely mad");
+    branchinst->SetMopcode(static_cast<RISCVMIR::RISCVISA>(branchinst->GetOpcode()^1));
+    branchinst->SetOperand(2,falseblock);
+    auto it=mylist<RISCVBasicBlock,RISCVMIR>::iterator(branchinst);
+    ++it;
+    assert(it!=branchinst->GetParent()->end());
+    auto nxt_inst=*it;
+    assert(nxt_inst->GetOpcode()==RISCVMIR::_j);
+    nxt_inst->SetOperand(0,trueblock);
+    std::swap(trueblock,falseblock);
+  };
+  inline void makeFallthrough(RISCVBasicBlock* _candidate){
+    if(trueblock==_candidate||falseblock==_candidate){
+      if(!isUncond())
+        if(trueblock==_candidate)
+          RotateCondition();
+        implictly=true;
+        auto j=branchinst->GetParent()->back();
+        delete j;
+    }
+  };
+
 };
 
 /// should we save return type here? I suppose not.
