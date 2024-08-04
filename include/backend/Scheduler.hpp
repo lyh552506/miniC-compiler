@@ -11,7 +11,6 @@ protected:
     uint32_t CurCycle = 0;
     // Pipeline status
     uint32_t PipelineMask = 0;
-    uint32_t PipelineLatency = 0;
     uint32_t PipelineDivLatency = 0;
     uint32_t PipelineFDivLatency = 0;
 public:
@@ -25,7 +24,8 @@ public:
     static bool compareSunit(const Sunit*, const Sunit*);
     inline void nextCycle();
     inline void Schedule_clear();
-    bool isPipelineReady(uint32_t);
+    bool isPipelineReady(RISCVMIR*);
+    void Swap_region(mylist_iterator begin, mylist_iterator end);
 };
 
 class Pre_RA_Scheduler: private Scheduler {

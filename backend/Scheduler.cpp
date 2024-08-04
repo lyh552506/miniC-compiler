@@ -16,17 +16,18 @@ bool Scheduler::isFinish(DependencyGraph* depGraph) {
     return false;
 }
 bool Scheduler::compareSunit(const Sunit* a, const Sunit* b) {
-    if(a->get_latency() == b->get_latency()) {
+    if(a->get_maxLatency() == b->get_maxLatency()) {
         if(a->get_height() == b->get_height()) {
             return a->get_depth() < b->get_depth();
         }
         return a->get_height() > b->get_height();
     }
-    return a->get_latency() < b->get_latency();
+    return a->get_maxLatency() < b->get_maxLatency();
 }
 void Scheduler::nextCycle() {
     if(PlaneNode.empty()) {
         CurCycle++;
+        PipelineMask = 0;
         return ;
     }
     assert(0&&"Still node in PlaneNode");
@@ -36,9 +37,66 @@ void Scheduler::Schedule_clear() {
     Pending.clear();
     Available.clear();
     Sequence.clear();
+    PipelineDivLatency = 0;
+    PipelineFDivLatency = 0;
     CurCycle = 0;
 }
+bool Scheduler::isPipelineReady(RISCVMIR* inst) {
+    RISCVMIR::RISCVISA op = inst->GetOpcode();
+    SchedInfo *info = new SchedInfo(op);
+    uint32_t pipeline = info->get_Pipeline();
+    if(pipeline == PIPELINE::PipelineA || pipeline == PIPELINE::PipelineB) {
+        if(pipeline & PipelineMask) {
+            return false;
+        }
+        PipelineMask |= pipeline;
+        return true;
+    }
+    else if(pipeline == PIPELINE::PipelineAB) {
+        if(pipeline & PipelineMask == pipeline) {
+            return false;
+        }
+        if(pipeline & PipelineMask == PIPELINE::PipelineA) {
+            // issule to PipelineB
+            PipelineMask |= PIPELINE::PipelineB;
+            return true;
+        }
+        // issule to PipelineA
+        PipelineMask |= PIPELINE::PipelineA;
+        return true;
+    }
+    // Actually, both PipelineDiv and PipelineFDiv will occpuy PipelineB.
+    else if(pipeline == PIPELINE::PipelineDiv) {
+        if(PipelineDivLatency >= CurCycle) {
+            return false;
+        }
+        if(op>=ISA::_div && op<=ISA::_remu) {
+            PipelineDivLatency += 65;
+        }
+        else if(op>=ISA::_divw && op<ISA::EndArithmetic) {
+            PipelineDivLatency += 33;
+        }
+        PipelineMask |= PIPELINE::PipelineB;
+        return true;
+    }
+    else if(pipeline == PIPELINE::PipelineFDiv) {
+        if(PipelineFDivLatency >= CurCycle) {
+            return false;
+        }
+        if(op==ISA::_fdiv_s) {
+            PipelineFDivLatency +=26;
+        }
+        else if(op==ISA::_fsqrt_s) {
+            PipelineFDivLatency += 27;
+        }
+        PipelineMask |= PIPELINE::PipelineB;
+        return true;
+    }
+}
 
+void Scheduler::Swap_region(mylist_iterator begin, mylist_iterator end) {
+
+}
 // Pre_RA_Scheduler
 void Pre_RA_Scheduler::ScheduleOnModule(RISCVLoweringContext& ctx) {
     #ifdef DEBUG_SCHED
@@ -83,6 +141,7 @@ void Pre_RA_Scheduler::ScheduleOnRegion(mylist_iterator begin, mylist_iterator e
 
     Schedule(depGraph);
     Schedule_clear();
+    Swap_region(begin, end);
 }
 void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
     while(!isFinish(depGraph)) {
@@ -113,6 +172,7 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
                 it = PlaneNode.erase(it);
             }
             else {
+                (*it)->set_maxLatency(CurCycle + (*it)->get_latency());
                 transfer(*it, PlaneNode, Pending);
                 it = PlaneNode.erase(it);
             }
@@ -123,20 +183,31 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
             if(CurCycle >= (*it)->get_maxLatency()) {
                 transfer(*it, Pending, Available);
                 it = Pending.erase(it);
+                continue;
             }
+            break;
         }
-        auto getInstPipeline = [&](Sunit* sunit) {
-            return SchedInfo(depGraph->depInfo->get_Sunit2InstMap()[sunit]->GetOpcode()).get_Pipeline();
+
+        auto getInstInfo = [&](Sunit* sunit) {
+            return depGraph->depInfo->get_Sunit2InstMap()[sunit];
         };
         std::sort(Available.begin(), Available.end(), compareSunit);
+        std::vector<Sunit *> temp;
         for(auto it = Available.begin(); it != Available.end();) {
             // Consider the pipeline
-            if(isPipelineReady(getInstPipeline(*it))) {
+            if(isPipelineReady(getInstInfo(*it))) {
                 transfer(*it, Available, Sequence);
                 it = Available.erase(it);
             }
-
+            else {
+                transfer(*it, Available, temp);
+                it = Available.erase(it);
+            }
         }
+        for(auto& it: temp) {
+            transfer(it, temp, Available);
+        }
+        temp.clear();
         nextCycle();
     }
     #ifdef DEBUG_SCHED
