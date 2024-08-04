@@ -870,12 +870,8 @@ void Function::InsertBlock(BasicBlock *curr, BasicBlock *insert) {
   this->push_bb(insert);
 }
 
-void Function::InlineCall(
+Value* Function::InlineCall(
     CallInst *inst, std::unordered_map<Operand, Operand> &OperandMapping) {
-      for(auto& [key,val] : OperandMapping)
-      {
-        int c = 1;
-      }
   BasicBlock *block = inst->GetParent();
   Function *func = block->GetParent();
   Function *inlined_func = inst->GetOperand(0)->as<Function>();
@@ -908,6 +904,8 @@ void Function::InlineCall(
   }
   for (BasicBlock *block_ : blocks)
     Block_Pos.insert_before(block_);
+  if (inlined_func->GetUserListSize() == 0)
+    Singleton<Module>().EraseFunction(inlined_func);
   if (inst->GetTypeEnum() != InnerDataType::IR_Value_VOID) {
     Value *Ret_Val = nullptr;
     for (BasicBlock *block : blocks) {
@@ -923,20 +921,11 @@ void Function::InlineCall(
     }
 
     if (Ret_Val)
-      inst->RAUW(Ret_Val);
-  } else {
-    for (BasicBlock *block_ : blocks) {
-      User *inst = block->back();
-      if (dynamic_cast<RetInst *>(inst)) {
-        UnCondInst *Br = new UnCondInst(SplitBlock);
-        inst->ClearRelation();
-        inst->EraseFromParent();
-        block->push_back(Br);
-      }
-    }
+      return Ret_Val;
   }
-  if (inlined_func->GetUserListSize() == 0)
-    Singleton<Module>().EraseFunction(inlined_func);
+  else
+    return nullptr;
+  return nullptr;
 }
 
 BuildInFunction::BuildInFunction(Type *tp, std::string _id) : Value(tp) {
