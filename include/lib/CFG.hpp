@@ -317,7 +317,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);
     //curr ==>  insert -> curr
     void InsertBlock(BasicBlock* curr,BasicBlock* insert);
-    Value* InlineCall(CallInst* call,std::unordered_map<Operand, Operand>& OperandMapping);
+    std::pair<Value*,BasicBlock*> InlineCall(CallInst* call,std::unordered_map<Operand, Operand>& OperandMapping);
     void init_visited_block();
     void init_reach_block();
     bool MemWrite();

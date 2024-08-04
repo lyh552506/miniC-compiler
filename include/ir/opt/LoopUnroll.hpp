@@ -12,8 +12,9 @@ public:
 
 private:
   CallInst *ExtractLoopBody(LoopInfo *loop);
-  void Unroll(LoopInfo *loop, CallInst *UnrollBody);
+  BasicBlock *Unroll(LoopInfo *loop, CallInst *UnrollBody);
   bool CanBeUnroll(LoopInfo *loop);
+  void CleanUp(LoopInfo *loop, BasicBlock *clean);
   Function *m_func;
   dominance *dom;
   LoopAnalysis *loopAnaly;
