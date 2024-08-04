@@ -870,7 +870,12 @@ void Function::InsertBlock(BasicBlock *curr, BasicBlock *insert) {
   this->push_bb(insert);
 }
 
-void Function::InlineCall(CallInst *inst) {
+void Function::InlineCall(
+    CallInst *inst, std::unordered_map<Operand, Operand> &OperandMapping) {
+      for(auto& [key,val] : OperandMapping)
+      {
+        int c = 1;
+      }
   BasicBlock *block = inst->GetParent();
   Function *func = block->GetParent();
   Function *inlined_func = inst->GetOperand(0)->as<Function>();
@@ -879,11 +884,13 @@ void Function::InlineCall(CallInst *inst) {
   Block_Pos.insert_after(SplitBlock);
   ++Block_Pos;
   std::vector<BasicBlock *> blocks;
-  std::unordered_map<Operand, Operand> OperandMapping;
   int num = 1;
   for (auto &param : inlined_func->GetParams()) {
     Value *Param = param.get();
-    OperandMapping[Param] = inst->Getuselist()[num]->usee;
+    if(OperandMapping.find(inst->Getuselist()[num]->usee) != OperandMapping.end())
+      OperandMapping[Param] = OperandMapping[inst->Getuselist()[num]->usee];
+    else
+     OperandMapping[Param] = inst->Getuselist()[num]->usee;
     num++;
   }
   for (BasicBlock *block : *inlined_func)

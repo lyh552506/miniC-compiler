@@ -328,13 +328,14 @@ void LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   replceArg(UnrollBody, IndVarOrigin, ResOrigin);
   BasicBlock::mylist<BasicBlock, User>::iterator call_pos(UnrollBody);
   User *cloned = UnrollBody;
-  User* tmp=nullptr;
+  User *tmp = nullptr;
   for (int i = 1; i < iteration; i++) {
     m_func->InlineCall(dynamic_cast<CallInst *>(cloned), Arg2Orig);
     if (cloned->GetTypeEnum() != InnerDataType::IR_Value_VOID)
       ResOrigin = cloned;
     OriginChange = Arg2Orig[OriginChange];
-    tmp=cloned;
+    Arg2Orig.clear();
+    tmp = cloned;
     cloned = cloned->CloneInst();
     call_pos = call_pos.insert_after(cloned);
     delete tmp;
