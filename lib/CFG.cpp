@@ -768,8 +768,8 @@ BasicBlock *BasicBlock::GenerateNewBlock() {
 }
 
 BasicBlock *BasicBlock::SplitAt(User *inst) {
-  auto call_inst = dynamic_cast<CallInst *>(inst);
-  assert(call_inst != nullptr && "CallInst Is Expected Here");
+  // auto call_inst = dynamic_cast<CallInst *>(inst);
+  // assert(call_inst != nullptr && "CallInst Is Expected Here");
   auto tmp = new BasicBlock();
 
   // other block:
@@ -1403,6 +1403,18 @@ void PhiInst::ModifyBlock(BasicBlock *Old, BasicBlock *New) {
   it1->second.second = New;
 }
 
+void PhiInst::EraseRecordByBlock(BasicBlock* block)
+{
+  for(auto& [index,record] : PhiRecord)
+  {
+    if(record.second==block)
+    {
+      PhiRecord.erase(index);
+      break;
+    }
+  }
+}
+
 std::pair<size_t, size_t> &Function::GetInlineInfo() {
   // codesize,framesize
   if (inlineinfo.first == 0) {
@@ -1419,9 +1431,10 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
   return inlineinfo;
 }
 
-bool Function::isRecursive() {
+bool Function::isRecursive(bool useMem) {
   static std::unordered_map<Function *, bool> visited;
-  if (visited.find(this) == visited.end()) {
+
+  auto calcOnce=[&](){
     auto usrlist = GetUserlist();
     bool suc = false;
     for (auto use : usrlist) {
@@ -1431,10 +1444,12 @@ bool Function::isRecursive() {
           break;
         }
       }
-      // unexpected
     }
-    visited[this] = suc;
-  }
+    return suc;
+  };
+
+  if (!useMem||visited.find(this) == visited.end())
+    visited[this] = calcOnce();
   return visited[this];
 }
 
@@ -1599,5 +1614,6 @@ PhiInst *PhiInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   for (auto &[i, data] : PhiRecord) {
     to->updateIncoming(data.first->clone(mapping), data.second->clone(mapping));
   }
+  to->FormatPhi();
   return to;
 }

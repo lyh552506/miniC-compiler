@@ -3,6 +3,9 @@
 #include "../include/backend/PhiElimination.hpp"
 #include "../include/backend/PostRACalleeSavedLegalizer.hpp"
 #include "../include/backend/Scheduler.hpp"
+#include "../include/backend/CodeLayout.hpp"
+#include "../include/backend/DeleteDeadBlock.hpp"
+
 extern std::string asmoutput_path;
 RISCVAsmPrinter *asmprinter = nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module *m)
@@ -107,6 +110,14 @@ bool RISCVFunctionLowering::run(Function *m)
 
     // legal.run_afterRA();
     legal.run();
+
+    auto dbd=DeleteDeadBlock();
+    dbd.run(mfunc);
+
+    // auto layout=CodeLayout();
+    // layout.run(mfunc);
+
+
 
     return false;
 }

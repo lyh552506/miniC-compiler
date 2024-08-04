@@ -40,9 +40,9 @@ int main(int argc, char **argv) {
   auto PM = std::make_unique<_PassManager>();
   PM->DecodeArgs(argc, argv);
 // #ifdef TEST
-  // PM->RunOnTest();
+  PM->RunOnTest();
 // #elif defined(LEVEL)
-  PM->RunOnLevel();
+  // PM->RunOnLevel();
 // #else
   // assert(0);
 // #endif

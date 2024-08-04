@@ -85,10 +85,26 @@ int param16(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8,
 }
 
 int main() {
-  int arr[32][2] = {{param16(getint(), getint(), getint(), getint(), getint(),
-                             getint(), getint(), getint(), getint(), getint(),
-                             getint(), getint(), getint(), getint(), getint(),
-                             getint()),
+  int p16arg0 = getint();
+  int p16arg1 = getint();
+  int p16arg2 = getint();
+  int p16arg3 = getint();
+  int p16arg4 = getint();
+  int p16arg5 = getint();
+  int p16arg6 = getint();
+  int p16arg7 = getint();
+  int p16arg8 = getint();
+  int p16arg9 = getint();
+  int p16arg10 = getint();
+  int p16arg11 = getint();
+  int p16arg12 = getint();
+  int p16arg13 = getint();
+  int p16arg14 = getint();
+  int p16arg15 = getint();
+  int arr[32][2] = {{param16(p16arg0, p16arg1, p16arg2, p16arg3, p16arg4,
+                             p16arg5, p16arg6, p16arg7, p16arg8, p16arg9,
+                             p16arg10, p16arg11, p16arg12, p16arg13, p16arg14,
+                             p16arg15),
                      8848}},
       i = 1;
   while (i < 32) {

@@ -123,7 +123,9 @@ void _PassManager::RunOnLevel() {
       // reassociate
       RunLevelPass(Reassociate, curfunc, modified);
       // cse
-      RunLevelPass(CSE, curfunc, modified)
+      RunLevelPass(CSE, curfunc, modified);
+      // TRE
+      RunLevelPass(TailRecurseEliminator,curfunc,modified);
     }
     if (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
