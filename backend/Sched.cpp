@@ -10,6 +10,8 @@ void BlockDepInfo::BuildBlockDepInfo(RISCVBasicBlock* block) {
         if(isboundary(inst)) continue;
         Sunit* sunit = new Sunit();
         inst2sunit.push_back(std::make_pair(inst, sunit));
+        Sunit2InstMap[sunit] = inst;
+
         if(inst->GetDef() != nullptr) {
             def2inst[inst->GetDef()].push(inst);
         }
@@ -50,6 +52,10 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
     for(auto it = inst2sunitLocal.rbegin(); it != inst2sunitLocal.rend(); ++it) {
         RISCVMIR*& inst = it->first;
         Sunit*& sunit = it->second;
+        if(adjList.find(sunit) == adjList.end()) {
+            adjList[sunit] = {};
+            inDegree[sunit];
+        }
         // def
         if(inst->GetDef() != nullptr) {
             depInfo->def2inst[inst->GetDef()].pop();
@@ -59,13 +65,8 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
         for(int i=0; i<inst->GetOperandSize(); i++) {
             RISCVMOperand*& op = inst->GetOperand(i);
             if(op != nullptr) {
-                if(!depInfo->def2inst[inst->GetOperand(i)].empty()) {
+                if(!depInfo->def2inst[op].empty()) {
                     RISCVMIR* definst = depInfo->def2inst[inst->GetOperand(i)].top();
-                   
-                    
-                    // inst->printfull();
-                    // std::cout << std::flush;
-                   
                     addDependency(GetSunit(inst), GetSunit(definst));
                     sunit->latency = GetWriteReg(definst) > sunit->latency ? GetWriteReg(definst): sunit->latency;             
                 }
@@ -73,9 +74,12 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
                     // loadimm32 is a special case.
                     sunit->latency = SchedInfo(ISA::LoadImm32).WriteRes;
                 }
+                else if(RISCVFrameObject* sreg = dynamic_cast<RISCVFrameObject*>(op)) {
+                    sunit->latency = SchedInfo(ISA::LoadFromStack).WriteRes;
+                }
                 else {
                     // the use's def is not in this block
-                    sunit->latency = 0;
+                    // sunit->latency = 0;
                 }
             }
         }
@@ -91,14 +95,29 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
 }
 // use sunit point to def sunit
 void DependencyGraph::addDependency(Sunit* use, Sunit* def){
-    if(adjList[use].find(def) == adjList[def].end()) {
+    if(adjList[use].find(def) == adjList[use].end()) {
         adjList[use].insert(def);
         inDegree[def]++;
     }
 }
 
 void DependencyGraph::ComputeHeight() {
-    
+    for(auto it = adjList.rbegin(); it != adjList.rend(); ++it) {
+        Sunit* sunit = (*it).first; 
+        if(inDegree[sunit]==0) {
+            sunit->height = 0;
+        }
+        // std::set<Sunit*>
+        for(auto ind = (*it).second.begin(); ind != (*it).second.end(); ++ind) {
+            Sunit* def = *ind;
+            def->height = def->height > (sunit->height + def->latency) ? def->height : (sunit->height + def->latency);
+        }
+
+        #ifdef DEBUG_SCHED
+        std::cout << "height: " << sunit->height;
+        depInfo->Sunit2InstMap[sunit]->printfull();
+        #endif
+    }
 }
 
 void DependencyGraph::ComputeDepth() {

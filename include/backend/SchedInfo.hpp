@@ -156,5 +156,11 @@ public:
             ReadAdvance = 0;
             Pipeline = PipelineAB;
         }
+        else if(op==ISA::LoadFromStack) {
+            WriteRes = 6;
+            // ReadAdvance = 0;
+            // Pipeline = PipelineAB;
+        }
     }
+    inline uint32_t get_Pipeline() {return Pipeline;}
 };

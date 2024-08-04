@@ -19,11 +19,11 @@ private:
     uint32_t depth;
 public:
     Sunit() = default;
-    inline uint32_t get_latency() {return latency;}
-    inline uint32_t get_maxLatency() {return maxLatency;}
-    inline uint32_t get_height() {return height;}
-    inline uint32_t get_depth() {return depth;}
-    inline bool set_maxLatency(uint32_t laten) {maxLatency = laten;}
+    inline uint32_t get_latency() const {return latency;}
+    inline uint32_t get_maxLatency() const {return maxLatency;}
+    inline uint32_t get_height() const {return height;}
+    inline uint32_t get_depth() const {return depth;}
+    inline void set_maxLatency(uint32_t laten) {maxLatency = laten;}
 };
 
 using MOp2StackMap = std::unordered_map<RISCVMOperand*, std::stack<RISCVMIR*>>;
@@ -33,25 +33,32 @@ class BlockDepInfo {
     MOp2StackMap def2inst;
     MOp2StackMap use2inst;
     std::list<RealSunit> inst2sunit;
+    std::unordered_map<Sunit*, RISCVMIR*> Sunit2InstMap;
 public:
     BlockDepInfo(RISCVBasicBlock*);
     void BuildBlockDepInfo(RISCVBasicBlock*);
+    inline std::list<RealSunit> get_inst2sunit() {return inst2sunit;}
+    inline std::unordered_map<Sunit*, RISCVMIR*> get_Sunit2InstMap() {return Sunit2InstMap;}
 };
 
 // DependencyGraph
 class DependencyGraph {
 private:
     BlockDepInfo* depInfo;
-    std::unordered_map<Sunit*, std::set<Sunit*>> adjList; 
+    std::map<Sunit*, std::set<Sunit*>> adjList; 
     std::unordered_map<Sunit*, uint32_t> inDegree;
 
 public:
     friend class Scheduler;
     friend class Pre_RA_Scheduler;
     DependencyGraph(BlockDepInfo* depInfo): depInfo(depInfo){};
+    /// @brief Build dependency graph from begin to end, that means build graph
+    /// from top to bottom.
     void BuildGraph(mylist<RISCVBasicBlock,RISCVMIR>::iterator, mylist<RISCVBasicBlock,RISCVMIR>::iterator);
     void addDependency(Sunit*, Sunit*);
+    /// @brief Compute height of each node in the graph in order form bottom to top.
     void ComputeHeight();
+    /// @brief Compute depth of each node in the graph in order form top to bottom.
     void ComputeDepth();
 };
 
