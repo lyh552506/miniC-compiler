@@ -156,7 +156,29 @@ std::vector<int>& RISCVFunction::GetParamNeedSpill() {return this->param_need_sp
 // std::vector<std::unique_ptr<RISCVFrameObject>>& RISCVFunction::GetFrameObjects(){
 //     return frame;
 // }
+void Terminator::RotateCondition(){
+    assert(RISCVMIR::BeginBranch<branchinst->GetOpcode()&&branchinst->GetOpcode()<RISCVMIR::EndBranch&&branchinst->GetOpcode()!=RISCVMIR::_j&&"Bro is definitely mad");
+    branchinst->SetMopcode(static_cast<RISCVMIR::RISCVISA>(branchinst->GetOpcode()^1));
+    branchinst->SetOperand(2,falseblock);
+    auto it=mylist<RISCVBasicBlock,RISCVMIR>::iterator(branchinst);
+    ++it;
+    assert(it!=branchinst->GetParent()->end());
+    auto nxt_inst=*it;
+    assert(nxt_inst->GetOpcode()==RISCVMIR::_j);
+    nxt_inst->SetOperand(0,trueblock);
+    std::swap(trueblock,falseblock);
+}
 
+void Terminator::makeFallthrough(RISCVBasicBlock* _candidate){
+    if(trueblock==_candidate||falseblock==_candidate){
+        if(!isUncond())
+            if(trueblock==_candidate)
+                RotateCondition();
+        implictly=true;
+        auto j=branchinst->GetParent()->back();
+        delete j;
+    }
+}
 
 RISCVBasicBlock::RISCVBasicBlock(std::string _name):NamedMOperand(_name,RISCVType::riscv_none){}
 
@@ -181,6 +203,33 @@ void RISCVBasicBlock::replace_succ(RISCVBasicBlock* from,RISCVBasicBlock* to){
         }
     }
     assert(0&&"IMPOSSIBLE");
+}
+
+Terminator& RISCVBasicBlock::getTerminator() {
+    if(term.implictly==true)return term;
+    auto inst_size=Size();
+    assert(inst_size>0&&"Bro is definitely mad");
+    for(auto it=rbegin();it!=rend();--it){
+      auto minst=*it;
+      if(minst->GetOpcode()==RISCVMIR::ret){
+        term.branchinst=nullptr;
+        break;
+      }
+      if(RISCVMIR::BeginBranch<minst->GetOpcode()&&minst->GetOpcode()<RISCVMIR::EndBranch){
+        if(minst->GetOpcode()==RISCVMIR::_j){
+          term.branchinst=minst;
+          term.trueblock=minst->GetOperand(0)->as<RISCVBasicBlock>();
+        }
+        else{
+          term.branchinst=minst;
+          term.falseblock=minst->GetOperand(2)->as<RISCVBasicBlock>();
+          std::swap(term.trueblock,term.falseblock);
+          break;
+        }
+      }
+    }
+    if(term.isUncond())term.SetProb(1);
+    return term;
 }
 
 void RISCVBasicBlock::push_before_branch(RISCVMIR* minst) {

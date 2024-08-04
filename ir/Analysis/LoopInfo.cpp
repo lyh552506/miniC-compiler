@@ -256,11 +256,11 @@ void LoopAnalysis::PrintPass() {
 
 void LoopAnalysis::DeleteLoop(LoopInfo *loop) {
   auto parent = loop->GetParent();
-  while (parent) {
-    auto it = std::find(parent->GetSubLoop().begin(),
+  auto it = std::find(parent->GetSubLoop().begin(),
                         parent->GetSubLoop().end(), loop);
-    assert(it != parent->GetSubLoop().end());
-    parent->GetSubLoop().erase(it);
+  assert(it != parent->GetSubLoop().end());
+  parent->GetSubLoop().erase(it);
+  while (parent) {
     for (auto loopbody : loop->GetLoopBody()) {
       auto iter = std::find(parent->GetLoopBody().begin(),
                             parent->GetLoopBody().end(), loopbody);
@@ -270,9 +270,9 @@ void LoopAnalysis::DeleteLoop(LoopInfo *loop) {
     }
     parent = parent->GetParent();
   }
-  auto it = std::find(LoopRecord.begin(), LoopRecord.end(), loop);
-  assert(it != LoopRecord.end());
-  LoopRecord.erase(it);
+  auto it1 = std::find(LoopRecord.begin(), LoopRecord.end(), loop);
+  assert(it1 != LoopRecord.end());
+  LoopRecord.erase(it1);
   return;
 }
 

@@ -124,6 +124,10 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
   m_dom->GetNode(New_header->num).rev.push_front(prehead->num);
   m_dom->GetNode(prehead->num).des.push_front(New_header->num);
   // Deal With Phi In header
+  if (header->GetName() == ".232wc89") {
+    Singleton<Module>().Test();
+    exit(0);
+  }
   PreservePhi(header, latch, loop, prehead, New_header, PreHeaderValue,
               loopAnlasis);
   if (dynamic_cast<CondInst *>(prehead->back()) &&
@@ -308,9 +312,10 @@ void LoopRotate::PreservePhi(
       new_phi->updateIncoming(inst, Latch);
       for (auto use : Rewrite) {
         auto user = use->GetUser();
-        if (auto phi = dynamic_cast<PhiInst *>(user))
-          phi->ReplaceVal(use, new_phi);
-        else
+        if (auto phi = dynamic_cast<PhiInst *>(user)) {
+          if (phi->ReturnBBIn(use) != header)
+            phi->ReplaceVal(use, new_phi);
+        } else
           user->RSUW(use, new_phi);
       }
     }

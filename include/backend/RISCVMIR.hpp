@@ -76,12 +76,13 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         BeginBranch,
         _j, // equals jal x0 ...
-        _beq,
+        /// @warning !!!CAUSION!!! condition can make it ^ 1 to get the opposite
+        _beq=74,
         _bne,
         _blt,
+        _bge,
         _ble,
         _bgt,
-        _bge,
         _bltu,
         _bgeu,
         EndBranch,
@@ -216,8 +217,25 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
     void printfull();
 };
 
+/// \p ret branchinst=nullptr
+/// \p uncond falseblock=nullptr
+struct Terminator{
+  bool implictly=false;
+  double prob2true=0.5;
+  RISCVMIR* branchinst=nullptr;
+  RISCVBasicBlock* trueblock=nullptr;
+  RISCVBasicBlock* falseblock=nullptr;
+  // This will rotate the condition and update THIS terminator
+  inline void SetProb(double _p){prob2true=_p;};
+  inline bool isUncond(){return falseblock==nullptr;};
+  inline bool isRet(){return branchinst==nullptr;};
+  void RotateCondition();
+  void makeFallthrough(RISCVBasicBlock* _candidate);
+};
+
 class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMIR>,public list_node<RISCVFunction,RISCVBasicBlock>
 {    
+    Terminator term;
     public:
     // RISCVBasicBlock();
     RISCVBasicBlock(std::string);
@@ -225,6 +243,7 @@ class RISCVBasicBlock:public NamedMOperand,public mylist<RISCVBasicBlock,RISCVMI
     void push_before_branch(RISCVMIR*);
     void printfull();
     void replace_succ(RISCVBasicBlock*,RISCVBasicBlock*);
+    Terminator& getTerminator();
 };
 
 /// should we save return type here? I suppose not.
