@@ -2,8 +2,8 @@
 #include "../../include/ir/Analysis/SideEffect.hpp"
 #include "../../include/ir/opt/ConstantFold.hpp"
 #include "../../include/ir/opt/InstructionSimplify.hpp"
-#include <deque>
 #include <algorithm>
+#include <deque>
 
 bool GepCombine::Run()
 {
@@ -11,8 +11,9 @@ bool GepCombine::Run()
     AM.get<SideEffect>(&Singleton<Module>());
     bool modified = false;
     std::deque<HandleNode *> WorkList;
-    WorkList.push_back(new HandleNode(DomTree, &(DomTree->GetNode(0)), DomTree->GetNode(0).idom_child.begin(),
-                                      DomTree->GetNode(0).idom_child.end(), std::unordered_map<Value*, std::unordered_set<gepinfo*>>(), std::unordered_set<binaryinfo*>()));
+    WorkList.push_back(new HandleNode(
+        DomTree, &(DomTree->GetNode(0)), DomTree->GetNode(0).idom_child.begin(), DomTree->GetNode(0).idom_child.end(),
+        std::unordered_map<Value *, std::unordered_set<gepinfo *>>(), std::unordered_set<binaryinfo *>()));
     while (!WorkList.empty())
     {
         GepCombine::HandleNode *cur = WorkList.back();
@@ -24,9 +25,9 @@ bool GepCombine::Run()
         else if (cur->Child() != cur->EndIter())
         {
             auto node = cur->NextChild();
-            WorkList.push_back(new HandleNode(DomTree, &(DomTree->GetNode(*node)),
-                                              DomTree->GetNode(*node).idom_child.begin(),
-                                              DomTree->GetNode(*node).idom_child.end(), cur->GetGeps(), cur->GetBinarys()));
+            WorkList.push_back(
+                new HandleNode(DomTree, &(DomTree->GetNode(*node)), DomTree->GetNode(*node).idom_child.begin(),
+                               DomTree->GetNode(*node).idom_child.end(), cur->GetGeps(), cur->GetBinarys()));
         }
         else
         {
@@ -42,61 +43,59 @@ bool GepCombine::ProcessNode(HandleNode *node)
     bool modified = false;
     BasicBlock *block = node->GetBlock();
     _DEBUG(std::cerr << "Processing Node: " << block->GetName() << std::endl;)
-    
-    for(User* inst : *block)
-    {
-        if(auto binary  = dynamic_cast<BinaryInst*>(inst))
-        {
 
+    for (User *inst : *block)
+    {
+        if (auto binary = dynamic_cast<BinaryInst *>(inst))
+        {
         }
 
-        if(auto gep = dynamic_cast<GetElementPtrInst*>(inst))
+        if (auto gep = dynamic_cast<GetElementPtrInst *>(inst))
         {
-            if(auto val = SimplifyGepInst(gep))
+            if (auto val = SimplifyGepInst(gep))
             {
                 gep->RAUW(val);
                 modified |= true;
                 continue;
             }
             bool Changed = false;
-            Value* Base = gep->Getuselist()[0]->usee;
-            
+            Value *Base = gep->Getuselist()[0]->usee;
         }
     }
 }
 
-Value* GepCombine::SimplifyGepInst(GetElementPtrInst* inst)
+Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst)
 {
-    Value* Base = inst->Getuselist()[0]->usee;
-    
+    Value *Base = inst->Getuselist()[0]->usee;
+
     // In this case, there is only < gep base > -> base
-    if(inst->Getuselist().size() == 1)
+    if (inst->Getuselist().size() == 1)
         return Base;
-    
-    if(dynamic_cast<UndefValue*>(Base))
+
+    if (dynamic_cast<UndefValue *>(Base))
         return UndefValue::get(inst->GetType());
-    
-    if(inst->Getuselist().size() == 2)
+
+    if (inst->Getuselist().size() == 2)
     {
-        Value * Op1 = inst->Getuselist()[1]->usee;
-        if(auto val = dynamic_cast<ConstantData*>(Op1))
+        Value *Op1 = inst->Getuselist()[1]->usee;
+        if (auto val = dynamic_cast<ConstantData *>(Op1))
         {
-            if(val->isConstZero())
+            if (val->isConstZero())
                 return Base;
         }
         // Now there is the case of < gep base, offset >
         {
-            if(auto tp = dynamic_cast<HasSubType*>(Base->GetType()))
+            if (auto tp = dynamic_cast<HasSubType *>(Base->GetType()))
             {
-                if(tp->get_size() == 0)
+                if (tp->get_size() == 0)
                     return Base;
             }
-            
-            if(auto binary = dynamic_cast<BinaryInst*>(Op1))
+
+            if (auto binary = dynamic_cast<BinaryInst *>(Op1))
             {
-                if(binary->getopration() == BinaryInst::Operation::Op_Sub)
+                if (binary->getopration() == BinaryInst::Operation::Op_Sub)
                 {
-                    if(binary->Getuselist()[1]->usee == Base)
+                    if (binary->Getuselist()[1]->usee == Base)
                     {
                         inst->RSUW(inst->Getuselist()[0].get(), binary->Getuselist()[0]->usee);
                         inst->RSUW(inst->Getuselist()[1].get(), ConstIRInt::GetNewConstant(0));
@@ -108,11 +107,9 @@ Value* GepCombine::SimplifyGepInst(GetElementPtrInst* inst)
     }
 
     // Now handle the case of < gep base, 0, 0, 0  ... >
-    auto all_offset_zero = [&inst]()
-    {
-        return std::all_of(inst->Getuselist().begin() + 1, inst->Getuselist().end(), [](User::UsePtr &use)
-        {
-            if(auto val = dynamic_cast<ConstantData*>(use->usee))
+    auto all_offset_zero = [&inst]() {
+        return std::all_of(inst->Getuselist().begin() + 1, inst->Getuselist().end(), [](User::UsePtr &use) {
+            if (auto val = dynamic_cast<ConstantData *>(use->usee))
             {
                 return val->isConstZero();
             }
@@ -120,6 +117,102 @@ Value* GepCombine::SimplifyGepInst(GetElementPtrInst* inst)
         });
     };
     // if(all_offset_zero())
-        // return Base;
+    // return Base;
     return nullptr;
+}
+
+Value *GepCombine::HandleGepPhi(GetElementPtrInst *inst)
+{
+    Value *Base = inst->Getuselist()[0]->usee;
+    if (auto Phi = dynamic_cast<PhiInst *>(Base))
+    {
+        auto val = dynamic_cast<GetElementPtrInst *>(Phi->GetVal(0));
+        if (!val)
+            return nullptr;
+        if (val == inst)
+            return nullptr;
+
+        int Not_Same_Pos = -1;
+        for (int i = 1; i < Phi->Getuselist().size(); i++)
+        {
+            auto val_ = dynamic_cast<GetElementPtrInst *>(Phi->GetVal(i));
+            if (!val_ || val_->Getuselist().size() != val->Getuselist().size())
+                return nullptr;
+            if (val_ == inst)
+                return nullptr;
+
+            Type *CurTp = nullptr;
+
+            for (int j = 0; j < val->Getuselist().size(); j++)
+            {
+                if (val->GetOperand(j)->GetType() != val_->GetOperand(j)->GetType())
+                    return nullptr;
+                Value *Val_j = val->GetOperand(j);
+                Value *Val_j_ = val_->GetOperand(j);
+                auto const_Val_j = dynamic_cast<ConstantData *>(Val_j);
+                auto const_Val_j_ = dynamic_cast<ConstantData *>(Val_j_);
+                if (const_Val_j && const_Val_j_)
+                {
+                    if (auto const_Val_j_int = dynamic_cast<ConstIRInt *>(const_Val_j))
+                    {
+                        if (auto const_val_j_int_ = dynamic_cast<ConstIRInt *>(const_Val_j_))
+                        {
+                            if (const_Val_j_int->GetVal() != const_val_j_int_->GetVal())
+                                return nullptr;
+                        }
+                        else if (auto const_val_j_float_ = dynamic_cast<ConstIRFloat *>(const_Val_j_))
+                        {
+                            if (const_Val_j_int->GetVal() != const_val_j_float_->GetVal())
+                                return nullptr;
+                        }
+                    }
+                    else if (auto const_Val_j_float = dynamic_cast<ConstIRFloat *>(const_Val_j))
+                    {
+                        if (auto const_val_j_int_ = dynamic_cast<ConstIRInt *>(const_Val_j_))
+                        {
+                            if (const_Val_j_float->GetVal() != const_val_j_int_->GetVal())
+                                return nullptr;
+                        }
+                        else if (auto const_val_j_float_ = dynamic_cast<ConstIRFloat *>(const_Val_j_))
+                        {
+                            if (const_Val_j_float->GetVal() != const_val_j_float_->GetVal())
+                                return nullptr;
+                        }
+                    }
+                }
+                else if (Val_j != Val_j_)
+                {
+                    if (Not_Same_Pos == -1)
+                        Not_Same_Pos = j;
+                    else
+                        return nullptr;
+                }
+                // More than one different operand
+            }
+        }
+        if (Phi->GetUserlist().GetSize() != 1)
+            return nullptr;
+        std::vector<Operand> Ops(val->Getuselist().begin() + 1, val->Getuselist().end());
+        GetElementPtrInst *New_Gep = new GetElementPtrInst(val->Getuselist()[0]->usee, Ops);
+        if (Not_Same_Pos == -1)
+        {
+            // insert before
+            BasicBlock::mylist<BasicBlock, User>::iterator Inst_Pos(inst);
+            Inst_Pos.insert_before(New_Gep);
+        }
+        else
+        {
+            // Down the Phi to Current Block
+            PhiInst* NewPhi = new PhiInst(Phi, Phi->GetType());
+            for(auto& [key, val] : Phi->PhiRecord)
+                NewPhi->updateIncoming(val.first, val.second);
+            New_Gep->RSUW(Not_Same_Pos, NewPhi);
+            // insert before
+            BasicBlock::mylist<BasicBlock, User>::iterator Inst_Pos(inst);
+            Inst_Pos.insert_before(New_Gep);
+            New_Gep->RSUW(Not_Same_Pos, NewPhi);
+        }
+        inst->RSUW(0, New_Gep);
+        Base = New_Gep;
+    }
 }

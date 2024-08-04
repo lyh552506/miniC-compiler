@@ -114,6 +114,7 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
     void init();
     bool CanHandle(User *inst);
     Value* SimplifyGepInst(GetElementPtrInst* inst);
+    Value* HandleGepPhi(GetElementPtrInst* inst);
   public:
     GepCombine(Function *func, _AnalysisManager &AM_) : func(func), AM(AM_)
     {
