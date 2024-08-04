@@ -211,8 +211,30 @@ class mylist
     }
 
     void swap_region(derived_list_node* begin, derived_list_node* end, std::list<derived_list_node>& sequence) {
+        assert(!sequence.empty()&&"sequence can't be empty");
+        
+        auto prev=begin->prev;
+        auto next=end->next;
+        
+        if(prev==nullptr)
+            head=sequence.front();
 
+        if(next==nullptr)
+            next=sequence.back();
+
+        for(auto ele:sequence)
+            assert(ele->GetParent()==this&&"All elements inside the sequence must be in this list");
+
+        for(auto ele:sequence){
+            ele->prev=prev;
+            if(prev!=nullptr)
+                prev->next=ele;
+            prev=ele;
+        }
+        
+        sequence.back()->next=next;
     }
+
     virtual void clear(){
         while(this->head!=nullptr){
             delete head;
