@@ -83,7 +83,10 @@ bool TailRecurseEliminator::Run(){
     }
 
     for(auto phi:phis)
+    {
+        phi->FormatPhi();
         jump_dst->push_front(phi);
+    }
     
     func->isRecursive(false);
 

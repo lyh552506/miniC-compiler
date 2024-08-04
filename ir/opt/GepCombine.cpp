@@ -11,9 +11,8 @@ bool GepCombine::Run()
     AM.get<SideEffect>(&Singleton<Module>());
     bool modified = false;
     std::deque<HandleNode *> WorkList;
-    WorkList.push_back(new HandleNode(
-        DomTree, &(DomTree->GetNode(0)), DomTree->GetNode(0).idom_child.begin(), DomTree->GetNode(0).idom_child.end(),
-        std::unordered_map<Value *, std::unordered_set<gepinfo *>>(), std::unordered_set<binaryinfo *>()));
+    WorkList.push_back(new HandleNode(DomTree, &(DomTree->GetNode(0)), DomTree->GetNode(0).idom_child.begin(),
+                                      DomTree->GetNode(0).idom_child.end(), std::unordered_set<GetElementPtrInst *>()));
     while (!WorkList.empty())
     {
         GepCombine::HandleNode *cur = WorkList.back();
@@ -21,13 +20,14 @@ bool GepCombine::Run()
         {
             modified |= ProcessNode(cur);
             cur->Process();
+            cur->SetChildGeps(cur->GetGeps());
         }
         else if (cur->Child() != cur->EndIter())
         {
             auto node = cur->NextChild();
-            WorkList.push_back(
-                new HandleNode(DomTree, &(DomTree->GetNode(*node)), DomTree->GetNode(*node).idom_child.begin(),
-                               DomTree->GetNode(*node).idom_child.end(), cur->GetGeps(), cur->GetBinarys()));
+            WorkList.push_back(new HandleNode(DomTree, &(DomTree->GetNode(*node)),
+                                              DomTree->GetNode(*node).idom_child.begin(),
+                                              DomTree->GetNode(*node).idom_child.end(), cur->GetChildGeps()));
         }
         else
         {
@@ -43,44 +43,58 @@ bool GepCombine::ProcessNode(HandleNode *node)
     bool modified = false;
     BasicBlock *block = node->GetBlock();
     _DEBUG(std::cerr << "Processing Node: " << block->GetName() << std::endl;)
-
+    std::unordered_set<GetElementPtrInst*> geps = node->GetGeps();
     for (User *inst : *block)
     {
         if (auto gep = dynamic_cast<GetElementPtrInst *>(inst))
         {
-            if (auto val = SimplifyGepInst(gep))
+            geps.insert(gep);
+            if (auto val = SimplifyGepInst(gep, geps))
             {
-                gep->RAUW(val);
+                _DEBUG(std::cerr << "SimplifyGepInst modified" << std::endl;)
                 modified |= true;
                 continue;
             }
 
-            if (GetElementPtrInst *new_gep = HandleGepPhi(gep))
+            if (GetElementPtrInst *new_gep = HandleGepPhi(gep, geps))
             {
                 gep = new_gep;
+                _DEBUG(std::cerr << "HandleGepPhi modified" << std::endl;)
                 modified |= true;
             }
 
-            if (GetElementPtrInst *new_gep = Normal_Handle_With_GepBase(gep))
+            if (GetElementPtrInst *new_gep = Normal_Handle_With_GepBase(gep, geps))
             {
-                gep = new_gep;
+                // gep->RAUW(new_gep);
+                _DEBUG(std::cerr << "Normal_Handle_With_GepBase modified " << std::endl;)
                 modified |= true;
             }
         }
     }
+    node->SetGeps(geps);
     return modified;
 }
 
-Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst)
+Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst, std::unordered_set<GetElementPtrInst*>& geps)
 {
     Value *Base = inst->Getuselist()[0]->usee;
 
     // In this case, there is only < gep base > -> base
     if (inst->Getuselist().size() == 1)
+    {
+        _DEBUG(std::cerr << "Handle Case Only have base." << std::endl;)
+        inst->RAUW(Base);
+        geps.erase(inst);
         return Base;
+    }
 
     if (dynamic_cast<UndefValue *>(Base))
+    {
+        _DEBUG(std::cerr << "Handle Case : base is undef." << std::endl;)
+        inst->RAUW(UndefValue::get(inst->GetType()));
+        geps.erase(inst);
         return UndefValue::get(inst->GetType());
+    }
 
     if (inst->Getuselist().size() == 2)
     {
@@ -88,14 +102,23 @@ Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst)
         if (auto val = dynamic_cast<ConstantData *>(Op1))
         {
             if (val->isConstZero())
+            {
+                _DEBUG(std::cerr << "Handle Case : offset is zero." << std::endl;)
+                inst->RAUW(Base);
+                geps.erase(inst);
                 return Base;
+            }
         }
         // Now there is the case of < gep base, offset >
         {
             if (auto tp = dynamic_cast<HasSubType *>(Base->GetType()))
             {
                 if (tp->get_size() == 0)
+                {
+                    inst->RAUW(Base);
+                    geps.erase(inst);
                     return Base;
+                }
             }
 
             if (auto binary = dynamic_cast<BinaryInst *>(Op1))
@@ -106,13 +129,54 @@ Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst)
                     {
                         inst->RSUW(inst->Getuselist()[0].get(), binary->Getuselist()[0]->usee);
                         inst->RSUW(inst->Getuselist()[1].get(), ConstIRInt::GetNewConstant(0));
-                        return inst;
+                        _DEBUG(std::cerr << "Handle Case : gep %base, binary(sub)" << std::endl;)
+                        return nullptr;
+                    }
+                }
+                else if (binary->getopration() == BinaryInst::Operation::Op_Add)
+                {
+                    if (dynamic_cast<ConstantData *>(binary->Getuselist()[1]->usee))
+                    {
+                        auto val1 = dynamic_cast<User *>(binary->Getuselist()[0]->usee);
+                        if (val1)
+                        {
+                            for (auto user : val1->GetUserlist())
+                            {
+                                auto user_gep = dynamic_cast<GetElementPtrInst *>(user->GetUser());
+                                if (user_gep && geps.count(user_gep) &&
+                                    user_gep->Getuselist()[0]->usee == Base)
+                                {
+                                    inst->RSUW(inst->Getuselist()[0].get(), user->GetUser());
+                                    inst->RSUW(inst->Getuselist()[1].get(), binary->Getuselist()[1]->usee);
+                                    _DEBUG(std::cerr << "Handle Case : gep %base, binary(add)" << std::endl;)
+                                    return nullptr;
+                                }
+                            }
+                        }
+                    }
+                    if (dynamic_cast<ConstantData *>(binary->Getuselist()[0]->usee))
+                    {
+                        auto val1 = dynamic_cast<User *>(binary->Getuselist()[0]->usee);
+                        if (val1)
+                        {
+                            for (auto user : val1->GetUserlist())
+                            {
+                                auto user_gep = dynamic_cast<GetElementPtrInst *>(user->GetUser());
+                                if (user_gep && geps.count(user_gep) &&
+                                    user_gep->Getuselist()[0]->usee == Base)
+                                {
+                                    inst->RSUW(inst->Getuselist()[0].get(), user->GetUser());
+                                    inst->RSUW(inst->Getuselist()[1].get(), binary->Getuselist()[0]->usee);
+                                    _DEBUG(std::cerr << "Handle Case : gep %base, binary(add)" << std::endl;)
+                                    return nullptr;
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
-
     // Now handle the case of < gep base, 0, 0, 0  ... >
     auto all_offset_zero = [&inst]() {
         return std::all_of(inst->Getuselist().begin() + 1, inst->Getuselist().end(), [](User::UsePtr &use) {
@@ -128,7 +192,7 @@ Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst)
     return nullptr;
 }
 
-GetElementPtrInst *GepCombine::HandleGepPhi(GetElementPtrInst *inst)
+GetElementPtrInst *GepCombine::HandleGepPhi(GetElementPtrInst *inst, std::unordered_set<GetElementPtrInst*>& geps)
 {
     Value *Base = inst->Getuselist()[0]->usee;
     if (auto Phi = dynamic_cast<PhiInst *>(Base))
@@ -228,7 +292,7 @@ GetElementPtrInst *GepCombine::HandleGepPhi(GetElementPtrInst *inst)
     return nullptr;
 }
 
-GetElementPtrInst *GepCombine::Normal_Handle_With_GepBase(GetElementPtrInst *inst)
+GetElementPtrInst *GepCombine::Normal_Handle_With_GepBase(GetElementPtrInst *inst, std::unordered_set<GetElementPtrInst*>& geps)
 {
     Value *Base = inst->Getuselist()[0]->usee;
     if (auto base = dynamic_cast<GetElementPtrInst *>(Base))
@@ -248,42 +312,58 @@ GetElementPtrInst *GepCombine::Normal_Handle_With_GepBase(GetElementPtrInst *ins
         if (auto base_base = dynamic_cast<GetElementPtrInst *>(base->Getuselist()[0]->usee))
             if (base_base->Getuselist().size() == 2 && CanHandle(base, base_base))
                 return nullptr;
-
-        std::vector<Value *> Offsets;
-
-        // Handle the case
-        /*
-            %1 = gep %base, A
-            %a = gep %1, B
-            ---->
-            C = A + B
-            %a = gep %base, C
-        */
+    }
+    // Handle the case
+    /*
+        %a = gep %base, 0, %1
+        %2 = %1 + const
+        %b = gep %base, 0, %2
+        ---->
+        %a = gep %base, 0, %1
+        %b = gep %a, const
+    */
+    {
+        if (inst->Getuselist().size() == 3)
         {
-            Value *Dst = nullptr;
-            Value *Src_Op = base->GetOperand(base->Getuselist().size() - 1);
-            Value *Cur_Op = inst->GetOperand(1);
-            if (dynamic_cast<ConstantData *>(Src_Op) && dynamic_cast<ConstantData *>(Src_Op)->isZero())
-                Dst = Cur_Op;
-            else if (dynamic_cast<ConstantData *>(Cur_Op) && dynamic_cast<ConstantData *>(Cur_Op)->isZero())
-                Dst = Src_Op;
-            else
+            if (dynamic_cast<ConstantData *>(inst->Getuselist()[1]->usee) &&
+                dynamic_cast<ConstantData *>(inst->Getuselist()[1]->usee)->isConstZero())
             {
-                if (!dynamic_cast<ConstantData *>(Src_Op) && !dynamic_cast<ConstantData *>(Cur_Op))
-                    return nullptr;
-                else
-                    Dst = new BinaryInst(Src_Op, BinaryInst::Operation::Op_Add, Cur_Op);
+                Value *val = inst->Getuselist()[2]->usee;
+                if (auto binary = dynamic_cast<BinaryInst *>(val))
+                {
+                    if (binary->getopration() == BinaryInst::Operation::Op_Add)
+                    {
+                        if (auto constdata = dynamic_cast<ConstantData *>(binary->Getuselist()[1]->usee))
+                        {
+                            if (auto gep = dynamic_cast<GetElementPtrInst *>(binary->Getuselist()[0]->usee))
+                            {
+                                if (gep->Getuselist()[0]->usee == Base && geps.count(gep))
+                                {
+                                    inst->RSUW(inst->Getuselist()[0].get(), gep);
+                                    inst->RSUW(inst->Getuselist()[1].get(), constdata);
+                                    _DEBUG(std::cerr
+                                               << "Handle Case : gep %base, binary(add), while there are three uses"
+                                               << std::endl;)
+                                }
+                            }
+                        }
+                        else if (auto constdata = dynamic_cast<ConstantData *>(binary->Getuselist()[0]->usee))
+                        {
+                            if (auto gep = dynamic_cast<GetElementPtrInst *>(binary->Getuselist()[1]->usee))
+                            {
+                                if (gep->Getuselist()[0]->usee == Base && geps.count(gep))
+                                {
+                                    inst->RSUW(inst->Getuselist()[0].get(), gep);
+                                    inst->RSUW(inst->Getuselist()[1].get(), constdata);
+                                    _DEBUG(std::cerr
+                                               << "Handle Case : gep %base, binary(add), while there are three uses"
+                                               << std::endl;)
+                                }
+                            }
+                        }
+                    }
+                }
             }
-
-            if (base->Getuselist().size() == 2)
-            {
-                inst->RSUW(0, base->Getuselist()[0]->usee);
-                inst->RSUW(1, Dst);
-                return inst;
-            }
-            // Offsets.insert(Offsets.end(), base->Getuselist().begin() + 1, base->Getuselist().end() - 1);
-            // Offsets.push_back(Dst);
-            // Offsets.insert(Offsets.end(), inst->Getuselist().begin() + 2, inst->Getuselist().end());
         }
     }
     return nullptr;
