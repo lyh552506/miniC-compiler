@@ -7,10 +7,12 @@
 #include "../../include/lib/Singleton.hpp"
 #include "New_passManager.hpp"
 #include "Type.hpp"
+#include "my_stl.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -18,16 +20,17 @@ bool LoopUnroll::Run() {
   bool changed = false;
   dom = AM.get<dominance>(m_func);
   loopAnaly = AM.get<LoopAnalysis>(m_func, dom);
-  for (auto iter = loopAnaly->begin(); iter != loopAnaly->end();) {
+  std::vector<LoopInfo *> loops{loopAnaly->begin(), loopAnaly->end()};
+  for (auto iter = loops.begin(); iter != loops.end();) {
     auto loop = *iter;
     ++iter;
     if (AM.FindAttr(loop->GetHeader(), Rotate) && CanBeUnroll(loop)) {
       auto unrollbody = ExtractLoopBody(loop);
       if (unrollbody) {
         changed |= true;
-        Unroll(loop, unrollbody);
+        auto bb = Unroll(loop, unrollbody);
+        CleanUp(loop, bb);
         // delete unrollbody;
-        return false;
       }
     }
   }
@@ -203,41 +206,8 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
   } else {
     ret = new RetInst();
   }
-  // auto Findexitbb = [&](CondInst *cond) -> BasicBlock * {
-  //   for (int i = 1; i < 3; i++) {
-  //     auto bb = dynamic_cast<BasicBlock *>(cond->GetOperand(i));
-  //     if (!loop->Contain(bb))
-  //       return bb;
-  //   }
-  //   return nullptr;
-  // };
-  // auto FindexitIndex = [&](CondInst *cond) -> int {
-  //   for (int i = 1; i < 3; i++) {
-  //     auto bb = dynamic_cast<BasicBlock *>(cond->GetOperand(i));
-  //     if (!loop->Contain(bb))
-  //       return i;
-  //   }
-  //   return -1;
-  // };
-  // BasicBlock *RetBlock = nullptr;
-  // auto head_out = dynamic_cast<CondInst *>(header->back());
-  // auto latch_out = dynamic_cast<CondInst *>(latch->back());
-  // if (header != latch && Findexitbb(head_out) != nullptr) {
-  //   auto ex_head = Findexitbb(head_out);
-  //   auto ex_latch = Findexitbb(latch_out);
-  //   assert(ex_head == ex_latch);
-  //   assert(head_out);
-  //   assert(latch_out);
-  //   RetBlock = new BasicBlock();
-  //   RetBlock->SetName(RetBlock->GetName() + ".Ret");
-  //   head_out->RSUW(FindexitIndex(head_out), RetBlock);
-  //   latch_out->RSUW(FindexitIndex(latch_out), RetBlock);
-  //   RetBlock->push_back(ret);
-  // } else {
   delete latch->back();
   latch->push_back(ret);
-  // }
-  // deal phi
   for (auto it = substitute->begin();
        it != substitute->end() && dynamic_cast<PhiInst *>(*it); ++it) {
     auto phi = dynamic_cast<PhiInst *>(*it);
@@ -280,12 +250,16 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
   return callinst;
 }
 
-void LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
+BasicBlock *LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
+  BasicBlock *tmp = nullptr;
   auto iteration = 0;
   auto initial = dynamic_cast<ConstIRInt *>(loop->trait.initial)->GetVal();
   auto bound = dynamic_cast<ConstIRInt *>(loop->trait.boundary)->GetVal();
   auto bin = dynamic_cast<BinaryInst *>(loop->trait.change);
+  auto exitBBs = loopAnaly->GetExit(loop);
+  assert(exitBBs.size() == 1);
   assert(bin);
+  auto exit = exitBBs[0];
   auto op = bin->getopration();
   auto step = loop->trait.step;
   switch (op) {
@@ -327,23 +301,40 @@ void LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   };
   replceArg(UnrollBody, IndVarOrigin, ResOrigin);
   BasicBlock::mylist<BasicBlock, User>::iterator call_pos(UnrollBody);
+  std::vector<User *> Erase;
   User *cloned = UnrollBody;
-  User *tmp = nullptr;
-  for (int i = 1; i < iteration; i++) {
-    m_func->InlineCall(dynamic_cast<CallInst *>(cloned), Arg2Orig);
-    if (cloned->GetTypeEnum() != InnerDataType::IR_Value_VOID)
-      ResOrigin = cloned;
-    OriginChange = Arg2Orig[OriginChange];
+  Erase.push_back(cloned);
+  Value *CurChange = nullptr;
+  for (int i = 0; i < iteration; i++) {
+    auto Ret = m_func->InlineCall(dynamic_cast<CallInst *>(cloned), Arg2Orig);
+    if (Ret.first != nullptr)
+      ResOrigin = Ret.first;
+    tmp = Ret.second;
+    CurChange = Arg2Orig[OriginChange];
     Arg2Orig.clear();
-    tmp = cloned;
     cloned = cloned->CloneInst();
+    Erase.push_back(cloned);
     call_pos = call_pos.insert_after(cloned);
-    delete tmp;
-    replceArg(cloned, OriginChange, ResOrigin);
-    Singleton<Module>().Test();
-    std::cout << std::endl;
+    replceArg(cloned, CurChange, ResOrigin);
   }
-  return;
+  UnrollBody->RAUW(ResOrigin);
+  loop->trait.indvar->RAUW(UndefValue::get(loop->trait.indvar->GetType()));
+  delete loop->trait.indvar;
+  // return nullptr;
+  if (loop->trait.res) {
+    loop->trait.res->RAUW(UndefValue::get(loop->trait.res->GetType()));
+    delete loop->trait.res;
+  }
+  for (auto use : UnrollBody->GetUserlist()) {
+    if (use->GetUser()->GetParent() == exit)
+      use->GetUser()->RSUW(use, ResOrigin);
+  }
+  for (auto iter = Erase.begin(); iter != Erase.end();) {
+    auto call = *iter;
+    ++iter;
+    delete call;
+  }
+  return tmp;
 }
 
 bool LoopUnroll::CanBeUnroll(LoopInfo *loop) {
@@ -359,4 +350,16 @@ bool LoopUnroll::CanBeUnroll(LoopInfo *loop) {
       !dynamic_cast<ConstIRInt *>(loop->trait.boundary))
     return false;
   return true;
+}
+
+void LoopUnroll::CleanUp(LoopInfo *loop, BasicBlock *clean) {
+  auto cond = dynamic_cast<CondInst *>(clean->back());
+  auto Inloop = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
+  auto Outloop = dynamic_cast<BasicBlock *>(cond->GetOperand(2));
+  if (loop->Contain(Outloop))
+    std::swap(Inloop, Outloop);
+  auto uncond = new UnCondInst(Outloop);
+  delete cond;
+  clean->push_back(uncond);
+  loopAnaly->DeleteLoop(loop);
 }

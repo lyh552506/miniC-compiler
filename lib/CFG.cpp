@@ -870,12 +870,15 @@ void Function::InsertBlock(BasicBlock *curr, BasicBlock *insert) {
   this->push_bb(insert);
 }
 
-Value* Function::InlineCall(
-    CallInst *inst, std::unordered_map<Operand, Operand> &OperandMapping) {
+std::pair<Value *, BasicBlock *>
+Function::InlineCall(CallInst *inst,
+                     std::unordered_map<Operand, Operand> &OperandMapping) {
+  std::pair<Value *, BasicBlock *> tmp{nullptr, nullptr};
   BasicBlock *block = inst->GetParent();
   Function *func = block->GetParent();
   Function *inlined_func = inst->GetOperand(0)->as<Function>();
   BasicBlock *SplitBlock = block->SplitAt(inst);
+  tmp.second = SplitBlock;
   BasicBlock::mylist<Function, BasicBlock>::iterator Block_Pos(block);
   Block_Pos.insert_after(SplitBlock);
   ++Block_Pos;
@@ -883,10 +886,11 @@ Value* Function::InlineCall(
   int num = 1;
   for (auto &param : inlined_func->GetParams()) {
     Value *Param = param.get();
-    if(OperandMapping.find(inst->Getuselist()[num]->usee) != OperandMapping.end())
+    if (OperandMapping.find(inst->Getuselist()[num]->usee) !=
+        OperandMapping.end())
       OperandMapping[Param] = OperandMapping[inst->Getuselist()[num]->usee];
     else
-     OperandMapping[Param] = inst->Getuselist()[num]->usee;
+      OperandMapping[Param] = inst->Getuselist()[num]->usee;
     num++;
   }
   for (BasicBlock *block : *inlined_func)
@@ -906,26 +910,32 @@ Value* Function::InlineCall(
     Block_Pos.insert_before(block_);
   if (inlined_func->GetUserListSize() == 0)
     Singleton<Module>().EraseFunction(inlined_func);
+  Value *Ret_Val = nullptr;
   if (inst->GetTypeEnum() != InnerDataType::IR_Value_VOID) {
-    Value *Ret_Val = nullptr;
     for (BasicBlock *block : blocks) {
       User *inst = block->back();
       if (dynamic_cast<RetInst *>(inst)) {
-        if (auto val = inst->GetOperand(0))
-          Ret_Val = val;
+        if (auto val = inst->GetOperand(0)) {
+          tmp.first = val;
+        }
         UnCondInst *Br = new UnCondInst(SplitBlock);
         inst->ClearRelation();
         inst->EraseFromParent();
         block->push_back(Br);
       }
     }
-
-    if (Ret_Val)
-      return Ret_Val;
+  } else {
+    for (BasicBlock *block : blocks) {
+      User *inst = block->back();
+      if (dynamic_cast<RetInst *>(inst)) {
+        UnCondInst *Br = new UnCondInst(SplitBlock);
+        inst->ClearRelation();
+        inst->EraseFromParent();
+        block->push_back(Br);
+      }
+    }
   }
-  else
-    return nullptr;
-  return nullptr;
+  return tmp;
 }
 
 BuildInFunction::BuildInFunction(Type *tp, std::string _id) : Value(tp) {
