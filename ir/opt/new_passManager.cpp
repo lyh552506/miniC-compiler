@@ -73,6 +73,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case tailrecurseEliminator:
       AddPass(tailrecurseEliminator);
       break;
+    case branchrotate:
+      AddPass(branchrotate);
+      break;
     case O0:
       level = O0;
       break;
@@ -312,6 +315,10 @@ void _PassManager::RunOnTest() {
         }
         case tailrecurseEliminator: {
           auto m_TRE = RunImpl<TailRecurseEliminator>(curfunc, AM);
+          break;
+        }
+        case branchrotate: {
+          auto m_BranchRotate = RunImpl<BranchRotate>(curfunc, AM);
           break;
         }
         default: {

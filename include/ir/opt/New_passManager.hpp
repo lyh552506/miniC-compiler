@@ -28,6 +28,7 @@
 #include "../../include/ir/opt/reassociate.hpp"
 #include "../../include/ir/opt/LoopUnroll.hpp"
 #include "../../include/ir/opt/GepCombine.hpp"
+#include "../../include/ir/opt/BranchRotate.hpp"
 #include <getopt.h>
 #include <any>
 #include <memory>
@@ -57,7 +58,8 @@ enum PassName {
   parallel,
   loopUnroll,
   gepcombine,
-  tailrecurseEliminator
+  tailrecurseEliminator,
+  branchrotate
 };
 
 static struct option long_options[] = {
@@ -83,6 +85,7 @@ static struct option long_options[] = {
     {"loopUnroll", no_argument, 0, 23},
     {"GepCombine", no_argument, 0, 24},
     {"TailRecurseEliminator", no_argument, 0, 25},
+    {"branch-rotate", no_argument, 0, 26},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},
