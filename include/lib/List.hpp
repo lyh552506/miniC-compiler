@@ -209,6 +209,10 @@ class mylist
         }
         size++;
     }
+
+    void swap_region(derived_list_node* begin, derived_list_node* end, std::list<derived_list_node>& sequence) {
+
+    }
     virtual void clear(){
         while(this->head!=nullptr){
             delete head;

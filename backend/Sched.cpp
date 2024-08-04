@@ -53,6 +53,7 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
         RISCVMIR*& inst = it->first;
         Sunit*& sunit = it->second;
         if(adjList.find(sunit) == adjList.end()) {
+            sunits.push_back(sunit);
             adjList[sunit] = {};
             inDegree[sunit];
         }
@@ -102,13 +103,16 @@ void DependencyGraph::addDependency(Sunit* use, Sunit* def){
 }
 
 void DependencyGraph::ComputeHeight() {
-    for(auto it = adjList.rbegin(); it != adjList.rend(); ++it) {
-        Sunit* sunit = (*it).first; 
+    for(auto& it: sunits) {
+    // for(auto it = adjList.rbegin(); it != adjList.rend(); ++it) {
+    //     Sunit* sunit = (*it).first; 
+        Sunit* sunit = it;
         if(inDegree[sunit]==0) {
             sunit->height = 0;
         }
         // std::set<Sunit*>
-        for(auto ind = (*it).second.begin(); ind != (*it).second.end(); ++ind) {
+        // for(auto ind = (*it).second.begin(); ind != (*it).second.end(); ++ind) {
+        for(auto ind = adjList[it].begin(); ind != adjList[it].end(); ++ind) {
             Sunit* def = *ind;
             def->height = def->height > (sunit->height + def->latency) ? def->height : (sunit->height + def->latency);
         }
@@ -116,6 +120,7 @@ void DependencyGraph::ComputeHeight() {
         #ifdef DEBUG_SCHED
         std::cout << "height: " << sunit->height;
         depInfo->Sunit2InstMap[sunit]->printfull();
+        std::cout << std::flush;
         #endif
     }
 }

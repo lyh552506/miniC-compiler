@@ -45,6 +45,7 @@ public:
 class DependencyGraph {
 private:
     BlockDepInfo* depInfo;
+    std::vector<Sunit*> sunits;
     std::map<Sunit*, std::set<Sunit*>> adjList; 
     std::unordered_map<Sunit*, uint32_t> inDegree;
 
