@@ -46,10 +46,6 @@ bool GepCombine::ProcessNode(HandleNode *node)
 
     for (User *inst : *block)
     {
-        if (auto binary = dynamic_cast<BinaryInst *>(inst))
-        {
-        }
-
         if (auto gep = dynamic_cast<GetElementPtrInst *>(inst))
         {
             if (auto val = SimplifyGepInst(gep))
@@ -58,10 +54,21 @@ bool GepCombine::ProcessNode(HandleNode *node)
                 modified |= true;
                 continue;
             }
-            bool Changed = false;
-            Value *Base = gep->Getuselist()[0]->usee;
+
+            if (GetElementPtrInst *new_gep = HandleGepPhi(gep))
+            {
+                gep = new_gep;
+                modified |= true;
+            }
+
+            if (GetElementPtrInst *new_gep = Normal_Handle_With_GepBase(gep))
+            {
+                gep = new_gep;
+                modified |= true;
+            }
         }
     }
+    return modified;
 }
 
 Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst)
@@ -121,7 +128,7 @@ Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst)
     return nullptr;
 }
 
-Value *GepCombine::HandleGepPhi(GetElementPtrInst *inst)
+GetElementPtrInst *GepCombine::HandleGepPhi(GetElementPtrInst *inst)
 {
     Value *Base = inst->Getuselist()[0]->usee;
     if (auto Phi = dynamic_cast<PhiInst *>(Base))
@@ -192,7 +199,9 @@ Value *GepCombine::HandleGepPhi(GetElementPtrInst *inst)
         }
         if (Phi->GetUserlist().GetSize() != 1)
             return nullptr;
-        std::vector<Operand> Ops(val->Getuselist().begin() + 1, val->Getuselist().end());
+        std::vector<Operand> Ops;
+        for (int i = 1; i < val->Getuselist().size(); i++)
+            Ops.push_back(val->GetOperand(i));
         GetElementPtrInst *New_Gep = new GetElementPtrInst(val->Getuselist()[0]->usee, Ops);
         if (Not_Same_Pos == -1)
         {
@@ -203,8 +212,8 @@ Value *GepCombine::HandleGepPhi(GetElementPtrInst *inst)
         else
         {
             // Down the Phi to Current Block
-            PhiInst* NewPhi = new PhiInst(Phi, Phi->GetType());
-            for(auto& [key, val] : Phi->PhiRecord)
+            PhiInst *NewPhi = new PhiInst(Phi, Phi->GetType());
+            for (auto &[key, val] : Phi->PhiRecord)
                 NewPhi->updateIncoming(val.first, val.second);
             New_Gep->RSUW(Not_Same_Pos, NewPhi);
             // insert before
@@ -214,5 +223,94 @@ Value *GepCombine::HandleGepPhi(GetElementPtrInst *inst)
         }
         inst->RSUW(0, New_Gep);
         Base = New_Gep;
+        return inst;
     }
+    return nullptr;
+}
+
+GetElementPtrInst *GepCombine::Normal_Handle_With_GepBase(GetElementPtrInst *inst)
+{
+    Value *Base = inst->Getuselist()[0]->usee;
+    if (auto base = dynamic_cast<GetElementPtrInst *>(Base))
+    {
+        if (!CanHandle(inst, base))
+            return nullptr;
+
+        // Handle the case
+        /*
+            %a = gep %1, ...
+            %b = gep %a, ...
+            %c = gep %b, ...
+            %d = gep %c, ...
+            ...
+        */
+        // Pay attention to the base_gep is has been folded
+        if (auto base_base = dynamic_cast<GetElementPtrInst *>(base->Getuselist()[0]->usee))
+            if (base_base->Getuselist().size() == 2 && CanHandle(base, base_base))
+                return nullptr;
+
+        std::vector<Value *> Offsets;
+
+        // Handle the case
+        /*
+            %1 = gep %base, A
+            %a = gep %1, B
+            ---->
+            C = A + B
+            %a = gep %base, C
+        */
+        {
+            Value *Dst = nullptr;
+            Value *Src_Op = base->GetOperand(base->Getuselist().size() - 1);
+            Value *Cur_Op = inst->GetOperand(1);
+            if (dynamic_cast<ConstantData *>(Src_Op) && dynamic_cast<ConstantData *>(Src_Op)->isZero())
+                Dst = Cur_Op;
+            else if (dynamic_cast<ConstantData *>(Cur_Op) && dynamic_cast<ConstantData *>(Cur_Op)->isZero())
+                Dst = Src_Op;
+            else
+            {
+                if (!dynamic_cast<ConstantData *>(Src_Op) && !dynamic_cast<ConstantData *>(Cur_Op))
+                    return nullptr;
+                else
+                    Dst = new BinaryInst(Src_Op, BinaryInst::Operation::Op_Add, Cur_Op);
+            }
+
+            if (base->Getuselist().size() == 2)
+            {
+                inst->RSUW(0, base->Getuselist()[0]->usee);
+                inst->RSUW(1, Dst);
+                return inst;
+            }
+            // Offsets.insert(Offsets.end(), base->Getuselist().begin() + 1, base->Getuselist().end() - 1);
+            // Offsets.push_back(Dst);
+            // Offsets.insert(Offsets.end(), inst->Getuselist().begin() + 2, inst->Getuselist().end());
+        }
+    }
+    return nullptr;
+}
+
+bool GepCombine::CanHandle(GetElementPtrInst *src, GetElementPtrInst *base)
+{
+    // Judge if it can be simplified
+    auto inst_all_offset_zero = [&src]() {
+        return std::all_of(src->Getuselist().begin() + 1, src->Getuselist().end(), [](User::UsePtr &use) {
+            if (auto val = dynamic_cast<ConstantData *>(use->usee))
+            {
+                return val->isConstZero();
+            }
+            return false;
+        });
+    };
+    auto base_all_offset_zero = [&base]() {
+        return std::all_of(base->Getuselist().begin() + 1, base->Getuselist().end(), [](User::UsePtr &use) {
+            if (auto val = dynamic_cast<ConstantData *>(use->usee))
+            {
+                return val->isConstZero();
+            }
+            return false;
+        });
+    };
+    if (inst_all_offset_zero() && !base_all_offset_zero() && base->GetUserlist().GetSize() != 1)
+        return false;
+    return true;
 }

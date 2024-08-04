@@ -112,9 +112,10 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
     _AnalysisManager &AM;
     bool ProcessNode(HandleNode *node);
     void init();
-    bool CanHandle(User *inst);
+    bool CanHandle(GetElementPtrInst* src, GetElementPtrInst* base);
     Value* SimplifyGepInst(GetElementPtrInst* inst);
-    Value* HandleGepPhi(GetElementPtrInst* inst);
+    GetElementPtrInst* HandleGepPhi(GetElementPtrInst* inst);
+    GetElementPtrInst* Normal_Handle_With_GepBase(GetElementPtrInst* inst);
   public:
     GepCombine(Function *func, _AnalysisManager &AM_) : func(func), AM(AM_)
     {
