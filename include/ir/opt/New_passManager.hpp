@@ -27,6 +27,7 @@
 #include "../../include/ir/opt/mem2reg.hpp"
 #include "../../include/ir/opt/reassociate.hpp"
 #include "../../include/ir/opt/LoopUnroll.hpp"
+#include "../../include/ir/opt/GepCombine.hpp"
 #include <getopt.h>
 #include <any>
 #include <memory>
@@ -55,6 +56,8 @@ enum PassName {
   local2global,
   parallel,
   loopUnroll,
+  gepcombine,
+  tailrecurseEliminator
 };
 
 static struct option long_options[] = {
@@ -78,6 +81,8 @@ static struct option long_options[] = {
     {"local2global", no_argument, 0, 21},
     {"parallel", no_argument, 0, 22},
     {"loopUnroll", no_argument, 0, 23},
+    {"GepCombine", no_argument, 0, 24},
+    {"TailRecurseEliminator", no_argument, 0, 25},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},

@@ -67,6 +67,12 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case loopUnroll:
       AddPass(loopUnroll);
       break;
+    case gepcombine:
+      AddPass(gepcombine);
+      break;
+    case tailrecurseEliminator:
+      AddPass(tailrecurseEliminator);
+      break;
     case O0:
       level = O0;
       break;
@@ -117,13 +123,14 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc) PassChangedEnd
           // cse
           RunLevelPass(CSE, curfunc, modified);
-
       // constprop
       RunLevelPass(ConstantProp, curfunc, modified);
       // reassociate
       RunLevelPass(Reassociate, curfunc, modified);
       // cse
       RunLevelPass(CSE, curfunc, modified);
+      RunLevelPass(GepCombine, curfunc, modified);
+      RunLevelPass(DCE, curfunc, modified);
       // TRE
       RunLevelPass(TailRecurseEliminator,curfunc,modified);
     }
@@ -297,6 +304,14 @@ void _PassManager::RunOnTest() {
         }
         case loopUnroll: {
           auto m_LoopUnroll = RunImpl<LoopUnroll>(curfunc, AM);
+          break;
+        }
+        case gepcombine: {
+          auto m_gepcombine = RunImpl<GepCombine>(curfunc, AM);
+          break;
+        }
+        case tailrecurseEliminator: {
+          auto m_TRE = RunImpl<TailRecurseEliminator>(curfunc, AM);
           break;
         }
         default: {

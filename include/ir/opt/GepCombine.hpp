@@ -8,24 +8,6 @@ class _AnalysisManager;
 
 class GepCombine : public _PassManagerBase<GepCombine, Function>
 {
-    typedef struct GepInfo
-    {
-        Value *base;
-        Value *offset;
-        std::vector<Value *> index;
-        std::vector<ConstantData *> const_index;
-        bool ConstIndex = false;
-        GepInfo()
-            : base(nullptr), offset(nullptr), index(std::vector<Value *>()), const_index(std::vector<ConstantData *>()),
-              ConstIndex(false)
-        {
-        }
-        GepInfo(Value *base_, Value *offset_, std::vector<Value *> index_, std::vector<ConstantData *> const_index_,
-                bool flag)
-            : base(base_), offset(offset_), index(index_), const_index(const_index_), ConstIndex(flag)
-        {
-        }
-    } gepinfo;
     class HandleNode
     {
       private:
@@ -35,7 +17,8 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
         bool Processed = false;
         std::forward_list<int>::iterator Curiter;
         std::forward_list<int>::iterator Enditer;
-        std::unordered_map<Value*, std::unordered_set<gepinfo*>> Geps;
+        std::unordered_set<GetElementPtrInst*> Geps;
+        std::unordered_set<GetElementPtrInst*> ChildGeps;
       public:
         std::forward_list<int>::iterator Child()
         {
@@ -63,12 +46,24 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
         {
             return block;
         }
-        std::unordered_map<Value*, std::unordered_set<gepinfo*>> GetGeps()
+        void SetChildGeps(std::unordered_set<GetElementPtrInst*> geps)
+        {
+            ChildGeps = geps;
+        }
+        std::unordered_set<GetElementPtrInst*> GetChildGeps()
+        {
+            return ChildGeps;
+        }
+        std::unordered_set<GetElementPtrInst*> GetGeps()
         {
             return Geps;
         }
+        void SetGeps(std::unordered_set<GetElementPtrInst*> geps)
+        {
+            Geps = geps;
+        }
         HandleNode(dominance *dom, dominance::Node *node, std::forward_list<int>::iterator child,
-                   std::forward_list<int>::iterator end, std::unordered_map<Value*, std::unordered_set<gepinfo*>> geps)
+                   std::forward_list<int>::iterator end, std::unordered_set<GetElementPtrInst*> geps)
             : DomTree(dom), dom_node(node), Curiter(child), Enditer(end), Geps(geps)
         {
             block = node->thisBlock;
@@ -80,9 +75,10 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
     Function *func;
     _AnalysisManager &AM;
     bool ProcessNode(HandleNode *node);
-    void init();
-    bool CanHandle(User *inst);
-
+    bool CanHandle(GetElementPtrInst* src, GetElementPtrInst* base);
+    Value* SimplifyGepInst(GetElementPtrInst* inst, std::unordered_set<GetElementPtrInst*>& geps);
+    GetElementPtrInst* HandleGepPhi(GetElementPtrInst* inst, std::unordered_set<GetElementPtrInst*>& geps);
+    GetElementPtrInst* Normal_Handle_With_GepBase(GetElementPtrInst* inst, std::unordered_set<GetElementPtrInst*>& geps);
   public:
     GepCombine(Function *func, _AnalysisManager &AM_) : func(func), AM(AM_)
     {
