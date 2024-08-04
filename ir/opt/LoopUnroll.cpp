@@ -6,10 +6,12 @@
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
 #include "New_passManager.hpp"
+#include "Type.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <unordered_map>
 #include <vector>
 
 bool LoopUnroll::Run() {
@@ -37,6 +39,7 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
   Val2Arg.clear();
   auto header = loop->GetHeader();
   auto latch = loopAnaly->GetLatch(loop);
+  prehead = loopAnaly->GetPreHeader(loop);
   PhiInst *res = nullptr; // result += const ....
   int cnt = 0;
   for (auto inst : *header) {
@@ -118,6 +121,7 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
   substitute->push_back(callinst);
   auto loopchange = dynamic_cast<User *>(loop->trait.change);
   assert(loopchange);
+  OriginChange = loopchange;
   auto change = loopchange->CloneInst();
   substitute->push_back(change);
   loop->trait.change = change;
@@ -300,24 +304,44 @@ void LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   default:
     assert(0 && "what op?");
   }
-  BasicBlock::mylist<BasicBlock, User>::iterator call_pos(UnrollBody);
-  for (int i = 1; i < iteration; i++) {
-    auto cloned = UnrollBody->CloneInst();
-    for (int i = 1; i < cloned->Getuselist().size(); i++) {
-      auto arg = cloned->GetOperand(i);
+  std::unordered_map<Value *, Value *> Arg2Orig;
+  Value *IndVarOrigin = loop->trait.initial;
+  Value *ResOrigin = nullptr;
+  if (loop->trait.res)
+    ResOrigin = loop->trait.res->ReturnValIn(prehead);
+  auto replceArg = [&](User *call, Value *IndVar, Value *Res) {
+    for (int i = 1; i < call->Getuselist().size(); i++) {
+      auto arg = call->GetOperand(i);
       if (auto phi = dynamic_cast<PhiInst *>(arg)) {
         if (phi == loop->trait.indvar) {
-
+          Arg2Orig[arg] = IndVar;
         } else if (phi == loop->trait.res) {
-
+          Arg2Orig[arg] = Res;
         } else {
           assert(0 && "What phi?");
         }
+      } else {
+        Arg2Orig[arg] = arg;
       }
     }
+  };
+  replceArg(UnrollBody, IndVarOrigin, ResOrigin);
+  BasicBlock::mylist<BasicBlock, User>::iterator call_pos(UnrollBody);
+  User *cloned = UnrollBody;
+  User* tmp=nullptr;
+  for (int i = 1; i < iteration; i++) {
+    m_func->InlineCall(dynamic_cast<CallInst *>(cloned), Arg2Orig);
+    if (cloned->GetTypeEnum() != InnerDataType::IR_Value_VOID)
+      ResOrigin = cloned;
+    OriginChange = Arg2Orig[OriginChange];
+    tmp=cloned;
+    cloned = cloned->CloneInst();
     call_pos = call_pos.insert_after(cloned);
+    delete tmp;
+    replceArg(cloned, OriginChange, ResOrigin);
+    Singleton<Module>().Test();
+    std::cout << std::endl;
   }
-  m_func->InlineCall(UnrollBody);
   return;
 }
 
