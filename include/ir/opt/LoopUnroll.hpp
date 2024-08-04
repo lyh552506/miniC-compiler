@@ -19,6 +19,8 @@ private:
   LoopAnalysis *loopAnaly;
   _AnalysisManager &AM;
   std::unordered_map<Value *, Variable *> Val2Arg;
+  Value *OriginChange = nullptr;
+  BasicBlock *prehead = nullptr;
   int cost = 0; // gep: 4 ; load: 4 ;binary: 1; phi: 2
   const int MaxInstCost = 800;
   const int MaxBlock = 128;
