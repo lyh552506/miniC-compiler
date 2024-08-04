@@ -95,7 +95,7 @@ bool Scheduler::isPipelineReady(RISCVMIR* inst) {
 }
 
 void Scheduler::Swap_region(mylist_iterator begin, mylist_iterator end) {
-
+    
 }
 // Pre_RA_Scheduler
 void Pre_RA_Scheduler::ScheduleOnModule(RISCVLoweringContext& ctx) {
@@ -148,20 +148,16 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
         for(auto& pair: depGraph->inDegree) {
             if(pair.second == 0) {
                 PlaneNode.push_back(pair.first);
-                for(auto& node: depGraph->adjList[pair.first]) {
-                    depGraph->inDegree[node]--;
-                }
+                // for(auto& node: depGraph->adjList[pair.first]) {
+                //     depGraph->inDegree[node]--;
+                // }
                 depGraph->inDegree[pair.first] = -1;
             }
         }
         #ifdef DEBUG_SCHED
             std::cout << "---PlaneNode---" << std::endl;
             for(auto& node: PlaneNode) {
-                for(auto& it: depGraph->depInfo->get_inst2sunit()) {
-                    if(it.second == node) {
-                        it.first->printfull();
-                    }
-                }
+                depGraph->depInfo->get_Sunit2InstMap()[node]->printfull();
             }
             std::cout << "---PlaneNodeEnd---" << std::endl;
         #endif
@@ -169,6 +165,10 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
         for(auto it = PlaneNode.begin(); it != PlaneNode.end();) {
             if(CurCycle >= (*it)->get_latency()) {
                 transfer(*it, PlaneNode, Available);
+                for(auto& node: depGraph->adjList[*it]) {
+                    depGraph->inDegree[node]--;
+                }
+                // depGraph->inDegree[*it] = -1;
                 it = PlaneNode.erase(it);
             }
             else {
@@ -183,6 +183,10 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
             if(CurCycle >= (*it)->get_maxLatency()) {
                 transfer(*it, Pending, Available);
                 it = Pending.erase(it);
+                for(auto& node: depGraph->adjList[*it]) {
+                    depGraph->inDegree[node]--;
+                }
+                // depGraph->inDegree[*it] = -1;
                 continue;
             }
             break;
@@ -198,6 +202,7 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
             if(isPipelineReady(getInstInfo(*it))) {
                 transfer(*it, Available, Sequence);
                 it = Available.erase(it);
+
             }
             else {
                 transfer(*it, Available, temp);
