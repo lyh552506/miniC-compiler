@@ -204,6 +204,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         BeginPipeline,
         LoadImm12,
         LoadImm32,
+        LoadFromStack,
         EndPipeline
       } opcode;
       /// @note def in the front while use in the back
