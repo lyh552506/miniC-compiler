@@ -178,6 +178,7 @@ class BinaryInst:public User
     void SetOperand(int index,Value* val);
     std::string GetOperation();
     Operation getopration();
+    void setoperation(Operation _op){op=_op;}
     static BinaryInst* CreateInst(Operand _A,Operation __op,Operand _B,User* place=nullptr);
 };
 class GetElementPtrInst:public User
