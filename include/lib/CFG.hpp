@@ -163,7 +163,7 @@ class BinaryInst:public User
     public:
     enum Operation
     {
-        Op_Add,Op_Sub,Op_Mul,Op_Div,Op_Mod,Op_And,Op_Or,
+        Op_Add,Op_Sub,Op_Mul,Op_Div,Op_Mod,Op_And,Op_Or,Op_Xor,
         //what's below should be translate to cmp inst in llvm
         Op_E,Op_NE,Op_GE,Op_L,Op_LE,Op_G
     };//卧槽，原批
@@ -173,11 +173,13 @@ class BinaryInst:public User
     BinaryInst(Type* _tp):User(_tp){id = OpID::BinaryUnknown;};
     BinaryInst(Operand _A,Operation __op,Operand _B);
     BinaryInst* clone(std::unordered_map<Operand,Operand>&)override;
-    bool IsCmpInst(){return  (op-Op_Add) > 6;}
+    bool IsCmpInst(){return  (op-Op_Add) > 7;}
     void print()final;
     void SetOperand(int index,Value* val);
     std::string GetOperation();
     Operation getopration();
+    Operation GetReversedOperation(BinaryInst::Operation ope);
+    Operation GetInvertedOperation(BinaryInst::Operation ope);
     static BinaryInst* CreateInst(Operand _A,Operation __op,Operand _B,User* place=nullptr);
 };
 class GetElementPtrInst:public User

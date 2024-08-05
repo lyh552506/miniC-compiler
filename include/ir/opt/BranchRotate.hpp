@@ -13,10 +13,17 @@ class BranchRotate : public _PassManagerBase<BranchRotate, Function>
   private:
     Function *func;
     _AnalysisManager &AM;
-    std::unordered_map<BasicBlock*, std::set<BasicBlock*>> Successors;
-    void ReWritePhi(std::vector<std::pair<BasicBlock*, std::set<PhiInst*>>>& NeedHandle);
-    void CalCulateCycle();
-    bool Handle(std::vector<std::pair<BasicBlock*, std::set<PhiInst*>>> &NeedHandle);
+    dominance* dom;
+    std::vector<BasicBlock*> DFSOrder;
+    std::unordered_map<BasicBlock*, std::unordered_map<size_t, std::vector<BinaryInst*>>> CmpMap;
+    bool NormalizingCmp();
+    bool CombineCmp();
+    bool AdjustExit();
+    bool AdjustCondition();
+    bool DetectCall(Value* inst, BasicBlock* block);
+    bool Handle_Or(BasicBlock* cur, BasicBlock* succ, std::unordered_set<BasicBlock*>& wait_del);
+    bool Handle_And(BasicBlock* cur, BasicBlock* succ, std::unordered_set<BasicBlock*>& wait_del);
+    void OrderBlock(BasicBlock* block);
   public:
     BranchRotate(Function *func, _AnalysisManager &_AM) : func(func), AM(_AM)
     {
