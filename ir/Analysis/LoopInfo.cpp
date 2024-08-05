@@ -7,7 +7,6 @@
 #include <unordered_set>
 #include <vector>
 
-std::set<LoopInfo::Tag> LoopInfo::LoopForm = {LoopInfo::Normal};
 void LoopAnalysis::Analysis() {
   //此处后续遍历支配树
   for (auto curbb : PostOrder) {
@@ -256,19 +255,21 @@ void LoopAnalysis::PrintPass() {
 
 void LoopAnalysis::DeleteLoop(LoopInfo *loop) {
   auto parent = loop->GetParent();
-  auto it = std::find(parent->GetSubLoop().begin(),
+  if (parent) {
+    auto it = std::find(parent->GetSubLoop().begin(),
                         parent->GetSubLoop().end(), loop);
-  assert(it != parent->GetSubLoop().end());
-  parent->GetSubLoop().erase(it);
-  while (parent) {
-    for (auto loopbody : loop->GetLoopBody()) {
-      auto iter = std::find(parent->GetLoopBody().begin(),
-                            parent->GetLoopBody().end(), loopbody);
-      if (iter != parent->GetLoopBody().end()) {
-        parent->GetLoopBody().erase(iter);
+    assert(it != parent->GetSubLoop().end());
+    parent->GetSubLoop().erase(it);
+    while (parent) {
+      for (auto loopbody : loop->GetLoopBody()) {
+        auto iter = std::find(parent->GetLoopBody().begin(),
+                              parent->GetLoopBody().end(), loopbody);
+        if (iter != parent->GetLoopBody().end()) {
+          parent->GetLoopBody().erase(iter);
+        }
       }
+      parent = parent->GetParent();
     }
-    parent = parent->GetParent();
   }
   auto it1 = std::find(LoopRecord.begin(), LoopRecord.end(), loop);
   assert(it1 != LoopRecord.end());

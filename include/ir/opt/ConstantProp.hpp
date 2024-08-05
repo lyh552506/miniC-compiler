@@ -8,6 +8,7 @@ class ConstantProp : public _PassManagerBase<ConstantProp, Function>
     bool RunOnBlock(BasicBlock* block);
 private:
     ConstantFolding* ConstFold;
+    bool ChangeCmpOp(User* inst);
     Function* _func;
     _AnalysisManager& AM;
 public:

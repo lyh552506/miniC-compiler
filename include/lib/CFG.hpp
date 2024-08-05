@@ -178,6 +178,7 @@ class BinaryInst:public User
     void SetOperand(int index,Value* val);
     std::string GetOperation();
     Operation getopration();
+    void setoperation(Operation _op){op=_op;}
     static BinaryInst* CreateInst(Operand _A,Operation __op,Operand _B,User* place=nullptr);
 };
 class GetElementPtrInst:public User
@@ -314,7 +315,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void InsertBlock(BasicBlock* pred,BasicBlock* succ,BasicBlock* insert);
     //curr ==>  insert -> curr
     void InsertBlock(BasicBlock* curr,BasicBlock* insert);
-    void InlineCall(CallInst* call);
+    std::pair<Value*,BasicBlock*> InlineCall(CallInst* call,std::unordered_map<Operand, Operand>& OperandMapping);
     void init_visited_block();
     void init_reach_block();
     bool MemWrite();
