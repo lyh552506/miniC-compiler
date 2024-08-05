@@ -25,7 +25,8 @@ public:
     inline void nextCycle();
     inline void Schedule_clear();
     bool isPipelineReady(RISCVMIR*);
-    void Swap_region(mylist_iterator begin, mylist_iterator end);
+    void Swap_region(mylist_iterator, mylist_iterator, BlockDepInfo*);
+
 };
 
 class Pre_RA_Scheduler: private Scheduler {

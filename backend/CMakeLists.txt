@@ -1,6 +1,6 @@
 file(GLOB Backend_Src "*.cpp")
 add_library(Backend ${Backend_Src})
-add_definitions(-DDEBUG_SCHED)
+# add_definitions(-DDEBUG_SCHED)
 target_link_libraries(Backend Lib)
 # target_link_libraries(Target Backend)
 target_include_directories(Backend PUBLIC ${PROJECT_SOURCE_DIR}/lib)

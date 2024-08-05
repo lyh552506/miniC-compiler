@@ -29,6 +29,7 @@ public:
 using MOp2StackMap = std::unordered_map<RISCVMOperand*, std::stack<RISCVMIR*>>;
 using RealSunit = std::pair<RISCVMIR*, Sunit*>;
 class BlockDepInfo {
+    RISCVBasicBlock* block;
     friend class DependencyGraph;
     MOp2StackMap def2inst;
     MOp2StackMap use2inst;
@@ -37,8 +38,9 @@ class BlockDepInfo {
 public:
     BlockDepInfo(RISCVBasicBlock*);
     void BuildBlockDepInfo(RISCVBasicBlock*);
-    inline std::list<RealSunit> get_inst2sunit() {return inst2sunit;}
-    inline std::unordered_map<Sunit*, RISCVMIR*> get_Sunit2InstMap() {return Sunit2InstMap;}
+    inline RISCVBasicBlock*& get_block() {return block;}
+    inline std::list<RealSunit>& get_inst2sunit() {return inst2sunit;}
+    inline std::unordered_map<Sunit*, RISCVMIR*>& get_Sunit2InstMap() {return Sunit2InstMap;}
 };
 
 // DependencyGraph
@@ -74,6 +76,7 @@ class SchedRegion {
 
 public:
     SchedRegion(RISCVBasicBlock* block);
+    inline RISCVBasicBlock*& getBlock() {return block;}
     bool LastRegion();
     bool NextRegion();
 };

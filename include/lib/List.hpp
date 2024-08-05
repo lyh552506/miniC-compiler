@@ -210,7 +210,7 @@ class mylist
         size++;
     }
 
-    void swap_region(derived_list_node* begin, derived_list_node* end, std::list<derived_list_node>& sequence) {
+    void swap_region(derived_list_node* begin, derived_list_node* end, std::list<derived_list_node*>& sequence) {
         assert(!sequence.empty()&&"sequence can't be empty");
         
         auto prev=begin->prev;
