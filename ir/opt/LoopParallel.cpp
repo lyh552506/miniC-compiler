@@ -202,3 +202,24 @@ void LoopParallel::ClearLoop(LoopInfo *loop) {
     delete contain;
   }
 }
+
+bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
+  std::unordered_map<Value *, std::pair<Value *, Value *>> PointerAnaly;
+  auto body = loop->GetLoopBody();
+  for (auto bb : body)
+    for (auto inst : *bb) {
+      if (inst->IsTerminateInst())
+        break;
+      Operand p = nullptr;
+      if (dynamic_cast<LoadInst *>(inst))
+        p = inst->GetOperand(0);
+      else if (dynamic_cast<StoreInst *>(inst))
+        p = inst->GetOperand(1);
+      else if (inst->HasSideEffect())
+        return false;
+      else
+       continue;
+      assert(p);
+      
+    }
+}
