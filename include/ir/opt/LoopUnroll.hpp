@@ -15,6 +15,8 @@ private:
   BasicBlock *Unroll(LoopInfo *loop, CallInst *UnrollBody);
   bool CanBeUnroll(LoopInfo *loop);
   void CleanUp(LoopInfo *loop, BasicBlock *clean);
+  bool simplify_Block();
+  void DeletDeadBlock(BasicBlock *bb);
   Function *m_func;
   dominance *dom;
   LoopAnalysis *loopAnaly;

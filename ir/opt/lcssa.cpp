@@ -212,8 +212,10 @@ void LcSSA::FindBBRecursive(std::set<BasicBlock *> &exit,
                             std::set<BasicBlock *> &target,
                             std::set<BasicBlock *> &visited, BasicBlock *bb) {
   if (visited.insert(bb).second) {
-    if (exit.find(bb) != exit.end())
+    if (exit.find(bb) != exit.end()) {
       target.insert(bb);
+      return;
+    }
     for (auto prednode : m_dom->GetNode(bb->num).rev) {
       auto predbb = m_dom->GetNode(prednode).thisBlock;
       FindBBRecursive(exit, target, visited, predbb);
