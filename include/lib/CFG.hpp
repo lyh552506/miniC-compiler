@@ -180,6 +180,7 @@ class BinaryInst:public User
     Operation getopration();
     Operation GetReversedOperation(BinaryInst::Operation ope);
     Operation GetInvertedOperation(BinaryInst::Operation ope);
+    void setoperation(Operation _op){op=_op;}
     static BinaryInst* CreateInst(Operand _A,Operation __op,Operand _B,User* place=nullptr);
 };
 class GetElementPtrInst:public User

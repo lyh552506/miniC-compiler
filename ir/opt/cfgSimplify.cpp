@@ -1,5 +1,7 @@
 #include "../../include/ir/opt/cfgSimplify.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
+#include "CFG.hpp"
+#include "Singleton.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -378,7 +380,7 @@ bool cfgSimplify::DelSamePhis() {
   bool changed = false;
   while (i < m_func->GetBasicBlock().size()) {
     BasicBlock *bb = m_func->GetBasicBlock()[i++];
-    std::vector<PhiInst *> &phis = BlockToPhis[bb];
+    std::vector<PhiInst *> phis;
     for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
       if (auto phi = dynamic_cast<PhiInst *>(*iter)) {
         if (std::find(phis.begin(), phis.end(), phi) == phis.end())
@@ -393,7 +395,10 @@ bool cfgSimplify::DelSamePhis() {
       for (int j = i + 1; j < phis.size(); ++j)
         if (phis[i]->IsSame(phis[j])) {
           phis[j]->RAUW(phis[i]);
-          delete phis[j];
+          auto del = phis[j];
+          phis[j] = phis[phis.size() - 1];
+          delete del;
+          phis.pop_back();
           //替换了phi后可能会对其他的phi造成影响，此处我们记录并在后续再进行循环
           i--;
           changed = true;
