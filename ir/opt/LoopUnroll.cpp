@@ -17,7 +17,6 @@
 #include <vector>
 
 bool LoopUnroll::Run() {
-  bool changed = false;
   dom = AM.get<dominance>(m_func);
   loopAnaly = AM.get<LoopAnalysis>(m_func, dom);
   std::vector<LoopInfo *> loops{loopAnaly->begin(), loopAnaly->end()};
@@ -27,14 +26,13 @@ bool LoopUnroll::Run() {
     if (AM.FindAttr(loop->GetHeader(), Rotate) && CanBeUnroll(loop)) {
       auto unrollbody = ExtractLoopBody(loop);
       if (unrollbody) {
-        changed |= true;
         auto bb = Unroll(loop, unrollbody);
         CleanUp(loop, bb);
-        // delete unrollbody;
+        return true;
       }
     }
   }
-  return changed;
+  return false;
 }
 
 CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
@@ -233,6 +231,9 @@ CallInst *LoopUnroll::ExtractLoopBody(LoopInfo *loop) {
     res->updateIncoming(callinst, substitute);
   loop->trait.indvar->updateIncoming(loop->trait.change, substitute);
   //转移
+  substitute->num = header->num;
+  m_func->GetBasicBlock()[header->num] = substitute;
+  dom->GetNode(header->num).thisBlock = substitute;
   std::vector<BasicBlock *> tmp{body.begin(), body.end()};
   for (auto iter = tmp.begin(); iter != tmp.end();) {
     auto bb = *iter;
@@ -291,8 +292,6 @@ BasicBlock *LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
           Arg2Orig[arg] = IndVar;
         } else if (phi == loop->trait.res) {
           Arg2Orig[arg] = Res;
-        } else {
-          assert(0 && "What phi?");
         }
       } else {
         Arg2Orig[arg] = arg;

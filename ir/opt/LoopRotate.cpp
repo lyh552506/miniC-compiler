@@ -412,6 +412,9 @@ bool LoopRotate::TryRotate(LoopInfo *loop) {
   bool Legal = false;
   auto latch = loopAnlasis->GetLatch(loop);
   auto head = loop->GetHeader();
+  auto uncond = dynamic_cast<UnCondInst *>(latch->back());
+  if (!uncond)
+    return false;
   assert(latch);
   int pred = std::distance(m_dom->GetNode(latch->num).rev.begin(),
                            m_dom->GetNode(latch->num).rev.end());
