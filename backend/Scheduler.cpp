@@ -94,8 +94,16 @@ bool Scheduler::isPipelineReady(RISCVMIR* inst) {
     }
 }
 
-void Scheduler::Swap_region(mylist_iterator begin, mylist_iterator end) {
-    
+void Scheduler::Swap_region(mylist_iterator begin, mylist_iterator end, BlockDepInfo* depInfo) {
+    if(Sequence.size()==0) {
+        return;
+    }
+    std::list<RISCVMIR*> sched_list;
+    for(auto& sunit: Sequence) {
+        sched_list.push_back(depInfo->get_Sunit2InstMap()[sunit]);
+    }
+    RISCVBasicBlock*& block = depInfo->get_block();
+    block->swap_region(*begin, *end, sched_list);
 }
 // Pre_RA_Scheduler
 void Pre_RA_Scheduler::ScheduleOnModule(RISCVLoweringContext& ctx) {
@@ -141,7 +149,8 @@ void Pre_RA_Scheduler::ScheduleOnRegion(mylist_iterator begin, mylist_iterator e
 
     Schedule(depGraph);
     Schedule_clear();
-    Swap_region(begin, end);
+    Swap_region(begin, end, depInfo);
+    
 }
 void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
     while(!isFinish(depGraph)) {
@@ -168,7 +177,6 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
                 for(auto& node: depGraph->adjList[*it]) {
                     depGraph->inDegree[node]--;
                 }
-                // depGraph->inDegree[*it] = -1;
                 it = PlaneNode.erase(it);
             }
             else {
@@ -182,11 +190,10 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
         for(auto it = Pending.begin(); it != Pending.end();) {
             if(CurCycle >= (*it)->get_maxLatency()) {
                 transfer(*it, Pending, Available);
-                it = Pending.erase(it);
                 for(auto& node: depGraph->adjList[*it]) {
                     depGraph->inDegree[node]--;
                 }
-                // depGraph->inDegree[*it] = -1;
+                it = Pending.erase(it);
                 continue;
             }
             break;

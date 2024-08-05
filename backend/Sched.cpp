@@ -1,6 +1,7 @@
 #include "../include/backend/Sched.hpp"
 
-BlockDepInfo::BlockDepInfo(RISCVBasicBlock* block) {
+BlockDepInfo::BlockDepInfo(RISCVBasicBlock* block)
+    : block(block) {
     BuildBlockDepInfo(block);
 }
 
