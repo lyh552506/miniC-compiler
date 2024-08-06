@@ -175,32 +175,32 @@ bool BranchRotate::Handle_Or(BasicBlock *cur, BasicBlock *succ, std::unordered_s
             for (auto it = succ->begin(); it != succ->end();)
             {
                 (*it)->EraseFromParent();
-                // for (int i = 0; i < (*it)->Getuselist().size(); i++)
-                // Mapping[(*it)->GetOperand(i)] = (*it)->GetOperand(i);
-                // auto new_inst = (*it)->clone(Mapping);
-                Cur_iter.insert_before(*it);
+                if (auto phi = dynamic_cast<PhiInst *>(*it))
+                {
+                    phi->EraseRecordByBlock(cur);
+                    cur->push_front(phi);
+                }
+                else
+                    Cur_iter.insert_before(*it);
                 it = succ->begin();
             }
-            wait_del.insert(succ);
             auto binary_or = new BinaryInst(cond1, BinaryInst::Op_Or, cond2);
             Cur_iter.insert_before(binary_or);
             Cur_Cond->RSUW(Cur_Cond->Getuselist()[0].get(), binary_or);
             auto phi_iter = PhiBlock1->begin();
             while (auto phi = dynamic_cast<PhiInst *>(*phi_iter))
             {
-                // phi->EraseRecordByBlock(succ);
-                phi->ModifyBlock(succ, cur);
-                // phi->FormatPhi();
+                phi->ModifyBlock_CheckSame(succ, cur);
                 ++phi_iter;
             }
             phi_iter = PhiBlock2->begin();
             while (auto phi = dynamic_cast<PhiInst *>(*phi_iter))
             {
-                // phi->EraseRecordByBlock(succ);
-                phi->ModifyBlock(succ, cur);
-                // phi->FormatPhi();
+                phi->ModifyBlock_CheckSame(succ, cur);
                 ++phi_iter;
             }
+            wait_del.insert(succ);
+            succ->RAUW(cur);
             modified = true;
         }
     }
@@ -231,32 +231,32 @@ bool BranchRotate::Handle_And(BasicBlock *cur, BasicBlock *succ, std::unordered_
             for (auto it = succ->begin(); it != succ->end();)
             {
                 (*it)->EraseFromParent();
-                // for (int i = 0; i < (*it)->Getuselist().size(); i++)
-                // Mapping[(*it)->GetOperand(i)] = (*it)->GetOperand(i);
-                // auto new_inst = (*it)->clone(Mapping);
-                Cur_iter.insert_before(*it);
+                if (auto phi = dynamic_cast<PhiInst *>(*it))
+                {
+                    phi->EraseRecordByBlock(cur);
+                    cur->push_front(phi);
+                }
+                else
+                    Cur_iter.insert_before(*it);
                 it = succ->begin();
             }
-            wait_del.insert(succ);
             auto binary_and = new BinaryInst(cond1, BinaryInst::Op_And, cond2);
             Cur_iter.insert_before(binary_and);
             Cur_Cond->RSUW(Cur_Cond->Getuselist()[0].get(), binary_and);
             auto phi_iter = PhiBlock1->begin();
             while (auto phi = dynamic_cast<PhiInst *>(*phi_iter))
             {
-                phi->EraseRecordByBlock(succ);
-                // phi->ModifyBlock(succ, cur);
-                // phi->FormatPhi();
+                phi->ModifyBlock_CheckSame(succ, cur);
                 ++phi_iter;
             }
             phi_iter = PhiBlock2->begin();
             while (auto phi = dynamic_cast<PhiInst *>(*phi_iter))
             {
-                phi->EraseRecordByBlock(succ);
-                // phi->ModifyBlock(succ, cur);
-                // phi->FormatPhi();
+                phi->ModifyBlock_CheckSame(succ, cur);
                 ++phi_iter;
             }
+            wait_del.insert(succ);
+            succ->RAUW(cur);
             modified = true;
         }
     }

@@ -107,6 +107,8 @@ void _PassManager::RunOnLevel() {
 
     // global2local
     // RunImpl<Global2Local>(module, AM);
+      PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
+      PassChangedEnd
     while (modified) {
     Iteration:
       modified = false;
@@ -114,8 +116,7 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
       PassChangedEnd
           // Local2Global
-          RunImpl<Local2Global>(module, AM);
-
+      RunImpl<Local2Global>(module, AM);
       // simplifycfg
       RunLevelPass(ConstantProp, curfunc, modified);
 
@@ -134,8 +135,9 @@ void _PassManager::RunOnLevel() {
       RunLevelPass(CSE, curfunc, modified);
       RunLevelPass(GepCombine, curfunc, modified);
       RunLevelPass(DCE, curfunc, modified);
+      RunLevelPass(BranchRotate, curfunc, modified);
       // TRE
-      RunLevelPass(TailRecurseEliminator,curfunc,modified);
+      // RunLevelPass(TailRecurseEliminator,curfunc,modified);
     }
     if (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)

@@ -11,6 +11,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <tuple>
 #define BaseEnumNum 8
 template <typename T>
 T *normal_clone(T *from, std::unordered_map<Operand, Operand> &mapping) {
@@ -1443,6 +1444,38 @@ void PhiInst::ModifyBlock(BasicBlock *Old, BasicBlock *New) {
     return;
   //将value对应的块信息更改
   it1->second.second = New;
+}
+
+void PhiInst::ModifyBlock_CheckSame(BasicBlock* Old, BasicBlock* New)
+{
+  bool flag = false;
+  Value* old_val = nullptr;
+  int index = -1;
+  for(auto&[key, val] : PhiRecord)
+  {
+    if(val.second == Old)
+    {
+      old_val = val.first;
+      index = key;
+      break;
+    }
+  }
+
+  std::pair<Value*, BasicBlock*> Pair{old_val, New};
+  for(auto&[key, val] : PhiRecord)
+  {
+    if(val.second == New)
+    {
+      flag = true;
+      PhiRecord.erase(index);
+      oprandNum--;
+      break;
+    }
+  }
+  if(flag)
+    return;
+  PhiRecord[index] = Pair;
+  return;
 }
 
 void PhiInst::EraseRecordByBlock(BasicBlock* block)

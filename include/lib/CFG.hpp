@@ -232,6 +232,7 @@ public:
   Value* GetVal(int index);
   void EraseRecordByBlock(BasicBlock* block);
   void ModifyBlock(BasicBlock* Old,BasicBlock* New);
+  void ModifyBlock_CheckSame(BasicBlock* Old, BasicBlock* New);
   std::vector<BasicBlock*> Blocks;
   int oprandNum;
   bool IsGetIncomings=false;

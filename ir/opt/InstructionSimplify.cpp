@@ -14,6 +14,8 @@ Value *SimplifyBinOp(BinaryInst::Operation Opcode, Value *LHS, Value *RHS)
         return SimplifyDivInst(LHS, RHS);
     case BinaryInst::Op_Mod:
         return SimplifyModInst(LHS, RHS);
+    case BinaryInst::Op_And:
+    case BinaryInst::Op_Or:
     case BinaryInst::Op_E:
     case BinaryInst::Op_NE:
     case BinaryInst::Op_G:
@@ -172,6 +174,18 @@ Value *SimplifyModInst(Value *LHS, Value *RHS)
 
 Value *SimplifyIcmpInst(BinaryInst::Operation Opcode, Value *LHS, Value *RHS)
 {
+    // false and  X -> false
+    if (Opcode == BinaryInst::Op_And &&
+        ((dynamic_cast<ConstIRBoolean *>(LHS) && !dynamic_cast<ConstIRBoolean *>(LHS)->GetVal()) ||
+         (dynamic_cast<ConstIRBoolean *>(RHS) && !dynamic_cast<ConstIRBoolean *>(RHS)->GetVal())))
+        return ConstIRBoolean::GetNewConstant(false);
+
+    // true or X -> true
+    if (Opcode == BinaryInst::Op_Or &&
+        ((dynamic_cast<ConstIRBoolean *>(LHS) && dynamic_cast<ConstIRBoolean *>(LHS)->GetVal()) ||
+         (dynamic_cast<ConstIRBoolean *>(RHS) && dynamic_cast<ConstIRBoolean *>(RHS)->GetVal())))
+        return ConstIRBoolean::GetNewConstant(true);
+
     // X == X -> true
     if (LHS == RHS && Opcode == BinaryInst::Op_E)
         return ConstIRBoolean::GetNewConstant(true);
