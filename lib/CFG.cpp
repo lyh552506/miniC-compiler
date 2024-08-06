@@ -1484,7 +1484,8 @@ void PhiInst::EraseRecordByBlock(BasicBlock* block)
   {
     if(record.second==block)
     {
-      PhiRecord.erase(index);
+      Del_Incomes(block->num);
+      FormatPhi();
       break;
     }
   }

@@ -25,42 +25,6 @@ bool CondMerge::Run()
         changed |= AdjustCondition();
         modified |= changed;
     }
-    modified |= NormalizingCmp();
-    modified |= CombineCmp();
-    return modified;
-}
-
-bool CondMerge::NormalizingCmp()
-{
-    bool modified = false;
-    for (BasicBlock *block : DFSOrder)
-    {
-        User *inst = block->back();
-        if (dynamic_cast<CondInst *>(inst))
-        {
-            auto cmp = dynamic_cast<BinaryInst *>(inst->Getuselist()[0]->usee);
-            if (cmp && cmp->IsCmpInst())
-            {
-
-                BasicBlock::mylist<BasicBlock, User>::iterator it(inst);
-                BasicBlock::mylist<BasicBlock, User>::iterator it1(cmp);
-                if (++it1 != it)
-                {
-                    std::unordered_map<Operand, Operand> Mapping;
-                    Mapping[cmp->GetOperand(0)] = cmp->GetOperand(0);
-                    Mapping[cmp->GetOperand(1)] = cmp->GetOperand(1);
-                    auto new_cmp = cmp->clone(Mapping);
-                    it.insert_before(new_cmp);
-                    inst->RSUW(inst->Getuselist()[0].get(), new_cmp);
-                    cmp->ClearRelation();
-                    cmp->EraseFromParent();
-                    _DEBUG_(std::cerr << "Normalizing Cmp" << std::endl;)
-                    modified |= true;
-                    continue;
-                }
-            }
-        }
-    }
     return modified;
 }
 
@@ -72,66 +36,6 @@ void CondMerge::OrderBlock(BasicBlock *block)
     for (int dest : dom->GetNode(block->num).des)
         OrderBlock(dom->GetNode(dest).thisBlock);
     DFSOrder.push_back(block);
-}
-
-bool CondMerge::CombineCmp()
-{
-    bool modified = false;
-    for (BasicBlock *block : DFSOrder)
-    {
-        auto &cmps = CmpMap[block];
-        if (auto parent = dom->GetNode(dom->GetNode(block->num).idom).thisBlock)
-            cmps = CmpMap[parent];
-
-        for (auto iter = block->rbegin(); iter != block->rend(); --iter)
-        {
-            auto cmp = dynamic_cast<BinaryInst *>(*iter);
-            if (!cmp)
-                continue;
-            if (!cmp->IsCmpInst())
-                continue;
-            bool Should_del = false;
-            size_t hash = std::hash<User::OpID>{}(cmp->GetInstId()) ^ std::hash<Operand>{}(cmp->GetOperand(0)) ^
-                          std::hash<Operand>{}(cmp->GetOperand(1));
-            auto &IncomeCmps = cmps[hash];
-            for (BinaryInst *Income : IncomeCmps)
-            {
-                BinaryInst::Operation Income_op = Income->getopration();
-                BinaryInst::Operation Cur_Op = cmp->getopration();
-                auto match_Op = [&](int i, int j) {
-                    return cmp->GetOperand(0) == Income->GetOperand(i) && cmp->GetOperand(1) == Income->GetOperand(j);
-                };
-
-                if ((Income_op == Cur_Op && match_Op(0, 1)) ||
-                    (Income->GetReversedOperation(Income_op) == Cur_Op && match_Op(1, 0)))
-                {
-                    cmp->RAUW(Income);
-                    Should_del = true;
-                    break;
-                }
-                if ((Income->GetInvertedOperation(Income_op) == Cur_Op && match_Op(0, 1)) ||
-                    (Income->GetReversedOperation(Income->GetInvertedOperation(Income_op)) == Cur_Op && match_Op(1, 0)))
-                {
-                    BasicBlock::mylist<BasicBlock, User>::iterator it(cmp);
-                    auto xor_ = new BinaryInst(Income, BinaryInst::Op_Xor, ConstIRBoolean::GetNewConstant(true));
-                    it.insert_before(xor_);
-                    cmp->RAUW(xor_);
-                    _DEBUG_(std::cerr << "Cmpcombine" << std::endl;)
-                    Should_del = true;
-                    break;
-                }
-            }
-            if (!Should_del)
-                IncomeCmps.push_back(cmp);
-            else
-            {
-                cmp->ClearRelation();
-                cmp->EraseFromParent();
-                modified |= true;
-            }
-        }
-    }
-    return modified;
 }
 
 bool CondMerge::AdjustCondition()
