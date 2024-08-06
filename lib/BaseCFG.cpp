@@ -128,6 +128,21 @@ bool Value::isConstOne() {
     return false;
 }
 
+Value* Value::GetNegtive()
+{
+  if(Negative_tag)
+  {
+    if(auto num = dynamic_cast<ConstIRInt*>(this))
+      return ConstIRInt::GetNewConstant(-num->GetVal());
+    else if(auto num = dynamic_cast<ConstIRFloat*>(this))
+      return ConstIRFloat::GetNewConstant(-num->GetVal());
+    else
+      return this;
+  }
+  else
+    return nullptr;
+}
+
 void User::add_use(Value *__data) {
   uselist.push_back(std::make_unique<Use>(this, __data));
 }

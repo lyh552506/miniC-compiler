@@ -63,6 +63,8 @@ Value *ConstantFolding::ConstantFoldBinaryInst(BinaryInst *inst)
     Value *Simplify = SimplifyBinOp(inst->getopration(), LHS, RHS);
     if (Simplify)
         return Simplify;
+    if(inst->getopration() == BinaryInst::Op_Sub)
+        ReversedSubOperand(inst);
     return nullptr;
 }
 
@@ -498,4 +500,16 @@ ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst::Operation Opcode, Con
     if (retval)
         return retval;
     return nullptr;
+}
+
+bool ConstantFolding::ReversedSubOperand(BinaryInst* inst)
+{
+    assert(inst->getopration() == BinaryInst::Op_Sub && "Not a Sub Operation");
+    Value* RHS = inst->Getuselist()[1]->usee;
+    if(RHS)
+    {
+        RHS->Negative_tag = true;
+        return true;
+    }
+    return false;
 }

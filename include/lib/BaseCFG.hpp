@@ -97,6 +97,7 @@ class Value
     void print();
     InnerDataType GetTypeEnum();
     virtual Type* GetType();
+    bool Negative_tag = false;
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
     void RAUW(Value* val); //ReplaceAllUseWith
@@ -108,6 +109,7 @@ class Value
     bool isUndefVal();
     bool isConstZero();
     bool isConstOne();
+    Value* GetNegtive();
     int GetUserListSize(){return GetUserlist().GetSize();}
     std::set<Function*> Change_Funcs;
     template<typename T>
