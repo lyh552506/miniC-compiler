@@ -5,7 +5,7 @@
 #include "../include/backend/Scheduler.hpp"
 #include "../include/backend/CodeLayout.hpp"
 #include "../include/backend/DeleteDeadBlock.hpp"
-
+#include "../include/backend/Scheduler.hpp"
 extern std::string asmoutput_path;
 RISCVAsmPrinter *asmprinter = nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module *m)

@@ -140,6 +140,7 @@ class User:public Value,public list_node<BasicBlock,User>
         Mod,
         And,
         Or,
+        Xor,
         Eq,
         Ne,
         Ge,

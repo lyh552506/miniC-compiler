@@ -73,6 +73,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case tailrecurseEliminator:
       AddPass(tailrecurseEliminator);
       break;
+    case branchrotate:
+      AddPass(branchrotate);
+      break;
     case O0:
       level = O0;
       break;
@@ -104,6 +107,8 @@ void _PassManager::RunOnLevel() {
 
     // global2local
     // RunImpl<Global2Local>(module, AM);
+      PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
+      PassChangedEnd
     while (modified) {
     Iteration:
       modified = false;
@@ -111,8 +116,7 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
       PassChangedEnd
           // Local2Global
-          RunImpl<Local2Global>(module, AM);
-
+      RunImpl<Local2Global>(module, AM);
       // simplifycfg
       RunLevelPass(ConstantProp, curfunc, modified);
 
@@ -120,19 +124,28 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc) PassChangedEnd
 
           RunLevelPass(cfgSimplify, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
+      PassChangedBegin(curfunc) PassChangedEnd   
+
+
           // cse
           RunLevelPass(CSE, curfunc, modified);
+
       // constprop
       RunLevelPass(ConstantProp, curfunc, modified);
       // reassociate
       RunLevelPass(Reassociate, curfunc, modified);
+
       // cse
+
       RunLevelPass(CSE, curfunc, modified);
+
       RunLevelPass(GepCombine, curfunc, modified);
-      RunLevelPass(DCE, curfunc, modified);
+      RunLevelPass(DCE, curfunc, modified); 
+
+
+      RunLevelPass(BranchRotate, curfunc, modified);
       // TRE
-      RunLevelPass(TailRecurseEliminator,curfunc,modified);
+      RunLevelPass(TailRecurseEliminator,curfunc,modified);   
     }
     if (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
@@ -312,6 +325,10 @@ void _PassManager::RunOnTest() {
         }
         case tailrecurseEliminator: {
           auto m_TRE = RunImpl<TailRecurseEliminator>(curfunc, AM);
+          break;
+        }
+        case branchrotate: {
+          auto m_BranchRotate = RunImpl<BranchRotate>(curfunc, AM);
           break;
         }
         default: {

@@ -11,6 +11,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <tuple>
 #define BaseEnumNum 8
 template <typename T>
 T *normal_clone(T *from, std::unordered_map<Operand, Operand> &mapping) {
@@ -348,7 +349,46 @@ BinaryInst *BinaryInst::clone(std::unordered_map<Operand, Operand> &mapping) {
 }
 
 BinaryInst::Operation BinaryInst::getopration() { return op; }
-
+BinaryInst::Operation BinaryInst::GetReversedOperation(BinaryInst::Operation op)
+{
+  switch (op)
+  {
+    case BinaryInst::Op_E:
+      return BinaryInst::Op_E;
+    case BinaryInst::Op_NE:
+      return BinaryInst::Op_NE;
+    case BinaryInst::Op_G:
+      return BinaryInst::Op_L;
+    case BinaryInst::Op_GE:
+      return BinaryInst::Op_LE;
+    case BinaryInst::Op_L:
+      return BinaryInst::Op_G;
+    case BinaryInst::Op_LE:
+      return BinaryInst::Op_GE;
+    default:
+      return static_cast<BinaryInst::Operation>(-1);
+  }
+}
+BinaryInst::Operation BinaryInst::GetInvertedOperation(BinaryInst::Operation op)
+{
+  switch (op)
+  {
+    case BinaryInst::Op_E:
+      return BinaryInst::Op_NE;
+    case BinaryInst::Op_NE:
+      return BinaryInst::Op_E;
+    case BinaryInst::Op_G:
+      return BinaryInst::Op_LE;
+    case BinaryInst::Op_GE:
+      return BinaryInst::Op_L;
+    case BinaryInst::Op_L:
+      return BinaryInst::Op_GE;
+    case BinaryInst::Op_LE:
+      return BinaryInst::Op_G;
+    default:
+      return static_cast<BinaryInst::Operation>(-1);
+  }
+}
 BinaryInst *BinaryInst::CreateInst(Operand _A, Operation __op, Operand _B,
                                    User *place) {
 
@@ -402,7 +442,10 @@ void BinaryInst::print() {
     std::cout << "and ";
     break;
   case BinaryInst::Op_Or:
-    std::cout << "Or ";
+    std::cout << "or ";
+    break;
+  case BinaryInst::Op_Xor:
+    std::cout << "xor ";
     break;
   case BinaryInst::Op_E:
     if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
@@ -1377,9 +1420,44 @@ void PhiInst::ModifyBlock(BasicBlock *Old, BasicBlock *New) {
   it1->second.second = New;
 }
 
-void PhiInst::EraseRecordByBlock(BasicBlock *block) {
-  for (auto &[index, record] : PhiRecord) {
-    if (record.second == block) {
+void PhiInst::ModifyBlock_CheckSame(BasicBlock* Old, BasicBlock* New)
+{
+  bool flag = false;
+  Value* old_val = nullptr;
+  int index = -1;
+  for(auto&[key, val] : PhiRecord)
+  {
+    if(val.second == Old)
+    {
+      old_val = val.first;
+      index = key;
+      break;
+    }
+  }
+
+  std::pair<Value*, BasicBlock*> Pair{old_val, New};
+  for(auto&[key, val] : PhiRecord)
+  {
+    if(val.second == New)
+    {
+      flag = true;
+      PhiRecord.erase(index);
+      oprandNum--;
+      break;
+    }
+  }
+  if(flag)
+    return;
+  PhiRecord[index] = Pair;
+  return;
+}
+
+void PhiInst::EraseRecordByBlock(BasicBlock* block)
+{
+  for(auto& [index,record] : PhiRecord)
+  {
+    if(record.second==block)
+    {
       PhiRecord.erase(index);
       break;
     }
