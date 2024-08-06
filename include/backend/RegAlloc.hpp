@@ -4,9 +4,9 @@
 #include "../../include/backend/RISCVMOperand.hpp"
 #include "../../include/backend/RISCVRegister.hpp"
 #include "../../include/backend/RISCVType.hpp"
+#include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../util/my_stl.hpp"
-#include "../../include/lib/BaseCFG.hpp"
 #include <algorithm>
 #include <cmath>
 #include <list>
@@ -25,7 +25,9 @@ class RegAllocImpl {
 
 public:
   RegAllocImpl(RISCVFunction *func, RISCVLoweringContext &_ctx)
-      : m_func(func), ctx(_ctx) {}
+      : m_func(func), ctx(_ctx) {
+    m_func = ctx.GetCurFunction();
+  }
   void RunGCpass();
   struct RegLiveInterval {
     int start;
@@ -60,7 +62,7 @@ public:
   std::unordered_map<RISCVMIR *, std::unordered_set<MOperand>> InstLive;
   // 机器寄存器的集合，每个寄存器都预先指派了一种颜色
   std::unordered_set<MOperand> Precolored; // reg
-                                           //算法最后为每一个operand选择的颜色
+                                           // 算法最后为每一个operand选择的颜色
   std::unordered_map<MOperand, PhyRegister *> color;
   // 从一个结点到与该节点相关的传送指令表的映射
   std::unordered_map<MOperand, std::unordered_set<RISCVMIR *>>
@@ -119,13 +121,15 @@ public:
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
   GraphColor(RISCVFunction *func, RISCVLoweringContext &_ctx)
-      : LiveInterval(func), ctx(_ctx), m_func(func) {}
+      : LiveInterval(func), ctx(_ctx), m_func(func) {
+    m_func = ctx.GetCurFunction();
+  }
   void RunOnFunc();
 
 private:
   /// @brief 初始化各个工作表
   void MakeWorklist();
-  //返回vector为0则不是move相关
+  // 返回vector为0则不是move相关
   std::unordered_set<RISCVMIR *> MoveRelated(MOperand v);
   void CalcmoveList(RISCVBasicBlock *block);
   void CalcIG(RISCVMIR *inst);
@@ -164,7 +168,7 @@ private:
                           std::unordered_set<VirRegister *> &temps);
   void Print();
   std::vector<MOperand> SpillStack;
-  //保证Interval vector的顺序
+  // 保证Interval vector的顺序
   std::unordered_map<MOperand, IntervalLength> ValsInterval;
   enum MoveState { coalesced, constrained, frozen, worklist, active };
   // 低度数的传送有关节点表
@@ -177,25 +181,25 @@ private:
   std::unordered_set<MOperand> spilledNodes;
   // 已合并的寄存器集合，当合并u<--v，将v加入到这个集合中，u则被放回到某个工作表中(或反之)
   std::unordered_set<MOperand> coalescedNodes;
-  //源操作数和目标操作数冲突的传送指令集合
+  // 源操作数和目标操作数冲突的传送指令集合
   std::unordered_set<RISCVMIR *> constrainedMoves;
-  //已经合并的传送指令集合
+  // 已经合并的传送指令集合
   std::vector<RISCVMIR *> coalescedMoves;
-  //不再考虑合并的传送指令集合
+  // 不再考虑合并的传送指令集合
   std::unordered_set<RISCVMIR *> frozenMoves;
-  //已成功着色的结点集合
+  // 已成功着色的结点集合
   std::unordered_set<MOperand> coloredNode;
   // 从图中删除的临时变量的栈
   std::vector<MOperand> selectstack;
-  //查询每个传送指令属于哪一个集合
+  // 查询每个传送指令属于哪一个集合
   std::unordered_map<RISCVMIR *, MoveState> belongs;
   // 还未做好准备的传送指令集合
   std::unordered_set<RISCVMIR *> activeMoves;
-  //合并后的别名管理
+  // 合并后的别名管理
   std::unordered_map<MOperand, MOperand> alias;
   std::unordered_map<PhyRegister *, RISCVType> RegType;
-  //记录已经重写的spill node
-  // std::unordered_map<VirRegister *, RISCVMIR *> AlreadySpill;
+  // 记录已经重写的spill node
+  //  std::unordered_map<VirRegister *, RISCVMIR *> AlreadySpill;
   std::vector<RISCVBasicBlock *> topu;
   std::set<RISCVBasicBlock *> assist;
   float LoopWeight = 1;

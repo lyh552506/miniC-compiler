@@ -67,9 +67,14 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block)
         BlockLiveout[block].insert(BlockLivein[succ].begin(), BlockLivein[succ].end());
 }
 void BlockInfo::GetBlockLivein(RISCVBasicBlock *block)
-{
+{int a=0;
     for (auto inst = block->rbegin(); inst != block->rend(); --inst)
-    {
+    {   
+        a++;
+        if((*inst)->GetDef()&&(*inst)->GetDef()->ignoreLA()->GetName()==".356")
+            int i=0;
+        if(a==4)
+          {(*inst)->printfull();std::cout<<std::endl;}
         OpType Opcode = (*inst)->GetOpcode();
         if (auto def = (*inst)->GetDef())
         {

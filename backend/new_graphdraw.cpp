@@ -13,6 +13,8 @@
 #include <ostream>
 #include <unordered_set>
 void GraphColor::RunOnFunc() {
+  ctx.print();
+  std::cout<<std::endl;
   bool condition = true;
   GC_init();
   for (auto b : *m_func)
@@ -48,12 +50,17 @@ void GraphColor::RunOnFunc() {
       condition = true;
     }
   }
+  ctx.GetCurFunction()->printfull();
+  std::cout<<std::endl;
   RewriteProgram();
 }
 
 void GraphColor::MakeWorklist() {
   for (auto node : initial) {
     //添加溢出节点
+    if(node->GetName()==".356"){
+      int a=0;
+    }
     if (Degree[node] > GetRegNums(node))
       spillWorkList.insert(node);
     else if (MoveRelated(node).size() != 0)
@@ -391,6 +398,9 @@ void GraphColor::spill() {
 void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     MOperand select = selectstack.front();
+    if(select->GetName()==".83"){
+      int a=0;
+    }
     RISCVType ty = select->GetType();
     selectstack.erase(selectstack.begin());
     std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),
@@ -430,7 +440,7 @@ void GraphColor::AssignColors() {
     }
   }
   for (auto caols : coalescedNodes) {
-    if (caols->GetName() == ".32")
+    if (caols->GetName() == ".31")
       int i = 0;
     color[caols] = color[GetAlias(caols)];
   }
@@ -558,8 +568,12 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
 
 void GraphColor::RewriteProgram() {
   for (const auto mbb : topu) {
+    int a=0;
     for (auto mirit = mbb->begin(); mirit != mbb->end();) {
+      a++;
       auto mir = *mirit;
+      if(a==164)
+        mir->printfull();
       ++mirit;
       if (mir->GetOpcode() == RISCVMIR::call)
         continue;

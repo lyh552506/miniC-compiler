@@ -11,10 +11,10 @@ import time
 TestResult_path = "BackendTest/TestResult.txt"
 # sys.stdout = open(TestResult_path, 'w')
 
-outputfile = open(TestResult_path, 'w') 
-
-compiler_path = "./compiler"
-# compiler_path = "./build/SYSY-compiler"
+outputfile = open(TestResult_path, 'w')
+upload_folder = "uploadfolder"
+# compiler_path = "./compiler"
+compiler_path = "./build/SYSY-compiler"
 
 test_folder="testcases/functional"
 output_folder = "testcases/output"
@@ -94,7 +94,7 @@ for root, dirs, files in os.walk(output_folder):
             AC_Assembler_list.append(os.path.join(root, file))
 
 for objfile in AC_Assembler_list:
-    target = objfile.replace(test_folder, output_folder)
+    target = objfile.replace(output_folder, upload_folder)
     target = target.replace(".o", "")
     if objfile.endswith(".o"):
         compile_args=["riscv64-unknown-elf-gcc", "-o", target, objfile, sylib_path, "-lm"]
@@ -112,22 +112,24 @@ for objfile in AC_Assembler_list:
 
 # Run On Qemu
 Try_run_list = []
-for root, dirs, files in os.walk(output_folder):
+for root, dirs, files in os.walk(upload_folder):
     for file in files:
         if '.' not in file:
             Try_run_list.append(os.path.join(root, file))
 
 start_time = time.time()
 ind = 0
-for ind in range(0, 30):
+for ind in range(0, 1):
     for test in Try_run_list:
         compile_args=["qemu-riscv64", test]
-        source = test.replace(output_folder, test_folder)
+        source = test.replace(upload_folder, test_folder)
+        basename = os.path.basename(test)
         try:
             if not os.path.exists(source+".in"):
-                ret = subprocess.run(compile_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=120)
+                ret = subprocess.run(compile_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=10)
             else:
-                ret = subprocess.run(compile_args,stdin=open(source+".in"),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=120)
+                shutil.copy(source+".in",upload_folder+"/"+basename+".in")
+                ret = subprocess.run(compile_args,stdin=open(source+".in"),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=10)
         except subprocess.TimeoutExpired:
             outputfile.write("TIMEOUT ERROR: "+test+ "\n")
             outputfile.flush()
@@ -136,6 +138,7 @@ for ind in range(0, 30):
         if not os.path.exists(source+".out"):
             BadTest_list.append(test)
         else:
+            shutil.copy(source+".out",upload_folder+"/"+basename+".out")
             out_file=source + ".out"
 
         dump_str=ret.stdout.decode()

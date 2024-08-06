@@ -102,19 +102,20 @@ void Scheduler::Swap_region(mylist_iterator begin, mylist_iterator end, BlockDep
     for(auto& sunit: Sequence) {
         sched_list.push_back(depInfo->get_Sunit2InstMap()[sunit]);
     }
+    sched_list.reverse();
     RISCVBasicBlock*& block = depInfo->get_block();
     block->swap_region(*begin, *end, sched_list);
+    int a=0;
 }
 // Pre_RA_Scheduler
-void Pre_RA_Scheduler::ScheduleOnModule(RISCVLoweringContext& ctx) {
+void Pre_RA_Scheduler::ScheduleOnFunction(RISCVLoweringContext& ctx) {
     #ifdef DEBUG_SCHED
-    static std::streambuf* cout_buf = std::cout.rdbuf();
+    std::ofstream Sched_debugfile(Sched_debuginfo);
+    std::streambuf* cout_buf = std::cout.rdbuf();
     std::cout.rdbuf(Sched_debugfile.rdbuf());
     #endif
-    for(auto& func : ctx.GetFunctions()) {
-        for(auto block : *func) {
-            ScheduleOnBlock(block);
-        }
+    for(auto block : *(ctx.GetCurFunction())) {
+        ScheduleOnBlock(block);
     }
     #ifdef DEBUG_SCHED
     std::cout.rdbuf(cout_buf);
@@ -122,12 +123,16 @@ void Pre_RA_Scheduler::ScheduleOnModule(RISCVLoweringContext& ctx) {
     #endif
 }
 void Pre_RA_Scheduler::ScheduleOnBlock(RISCVBasicBlock* block) {
+    if(block->Size() <= 1) return;
     SchedRegion region(block);
     BlockDepInfo* depInfo = new BlockDepInfo(block);
     #ifdef DEBUG_SCHED
     std::cout << "ScheduleOnBlock: " << block->GetName() << std::endl;
     #endif
-    if(block->Size() > 1) {
+    if(block->GetName() == ".LBB6") {
+        int a=0;
+    }
+    if(block->Size() > 2) { 
         while(region.LastRegion()) {
             ScheduleOnRegion(region.begin, region.end, depInfo);
         }
@@ -136,6 +141,7 @@ void Pre_RA_Scheduler::ScheduleOnBlock(RISCVBasicBlock* block) {
 
 void Pre_RA_Scheduler::ScheduleOnRegion(mylist_iterator begin, mylist_iterator end, BlockDepInfo* depInfo) {
     // Build dependency graph, and compute info on graph.
+    if(begin == end) return;
     #ifdef DEBUG_SCHED
         std::cout << "ScheduleOnRegion: " << std::endl << " ---from---";
         (*begin)->printfull();
@@ -148,39 +154,33 @@ void Pre_RA_Scheduler::ScheduleOnRegion(mylist_iterator begin, mylist_iterator e
     depGraph->ComputeHeight();
 
     Schedule(depGraph);
-    Schedule_clear();
     Swap_region(begin, end, depInfo);
+    Schedule_clear();
     
 }
 void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
     while(!isFinish(depGraph)) {
-        for(auto& pair: depGraph->inDegree) {
-            if(pair.second == 0) {
-                PlaneNode.push_back(pair.first);
-                // for(auto& node: depGraph->adjList[pair.first]) {
-                //     depGraph->inDegree[node]--;
-                // }
-                depGraph->inDegree[pair.first] = -1;
+        for(auto& sunit: depGraph->sunits) {
+            if(depGraph->inDegree[sunit] == 0) {
+                PlaneNode.push_back(sunit);
+                depGraph->inDegree[sunit] = -1;
             }
         }
         #ifdef DEBUG_SCHED
-            std::cout << "---PlaneNode---" << std::endl;
-            for(auto& node: PlaneNode) {
-                depGraph->depInfo->get_Sunit2InstMap()[node]->printfull();
+            if(PlaneNode.size() != 0) {
+                std::cout << "---PlaneNode---" << std::endl;
+                for(auto& node: PlaneNode) {
+                    depGraph->depInfo->get_Sunit2InstMap()[node]->printfull();
+                }
             }
-            std::cout << "---PlaneNodeEnd---" << std::endl;
         #endif
         
         for(auto it = PlaneNode.begin(); it != PlaneNode.end();) {
-            if(CurCycle >= (*it)->get_latency()) {
+            if(CurCycle >= (*it)->get_maxLatency()) {
                 transfer(*it, PlaneNode, Available);
-                for(auto& node: depGraph->adjList[*it]) {
-                    depGraph->inDegree[node]--;
-                }
                 it = PlaneNode.erase(it);
             }
             else {
-                (*it)->set_maxLatency(CurCycle + (*it)->get_latency());
                 transfer(*it, PlaneNode, Pending);
                 it = PlaneNode.erase(it);
             }
@@ -190,9 +190,6 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
         for(auto it = Pending.begin(); it != Pending.end();) {
             if(CurCycle >= (*it)->get_maxLatency()) {
                 transfer(*it, Pending, Available);
-                for(auto& node: depGraph->adjList[*it]) {
-                    depGraph->inDegree[node]--;
-                }
                 it = Pending.erase(it);
                 continue;
             }
@@ -208,8 +205,14 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
             // Consider the pipeline
             if(isPipelineReady(getInstInfo(*it))) {
                 transfer(*it, Available, Sequence);
+                for(auto& node: depGraph->adjList[*it]) {
+                    node->set_maxLatency(node->get_maxLatency() > CurCycle + (*it)->get_latency() ?\
+                                         node->get_maxLatency() : CurCycle + (*it)->get_latency());
+                }
+                for(auto& node: depGraph->adjList[*it]) {
+                    depGraph->inDegree[node]--;
+                }
                 it = Available.erase(it);
-
             }
             else {
                 transfer(*it, Available, temp);
@@ -231,13 +234,12 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
                 }
             }
         }
-        std::cout << "---SequenceEnd---" << std::endl;
     #endif
 }
 
 
 // Post_RA_Scheduler
-void Post_RA_Scheduler::ScheduleOnModule(RISCVLoweringContext&) {
+void Post_RA_Scheduler::ScheduleOnFunction(RISCVLoweringContext&) {
 
 }
 

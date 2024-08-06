@@ -85,6 +85,5 @@ bool isboundary(RISCVMIR*);
 
 #ifdef DEBUG_SCHED
     static std::string Sched_debuginfo = "BackendTest/Sched.buginfo";
-    static std::ofstream Sched_debugfile(Sched_debuginfo);
-    static std::streambuf* cout_buf = std::cout.rdbuf();
+    
 #endif

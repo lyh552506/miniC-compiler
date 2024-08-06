@@ -57,66 +57,63 @@ bool RISCVFunctionLowering::run(Function *m)
 
     Legalize legal(ctx);
     // legal.run_beforeRA();
+
     // Backend DCE before RA
     bool modified = true;
     while (modified)
     {
         modified = false;
-        BackendDCE dcebefore(mfunc, ctx);
+        BackendDCE dcebefore(ctx.GetCurFunction(), ctx);
         modified |= dcebefore.RunImpl();
     }
 
-    // asmprinter->printAsm();
-    
     Pre_RA_Scheduler pre_scheduler;
-    pre_scheduler.ScheduleOnModule(ctx);
+    pre_scheduler.ScheduleOnFunction(ctx);
+    // asmprinter->printAsm();
 
-
-    // Register Allocation
+    // // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
-    for (auto block : *mfunc)
-    {
-        for (auto it = block->begin(); it != block->end();)
-        {
-            auto inst = *it;
-            ++it;
-            if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
-                delete inst;
-        }
-    }
-    modified = true;
-    // Backend DCE after RA
-    while (modified)
-    {
-        modified = false;
-        BackendDCE dceafter(mfunc, ctx);
-        modified |= dceafter.RunImpl();
-    }
+    // for (auto block : *(ctx.GetCurFunction()))
+    // {
+    //     for (auto it = block->begin(); it != block->end();)
+    //     {
+    //         auto inst = *it;
+    //         ++it;
+    //         if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
+    //             delete inst;
+    //     }
+    // }
+    // modified = true;
+    // // Backend DCE after RA
+    // while (modified)
+    // {
+    //     modified = false;
+    //     BackendDCE dceafter(ctx.GetCurFunction(), ctx);
+    //     modified |= dceafter.RunImpl();
+    // }
 
-    // Post_RA_Scheduler post_scheduler;
-    // post_scheduler.ScheduleOnModule(ctx);
+    // // Post_RA_Scheduler post_scheduler;
+    // // post_scheduler.ScheduleOnFunction(ctx);
 
-    // Generate Frame of current Function
-    // And generate the head and tail of frame here
-    PostRACalleeSavedLegalizer callee_saved_legalizer;
-    callee_saved_legalizer.run(mfunc);
+    // // Generate Frame of current Function
+    // // And generate the head and tail of frame here
+    // // PostRACalleeSavedLegalizer callee_saved_legalizer;
+    // // callee_saved_legalizer.run(ctx.GetCurFunction());
 
-    auto& frame = mfunc->GetFrame();
-    frame->GenerateFrame();
-    frame->GenerateFrameHead();
-    frame->GenerateFrameTail();
+    // auto& frame = ctx.GetCurFunction()->GetFrame();
+    // frame->GenerateFrame();
+    // frame->GenerateFrameHead();
+    // frame->GenerateFrameTail();
 
-    // legal.run_afterRA();
-    legal.run();
+    // // legal.run_afterRA();
+    // legal.run();
 
-    auto dbd=DeleteDeadBlock();
-    dbd.run(mfunc);
+    // auto dbd=DeleteDeadBlock();
+    // dbd.run(ctx.GetCurFunction());
 
-    // auto layout=CodeLayout();
-    // layout.run(mfunc);
-
-
-
+    // // auto layout=CodeLayout();
+    // // layout.run(mfunc);
+    
     return false;
 }
