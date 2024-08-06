@@ -2,6 +2,7 @@
 #include "../include/backend/BuildInFunctionTransform.hpp"
 #include "../include/backend/PhiElimination.hpp"
 #include "../include/backend/PostRACalleeSavedLegalizer.hpp"
+#include "../include/backend/Scheduler.hpp"
 #include "../include/backend/CodeLayout.hpp"
 #include "../include/backend/DeleteDeadBlock.hpp"
 #include "../include/backend/Scheduler.hpp"
