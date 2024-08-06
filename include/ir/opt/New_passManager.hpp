@@ -168,6 +168,8 @@ public:
   }
   void DecodeArgs(int argc, char *argv[]);
 
+  bool CommonPass( _AnalysisManager &AM);
+
 private:
   void Init();
   OptLevel level;

@@ -1,4 +1,8 @@
 #include "../../include/ir/opt/New_passManager.hpp"
+#include "CFG.hpp"
+#include "LoopUnroll.hpp"
+#include "Singleton.hpp"
+#include "my_stl.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -105,62 +109,86 @@ void _PassManager::RunOnLevel() {
     // global2local
     // RunImpl<Global2Local>(module, AM);
     while (modified) {
-    Iteration:
       modified = false;
       // mem2reg
-      PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
-      PassChangedEnd
-          // Local2Global
-          RunImpl<Local2Global>(module, AM);
-
-      // simplifycfg
-      RunLevelPass(ConstantProp, curfunc, modified);
-
-      RunLevelPass(DCE, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
-
-          RunLevelPass(cfgSimplify, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
-          // cse
-          RunLevelPass(CSE, curfunc, modified);
-      // constprop
-      RunLevelPass(ConstantProp, curfunc, modified);
-      // reassociate
-      RunLevelPass(Reassociate, curfunc, modified);
-      // cse
-      RunLevelPass(CSE, curfunc, modified);
-      RunLevelPass(GepCombine, curfunc, modified);
-      RunLevelPass(DCE, curfunc, modified);
-      // TRE
-      RunLevelPass(TailRecurseEliminator,curfunc,modified);
+      modified |= CommonPass(AM);
     }
-    if (RunImpl<Inliner>(module, AM)) {
+    while (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
           RunImpl<DeadArgsElimination>(module, AM);
       RunImpl<StoreOnlyGlobalElimination>(module, AM);
       RunImpl<Global2Local>(module, AM);
-      goto Iteration;
+      CommonPass(AM);
     }
     // Loops
     {
-      // RunLevelPass(LoopSimplify, curfunc, modified);
-      // PassChangedBegin(curfunc) PassChangedEnd
+      RunLevelPass(LoopSimplify, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd
 
-      // lcssa
-      //     RunLevelPass(LcSSA, curfunc, modified);
-      // PassChangedBegin(curfunc) PassChangedEnd
+          // lcssa
 
-      // loop-rotate
+          RunLevelPass(LcSSA, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd
 
-      // licm
-      // RunLevelPass(LICM, curfunc);
-      // PassChangedBegin(curfunc) PassChangedEnd
+          // loop-rotate
+          RunLevelPass(LoopRotate, curfunc, modified) PassChangedBegin(curfunc)
+              PassChangedEnd
+                  // licm
+                  RunLevelPass(LICMPass, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd
 
-      // loopdeletion
-      // RunLevelPass(LoopDeletion, curfunc);
-      // PassChangedBegin(curfunc) PassChangedEnd
+          // loopdeletion
+          RunLevelPass(LoopDeletion, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd
+
+          // RunLevelPass(LoopUnroll, curfunc, modified) PassChangedBegin(curfunc)
+              // PassChangedEnd 
+          CommonPass(AM);
+    }
+    {
+      // tail
+      // RunLevelPass(TailRecurseEliminator, curfunc,
+      //              modified) while (RunImpl<Inliner>(module, AM)) {
+      //   RunLevelPass(cfgSimplify, curfunc, modified)
+      //       RunImpl<DeadArgsElimination>(module, AM);
+      //   RunImpl<StoreOnlyGlobalElimination>(module, AM);
+      //   RunImpl<Global2Local>(module, AM);
+      //   while (1) {
+      //     if (!CommonPass(AM))
+      //       break;
+      //   }
+      // }
     }
   }
+}
+
+bool _PassManager::CommonPass(_AnalysisManager &AM) {
+  bool modified = false;
+  PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
+  PassChangedEnd
+      // Local2Global
+      RunImpl<Local2Global>(module, AM);
+
+  // simplifycfg
+  RunLevelPass(ConstantProp, curfunc, modified);
+  RunLevelPass(DCE, curfunc, modified);
+  PassChangedBegin(curfunc) PassChangedEnd
+
+      RunLevelPass(cfgSimplify, curfunc, modified);
+  PassChangedBegin(curfunc) PassChangedEnd
+      // cse
+      RunLevelPass(CSE, curfunc, modified);
+  // constprop
+  RunLevelPass(ConstantProp, curfunc, modified);
+  // reassociate
+  RunLevelPass(Reassociate, curfunc, modified);
+  // cse
+  RunLevelPass(CSE, curfunc, modified);
+  RunLevelPass(GepCombine, curfunc, modified);
+  RunLevelPass(DCE, curfunc, modified);
+  // TRE
+  // RunLevelPass(TailRecurseEliminator, curfunc, modified) return modified;
+  return modified;
 }
 
 ///@brief 执行Pass顺序会按照给定参数的顺序来
