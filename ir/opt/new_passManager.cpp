@@ -124,20 +124,28 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc) PassChangedEnd
 
           RunLevelPass(cfgSimplify, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
+      PassChangedBegin(curfunc) PassChangedEnd   
+
+
           // cse
           RunLevelPass(CSE, curfunc, modified);
+
       // constprop
       RunLevelPass(ConstantProp, curfunc, modified);
       // reassociate
       RunLevelPass(Reassociate, curfunc, modified);
+
       // cse
+
       RunLevelPass(CSE, curfunc, modified);
+
       RunLevelPass(GepCombine, curfunc, modified);
-      RunLevelPass(DCE, curfunc, modified);
+      RunLevelPass(DCE, curfunc, modified); 
+
+
       RunLevelPass(BranchRotate, curfunc, modified);
       // TRE
-      // RunLevelPass(TailRecurseEliminator,curfunc,modified);
+      RunLevelPass(TailRecurseEliminator,curfunc,modified);   
     }
     if (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)

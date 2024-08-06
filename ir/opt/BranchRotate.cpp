@@ -15,12 +15,18 @@ bool BranchRotate::Run()
     */
     dom = AM.get<dominance>(func);
     bool modified = false;
+    bool changed = true;
     func->init_visited_block();
     OrderBlock(func->front());
     std::reverse(DFSOrder.begin(), DFSOrder.end());
     // modified |= NormalizingCmp();
     // modified |= CombineCmp();
-    modified |= AdjustCondition();
+    while (changed)
+    {
+        changed = false;
+        changed |= AdjustCondition();
+        modified |= changed;
+    }
     return modified;
 }
 
@@ -139,9 +145,10 @@ bool BranchRotate::AdjustCondition()
         {
             if (CanHandle(block, cond))
             {
-                if (Handle_And(block, br->Getuselist()[1]->usee->as<BasicBlock>(), wait_del))
+                BasicBlock *succ = br->Getuselist()[1]->usee->as<BasicBlock>();
+                if (Handle_And(block, succ, wait_del))
                     modified = true;
-                else if (Handle_Or(block, br->Getuselist()[2]->usee->as<BasicBlock>(), wait_del))
+                else if (Handle_Or(block, succ, wait_del))
                     modified = true;
             }
         }
@@ -166,8 +173,9 @@ bool BranchRotate::Handle_Or(BasicBlock *cur, BasicBlock *succ, std::unordered_s
     {
         Value *cond1 = Cur_Cond->Getuselist()[0]->usee;
         Value *cond2 = Succ_Cond->Getuselist()[0]->usee;
-        if (Cur_Cond->Getuselist()[1]->usee == Succ_Cond->Getuselist()[1]->usee && !DetectCall(cond2, succ) &&
-            !RetPhi(static_cast<BasicBlock *>(Cur_Cond->Getuselist()[1]->usee)))
+        if (Cur_Cond->Getuselist()[1]->usee == Succ_Cond->Getuselist()[1]->usee &&
+            !Match_Lib_Phi(cur, succ, static_cast<BasicBlock *>(Cur_Cond->Getuselist()[1]->usee)) &&
+            !DetectCall(cond2, succ) && !RetPhi(static_cast<BasicBlock *>(Cur_Cond->Getuselist()[1]->usee)))
         {
             _DEBUG(std::cerr << "Handling Or(||) case" << std::endl;)
             Cur_Cond->RSUW(Cur_Cond->Getuselist()[2].get(), Succ_Cond->Getuselist()[2]->usee);
@@ -222,7 +230,9 @@ bool BranchRotate::Handle_And(BasicBlock *cur, BasicBlock *succ, std::unordered_
     {
         Value *cond1 = Cur_Cond->Getuselist()[0]->usee;
         Value *cond2 = Succ_Cond->Getuselist()[0]->usee;
-        if (Cur_Cond->Getuselist()[2]->usee == Succ_Cond->Getuselist()[2]->usee && !DetectCall(cond2, succ))
+        if (Cur_Cond->Getuselist()[2]->usee == Succ_Cond->Getuselist()[2]->usee &&
+            !Match_Lib_Phi(cur, succ, static_cast<BasicBlock *>(Cur_Cond->Getuselist()[2]->usee)) &&
+            !DetectCall(cond2, succ))
         {
             _DEBUG(std::cerr << "Handling And(&&) case" << std::endl;)
             BasicBlock *PhiBlock = Succ_Cond->Getuselist()[2]->usee->as<BasicBlock>();
@@ -296,6 +306,8 @@ bool BranchRotate::RetPhi(BasicBlock *block)
                     return true;
             }
         }
+        else
+            break;
     }
     return false;
 }
@@ -307,4 +319,64 @@ bool BranchRotate::CanHandle(BasicBlock *cur, CondInst *inst)
     if (inst->Getuselist()[1]->usee->GetUserlist().Front()->GetUser()->GetParent() != cur)
         return false;
     return true;
+}
+
+bool BranchRotate::Match_Lib_Phi(BasicBlock *curr, BasicBlock *succ, BasicBlock *exit)
+{
+    for (User *inst : *succ)
+    {
+        if (dynamic_cast<CallInst *>(inst))
+        {
+            std::string name = dynamic_cast<CallInst *>(inst)->GetOperand(0)->GetName();
+            if (name == "putch" || name == "putint" || name == "putfloat" || name == "putarray" ||
+                name == "putfarray" || name == "putf" || name == "getint" || name == "getch" || name == "getfloat" ||
+                name == "getfarray" | name == "getarray" || name == "_sysy_starttime" || name == "_sysy_stoptime" ||
+                name == "llvm.memcpy.p0.p0.i32")
+                return true;
+        }
+    }
+    for (User *inst : *exit)
+    {
+        if (auto phi = dynamic_cast<PhiInst *>(inst))
+        {
+            Value *from_cur = nullptr;
+            Value *from_succ = nullptr;
+            for (auto &[key, val] : phi->PhiRecord)
+            {
+                if (val.second == curr)
+                {
+                    from_cur = val.first;
+                    if (from_succ)
+                        break;
+                }
+                if (val.second == succ)
+                {
+                    from_succ = val.first;
+                    if (from_cur)
+                        break;
+                }
+            }
+            if (from_cur && from_succ)
+            {
+                if(DetectUserPos(from_cur, succ, from_succ))
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool BranchRotate::DetectUserPos(Value *user, BasicBlock *blockpos, Value *val)
+{
+    for (auto user : user->GetUserlist())
+    {
+        if (user->GetUser() == val)
+            return true;
+        else if (user->GetUser()->GetParent() == blockpos)
+        {
+            if (DetectUserPos(user->GetUser(), blockpos, val))
+                return true;
+        }
+    }
+    return false;
 }
