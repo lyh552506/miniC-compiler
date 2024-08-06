@@ -135,12 +135,15 @@ bool BranchRotate::AdjustCondition()
         if (wait_del.count(block))
             continue;
         User *br = block->back();
-        if (dynamic_cast<CondInst *>(br))
+        if (auto cond = dynamic_cast<CondInst *>(br))
         {
-            if (Handle_And(block, br->Getuselist()[1]->usee->as<BasicBlock>(), wait_del))
-                modified = true;
-            else if (Handle_Or(block, br->Getuselist()[2]->usee->as<BasicBlock>(), wait_del))
-                modified = true;
+            if (CanHandle(block, cond))
+            {
+                if (Handle_And(block, br->Getuselist()[1]->usee->as<BasicBlock>(), wait_del))
+                    modified = true;
+                else if (Handle_Or(block, br->Getuselist()[2]->usee->as<BasicBlock>(), wait_del))
+                    modified = true;
+            }
         }
     }
     while (!wait_del.empty())
@@ -163,7 +166,8 @@ bool BranchRotate::Handle_Or(BasicBlock *cur, BasicBlock *succ, std::unordered_s
     {
         Value *cond1 = Cur_Cond->Getuselist()[0]->usee;
         Value *cond2 = Succ_Cond->Getuselist()[0]->usee;
-        if (Cur_Cond->Getuselist()[1]->usee == Succ_Cond->Getuselist()[1]->usee && !DetectCall(cond2, succ))
+        if (Cur_Cond->Getuselist()[1]->usee == Succ_Cond->Getuselist()[1]->usee && !DetectCall(cond2, succ) &&
+            !RetPhi(static_cast<BasicBlock *>(Cur_Cond->Getuselist()[1]->usee)))
         {
             _DEBUG(std::cerr << "Handling Or(||) case" << std::endl;)
             Cur_Cond->RSUW(Cur_Cond->Getuselist()[2].get(), Succ_Cond->Getuselist()[2]->usee);
@@ -278,4 +282,29 @@ bool BranchRotate::DetectCall(Value *val, BasicBlock *block)
             return true;
     }
     return false;
+}
+
+bool BranchRotate::RetPhi(BasicBlock *block)
+{
+    for (auto it = block->begin(); it != block->end(); ++it)
+    {
+        if (auto phi = dynamic_cast<PhiInst *>(*it))
+        {
+            for (auto user : phi->GetUserlist())
+            {
+                if (dynamic_cast<RetInst *>(user->GetUser()))
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool BranchRotate::CanHandle(BasicBlock *cur, CondInst *inst)
+{
+    if (inst->Getuselist()[1]->usee->GetUserlist().GetSize() > 1)
+        return false;
+    if (inst->Getuselist()[1]->usee->GetUserlist().Front()->GetUser()->GetParent() != cur)
+        return false;
+    return true;
 }

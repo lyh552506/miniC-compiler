@@ -21,9 +21,10 @@ class BranchRotate : public _PassManagerBase<BranchRotate, Function>
     bool AdjustExit();
     bool AdjustCondition();
     bool DetectCall(Value* inst, BasicBlock* block);
+    bool RetPhi(BasicBlock* block);
     bool Handle_Or(BasicBlock* cur, BasicBlock* succ, std::unordered_set<BasicBlock*>& wait_del);
     bool Handle_And(BasicBlock* cur, BasicBlock* succ, std::unordered_set<BasicBlock*>& wait_del);
-    bool CheckSamePhi(BasicBlock* front, BasicBlock* curr);
+    inline bool CanHandle(BasicBlock* cur, CondInst* inst);
     void OrderBlock(BasicBlock* block);
   public:
     BranchRotate(Function *func, _AnalysisManager &_AM) : func(func), AM(_AM)
