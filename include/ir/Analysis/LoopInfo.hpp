@@ -15,6 +15,7 @@ struct LoopTrait {
   int step = 0;
   PhiInst *indvar = nullptr; // eg: i++
   Value *change = nullptr;
+  PhiInst *res = nullptr;
 };
 
 class LoopInfo {
@@ -22,12 +23,6 @@ public:
   friend class LoopAnalysis;
   using iterator = std::vector<LoopInfo *>::const_iterator;
   using reverse_iterator = std::vector<LoopInfo *>::const_reverse_iterator;
-  enum Tag {
-    Normal,
-    Simplified,
-    Lcssa,
-    Rotate,
-  };
   LoopInfo() = default;
   LoopInfo(BasicBlock *_Header) : Header(_Header) {
     ContainBlocks.push_back(_Header);
@@ -73,7 +68,6 @@ public:
   }
   int RotateTimes = 0;
   LoopTrait trait;
-  static std::set<Tag> LoopForm;
 
 private:
   BasicBlock *Header = nullptr;

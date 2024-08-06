@@ -7,6 +7,7 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
+#include "New_passManager.hpp"
 #include <cassert>
 #include <cstdlib>
 #include <iterator>
@@ -26,7 +27,7 @@ bool LoopRotate::Run() {
     Success |= TryRotate(loop);
     if (RotateLoop(loop, Success) || Success) {
       changed |= true;
-      loop->LoopForm.insert(LoopInfo::Rotate);
+      AM.AddAttr(loop->GetHeader(), Rotate);
     }
   }
   return changed;
@@ -124,10 +125,6 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
   m_dom->GetNode(New_header->num).rev.push_front(prehead->num);
   m_dom->GetNode(prehead->num).des.push_front(New_header->num);
   // Deal With Phi In header
-  if (header->GetName() == ".232wc89") {
-    Singleton<Module>().Test();
-    exit(0);
-  }
   PreservePhi(header, latch, loop, prehead, New_header, PreHeaderValue,
               loopAnlasis);
   if (dynamic_cast<CondInst *>(prehead->back()) &&
@@ -158,6 +155,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
     delete cond;
   }
   loop->setHeader(New_header);
+  AM.ChangeLoopHeader(header, New_header);
   SimplifyBlocks(header, loop);
   return true;
 }
@@ -414,6 +412,9 @@ bool LoopRotate::TryRotate(LoopInfo *loop) {
   bool Legal = false;
   auto latch = loopAnlasis->GetLatch(loop);
   auto head = loop->GetHeader();
+  auto uncond = dynamic_cast<UnCondInst *>(latch->back());
+  if (!uncond)
+    return false;
   assert(latch);
   int pred = std::distance(m_dom->GetNode(latch->num).rev.begin(),
                            m_dom->GetNode(latch->num).rev.end());

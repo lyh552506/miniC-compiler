@@ -97,6 +97,7 @@ class Value
     void print();
     InnerDataType GetTypeEnum();
     virtual Type* GetType();
+    void SetType(Type* _ty){ tp = _ty;}
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
     void RAUW(Value* val); //ReplaceAllUseWith

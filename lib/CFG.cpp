@@ -870,20 +870,27 @@ void Function::InsertBlock(BasicBlock *curr, BasicBlock *insert) {
   this->push_bb(insert);
 }
 
-void Function::InlineCall(CallInst *inst) {
+std::pair<Value *, BasicBlock *>
+Function::InlineCall(CallInst *inst,
+                     std::unordered_map<Operand, Operand> &OperandMapping) {
+  std::pair<Value *, BasicBlock *> tmp{nullptr, nullptr};
   BasicBlock *block = inst->GetParent();
   Function *func = block->GetParent();
-  Function* inlined_func = inst->GetOperand(0)->as<Function>();
+  Function *inlined_func = inst->GetOperand(0)->as<Function>();
   BasicBlock *SplitBlock = block->SplitAt(inst);
+  tmp.second = SplitBlock;
   BasicBlock::mylist<Function, BasicBlock>::iterator Block_Pos(block);
   Block_Pos.insert_after(SplitBlock);
   ++Block_Pos;
   std::vector<BasicBlock *> blocks;
-  std::unordered_map<Operand, Operand> OperandMapping;
   int num = 1;
   for (auto &param : inlined_func->GetParams()) {
     Value *Param = param.get();
-    OperandMapping[Param] = inst->Getuselist()[num]->usee;
+    if (OperandMapping.find(inst->Getuselist()[num]->usee) !=
+        OperandMapping.end())
+      OperandMapping[Param] = OperandMapping[inst->Getuselist()[num]->usee];
+    else
+      OperandMapping[Param] = inst->Getuselist()[num]->usee;
     num++;
   }
   for (BasicBlock *block : *inlined_func)
@@ -901,24 +908,24 @@ void Function::InlineCall(CallInst *inst) {
   }
   for (BasicBlock *block_ : blocks)
     Block_Pos.insert_before(block_);
+  if (inlined_func->GetUserListSize() == 0)
+    Singleton<Module>().EraseFunction(inlined_func);
+  Value *Ret_Val = nullptr;
   if (inst->GetTypeEnum() != InnerDataType::IR_Value_VOID) {
-    Value* Ret_Val = nullptr;
     for (BasicBlock *block : blocks) {
       User *inst = block->back();
       if (dynamic_cast<RetInst *>(inst)) {
-        if(auto val = inst->GetOperand(0))
-          Ret_Val = val;
+        if (auto val = inst->GetOperand(0)) {
+          tmp.first = val;
+        }
         UnCondInst *Br = new UnCondInst(SplitBlock);
         inst->ClearRelation();
         inst->EraseFromParent();
         block->push_back(Br);
       }
     }
-
-    if (Ret_Val)
-      inst->RAUW(Ret_Val);
   } else {
-    for (BasicBlock *block_ : blocks) {
+    for (BasicBlock *block : blocks) {
       User *inst = block->back();
       if (dynamic_cast<RetInst *>(inst)) {
         UnCondInst *Br = new UnCondInst(SplitBlock);
@@ -928,8 +935,7 @@ void Function::InlineCall(CallInst *inst) {
       }
     }
   }
-  if (inlined_func->GetUserListSize() == 0)
-    Singleton<Module>().EraseFunction(inlined_func);
+  return tmp;
 }
 
 BuildInFunction::BuildInFunction(Type *tp, std::string _id) : Value(tp) {
@@ -1020,30 +1026,9 @@ void BasicBlock::RemovePredBB(BasicBlock *pred) {
           phi->RAUW(UndefValue::get(phi->GetType()));
           delete phi;
         } else {
-
           Value *repl = (*(phi->PhiRecord.begin())).second.first;
-          // avoid situation like this:
-          //   %54 =phi [%23,%1]
-          //   %.23 = add i32 %.54, 2
-          // After RAUW:  %.23 = add i32 %.23, 2; which is not SSA form
-          // for (auto it = phi->GetUserlist().begin();
-          //      it != phi->GetUserlist().end();) {
-          //   auto user = (*it)->GetUser();
-          //   ++it;
-          //   if (user->GetDef() != nullptr && user->GetDef() == repl) {
-          //     auto New = user->CloneInst();
-          //     for (auto iter = user->GetParent()->begin();
-          //          iter != user->GetParent()->end(); ++iter) {
-          //       if (*iter == user) {
-          //         iter.insert_before(New);
-          //         break;
-          //       }
-          //     }
-          //     user->RAUW(New);
-          //     repl = (*(phi->PhiRecord.begin())).second.first;
-          //     delete user;
-          //   }
-          // }
+          if (repl == phi)
+            phi->RAUW(UndefValue::get(phi->GetType()));
           phi->RAUW(repl);
           delete phi;
         }
@@ -1327,17 +1312,6 @@ void PhiInst::Del_Incomes(int CurrentNum) {
     if (i != UseToRecord.end()) {
       UseToRecord.erase(i);
     }
-    //维护PhiRecord的关系
-    // std::vector<std::pair<int,std::pair<Value*,BasicBlock*>>> Defend;
-    // for(auto& [_1,v]:PhiRecord)
-    //   if(_1>CurrentNum)
-    //     Defend.push_back(std::make_pair(_1,v));
-    // for(const auto& item:Defend)
-    //   PhiRecord.erase(item.first);
-    // for(const auto& item:Defend)
-    //   PhiRecord.insert(std::make_pair(item.first-1,item.second));
-    // oprandNum--;
-    // FormatPhi();
   } else
     std::cerr << "No such PhiRecord" << std::endl;
 }
@@ -1403,12 +1377,9 @@ void PhiInst::ModifyBlock(BasicBlock *Old, BasicBlock *New) {
   it1->second.second = New;
 }
 
-void PhiInst::EraseRecordByBlock(BasicBlock* block)
-{
-  for(auto& [index,record] : PhiRecord)
-  {
-    if(record.second==block)
-    {
+void PhiInst::EraseRecordByBlock(BasicBlock *block) {
+  for (auto &[index, record] : PhiRecord) {
+    if (record.second == block) {
       PhiRecord.erase(index);
       break;
     }
