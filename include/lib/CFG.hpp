@@ -212,6 +212,7 @@ public:
   void print() final;
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,std::string Name="");
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty,std::string Name="");
+  static PhiInst *NewPhiNode(Type* ty);
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
   std::vector<Value*>& GetAllPhiVal();
   Value* ReturnValIn(BasicBlock* bb);
@@ -293,6 +294,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     enum Tag{
         Normal,
         UnrollBody,
+        LoopBody,
         ParallelBody,
     };
     Tag tag=Normal;

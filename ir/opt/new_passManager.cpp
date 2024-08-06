@@ -122,28 +122,33 @@ void _PassManager::RunOnLevel() {
     }
     // Loops
     {
-      RunLevelPass(LoopSimplify, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
+      int time = 1;
+      while (time) {
+        time--;
+        PassChangedBegin(curfunc) PassChangedEnd
+        RunLevelPass(LoopSimplify, curfunc, modified);
+        PassChangedBegin(curfunc) PassChangedEnd
 
-          // lcssa
+            // lcssa
 
-          RunLevelPass(LcSSA, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
+            RunLevelPass(LcSSA, curfunc, modified);
+        PassChangedBegin(curfunc) PassChangedEnd
 
-          // loop-rotate
-          RunLevelPass(LoopRotate, curfunc, modified) PassChangedBegin(curfunc)
-              PassChangedEnd
-                  // licm
-                  RunLevelPass(LICMPass, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
+            // loop-rotate
+            RunLevelPass(LoopRotate, curfunc, modified)
+                PassChangedBegin(curfunc) PassChangedEnd
+                    // licm
+                    RunLevelPass(LICMPass, curfunc, modified);
+        PassChangedBegin(curfunc) PassChangedEnd
 
-          // loopdeletion
-          RunLevelPass(LoopDeletion, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd
+            // loopdeletion
+            RunLevelPass(LoopDeletion, curfunc, modified);
+        PassChangedBegin(curfunc) PassChangedEnd
 
-          // RunLevelPass(LoopUnroll, curfunc, modified) PassChangedBegin(curfunc)
-              // PassChangedEnd 
-          CommonPass(AM);
+            RunLevelPass(LoopUnroll, curfunc, modified)
+                PassChangedBegin(curfunc) PassChangedEnd 
+             CommonPass(AM);
+      }
     }
     {
       // tail

@@ -263,9 +263,14 @@ User *User::CloneInst() {
                         dynamic_cast<BasicBlock *>(cond->GetOperand(2)));
   } else if (auto uncond = dynamic_cast<UnCondInst *>(this)) {
     return new UnCondInst(dynamic_cast<BasicBlock *>(uncond->GetOperand(0)));
-  } else {
-    assert(0);
+  } else if (auto phi = dynamic_cast<PhiInst *>(this)) {
+    auto new_phi = PhiInst::NewPhiNode(phi->GetType());
+    for (const auto &[index, val] : phi->PhiRecord) {
+      phi->updateIncoming(val.first, val.second);
+    }
+    return new_phi;
   }
+  assert(0);
 }
 
 // change uselist[num] to val while manage use-def relation

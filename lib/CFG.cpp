@@ -1238,6 +1238,8 @@ PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB, Type *ty,
   return tmp;
 }
 
+PhiInst *PhiInst::NewPhiNode(Type* ty){}
+
 void PhiInst::updateIncoming(Value *Income, BasicBlock *BB) {
   add_use(Income);
   auto &use = uselist.back();
@@ -1380,7 +1382,8 @@ void PhiInst::ModifyBlock(BasicBlock *Old, BasicBlock *New) {
 void PhiInst::EraseRecordByBlock(BasicBlock *block) {
   for (auto &[index, record] : PhiRecord) {
     if (record.second == block) {
-      PhiRecord.erase(index);
+      this->Del_Incomes(index);
+      this->FormatPhi();
       break;
     }
   }
@@ -1405,7 +1408,7 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
 bool Function::isRecursive(bool useMem) {
   static std::unordered_map<Function *, bool> visited;
 
-  auto calcOnce=[&](){
+  auto calcOnce = [&]() {
     auto usrlist = GetUserlist();
     bool suc = false;
     for (auto use : usrlist) {
@@ -1419,7 +1422,7 @@ bool Function::isRecursive(bool useMem) {
     return suc;
   };
 
-  if (!useMem||visited.find(this) == visited.end())
+  if (!useMem || visited.find(this) == visited.end())
     visited[this] = calcOnce();
   return visited[this];
 }

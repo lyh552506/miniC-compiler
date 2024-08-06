@@ -3,6 +3,7 @@
 #include "../../include/lib/CFG.hpp"
 #include "AliasAnalysis.hpp"
 #include "LoopSimplify.hpp"
+#include "Type.hpp"
 #include "my_stl.hpp"
 #include <cassert>
 #include <cstddef>
@@ -27,6 +28,7 @@ bool LoopParallel::Run() {
       std::cerr << "Find a Parallelable Loop!"
                 << "\n";
       auto call = ExtractLoopParallelBody(loop);
+      MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
     }
   }
   return changed;
@@ -58,7 +60,7 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
 
 CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   auto &body = loop->GetLoopBody();
-  std::unordered_map<Value *, Variable *> Val2Arg;
+  Val2Arg.clear();
   auto header = loop->GetHeader();
   auto latch = loopAnaly->GetLatch(loop);
   auto prehead = loopAnaly->GetPreHeader(loop);
@@ -83,10 +85,10 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   if (res)
     ty = res->GetTypeEnum();
   auto ParallelFunc =
-      new Function(ty, Singleton<Module>().GetFuncNameEnum("Parall_Body"));
+      new Function(ty, Singleton<Module>().GetFuncNameEnum("Loop_Body"));
   Singleton<Module>().Push_Func(ParallelFunc);
   ParallelFunc->clear();
-  ParallelFunc->tag = Function::UnrollBody;
+  ParallelFunc->tag = Function::LoopBody;
   auto indvar = loop->trait.indvar;
   Val2Arg[indvar] = new Variable(Variable::Param, indvar->GetType(), "");
   if (res)
@@ -126,10 +128,12 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   auto substitute = new BasicBlock();
   substitute->SetName(header->GetName() + ".Substitute");
   m_func->add_block(substitute);
+  this->substi = substitute;
   for (auto it = header->begin(); it != header->end();) {
     auto inst = *it;
     ++it;
-    if (dynamic_cast<PhiInst *>(inst)) {
+    if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+      phi->EraseRecordByBlock(latch);
       inst->EraseFromParent();
       substitute->push_back(inst);
     } else {
@@ -157,7 +161,7 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
         _exit = dynamic_cast<BasicBlock *>(cond->GetOperand(i));
     }
   assert(_exit);
-  auto br = new CondInst(cmp, substitute, _exit);
+  auto br = new UnCondInst(_exit);
   substitute->push_back(br);
   for (auto &use : cmp->Getuselist()) {
     if (use->GetValue() == loopchange)
@@ -176,7 +180,6 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
         uncond->RSUW(0, substitute);
       }
     }
-
   bool NoUse = false;
   for (auto des : dom->GetNode(latch->num).des)
     if (dom->GetNode(des).thisBlock != header)
@@ -229,12 +232,7 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   for (auto it = substitute->begin();
        it != substitute->end() && dynamic_cast<PhiInst *>(*it); ++it) {
     auto phi = dynamic_cast<PhiInst *>(*it);
-    for (int i = 0; i < phi->PhiRecord.size(); i++) {
-      if (phi->PhiRecord[i].second == latch) {
-        phi->Del_Incomes(i--);
-        phi->FormatPhi();
-      }
-    }
+    phi->EraseRecordByBlock(latch);
   }
   for (auto bb : body)
     for (auto inst : *bb) {
@@ -247,9 +245,16 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
         }
       }
     }
-  if (res && !NoUse)
-    res->updateIncoming(callinst, substitute);
-  loop->trait.indvar->updateIncoming(loop->trait.change, substitute);
+
+  for (auto it = substitute->begin();
+       it != substitute->end() && dynamic_cast<PhiInst *>(*it);) {
+    auto phi = dynamic_cast<PhiInst *>(*it);
+    ++it;
+    if (phi->PhiRecord.size() == 1) {
+      phi->RAUW((*(phi->PhiRecord.begin())).second.first);
+      delete phi;
+    }
+  }
   //转移
   substitute->num = header->num;
   m_func->GetBasicBlock()[header->num] = substitute;
@@ -260,24 +265,9 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
     ++iter;
     bb->EraseFromParent();
     ParallelFunc->push_bb(bb);
-    if (bb != header)
-      loopAnaly->DeleteBlock(bb);
-    else {
-      loopAnaly->ReplBlock(bb, substitute);
-      loop->setHeader(substitute);
-      loopAnaly->setLoop(substitute, loop);
-    }
   }
+  loopAnaly->DeleteLoop(loop);
   return callinst;
-}
-
-void LoopParallel::ClearLoop(LoopInfo *loop) {
-  auto &body = loop->GetLoopBody();
-  for (auto it = body.begin(); it != body.end();) {
-    auto contain = *it;
-    ++it;
-    delete contain;
-  }
 }
 
 bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
@@ -374,15 +364,101 @@ Value *LoopParallel::FindPointBase(Value *val) {
   return nullptr;
 }
 
-Function &LoopParallel::GetParallelFunc() {
-  static Function func(InnerDataType::IR_Value_VOID, "MainParallel");
-  static bool Create = false;
-  if (Create) {
-    func.clear();
-    func.tag = Function::UnrollBody;
-    // insert param, waiting for Function Ptr
-    // TODO
-    Create = true;
+void LoopParallel::MakeWorkThread(Value *begin, Value *end,
+                                  CallInst *loop_body) {
+  std::unordered_map<Value *, Variable *> ValMap;
+  auto Parallel =
+      new Function(InnerDataType::IR_Value_VOID,
+                   Singleton<Module>().GetFuncNameEnum("Parallel_Target"));
+  auto beg = new Variable(Variable::Param, IntType::NewIntTypeGet(), "");
+  auto en = new Variable(Variable::Param, IntType::NewIntTypeGet(), "");
+  Parallel->PushMyParam(beg); // beg
+  Parallel->PushMyParam(en);  // end
+  ValMap[begin] = beg;
+  ValMap[end] = en;
+  Singleton<Module>().Push_Func(Parallel);
+  Parallel->clear();
+  Parallel->tag = Function::ParallelBody;
+  auto Entry = new BasicBlock();
+  Parallel->push_bb(Entry);
+  auto While_Loop = new BasicBlock();
+  Parallel->push_bb(While_Loop);
+  auto exit = new BasicBlock();
+  Parallel->push_bb(exit);
+  Entry->SetName(Entry->GetName() + ".Entry");
+  While_Loop->SetName(While_Loop->GetName() + ".While_Loop");
+  exit->SetName(exit->GetName() + ".Exit");
+  Entry->GenerateUnCondInst(While_Loop);
+  // maping
+  for (auto inst : *substi)
+    for (int i = 0; i < inst->Getuselist().size(); i++) {
+      auto op = inst->GetOperand(i);
+      if (ValMap.find(op) == ValMap.end() &&
+          Judge(loop_body->GetParent(), op)) {
+        ValMap[op] = new Variable(Variable::Param, op->GetType(), "");
+      }
+    }
+
+  for (auto inst : *substi) {
+    for (auto &use : inst->Getuselist()) {
+      if (ValMap.find(use->GetValue()) != ValMap.end()) {
+        if (auto phi = dynamic_cast<PhiInst *>(inst))
+          phi->ReplaceVal(use.get(), ValMap[use->GetValue()]);
+        else
+          inst->RSUW(use.get(), ValMap[use->GetValue()]);
+      }
+    }
   }
-  return func;
+  // add arg
+  std::vector<Value *> args{begin, end};
+  for (const auto &[val, arg] : ValMap) {
+    if (val == begin || val == end)
+      continue;
+    args.push_back(val);
+  }
+  for (const auto [val, arg] : ValMap) {
+    if (val == begin || val == end)
+      continue;
+    Parallel->PushMyParam(arg);
+  }
+
+  // replace
+  User *cmp = nullptr;
+  for (auto iter = substi->begin(); iter != substi->end();) {
+    auto inst = *iter;
+    ++iter;
+    if (dynamic_cast<UnCondInst *>(inst)) {
+      continue;
+    }
+    if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+      assert(0);
+    }
+    cmp = inst;
+    inst->EraseFromParent();
+    While_Loop->push_back(inst);
+  }
+  auto callinst = new CallInst(Parallel, args);
+  substi->push_front(callinst);
+  While_Loop->GenerateCondInst(cmp, While_Loop, exit);
+  exit->GenerateRetInst();
+  return;
+}
+
+bool LoopParallel::Judge(BasicBlock *bb, Value *target) {
+  if (dynamic_cast<BasicBlock *>(target) || dynamic_cast<Function *>(target))
+    return false;
+  auto name = target->GetName();
+  if (name == "getint" || name == "getch" || name == "getfloat" ||
+      name == "getfarray" || name == "putint" || name == "putfloat" ||
+      name == "putarray" || name == "putfarray" || name == "putf" ||
+      name == "getarray" || name == "putch" || name == "_sysy_starttime" ||
+      name == "_sysy_stoptime" || name == "llvm.memcpy.p0.p0.i32")
+    return false;
+  if (target->isConst() || target->isGlobal())
+    return false;
+  auto user = dynamic_cast<User *>(target);
+  assert(user);
+  if (user->GetParent() == bb)
+    return false;
+  return true;
 }
