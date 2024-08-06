@@ -73,8 +73,8 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case tailrecurseEliminator:
       AddPass(tailrecurseEliminator);
       break;
-    case branchrotate:
-      AddPass(branchrotate);
+    case condmerge:
+      AddPass(condmerge);
       break;
     case O0:
       level = O0;
@@ -143,7 +143,7 @@ void _PassManager::RunOnLevel() {
       RunLevelPass(DCE, curfunc, modified); 
 
 
-      RunLevelPass(BranchRotate, curfunc, modified);
+      RunLevelPass(CondMerge, curfunc, modified);
       // TRE
       RunLevelPass(TailRecurseEliminator,curfunc,modified);   
     }
@@ -327,8 +327,8 @@ void _PassManager::RunOnTest() {
           auto m_TRE = RunImpl<TailRecurseEliminator>(curfunc, AM);
           break;
         }
-        case branchrotate: {
-          auto m_BranchRotate = RunImpl<BranchRotate>(curfunc, AM);
+        case condmerge: {
+          auto m_CondMerge = RunImpl<CondMerge>(curfunc, AM);
           break;
         }
         default: {
