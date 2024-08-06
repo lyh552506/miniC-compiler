@@ -3,13 +3,13 @@
 #define NumThreads 4
 
 class Spinlock{
-    std::atomic_flag lock = ATOMIC_FLAG_INIT;
+    std::atomic_flag _lock = ATOMIC_FLAG_INIT;
     public:
     void lock(){
-        while(atomic_flag_test_and_set(&lock)){}
+        while(atomic_flag_test_and_set(&_lock)){}
     }
     void unlock(){
-        atomic_flag_clear(&lock);
+        atomic_flag_clear(&_lock);
     }
 };
 
@@ -62,6 +62,7 @@ void* WorkerThread(void *arg){
 [[constructor]]
 void CreateThread() {
     // create four threads using pthread_create, and detach them
+    full.lock();
     pthread_t threads[NumThreads];
     for (int i = 0; i < NumThreads; i++) {
         pthread_create(&threads[i], NULL, WorkerThread, NULL);
