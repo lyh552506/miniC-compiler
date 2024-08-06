@@ -193,7 +193,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 break;
             }
             default:
-                assert(0&&"Impossible");
+                // assert(0&&"Impossible");
+                break;
             }
             return;
         }

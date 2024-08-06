@@ -28,7 +28,7 @@ bool RISCVModuleLowering::run(Module *m)
         }
     }
 
-    asmprinter->printAsm();
+    // asmprinter->printAsm();
     return false;
 }
 
@@ -63,43 +63,45 @@ bool RISCVFunctionLowering::run(Function *m)
     while (modified)
     {
         modified = false;
-        BackendDCE dcebefore(ctx.GetCurFunction(), ctx);
+        BackendDCE dcebefore(mfunc, ctx);
         modified |= dcebefore.RunImpl();
     }
 
-    Pre_RA_Scheduler pre_scheduler;
-    pre_scheduler.ScheduleOnFunction(ctx);
     // asmprinter->printAsm();
 
-    // // Register Allocation
-    RegAllocImpl regalloc(mfunc, ctx);
+    Pre_RA_Scheduler pre_scheduler;
+    pre_scheduler.ScheduleOnFunction(ctx);
+
+    // Register Allocation
+    RegAllocImpl regalloc(ctx.GetCurFunction(), ctx);
     regalloc.RunGCpass();
-    // for (auto block : *(ctx.GetCurFunction()))
-    // {
-    //     for (auto it = block->begin(); it != block->end();)
-    //     {
-    //         auto inst = *it;
-    //         ++it;
-    //         if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
-    //             delete inst;
-    //     }
-    // }
-    // modified = true;
-    // // Backend DCE after RA
-    // while (modified)
-    // {
-    //     modified = false;
-    //     BackendDCE dceafter(ctx.GetCurFunction(), ctx);
-    //     modified |= dceafter.RunImpl();
-    // }
 
-    // // Post_RA_Scheduler post_scheduler;
-    // // post_scheduler.ScheduleOnFunction(ctx);
+    for (auto block : *(ctx.GetCurFunction()))
+    {
+        for (auto it = block->begin(); it != block->end();)
+        {
+            auto inst = *it;
+            ++it;
+            if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
+                delete inst;
+        }
+    }
+     
+    modified = true;
+    // Backend DCE after RA
+    while (modified)
+    {
+        modified = false;
+        BackendDCE dceafter(ctx.GetCurFunction(), ctx);
+        modified |= dceafter.RunImpl();
+    }
+    // Post_RA_Scheduler post_scheduler;
+    // post_scheduler.ScheduleOnFunction(ctx);
 
-    // // Generate Frame of current Function
-    // // And generate the head and tail of frame here
-    // // PostRACalleeSavedLegalizer callee_saved_legalizer;
-    // // callee_saved_legalizer.run(ctx.GetCurFunction());
+    // Generate Frame of current Function
+    // And generate the head and tail of frame here
+    // PostRACalleeSavedLegalizer callee_saved_legalizer;
+    // callee_saved_legalizer.run(ctx.GetCurFunction());
 
     // auto& frame = ctx.GetCurFunction()->GetFrame();
     // frame->GenerateFrame();
@@ -112,8 +114,8 @@ bool RISCVFunctionLowering::run(Function *m)
     // auto dbd=DeleteDeadBlock();
     // dbd.run(ctx.GetCurFunction());
 
-    // // auto layout=CodeLayout();
-    // // layout.run(mfunc);
+    // auto layout=CodeLayout();
+    // layout.run(mfunc);
     
     return false;
 }

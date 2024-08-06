@@ -20,6 +20,7 @@ void BlockInfo::RunOnFunction()
         GetBlockLivein(block);
         GetBlockLiveout(block);
     }
+
     bool modified = true;
     while (modified)
     {
@@ -67,19 +68,17 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block)
         BlockLiveout[block].insert(BlockLivein[succ].begin(), BlockLivein[succ].end());
 }
 void BlockInfo::GetBlockLivein(RISCVBasicBlock *block)
-{int a=0;
+{
+
     for (auto inst = block->rbegin(); inst != block->rend(); --inst)
     {   
-        a++;
-        if((*inst)->GetDef()&&(*inst)->GetDef()->ignoreLA()->GetName()==".356")
-            int i=0;
-        if(a==4)
-          {(*inst)->printfull();std::cout<<std::endl;}
+
         OpType Opcode = (*inst)->GetOpcode();
         if (auto def = (*inst)->GetDef())
         {
             if (auto reg = def->ignoreLA())
             {
+
                 BlockLivein[block].erase(reg);
                 if (dynamic_cast<VirRegister *>(reg))
                     initial.insert(reg);
@@ -143,15 +142,18 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block)
             }
             for (int i = 0; i < (*inst)->GetOperandSize(); i++)
             {
-                if (auto reg = (*inst)->GetOperand(i)->ignoreLA())
+                if ((*inst)->GetOperand(i))
                 {
-                    BlockLivein[block].insert(reg);
-                    if (dynamic_cast<VirRegister *>(reg))
-                        initial.insert(reg);
-                    else if (auto phy = dynamic_cast<PhyRegister *>(reg))
+                    if(auto reg = (*inst)->GetOperand(i)->ignoreLA())
                     {
-                        Precolored.insert(phy);
-                        color[phy] = phy;
+                        BlockLivein[block].insert(reg);
+                        if (dynamic_cast<VirRegister *>(reg))
+                            initial.insert(reg);
+                        else if (auto phy = dynamic_cast<PhyRegister *>(reg))
+                        {
+                            Precolored.insert(phy);
+                            color[phy] = phy;
+                        }
                     }
                 }
             }

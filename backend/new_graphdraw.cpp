@@ -13,8 +13,6 @@
 #include <ostream>
 #include <unordered_set>
 void GraphColor::RunOnFunc() {
-  ctx.print();
-  std::cout<<std::endl;
   bool condition = true;
   GC_init();
   for (auto b : *m_func)
@@ -50,8 +48,22 @@ void GraphColor::RunOnFunc() {
       condition = true;
     }
   }
-  ctx.GetCurFunction()->printfull();
-  std::cout<<std::endl;
+  if(m_func->GetName() == "main")
+  {
+  // ctx.GetCurFunction()->printfull();
+  // std::cout<<std::endl;   
+    for(auto block : *m_func)
+    {
+      
+      for(auto iter = block->rbegin() ; iter != block->rend(); --iter)
+    {
+       (*iter)->printfull();
+      std::cout<<std::flush;
+    }
+    }
+  }
+  if(m_func->GetName() =="main")
+  CaculateLiveness();
   RewriteProgram();
 }
 
@@ -568,12 +580,8 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
 
 void GraphColor::RewriteProgram() {
   for (const auto mbb : topu) {
-    int a=0;
     for (auto mirit = mbb->begin(); mirit != mbb->end();) {
-      a++;
       auto mir = *mirit;
-      if(a==164)
-        mir->printfull();
       ++mirit;
       if (mir->GetOpcode() == RISCVMIR::call)
         continue;

@@ -24,10 +24,8 @@ class RegAllocImpl {
   RISCVLoweringContext &ctx;
 
 public:
-  RegAllocImpl(RISCVFunction *func, RISCVLoweringContext &_ctx)
-      : m_func(func), ctx(_ctx) {
-    m_func = ctx.GetCurFunction();
-  }
+  RegAllocImpl(RISCVFunction *&func, RISCVLoweringContext &_ctx)
+      : m_func(func), ctx(_ctx) {}
   void RunGCpass();
   struct RegLiveInterval {
     int start;
