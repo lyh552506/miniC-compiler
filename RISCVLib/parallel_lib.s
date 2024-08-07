@@ -4,55 +4,81 @@
 	.attribute unaligned_access, 0
 	.attribute stack_align, 16
 	.text
+	.section	.rodata.str1.8,"aMS",@progbits,1
+	.align	3
+.LC0:
+	.string	"work thread created"
+	.align	3
+.LC1:
+	.string	"task %d done\n"
+	.text
 	.align	1
 	.globl	_Z12WorkerThreadPv
 	.type	_Z12WorkerThreadPv, @function
 _Z12WorkerThreadPv:
-.LFB333:
+.LFB345:
 	.cfi_startproc
-	addi	sp,sp,-64
-	.cfi_def_cfa_offset 64
-	sd	s0,48(sp)
+	lui	a0,%hi(.LC0)
+	addi	sp,sp,-80
+	.cfi_def_cfa_offset 80
+	addi	a0,a0,%lo(.LC0)
+	sd	ra,72(sp)
+	sd	s0,64(sp)
+	sd	s1,56(sp)
+	sd	s2,48(sp)
+	sd	s3,40(sp)
+	sd	s4,32(sp)
+	sd	s5,24(sp)
+	sd	s6,16(sp)
+	sd	s7,8(sp)
+	.cfi_offset 1, -8
 	.cfi_offset 8, -16
-	lui	s0,%hi(full)
-	addi	s0,s0,%lo(full)
-	sd	s1,40(sp)
 	.cfi_offset 9, -24
-	andi	s1,s0,3
-	sd	s4,16(sp)
-	slliw	s1,s1,3
-	.cfi_offset 20, -48
-	li	s4,1
-	sd	s2,32(sp)
-	sd	s3,24(sp)
-	sd	s5,8(sp)
-	sd	ra,56(sp)
 	.cfi_offset 18, -32
 	.cfi_offset 19, -40
+	.cfi_offset 20, -48
 	.cfi_offset 21, -56
-	.cfi_offset 1, -8
-	lui	s5,%hi(func)
+	.cfi_offset 22, -64
+	.cfi_offset 23, -72
+	lui	s4,%hi(stdout)
+	call	puts
+	lui	s0,%hi(full)
+	addi	s0,s0,%lo(full)
+	ld	a0,%lo(stdout)(s4)
+	andi	s1,s0,3
+	li	s5,1
+	slliw	s1,s1,3
+	call	fflush
+	lui	s7,%hi(func)
 	lui	s3,%hi(task_done)
+	lui	s6,%hi(.LC1)
 	andi	s0,s0,-4
-	sllw	s2,s4,s1
+	sllw	s2,s5,s1
 .L2:
 	fence iorw,ow; amoor.w.aq a5,s2,0(s0)
 	srlw	a5,a5,s1
 	andi	a5,a5,0xff
 	bne	a5,zero,.L2
-	ld	a5,%lo(func)(s5)
+	ld	a5,%lo(func)(s7)
 	jalr	a5
+	fence	iorw,iorw
+	lw	a1,%lo(task_done)(s3)
+	fence	iorw,iorw
+	addi	a0,s6,%lo(.LC1)
+	call	printf
+	ld	a0,%lo(stdout)(s4)
+	call	fflush
 	addi	a5,s3,%lo(task_done)
-	fence iorw,ow; amoadd.w.aq zero,s4,0(a5)
+	fence iorw,ow; amoadd.w.aq zero,s5,0(a5)
 	j	.L2
 	.cfi_endproc
-.LFE333:
+.LFE345:
 	.size	_Z12WorkerThreadPv, .-_Z12WorkerThreadPv
 	.align	1
 	.globl	_Z14FenceArgLoadedv
 	.type	_Z14FenceArgLoadedv, @function
 _Z14FenceArgLoadedv:
-.LFB328:
+.LFB340:
 	.cfi_startproc
 	fence	iorw,iorw
 	lui	a5,%hi(empty)
@@ -60,13 +86,13 @@ _Z14FenceArgLoadedv:
 	fence	iorw,iorw
 	ret
 	.cfi_endproc
-.LFE328:
+.LFE340:
 	.size	_Z14FenceArgLoadedv, .-_Z14FenceArgLoadedv
 	.align	1
 	.globl	_Z18WaitTasksCompletedv
 	.type	_Z18WaitTasksCompletedv, @function
 _Z18WaitTasksCompletedv:
-.LFB329:
+.LFB341:
 	.cfi_startproc
 	lui	a2,%hi(task_done)
 	lui	a3,%hi(tasks)
@@ -81,27 +107,29 @@ _Z18WaitTasksCompletedv:
 	bne	a4,a5,.L9
 	ret
 	.cfi_endproc
-.LFE329:
+.LFE341:
 	.size	_Z18WaitTasksCompletedv, .-_Z18WaitTasksCompletedv
 	.align	1
 	.globl	_Z14WaitBufferReadv
 	.type	_Z14WaitBufferReadv, @function
 _Z14WaitBufferReadv:
-.LFB330:
+.LFB342:
 	.cfi_startproc
 	lui	a4,%hi(full)
 	addi	a4,a4,%lo(full)
-	addi	sp,sp,-16
-	.cfi_def_cfa_offset 16
+	addi	sp,sp,-32
+	.cfi_def_cfa_offset 32
 	andi	a3,a4,3
-	sd	s0,0(sp)
+	sd	s1,8(sp)
 	slliw	a3,a3,3
-	.cfi_offset 8, -16
-	li	s0,1
-	sd	ra,8(sp)
+	.cfi_offset 9, -24
+	li	s1,1
+	sd	ra,24(sp)
+	sd	s0,16(sp)
 	.cfi_offset 1, -8
+	.cfi_offset 8, -16
 	andi	a4,a4,-4
-	sllw	a2,s0,a3
+	sllw	a2,s1,a3
 .L12:
 	fence iorw,ow; amoor.w.aq a5,a2,0(a4)
 	srlw	a5,a5,a3
@@ -109,25 +137,36 @@ _Z14WaitBufferReadv:
 	bne	a5,zero,.L12
 	lui	a5,%hi(func)
 	ld	a5,%lo(func)(a5)
+	lui	s0,%hi(task_done)
 	jalr	a5
-	lui	a5,%hi(task_done)
-	addi	a5,a5,%lo(task_done)
-	fence iorw,ow; amoadd.w.aq zero,s0,0(a5)
-	ld	ra,8(sp)
+	fence	iorw,iorw
+	lw	a1,%lo(task_done)(s0)
+	fence	iorw,iorw
+	lui	a0,%hi(.LC1)
+	addi	a0,a0,%lo(.LC1)
+	call	printf
+	lui	a5,%hi(stdout)
+	ld	a0,%lo(stdout)(a5)
+	call	fflush
+	addi	a5,s0,%lo(task_done)
+	fence iorw,ow; amoadd.w.aq zero,s1,0(a5)
+	ld	ra,24(sp)
 	.cfi_restore 1
-	ld	s0,0(sp)
+	ld	s0,16(sp)
 	.cfi_restore 8
-	addi	sp,sp,16
+	ld	s1,8(sp)
+	.cfi_restore 9
+	addi	sp,sp,32
 	.cfi_def_cfa_offset 0
 	jr	ra
 	.cfi_endproc
-.LFE330:
+.LFE342:
 	.size	_Z14WaitBufferReadv, .-_Z14WaitBufferReadv
 	.align	1
 	.globl	_Z15WaitBufferWritev
 	.type	_Z15WaitBufferWritev, @function
 _Z15WaitBufferWritev:
-.LFB331:
+.LFB343:
 	.cfi_startproc
 	lui	a4,%hi(empty)
 	addi	a4,a4,%lo(empty)
@@ -143,13 +182,13 @@ _Z15WaitBufferWritev:
 	bne	a5,zero,.L16
 	ret
 	.cfi_endproc
-.LFE331:
+.LFE343:
 	.size	_Z15WaitBufferWritev, .-_Z15WaitBufferWritev
 	.align	1
 	.globl	_Z12NotifyWorkerv
 	.type	_Z12NotifyWorkerv, @function
 _Z12NotifyWorkerv:
-.LFB332:
+.LFB344:
 	.cfi_startproc
 	lui	a5,%hi(tasks)
 	li	a4,1
@@ -161,13 +200,14 @@ _Z12NotifyWorkerv:
 	fence	iorw,iorw
 	ret
 	.cfi_endproc
-.LFE332:
+.LFE344:
 	.size	_Z12NotifyWorkerv, .-_Z12NotifyWorkerv
+	.section	.text.startup,"ax",@progbits
 	.align	1
 	.globl	_Z12CreateThreadv
 	.type	_Z12CreateThreadv, @function
 _Z12CreateThreadv:
-.LFB334:
+.LFB346:
 	.cfi_startproc
 	lui	a4,%hi(full)
 	addi	a4,a4,%lo(full)
@@ -216,8 +256,11 @@ _Z12CreateThreadv:
 	.cfi_def_cfa_offset 0
 	jr	ra
 	.cfi_endproc
-.LFE334:
+.LFE346:
 	.size	_Z12CreateThreadv, .-_Z12CreateThreadv
+	.section	.init_array,"aw"
+	.align	3
+	.dword	_Z12CreateThreadv
 	.globl	task_done
 	.globl	tasks
 	.globl	full

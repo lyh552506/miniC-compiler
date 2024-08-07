@@ -1,5 +1,7 @@
 #include <pthread.h>
 #include <atomic>
+// #include <iostream>
+#include <stdio.h>
 #define NumThreads 4
 
 class Spinlock{
@@ -38,6 +40,8 @@ void WaitBufferRead(){
     full.lock();
     // inside the function, the FenceArgLoaded will be called
     func();
+    printf("task %d done\n",task_done.load());
+    fflush(stdout);
     task_done++;
 }
 
@@ -55,11 +59,15 @@ void NotifyWorker(){
 }
 
 void* WorkerThread(void *arg){
+    // std::cerr<<"work thread created\n";
+    printf("work thread created\n");
+    fflush(stdout);
     while(true)
         WaitBufferRead();
 }
 
-[[constructor]]
+// [[constructor]]
+void CreateThread()__attribute__((constructor)); 
 void CreateThread() {
     // create four threads using pthread_create, and detach them
     full.lock();
