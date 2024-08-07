@@ -233,6 +233,8 @@ class mylist
         }
         
         sequence.back()->next=next;
+        if(next!=nullptr)
+            next->prev=sequence.back();
     }
 
     virtual void clear(){
