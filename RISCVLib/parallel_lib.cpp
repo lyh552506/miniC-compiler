@@ -90,8 +90,7 @@ void CreateThread() {
 }
 
 /*
-parallel_call translation:
-
+parallel_call translation: [done]
     parallel_call func, arg0, arg1, ...
     ->
     store all of them, except %begin and %end in the buffer
@@ -99,8 +98,7 @@ parallel_call translation:
     mv a1 <- %end
     call Notify Worker
 
-func translation:
-
+func translation: [done]
     1. translate it to a void(void)
     DURING FUNC LOWERING
     2. all arguments load from the buffer
