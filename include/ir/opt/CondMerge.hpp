@@ -15,14 +15,14 @@ class CondMerge : public _PassManagerBase<CondMerge, Function>
     _AnalysisManager &AM;
     dominance *dom;
     std::vector<BasicBlock *> DFSOrder;
+    std::unordered_set<BasicBlock *> wait_del;
     bool AdjustCondition();
     bool DetectCall(Value *inst, BasicBlock *block);
     bool RetPhi(BasicBlock *block);
     bool Handle_Or(BasicBlock *cur, BasicBlock *succ, std::unordered_set<BasicBlock *> &wait_del);
     bool Handle_And(BasicBlock *cur, BasicBlock *succ, std::unordered_set<BasicBlock *> &wait_del);
-    inline bool CanHandle(BasicBlock *cur, CondInst *inst);
     inline bool Match_Lib_Phi(BasicBlock *curr, BasicBlock *succ, BasicBlock *exit);
-    inline bool DetectUserPos(Value* user, BasicBlock* blockpos, Value* val);
+    inline bool DetectUserPos(Value *user, BasicBlock *blockpos, Value *val);
     void OrderBlock(BasicBlock *block);
 
   public:

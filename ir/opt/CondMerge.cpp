@@ -25,6 +25,12 @@ bool CondMerge::Run()
         changed |= AdjustCondition();
         modified |= changed;
     }
+    while (!wait_del.empty())
+    {
+        BasicBlock *block = *wait_del.begin();
+        wait_del.erase(block);
+        delete block;
+    }
     return modified;
 }
 
@@ -41,29 +47,21 @@ void CondMerge::OrderBlock(BasicBlock *block)
 bool CondMerge::AdjustCondition()
 {
     bool modified = false;
-    std::unordered_set<BasicBlock *> wait_del;
+
     for (BasicBlock *block : DFSOrder)
     {
         if (wait_del.count(block))
             continue;
         User *br = block->back();
-        if (auto cond = dynamic_cast<CondInst *>(br))
+        if (br && dynamic_cast<CondInst *>(br))
         {
-            if (CanHandle(block, cond))
-            {
-                BasicBlock *succ = br->Getuselist()[1]->usee->as<BasicBlock>();
-                if (Handle_And(block, succ, wait_del))
-                    modified = true;
-                else if (Handle_Or(block, succ, wait_del))
-                    modified = true;
-            }
+            BasicBlock *succ_and = br->Getuselist()[1]->usee->as<BasicBlock>();
+            BasicBlock *succ_or = br->Getuselist()[2]->usee->as<BasicBlock>();
+            if (Handle_And(block, succ_and, wait_del))
+                modified = true;
+            else if (Handle_Or(block, succ_or, wait_del))
+                modified = true;
         }
-    }
-    while (!wait_del.empty())
-    {
-        BasicBlock *block = *wait_del.begin();
-        wait_del.erase(block);
-        delete block;
     }
     return modified;
 }
@@ -218,14 +216,6 @@ bool CondMerge::RetPhi(BasicBlock *block)
     return false;
 }
 
-bool CondMerge::CanHandle(BasicBlock *cur, CondInst *inst)
-{
-    if (inst->Getuselist()[1]->usee->GetUserlist().GetSize() > 1)
-        return false;
-    if (inst->Getuselist()[1]->usee->GetUserlist().Front()->GetUser()->GetParent() != cur)
-        return false;
-    return true;
-}
 
 bool CondMerge::Match_Lib_Phi(BasicBlock *curr, BasicBlock *succ, BasicBlock *exit)
 {
