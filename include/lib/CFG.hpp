@@ -204,7 +204,7 @@ class ZextInst:public User
 
 class PhiInst : public User {
 public:
-  PhiInst(Type *ty) : User{ty} {id = OpID::Phi;}
+  PhiInst(Type *ty) :oprandNum(0), User{ty} {id = OpID::Phi;}
   PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {id = OpID::Phi;}
 
   PhiInst(User *BeforeInst):oprandNum(0) {id = OpID::Phi;}

@@ -2,9 +2,11 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "AliasAnalysis.hpp"
+#include "LoopInfo.hpp"
 #include "LoopSimplify.hpp"
 #include "Type.hpp"
 #include "my_stl.hpp"
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdlib>
@@ -23,10 +25,16 @@ bool LoopParallel::Run() {
 
   if (m_func->GetName() != "main")
     return false;
-  for (auto loop : *loopAnaly) {
-    if (CanBeParallel(loop)) {
-      std::cerr << "Find a Parallelable Loop!"
+  std::vector<LoopInfo *> loops{loopAnaly->begin(), loopAnaly->end()};
+  std::sort(loops.begin(), loops.end(), [&](LoopInfo *l, LoopInfo *r) {
+    return dom->dominates(l->GetHeader(), r->GetHeader());
+  });
+  for (auto loop : loops) {
+    if (ExcutedLoops.find(loop->GetHeader()) == ExcutedLoops.end() &&
+        CanBeParallel(loop)) {
+      std::cerr << "Find a Parallelable Loop: " << loop->GetHeader()->GetName()
                 << "\n";
+      SubstitudeTrait.Init();
       auto call = ExtractLoopParallelBody(loop);
       MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
     }
@@ -53,6 +61,7 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
   LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   if (loop->CantCalcTrait())
     return false;
+  // SimplifyPhi(loop);
   if (!DependencyAnalysis(loop))
     return false;
   return true;
@@ -82,14 +91,17 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   }
   loop->trait.res = res;
   InnerDataType ty = InnerDataType::IR_Value_VOID;
-  if (res)
+  if (res) {
     ty = res->GetTypeEnum();
+    SubstitudeTrait.res = res;
+  }
   auto ParallelFunc =
       new Function(ty, Singleton<Module>().GetFuncNameEnum("Loop_Body"));
   Singleton<Module>().Push_Func(ParallelFunc);
   ParallelFunc->clear();
   ParallelFunc->tag = Function::LoopBody;
   auto indvar = loop->trait.indvar;
+  SubstitudeTrait.indvar = indvar;
   Val2Arg[indvar] = new Variable(Variable::Param, indvar->GetType(), "");
   if (res)
     Val2Arg[res] = new Variable(Variable::Param, res->GetType(), "");
@@ -128,12 +140,11 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   auto substitute = new BasicBlock();
   substitute->SetName(header->GetName() + ".Substitute");
   m_func->add_block(substitute);
-  this->substi = substitute;
+  SubstitudeTrait.head = substitute;
   for (auto it = header->begin(); it != header->end();) {
     auto inst = *it;
     ++it;
     if (auto phi = dynamic_cast<PhiInst *>(inst)) {
-      phi->EraseRecordByBlock(latch);
       inst->EraseFromParent();
       substitute->push_back(inst);
     } else {
@@ -145,10 +156,11 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
     args.push_back(val);
   auto callinst = new CallInst(ParallelFunc, args);
   substitute->push_back(callinst);
+  SubstitudeTrait.call = callinst;
   auto loopchange = dynamic_cast<User *>(loop->trait.change);
-  assert(loopchange);
   auto change = loopchange->CloneInst();
   substitute->push_back(change);
+  SubstitudeTrait.change = change;
   loop->trait.change = change;
   auto loopcmp = dynamic_cast<User *>(latch->back()->GetOperand(0));
   assert(loopcmp);
@@ -246,15 +258,6 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
       }
     }
 
-  for (auto it = substitute->begin();
-       it != substitute->end() && dynamic_cast<PhiInst *>(*it);) {
-    auto phi = dynamic_cast<PhiInst *>(*it);
-    ++it;
-    if (phi->PhiRecord.size() == 1) {
-      phi->RAUW((*(phi->PhiRecord.begin())).second.first);
-      delete phi;
-    }
-  }
   //转移
   substitute->num = header->num;
   m_func->GetBasicBlock()[header->num] = substitute;
@@ -266,6 +269,8 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
     bb->EraseFromParent();
     ParallelFunc->push_bb(bb);
   }
+  for (auto bb : loop->GetLoopBody())
+    ExcutedLoops.insert(bb);
   loopAnaly->DeleteLoop(loop);
   return callinst;
 }
@@ -297,6 +302,8 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
       } else if (auto call = dynamic_cast<CallInst *>(inst)) {
         if (call->HasSideEffect())
           return false;
+        else
+          continue;
       } else
         continue;
       assert(target);
@@ -321,7 +328,7 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
           if (_base == Base) {
             if (dynamic_cast<LoadInst *>(inst)) {
               if (ld) {
-                assert(0 && "What case?");
+                return false;
               }
               ld = dynamic_cast<LoadInst *>(inst);
             } else {
@@ -366,6 +373,7 @@ Value *LoopParallel::FindPointBase(Value *val) {
 
 void LoopParallel::MakeWorkThread(Value *begin, Value *end,
                                   CallInst *loop_body) {
+  auto head = SubstitudeTrait.head;
   std::unordered_map<Value *, Variable *> ValMap;
   auto Parallel =
       new Function(InnerDataType::IR_Value_VOID,
@@ -389,17 +397,37 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   While_Loop->SetName(While_Loop->GetName() + ".While_Loop");
   exit->SetName(exit->GetName() + ".Exit");
   Entry->GenerateUnCondInst(While_Loop);
+  auto Indvar = PhiInst::NewPhiNode(SubstitudeTrait.change->GetType());
+  PhiInst *res = nullptr;
+  Indvar->updateIncoming(begin, Entry);
+  Indvar->updateIncoming(SubstitudeTrait.change, While_Loop);
+  While_Loop->push_back(Indvar);
+  SubstitudeTrait.indvar->RAUW(Indvar);
+  delete SubstitudeTrait.indvar;
+  if (SubstitudeTrait.res) {
+    res = PhiInst::NewPhiNode(SubstitudeTrait.res->GetType());
+    assert(SubstitudeTrait.res->PhiRecord.size() == 1);
+    res->updateIncoming(SubstitudeTrait.res->GetOperand(0), Entry);
+    res->updateIncoming(SubstitudeTrait.call, While_Loop);
+    While_Loop->push_back(res);
+    SubstitudeTrait.res->RAUW(res);
+    delete SubstitudeTrait.res;
+  }
   // maping
-  for (auto inst : *substi)
+  for (auto inst : *head) {
     for (int i = 0; i < inst->Getuselist().size(); i++) {
       auto op = inst->GetOperand(i);
+      if (res)
+        if (op == res)
+          continue;
       if (ValMap.find(op) == ValMap.end() &&
-          Judge(loop_body->GetParent(), op)) {
+          Judge(loop_body->GetParent(), op) && op != Indvar) {
         ValMap[op] = new Variable(Variable::Param, op->GetType(), "");
       }
     }
+  }
 
-  for (auto inst : *substi) {
+  for (auto inst : *head) {
     for (auto &use : inst->Getuselist()) {
       if (ValMap.find(use->GetValue()) != ValMap.end()) {
         if (auto phi = dynamic_cast<PhiInst *>(inst))
@@ -424,7 +452,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
 
   // replace
   User *cmp = nullptr;
-  for (auto iter = substi->begin(); iter != substi->end();) {
+  for (auto iter = head->begin(); iter != head->end();) {
     auto inst = *iter;
     ++iter;
     if (dynamic_cast<UnCondInst *>(inst)) {
@@ -438,7 +466,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
     While_Loop->push_back(inst);
   }
   auto callinst = new CallInst(Parallel, args);
-  substi->push_front(callinst);
+  head->push_front(callinst);
   While_Loop->GenerateCondInst(cmp, While_Loop, exit);
   exit->GenerateRetInst();
   return;
@@ -461,4 +489,23 @@ bool LoopParallel::Judge(BasicBlock *bb, Value *target) {
   if (user->GetParent() == bb)
     return false;
   return true;
+}
+
+void LoopParallel::SimplifyPhi(LoopInfo *loop) {
+  auto exit = loopAnaly->GetExit(loop);
+  auto bound = loop->trait.boundary;
+  auto change = loop->trait.change;
+  if (loop->trait.step && loop->trait.step == 1)
+    for (auto use : change->GetUserlist()) {
+      auto user = use->GetUser();
+      auto it = std::find(exit.begin(), exit.end(), user->GetParent());
+      if (it != exit.end() && dynamic_cast<PhiInst *>(user)) {
+        auto phi = dynamic_cast<PhiInst *>(user);
+        phi->ReplaceVal(use, bound);
+      }
+    }
+}
+
+std::pair<Value *, Value *> &LoopParallel::Slice(Value *begin, Value *end) {
+  
 }
