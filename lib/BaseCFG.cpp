@@ -220,6 +220,8 @@ bool User::HasSideEffect() {
         return false;
     }
   }
+  if(dynamic_cast<RetInst*>(this))
+    return true;
   if (this->GetUserlist().is_empty())
     return false;
   return false;
