@@ -587,8 +587,7 @@ void RISCVISel::InstLowering(CallInst* inst){
     // 把VReg Copy到PhyReg
     // 如果溢出则按照规约store
     // 如果有返回值则copy a0 到 VReg
-    auto isParallel=[](Function* func)-> bool {};
-    if(inst->GetOperand(0)->as<Function>()&&isParallel(inst->GetOperand(0)->as<Function>())){
+    if(inst->GetOperand(0)->as<Function>()&&inst->GetOperand(0)->as<Function>()->tag==Function::ParallelBody){
         LowerCallInstParallel(inst);
         return;
     }

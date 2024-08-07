@@ -52,8 +52,7 @@ void LowerFormalArgumentsParallel(Function* func,RISCVLoweringContext& ctx){
 }
 
 void LowerFormalArguments(Function* func, RISCVLoweringContext& ctx) {
-    auto isParallel=[](Function* func)-> bool {};
-    if(isParallel(func)){
+    if(func->tag==Function::ParallelBody){
         LowerFormalArgumentsParallel(func,ctx);
         return;
     }
