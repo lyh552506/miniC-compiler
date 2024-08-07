@@ -26,21 +26,29 @@ void LowerFormalArgumentsParallel(Function* func,RISCVLoweringContext& ctx){
             reg=ctx.createVReg(_tp);
             mir->SetDef(reg);
             mir->AddOperand(addressreg);
+            ctx.insert_val2mop(param,reg);
+            ctx(mir);
             mvaddress(tp->get_size());
         };
         if(dynamic_cast<PointerType*>(tp)){
             assert(tp->get_size()==8);
             load2reg(RISCVMIR::_ld,riscv_ptr);
         }
-        else if(tp==IntType::NewIntTypeGet()){
+        else if(tp==FloatType::NewFloatTypeGet()){
             assert(tp->get_size()==4);
-            load2reg(RISCVMIR::_lw,riscv_i32);
+            load2reg(RISCVMIR::_flw,riscv_float32);
         }
         else{
             assert(tp->get_size()==4);
-            load2reg(RISCVMIR::_lw,riscv_float32);
+            load2reg(RISCVMIR::_lw,riscv_i32);
         }
     }
+
+    // call fenceArgLoaderd
+    auto fenceArgLoaded=BuildInFunction::GetBuildInFunction("FenceArgLoaded");
+    auto call=new RISCVMIR(RISCVMIR::call);
+    call->AddOperand(ctx.mapping(fenceArgLoaded));
+    ctx(call);
 }
 
 void LowerFormalArguments(Function* func, RISCVLoweringContext& ctx) {

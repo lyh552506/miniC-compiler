@@ -483,10 +483,101 @@ void RISCVISel::InstLowering(PhiInst* inst){
     return;
 }
 
+void RISCVISel::LowerCallInstParallel(CallInst* inst){
+    #define M(x) ctx.mapping(x)
+    auto func_called=inst->GetOperand(0)->as<Function>();
+    assert(func_called!=nullptr);
+
+    // call notifyworker
+    // mv first operand 2 a0 & a1
+
+    auto createMir=[&](PhyRegister* preg,RISCVMIR::RISCVISA _opcode,Operand op0)-> VirRegister* {
+        auto mir=new RISCVMIR(_opcode);
+        auto def=ctx.createVReg(riscv_i32);
+        mir->SetDef(preg);
+        mir->AddOperand(ctx.mapping(op0));
+        ctx(mir);
+        return def;
+    };
+
+    auto addressreg=ctx.createVReg(riscv_ptr);
+    auto addressinst=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
+    addressinst->SetDef(addressreg);
+    // addressinst->AddOperand();
+    ctx(addressinst);
+
+    auto mvaddress=[&](int offset){
+        auto addi=new RISCVMIR(RISCVMIR::_addi);
+        addi->SetDef(addressreg);
+        addi->AddOperand(addressreg);
+        addi->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(offset)));
+        ctx(addi);
+    };
+
+    int offset=0;
+
+    for(int i=1,limi=inst->Getuselist().size();i<limi;i++){
+        if(i<=2){
+            assert(inst->GetOperand(i)->GetType()==IntType::NewIntTypeGet());
+            offset+=4;
+            auto phyreg=(i==1)?
+            PhyRegister::GetPhyReg(PhyRegister::a0):
+            PhyRegister::GetPhyReg(PhyRegister::a1);
+            if(inst->GetOperand(i)->isConst()){
+                createMir(phyreg,RISCVMIR::li,inst->GetOperand(i));
+            }
+            else{
+                createMir(phyreg,RISCVMIR::mv,inst->GetOperand(i));
+            }
+        }
+        else{
+            auto store2place=[&](RISCVMIR::RISCVISA _opcode,RISCVMOperand* mop){
+                auto mir=new RISCVMIR(_opcode);
+                mir->AddOperand(mop);
+                mir->AddOperand(addressreg);
+                ctx(mir);
+                mvaddress(offset);
+                offset=0;
+            };
+            auto op=ctx.mapping(inst->GetOperand(i));
+            auto tp=inst->GetType();
+            if(dynamic_cast<PointerType*>(tp)){
+                assert(tp->get_size()==8);
+                offset+=tp->get_size();
+                store2place(RISCVMIR::_sd,op);
+            }
+            else if(tp==FloatType::NewFloatTypeGet()){
+                assert(tp->get_size()==4);
+                offset+=tp->get_size();
+                store2place(RISCVMIR::_fsd,op);
+            }
+            else{
+                assert(tp->get_size()==4);
+                offset+=tp->get_size();
+                store2place(RISCVMIR::_sw,op);
+            }
+        }
+    }
+    
+    auto NotifyWorker=BuildInFunction::GetBuildInFunction("NotifyWorker");
+    auto call=new RISCVMIR(RISCVMIR::call);
+    call->AddOperand(M(NotifyWorker));
+    call->AddOperand(PhyRegister::GetPhyReg(PhyRegister::a0));
+    call->AddOperand(PhyRegister::GetPhyReg(PhyRegister::a1));
+    ctx(call);
+    #undef M
+}
+
 void RISCVISel::InstLowering(CallInst* inst){
     // 把VReg Copy到PhyReg
     // 如果溢出则按照规约store
     // 如果有返回值则copy a0 到 VReg
+    auto isParallel=[](Function* func)-> bool {};
+    if(inst->GetOperand(0)->as<Function>()&&isParallel(inst->GetOperand(0)->as<Function>())){
+        LowerCallInstParallel(inst);
+        return;
+    }
+
     #define M(x) ctx.mapping(x)
     int IntMaxNum=8, FloatMaxNum=8;
     std::unique_ptr<RISCVFrame>& frame = ctx.GetCurFunction()->GetFrame();
