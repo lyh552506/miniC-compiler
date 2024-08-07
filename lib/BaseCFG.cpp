@@ -133,9 +133,11 @@ Value* Value::GetNegtive()
   if(Negative_tag)
   {
     if(auto num = dynamic_cast<ConstIRInt*>(this))
-      return ConstIRInt::GetNewConstant(-num->GetVal());
+      assert(0 && "Negative of a const int is not a const int!");
     else if(auto num = dynamic_cast<ConstIRFloat*>(this))
-      return ConstIRFloat::GetNewConstant(-num->GetVal());
+      assert(0 && "Negative of a const float is not a const float!");
+    else if(auto num = dynamic_cast<ConstIRBoolean*>(this))
+      assert(0 && "Negative of a const bool is not a const bool!");
     else
       return this;
   }
