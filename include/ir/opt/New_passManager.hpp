@@ -28,6 +28,7 @@
 #include "../../include/ir/opt/LoopUnroll.hpp"
 #include "../../include/ir/opt/GepCombine.hpp"
 #include "../../include/ir/opt/CondMerge.hpp"
+#include "../../include/ir/opt/GepEvaluate.hpp"
 #include <getopt.h>
 #include <any>
 #include <getopt.h>
@@ -60,7 +61,8 @@ enum PassName {
   loopUnroll,
   gepcombine,
   tailrecurseEliminator,
-  condmerge
+  condmerge,
+  gepevaluate
 };
 
 static struct option long_options[] = {
@@ -87,6 +89,7 @@ static struct option long_options[] = {
     {"GepCombine", no_argument, 0, 24},
     {"TailRecurseEliminator", no_argument, 0, 25},
     {"CondMerge", no_argument, 0, 26},
+    {"GepEvaluate", no_argument, 0, 27},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},

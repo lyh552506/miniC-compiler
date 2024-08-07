@@ -76,6 +76,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case condmerge:
       AddPass(condmerge);
       break;
+    case gepevaluate:
+      AddPass(gepevaluate);
+      break;
     case O0:
       level = O0;
       break;
@@ -100,13 +103,13 @@ void _PassManager::RunOnLevel() {
   if (level == O1) {
     _AnalysisManager AM;
     // DeadArgsElimination
-    // RunImpl<DeadArgsElimination>(module, AM);
+    RunImpl<DeadArgsElimination>(module, AM);
 
     // StoreOnlyGlobalElimination
-    // RunImpl<StoreOnlyGlobalElimination>(module, AM);
+    RunImpl<StoreOnlyGlobalElimination>(module, AM);
 
     // global2local
-    // RunImpl<Global2Local>(module, AM);
+    RunImpl<Global2Local>(module, AM);
       PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
       PassChangedEnd
     while (modified) {
@@ -329,6 +332,10 @@ void _PassManager::RunOnTest() {
         }
         case condmerge: {
           auto m_CondMerge = RunImpl<CondMerge>(curfunc, AM);
+          break;
+        }
+        case gepevaluate: {
+          auto m_gepevaluate = RunImpl<GepEvaluate>(curfunc, AM);
           break;
         }
         default: {

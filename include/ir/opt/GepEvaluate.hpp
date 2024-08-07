@@ -9,45 +9,72 @@
 
 class _AnalysisManager;
 
+struct InitHash
+{
+    size_t operator()(AllocaInst *alloca, std::vector<int> index)
+    {
+        std::reverse(index.begin(), index.end());
+        size_t hash = 0;
+        hash ^= std::hash<AllocaInst *>()(alloca);
+        int j = 0;
+        for (auto i : index)
+        {
+            hash += (((std::hash<int>()(i + 3) * 10107 ^ std::hash<int>()(i + 5) * 137) * 157) * ((j + 4) * 107));
+            j++;
+        }
+        return hash;
+    }
+};
 struct ValueHash
 {
-    size_t operator()(Value* val, Value* base) const
+    size_t operator()(Value *val) const
     {
-
+        if (auto val_int = dynamic_cast<ConstIRInt *>(val))
+            return ((std::hash<int>()(val_int->GetVal() + 3) * 10107 ^ std::hash<int>()(val_int->GetVal() + 5) * 137) *
+                    157);
+        else if (dynamic_cast<LoadInst *>(val))
+        {
+            // handle gep index
+            int c = 1;
+        }
     }
 };
 
 struct GepHash
 {
-    size_t operator()(GetElementPtrInst* gep) const
+    size_t operator()(GetElementPtrInst *gep) const
     {
         size_t h = 0;
-        Value* Base = gep->GetOperand(0);
-        if(!Base->isParam())
+        Value *Base = gep->GetOperand(0);
+        if (!Base->isParam())
         {
-            if(auto alloca = dynamic_cast<AllocaInst*>(Base))
-                h ^= std::hash<AllocaInst *>()(alloca);
-            else if(auto gep_base = dynamic_cast<GetElementPtrInst*>(Base))
-                h ^= GepHash{}(gep_base);
-            for(int i = 1; i < gep->Getuselist().size(); i++)
+            if (auto alloca = dynamic_cast<AllocaInst *>(Base))
             {
-                auto p = gep->Getuselist()[i]->usee;
-                h ^= ValueHash{}(p, Base);
+                h ^= std::hash<AllocaInst *>()(alloca);
+                int j = 0;
+                for (int i = 2; i < gep->Getuselist().size(); i++)
+                {
+                    auto p = gep->Getuselist()[i]->usee;
+                    h += ValueHash{}(p) * ((j + 4) * 107);
+                    j++;
+                }
             }
+            else if (auto gep_base = dynamic_cast<GetElementPtrInst *>(Base))
+                h ^= GepHash{}(gep_base);
         }
         else
         {
-            if(dynamic_cast<HasSubType*>(Base->GetType())->GetSubType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
+            if (dynamic_cast<HasSubType *>(Base->GetType())->GetSubType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
             {
-                auto array = dynamic_cast<ArrayType*>(dynamic_cast<HasSubType*>(Base->GetType())->GetSubType());
+                auto array = dynamic_cast<ArrayType *>(dynamic_cast<HasSubType *>(Base->GetType())->GetSubType());
                 h ^= (std::hash<Value *>()(Base) << array->GetNumEle());
             }
             else
-                h ^= std::hash<Variable *>()(dynamic_cast<Variable*>(Base));
-            for(int i = 1; i < gep->Getuselist().size(); i++)
+                h ^= std::hash<Variable *>()(dynamic_cast<Variable *>(Base));
+            for (int i = 1; i < gep->Getuselist().size(); i++)
             {
                 auto p = gep->Getuselist()[i]->usee;
-                h ^= ValueHash{}(p, Base);
+                // h ^= ValueHash{}(p, Base);
             }
         }
         return h;
@@ -64,8 +91,9 @@ class GepEvaluate : public _PassManagerBase<GepEvaluate, Function>
         bool Processed = false;
         std::forward_list<int>::iterator Curiter;
         std::forward_list<int>::iterator Enditer;
+
+      public:
         std::unordered_map<Value *, std::unordered_map<size_t, Value *>> ValueAddr;
-        std::unordered_map<Value *, std::unordered_map<size_t, Value *>> ChildValueAddr;
 
       public:
         std::forward_list<int>::iterator Child()
@@ -94,24 +122,9 @@ class GepEvaluate : public _PassManagerBase<GepEvaluate, Function>
         {
             return block;
         }
-        void SetChildValueAddr(std::unordered_map<Value *, std::unordered_map<size_t, Value *>> valueaddr)
-        {
-            ChildValueAddr = valueaddr;
-        }
-        std::unordered_map<Value *, std::unordered_map<size_t, Value *>> GetChildValueAddr()
-        {
-            return ChildValueAddr;
-        }
-        std::unordered_map<Value *, std::unordered_map<size_t, Value *>> GetValueAddr()
-        {
-            return ValueAddr;
-        }
-        void SetValueAddr(std::unordered_map<Value *, std::unordered_map<size_t, Value *>> valueaddr)
-        {
-            ValueAddr = valueaddr;
-        }
         HandleNode(dominance *dom, dominance::Node *node, std::forward_list<int>::iterator child,
-                   std::forward_list<int>::iterator end,  std::unordered_map<Value *, std::unordered_map<size_t, Value *>> ValueAddr)
+                   std::forward_list<int>::iterator end,
+                   std::unordered_map<Value *, std::unordered_map<size_t, Value *>> ValueAddr)
             : DomTree(dom), dom_node(node), Curiter(child), Enditer(end), ValueAddr(ValueAddr)
         {
             block = node->thisBlock;
@@ -122,8 +135,10 @@ class GepEvaluate : public _PassManagerBase<GepEvaluate, Function>
     Function *func;
     dominance *DomTree;
     _AnalysisManager &AM;
-    std::vector<User*> wait_del;
+    std::vector<User *> wait_del;
     bool ProcessNode(HandleNode *node);
+    void HandleMemcpy(AllocaInst *inst, Initializer *init, HandleNode *node, std::vector<int> index);
+
   public:
     GepEvaluate(Function *_func, _AnalysisManager &_AM) : func(_func), AM(_AM)
     {

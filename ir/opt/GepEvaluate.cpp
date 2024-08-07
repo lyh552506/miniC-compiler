@@ -32,14 +32,13 @@ bool GepEvaluate::Run()
         {
             modified |= ProcessNode(cur);
             cur->Process();
-            cur->SetChildValueAddr(cur->GetValueAddr());
         }
         else if (cur->Child() != cur->EndIter())
         {
             auto node = cur->NextChild();
             WorkList.push_back(new HandleNode(DomTree, &(DomTree->GetNode(*node)),
                                               DomTree->GetNode(*node).idom_child.begin(),
-                                              DomTree->GetNode(*node).idom_child.end(), cur->GetChildValueAddr()));
+                                              DomTree->GetNode(*node).idom_child.end(), cur->ValueAddr));
         }
         else
         {
@@ -56,7 +55,79 @@ bool GepEvaluate::Run()
     return modified;
 }
 
-bool GepEvaluate::ProcessNode(HandleNode* node)
+bool GepEvaluate::ProcessNode(HandleNode *node)
 {
-    
+    bool modified = false;
+    BasicBlock *block = node->GetBlock();
+    for (User *inst : *block)
+    {
+        if (dynamic_cast<CallInst *>(inst))
+        {
+            if (inst->Getuselist()[0]->usee->GetName() == "llvm.memcpy.p0.p0.i32")
+            {
+                auto array = dynamic_cast<Variable *>(inst->Getuselist()[2]->usee);
+                if (array && array->usage == Variable::Constant)
+                {
+                    if (auto alloca = dynamic_cast<AllocaInst *>(inst->Getuselist()[1]->usee))
+                    {
+                        if (array->Getuselist().size() != 0)
+                        {
+                            auto init = dynamic_cast<Initializer *>(array->Getuselist()[0]->usee);
+                            HandleMemcpy(alloca, init, node, std::vector<int>());
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+        if (dynamic_cast<LoadInst *>(inst))
+        {
+            if (auto gep = dynamic_cast<GetElementPtrInst *>(inst->Getuselist()[0]->usee))
+            {
+                if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
+                {
+                    size_t hash = GepHash{}(gep);
+                    if (node->ValueAddr[alloca].find(hash) != node->ValueAddr[alloca].end())
+                    {
+                        inst->RAUW(node->ValueAddr[alloca][hash]);
+                        wait_del.push_back(gep);
+                        wait_del.push_back(inst);
+                        modified = true;
+                    }
+                }
+            }
+        }
+    }
+    return modified;
+}
+
+void GepEvaluate::HandleMemcpy(AllocaInst *inst, Initializer *init, HandleNode *node, std::vector<int> index)
+{
+    if (init->size() == 0)
+    {
+        inst->AllZero = true;
+        return;
+    }
+    int limi = dynamic_cast<ArrayType *>(init->GetType())->GetNumEle();
+    for (int i = 0; i < limi; i++)
+    {
+        if (i < init->size())
+        {
+            index.push_back(i);
+            if (auto inits = dynamic_cast<Initializer *>((*init)[i]))
+            {
+                HandleMemcpy(inst, inits, node, index);
+                index.pop_back();
+            }
+            else // Handle Truly value
+            {
+                node->ValueAddr[inst][InitHash{}(inst, index)] = (*init)[i];
+                index.pop_back();
+            }
+        }
+        else // 这里就是zero
+        {
+            Value *val = nullptr; // 选择直接不处理, 在map找不到就是0
+        }
+    }
 }
