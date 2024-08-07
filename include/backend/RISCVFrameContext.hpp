@@ -12,6 +12,12 @@ class NamedMOperand:public RISCVMOperand{
     void print()override;
 };
 
+class OuterTag:public NamedMOperand{
+    public:
+    OuterTag(std::string);
+    static OuterTag* GetOuterTag(std::string);
+};
+
 /// @brief A ptr type to some mem address
 class RISCVObject:public NamedMOperand{
     protected:
