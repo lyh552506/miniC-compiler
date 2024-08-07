@@ -110,7 +110,6 @@ class Value
     bool isUndefVal();
     bool isConstZero();
     bool isConstOne();
-    Value* GetNegtive();
     int GetUserListSize(){return GetUserlist().GetSize();}
     std::set<Function*> Change_Funcs;
     template<typename T>
