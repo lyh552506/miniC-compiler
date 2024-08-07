@@ -175,7 +175,7 @@ bool User::IsUncondInst() {
   return false;
 }
 bool User::IsBinary() {
-  if (id >= 8 && id <= 20)
+  if (id >= 8 && id <= 21)
     return true;
   return false;
 }

@@ -29,7 +29,7 @@ struct InstHash
                     HashValue += std::hash<Value *>{}(inst->GetOperand(1)) * 7;
                     HashValue += 29;
                 }
-                else if (binary->getopration() == BinaryInst::Op_LE)
+                else if (binary->getopration() == BinaryInst::Op_L)
                 {
                     HashValue += std::hash<BinaryInst::Operation>{}(BinaryInst::Op_G);
                     HashValue += std::hash<Value *>{}(inst->GetOperand(0)) * 7;
@@ -37,21 +37,22 @@ struct InstHash
                     HashValue += std::hash<Value *>{}(inst->GetOperand(1)) << 11;
                     HashValue += 21;
                 }
-                else if (binary->getopration() == BinaryInst::Op_L)
+                else if (binary->getopration() == BinaryInst::Op_LE)
                 {
-                    HashValue += std::hash<BinaryInst::Operation>{}(BinaryInst::Op_L);
+                    HashValue += std::hash<BinaryInst::Operation>{}(BinaryInst::Op_LE);
                     HashValue += std::hash<Value *>{}(inst->GetOperand(0)) * 7;
-                    HashValue += 33;
+                    HashValue += 29;
                     HashValue += std::hash<Value *>{}(inst->GetOperand(1)) << 11;
-                    HashValue += 53;
+                    HashValue += 21;
                 }
+
                 else if (binary->getopration() == BinaryInst::Op_GE)
                 {
-                    HashValue += std::hash<BinaryInst::Operation>{}(BinaryInst::Op_L);
+                    HashValue += std::hash<BinaryInst::Operation>{}(BinaryInst::Op_LE);
                     HashValue += std::hash<Value *>{}(inst->GetOperand(0)) << 11;
-                    HashValue += 53;
+                    HashValue += 21;
                     HashValue += std::hash<Value *>{}(inst->GetOperand(1)) * 7;
-                    HashValue += 33;
+                    HashValue += 29;
                 }
                 else
                 {

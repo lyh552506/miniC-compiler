@@ -77,6 +77,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case tailrecurseEliminator:
       AddPass(tailrecurseEliminator);
       break;
+    case branchrotate:
+      AddPass(branchrotate);
+      break;
     case O0:
       level = O0;
       break;
@@ -108,6 +111,8 @@ void _PassManager::RunOnLevel() {
 
     // global2local
     // RunImpl<Global2Local>(module, AM);
+      PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
+      PassChangedEnd
     while (modified) {
       modified = false;
       // mem2reg
@@ -345,6 +350,10 @@ void _PassManager::RunOnTest() {
         }
         case tailrecurseEliminator: {
           auto m_TRE = RunImpl<TailRecurseEliminator>(curfunc, AM);
+          break;
+        }
+        case branchrotate: {
+          auto m_BranchRotate = RunImpl<BranchRotate>(curfunc, AM);
           break;
         }
         default: {

@@ -14,6 +14,8 @@ Value *SimplifyBinOp(BinaryInst::Operation Opcode, Value *LHS, Value *RHS)
         return SimplifyDivInst(LHS, RHS);
     case BinaryInst::Op_Mod:
         return SimplifyModInst(LHS, RHS);
+    case BinaryInst::Op_And:
+    case BinaryInst::Op_Or:
     case BinaryInst::Op_E:
     case BinaryInst::Op_NE:
     case BinaryInst::Op_G:
@@ -172,6 +174,54 @@ Value *SimplifyModInst(Value *LHS, Value *RHS)
 
 Value *SimplifyIcmpInst(BinaryInst::Operation Opcode, Value *LHS, Value *RHS)
 {
+    // false and  X -> false
+    if (Opcode == BinaryInst::Op_And)
+    {
+        auto LHSBool = dynamic_cast<ConstIRBoolean *>(LHS);
+        auto RHSBool = dynamic_cast<ConstIRBoolean *>(RHS);
+        if (LHSBool && RHSBool)
+        {
+            if (LHSBool->GetVal() == false || RHSBool->GetVal() == false)
+                return ConstIRBoolean::GetNewConstant(false);
+            else
+                return ConstIRBoolean::GetNewConstant(true);
+        }
+        else if (LHSBool && !RHSBool)
+        {
+            if (LHSBool->GetVal() == false)
+                return ConstIRBoolean::GetNewConstant(false);
+        }
+        else if (RHSBool && !LHSBool)
+        {
+            if (RHSBool->GetVal() == false)
+                return ConstIRBoolean::GetNewConstant(false);
+        }
+    }
+
+    // true or X -> true
+    if (Opcode == BinaryInst::Op_Or)
+    {
+        auto LHSBool = dynamic_cast<ConstIRBoolean *>(LHS);
+        auto RHSBool = dynamic_cast<ConstIRBoolean *>(RHS);
+        if(LHSBool && RHSBool)
+        {
+            if(LHSBool->GetVal() == false && RHSBool->GetVal() == false)
+                return ConstIRBoolean::GetNewConstant(false);
+            else
+                return ConstIRBoolean::GetNewConstant(true);
+        }
+        else if(LHSBool && !RHSBool)
+        {
+            if(LHSBool->GetVal() == true)
+                return ConstIRBoolean::GetNewConstant(true);
+        }
+        else if(RHSBool && !LHSBool)
+        {
+            if(RHSBool->GetVal() == true)
+                return ConstIRBoolean::GetNewConstant(true);
+        }
+    }
+
     // X == X -> true
     if (LHS == RHS && Opcode == BinaryInst::Op_E)
         return ConstIRBoolean::GetNewConstant(true);
