@@ -2,6 +2,9 @@
 #include <atomic>
 // #include <iostream>
 #include <stdio.h>
+#include <cmath>
+#include "parallel_lib.hpp"
+
 #define NumThreads 4
 
 class Spinlock{
@@ -24,17 +27,14 @@ std::atomic_int32_t tasks;
 std::atomic_int32_t task_done;
 
 // tell the main thread that the buffer is empty again
-[[always_inline]]
 void FenceArgLoaded(){
     empty.unlock();
 }
 
-[[always_inline]]
 void WaitTasksCompleted(){
     while(task_done.load() != tasks.load()){}
 }
 
-[[always_inline]]
 void WaitBufferRead(){
     // wait the buffer to be full
     full.lock();
@@ -45,17 +45,26 @@ void WaitBufferRead(){
     task_done++;
 }
 
-[[always_inline]]
 void WaitBufferWrite(){
     // wait the buffer to be empty
     empty.lock();
 }
 
-[[always_inline]]
-void NotifyWorker(){
+void NotifyWorker(int begin,int end){
     // tell the worker that the buffer is full
-    tasks++;
-    full.unlock();    
+    int64_t _begin=begin;
+    int64_t _end=end;
+    int64_t step=(_end-_begin)/4;
+    
+    for(_begin;_begin<_end;_begin+=step){
+        int64_t limi=std::min(_begin+step,_end);
+        int st=_begin,ed=limi;
+        WaitBufferWrite();
+        *(int*)(parallel_arg_storage)=st;
+        *(int*)(parallel_arg_storage+4)=ed;
+        tasks++;
+        full.unlock();
+    }
 }
 
 void* WorkerThread(void *arg){
@@ -67,7 +76,6 @@ void* WorkerThread(void *arg){
 }
 
 // [[constructor]]
-void CreateThread()__attribute__((constructor)); 
 void CreateThread() {
     // create four threads using pthread_create, and detach them
     full.lock();
@@ -75,6 +83,7 @@ void CreateThread() {
     for (int i = 0; i < NumThreads; i++) {
         pthread_create(&threads[i], NULL, WorkerThread, NULL);
         pthread_detach(threads[i]);
+        // pthread_setaffinity_np
     }
 }
 
@@ -83,9 +92,11 @@ parallel_call translation:
 
     parallel_call func, arg0, arg1, ...
     ->
-    call WaitBufferWrite
-    store all of them in the buffer
-    call TellWorker
+    store all of them, except %begin and %end in the buffer
+    mv a0 <- %begin
+    mv a1 <- %end
+    call Notify Worker
+    call WaitTasksCompleted
 
 func translation:
 
@@ -97,14 +108,5 @@ func translation:
     4. excute the function
 
 IR:
-    PIECE THE LOOP AREAS
-    parallel_call func 1 2 3 4
-    parallel_call func 2 3 4 5
-    parallel_call func 4 5 6 7
-    parallel_call func 5 6 7 8
-    call WaitTasksCompleted
-
-Usage Case:
-    1. Parallel Loops
-    2. Functions With Heavy workloads but return value used very much latter
+    parallel_call func l r ...
 */
