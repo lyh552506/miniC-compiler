@@ -1020,6 +1020,10 @@ BuildInFunction *BuildInFunction::GetBuildInFunction(std::string _id) {
       return VoidType::NewVoidTypeGet();
     if (_id == "memcpy@plt")
       return VoidType::NewVoidTypeGet();
+    if (_id == "buildin_NotifyWorker")
+      return VoidType::NewVoidTypeGet();
+    if (_id == "buildin_FenceArgLoaded")
+      return VoidType::NewVoidTypeGet();
     assert(0);
   };
   if (mp.find(_id) == mp.end()) {

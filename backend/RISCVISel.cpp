@@ -468,9 +468,6 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
     auto func_called=inst->GetOperand(0)->as<Function>();
     assert(func_called!=nullptr);
 
-    // call notifyworker
-    // mv first operand 2 a0 & a1
-
     auto createMir=[&](PhyRegister* preg,RISCVMIR::RISCVISA _opcode,Operand op0)-> VirRegister* {
         auto mir=new RISCVMIR(_opcode);
         auto def=ctx.createVReg(riscv_i32);
@@ -480,11 +477,29 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
         return def;
     };
 
+    auto loadTagAddress=[&](VirRegister* reg,std::string tag){
+        auto addressinst=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
+        addressinst->SetDef(reg);
+        auto args_storage=OuterTag::GetOuterTag(tag);
+        addressinst->AddOperand(args_storage);
+        ctx(addressinst);
+    };
+
+    // store funcptr 2 where it should be
+    auto funcptr=ctx.createVReg(riscv_ptr);
+    loadTagAddress(funcptr,func_called->GetName());
+
+    auto funcptrstorage=ctx.createVReg(riscv_ptr);
+    loadTagAddress(funcptrstorage,"buildin_funcptr");
+
+    auto sd2funcptr=new RISCVMIR(RISCVMIR::_sd);
+    sd2funcptr->AddOperand(funcptr);
+    sd2funcptr->AddOperand(funcptrstorage);
+    ctx(sd2funcptr);
+
+    
     auto addressreg=ctx.createVReg(riscv_ptr);
-    auto addressinst=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
-    addressinst->SetDef(addressreg);
-    // addressinst->AddOperand();
-    ctx(addressinst);
+    loadTagAddress(addressreg,"buildin_parallel_arg_storage");
 
     auto mvaddress=[&](int offset){
         auto addi=new RISCVMIR(RISCVMIR::_addi);
@@ -512,34 +527,34 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
         }
         else{
             auto store2place=[&](RISCVMIR::RISCVISA _opcode,RISCVMOperand* mop){
+                mvaddress(offset);
                 auto mir=new RISCVMIR(_opcode);
                 mir->AddOperand(mop);
                 mir->AddOperand(addressreg);
                 ctx(mir);
-                mvaddress(offset);
                 offset=0;
             };
             auto op=ctx.mapping(inst->GetOperand(i));
             auto tp=inst->GetType();
             if(dynamic_cast<PointerType*>(tp)){
                 assert(tp->get_size()==8);
-                offset+=tp->get_size();
                 store2place(RISCVMIR::_sd,op);
+                offset+=tp->get_size();
             }
             else if(tp==FloatType::NewFloatTypeGet()){
                 assert(tp->get_size()==4);
+                store2place(RISCVMIR::_fsw,op);
                 offset+=tp->get_size();
-                store2place(RISCVMIR::_fsd,op);
             }
             else{
                 assert(tp->get_size()==4);
-                offset+=tp->get_size();
                 store2place(RISCVMIR::_sw,op);
+                offset+=tp->get_size();
             }
         }
     }
     
-    auto NotifyWorker=BuildInFunction::GetBuildInFunction("NotifyWorker");
+    auto NotifyWorker=BuildInFunction::GetBuildInFunction("buildin_NotifyWorker");
     auto call=new RISCVMIR(RISCVMIR::call);
     call->AddOperand(M(NotifyWorker));
     call->AddOperand(PhyRegister::GetPhyReg(PhyRegister::a0));
