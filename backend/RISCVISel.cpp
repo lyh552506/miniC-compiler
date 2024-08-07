@@ -500,7 +500,7 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
     auto loadTagAddress=[&](VirRegister* reg,std::string tag){
         auto addressinst=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
         addressinst->SetDef(reg);
-        auto args_storage=OuterTag::GetOuterTag(tag);
+        auto args_storage=OuterTag::GetOuterTag("buildin_parallel_arg_storage");
         addressinst->AddOperand(args_storage);
         ctx(addressinst);
     };
