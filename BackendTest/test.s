@@ -3,28 +3,28 @@
     .attribute unaligned_access, 0
     .attribute stack_align, 16
     .text
-    .globl  .C..13
+    .globl  .C..6
+    .bss
+    .align  3
+    .type  .C..6, @object
+    .size  .C..6, 32
+.C..6:
+    .zero  32
+    .globl  .C..24
     .data
     .align  3
-    .type  .C..13, @object
-    .size  .C..13, 32
-.C..13:
+    .type  .C..24, @object
+    .size  .C..24, 32
+.C..24:
     .word  1
     .word  2
     .word  3
     .word  4
-    .zero  8
+    .word  5
+    .word  6
     .word  7
-    .zero  4
-    .globl  .C..21
-    .bss
-    .align  3
-    .type  .C..21, @object
-    .size  .C..21, 32
-.C..21:
-    .zero  32
+    .word  8
     .globl  .C..32
-    .data
     .align  3
     .type  .C..32, @object
     .size  .C..32, 32
@@ -37,23 +37,24 @@
     .word  6
     .word  7
     .word  8
-    .globl  .C..43
+    .globl  .C..40
     .align  3
-    .type  .C..43, @object
-    .size  .C..43, 32
-.C..43:
+    .type  .C..40, @object
+    .size  .C..40, 32
+.C..40:
     .word  1
     .word  2
     .word  3
     .zero  4
     .word  5
-    .zero  8
+    .zero  4
+    .word  7
     .word  8
-    .globl  .C..65
+    .globl  .C..53
     .align  3
-    .type  .C..65, @object
-    .size  .C..65, 32
-.C..65:
+    .type  .C..53, @object
+    .size  .C..53, 32
+.C..53:
     .zero  8
     .word  3
     .word  4
@@ -67,16 +68,25 @@
     .type  main, @function
 main:
 .LBB0:
-	LoadGlobalAddr %16, .C..65
-	LoadGlobalAddr %10, .C..43
-	LoadGlobalAddr %7, .C..32
-	LoadGlobalAddr %6, .C..21
-	LoadGlobalAddr %5, .C..13
-	StackAlloc %0
-	StackAlloc %1
-	StackAlloc %2
-	StackAlloc %3
-	StackAlloc %4
+	addi sp, sp, -176
+	sd ra, 168(sp)
+	sd s0, 160(sp)
+	addi s0, sp, 176
+	addi %1, s0, -80
+	addi %0, s0, -48
+	addi %2, s0, -112
+	lui %5, %hi(.C..6)
+	addi %5, %5, %lo(.C..6)
+	lui %13, %hi(.C..53)
+	addi %13, %13, %lo(.C..53)
+	lui %8, %hi(.C..40)
+	addi %8, %8, %lo(.C..40)
+	lui %7, %hi(.C..32)
+	addi %7, %7, %lo(.C..32)
+	lui %6, %hi(.C..24)
+	addi %6, %6, %lo(.C..24)
+	addi %4, s0, -176
+	addi %3, s0, -144
 	mv a0, %4
 	mv a1, %5
 	li a2, 32
@@ -89,35 +99,34 @@ main:
 	mv a1, %7
 	li a2, 32
 	call memcpy@plt
-	addi %8, %4, 24
-	lw %9, %8
 	mv a0, %1
-	mv a1, %10
+	mv a1, %8
 	li a2, 32
 	call memcpy@plt
-	addi %11, %1, 24
-	sw %9, %11
-	addi %12, %1, 20
-	lw %13, %12
-	addi %14, %2, 20
-	lw %15, %14
+	addi %9, %1, 20
+	lw %10, %9
+	addi %11, %2, 20
+	lw %12, %11
 	mv a0, %0
-	mv a1, %16
+	mv a1, %13
 	li a2, 32
 	call memcpy@plt
-	sw %13, %0
-	addi %17, %0, 4
-	sw %15, %17
-	addi %18, %0, 28
-	lw %19, %18
-	lw %20, %0
-	addw %21, %19, %20
-	addi %22, %0, 4
+	sw %10, %0
+	addi %15, %0, 28
+	lw %16, %15
+	addi %19, %0, 4
+	lw %17, %0
+	addi %14, %0, 4
+	lw %20, %19
+	addw %18, %16, %17
+	addi %22, %4, 16
+	addw %21, %18, %20
 	lw %23, %22
 	addw %24, %21, %23
-	addi %25, %1, 24
-	lw %26, %25
-	addw %27, %24, %26
-	mv a0, %27
+	sw %12, %14
+	mv a0, %24
+	ld ra, 168(sp)
+	ld s0, 160(sp)
+	addi sp, sp, 176
 	ret 
     .size main, .-main

@@ -1,9 +1,16 @@
 #include "../include/backend/Sched.hpp"
-// bool isstore(RISCVMIR* inst) {
-//     ISA op = inst->GetOpcode();
-//     return (op>ISA::BeginStoreMem&&op<ISA::EndStoreMem)\
-//         || (op>ISA::BeginFloatStoreMem&&op<ISA::EndFloatStoreMem);
-// }
+using ISA = RISCVMIR::RISCVISA;
+bool isLoadinst (RISCVMIR* inst) {
+    ISA opcode = inst->GetOpcode();
+    return (opcode > ISA::BeginLoadMem && opcode < ISA::EndLoadMem)\
+        || (opcode > ISA::BeginFloatLoadMem && opcode < ISA::EndFloatLoadMem);
+};
+bool isStoreinst (RISCVMIR* inst) {
+    ISA opcode = inst->GetOpcode();
+    return (opcode > ISA::BeginStoreMem && opcode < ISA::EndStoreMem)\
+        || (opcode > ISA::BeginFloatStoreMem && opcode < ISA::EndFloatStoreMem);
+};
+
 BlockDepInfo::BlockDepInfo(RISCVBasicBlock* block)
     : block(block) {
     BuildBlockDepInfo(block);
@@ -20,9 +27,6 @@ void BlockDepInfo::BuildBlockDepInfo(RISCVBasicBlock* block) {
         if(inst->GetDef() != nullptr) {
             def2inst[inst->GetDef()].push(inst);
         }
-        // if(isstore(inst)) {
-        //     def2inst[inst->GetOperand(1)].push(inst);
-        // }
         for(int i=0; i<inst->GetOperandSize(); i++) {
             if(inst->GetOperand(i) != nullptr) {
                 use2inst[inst->GetOperand(i)].push(inst);
@@ -39,25 +43,20 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
         }
         assert(0 && "impossible");
     };
-    std::list<RealSunit> inst2sunitLocal;
-    for(mylist_iterator it = begin; it != end; ++it) {
-        inst2sunitLocal.push_back(GetRealSunit(*it));
-    }
-    auto GetSunit = [&](RISCVMIR* inst) {
-        for(auto pair : depInfo->inst2sunit) {
-            if(pair.first == inst)
-                return pair.second;
-        }
-        assert(0 && "impossible");
-    };
     auto GetWriteReg = [&](RISCVMIR* inst) {
         return SchedInfo(inst->GetOpcode()).WriteRes;
     };
     auto GetReadAdvance = [&](RISCVMIR* inst) {
         return SchedInfo(inst->GetOpcode()).ReadAdvance;
     };
-    using ISA = RISCVMIR::RISCVISA;
 
+    // glue info
+    glue = new GlueChain(begin, end, this);
+
+    std::list<RealSunit> inst2sunitLocal;
+    for(mylist_iterator it = begin; it != end; ++it) {
+        inst2sunitLocal.push_back(GetRealSunit(*it));
+    }
 
     for(auto it = inst2sunitLocal.rbegin(); it != inst2sunitLocal.rend(); ++it) {
         RISCVMIR*& inst = it->first;
@@ -71,17 +70,12 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
         if(inst->GetDef() != nullptr) {
             depInfo->def2inst[inst->GetDef()].pop();
         }
-        // if(isstore(inst)) {
-        //     depInfo->def2inst[inst->GetOperand(1)].pop();
-        // }
 
         // use
         for(int i=0; i<inst->GetOperandSize(); i++) {
             RISCVMOperand*& op = inst->GetOperand(i);
+            // latency info
             if(op != nullptr) {
-                // if(isstore(inst) && i==1) {
-                //     break;
-                // }
                 if(!depInfo->def2inst[op].empty()) {
                     RISCVMIR* definst = depInfo->def2inst[inst->GetOperand(i)].top();
                     addDependency(GetSunit(inst), GetSunit(definst));
@@ -120,19 +114,14 @@ void DependencyGraph::addDependency(Sunit* use, Sunit* def){
 
 void DependencyGraph::ComputeHeight() {
     for(auto& it: sunits) {
-    // for(auto it = adjList.rbegin(); it != adjList.rend(); ++it) {
-    //     Sunit* sunit = (*it).first; 
         Sunit* sunit = it;
         if(inDegree[sunit]==0) {
             sunit->height = 0;
         }
-        // std::set<Sunit*>
-        // for(auto ind = (*it).second.begin(); ind != (*it).second.end(); ++ind) {
         for(auto ind = adjList[it].begin(); ind != adjList[it].end(); ++ind) {
             Sunit* def = *ind;
             def->height = def->height > (sunit->height + def->latency) ? def->height : (sunit->height + def->latency);
         }
-
         #ifdef DEBUG_SCHED
         std::cout << "height: " << sunit->height;
         depInfo->Sunit2InstMap[sunit]->printfull();
@@ -143,6 +132,32 @@ void DependencyGraph::ComputeHeight() {
 
 void DependencyGraph::ComputeDepth() {
     
+}
+Sunit* DependencyGraph::GetSunit(RISCVMIR* inst) {
+    for(auto pair : depInfo->inst2sunit) {
+        if(pair.first == inst)
+            return pair.second;
+    }
+    assert(0 && "impossible");
+}
+
+GlueChain::GlueChain(mylist_iterator begin, mylist_iterator end, DependencyGraph* depGraph) {
+    for(mylist_iterator it = begin; it != end; ++it) {
+        RISCVMIR* inst = *it;
+        if(isStoreinst(inst)) {
+            std::unordered_set<Sunit*> set;
+            gluemap[depGraph->GetSunit(inst)] = set;
+            continue;
+        }
+        for(int ind=0; ind<inst->GetOperandSize(); ind++) {
+            for(auto& map: gluemap) {
+                if(depGraph->get_depInfo()->get_Sunit2InstMap()[map.first]->GetOperand(1) == inst->GetOperand(ind)) {
+                    map.second.insert(depGraph->GetSunit(inst));
+                    break;
+                }
+            }
+        }
+    }
 }
 
 void GlueChain::add_glue(Sunit* former, Sunit* latter) {

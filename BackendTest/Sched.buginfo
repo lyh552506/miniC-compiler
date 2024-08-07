@@ -1,147 +1,130 @@
 ScheduleOnBlock: .LBB0
 ScheduleOnRegion: 
- ---from---	sw %13, %0
+ ---from---	sw %10, %0
  ---to--- 	ret 
-latency: 1  	mv a0, %27
-latency: 1  	addw %27, %24, %26
-latency: 1  	lw %26, %25
-latency: 1  	addi %25, %1, 24
+latency: 1  	mv a0, %24
 latency: 1  	addw %24, %21, %23
 latency: 1  	lw %23, %22
-latency: 1  	addi %22, %0, 4
-latency: 1  	addw %21, %19, %20
-latency: 21843  	lw %20, %0
-latency: 1  	lw %19, %18
-latency: 1  	addi %18, %0, 28
-latency: 3  	sw %15, %17
-latency: 1  	addi %17, %0, 4
-latency: 21845  	sw %13, %0
-height: 0	mv a0, %27
-height: 1	addw %27, %24, %26
-height: 2	lw %26, %25
-height: 3	addi %25, %1, 24
-height: 2	addw %24, %21, %23
-height: 3	lw %23, %22
-height: 4	addi %22, %0, 4
-height: 3	addw %21, %19, %20
-height: 21846	lw %20, %0
-height: 4	lw %19, %18
-height: 5	addi %18, %0, 28
-height: 0	sw %15, %17
-height: 1	addi %17, %0, 4
-height: 0	sw %13, %0
+latency: 1  	addi %22, %4, 16
+latency: 1  	addw %21, %18, %20
+latency: 1  	lw %20, %19
+latency: 1  	addi %19, %0, 4
+latency: 1  	addw %18, %16, %17
+latency: 1  	lw %17, %0
+latency: 1  	lw %16, %15
+latency: 1  	addi %15, %0, 28
+latency: 3  	sw %12, %14
+latency: 1  	addi %14, %0, 4
+latency: 3  	sw %10, %0
+height: 0	mv a0, %24
+height: 1	addw %24, %21, %23
+height: 2	lw %23, %22
+height: 3	addi %22, %4, 16
+height: 2	addw %21, %18, %20
+height: 3	lw %20, %19
+height: 4	addi %19, %0, 4
+height: 3	addw %18, %16, %17
+height: 4	lw %17, %0
+height: 4	lw %16, %15
+height: 5	addi %15, %0, 28
+height: 0	sw %12, %14
+height: 1	addi %14, %0, 4
+height: 0	sw %10, %0
 ---PlaneNode---
-	mv a0, %27
-	sw %15, %17
-	sw %13, %0
+	mv a0, %24
+	sw %12, %14
 ---PlaneNode---
-	addw %27, %24, %26
----PlaneNode---
-	lw %26, %25
 	addw %24, %21, %23
-	addi %17, %0, 4
 ---PlaneNode---
 	lw %23, %22
-	addw %21, %19, %20
+	addw %21, %18, %20
+	addi %14, %0, 4
 ---PlaneNode---
-	addi %25, %1, 24
-	lw %20, %0
-	lw %19, %18
+	addi %22, %4, 16
+	lw %20, %19
+	addw %18, %16, %17
 ---PlaneNode---
-	addi %22, %0, 4
+	lw %17, %0
+	lw %16, %15
 ---PlaneNode---
-	addi %18, %0, 28
+	addi %19, %0, 4
+---PlaneNode---
+	addi %15, %0, 28
+---PlaneNode---
+	sw %10, %0
 ---Sequence---
-	mv a0, %27
-	sw %15, %17
-	addw %27, %24, %26
-	sw %13, %0
+	mv a0, %24
+	sw %12, %14
 	addw %24, %21, %23
-	lw %26, %25
-	addw %21, %19, %20
 	lw %23, %22
-	addi %25, %1, 24
-	lw %20, %0
-	addi %17, %0, 4
-	lw %19, %18
-	addi %22, %0, 4
-	addi %18, %0, 28
+	addw %21, %18, %20
+	addi %22, %4, 16
+	addw %18, %16, %17
+	lw %20, %19
+	addi %14, %0, 4
+	lw %17, %0
+	addi %19, %0, 4
+	lw %16, %15
+	addi %15, %0, 28
+	sw %10, %0
 ScheduleOnRegion: 
- ---from---	addi %11, %1, 24
+ ---from---	addi %9, %1, 20
  ---to--- 	call memcpy@plt
 latency: 1  	li a2, 32
-latency: 4  	mv a1, %16
-latency: 21843  	mv a0, %0
-latency: 1  	lw %15, %14
-latency: 1  	addi %14, %2, 20
-latency: 1  	lw %13, %12
-latency: 1  	addi %12, %1, 20
-latency: 3  	sw %9, %11
-latency: 1  	addi %11, %1, 24
+latency: 4  	mv a1, %13
+latency: 1  	mv a0, %0
+latency: 1  	lw %12, %11
+latency: 1  	addi %11, %2, 20
+latency: 1  	lw %10, %9
+latency: 1  	addi %9, %1, 20
 height: 0	li a2, 32
-height: 0	mv a1, %16
+height: 0	mv a1, %13
 height: 0	mv a0, %0
-height: 0	lw %15, %14
-height: 1	addi %14, %2, 20
-height: 0	lw %13, %12
-height: 1	addi %12, %1, 20
-height: 0	sw %9, %11
-height: 1	addi %11, %1, 24
+height: 0	lw %12, %11
+height: 1	addi %11, %2, 20
+height: 0	lw %10, %9
+height: 1	addi %9, %1, 20
 ---PlaneNode---
 	li a2, 32
-	mv a1, %16
+	mv a1, %13
 	mv a0, %0
-	lw %15, %14
-	lw %13, %12
-	sw %9, %11
+	lw %12, %11
+	lw %10, %9
 ---PlaneNode---
-	addi %11, %1, 24
+	addi %11, %2, 20
 ---PlaneNode---
-	addi %14, %2, 20
----PlaneNode---
-	addi %12, %1, 20
+	addi %9, %1, 20
 ---Sequence---
 	li a2, 32
-	mv a1, %16
+	mv a1, %13
 	mv a0, %0
-	sw %9, %11
-	lw %15, %14
-	addi %14, %2, 20
-	addi %11, %1, 24
-	lw %13, %12
-	addi %12, %1, 20
+	lw %12, %11
+	addi %11, %2, 20
+	lw %10, %9
+	addi %9, %1, 20
 ScheduleOnRegion: 
- ---from---	addi %8, %4, 24
+ ---from---	mv a0, %1
  ---to--- 	call memcpy@plt
 latency: 1  	li a2, 32
-latency: 4  	mv a1, %10
-latency: 21843  	mv a0, %1
-latency: 1  	lw %9, %8
-latency: 1  	addi %8, %4, 24
+latency: 4  	mv a1, %8
+latency: 1  	mv a0, %1
 height: 0	li a2, 32
-height: 0	mv a1, %10
+height: 0	mv a1, %8
 height: 0	mv a0, %1
-height: 0	lw %9, %8
-height: 1	addi %8, %4, 24
 ---PlaneNode---
 	li a2, 32
-	mv a1, %10
+	mv a1, %8
 	mv a0, %1
-	lw %9, %8
----PlaneNode---
-	addi %8, %4, 24
 ---Sequence---
 	li a2, 32
-	mv a1, %10
+	mv a1, %8
 	mv a0, %1
-	lw %9, %8
-	addi %8, %4, 24
 ScheduleOnRegion: 
  ---from---	mv a0, %2
  ---to--- 	call memcpy@plt
 latency: 1  	li a2, 32
 latency: 4  	mv a1, %7
-latency: 21843  	mv a0, %2
+latency: 1  	mv a0, %2
 height: 0	li a2, 32
 height: 0	mv a1, %7
 height: 0	mv a0, %2
@@ -158,7 +141,7 @@ ScheduleOnRegion:
  ---to--- 	call memcpy@plt
 latency: 1  	li a2, 32
 latency: 4  	mv a1, %6
-latency: 21843  	mv a0, %3
+latency: 1  	mv a0, %3
 height: 0	li a2, 32
 height: 0	mv a1, %6
 height: 0	mv a0, %3
@@ -171,61 +154,61 @@ height: 0	mv a0, %3
 	mv a1, %6
 	mv a0, %3
 ScheduleOnRegion: 
- ---from---	LoadGlobalAddr %16, .C..65
+ ---from---	LoadGlobalAddr %13, .C..53
  ---to--- 	call memcpy@plt
 latency: 1  	li a2, 32
 latency: 4  	mv a1, %5
-latency: 21843  	mv a0, %4
-latency: 0  	StackAlloc %4
-latency: 0  	StackAlloc %3
-latency: 0  	StackAlloc %2
-latency: 0  	StackAlloc %1
-latency: 0  	StackAlloc %0
-latency: 0  	LoadGlobalAddr %5, .C..13
-latency: 0  	LoadGlobalAddr %6, .C..21
+latency: 1  	mv a0, %4
+latency: 4  	LoadLocalAddr %0, 0(s0)
+latency: 4  	LoadLocalAddr %1, 0(s0)
+latency: 4  	LoadLocalAddr %2, 0(s0)
+latency: 4  	LoadLocalAddr %3, 0(s0)
+latency: 4  	LoadLocalAddr %4, 0(s0)
+latency: 0  	LoadGlobalAddr %5, .C..6
+latency: 0  	LoadGlobalAddr %6, .C..24
 latency: 0  	LoadGlobalAddr %7, .C..32
-latency: 0  	LoadGlobalAddr %10, .C..43
-latency: 0  	LoadGlobalAddr %16, .C..65
+latency: 0  	LoadGlobalAddr %8, .C..40
+latency: 0  	LoadGlobalAddr %13, .C..53
 height: 0	li a2, 32
 height: 0	mv a1, %5
 height: 0	mv a0, %4
-height: 1	StackAlloc %4
-height: 0	StackAlloc %3
-height: 0	StackAlloc %2
-height: 0	StackAlloc %1
-height: 0	StackAlloc %0
-height: 0	LoadGlobalAddr %5, .C..13
-height: 0	LoadGlobalAddr %6, .C..21
+height: 0	LoadLocalAddr %0, 0(s0)
+height: 0	LoadLocalAddr %1, 0(s0)
+height: 0	LoadLocalAddr %2, 0(s0)
+height: 0	LoadLocalAddr %3, 0(s0)
+height: 4	LoadLocalAddr %4, 0(s0)
+height: 0	LoadGlobalAddr %5, .C..6
+height: 0	LoadGlobalAddr %6, .C..24
 height: 0	LoadGlobalAddr %7, .C..32
-height: 0	LoadGlobalAddr %10, .C..43
-height: 0	LoadGlobalAddr %16, .C..65
+height: 0	LoadGlobalAddr %8, .C..40
+height: 0	LoadGlobalAddr %13, .C..53
 ---PlaneNode---
 	li a2, 32
 	mv a1, %5
 	mv a0, %4
-	StackAlloc %3
-	StackAlloc %2
-	StackAlloc %1
-	StackAlloc %0
-	LoadGlobalAddr %6, .C..21
+	LoadLocalAddr %0, 0(s0)
+	LoadLocalAddr %1, 0(s0)
+	LoadLocalAddr %2, 0(s0)
+	LoadLocalAddr %3, 0(s0)
+	LoadGlobalAddr %6, .C..24
 	LoadGlobalAddr %7, .C..32
-	LoadGlobalAddr %10, .C..43
-	LoadGlobalAddr %16, .C..65
+	LoadGlobalAddr %8, .C..40
+	LoadGlobalAddr %13, .C..53
 ---PlaneNode---
-	LoadGlobalAddr %5, .C..13
+	LoadGlobalAddr %5, .C..6
 ---PlaneNode---
-	StackAlloc %4
+	LoadLocalAddr %4, 0(s0)
 ---Sequence---
 	li a2, 32
 	mv a1, %5
 	mv a0, %4
-	LoadGlobalAddr %6, .C..21
+	LoadLocalAddr %3, 0(s0)
+	LoadLocalAddr %4, 0(s0)
+	LoadGlobalAddr %6, .C..24
 	LoadGlobalAddr %7, .C..32
-	LoadGlobalAddr %10, .C..43
-	LoadGlobalAddr %16, .C..65
-	LoadGlobalAddr %5, .C..13
-	StackAlloc %4
-	StackAlloc %3
-	StackAlloc %2
-	StackAlloc %0
-	StackAlloc %1
+	LoadGlobalAddr %8, .C..40
+	LoadGlobalAddr %13, .C..53
+	LoadGlobalAddr %5, .C..6
+	LoadLocalAddr %2, 0(s0)
+	LoadLocalAddr %0, 0(s0)
+	LoadLocalAddr %1, 0(s0)

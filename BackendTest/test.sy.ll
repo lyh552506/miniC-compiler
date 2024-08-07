@@ -332,45 +332,41 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.C..13 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 4], [2 x i32] zeroinitializer, [2 x i32]  [i32 7, i32 zeroinitializer]]
-@.C..21 = constant [4 x [2 x i32]] zeroinitializer
+@.C..6 = constant [4 x [2 x i32]] zeroinitializer
+@.C..24 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 4], [2 x i32]  [i32 5, i32 6], [2 x i32]  [i32 7, i32 8]]
 @.C..32 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 4], [2 x i32]  [i32 5, i32 6], [2 x i32]  [i32 7, i32 8]]
-@.C..43 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 zeroinitializer], [2 x i32]  [i32 5, i32 zeroinitializer], [2 x i32]  [i32 0, i32 8]]
-@.C..65 = constant [4 x [2 x [1 x i32]]]  [[2 x [1 x i32]]  [[1 x i32]  [i32 0], [1 x i32]  [i32 0]], [2 x [1 x i32]]  [[1 x i32]  [i32 3], [1 x i32]  [i32 4]], [2 x [1 x i32]]  [[1 x i32]  [i32 5], [1 x i32]  [i32 6]], [2 x [1 x i32]]  [[1 x i32]  [i32 7], [1 x i32]  [i32 8]]]
+@.C..40 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 1, i32 2], [2 x i32]  [i32 3, i32 zeroinitializer], [2 x i32]  [i32 5, i32 zeroinitializer], [2 x i32]  [i32 7, i32 8]]
+@.C..53 = constant [4 x [2 x i32]]  [[2 x i32]  [i32 0, i32 0], [2 x i32]  [i32 3, i32 4], [2 x i32]  [i32 5, i32 6], [2 x i32]  [i32 7, i32 8]]
 define i32 @main(){
 .1:
-  %.47 = alloca [4 x [2 x [1 x i32]]]
+  %.42 = alloca [4 x [2 x i32]]
   %.34 = alloca [4 x [2 x i32]]
-  %.23 = alloca [4 x [2 x i32]]
-  %.19 = alloca [4 x [2 x i32]]
+  %.26 = alloca [4 x [2 x i32]]
+  %.12 = alloca [4 x [2 x i32]]
   %.4 = alloca [4 x [2 x i32]]
-  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.4, [4 x [2 x i32]]* @.C..13, i32 32, i1 false)
-  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.19, [4 x [2 x i32]]* @.C..21, i32 32, i1 false)
-  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.23, [4 x [2 x i32]]* @.C..32, i32 32, i1 false)
-  %.40 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.4, i32 0, i32 3, i32 0
-  %.41 = load i32, i32* %.40
-  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.34, [4 x [2 x i32]]* @.C..43, i32 32, i1 false)
-  %.45 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.34, i32 0, i32 3, i32 0
-  store i32 %.41, i32* %.45
-  %.50 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.34, i32 0, i32 2, i32 1
-  %.51 = load i32, i32* %.50
-  %.54 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.23, i32 0, i32 2, i32 1
-  %.55 = load i32, i32* %.54
-  call void @llvm.memcpy.p0.p0.i32([4 x [2 x [1 x i32]]]* %.47, [4 x [2 x [1 x i32]]]* @.C..65, i32 32, i1 false)
-  %.67 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 0, i32 0
-  store i32 %.51, i32* %.67
-  %.69 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 1, i32 0
-  store i32 %.55, i32* %.69
-  %.71 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 3, i32 1, i32 0
-  %.72 = load i32, i32* %.71
-  %.73 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 0, i32 0
-  %.74 = load i32, i32* %.73
-  %.75 = add i32 %.72, %.74
-  %.76 = getelementptr inbounds [4 x [2 x [1 x i32]]], [4 x [2 x [1 x i32]]]* %.47, i32 0, i32 0, i32 1, i32 0
-  %.77 = load i32, i32* %.76
-  %.78 = add i32 %.75, %.77
-  %.79 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.34, i32 0, i32 3, i32 0
-  %.80 = load i32, i32* %.79
-  %.81 = add i32 %.78, %.80
-  ret i32 %.81 
+  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.4, [4 x [2 x i32]]* @.C..6, i32 32, i1 false)
+  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.12, [4 x [2 x i32]]* @.C..24, i32 32, i1 false)
+  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.26, [4 x [2 x i32]]* @.C..32, i32 32, i1 false)
+  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.34, [4 x [2 x i32]]* @.C..40, i32 32, i1 false)
+  %.45 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.34, i32 0, i32 2, i32 1
+  %.47 = load i32, i32* %.45
+  %.48 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.26, i32 0, i32 2, i32 1
+  %.49 = load i32, i32* %.48
+  call void @llvm.memcpy.p0.p0.i32([4 x [2 x i32]]* %.42, [4 x [2 x i32]]* @.C..53, i32 32, i1 false)
+  %.55 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.42, i32 0, i32 0, i32 0
+  store i32 %.47, i32* %.55
+  %.57 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.42, i32 0, i32 0, i32 1
+  store i32 %.49, i32* %.57
+  %.59 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.42, i32 0, i32 3, i32 1
+  %.60 = load i32, i32* %.59
+  %.61 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.42, i32 0, i32 0, i32 0
+  %.62 = load i32, i32* %.61
+  %.63 = add i32 %.60, %.62
+  %.64 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.42, i32 0, i32 0, i32 1
+  %.65 = load i32, i32* %.64
+  %.66 = add i32 %.63, %.65
+  %.67 = getelementptr inbounds [4 x [2 x i32]], [4 x [2 x i32]]* %.4, i32 0, i32 2, i32 0
+  %.68 = load i32, i32* %.67
+  %.69 = add i32 %.66, %.68
+  ret i32 %.69 
 }

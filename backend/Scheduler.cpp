@@ -160,9 +160,12 @@ void Pre_RA_Scheduler::ScheduleOnRegion(mylist_iterator begin, mylist_iterator e
     
 }
 void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
+    auto isGlueClear = [&](Sunit* sunit) {
+        return depGraph->glue->isempty(sunit);
+    };
     while(!isFinish(depGraph)) {
         for(auto& sunit: depGraph->sunits) {
-            if(depGraph->inDegree[sunit] == 0) {
+            if(depGraph->inDegree[sunit] == 0 && isGlueClear(sunit)) {
                 PlaneNode.push_back(sunit);
                 depGraph->inDegree[sunit] = -1;
             }
@@ -175,7 +178,6 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
                 }
             }
         #endif
-        
         for(auto it = PlaneNode.begin(); it != PlaneNode.end();) {
             if(CurCycle >= (*it)->get_maxLatency()) {
                 transfer(*it, PlaneNode, Available);
@@ -212,6 +214,16 @@ void Pre_RA_Scheduler::Schedule(DependencyGraph* depGraph) {
                 }
                 for(auto& node: depGraph->adjList[*it]) {
                     depGraph->inDegree[node]--;
+                }
+                // consider the glue for instructions
+                RISCVMIR*& inst = depGraph->depInfo->get_Sunit2InstMap()[*it];
+                for(int ind=0; ind<inst->GetOperandSize(); ind++) {
+                    for(auto& map: depGraph->glue->get_gluemap()) {
+                        if(depGraph->get_depInfo()->get_Sunit2InstMap()[map.first]->GetOperand(1) == inst->GetOperand(ind)) {
+                            map.second.erase(depGraph->GetSunit(inst));
+                            break;
+                        }
+                    }
                 }
                 it = Available.erase(it);
             }
