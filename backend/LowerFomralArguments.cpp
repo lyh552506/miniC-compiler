@@ -2,11 +2,11 @@
 /// @todo 参数带有浮点数的情况
 
 void LowerFormalArgumentsParallel(Function* func,RISCVLoweringContext& ctx){
-    auto params=func->GetParams();
+    auto& params=func->GetParams();
     auto addressreg=ctx.createVReg(riscv_ptr);
     auto addressinst=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
     addressinst->SetDef(addressreg);
-    // addressinst->AddOperand();
+    addressinst->AddOperand(OuterTag::GetOuterTag("buildin_"));
     ctx(addressinst);
 
     auto mvaddress=[&](int offset){
