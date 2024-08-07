@@ -39,13 +39,13 @@ int main(int argc, char **argv) {
 // #ifdef SYSY_ENABLE_MIDDLE_END
   auto PM = std::make_unique<_PassManager>();
   PM->DecodeArgs(argc, argv);
-// #ifdef TEST
+#ifdef TEST
   PM->RunOnTest();
-// #elif defined(LEVEL)
-  // PM->RunOnLevel();
-// #else
-  // assert(0);
-// #endif
+#elif defined(LEVEL)
+  PM->RunOnLevel();
+#else
+  assert(0);
+#endif
   Singleton<Module>().Test();
   fflush(stdout);
   fclose(stdout);

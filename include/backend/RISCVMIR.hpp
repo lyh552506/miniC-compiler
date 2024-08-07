@@ -49,9 +49,10 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         _div,
         _divu,
-        _divw,
         _rem,
         _remu,
+
+        _divw,
         _remw,
         _remuw,
         EndArithmetic,
@@ -145,13 +146,14 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _fadd_s,
         _fsub_s,
         _fmul_s,
-        _fdiv_s,
-        _fsqrt_s,
 
         _fmadd_s,
         _fmsub_s,
         _fnmadd_s,
         _fnmsub_s,
+        
+        _fdiv_s,
+        _fsqrt_s,
 
         _fsgnj_s,
         _fsgnjn_s,
@@ -198,6 +200,12 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         LoadLocalAddr,
         EndMIRPseudo,
         MarkDead,
+
+        BeginPipeline,
+        LoadImm12,
+        LoadImm32,
+        LoadFromStack,
+        EndPipeline
       } opcode;
       /// @note def in the front while use in the back
       // RISCVMIR(RISCVISA,User* inst);

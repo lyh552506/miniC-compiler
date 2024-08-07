@@ -98,6 +98,7 @@ class Value
     InnerDataType GetTypeEnum();
     virtual Type* GetType();
     bool Negative_tag = false;
+    void SetType(Type* _ty){ tp = _ty;}
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
     void RAUW(Value* val); //ReplaceAllUseWith

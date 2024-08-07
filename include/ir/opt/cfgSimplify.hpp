@@ -36,6 +36,5 @@ private:
   Function *m_func;
   dominance *m_dom;
   _AnalysisManager &AM;
-  std::map<BasicBlock *, std::vector<PhiInst *>> BlockToPhis;
   LoopAnalysis *loopAnlaysis;
 };

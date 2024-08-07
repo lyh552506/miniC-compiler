@@ -2,9 +2,10 @@
 #include "../include/backend/BuildInFunctionTransform.hpp"
 #include "../include/backend/PhiElimination.hpp"
 #include "../include/backend/PostRACalleeSavedLegalizer.hpp"
+#include "../include/backend/Scheduler.hpp"
 #include "../include/backend/CodeLayout.hpp"
 #include "../include/backend/DeleteDeadBlock.hpp"
-
+#include "../include/backend/Scheduler.hpp"
 extern std::string asmoutput_path;
 RISCVAsmPrinter *asmprinter = nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module *m)
@@ -28,7 +29,6 @@ bool RISCVModuleLowering::run(Module *m)
     }
 
     asmprinter->printAsm();
-    // ctx.print();
     return false;
 }
 
@@ -65,6 +65,13 @@ bool RISCVFunctionLowering::run(Function *m)
         BackendDCE dcebefore(mfunc, ctx);
         modified |= dcebefore.RunImpl();
     }
+
+    // asmprinter->printAsm();
+    
+    Pre_RA_Scheduler pre_scheduler;
+    pre_scheduler.ScheduleOnModule(ctx);
+
+
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
@@ -86,8 +93,12 @@ bool RISCVFunctionLowering::run(Function *m)
         BackendDCE dceafter(mfunc, ctx);
         modified |= dceafter.RunImpl();
     }
-    // // Generate Frame of current Function
-    // // And generate the head and tail of frame here
+
+    // Post_RA_Scheduler post_scheduler;
+    // post_scheduler.ScheduleOnModule(ctx);
+
+    // Generate Frame of current Function
+    // And generate the head and tail of frame here
     PostRACalleeSavedLegalizer callee_saved_legalizer;
     callee_saved_legalizer.run(mfunc);
 
