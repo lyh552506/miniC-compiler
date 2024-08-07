@@ -208,7 +208,6 @@ void RISCVISel::InstLowering(CondInst* inst){
 void RISCVISel::InstLowering(BinaryInst* inst){
     assert(!(inst->GetOperand(0)->isConst()&&inst->GetOperand(1)->isConst()));
     Operand temp = inst->GetOperand(0);
-    if(inst->getopration()<BinaryInst::Op_And||inst->getopration()>BinaryInst::Op_Or){
         RISCVMIR* result;
         switch (inst->getopration())
         {
@@ -385,10 +384,31 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                 condition_helper(inst);
             break;
         }
+        case BinaryInst::Op_And:
+        {
+            if(inst->GetType()==IntType::NewIntTypeGet()) {
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1)))
+                    ctx(Builder(RISCVMIR::_andi,inst));
+                else 
+                    ctx(Builder(RISCVMIR::_and,inst));
+            }
+            else assert("Illegal!");
+            break;
+        }
+        case BinaryInst::Op_Or:
+        {
+            if(inst->GetType()==IntType::NewIntTypeGet()) {
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1)))
+                    ctx(Builder(RISCVMIR::_ori,inst));
+                else 
+                    ctx(Builder(RISCVMIR::_or,inst));
+            }
+            else assert("Illegal!");
+            break;
+        }
         default:
             assert(0&&"Invalid Opcode");
         }
-    }
 }
 
 void RISCVISel::InstLowering(GetElementPtrInst* inst){
