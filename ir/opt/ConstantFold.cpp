@@ -55,7 +55,7 @@ Value *ConstantFolding::ConstantFoldBinaryInst(BinaryInst *inst)
             if (auto val = ConstantFoldBinaryFloat(inst, LHS, RHS))
                 return val;
             if (auto val = ConstantFoldIntAndFloat(inst, LHS, RHS))
-              return val;
+                return val;
         }
         if (type == InnerDataType::IR_Value_Float)
             return ConstantFoldBinaryFloat(inst, LHS, RHS);
@@ -63,6 +63,8 @@ Value *ConstantFolding::ConstantFoldBinaryInst(BinaryInst *inst)
     Value *Simplify = SimplifyBinOp(inst->getopration(), LHS, RHS);
     if (Simplify)
         return Simplify;
+    if (inst->getopration() == BinaryInst::Op_Sub)
+        ReversedSubOperand(inst);
     return nullptr;
 }
 
@@ -146,7 +148,7 @@ Value *ConstantFolding::ConstantFoldIntAndFloat(BinaryInst *inst, Value *LHS, Va
             return ConstFoldFloatCmp(Opcode, LVal, RVal);
         }
     }
-  return nullptr;
+    return nullptr;
 }
 Value *ConstantFolding::ConstantFoldBinaryFloat(BinaryInst *inst, Value *LHS, Value *RHS)
 {
@@ -498,4 +500,30 @@ ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst::Operation Opcode, Con
     if (retval)
         return retval;
     return nullptr;
+}
+
+bool ConstantFolding::ReversedSubOperand(BinaryInst *inst)
+{
+    assert(inst->getopration() == BinaryInst::Op_Sub && "Not a Sub Operation");
+    Value *RHS = inst->Getuselist()[1]->usee;
+    if (dynamic_cast<ConstantData *>(RHS))
+    {
+        inst->setoperation(BinaryInst::Op_Add);
+        if(auto INT = dynamic_cast<ConstIRInt*>(RHS))
+        {
+            inst->RSUW(inst->Getuselist()[1].get() ,ConstIRInt::GetNewConstant(-INT->GetVal()));
+            return true;
+        }
+        else if(auto FLOAT = dynamic_cast<ConstIRFloat*>(RHS))
+        {
+            inst->RSUW(inst->Getuselist()[1].get() ,ConstIRFloat::GetNewConstant(-FLOAT->GetVal()));
+            return true;
+        }
+    }
+    else
+    {
+        RHS->Negative_tag = true;
+        return true;
+    }
+    return false;
 }

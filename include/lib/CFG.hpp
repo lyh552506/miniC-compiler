@@ -83,6 +83,7 @@ class AllocaInst:public User
     AllocaInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
     bool IsUsed();
+    bool AllZero = false;
 };
 
 class StoreInst:public User

@@ -17,7 +17,7 @@ bool LoopDeletion::Run()
     dom = AM.get<dominance>(func);
     loop = AM.get<LoopAnalysis>(func, dom);
     AM.get<SideEffect>(&Singleton<Module>());
-    for (auto loop_ : *loop)
+    for (auto loop_ : loop->GetLoops())
         changed |= DetectDeadLoop(loop_);
     changed |= DeleteUnReachable();
     return changed;
@@ -26,16 +26,13 @@ bool LoopDeletion::Run()
 bool LoopDeletion::DetectDeadLoop(LoopInfo *loopInfo)
 {
     bool modified = false;
-    BasicBlock *preheader = loop->GetPreHeader(loopInfo);
-    if (!preheader)
+    if (!loop->GetPreHeader(loopInfo))
         return false;
-
-    std::vector<BasicBlock *> exitblocks = loop->GetExit(loopInfo);
 
     if (!loopInfo->GetSubLoop().empty())
         return false;
 
-    if (exitblocks.size() != 1)
+    if (loop->GetExit(loopInfo).size() != 1)
         return false;
 
     if (CanBeDelete(loopInfo))
@@ -64,7 +61,9 @@ bool LoopDeletion::CanBeDelete(LoopInfo *loopInfo)
 
         if (auto Inst_Com = dynamic_cast<User *>(firstval))
         {
-            if (!makeLoopInvariant(Inst_Com, loopInfo, loop->GetPreHeader(loopInfo)->back()))
+            if (makeLoopInvariant(Inst_Com, loopInfo, loop->GetPreHeader(loopInfo)->back()))
+                Phi->ModifyBlock(exitingBlocks[0], loop->GetPreHeader(loopInfo));
+            else
             {
                 flag_invariant = false;
                 break;
@@ -109,36 +108,53 @@ bool LoopDeletion::CanBeDelete(LoopInfo *loopInfo)
     return true;
 }
 
+bool LoopDeletion::isLoopInvariant(std::set<BasicBlock *> &blocks, User *inst)
+{
+    for (auto user : inst->GetUserlist())
+    {
+        if (user->GetUser() == inst)
+            continue;
+        if (blocks.count(user->GetUser()->GetParent()))
+            return false;
+    }
+    return true;
+}
 bool LoopDeletion::makeLoopInvariant(User *inst, LoopInfo *loopinfo, User *Termination)
 {
-    const std::set<BasicBlock *> contain{loopinfo->GetLoopBody().begin(), loopinfo->GetLoopBody().end()};
+    std::set<BasicBlock *> contain{loopinfo->GetLoopBody().begin(), loopinfo->GetLoopBody().end()};
     bool flag = false;
-    if (LoopAnalysis::IsLoopInvariant(contain, inst, loopinfo))
-        flag = true;
     if (!IsSafeToMove(inst))
         flag = false;
+    if (isLoopInvariant(contain, inst))
+        flag = true;
     if (!flag)
         return false;
-    if (!Termination)
-    {
-        BasicBlock *preheader = loop->GetPreHeader(loopinfo);
-        if (!preheader)
-            return false;
-        Termination = preheader->back();
-    }
     for (auto &use : inst->Getuselist())
     {
+        if (use->usee == inst && dynamic_cast<PhiInst *>(inst))
+        {
+            auto phi = dynamic_cast<PhiInst *>(inst);
+            if (phi->PhiRecord.size() == 2)
+            {
+                Value *val = nullptr;
+                for (auto &[key, value] : phi->PhiRecord)
+                {
+                    if (value.first != inst)
+                    {
+                        val = value.first;
+                        break;
+                    }
+                }
+                if (val)
+                {
+                    phi->RAUW(val);
+                }
+            }
+            continue;
+        }
+        
         if (!makeLoopInvariant_val(use->usee, loopinfo, Termination))
             return false;
-    }
-    {
-        BasicBlock *block = Termination->GetParent();
-        auto iter = block->begin();
-        while (*iter != Termination)
-            ++iter;
-        // inst->ClearRelation();
-        inst->EraseFromParent();
-        iter.insert_before(inst);
     }
 
     return true;
@@ -178,13 +194,12 @@ bool LoopDeletion::TryDeleteLoop(LoopInfo *loopInfo)
         {
             phi->EraseRecordByBlock(exiting_blocks[i]);
         }
+        ++exit_iter;
     }
 
     Function *func_ = Pre_Header->GetParent();
     for (BasicBlock *block : loopInfo->GetLoopBody())
     {
-        func_->GetBasicBlock().erase(std::remove(func_->GetBasicBlock().begin(), func_->GetBasicBlock().end(), block),
-                                     func_->GetBasicBlock().end());
         // for(auto inst = block->rbegin(); inst != block->rend(); ++inst)
         // {
 
@@ -202,29 +217,6 @@ bool LoopDeletion::TryDeleteLoop(LoopInfo *loopInfo)
 bool LoopDeletion::IsSafeToMove(User *inst)
 {
     auto instid = inst->GetInstId();
-    if (instid == User::OpID::Phi)
-        return false;
-    if (instid == User::OpID::Div)
-    {
-        if (auto CONST = dynamic_cast<ConstantData *>(inst->GetOperand(1)))
-        {
-            if (CONST->getNullValue(CONST->GetType()))
-                return false;
-        }
-    }
-    if (instid == User::OpID::Mod)
-    {
-        if (auto CONST = dynamic_cast<ConstantData *>(inst->GetOperand(1)))
-        {
-            if (CONST->getNullValue(CONST->GetType()))
-                return false;
-            if (auto INT = dynamic_cast<ConstIRInt *>(CONST))
-            {
-                if (INT->GetVal() == -1)
-                    return false;
-            }
-        }
-    }
     if (instid == User::OpID::Load)
         return false;
 
@@ -240,69 +232,81 @@ bool LoopDeletion::IsSafeToMove(User *inst)
     return true;
 }
 
-bool LoopDeletion::DeleteUnReachable() {
-  bool changed = false;
-  std::vector<BasicBlock *> Erase;
-  std::set<BasicBlock *> visited;
-  std::vector<BasicBlock *> assist;
-  assist.push_back(func->front());
-  visited.insert(func->front());
-  while (!assist.empty()) {
-    auto bb = PopBack(assist);
-    auto condition = bb->back();
-    if (auto cond = dynamic_cast<CondInst *>(condition)) {
-      auto nxt_1 = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
-      auto nxt_2 = dynamic_cast<BasicBlock *>(cond->GetOperand(2));
-      if (visited.insert(nxt_1).second)
-        assist.push_back(nxt_1);
-      if (visited.insert(nxt_2).second)
-        assist.push_back(nxt_2);
-    } else if (auto uncond = dynamic_cast<UnCondInst *>(condition)) {
-      auto nxt = dynamic_cast<BasicBlock *>(uncond->GetOperand(0));
-      if (visited.insert(nxt).second)
-        assist.push_back(nxt);
+bool LoopDeletion::DeleteUnReachable()
+{
+    bool changed = false;
+    std::vector<BasicBlock *> Erase;
+    std::set<BasicBlock *> visited;
+    std::vector<BasicBlock *> assist;
+    assist.push_back(func->front());
+    visited.insert(func->front());
+    while (!assist.empty())
+    {
+        auto bb = PopBack(assist);
+        auto condition = bb->back();
+        if (auto cond = dynamic_cast<CondInst *>(condition))
+        {
+            auto nxt_1 = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
+            auto nxt_2 = dynamic_cast<BasicBlock *>(cond->GetOperand(2));
+            if (visited.insert(nxt_1).second)
+                assist.push_back(nxt_1);
+            if (visited.insert(nxt_2).second)
+                assist.push_back(nxt_2);
+        }
+        else if (auto uncond = dynamic_cast<UnCondInst *>(condition))
+        {
+            auto nxt = dynamic_cast<BasicBlock *>(uncond->GetOperand(0));
+            if (visited.insert(nxt).second)
+                assist.push_back(nxt);
+        }
     }
-  }
-  for (auto it = func->begin(); it != func->end();) {
-    auto bb = *it;
-    ++it;
-    if (visited.find(bb) == visited.end()) {
-      _DEBUG(std::cerr << "Delete Unreachable block: " << bb->GetName()
-                       << std::endl;)
-      DeletDeadBlock(bb);
-      changed = true;
+    for (auto it = func->begin(); it != func->end();)
+    {
+        auto bb = *it;
+        ++it;
+        if (visited.find(bb) == visited.end())
+        {
+            _DEBUG(std::cerr << "Delete Unreachable block: " << bb->GetName() << std::endl;)
+            DeletDeadBlock(bb);
+            changed = true;
+        }
     }
-  }
-  return changed;
+    return changed;
 }
 
-void LoopDeletion::DeletDeadBlock(BasicBlock *bb) {
-  auto &node = dom->GetNode(bb->num);
-  //维护后续的phi关系
-  for (int des : node.des) {
-    BasicBlock *succ = dom->GetNode(des).thisBlock;
-    succ->RemovePredBB(bb);
-  }
-  for (auto iter = bb->begin(); iter != bb->end();) {
-    User *inst = *iter;
-    ++iter;
-    inst->RAUW(UndefValue::get(inst->GetType()));
-  }
-  updateDTinfo(bb);
-  // loopAnlaysis->DeleteBlock(bb);
-  bb->Delete();
-  dom->updateBlockNum()--;
+void LoopDeletion::DeletDeadBlock(BasicBlock *bb)
+{
+    auto &node = dom->GetNode(bb->num);
+    // 维护后续的phi关系
+    for (int des : node.des)
+    {
+        BasicBlock *succ = dom->GetNode(des).thisBlock;
+        succ->RemovePredBB(bb);
+    }
+    for (auto iter = bb->begin(); iter != bb->end();)
+    {
+        User *inst = *iter;
+        ++iter;
+        inst->RAUW(UndefValue::get(inst->GetType()));
+    }
+    updateDTinfo(bb);
+    // loopAnlaysis->DeleteBlock(bb);
+    bb->Delete();
+    dom->updateBlockNum()--;
 }
 
-void LoopDeletion::updateDTinfo(BasicBlock *bb) {
-  auto &node = dom->GetNode(bb->num);
-  std::vector<int> Erase;
-  for (int rev : node.rev) {
-    auto &pred = dom->GetNode(rev);
-    pred.des.remove(bb->num);
-  }
-  for (int des : node.des) {
-    auto &succ = dom->GetNode(des);
-    succ.rev.remove(bb->num);
-  }
+void LoopDeletion::updateDTinfo(BasicBlock *bb)
+{
+    auto &node = dom->GetNode(bb->num);
+    std::vector<int> Erase;
+    for (int rev : node.rev)
+    {
+        auto &pred = dom->GetNode(rev);
+        pred.des.remove(bb->num);
+    }
+    for (int des : node.des)
+    {
+        auto &succ = dom->GetNode(des);
+        succ.rev.remove(bb->num);
+    }
 }

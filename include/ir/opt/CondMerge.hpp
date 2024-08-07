@@ -8,16 +8,13 @@
 #include "PassManagerBase.hpp"
 
 class _AnalysisManager;
-class BranchRotate : public _PassManagerBase<BranchRotate, Function>
+class CondMerge : public _PassManagerBase<CondMerge, Function>
 {
   private:
     Function *func;
     _AnalysisManager &AM;
     dominance *dom;
     std::vector<BasicBlock *> DFSOrder;
-    std::unordered_map<BasicBlock *, std::unordered_map<size_t, std::vector<BinaryInst *>>> CmpMap;
-    bool NormalizingCmp();
-    bool CombineCmp();
     bool AdjustCondition();
     bool DetectCall(Value *inst, BasicBlock *block);
     bool RetPhi(BasicBlock *block);
@@ -29,7 +26,7 @@ class BranchRotate : public _PassManagerBase<BranchRotate, Function>
     void OrderBlock(BasicBlock *block);
 
   public:
-    BranchRotate(Function *func, _AnalysisManager &_AM) : func(func), AM(_AM)
+    CondMerge(Function *func, _AnalysisManager &_AM) : func(func), AM(_AM)
     {
     }
     bool Run();

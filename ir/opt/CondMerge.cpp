@@ -1,9 +1,9 @@
-#include "../../include/ir/opt/BranchRotate.hpp"
+#include "../../include/ir/opt/CondMerge.hpp"
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
 
-bool BranchRotate::Run()
+bool CondMerge::Run()
 {
     /*
     Test for And Or
@@ -19,8 +19,6 @@ bool BranchRotate::Run()
     func->init_visited_block();
     OrderBlock(func->front());
     std::reverse(DFSOrder.begin(), DFSOrder.end());
-    // modified |= NormalizingCmp();
-    // modified |= CombineCmp();
     while (changed)
     {
         changed = false;
@@ -30,40 +28,7 @@ bool BranchRotate::Run()
     return modified;
 }
 
-bool BranchRotate::NormalizingCmp()
-{
-    bool modified = false;
-    for (BasicBlock *block : DFSOrder)
-    {
-        User *inst = block->back();
-        if (dynamic_cast<CondInst *>(inst))
-        {
-            auto cmp = dynamic_cast<BinaryInst *>(inst->Getuselist()[0]->usee);
-            if (cmp && cmp->IsCmpInst())
-            {
-
-                BasicBlock::mylist<BasicBlock, User>::iterator it(inst);
-                BasicBlock::mylist<BasicBlock, User>::iterator it1(cmp);
-                if (++it1 != it)
-                {
-                    std::unordered_map<Operand, Operand> Mapping;
-                    Mapping[cmp->GetOperand(0)] = cmp->GetOperand(0);
-                    Mapping[cmp->GetOperand(1)] = cmp->GetOperand(1);
-                    auto new_cmp = cmp->clone(Mapping);
-                    it.insert_before(new_cmp);
-                    inst->RSUW(inst->Getuselist()[0].get(), new_cmp);
-                    cmp->ClearRelation();
-                    cmp->EraseFromParent();
-                    modified |= true;
-                    continue;
-                }
-            }
-        }
-    }
-    return modified;
-}
-
-void BranchRotate::OrderBlock(BasicBlock *block)
+void CondMerge::OrderBlock(BasicBlock *block)
 {
     if (block->visited)
         return;
@@ -73,66 +38,7 @@ void BranchRotate::OrderBlock(BasicBlock *block)
     DFSOrder.push_back(block);
 }
 
-bool BranchRotate::CombineCmp()
-{
-    bool modified = false;
-    for (BasicBlock *block : DFSOrder)
-    {
-        auto &cmps = CmpMap[block];
-        if (auto parent = dom->GetNode(dom->GetNode(block->num).idom).thisBlock)
-            cmps = CmpMap[parent];
-
-        for (auto iter = block->rbegin(); iter != block->rend(); --iter)
-        {
-            auto cmp = dynamic_cast<BinaryInst *>(*iter);
-            if (!cmp)
-                continue;
-            if (!cmp->IsCmpInst())
-                continue;
-            bool Should_del = false;
-            size_t hash = std::hash<User::OpID>{}(cmp->GetInstId()) ^ std::hash<Operand>{}(cmp->GetOperand(0)) ^
-                          std::hash<Operand>{}(cmp->GetOperand(1));
-            auto &IncomeCmps = cmps[hash];
-            for (BinaryInst *Income : IncomeCmps)
-            {
-                BinaryInst::Operation Income_op = Income->getopration();
-                BinaryInst::Operation Cur_Op = cmp->getopration();
-                auto match_Op = [&](int i, int j) {
-                    return cmp->GetOperand(0) == Income->GetOperand(i) && cmp->GetOperand(1) == Income->GetOperand(j);
-                };
-
-                if ((Income_op == Cur_Op && match_Op(0, 1)) ||
-                    (Income->GetReversedOperation(Income_op) == Cur_Op && match_Op(1, 0)))
-                {
-                    cmp->RAUW(Income);
-                    Should_del = true;
-                    break;
-                }
-                if ((Income->GetInvertedOperation(Income_op) == Cur_Op && match_Op(0, 1)) ||
-                    (Income->GetReversedOperation(Income->GetInvertedOperation(Income_op)) == Cur_Op && match_Op(1, 0)))
-                {
-                    BasicBlock::mylist<BasicBlock, User>::iterator it(cmp);
-                    auto xor_ = new BinaryInst(Income, BinaryInst::Op_Xor, ConstIRBoolean::GetNewConstant(true));
-                    it.insert_before(xor_);
-                    cmp->RAUW(xor_);
-                    Should_del = true;
-                    break;
-                }
-            }
-            if (!Should_del)
-                IncomeCmps.push_back(cmp);
-            else
-            {
-                cmp->ClearRelation();
-                cmp->EraseFromParent();
-                modified |= true;
-            }
-        }
-    }
-    return modified;
-}
-
-bool BranchRotate::AdjustCondition()
+bool CondMerge::AdjustCondition()
 {
     bool modified = false;
     std::unordered_set<BasicBlock *> wait_del;
@@ -162,7 +68,7 @@ bool BranchRotate::AdjustCondition()
     return modified;
 }
 
-bool BranchRotate::Handle_Or(BasicBlock *cur, BasicBlock *succ, std::unordered_set<BasicBlock *> &wait_del)
+bool CondMerge::Handle_Or(BasicBlock *cur, BasicBlock *succ, std::unordered_set<BasicBlock *> &wait_del)
 {
     bool modified = false;
     assert((cur->back()->Getuselist()[1]->usee == succ) ||
@@ -219,7 +125,7 @@ bool BranchRotate::Handle_Or(BasicBlock *cur, BasicBlock *succ, std::unordered_s
     return modified;
 }
 
-bool BranchRotate::Handle_And(BasicBlock *cur, BasicBlock *succ, std::unordered_set<BasicBlock *> &wait_del)
+bool CondMerge::Handle_And(BasicBlock *cur, BasicBlock *succ, std::unordered_set<BasicBlock *> &wait_del)
 {
     bool modified = false;
     assert((cur->back()->Getuselist()[1]->usee == succ) ||
@@ -277,7 +183,7 @@ bool BranchRotate::Handle_And(BasicBlock *cur, BasicBlock *succ, std::unordered_
     return modified;
 }
 
-bool BranchRotate::DetectCall(Value *val, BasicBlock *block)
+bool CondMerge::DetectCall(Value *val, BasicBlock *block)
 {
     if (!dynamic_cast<User *>(val))
         return false;
@@ -294,7 +200,7 @@ bool BranchRotate::DetectCall(Value *val, BasicBlock *block)
     return false;
 }
 
-bool BranchRotate::RetPhi(BasicBlock *block)
+bool CondMerge::RetPhi(BasicBlock *block)
 {
     for (auto it = block->begin(); it != block->end(); ++it)
     {
@@ -312,7 +218,7 @@ bool BranchRotate::RetPhi(BasicBlock *block)
     return false;
 }
 
-bool BranchRotate::CanHandle(BasicBlock *cur, CondInst *inst)
+bool CondMerge::CanHandle(BasicBlock *cur, CondInst *inst)
 {
     if (inst->Getuselist()[1]->usee->GetUserlist().GetSize() > 1)
         return false;
@@ -321,7 +227,7 @@ bool BranchRotate::CanHandle(BasicBlock *cur, CondInst *inst)
     return true;
 }
 
-bool BranchRotate::Match_Lib_Phi(BasicBlock *curr, BasicBlock *succ, BasicBlock *exit)
+bool CondMerge::Match_Lib_Phi(BasicBlock *curr, BasicBlock *succ, BasicBlock *exit)
 {
     for (User *inst : *succ)
     {
@@ -358,7 +264,7 @@ bool BranchRotate::Match_Lib_Phi(BasicBlock *curr, BasicBlock *succ, BasicBlock 
             }
             if (from_cur && from_succ)
             {
-                if(DetectUserPos(from_cur, succ, from_succ))
+                if (DetectUserPos(from_cur, succ, from_succ))
                     return true;
             }
         }
@@ -366,7 +272,7 @@ bool BranchRotate::Match_Lib_Phi(BasicBlock *curr, BasicBlock *succ, BasicBlock 
     return false;
 }
 
-bool BranchRotate::DetectUserPos(Value *user, BasicBlock *blockpos, Value *val)
+bool CondMerge::DetectUserPos(Value *user, BasicBlock *blockpos, Value *val)
 {
     for (auto user : user->GetUserlist())
     {

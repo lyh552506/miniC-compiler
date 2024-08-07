@@ -24,6 +24,7 @@ class LoopDeletion : public _PassManagerBase<LoopDeletion, Function>
     bool makeLoopInvariant(User *inst, LoopInfo *loop, User *Termination);
     bool makeLoopInvariant_val(Value *val, LoopInfo *loop, User *Termination);
     bool DeleteUnReachable();
+    bool isLoopInvariant(std::set<BasicBlock*> &blocks, User *inst);
     void DeletDeadBlock(BasicBlock *bb);
     void updateDTinfo(BasicBlock *bb);
   private:

@@ -77,8 +77,11 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case tailrecurseEliminator:
       AddPass(tailrecurseEliminator);
       break;
-    case branchrotate:
-      AddPass(branchrotate);
+    case condmerge:
+      AddPass(condmerge);
+      break;
+    case gepevaluate:
+      AddPass(gepevaluate);
       break;
     case O0:
       level = O0;
@@ -104,13 +107,13 @@ void _PassManager::RunOnLevel() {
   if (level == O1) {
     _AnalysisManager AM;
     // DeadArgsElimination
-    // RunImpl<DeadArgsElimination>(module, AM);
+    RunImpl<DeadArgsElimination>(module, AM);
 
     // StoreOnlyGlobalElimination
-    // RunImpl<StoreOnlyGlobalElimination>(module, AM);
+    RunImpl<StoreOnlyGlobalElimination>(module, AM);
 
     // global2local
-    // RunImpl<Global2Local>(module, AM);
+    RunImpl<Global2Local>(module, AM);
       PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
       PassChangedEnd
     while (modified) {
@@ -352,8 +355,12 @@ void _PassManager::RunOnTest() {
           auto m_TRE = RunImpl<TailRecurseEliminator>(curfunc, AM);
           break;
         }
-        case branchrotate: {
-          auto m_BranchRotate = RunImpl<BranchRotate>(curfunc, AM);
+        case condmerge: {
+          auto m_CondMerge = RunImpl<CondMerge>(curfunc, AM);
+          break;
+        }
+        case gepevaluate: {
+          auto m_gepevaluate = RunImpl<GepEvaluate>(curfunc, AM);
           break;
         }
         default: {

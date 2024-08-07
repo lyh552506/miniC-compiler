@@ -1460,6 +1460,7 @@ void PhiInst::ModifyBlock_CheckSame(BasicBlock *Old, BasicBlock *New) {
   return;
 }
 
+
 std::pair<size_t, size_t> &Function::GetInlineInfo() {
   // codesize,framesize
   if (inlineinfo.first == 0) {
