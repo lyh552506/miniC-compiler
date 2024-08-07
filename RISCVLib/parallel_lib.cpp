@@ -18,16 +18,17 @@ class Spinlock{
     }
 };
 
-unsigned char parallel_arg_storage[512];
-void (*func)(void);
-Spinlock empty;
-Spinlock full;
+unsigned char buildin_parallel_arg_storage[512];
+void (*buildin_funcptr)(void);
 
-std::atomic_int32_t tasks;
-std::atomic_int32_t task_done;
+static Spinlock empty;
+static Spinlock full;
+
+static std::atomic_int32_t tasks;
+static std::atomic_int32_t task_done;
 
 // tell the main thread that the buffer is empty again
-void FenceArgLoaded(){
+void buildin_FenceArgLoaded(){
     empty.unlock();
 }
 
@@ -39,7 +40,7 @@ void WaitBufferRead(){
     // wait the buffer to be full
     full.lock();
     // inside the function, the FenceArgLoaded will be called
-    func();
+    buildin_funcptr();
     printf("task %d done\n",task_done.load());
     fflush(stdout);
     task_done++;
@@ -50,7 +51,7 @@ void WaitBufferWrite(){
     empty.lock();
 }
 
-void NotifyWorker(int begin,int end){
+void buildin_NotifyWorker(int begin,int end){
     // tell the worker that the buffer is full
     int64_t _begin=begin;
     int64_t _end=end;
@@ -60,8 +61,8 @@ void NotifyWorker(int begin,int end){
         int64_t limi=std::min(_begin+step,_end);
         int st=_begin,ed=limi;
         WaitBufferWrite();
-        *(int*)(parallel_arg_storage)=st;
-        *(int*)(parallel_arg_storage+4)=ed;
+        *(int*)(buildin_parallel_arg_storage)=st;
+        *(int*)(buildin_parallel_arg_storage+4)=ed;
         tasks++;
         full.unlock();
     }
@@ -110,7 +111,7 @@ IR:
     parallel_call func l r ...
 
 USED_OUTSIDE TAGS:
-    parallel_arg_storage
+    buildin_parallel_arg_storage
     func
     FenceArgLoaded
     Notify Worker
