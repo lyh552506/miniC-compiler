@@ -198,26 +198,61 @@ Value *SimplifyIcmpInst(BinaryInst::Operation Opcode, Value *LHS, Value *RHS)
         }
     }
 
+    // m and !m
+    if (Opcode == BinaryInst::Op_And)
+    {
+        auto LHS_Cmp = dynamic_cast<BinaryInst *>(LHS);
+        auto RHS_Cmp = dynamic_cast<BinaryInst *>(RHS);
+        if (LHS_Cmp && RHS_Cmp)
+        {
+            BinaryInst::Operation LHS_Op = LHS_Cmp->getopration();
+            BinaryInst::Operation RHS_Op = RHS_Cmp->getopration();
+            auto match_Op = [&](int i, int j) {
+                return LHS_Cmp->GetOperand(0) == RHS_Cmp->GetOperand(i) && LHS_Cmp->GetOperand(1) == RHS_Cmp->GetOperand(j);
+            };
+            if(LHS_Cmp->GetInvertedOperation(LHS_Op) == RHS_Op && match_Op(0, 1))
+                return ConstIRBoolean::GetNewConstant(false);
+        }
+    }
+
+    // m or !m
+    if (Opcode == BinaryInst::Op_Or)
+    {
+        auto LHS_Cmp = dynamic_cast<BinaryInst *>(LHS);
+        auto RHS_Cmp = dynamic_cast<BinaryInst *>(RHS);
+        if (LHS_Cmp && RHS_Cmp)
+        {
+            BinaryInst::Operation LHS_Op = LHS_Cmp->getopration();
+            BinaryInst::Operation RHS_Op = RHS_Cmp->getopration();
+            auto match_Op = [&](int i, int j) {
+                return LHS_Cmp->GetOperand(0) == RHS_Cmp->GetOperand(i) && LHS_Cmp->GetOperand(1) == RHS_Cmp->GetOperand(j);
+            };
+            if(LHS_Cmp->GetInvertedOperation(LHS_Op) == RHS_Op && match_Op(0, 1))
+                return ConstIRBoolean::GetNewConstant(true);
+        }
+    }
+
+
     // true or X -> true
     if (Opcode == BinaryInst::Op_Or)
     {
         auto LHSBool = dynamic_cast<ConstIRBoolean *>(LHS);
         auto RHSBool = dynamic_cast<ConstIRBoolean *>(RHS);
-        if(LHSBool && RHSBool)
+        if (LHSBool && RHSBool)
         {
-            if(LHSBool->GetVal() == false && RHSBool->GetVal() == false)
+            if (LHSBool->GetVal() == false && RHSBool->GetVal() == false)
                 return ConstIRBoolean::GetNewConstant(false);
             else
                 return ConstIRBoolean::GetNewConstant(true);
         }
-        else if(LHSBool && !RHSBool)
+        else if (LHSBool && !RHSBool)
         {
-            if(LHSBool->GetVal() == true)
+            if (LHSBool->GetVal() == true)
                 return ConstIRBoolean::GetNewConstant(true);
         }
-        else if(RHSBool && !LHSBool)
+        else if (RHSBool && !LHSBool)
         {
-            if(RHSBool->GetVal() == true)
+            if (RHSBool->GetVal() == true)
                 return ConstIRBoolean::GetNewConstant(true);
         }
     }
