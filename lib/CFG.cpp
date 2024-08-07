@@ -1238,7 +1238,12 @@ PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB, Type *ty,
   return tmp;
 }
 
-PhiInst *PhiInst::NewPhiNode(Type* ty){}
+PhiInst *PhiInst::NewPhiNode(Type *ty) {
+  assert(ty);
+  PhiInst *tmp = new PhiInst(ty);
+  tmp->id = OpID::Phi;
+  return tmp;
+}
 
 void PhiInst::updateIncoming(Value *Income, BasicBlock *BB) {
   add_use(Income);
