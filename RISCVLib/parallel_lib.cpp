@@ -65,6 +65,8 @@ void NotifyWorker(int begin,int end){
         tasks++;
         full.unlock();
     }
+    
+    WaitTasksCompleted();
 }
 
 void* WorkerThread(void *arg){
@@ -96,7 +98,6 @@ parallel_call translation:
     mv a0 <- %begin
     mv a1 <- %end
     call Notify Worker
-    call WaitTasksCompleted
 
 func translation:
 
@@ -109,4 +110,10 @@ func translation:
 
 IR:
     parallel_call func l r ...
+
+USED_OUTSIDE TAGS:
+    parallel_arg_storage
+    func
+    FenceArgLoaded
+    Notify Worker
 */
