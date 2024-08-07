@@ -165,8 +165,6 @@ void BlockInfo::Build()
 {
     for (RISCVBasicBlock *block : *m_func)
     {
-        if(block->GetName() == ".LBB14")
-            int c = 1;
         std::unordered_set<MOperand> live = BlockLiveout[block];
         for (auto inst_ = block->rbegin(); inst_ != block->rend();)
         {

@@ -200,6 +200,7 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         LoadLocalAddr,
         EndMIRPseudo,
         MarkDead,
+        StackAlloc,
 
         BeginPipeline,
         LoadImm12,

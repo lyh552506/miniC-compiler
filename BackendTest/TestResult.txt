@@ -1,0 +1,49 @@
+Wrong Answer: uploadfolder/59_sort_test5
+Wrong Answer: uploadfolder/94_nested_loops
+Wrong Answer: uploadfolder/51_short_circuit3
+Wrong Answer: uploadfolder/88_many_params2
+Wrong Answer: uploadfolder/28_while_test3
+Wrong Answer: uploadfolder/04_arr_defn3
+Wrong Answer: uploadfolder/93_nested_calls
+Wrong Answer: uploadfolder/84_long_array2
+Wrong Answer: uploadfolder/75_max_flow
+Wrong Answer: uploadfolder/69_expr_eval
+Wrong Answer: uploadfolder/64_calculator
+Wrong Answer: uploadfolder/99_matrix_tran
+Wrong Answer: uploadfolder/83_long_array
+Wrong Answer: uploadfolder/55_sort_test1
+Wrong Answer: uploadfolder/79_var_name
+Wrong Answer: uploadfolder/05_arr_defn4
+Wrong Answer: uploadfolder/97_matrix_sub
+Wrong Answer: uploadfolder/77_substr
+Wrong Answer: uploadfolder/61_sort_test7
+Wrong Answer: uploadfolder/54_hidden_var
+Wrong Answer: uploadfolder/76_n_queens
+Wrong Answer: uploadfolder/68_brainfk
+Wrong Answer: uploadfolder/57_sort_test3
+Wrong Answer: uploadfolder/71_full_conn
+Wrong Answer: uploadfolder/74_kmp
+Wrong Answer: uploadfolder/58_sort_test4
+Wrong Answer: uploadfolder/60_sort_test6
+Wrong Answer: uploadfolder/09_func_defn
+Wrong Answer: uploadfolder/96_matrix_add
+Wrong Answer: uploadfolder/98_matrix_mul
+Wrong Answer: uploadfolder/62_percolation
+Wrong Answer: uploadfolder/63_big_int_mul
+Wrong Answer: uploadfolder/65_color
+Wrong Answer: uploadfolder/86_long_code2
+Wrong Answer: uploadfolder/87_many_params
+Wrong Answer: uploadfolder/70_dijkstra
+Wrong Answer: uploadfolder/56_sort_test2
+Wrong Answer: uploadfolder/53_scope2
+Wrong Answer: uploadfolder/89_many_globals
+Wrong Answer: uploadfolder/81_skip_spaces
+Wrong Answer: uploadfolder/85_long_code
+Wrong Answer: uploadfolder/73_int_io
+Compiler Error: Total: 0
+Assembler Error: Total: 0
+Linker Error: Total: 0
+TimeOut Function:0
+Wrong Answer: Total: 42
+Accecpt : Total: 58
+Duration: 54.42842984199524 seconds

@@ -50,7 +50,7 @@ private:
     std::vector<Sunit*> sunits;
     std::map<Sunit*, std::set<Sunit*>> adjList; 
     std::unordered_map<Sunit*, uint32_t> inDegree;
-
+    
 public:
     friend class Scheduler;
     friend class Pre_RA_Scheduler;
@@ -64,6 +64,15 @@ public:
     /// @brief Compute depth of each node in the graph in order form top to bottom.
     void ComputeDepth();
 };
+
+class GlueChain {
+    std::map<Sunit*, std::unordered_set<Sunit*>> gluemap;
+public:
+    void add_glue(Sunit*, Sunit*);
+    void remove_glue(Sunit*, Sunit*);
+    inline std::map<Sunit*, std::unordered_set<Sunit*>>& get_gluemap() {return gluemap;}
+}; 
+
 
 class SchedRegion {
     friend class Pre_RA_Scheduler;
@@ -82,6 +91,8 @@ public:
 };
 
 bool isboundary(RISCVMIR*);
+
+
 
 #ifdef DEBUG_SCHED
     static std::string Sched_debuginfo = "BackendTest/Sched.buginfo";

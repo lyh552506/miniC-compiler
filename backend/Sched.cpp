@@ -1,5 +1,9 @@
 #include "../include/backend/Sched.hpp"
-
+// bool isstore(RISCVMIR* inst) {
+//     ISA op = inst->GetOpcode();
+//     return (op>ISA::BeginStoreMem&&op<ISA::EndStoreMem)\
+//         || (op>ISA::BeginFloatStoreMem&&op<ISA::EndFloatStoreMem);
+// }
 BlockDepInfo::BlockDepInfo(RISCVBasicBlock* block)
     : block(block) {
     BuildBlockDepInfo(block);
@@ -16,6 +20,9 @@ void BlockDepInfo::BuildBlockDepInfo(RISCVBasicBlock* block) {
         if(inst->GetDef() != nullptr) {
             def2inst[inst->GetDef()].push(inst);
         }
+        // if(isstore(inst)) {
+        //     def2inst[inst->GetOperand(1)].push(inst);
+        // }
         for(int i=0; i<inst->GetOperandSize(); i++) {
             if(inst->GetOperand(i) != nullptr) {
                 use2inst[inst->GetOperand(i)].push(inst);
@@ -49,6 +56,8 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
     auto GetReadAdvance = [&](RISCVMIR* inst) {
         return SchedInfo(inst->GetOpcode()).ReadAdvance;
     };
+    using ISA = RISCVMIR::RISCVISA;
+
 
     for(auto it = inst2sunitLocal.rbegin(); it != inst2sunitLocal.rend(); ++it) {
         RISCVMIR*& inst = it->first;
@@ -62,14 +71,17 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
         if(inst->GetDef() != nullptr) {
             depInfo->def2inst[inst->GetDef()].pop();
         }
+        // if(isstore(inst)) {
+        //     depInfo->def2inst[inst->GetOperand(1)].pop();
+        // }
+
         // use
-        using ISA = RISCVMIR::RISCVISA;
         for(int i=0; i<inst->GetOperandSize(); i++) {
             RISCVMOperand*& op = inst->GetOperand(i);
-            // if(inst->GetOpcode() == RISCVMIR::_sw) {
-            //     int a=0;
-            // }
             if(op != nullptr) {
+                // if(isstore(inst) && i==1) {
+                //     break;
+                // }
                 if(!depInfo->def2inst[op].empty()) {
                     RISCVMIR* definst = depInfo->def2inst[inst->GetOperand(i)].top();
                     addDependency(GetSunit(inst), GetSunit(definst));
@@ -133,6 +145,18 @@ void DependencyGraph::ComputeDepth() {
     
 }
 
+void GlueChain::add_glue(Sunit* former, Sunit* latter) {
+    if(gluemap[former].find(latter)==gluemap[former].end()) {
+        gluemap[former].insert(latter); 
+    }
+}
+void GlueChain::remove_glue(Sunit* former, Sunit* latter) {
+    if(gluemap[former].find(latter)!=gluemap[former].end()) {
+        gluemap[former].erase(latter);
+    }
+    assert(0&&"Error in remvoe glue");
+}
+
 SchedRegion::SchedRegion(RISCVBasicBlock* BasicBlock) {
     this->block = BasicBlock;
     this->begin = BasicBlock->begin();
@@ -168,6 +192,7 @@ bool SchedRegion::LastRegion() {
     }
     begin = block->begin();
     end = rbegin;
+    return true;
 }
 bool SchedRegion::NextRegion() {
     // Schedel region is from begin to the previous inst of end. 

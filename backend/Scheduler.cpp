@@ -92,6 +92,9 @@ bool Scheduler::isPipelineReady(RISCVMIR* inst) {
         PipelineMask |= PIPELINE::PipelineB;
         return true;
     }
+    else if(pipeline == PIPELINE::PipelineVoid) {
+        return true;
+    }
 }
 
 void Scheduler::Swap_region(mylist_iterator begin, mylist_iterator end, BlockDepInfo* depInfo) {
@@ -129,9 +132,7 @@ void Pre_RA_Scheduler::ScheduleOnBlock(RISCVBasicBlock* block) {
     #ifdef DEBUG_SCHED
     std::cout << "ScheduleOnBlock: " << block->GetName() << std::endl;
     #endif
-    if(block->GetName() == ".LBB6") {
-        int a=0;
-    }
+
     if(block->Size() > 2) { 
         while(region.LastRegion()) {
             ScheduleOnRegion(region.begin, region.end, depInfo);

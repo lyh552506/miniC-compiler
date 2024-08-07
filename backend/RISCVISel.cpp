@@ -75,7 +75,10 @@ bool RISCVISel::run(Function* m){
 }
 
 void RISCVISel::InstLowering(AllocaInst* inst){
-    ctx.mapping(inst);
+    RISCVMIR* minst = new RISCVMIR(RISCVMIR::StackAlloc);
+    minst->SetDef(ctx.mapping(inst));
+    ctx(minst);
+    // ctx.mapping(inst);
 }
 
 void RISCVISel::InstLowering(StoreInst* inst){

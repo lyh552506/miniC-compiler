@@ -2,6 +2,7 @@
 #include "RISCVMIR.hpp"
 using ISA = RISCVMIR::RISCVISA;
 enum PIPELINE : uint32_t{
+    PipelineVoid = 0,
     PipelineA = 1 << 0,
     PipelineB = 1 << 1,
     PipelineAB = PipelineA | PipelineB,
@@ -161,6 +162,11 @@ public:
             // ReadAdvance = 0;
             // Pipeline = PipelineAB;
         }
+        // else if(op==ISA::StackAlloc) {
+        //     WriteRes = 0;
+        //     ReadAdvance = 0;
+        //     Pipeline = PipelineVoid;
+        // }
     }
     inline uint32_t get_Pipeline() {return Pipeline;}
 };
