@@ -1,303 +1,124 @@
-// Really long code;
-int n;
+int arr1[10][2][3][4][5][6][2];
+int arr2[10][2][3][2][4][8][7];
 
-int bubblesort(int arr[]) {
-    int i;
-    int j;
-    i =0; 
-    while(i < n-1){
-    // Last i elements are already in place    
-        j = 0;
-        while(j < n-i-1){
-            if (arr[j] > arr[j+1]) {
-                // swap(&arr[j], &arr[j+1]); 
-                int tmp;
-                tmp = arr[j+1];
-                arr[j+1] = arr[j];
-                arr[j] = tmp;       
+void loop1(int x, int y) {
+  int a, b, c, d, e, f, g;
+  a = 0;
+  while (a < x && a < y) {
+    b = 0;
+    while (b < 2) {
+      c = 0;
+      while (c < 3) {
+        d = 0;
+        while (d < 4) {
+          e = 0;
+          while (e < 5) {
+            f = 0;
+            while (f < 6) {
+              g = 0;
+              while (g < 2) {
+                arr1[a][b][c][d][e][f][g] = a + b + c + d + e + f + g + x + y;
+                g = g + 1;
+              }
+              f = f + 1;
             }
-            j = j + 1;
+            e = e + 1;
+          }
+          d = d + 1;
         }
-        i = i + 1;
+        c = c + 1;
+      }
+      b = b + 1;
     }
-    return 0;
+    a = a + 1;
+  }
 }
 
-int insertsort(int a[]) {
-    int i;
-    i = 1;
-    while(i<n)     
-    {
-        int temp;
-        temp=a[i]; 
-        int j;
-        j=i-1;
-        while(j>-1&&temp<a[j])
-        {
-            a[j+1]=a[j];  
-            j = j - 1;
-        }
-        a[j+1]=temp; 
-        i = i + 1;
-    }
-    return 0;
-}
-
-int QuickSort(int arr[], int low, int high)
-{
-    if (low < high)
-    {
-        int i;
-        i = low;
-        int j;
-        j = high;
-        int k;
-        k = arr[low];
-        while (i < j)
-        {
-            while(i < j && arr[j] > k - 1)
-            {
-                j = j - 1;
+void loop2() {
+  int a, b, c, d, e, f, g;
+  a = 0;
+  while (a < 10) {
+    b = 0;
+    while (b < 2) {
+      c = 0;
+      while (c < 3) {
+        d = 0;
+        while (d < 2) {
+          e = 0;
+          while (e < 4) {
+            f = 0;
+            while (f < 8) {
+              g = 0;
+              while (g < 7) {
+                arr2[a][b][c][d][e][f][g] = a + b + d + g;
+                g = g + 1;
+              }
+              f = f + 1;
             }
- 
-            if(i < j)
-            {
-                arr[i] = arr[j];
-                i = i + 1;
+            e = e + 1;
+          }
+          d = d + 1;
+        }
+        c = c + 1;
+      }
+      b = b + 1;
+    }
+    a = a + 1;
+  }
+}
+
+int loop3(int h, int i, int j, int k, int l, int m, int n) {
+  int a, b, c, d, e, f, g;
+  int ans = 0;
+  a = 0;
+  while (a < 10) {
+    b = 0;
+    while (b < 100) {
+      c = 0;
+      while (c < 1000) {
+        d = 0;
+        while (d < 10000) {
+          e = 0;
+          while (e < 100000) {
+            f = 0;
+            while (f < 1000000) {
+              g = 0;
+              while (g < 10000000) {
+                ans = ans % 817 + arr1[a][b][c][d][e][f][g] + arr2[a][b][c][d][e][f][g];
+                g = g + 1;
+                if (g >= n) break;
+              }
+              f = f + 1;
+              if (f >= m) break;
             }
- 
-            while(i < j && arr[i] < k)
-            {
-                i = i + 1;
-            }
- 
-            if(i < j)
-            {
-                arr[j] = arr[i];
-                j = j - 1;
-            }
+            e = e + 1;
+            if (e >= l) break;
+          }
+          d = d + 1;
+          if (d >= k) break;
         }
- 
-        arr[i] = k;
-        int tmp;
-        tmp = i - 1;
-        tmp = QuickSort(arr, low, tmp);
-        tmp = i + 1;
-        tmp = QuickSort(arr, tmp, high);
+        c = c + 1;
+        if (c >= j) break;
+      }
+      b = b + 1;
+      if (b >= i) break;
     }
-    return 0;
-}
-
-
-int getMid(int arr[]) {
-    int mid;
-    if (n % 2 == 0) {
-        mid = n / 2;
-        return (arr[mid] + arr[mid - 1]) / 2;
-    } else {
-        mid = n / 2;
-        return arr[mid];
-    }
-}
-
-int getMost(int arr[]) {
-    int count[1000];
-    int i;
-    i = 0;
-    while (i < 1000) {
-        count[i] = 0;
-        i = i + 1;
-    }
-    i = 0;
-    int max;
-    int number;
-    max = 0;
-    while (i < n) {
-        int num;
-        num = arr[i];
-        count[num] = count[num] + 1;
-        if (count[num] > max) {
-            max = count[num];
-            number = num;
-        }
-        i = i + 1;
-    }
-    return number;
-}
-
-int revert(int arr[]) {
-    int temp;
-    int i;
-    int j;
-    i = 0;
-    j = 0;
-    while (i < j) {
-        temp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = temp;
-        i = i + 1;
-        j = j - 1;
-    }
-    return 0;
-}
-
-int arrCopy(int src[], int target[]) {
-    int i;
-    i = 0;
-    while (i < n) {
-        target[i] = src[i];
-        i = i + 1;
-    }
-    return 0;
-}
-
-int calSum(int arr[], int stride) {
-    int sum;
-    sum = 0;
-    int i;
-    i = 0;
-    while (i < n) {
-        sum = sum + arr[i];
-        if (i % stride != stride - 1) {
-            arr[i] = 0;
-        } else {
-            arr[i] = sum;
-            sum = 0;
-        }
-        i = i + 1;
-    }
-    return 0;
-}
-
-int avgPooling(int arr[], int stride) {
-    int sum;
-    int i;
-    i = 0;
-    sum = 0;
-    int lastnum;
-    while (i < n) {
-        if (i < stride - 1) {
-            sum = sum + arr[i];
-        } else if (i == stride - 1) {
-            lastnum = arr[0];
-            arr[0] = sum / stride;
-        } else {
-            sum = sum + arr[i] - lastnum;
-            lastnum = arr[i - stride + 1];
-            arr[i - stride + 1] = sum / stride;
-        }
-        i = i + 1;
-    }
-    i = n - stride + 1;
-    while (i < n) {
-        arr[i] = 0;
-        i = i + 1;
-    }
-    return 0;
+    a = a + 1;
+    if (a >= h) break;
+  }
+  return ans;
 }
 
 int main() {
-    n = 32;
-    int arr[32];
-    int result[32];
-    arr[0] = 7;
-    arr[1] = 23;
-    arr[2] = 89;
-    arr[3] = 26;
-    arr[4] = 282;
-    arr[5] = 254;
-    arr[6] = 27;
-    arr[7] = 5;
-    arr[8] = 83;
-    arr[9] = 273;
-    arr[10] = 574;
-    arr[11] = 905;
-    arr[12] = 354;
-    arr[13] = 657;
-    arr[14] = 935;
-    arr[15] = 264;
-    arr[16] = 639;
-    arr[17] = 459;
-    arr[18] = 29;
-    arr[19] = 68;
-    arr[20] = 929;
-    arr[21] = 756;
-    arr[22] = 452;
-    arr[23] = 279;
-    arr[24] = 58;
-    arr[25] = 87;
-    arr[26] = 96;
-    arr[27] = 36;
-    arr[28] = 39;
-    arr[29] = 28;
-    arr[30] = 1;
-    arr[31] = 290;
-    int t;
-    t = arrCopy(arr, result);
-    t = revert(result);
-    int i;
-    i = 0;
-    while (i < 32) {
-        t = result[i];
-        putint(t);
-        i = i + 1;
-    }
-    t = bubblesort(result);
-    i = 0;
-    while (i < 32) {
-        t = result[i];
-        putint(t);
-        i = i + 1;
-    }
-    t = getMid(result);
-    putint(t);
-    t = getMost(result);
-    putint(t);
-
-    t = arrCopy(arr, result);
-    t = bubblesort(result);
-    i = 0;
-    while (i < 32) {
-        t = result[i];
-        putint(t);
-        i = i + 1;
-    }
-    
-    t = arrCopy(arr, result);
-    t = insertsort(result);
-    i = 0;
-    while (i < 32) {
-        t = result[i];
-        putint(t);
-        i = i + 1;
-    }
-    
-    t = arrCopy(arr, result);
-    i = 0;
-    t = 31;
-    t = QuickSort(result, i, t);
-    while (i < 32) {
-        t = result[i];
-        putint(t);
-        i = i + 1;
-    }
-
-    t = arrCopy(arr, result);
-    t = calSum(result, 4);
-    i = 0;
-    while (i < 32) {
-        t = result[i];
-        putint(t);
-        i = i + 1;
-    }
-    
-    t = arrCopy(arr, result);
-    t =  avgPooling(result, 3);
-    i = 0;
-    while (i < 32) {
-        t = result[i];
-        putint(t);
-        i = i + 1;
-    }
-    return 0;
+  int x = getint();
+  int y = getint();
+  int h = getint();
+  int i = getint(), j = getint();
+  int k = getint();
+  int l = getint();
+  int m = getint();
+  int n = getint();
+  loop1(x, y);
+  loop2();
+  return loop3(h, i, j, k, l, m, n);
 }

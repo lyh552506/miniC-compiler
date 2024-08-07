@@ -22,7 +22,7 @@ output_folder = "testcases/output"
 # output_folder = "function_test"
 sylib_path = "BackendTest/sylib.o"
 
-pass_args=["--O1"] # 
+pass_args=[] # "--O1"
 CE_list = [] # Compile Error
 AE_list = [] # Assembler Error
 LE_list = [] # Linker Error

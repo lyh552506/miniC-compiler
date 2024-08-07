@@ -1,1336 +1,620 @@
-ScheduleOnBlock: .LBB84
+ScheduleOnBlock: .LBB5
 ScheduleOnRegion: 
- ---from---	mv %436, a0
- ---to--- 	j .LBB85
+ ---from---	LoadImmReg %73, 10
+ ---to--- 	j .LBB6
 latency: 6  	sw zero, 0(s0)
-latency: 6  	sw %436, 0(s0)
-latency: 1  	mv %436, a0
+latency: 6  	sw %66, %69
+latency: 6  	sw %66, %68
+latency: 6  	sw %66, %67
+latency: 4  	LoadLocalAddr %57, 0(s0)
+latency: 4  	LoadLocalAddr %58, 0(s0)
+latency: 4  	LoadLocalAddr %59, 0(s0)
+latency: 4  	LoadLocalAddr %60, 0(s0)
+latency: 4  	LoadLocalAddr %61, 0(s0)
+latency: 4  	LoadLocalAddr %62, 0(s0)
+latency: 4  	LoadLocalAddr %63, 0(s0)
+latency: 4  	LoadLocalAddr %64, 0(s0)
+latency: 4  	LoadLocalAddr %65, 0(s0)
+latency: 1  	LoadImmReg %66, 3
+latency: 0  	LoadGlobalAddr %67, .G.N
+latency: 0  	LoadGlobalAddr %68, .G.M
+latency: 0  	LoadGlobalAddr %69, .G.L
+latency: 1  	LoadImmReg %73, 10
 height: 0	sw zero, 0(s0)
-height: 0	sw %436, 0(s0)
-height: 1	mv %436, a0
+height: 0	sw %66, %69
+height: 0	sw %66, %68
+height: 0	sw %66, %67
+height: 0	LoadLocalAddr %57, 0(s0)
+height: 0	LoadLocalAddr %58, 0(s0)
+height: 0	LoadLocalAddr %59, 0(s0)
+height: 0	LoadLocalAddr %60, 0(s0)
+height: 0	LoadLocalAddr %61, 0(s0)
+height: 0	LoadLocalAddr %62, 0(s0)
+height: 0	LoadLocalAddr %63, 0(s0)
+height: 0	LoadLocalAddr %64, 0(s0)
+height: 0	LoadLocalAddr %65, 0(s0)
+height: 1	LoadImmReg %66, 3
+height: 0	LoadGlobalAddr %67, .G.N
+height: 0	LoadGlobalAddr %68, .G.M
+height: 0	LoadGlobalAddr %69, .G.L
+height: 0	LoadImmReg %73, 10
 ---PlaneNode---
 	sw zero, 0(s0)
-	sw %436, 0(s0)
+	sw %66, %69
+	sw %66, %68
+	sw %66, %67
+	LoadLocalAddr %57, 0(s0)
+	LoadLocalAddr %58, 0(s0)
+	LoadLocalAddr %59, 0(s0)
+	LoadLocalAddr %60, 0(s0)
+	LoadLocalAddr %61, 0(s0)
+	LoadLocalAddr %62, 0(s0)
+	LoadLocalAddr %63, 0(s0)
+	LoadLocalAddr %64, 0(s0)
+	LoadLocalAddr %65, 0(s0)
+	LoadImmReg %73, 10
 ---PlaneNode---
-	mv %436, a0
+	LoadGlobalAddr %69, .G.L
+---PlaneNode---
+	LoadGlobalAddr %68, .G.M
+---PlaneNode---
+	LoadImmReg %66, 3
+	LoadGlobalAddr %67, .G.N
 ---Sequence---
 	sw zero, 0(s0)
-	sw %436, 0(s0)
-	mv %436, a0
+	LoadLocalAddr %57, 0(s0)
+	sw %66, %69
+	LoadLocalAddr %58, 0(s0)
+	sw %66, %68
+	LoadLocalAddr %59, 0(s0)
+	sw %66, %67
+	LoadLocalAddr %60, 0(s0)
+	LoadLocalAddr %61, 0(s0)
+	LoadLocalAddr %62, 0(s0)
+	LoadLocalAddr %63, 0(s0)
+	LoadLocalAddr %64, 0(s0)
+	LoadLocalAddr %65, 0(s0)
+	LoadImmReg %73, 10
+	LoadGlobalAddr %69, .G.L
+	LoadGlobalAddr %68, .G.M
+	LoadImmReg %66, 3
+	LoadGlobalAddr %67, .G.N
+ScheduleOnBlock: .LBB6
 ScheduleOnRegion: 
- ---from---	mv %435, a0
- ---to--- 	call revert
-latency: 1  	mv a0, %368
-latency: 6  	sw %435, 0(s0)
-latency: 1  	mv %435, a0
-height: 0	mv a0, %368
-height: 0	sw %435, 0(s0)
-height: 1	mv %435, a0
+ ---from---	lw %70, 0(s0)
+ ---to--- 	blt %70, 3, .LBB7
+latency: 4  	lw %70, 0(s0)
+height: 0	lw %70, 0(s0)
 ---PlaneNode---
-	mv a0, %368
-	sw %435, 0(s0)
----PlaneNode---
-	mv %435, a0
+	lw %70, 0(s0)
 ---Sequence---
-	sw %435, 0(s0)
-	mv %435, a0
-	mv a0, %368
+	lw %70, 0(s0)
+ScheduleOnBlock: .LBB8
 ScheduleOnRegion: 
- ---from---	LoadImmReg %451, 31
- ---to--- 	call arrCopy
-latency: 1  	mv a1, %368
-latency: 1  	mv a0, %369
-latency: 5  	sw %434, %433
-latency: 1  	addi %433, %369, 124
-latency: 5  	sw %432, %431
-latency: 1  	addi %431, %369, 120
-latency: 5  	sw %430, %429
-latency: 1  	addi %429, %369, 116
-latency: 5  	sw %428, %427
-latency: 1  	addi %427, %369, 112
-latency: 5  	sw %426, %425
-latency: 1  	addi %425, %369, 108
-latency: 5  	sw %424, %423
-latency: 1  	addi %423, %369, 104
-latency: 5  	sw %422, %421
-latency: 1  	addi %421, %369, 100
-latency: 5  	sw %420, %419
-latency: 1  	addi %419, %369, 96
-latency: 5  	sw %418, %417
-latency: 1  	addi %417, %369, 92
-latency: 5  	sw %416, %415
-latency: 1  	addi %415, %369, 88
-latency: 5  	sw %414, %413
-latency: 1  	addi %413, %369, 84
-latency: 5  	sw %412, %411
-latency: 1  	addi %411, %369, 80
-latency: 5  	sw %410, %409
-latency: 1  	addi %409, %369, 76
-latency: 5  	sw %408, %407
-latency: 1  	addi %407, %369, 72
-latency: 5  	sw %406, %405
-latency: 1  	addi %405, %369, 68
-latency: 5  	sw %404, %403
-latency: 1  	addi %403, %369, 64
-latency: 5  	sw %402, %401
-latency: 1  	addi %401, %369, 60
-latency: 5  	sw %400, %399
-latency: 1  	addi %399, %369, 56
-latency: 5  	sw %398, %397
-latency: 1  	addi %397, %369, 52
-latency: 5  	sw %396, %395
-latency: 1  	addi %395, %369, 48
-latency: 5  	sw %394, %393
-latency: 1  	addi %393, %369, 44
-latency: 5  	sw %392, %391
-latency: 1  	addi %391, %369, 40
-latency: 5  	sw %390, %389
-latency: 1  	addi %389, %369, 36
-latency: 5  	sw %388, %387
-latency: 1  	addi %387, %369, 32
-latency: 5  	sw %386, %385
-latency: 1  	addi %385, %369, 28
-latency: 5  	sw %384, %383
-latency: 1  	addi %383, %369, 24
-latency: 5  	sw %382, %381
-latency: 1  	addi %381, %369, 20
-latency: 5  	sw %380, %379
-latency: 1  	addi %379, %369, 16
-latency: 5  	sw %378, %377
-latency: 1  	addi %377, %369, 12
-latency: 5  	sw %376, %375
-latency: 1  	addi %375, %369, 8
-latency: 5  	sw %374, %373
-latency: 1  	addi %373, %369, 4
-latency: 5  	sw %372, %369
-latency: 6  	sw %370, %371
-latency: 4  	LoadLocalAddr %368, 0(s0)
-latency: 4  	LoadLocalAddr %369, 0(s0)
-latency: 1  	LoadImmReg %370, 32
-latency: 0  	LoadGlobalAddr %371, .G.n
-latency: 1  	LoadImmReg %372, 7
-latency: 1  	LoadImmReg %374, 23
-latency: 1  	LoadImmReg %376, 89
-latency: 1  	LoadImmReg %378, 26
-latency: 1  	LoadImmReg %380, 282
-latency: 1  	LoadImmReg %382, 254
-latency: 1  	LoadImmReg %384, 27
-latency: 1  	LoadImmReg %386, 5
-latency: 1  	LoadImmReg %388, 83
-latency: 1  	LoadImmReg %390, 273
-latency: 1  	LoadImmReg %392, 574
-latency: 1  	LoadImmReg %394, 905
-latency: 1  	LoadImmReg %396, 354
-latency: 1  	LoadImmReg %398, 657
-latency: 1  	LoadImmReg %400, 935
-latency: 1  	LoadImmReg %402, 264
-latency: 1  	LoadImmReg %404, 639
-latency: 1  	LoadImmReg %406, 459
-latency: 1  	LoadImmReg %408, 29
-latency: 1  	LoadImmReg %410, 68
-latency: 1  	LoadImmReg %412, 929
-latency: 1  	LoadImmReg %414, 756
-latency: 1  	LoadImmReg %416, 452
-latency: 1  	LoadImmReg %418, 279
-latency: 1  	LoadImmReg %420, 58
-latency: 1  	LoadImmReg %422, 87
-latency: 1  	LoadImmReg %424, 96
-latency: 1  	LoadImmReg %426, 36
-latency: 1  	LoadImmReg %428, 39
-latency: 1  	LoadImmReg %430, 28
-latency: 1  	LoadImmReg %432, 1
-latency: 1  	LoadImmReg %434, 290
-latency: 1  	LoadImmReg %451, 31
-height: 0	mv a1, %368
-height: 0	mv a0, %369
-height: 0	sw %434, %433
-height: 1	addi %433, %369, 124
-height: 0	sw %432, %431
-height: 1	addi %431, %369, 120
-height: 0	sw %430, %429
-height: 1	addi %429, %369, 116
-height: 0	sw %428, %427
-height: 1	addi %427, %369, 112
-height: 0	sw %426, %425
-height: 1	addi %425, %369, 108
-height: 0	sw %424, %423
-height: 1	addi %423, %369, 104
-height: 0	sw %422, %421
-height: 1	addi %421, %369, 100
-height: 0	sw %420, %419
-height: 1	addi %419, %369, 96
-height: 0	sw %418, %417
-height: 1	addi %417, %369, 92
-height: 0	sw %416, %415
-height: 1	addi %415, %369, 88
-height: 0	sw %414, %413
-height: 1	addi %413, %369, 84
-height: 0	sw %412, %411
-height: 1	addi %411, %369, 80
-height: 0	sw %410, %409
-height: 1	addi %409, %369, 76
-height: 0	sw %408, %407
-height: 1	addi %407, %369, 72
-height: 0	sw %406, %405
-height: 1	addi %405, %369, 68
-height: 0	sw %404, %403
-height: 1	addi %403, %369, 64
-height: 0	sw %402, %401
-height: 1	addi %401, %369, 60
-height: 0	sw %400, %399
-height: 1	addi %399, %369, 56
-height: 0	sw %398, %397
-height: 1	addi %397, %369, 52
-height: 0	sw %396, %395
-height: 1	addi %395, %369, 48
-height: 0	sw %394, %393
-height: 1	addi %393, %369, 44
-height: 0	sw %392, %391
-height: 1	addi %391, %369, 40
-height: 0	sw %390, %389
-height: 1	addi %389, %369, 36
-height: 0	sw %388, %387
-height: 1	addi %387, %369, 32
-height: 0	sw %386, %385
-height: 1	addi %385, %369, 28
-height: 0	sw %384, %383
-height: 1	addi %383, %369, 24
-height: 0	sw %382, %381
-height: 1	addi %381, %369, 20
-height: 0	sw %380, %379
-height: 1	addi %379, %369, 16
-height: 0	sw %378, %377
-height: 1	addi %377, %369, 12
-height: 0	sw %376, %375
-height: 1	addi %375, %369, 8
-height: 0	sw %374, %373
-height: 1	addi %373, %369, 4
-height: 0	sw %372, %369
-height: 0	sw %370, %371
-height: 4	LoadLocalAddr %368, 0(s0)
-height: 5	LoadLocalAddr %369, 0(s0)
-height: 1	LoadImmReg %370, 32
-height: 0	LoadGlobalAddr %371, .G.n
-height: 1	LoadImmReg %372, 7
-height: 1	LoadImmReg %374, 23
-height: 1	LoadImmReg %376, 89
-height: 1	LoadImmReg %378, 26
-height: 1	LoadImmReg %380, 282
-height: 1	LoadImmReg %382, 254
-height: 1	LoadImmReg %384, 27
-height: 1	LoadImmReg %386, 5
-height: 1	LoadImmReg %388, 83
-height: 1	LoadImmReg %390, 273
-height: 1	LoadImmReg %392, 574
-height: 1	LoadImmReg %394, 905
-height: 1	LoadImmReg %396, 354
-height: 1	LoadImmReg %398, 657
-height: 1	LoadImmReg %400, 935
-height: 1	LoadImmReg %402, 264
-height: 1	LoadImmReg %404, 639
-height: 1	LoadImmReg %406, 459
-height: 1	LoadImmReg %408, 29
-height: 1	LoadImmReg %410, 68
-height: 1	LoadImmReg %412, 929
-height: 1	LoadImmReg %414, 756
-height: 1	LoadImmReg %416, 452
-height: 1	LoadImmReg %418, 279
-height: 1	LoadImmReg %420, 58
-height: 1	LoadImmReg %422, 87
-height: 1	LoadImmReg %424, 96
-height: 1	LoadImmReg %426, 36
-height: 1	LoadImmReg %428, 39
-height: 1	LoadImmReg %430, 28
-height: 1	LoadImmReg %432, 1
-height: 1	LoadImmReg %434, 290
-height: 0	LoadImmReg %451, 31
+ ---from---	mv %71, a0
+ ---to--- 	j .LBB9
+latency: 6  	sw %71, 0(s0)
+latency: 1  	mv %71, a0
+height: 0	sw %71, 0(s0)
+height: 1	mv %71, a0
 ---PlaneNode---
-	mv a1, %368
-	mv a0, %369
-	sw %434, %433
-	sw %432, %431
-	sw %430, %429
-	sw %428, %427
-	sw %426, %425
-	sw %424, %423
-	sw %422, %421
-	sw %420, %419
-	sw %418, %417
-	sw %416, %415
-	sw %414, %413
-	sw %412, %411
-	sw %410, %409
-	sw %408, %407
-	sw %406, %405
-	sw %404, %403
-	sw %402, %401
-	sw %400, %399
-	sw %398, %397
-	sw %396, %395
-	sw %394, %393
-	sw %392, %391
-	sw %390, %389
-	sw %388, %387
-	sw %386, %385
-	sw %384, %383
-	sw %382, %381
-	sw %380, %379
-	sw %378, %377
-	sw %376, %375
-	sw %374, %373
-	sw %372, %369
-	sw %370, %371
-	LoadImmReg %451, 31
+	sw %71, 0(s0)
 ---PlaneNode---
-	addi %383, %369, 24
-	LoadLocalAddr %368, 0(s0)
-	LoadImmReg %384, 27
----PlaneNode---
-	addi %419, %369, 96
-	LoadImmReg %420, 58
----PlaneNode---
-	addi %399, %369, 56
-	LoadImmReg %400, 935
----PlaneNode---
-	addi %417, %369, 92
-	LoadImmReg %418, 279
----PlaneNode---
-	addi %397, %369, 52
-	LoadImmReg %398, 657
----PlaneNode---
-	addi %393, %369, 44
-	LoadImmReg %394, 905
----PlaneNode---
-	addi %429, %369, 116
-	LoadImmReg %430, 28
----PlaneNode---
-	addi %391, %369, 40
-	LoadImmReg %392, 574
----PlaneNode---
-	addi %405, %369, 68
-	LoadImmReg %406, 459
----PlaneNode---
-	LoadImmReg %372, 7
----PlaneNode---
-	addi %427, %369, 112
-	LoadImmReg %428, 39
----PlaneNode---
-	addi %389, %369, 36
-	LoadImmReg %390, 273
----PlaneNode---
-	addi %407, %369, 72
-	LoadImmReg %408, 29
----PlaneNode---
-	addi %373, %369, 4
-	LoadImmReg %374, 23
----PlaneNode---
-	addi %395, %369, 48
-	LoadImmReg %396, 354
----PlaneNode---
-	addi %433, %369, 124
-	LoadImmReg %434, 290
----PlaneNode---
-	addi %403, %369, 64
-	LoadImmReg %404, 639
----PlaneNode---
-	LoadImmReg %370, 32
-	LoadGlobalAddr %371, .G.n
----PlaneNode---
-	addi %385, %369, 28
-	LoadImmReg %386, 5
----PlaneNode---
-	addi %421, %369, 100
-	LoadImmReg %422, 87
----PlaneNode---
-	addi %381, %369, 20
-	LoadImmReg %382, 254
----PlaneNode---
-	addi %415, %369, 88
-	LoadImmReg %416, 452
----PlaneNode---
-	addi %431, %369, 120
-	LoadImmReg %432, 1
----PlaneNode---
-	addi %425, %369, 108
-	LoadImmReg %426, 36
----PlaneNode---
-	addi %413, %369, 84
-	LoadImmReg %414, 756
----PlaneNode---
-	addi %387, %369, 32
-	LoadImmReg %388, 83
----PlaneNode---
-	addi %423, %369, 104
-	LoadImmReg %424, 96
----PlaneNode---
-	addi %411, %369, 80
-	LoadImmReg %412, 929
----PlaneNode---
-	addi %375, %369, 8
-	LoadImmReg %376, 89
----PlaneNode---
-	addi %377, %369, 12
-	LoadImmReg %378, 26
----PlaneNode---
-	addi %401, %369, 60
-	LoadImmReg %402, 264
----PlaneNode---
-	addi %379, %369, 16
-	LoadImmReg %380, 282
----PlaneNode---
-	addi %409, %369, 76
-	LoadImmReg %410, 68
----PlaneNode---
-	LoadLocalAddr %369, 0(s0)
+	mv %71, a0
 ---Sequence---
-	sw %384, %383
-	mv a1, %368
-	sw %420, %419
-	sw %400, %399
-	sw %418, %417
-	sw %398, %397
-	sw %394, %393
-	addi %383, %369, 24
-	sw %430, %429
-	addi %419, %369, 96
-	sw %392, %391
-	addi %399, %369, 56
-	sw %406, %405
-	mv a0, %369
-	sw %372, %369
-	addi %417, %369, 92
-	sw %428, %427
-	LoadLocalAddr %368, 0(s0)
-	sw %390, %389
-	addi %397, %369, 52
-	sw %408, %407
-	addi %393, %369, 44
-	sw %374, %373
-	addi %429, %369, 116
-	sw %396, %395
-	addi %391, %369, 40
-	sw %434, %433
-	addi %405, %369, 68
-	sw %404, %403
-	addi %427, %369, 112
-	sw %370, %371
-	addi %389, %369, 36
-	sw %386, %385
-	addi %407, %369, 72
-	sw %422, %421
-	addi %373, %369, 4
-	sw %382, %381
-	addi %395, %369, 48
-	sw %416, %415
-	addi %433, %369, 124
-	sw %432, %431
-	addi %403, %369, 64
-	sw %426, %425
-	addi %385, %369, 28
-	sw %414, %413
-	LoadGlobalAddr %371, .G.n
-	sw %388, %387
-	addi %421, %369, 100
-	sw %424, %423
-	addi %381, %369, 20
-	sw %412, %411
-	addi %415, %369, 88
-	sw %376, %375
-	addi %431, %369, 120
-	LoadImmReg %451, 31
-	addi %425, %369, 108
-	sw %378, %377
-	addi %413, %369, 84
-	sw %402, %401
-	addi %387, %369, 32
-	sw %380, %379
-	addi %423, %369, 104
-	sw %410, %409
-	addi %411, %369, 80
-	LoadImmReg %384, 27
-	addi %375, %369, 8
-	LoadImmReg %420, 58
-	addi %377, %369, 12
-	LoadImmReg %400, 935
-	addi %401, %369, 60
-	LoadImmReg %418, 279
-	addi %379, %369, 16
-	LoadImmReg %398, 657
-	addi %409, %369, 76
-	LoadImmReg %394, 905
-	LoadLocalAddr %369, 0(s0)
-	LoadImmReg %430, 28
-	LoadImmReg %392, 574
-	LoadImmReg %406, 459
-	LoadImmReg %372, 7
-	LoadImmReg %428, 39
-	LoadImmReg %390, 273
-	LoadImmReg %408, 29
-	LoadImmReg %374, 23
-	LoadImmReg %396, 354
-	LoadImmReg %434, 290
-	LoadImmReg %404, 639
-	LoadImmReg %386, 5
-	LoadImmReg %370, 32
-	LoadImmReg %422, 87
-	LoadImmReg %382, 254
-	LoadImmReg %416, 452
-	LoadImmReg %432, 1
-	LoadImmReg %426, 36
-	LoadImmReg %414, 756
-	LoadImmReg %388, 83
-	LoadImmReg %424, 96
-	LoadImmReg %412, 929
-	LoadImmReg %376, 89
-	LoadImmReg %378, 26
-	LoadImmReg %402, 264
-	LoadImmReg %380, 282
-	LoadImmReg %410, 68
-ScheduleOnBlock: .LBB85
+	sw %71, 0(s0)
+	mv %71, a0
 ScheduleOnRegion: 
- ---from---	lw %437, 0(s0)
- ---to--- 	blt %437, 32, .LBB86
-latency: 4  	lw %437, 0(s0)
-height: 0	lw %437, 0(s0)
+ ---from---	sd %57, 0(sp)
+ ---to--- 	call sub
+latency: 0  	mv a7, %58
+latency: 0  	mv a6, %59
+latency: 0  	mv a5, %60
+latency: 0  	mv a4, %61
+latency: 0  	mv a3, %62
+latency: 0  	mv a2, %63
+latency: 0  	mv a1, %64
+latency: 0  	mv a0, %65
+latency: 0  	sd %57, 0(sp)
+height: 0	mv a7, %58
+height: 0	mv a6, %59
+height: 0	mv a5, %60
+height: 0	mv a4, %61
+height: 0	mv a3, %62
+height: 0	mv a2, %63
+height: 0	mv a1, %64
+height: 0	mv a0, %65
+height: 0	sd %57, 0(sp)
 ---PlaneNode---
-	lw %437, 0(s0)
+	mv a7, %58
+	mv a6, %59
+	mv a5, %60
+	mv a4, %61
+	mv a3, %62
+	mv a2, %63
+	mv a1, %64
+	mv a0, %65
+	sd %57, 0(sp)
 ---Sequence---
-	lw %437, 0(s0)
-ScheduleOnBlock: .LBB87
+	mv a7, %58
+	mv a6, %59
+	mv a5, %60
+	mv a4, %61
+	mv a3, %62
+	mv a2, %63
+	mv a1, %64
+	sd %57, 0(sp)
+	mv a0, %65
+ScheduleOnBlock: .LBB9
 ScheduleOnRegion: 
- ---from---	mv %438, a0
- ---to--- 	j .LBB88
+ ---from---	lw %72, 0(s0)
+ ---to--- 	blt %72, 3, .LBB10
+latency: 4  	lw %72, 0(s0)
+height: 0	lw %72, 0(s0)
+---PlaneNode---
+	lw %72, 0(s0)
+---Sequence---
+	lw %72, 0(s0)
+ScheduleOnBlock: .LBB11
+ScheduleOnRegion: 
+ ---from---	sw %73, 0(s0)
+ ---to--- 	call putch
+latency: 1  	mv a0, %74
+latency: 4  	lw %74, 0(s0)
 latency: 6  	sw zero, 0(s0)
-latency: 6  	sw %438, 0(s0)
-latency: 1  	mv %438, a0
+latency: 6  	sw %73, 0(s0)
+height: 0	mv a0, %74
+height: 4	lw %74, 0(s0)
 height: 0	sw zero, 0(s0)
-height: 0	sw %438, 0(s0)
-height: 1	mv %438, a0
+height: 0	sw %73, 0(s0)
 ---PlaneNode---
+	mv a0, %74
 	sw zero, 0(s0)
-	sw %438, 0(s0)
+	sw %73, 0(s0)
 ---PlaneNode---
-	mv %438, a0
+	lw %74, 0(s0)
 ---Sequence---
+	mv a0, %74
 	sw zero, 0(s0)
-	sw %438, 0(s0)
-	mv %438, a0
+	sw %73, 0(s0)
+	lw %74, 0(s0)
+ScheduleOnBlock: .LBB12
 ScheduleOnRegion: 
- ---from---	mv a0, %368
- ---to--- 	call bubblesort
-latency: 0  	mv a0, %368
-height: 0	mv a0, %368
+ ---from---	lw %75, 0(s0)
+ ---to--- 	blt %75, 3, .LBB13
+latency: 4  	lw %75, 0(s0)
+height: 0	lw %75, 0(s0)
 ---PlaneNode---
-	mv a0, %368
+	lw %75, 0(s0)
 ---Sequence---
-	mv a0, %368
-ScheduleOnBlock: .LBB88
+	lw %75, 0(s0)
+ScheduleOnBlock: .LBB14
 ScheduleOnRegion: 
- ---from---	lw %439, 0(s0)
- ---to--- 	blt %439, 32, .LBB89
-latency: 4  	lw %439, 0(s0)
-height: 0	lw %439, 0(s0)
----PlaneNode---
-	lw %439, 0(s0)
----Sequence---
-	lw %439, 0(s0)
-ScheduleOnBlock: .LBB90
-ScheduleOnRegion: 
- ---from---	mv %445, a0
- ---to--- 	j .LBB91
+ ---from---	sw %73, 0(s0)
+ ---to--- 	call putch
+latency: 1  	mv a0, %76
+latency: 4  	lw %76, 0(s0)
 latency: 6  	sw zero, 0(s0)
-latency: 6  	sw %445, 0(s0)
-latency: 1  	mv %445, a0
+latency: 6  	sw %73, 0(s0)
+height: 0	mv a0, %76
+height: 4	lw %76, 0(s0)
 height: 0	sw zero, 0(s0)
-height: 0	sw %445, 0(s0)
-height: 1	mv %445, a0
+height: 0	sw %73, 0(s0)
 ---PlaneNode---
+	mv a0, %76
 	sw zero, 0(s0)
-	sw %445, 0(s0)
+	sw %73, 0(s0)
 ---PlaneNode---
-	mv %445, a0
+	lw %76, 0(s0)
 ---Sequence---
+	mv a0, %76
 	sw zero, 0(s0)
-	sw %445, 0(s0)
-	mv %445, a0
+	sw %73, 0(s0)
+	lw %76, 0(s0)
+ScheduleOnBlock: .LBB15
 ScheduleOnRegion: 
- ---from---	mv %444, a0
- ---to--- 	call bubblesort
-latency: 0  	mv a0, %368
-latency: 6  	sw %444, 0(s0)
-latency: 1  	mv %444, a0
-height: 0	mv a0, %368
-height: 0	sw %444, 0(s0)
-height: 1	mv %444, a0
+ ---from---	lw %77, 0(s0)
+ ---to--- 	blt %77, 3, .LBB16
+latency: 4  	lw %77, 0(s0)
+height: 0	lw %77, 0(s0)
 ---PlaneNode---
-	mv a0, %368
-	sw %444, 0(s0)
----PlaneNode---
-	mv %444, a0
+	lw %77, 0(s0)
 ---Sequence---
-	sw %444, 0(s0)
-	mv %444, a0
-	mv a0, %368
+	lw %77, 0(s0)
+ScheduleOnBlock: .LBB17
 ScheduleOnRegion: 
- ---from---	mv a0, %369
- ---to--- 	call arrCopy
-latency: 0  	mv a1, %368
-latency: 0  	mv a0, %369
-height: 0	mv a1, %368
-height: 0	mv a0, %369
+ ---from---	li a0, 0
+ ---to--- 	ret 
+latency: 1  	li a0, 0
+height: 0	li a0, 0
 ---PlaneNode---
-	mv a1, %368
-	mv a0, %369
+	li a0, 0
 ---Sequence---
-	mv a1, %368
-	mv a0, %369
+	li a0, 0
 ScheduleOnRegion: 
- ---from---	mv %442, a0
+ ---from---	sw %73, 0(s0)
+ ---to--- 	call putch
+latency: 1  	mv a0, %78
+latency: 4  	lw %78, 0(s0)
+latency: 6  	sw %73, 0(s0)
+height: 0	mv a0, %78
+height: 4	lw %78, 0(s0)
+height: 0	sw %73, 0(s0)
+---PlaneNode---
+	mv a0, %78
+	sw %73, 0(s0)
+---PlaneNode---
+	lw %78, 0(s0)
+---Sequence---
+	mv a0, %78
+	sw %73, 0(s0)
+	lw %78, 0(s0)
+ScheduleOnBlock: .LBB16
+ScheduleOnRegion: 
+ ---from---	lw %85, 0(s0)
+ ---to--- 	j .LBB15
+latency: 6  	sw %86, 0(s0)
+latency: 1  	addiw %86, %85, 1
+latency: 4  	lw %85, 0(s0)
+height: 0	sw %86, 0(s0)
+height: 1	addiw %86, %85, 1
+height: 5	lw %85, 0(s0)
+---PlaneNode---
+	sw %86, 0(s0)
+---PlaneNode---
+	addiw %86, %85, 1
+---PlaneNode---
+	lw %85, 0(s0)
+---Sequence---
+	sw %86, 0(s0)
+	addiw %86, %85, 1
+	lw %85, 0(s0)
+ScheduleOnRegion: 
+ ---from---	lw %79, 0(s0)
  ---to--- 	call putint
-latency: 1  	mv a0, %443
-latency: 4  	lw %443, 0(s0)
-latency: 6  	sw %442, 0(s0)
-latency: 1  	mv %442, a0
-height: 0	mv a0, %443
-height: 4	lw %443, 0(s0)
-height: 0	sw %442, 0(s0)
-height: 1	mv %442, a0
+latency: 1  	mv a0, %84
+latency: 4  	lw %84, 0(s0)
+latency: 6  	sw %83, 0(s0)
+latency: 2  	fcvt.w.s %83, %82, rtz
+latency: 3  	flw %82, %81
+latency: 1  	add %81, %57, %80
+latency: 1  	slli %80, %79, 2
+latency: 4  	lw %79, 0(s0)
+height: 0	mv a0, %84
+height: 4	lw %84, 0(s0)
+height: 0	sw %83, 0(s0)
+height: 2	fcvt.w.s %83, %82, rtz
+height: 5	flw %82, %81
+height: 6	add %81, %57, %80
+height: 7	slli %80, %79, 2
+height: 11	lw %79, 0(s0)
 ---PlaneNode---
-	mv a0, %443
-	sw %442, 0(s0)
+	mv a0, %84
+	sw %83, 0(s0)
 ---PlaneNode---
-	lw %443, 0(s0)
+	lw %84, 0(s0)
 ---PlaneNode---
-	mv %442, a0
+	fcvt.w.s %83, %82, rtz
+---PlaneNode---
+	flw %82, %81
+---PlaneNode---
+	add %81, %57, %80
+---PlaneNode---
+	slli %80, %79, 2
+---PlaneNode---
+	lw %79, 0(s0)
 ---Sequence---
-	mv a0, %443
-	sw %442, 0(s0)
-	lw %443, 0(s0)
-	mv %442, a0
+	mv a0, %84
+	sw %83, 0(s0)
+	lw %84, 0(s0)
+	fcvt.w.s %83, %82, rtz
+	flw %82, %81
+	add %81, %57, %80
+	slli %80, %79, 2
+	lw %79, 0(s0)
+ScheduleOnBlock: .LBB13
 ScheduleOnRegion: 
- ---from---	mv a0, %368
- ---to--- 	call getMost
-latency: 0  	mv a0, %368
-height: 0	mv a0, %368
+ ---from---	lw %93, 0(s0)
+ ---to--- 	j .LBB12
+latency: 6  	sw %94, 0(s0)
+latency: 1  	addiw %94, %93, 1
+latency: 4  	lw %93, 0(s0)
+height: 0	sw %94, 0(s0)
+height: 1	addiw %94, %93, 1
+height: 5	lw %93, 0(s0)
 ---PlaneNode---
-	mv a0, %368
+	sw %94, 0(s0)
+---PlaneNode---
+	addiw %94, %93, 1
+---PlaneNode---
+	lw %93, 0(s0)
 ---Sequence---
-	mv a0, %368
+	sw %94, 0(s0)
+	addiw %94, %93, 1
+	lw %93, 0(s0)
 ScheduleOnRegion: 
- ---from---	mv %440, a0
+ ---from---	lw %87, 0(s0)
  ---to--- 	call putint
-latency: 1  	mv a0, %441
-latency: 4  	lw %441, 0(s0)
-latency: 6  	sw %440, 0(s0)
-latency: 1  	mv %440, a0
-height: 0	mv a0, %441
-height: 4	lw %441, 0(s0)
-height: 0	sw %440, 0(s0)
-height: 1	mv %440, a0
+latency: 1  	mv a0, %92
+latency: 4  	lw %92, 0(s0)
+latency: 6  	sw %91, 0(s0)
+latency: 2  	fcvt.w.s %91, %90, rtz
+latency: 3  	flw %90, %89
+latency: 1  	add %89, %58, %88
+latency: 1  	slli %88, %87, 2
+latency: 4  	lw %87, 0(s0)
+height: 0	mv a0, %92
+height: 4	lw %92, 0(s0)
+height: 0	sw %91, 0(s0)
+height: 2	fcvt.w.s %91, %90, rtz
+height: 5	flw %90, %89
+height: 6	add %89, %58, %88
+height: 7	slli %88, %87, 2
+height: 11	lw %87, 0(s0)
 ---PlaneNode---
-	mv a0, %441
-	sw %440, 0(s0)
+	mv a0, %92
+	sw %91, 0(s0)
 ---PlaneNode---
-	lw %441, 0(s0)
+	lw %92, 0(s0)
 ---PlaneNode---
-	mv %440, a0
+	fcvt.w.s %91, %90, rtz
+---PlaneNode---
+	flw %90, %89
+---PlaneNode---
+	add %89, %58, %88
+---PlaneNode---
+	slli %88, %87, 2
+---PlaneNode---
+	lw %87, 0(s0)
 ---Sequence---
-	mv a0, %441
-	sw %440, 0(s0)
-	lw %441, 0(s0)
-	mv %440, a0
+	mv a0, %92
+	sw %91, 0(s0)
+	lw %92, 0(s0)
+	fcvt.w.s %91, %90, rtz
+	flw %90, %89
+	add %89, %58, %88
+	slli %88, %87, 2
+	lw %87, 0(s0)
+ScheduleOnBlock: .LBB10
 ScheduleOnRegion: 
- ---from---	mv a0, %368
- ---to--- 	call getMid
-latency: 0  	mv a0, %368
-height: 0	mv a0, %368
+ ---from---	lw %101, 0(s0)
+ ---to--- 	j .LBB9
+latency: 6  	sw %102, 0(s0)
+latency: 1  	addiw %102, %101, 1
+latency: 4  	lw %101, 0(s0)
+height: 0	sw %102, 0(s0)
+height: 1	addiw %102, %101, 1
+height: 5	lw %101, 0(s0)
 ---PlaneNode---
-	mv a0, %368
+	sw %102, 0(s0)
+---PlaneNode---
+	addiw %102, %101, 1
+---PlaneNode---
+	lw %101, 0(s0)
 ---Sequence---
-	mv a0, %368
-ScheduleOnBlock: .LBB91
+	sw %102, 0(s0)
+	addiw %102, %101, 1
+	lw %101, 0(s0)
 ScheduleOnRegion: 
- ---from---	lw %446, 0(s0)
- ---to--- 	blt %446, 32, .LBB92
-latency: 4  	lw %446, 0(s0)
-height: 0	lw %446, 0(s0)
----PlaneNode---
-	lw %446, 0(s0)
----Sequence---
-	lw %446, 0(s0)
-ScheduleOnBlock: .LBB93
-ScheduleOnRegion: 
- ---from---	mv %448, a0
- ---to--- 	j .LBB94
-latency: 6  	sw zero, 0(s0)
-latency: 6  	sw %448, 0(s0)
-latency: 1  	mv %448, a0
-height: 0	sw zero, 0(s0)
-height: 0	sw %448, 0(s0)
-height: 1	mv %448, a0
----PlaneNode---
-	sw zero, 0(s0)
-	sw %448, 0(s0)
----PlaneNode---
-	mv %448, a0
----Sequence---
-	sw zero, 0(s0)
-	sw %448, 0(s0)
-	mv %448, a0
-ScheduleOnRegion: 
- ---from---	mv %447, a0
- ---to--- 	call insertsort
-latency: 0  	mv a0, %368
-latency: 6  	sw %447, 0(s0)
-latency: 1  	mv %447, a0
-height: 0	mv a0, %368
-height: 0	sw %447, 0(s0)
-height: 1	mv %447, a0
----PlaneNode---
-	mv a0, %368
-	sw %447, 0(s0)
----PlaneNode---
-	mv %447, a0
----Sequence---
-	sw %447, 0(s0)
-	mv %447, a0
-	mv a0, %368
-ScheduleOnRegion: 
- ---from---	mv a0, %369
- ---to--- 	call arrCopy
-latency: 0  	mv a1, %368
-latency: 0  	mv a0, %369
-height: 0	mv a1, %368
-height: 0	mv a0, %369
----PlaneNode---
-	mv a1, %368
-	mv a0, %369
----Sequence---
-	mv a1, %368
-	mv a0, %369
-ScheduleOnBlock: .LBB94
-ScheduleOnRegion: 
- ---from---	lw %449, 0(s0)
- ---to--- 	blt %449, 32, .LBB95
-latency: 4  	lw %449, 0(s0)
-height: 0	lw %449, 0(s0)
----PlaneNode---
-	lw %449, 0(s0)
----Sequence---
-	lw %449, 0(s0)
-ScheduleOnBlock: .LBB96
-ScheduleOnRegion: 
- ---from---	mv %454, a0
- ---to--- 	j .LBB97
-latency: 6  	sw %454, 0(s0)
-latency: 1  	mv %454, a0
-height: 0	sw %454, 0(s0)
-height: 1	mv %454, a0
----PlaneNode---
-	sw %454, 0(s0)
----PlaneNode---
-	mv %454, a0
----Sequence---
-	sw %454, 0(s0)
-	mv %454, a0
-ScheduleOnRegion: 
- ---from---	mv %450, a0
- ---to--- 	call QuickSort
-latency: 1  	mv a2, %453
-latency: 1  	mv a1, %452
-latency: 0  	mv a0, %368
-latency: 4  	lw %453, 0(s0)
-latency: 4  	lw %452, 0(s0)
-latency: 6  	sw %451, 0(s0)
-latency: 6  	sw zero, 0(s0)
-latency: 6  	sw %450, 0(s0)
-latency: 1  	mv %450, a0
-height: 0	mv a2, %453
-height: 0	mv a1, %452
-height: 0	mv a0, %368
-height: 4	lw %453, 0(s0)
-height: 4	lw %452, 0(s0)
-height: 0	sw %451, 0(s0)
-height: 0	sw zero, 0(s0)
-height: 0	sw %450, 0(s0)
-height: 1	mv %450, a0
----PlaneNode---
-	mv a2, %453
-	mv a1, %452
-	mv a0, %368
-	sw %451, 0(s0)
-	sw zero, 0(s0)
-	sw %450, 0(s0)
----PlaneNode---
-	lw %453, 0(s0)
-	lw %452, 0(s0)
----PlaneNode---
-	mv %450, a0
----Sequence---
-	mv a2, %453
-	mv a1, %452
-	sw %451, 0(s0)
-	sw zero, 0(s0)
-	sw %450, 0(s0)
-	lw %453, 0(s0)
-	lw %452, 0(s0)
-	mv a0, %368
-	mv %450, a0
-ScheduleOnRegion: 
- ---from---	mv a0, %369
- ---to--- 	call arrCopy
-latency: 0  	mv a1, %368
-latency: 0  	mv a0, %369
-height: 0	mv a1, %368
-height: 0	mv a0, %369
----PlaneNode---
-	mv a1, %368
-	mv a0, %369
----Sequence---
-	mv a1, %368
-	mv a0, %369
-ScheduleOnBlock: .LBB97
-ScheduleOnRegion: 
- ---from---	lw %455, 0(s0)
- ---to--- 	blt %455, 32, .LBB98
-latency: 4  	lw %455, 0(s0)
-height: 0	lw %455, 0(s0)
----PlaneNode---
-	lw %455, 0(s0)
----Sequence---
-	lw %455, 0(s0)
-ScheduleOnBlock: .LBB99
-ScheduleOnRegion: 
- ---from---	mv %457, a0
- ---to--- 	j .LBB100
-latency: 6  	sw zero, 0(s0)
-latency: 6  	sw %457, 0(s0)
-latency: 1  	mv %457, a0
-height: 0	sw zero, 0(s0)
-height: 0	sw %457, 0(s0)
-height: 1	mv %457, a0
----PlaneNode---
-	sw zero, 0(s0)
-	sw %457, 0(s0)
----PlaneNode---
-	mv %457, a0
----Sequence---
-	sw zero, 0(s0)
-	sw %457, 0(s0)
-	mv %457, a0
-ScheduleOnRegion: 
- ---from---	mv %456, a0
- ---to--- 	call calSum
-latency: 1  	li a1, 4
-latency: 0  	mv a0, %368
-latency: 6  	sw %456, 0(s0)
-latency: 1  	mv %456, a0
-height: 0	li a1, 4
-height: 0	mv a0, %368
-height: 0	sw %456, 0(s0)
-height: 1	mv %456, a0
----PlaneNode---
-	li a1, 4
-	mv a0, %368
-	sw %456, 0(s0)
----PlaneNode---
-	mv %456, a0
----Sequence---
-	li a1, 4
-	sw %456, 0(s0)
-	mv %456, a0
-	mv a0, %368
-ScheduleOnRegion: 
- ---from---	mv a0, %369
- ---to--- 	call arrCopy
-latency: 0  	mv a1, %368
-latency: 0  	mv a0, %369
-height: 0	mv a1, %368
-height: 0	mv a0, %369
----PlaneNode---
-	mv a1, %368
-	mv a0, %369
----Sequence---
-	mv a1, %368
-	mv a0, %369
-ScheduleOnBlock: .LBB100
-ScheduleOnRegion: 
- ---from---	lw %458, 0(s0)
- ---to--- 	blt %458, 32, .LBB101
-latency: 4  	lw %458, 0(s0)
-height: 0	lw %458, 0(s0)
----PlaneNode---
-	lw %458, 0(s0)
----Sequence---
-	lw %458, 0(s0)
-ScheduleOnBlock: .LBB102
-ScheduleOnRegion: 
- ---from---	mv %460, a0
- ---to--- 	j .LBB103
-latency: 6  	sw zero, 0(s0)
-latency: 6  	sw %460, 0(s0)
-latency: 1  	mv %460, a0
-height: 0	sw zero, 0(s0)
-height: 0	sw %460, 0(s0)
-height: 1	mv %460, a0
----PlaneNode---
-	sw zero, 0(s0)
-	sw %460, 0(s0)
----PlaneNode---
-	mv %460, a0
----Sequence---
-	sw zero, 0(s0)
-	sw %460, 0(s0)
-	mv %460, a0
-ScheduleOnRegion: 
- ---from---	mv %459, a0
- ---to--- 	call avgPooling
-latency: 1  	li a1, 3
-latency: 0  	mv a0, %368
-latency: 6  	sw %459, 0(s0)
-latency: 1  	mv %459, a0
-height: 0	li a1, 3
-height: 0	mv a0, %368
-height: 0	sw %459, 0(s0)
-height: 1	mv %459, a0
----PlaneNode---
-	li a1, 3
-	mv a0, %368
-	sw %459, 0(s0)
----PlaneNode---
-	mv %459, a0
----Sequence---
-	li a1, 3
-	sw %459, 0(s0)
-	mv %459, a0
-	mv a0, %368
-ScheduleOnRegion: 
- ---from---	mv a0, %369
- ---to--- 	call arrCopy
-latency: 0  	mv a1, %368
-latency: 0  	mv a0, %369
-height: 0	mv a1, %368
-height: 0	mv a0, %369
----PlaneNode---
-	mv a1, %368
-	mv a0, %369
----Sequence---
-	mv a1, %368
-	mv a0, %369
-ScheduleOnBlock: .LBB103
-ScheduleOnRegion: 
- ---from---	lw %461, 0(s0)
- ---to--- 	blt %461, 32, .LBB104
-latency: 4  	lw %461, 0(s0)
-height: 0	lw %461, 0(s0)
----PlaneNode---
-	lw %461, 0(s0)
----Sequence---
-	lw %461, 0(s0)
-ScheduleOnBlock: .LBB105
-ScheduleOnBlock: .LBB104
-ScheduleOnRegion: 
- ---from---	lw %467, 0(s0)
- ---to--- 	j .LBB103
-latency: 6  	sw %468, 0(s0)
-latency: 1  	addiw %468, %467, 1
-latency: 4  	lw %467, 0(s0)
-height: 0	sw %468, 0(s0)
-height: 1	addiw %468, %467, 1
-height: 5	lw %467, 0(s0)
----PlaneNode---
-	sw %468, 0(s0)
----PlaneNode---
-	addiw %468, %467, 1
----PlaneNode---
-	lw %467, 0(s0)
----Sequence---
-	sw %468, 0(s0)
-	addiw %468, %467, 1
-	lw %467, 0(s0)
-ScheduleOnRegion: 
- ---from---	lw %462, 0(s0)
+ ---from---	lw %95, 0(s0)
  ---to--- 	call putint
-latency: 1  	mv a0, %466
-latency: 4  	lw %466, 0(s0)
-latency: 6  	sw %465, 0(s0)
-latency: 1  	lw %465, %464
-latency: 1  	add %464, %368, %463
-latency: 1  	slli %463, %462, 2
-latency: 4  	lw %462, 0(s0)
-height: 0	mv a0, %466
-height: 4	lw %466, 0(s0)
-height: 0	sw %465, 0(s0)
-height: 1	lw %465, %464
-height: 2	add %464, %368, %463
-height: 3	slli %463, %462, 2
-height: 7	lw %462, 0(s0)
+latency: 1  	mv a0, %100
+latency: 4  	lw %100, 0(s0)
+latency: 6  	sw %99, 0(s0)
+latency: 2  	fcvt.w.s %99, %98, rtz
+latency: 3  	flw %98, %97
+latency: 1  	add %97, %59, %96
+latency: 1  	slli %96, %95, 2
+latency: 4  	lw %95, 0(s0)
+height: 0	mv a0, %100
+height: 4	lw %100, 0(s0)
+height: 0	sw %99, 0(s0)
+height: 2	fcvt.w.s %99, %98, rtz
+height: 5	flw %98, %97
+height: 6	add %97, %59, %96
+height: 7	slli %96, %95, 2
+height: 11	lw %95, 0(s0)
 ---PlaneNode---
-	mv a0, %466
-	sw %465, 0(s0)
+	mv a0, %100
+	sw %99, 0(s0)
 ---PlaneNode---
-	lw %466, 0(s0)
+	lw %100, 0(s0)
 ---PlaneNode---
-	lw %465, %464
+	fcvt.w.s %99, %98, rtz
 ---PlaneNode---
-	add %464, %368, %463
+	flw %98, %97
 ---PlaneNode---
-	slli %463, %462, 2
+	add %97, %59, %96
 ---PlaneNode---
-	lw %462, 0(s0)
+	slli %96, %95, 2
+---PlaneNode---
+	lw %95, 0(s0)
 ---Sequence---
-	mv a0, %466
-	sw %465, 0(s0)
-	lw %466, 0(s0)
-	lw %465, %464
-	add %464, %368, %463
-	slli %463, %462, 2
-	lw %462, 0(s0)
-ScheduleOnBlock: .LBB101
+	mv a0, %100
+	sw %99, 0(s0)
+	lw %100, 0(s0)
+	fcvt.w.s %99, %98, rtz
+	flw %98, %97
+	add %97, %59, %96
+	slli %96, %95, 2
+	lw %95, 0(s0)
+ScheduleOnBlock: .LBB7
 ScheduleOnRegion: 
- ---from---	lw %474, 0(s0)
- ---to--- 	j .LBB100
-latency: 6  	sw %475, 0(s0)
-latency: 1  	addiw %475, %474, 1
-latency: 4  	lw %474, 0(s0)
-height: 0	sw %475, 0(s0)
-height: 1	addiw %475, %474, 1
-height: 5	lw %474, 0(s0)
+ ---from---	lw %103, 0(s0)
+ ---to--- 	j .LBB6
+latency: 6  	sw %134, 0(s0)
+latency: 1  	addiw %134, %133, 1
+latency: 4  	lw %133, 0(s0)
+latency: 3  	fsw %132, %131
+latency: 3  	fcvt.s.w %132, %128
+latency: 1  	add %131, %60, %130
+latency: 1  	slli %130, %129, 2
+latency: 4  	lw %129, 0(s0)
+latency: 4  	lw %128, 0(s0)
+latency: 3  	fsw %127, %126
+latency: 3  	fcvt.s.w %127, %123
+latency: 1  	add %126, %61, %125
+latency: 1  	slli %125, %124, 2
+latency: 4  	lw %124, 0(s0)
+latency: 4  	lw %123, 0(s0)
+latency: 3  	fsw %122, %121
+latency: 3  	fcvt.s.w %122, %118
+latency: 1  	add %121, %62, %120
+latency: 1  	slli %120, %119, 2
+latency: 4  	lw %119, 0(s0)
+latency: 4  	lw %118, 0(s0)
+latency: 3  	fsw %117, %116
+latency: 3  	fcvt.s.w %117, %113
+latency: 1  	add %116, %63, %115
+latency: 1  	slli %115, %114, 2
+latency: 4  	lw %114, 0(s0)
+latency: 4  	lw %113, 0(s0)
+latency: 3  	fsw %112, %111
+latency: 3  	fcvt.s.w %112, %108
+latency: 1  	add %111, %64, %110
+latency: 1  	slli %110, %109, 2
+latency: 4  	lw %109, 0(s0)
+latency: 4  	lw %108, 0(s0)
+latency: 3  	fsw %107, %106
+latency: 3  	fcvt.s.w %107, %103
+latency: 1  	add %106, %65, %105
+latency: 1  	slli %105, %104, 2
+latency: 4  	lw %104, 0(s0)
+latency: 4  	lw %103, 0(s0)
+height: 0	sw %134, 0(s0)
+height: 1	addiw %134, %133, 1
+height: 5	lw %133, 0(s0)
+height: 0	fsw %132, %131
+height: 3	fcvt.s.w %132, %128
+height: 1	add %131, %60, %130
+height: 2	slli %130, %129, 2
+height: 6	lw %129, 0(s0)
+height: 7	lw %128, 0(s0)
+height: 0	fsw %127, %126
+height: 3	fcvt.s.w %127, %123
+height: 1	add %126, %61, %125
+height: 2	slli %125, %124, 2
+height: 6	lw %124, 0(s0)
+height: 7	lw %123, 0(s0)
+height: 0	fsw %122, %121
+height: 3	fcvt.s.w %122, %118
+height: 1	add %121, %62, %120
+height: 2	slli %120, %119, 2
+height: 6	lw %119, 0(s0)
+height: 7	lw %118, 0(s0)
+height: 0	fsw %117, %116
+height: 3	fcvt.s.w %117, %113
+height: 1	add %116, %63, %115
+height: 2	slli %115, %114, 2
+height: 6	lw %114, 0(s0)
+height: 7	lw %113, 0(s0)
+height: 0	fsw %112, %111
+height: 3	fcvt.s.w %112, %108
+height: 1	add %111, %64, %110
+height: 2	slli %110, %109, 2
+height: 6	lw %109, 0(s0)
+height: 7	lw %108, 0(s0)
+height: 0	fsw %107, %106
+height: 3	fcvt.s.w %107, %103
+height: 1	add %106, %65, %105
+height: 2	slli %105, %104, 2
+height: 6	lw %104, 0(s0)
+height: 7	lw %103, 0(s0)
 ---PlaneNode---
-	sw %475, 0(s0)
+	sw %134, 0(s0)
+	fsw %132, %131
+	fsw %127, %126
+	fsw %122, %121
+	fsw %117, %116
+	fsw %112, %111
+	fsw %107, %106
 ---PlaneNode---
-	addiw %475, %474, 1
+	addiw %134, %133, 1
 ---PlaneNode---
-	lw %474, 0(s0)
+	fcvt.s.w %132, %128
+	add %131, %60, %130
+---PlaneNode---
+	fcvt.s.w %127, %123
+	add %126, %61, %125
+---PlaneNode---
+	fcvt.s.w %122, %118
+	add %121, %62, %120
+---PlaneNode---
+	lw %128, 0(s0)
+	fcvt.s.w %117, %113
+	add %116, %63, %115
+---PlaneNode---
+	slli %130, %129, 2
+	fcvt.s.w %112, %108
+	add %111, %64, %110
+---PlaneNode---
+	lw %123, 0(s0)
+	fcvt.s.w %107, %103
+	add %106, %65, %105
+---PlaneNode---
+	slli %125, %124, 2
+	lw %118, 0(s0)
+---PlaneNode---
+	lw %133, 0(s0)
+	lw %129, 0(s0)
+---PlaneNode---
+	slli %120, %119, 2
+	lw %113, 0(s0)
+---PlaneNode---
+	slli %115, %114, 2
+---PlaneNode---
+	lw %124, 0(s0)
+	lw %108, 0(s0)
+---PlaneNode---
+	slli %110, %109, 2
+	lw %103, 0(s0)
+---PlaneNode---
+	slli %105, %104, 2
+---PlaneNode---
+	lw %119, 0(s0)
+---PlaneNode---
+	lw %114, 0(s0)
+---PlaneNode---
+	lw %109, 0(s0)
+---PlaneNode---
+	lw %104, 0(s0)
 ---Sequence---
-	sw %475, 0(s0)
-	addiw %475, %474, 1
-	lw %474, 0(s0)
-ScheduleOnRegion: 
- ---from---	lw %469, 0(s0)
- ---to--- 	call putint
-latency: 1  	mv a0, %473
-latency: 4  	lw %473, 0(s0)
-latency: 6  	sw %472, 0(s0)
-latency: 1  	lw %472, %471
-latency: 1  	add %471, %368, %470
-latency: 1  	slli %470, %469, 2
-latency: 4  	lw %469, 0(s0)
-height: 0	mv a0, %473
-height: 4	lw %473, 0(s0)
-height: 0	sw %472, 0(s0)
-height: 1	lw %472, %471
-height: 2	add %471, %368, %470
-height: 3	slli %470, %469, 2
-height: 7	lw %469, 0(s0)
----PlaneNode---
-	mv a0, %473
-	sw %472, 0(s0)
----PlaneNode---
-	lw %473, 0(s0)
----PlaneNode---
-	lw %472, %471
----PlaneNode---
-	add %471, %368, %470
----PlaneNode---
-	slli %470, %469, 2
----PlaneNode---
-	lw %469, 0(s0)
----Sequence---
-	mv a0, %473
-	sw %472, 0(s0)
-	lw %473, 0(s0)
-	lw %472, %471
-	add %471, %368, %470
-	slli %470, %469, 2
-	lw %469, 0(s0)
-ScheduleOnBlock: .LBB98
-ScheduleOnRegion: 
- ---from---	lw %481, 0(s0)
- ---to--- 	j .LBB97
-latency: 6  	sw %482, 0(s0)
-latency: 1  	addiw %482, %481, 1
-latency: 4  	lw %481, 0(s0)
-height: 0	sw %482, 0(s0)
-height: 1	addiw %482, %481, 1
-height: 5	lw %481, 0(s0)
----PlaneNode---
-	sw %482, 0(s0)
----PlaneNode---
-	addiw %482, %481, 1
----PlaneNode---
-	lw %481, 0(s0)
----Sequence---
-	sw %482, 0(s0)
-	addiw %482, %481, 1
-	lw %481, 0(s0)
-ScheduleOnRegion: 
- ---from---	lw %476, 0(s0)
- ---to--- 	call putint
-latency: 1  	mv a0, %480
-latency: 4  	lw %480, 0(s0)
-latency: 6  	sw %479, 0(s0)
-latency: 1  	lw %479, %478
-latency: 1  	add %478, %368, %477
-latency: 1  	slli %477, %476, 2
-latency: 4  	lw %476, 0(s0)
-height: 0	mv a0, %480
-height: 4	lw %480, 0(s0)
-height: 0	sw %479, 0(s0)
-height: 1	lw %479, %478
-height: 2	add %478, %368, %477
-height: 3	slli %477, %476, 2
-height: 7	lw %476, 0(s0)
----PlaneNode---
-	mv a0, %480
-	sw %479, 0(s0)
----PlaneNode---
-	lw %480, 0(s0)
----PlaneNode---
-	lw %479, %478
----PlaneNode---
-	add %478, %368, %477
----PlaneNode---
-	slli %477, %476, 2
----PlaneNode---
-	lw %476, 0(s0)
----Sequence---
-	mv a0, %480
-	sw %479, 0(s0)
-	lw %480, 0(s0)
-	lw %479, %478
-	add %478, %368, %477
-	slli %477, %476, 2
-	lw %476, 0(s0)
-ScheduleOnBlock: .LBB95
-ScheduleOnRegion: 
- ---from---	lw %488, 0(s0)
- ---to--- 	j .LBB94
-latency: 6  	sw %489, 0(s0)
-latency: 1  	addiw %489, %488, 1
-latency: 4  	lw %488, 0(s0)
-height: 0	sw %489, 0(s0)
-height: 1	addiw %489, %488, 1
-height: 5	lw %488, 0(s0)
----PlaneNode---
-	sw %489, 0(s0)
----PlaneNode---
-	addiw %489, %488, 1
----PlaneNode---
-	lw %488, 0(s0)
----Sequence---
-	sw %489, 0(s0)
-	addiw %489, %488, 1
-	lw %488, 0(s0)
-ScheduleOnRegion: 
- ---from---	lw %483, 0(s0)
- ---to--- 	call putint
-latency: 1  	mv a0, %487
-latency: 4  	lw %487, 0(s0)
-latency: 6  	sw %486, 0(s0)
-latency: 1  	lw %486, %485
-latency: 1  	add %485, %368, %484
-latency: 1  	slli %484, %483, 2
-latency: 4  	lw %483, 0(s0)
-height: 0	mv a0, %487
-height: 4	lw %487, 0(s0)
-height: 0	sw %486, 0(s0)
-height: 1	lw %486, %485
-height: 2	add %485, %368, %484
-height: 3	slli %484, %483, 2
-height: 7	lw %483, 0(s0)
----PlaneNode---
-	mv a0, %487
-	sw %486, 0(s0)
----PlaneNode---
-	lw %487, 0(s0)
----PlaneNode---
-	lw %486, %485
----PlaneNode---
-	add %485, %368, %484
----PlaneNode---
-	slli %484, %483, 2
----PlaneNode---
-	lw %483, 0(s0)
----Sequence---
-	mv a0, %487
-	sw %486, 0(s0)
-	lw %487, 0(s0)
-	lw %486, %485
-	add %485, %368, %484
-	slli %484, %483, 2
-	lw %483, 0(s0)
-ScheduleOnBlock: .LBB92
-ScheduleOnRegion: 
- ---from---	lw %495, 0(s0)
- ---to--- 	j .LBB91
-latency: 6  	sw %496, 0(s0)
-latency: 1  	addiw %496, %495, 1
-latency: 4  	lw %495, 0(s0)
-height: 0	sw %496, 0(s0)
-height: 1	addiw %496, %495, 1
-height: 5	lw %495, 0(s0)
----PlaneNode---
-	sw %496, 0(s0)
----PlaneNode---
-	addiw %496, %495, 1
----PlaneNode---
-	lw %495, 0(s0)
----Sequence---
-	sw %496, 0(s0)
-	addiw %496, %495, 1
-	lw %495, 0(s0)
-ScheduleOnRegion: 
- ---from---	lw %490, 0(s0)
- ---to--- 	call putint
-latency: 1  	mv a0, %494
-latency: 4  	lw %494, 0(s0)
-latency: 6  	sw %493, 0(s0)
-latency: 1  	lw %493, %492
-latency: 1  	add %492, %368, %491
-latency: 1  	slli %491, %490, 2
-latency: 4  	lw %490, 0(s0)
-height: 0	mv a0, %494
-height: 4	lw %494, 0(s0)
-height: 0	sw %493, 0(s0)
-height: 1	lw %493, %492
-height: 2	add %492, %368, %491
-height: 3	slli %491, %490, 2
-height: 7	lw %490, 0(s0)
----PlaneNode---
-	mv a0, %494
-	sw %493, 0(s0)
----PlaneNode---
-	lw %494, 0(s0)
----PlaneNode---
-	lw %493, %492
----PlaneNode---
-	add %492, %368, %491
----PlaneNode---
-	slli %491, %490, 2
----PlaneNode---
-	lw %490, 0(s0)
----Sequence---
-	mv a0, %494
-	sw %493, 0(s0)
-	lw %494, 0(s0)
-	lw %493, %492
-	add %492, %368, %491
-	slli %491, %490, 2
-	lw %490, 0(s0)
-ScheduleOnBlock: .LBB89
-ScheduleOnRegion: 
- ---from---	lw %502, 0(s0)
- ---to--- 	j .LBB88
-latency: 6  	sw %503, 0(s0)
-latency: 1  	addiw %503, %502, 1
-latency: 4  	lw %502, 0(s0)
-height: 0	sw %503, 0(s0)
-height: 1	addiw %503, %502, 1
-height: 5	lw %502, 0(s0)
----PlaneNode---
-	sw %503, 0(s0)
----PlaneNode---
-	addiw %503, %502, 1
----PlaneNode---
-	lw %502, 0(s0)
----Sequence---
-	sw %503, 0(s0)
-	addiw %503, %502, 1
-	lw %502, 0(s0)
-ScheduleOnRegion: 
- ---from---	lw %497, 0(s0)
- ---to--- 	call putint
-latency: 1  	mv a0, %501
-latency: 4  	lw %501, 0(s0)
-latency: 6  	sw %500, 0(s0)
-latency: 1  	lw %500, %499
-latency: 1  	add %499, %368, %498
-latency: 1  	slli %498, %497, 2
-latency: 4  	lw %497, 0(s0)
-height: 0	mv a0, %501
-height: 4	lw %501, 0(s0)
-height: 0	sw %500, 0(s0)
-height: 1	lw %500, %499
-height: 2	add %499, %368, %498
-height: 3	slli %498, %497, 2
-height: 7	lw %497, 0(s0)
----PlaneNode---
-	mv a0, %501
-	sw %500, 0(s0)
----PlaneNode---
-	lw %501, 0(s0)
----PlaneNode---
-	lw %500, %499
----PlaneNode---
-	add %499, %368, %498
----PlaneNode---
-	slli %498, %497, 2
----PlaneNode---
-	lw %497, 0(s0)
----Sequence---
-	mv a0, %501
-	sw %500, 0(s0)
-	lw %501, 0(s0)
-	lw %500, %499
-	add %499, %368, %498
-	slli %498, %497, 2
-	lw %497, 0(s0)
-ScheduleOnBlock: .LBB86
-ScheduleOnRegion: 
- ---from---	lw %509, 0(s0)
- ---to--- 	j .LBB85
-latency: 6  	sw %510, 0(s0)
-latency: 1  	addiw %510, %509, 1
-latency: 4  	lw %509, 0(s0)
-height: 0	sw %510, 0(s0)
-height: 1	addiw %510, %509, 1
-height: 5	lw %509, 0(s0)
----PlaneNode---
-	sw %510, 0(s0)
----PlaneNode---
-	addiw %510, %509, 1
----PlaneNode---
-	lw %509, 0(s0)
----Sequence---
-	sw %510, 0(s0)
-	addiw %510, %509, 1
-	lw %509, 0(s0)
-ScheduleOnRegion: 
- ---from---	lw %504, 0(s0)
- ---to--- 	call putint
-latency: 1  	mv a0, %508
-latency: 4  	lw %508, 0(s0)
-latency: 6  	sw %507, 0(s0)
-latency: 1  	lw %507, %506
-latency: 1  	add %506, %368, %505
-latency: 1  	slli %505, %504, 2
-latency: 4  	lw %504, 0(s0)
-height: 0	mv a0, %508
-height: 4	lw %508, 0(s0)
-height: 0	sw %507, 0(s0)
-height: 1	lw %507, %506
-height: 2	add %506, %368, %505
-height: 3	slli %505, %504, 2
-height: 7	lw %504, 0(s0)
----PlaneNode---
-	mv a0, %508
-	sw %507, 0(s0)
----PlaneNode---
-	lw %508, 0(s0)
----PlaneNode---
-	lw %507, %506
----PlaneNode---
-	add %506, %368, %505
----PlaneNode---
-	slli %505, %504, 2
----PlaneNode---
-	lw %504, 0(s0)
----Sequence---
-	mv a0, %508
-	sw %507, 0(s0)
-	lw %508, 0(s0)
-	lw %507, %506
-	add %506, %368, %505
-	slli %505, %504, 2
-	lw %504, 0(s0)
+	sw %134, 0(s0)
+	fsw %132, %131
+	fsw %127, %126
+	fsw %122, %121
+	fsw %117, %116
+	fcvt.s.w %132, %128
+	fsw %112, %111
+	add %131, %60, %130
+	fsw %107, %106
+	fcvt.s.w %127, %123
+	add %126, %61, %125
+	fcvt.s.w %122, %118
+	slli %130, %129, 2
+	addiw %134, %133, 1
+	add %121, %62, %120
+	fcvt.s.w %117, %113
+	lw %128, 0(s0)
+	add %116, %63, %115
+	fcvt.s.w %112, %108
+	slli %125, %124, 2
+	add %111, %64, %110
+	fcvt.s.w %107, %103
+	lw %123, 0(s0)
+	add %106, %65, %105
+	lw %129, 0(s0)
+	slli %120, %119, 2
+	lw %133, 0(s0)
+	slli %115, %114, 2
+	lw %118, 0(s0)
+	slli %110, %109, 2
+	lw %113, 0(s0)
+	slli %105, %104, 2
+	lw %124, 0(s0)
+	lw %108, 0(s0)
+	lw %103, 0(s0)
+	lw %119, 0(s0)
+	lw %114, 0(s0)
+	lw %109, 0(s0)
+	lw %104, 0(s0)

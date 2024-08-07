@@ -48,37 +48,6 @@ void GraphColor::RunOnFunc() {
       condition = true;
     }
   }
-  if(m_func->GetName() == "main")
-    std::cout<<"222222222222222222222222222222222222222222222"<<std::endl;
-  if(m_func->GetName() == "main")
-  {
-    for(auto block : *m_func)
-    {
-      if(block->GetName() == ".LBB84")
-      {
-      for(auto inst : *block)
-        inst->printfull();
-      }
-    }
-  }
-  std::cout<< "------------------------------------------------"<< std::endl;
-  if(m_func->GetName() == "main")
-  {
-  // ctx.GetCurFunction()->printfull();
-  // std::cout<<std::endl;   
-    for(auto block : *m_func)
-    {
-      if(block->GetName() == ".LBB84")
-      {
-      for(auto iter = block->rbegin() ; iter != block->rend(); --iter)
-    {
-       (*iter)->printfull();
-      std::cout<<std::flush;
-    }
-    }}
-  }
-  // if(m_func->GetName() =="main")
-  // CaculateLiveness();
   RewriteProgram();
 }
 
