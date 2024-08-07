@@ -72,29 +72,83 @@ bool RISCVFunctionLowering::run(Function *m)
     Pre_RA_Scheduler pre_scheduler;
     pre_scheduler.ScheduleOnFunction(ctx);
 
-    // Register Allocation
+  if(ctx.GetCurFunction()->GetName() == "main")
+  {
+    for(auto block : *ctx.GetCurFunction())
+    {
+        if(block->GetName() == ".LBB84")
+        {
+      for(auto inst : *block)
+        inst->printfull();
+    }}
+  }
+  if(ctx.GetCurFunction()->GetName() == "main")
+  {
+  std::cout<< "------------------------------------------------"<< std::endl;
+
+  // ctx.GetCurFunction()->printfull();
+  // std::cout<<std::endl;   
+    for(auto block : *ctx.GetCurFunction())
+    {
+      if(block->GetName() == ".LBB84"){
+      for(auto iter = block->rbegin() ; iter != block->rend(); --iter)
+    {
+       (*iter)->printfull();
+      std::cout<<std::flush;
+    }}
+    }
+  }
+  if(ctx.GetCurFunction()->GetName() == "main")
+std::cout<< "111111111111111111111111111111111111111111111"<< std::endl;
+    if(ctx.GetCurFunction()->GetName() == "main") {
+        for(auto block: *(ctx.GetCurFunction())) {
+            if(block->GetName() == ".LBB84") {
+                for(auto it= block->begin(); it!=block->end(); ++it) {
+                    (*it)->printfull();
+                    std::cout << std::flush;
+                }
+            }
+        }
+    }
+    if(ctx.GetCurFunction()->GetName() == "main")
+    {
+                            std::cout << "----------------------------" << std::endl;
+        for(auto block : *ctx.GetCurFunction())
+        {
+            if(block->GetName() == ".LBB84") {
+                for(auto it = block->rbegin(); it!=block->rend(); --it) {
+                    (*it)->printfull();
+                    std::cout << std::flush;
+                }
+            }
+        }
+    }
+
+//   return false;
+
+    // // Register Allocation
     RegAllocImpl regalloc(ctx.GetCurFunction(), ctx);
     regalloc.RunGCpass();
 
-    for (auto block : *(ctx.GetCurFunction()))
-    {
-        for (auto it = block->begin(); it != block->end();)
-        {
-            auto inst = *it;
-            ++it;
-            if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
-                delete inst;
-        }
-    }
+    // for (auto block : *(ctx.GetCurFunction()))
+    // {
+    //     for (auto it = block->begin(); it != block->end();)
+    //     {
+    //         auto inst = *it;
+    //         ++it;
+    //         if (inst->GetOpcode() == RISCVMIR::RISCVISA::MarkDead)
+    //             delete inst;
+    //     }
+    // }
      
-    modified = true;
-    // Backend DCE after RA
-    while (modified)
-    {
-        modified = false;
-        BackendDCE dceafter(ctx.GetCurFunction(), ctx);
-        modified |= dceafter.RunImpl();
-    }
+    // modified = true;
+    // // Backend DCE after RA
+    // while (modified)
+    // {
+    //     modified = false;
+    //     BackendDCE dceafter(ctx.GetCurFunction(), ctx);
+    //     modified |= dceafter.RunImpl();
+    // }
     // Post_RA_Scheduler post_scheduler;
     // post_scheduler.ScheduleOnFunction(ctx);
 

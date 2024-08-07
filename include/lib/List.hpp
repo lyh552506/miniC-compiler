@@ -214,7 +214,7 @@ class mylist
         assert(!sequence.empty()&&"sequence can't be empty");
         
         auto prev=begin->prev;
-        auto next=end->next;
+        auto next=end;
         
         if(prev==nullptr)
             head=sequence.front();
