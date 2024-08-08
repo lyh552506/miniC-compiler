@@ -2,6 +2,7 @@
 #include "../../include/ir/Analysis/LoopInfo.hpp"
 #include "../../include/lib/CFG.hpp"
 #include <cassert>
+#include <cstdlib>
 
 bool LICMPass::Run() {
   m_dom = AM.get<dominance>(m_func);
@@ -59,6 +60,7 @@ bool LICMPass::licmSink(const std::set<BasicBlock *> &contain, LoopInfo *l,
                          << "LICM Move Invariant: " << CloneInst->GetName()
                          << " To ExitBlock" << PBB->GetName() << std::endl;)
               it.insert_before(CloneInst);
+              break;
             }
           }
           InsertNew[PBB] = CloneInst;

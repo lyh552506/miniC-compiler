@@ -10,12 +10,24 @@
 #include "../../util/my_stl.hpp"
 
 struct LoopTrait {
+  BasicBlock *head = nullptr;
   Value *boundary = nullptr;
   Value *initial = nullptr;
   int step = 0;
   PhiInst *indvar = nullptr; // eg: i++
   Value *change = nullptr;
   PhiInst *res = nullptr;
+  CallInst *call = nullptr; // result
+  void Init() {
+    head = nullptr;
+    boundary = nullptr;
+    initial = nullptr;
+    step = 0;
+    indvar = nullptr; // eg: i++
+    change = nullptr;
+    res = nullptr;
+    call = nullptr; // result
+  }
 };
 
 class LoopInfo {

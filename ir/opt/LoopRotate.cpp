@@ -162,8 +162,12 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
 
 bool LoopRotate::CanBeMove(User *I) {
   if (auto call = dynamic_cast<CallInst *>(I)) {
-    if (!call->HasSideEffect())
-      return true;
+    if (call->HasSideEffect())
+      return false;
+    auto callee = dynamic_cast<Function *>(call->GetOperand(0));
+    if (callee->MemRead() || callee->MemWrite())
+      return false;
+    return true;
   } else if (auto bin = dynamic_cast<BinaryInst *>(I)) {
     return true;
   } else if (auto gep = dynamic_cast<GetElementPtrInst *>(I)) {
@@ -379,6 +383,7 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     if (iter == Header->end())
       break;
     auto inst = *iter;
+    assert(!dynamic_cast<PhiInst *>(inst));
     inst->EraseFromParent();
     inst->SetParent(Latch);
     Latch->push_back(inst);

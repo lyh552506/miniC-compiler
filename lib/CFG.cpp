@@ -9,9 +9,9 @@
 #include <memory>
 #include <queue>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
-#include <tuple>
 #define BaseEnumNum 8
 template <typename T>
 T *normal_clone(T *from, std::unordered_map<Operand, Operand> &mapping) {
@@ -349,44 +349,42 @@ BinaryInst *BinaryInst::clone(std::unordered_map<Operand, Operand> &mapping) {
 }
 
 BinaryInst::Operation BinaryInst::getopration() { return op; }
-BinaryInst::Operation BinaryInst::GetReversedOperation(BinaryInst::Operation op)
-{
-  switch (op)
-  {
-    case BinaryInst::Op_E:
-      return BinaryInst::Op_E;
-    case BinaryInst::Op_NE:
-      return BinaryInst::Op_NE;
-    case BinaryInst::Op_G:
-      return BinaryInst::Op_L;
-    case BinaryInst::Op_GE:
-      return BinaryInst::Op_LE;
-    case BinaryInst::Op_L:
-      return BinaryInst::Op_G;
-    case BinaryInst::Op_LE:
-      return BinaryInst::Op_GE;
-    default:
-      return static_cast<BinaryInst::Operation>(-1);
+BinaryInst::Operation
+BinaryInst::GetReversedOperation(BinaryInst::Operation op) {
+  switch (op) {
+  case BinaryInst::Op_E:
+    return BinaryInst::Op_E;
+  case BinaryInst::Op_NE:
+    return BinaryInst::Op_NE;
+  case BinaryInst::Op_G:
+    return BinaryInst::Op_L;
+  case BinaryInst::Op_GE:
+    return BinaryInst::Op_LE;
+  case BinaryInst::Op_L:
+    return BinaryInst::Op_G;
+  case BinaryInst::Op_LE:
+    return BinaryInst::Op_GE;
+  default:
+    return static_cast<BinaryInst::Operation>(-1);
   }
 }
-BinaryInst::Operation BinaryInst::GetInvertedOperation(BinaryInst::Operation op)
-{
-  switch (op)
-  {
-    case BinaryInst::Op_E:
-      return BinaryInst::Op_NE;
-    case BinaryInst::Op_NE:
-      return BinaryInst::Op_E;
-    case BinaryInst::Op_G:
-      return BinaryInst::Op_LE;
-    case BinaryInst::Op_GE:
-      return BinaryInst::Op_L;
-    case BinaryInst::Op_L:
-      return BinaryInst::Op_GE;
-    case BinaryInst::Op_LE:
-      return BinaryInst::Op_G;
-    default:
-      return static_cast<BinaryInst::Operation>(-1);
+BinaryInst::Operation
+BinaryInst::GetInvertedOperation(BinaryInst::Operation op) {
+  switch (op) {
+  case BinaryInst::Op_E:
+    return BinaryInst::Op_NE;
+  case BinaryInst::Op_NE:
+    return BinaryInst::Op_E;
+  case BinaryInst::Op_G:
+    return BinaryInst::Op_LE;
+  case BinaryInst::Op_GE:
+    return BinaryInst::Op_L;
+  case BinaryInst::Op_L:
+    return BinaryInst::Op_GE;
+  case BinaryInst::Op_LE:
+    return BinaryInst::Op_G;
+  default:
+    return static_cast<BinaryInst::Operation>(-1);
   }
 }
 BinaryInst *BinaryInst::CreateInst(Operand _A, Operation __op, Operand _B,
@@ -1285,6 +1283,13 @@ PhiInst *PhiInst::NewPhiNode(User *BeforeInst, BasicBlock *currentBB, Type *ty,
   return tmp;
 }
 
+PhiInst *PhiInst::NewPhiNode(Type *ty) {
+  assert(ty);
+  PhiInst *tmp = new PhiInst(ty);
+  tmp->id = OpID::Phi;
+  return tmp;
+}
+
 void PhiInst::updateIncoming(Value *Income, BasicBlock *BB) {
   add_use(Income);
   auto &use = uselist.back();
@@ -1424,50 +1429,41 @@ void PhiInst::ModifyBlock(BasicBlock *Old, BasicBlock *New) {
   it1->second.second = New;
 }
 
-void PhiInst::ModifyBlock_CheckSame(BasicBlock* Old, BasicBlock* New)
-{
+void PhiInst::EraseRecordByBlock(BasicBlock *block) {
+  for (auto &[index, record] : PhiRecord) {
+    if (record.second == block) {
+      this->Del_Incomes(index);
+      this->FormatPhi();
+    }
+  }
+}
+void PhiInst::ModifyBlock_CheckSame(BasicBlock *Old, BasicBlock *New) {
   bool flag = false;
-  Value* old_val = nullptr;
+  Value *old_val = nullptr;
   int index = -1;
-  for(auto&[key, val] : PhiRecord)
-  {
-    if(val.second == Old)
-    {
+  for (auto &[key, val] : PhiRecord) {
+    if (val.second == Old) {
       old_val = val.first;
       index = key;
       break;
     }
   }
 
-  std::pair<Value*, BasicBlock*> Pair{old_val, New};
-  for(auto&[key, val] : PhiRecord)
-  {
-    if(val.second == New)
-    {
+  std::pair<Value *, BasicBlock *> Pair{old_val, New};
+  for (auto &[key, val] : PhiRecord) {
+    if (val.second == New) {
       flag = true;
       PhiRecord.erase(index);
       oprandNum--;
       break;
     }
   }
-  if(flag)
+  if (flag)
     return;
   PhiRecord[index] = Pair;
   return;
 }
 
-void PhiInst::EraseRecordByBlock(BasicBlock* block)
-{
-  for(auto& [index,record] : PhiRecord)
-  {
-    if(record.second==block)
-    {
-      Del_Incomes(block->num);
-      FormatPhi();
-      break;
-    }
-  }
-}
 
 std::pair<size_t, size_t> &Function::GetInlineInfo() {
   // codesize,framesize
@@ -1488,7 +1484,7 @@ std::pair<size_t, size_t> &Function::GetInlineInfo() {
 bool Function::isRecursive(bool useMem) {
   static std::unordered_map<Function *, bool> visited;
 
-  auto calcOnce=[&](){
+  auto calcOnce = [&]() {
     auto usrlist = GetUserlist();
     bool suc = false;
     for (auto use : usrlist) {
@@ -1502,7 +1498,7 @@ bool Function::isRecursive(bool useMem) {
     return suc;
   };
 
-  if (!useMem||visited.find(this) == visited.end())
+  if (!useMem || visited.find(this) == visited.end())
     visited[this] = calcOnce();
   return visited[this];
 }

@@ -207,7 +207,7 @@ class ZextInst:public User
 
 class PhiInst : public User {
 public:
-  PhiInst(Type *ty) : User{ty} {id = OpID::Phi;}
+  PhiInst(Type *ty) :oprandNum(0), User{ty} {id = OpID::Phi;}
   PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {id = OpID::Phi;}
 
   PhiInst(User *BeforeInst):oprandNum(0) {id = OpID::Phi;}
@@ -215,6 +215,7 @@ public:
   void print() final;
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,std::string Name="");
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty,std::string Name="");
+  static PhiInst *NewPhiNode(Type* ty);
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
   std::vector<Value*>& GetAllPhiVal();
   Value* ReturnValIn(BasicBlock* bb);
@@ -297,6 +298,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     enum Tag{
         Normal,
         UnrollBody,
+        LoopBody,
         ParallelBody,
     };
     Tag tag=Normal;

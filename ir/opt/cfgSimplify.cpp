@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <ostream>
 #include <vector>
@@ -206,9 +207,8 @@ bool cfgSimplify::SimplifyUncondBr() {
     User *inst = bb->back();
     if (dynamic_cast<UnCondInst *>(inst)) {
       //检查是否是empty block，在这里我们忽略其他phi存在情况，不值得花费太多时间
-      if (*(bb->begin()) != inst)
-        continue;
-      changed |= SimplifyEmptyUncondBlock(bb);
+      if (*(bb->begin()) == inst)
+        changed |= SimplifyEmptyUncondBlock(bb);
     } else
       continue;
   }
@@ -220,7 +220,7 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock *bb) {
   if (bb->num == m_dom->GetNode(bb->num).idom)
     return false;
   BasicBlock *succ = dynamic_cast<BasicBlock *>(
-      dynamic_cast<UnCondInst *>(bb->back())->Getuselist()[0]->GetValue());
+      dynamic_cast<UnCondInst *>(bb->back())->GetOperand(0));
   assert(succ);
   for (int rev : m_dom->GetNode(bb->num).rev) {
     BasicBlock *pred = m_dom->GetNode(rev).thisBlock;
