@@ -18,13 +18,17 @@ bool GepEvaluate::Run()
     //         }
     //     }
     // }
+
     DomTree = AM.get<dominance>(func);
     AM.get<SideEffect>(&Singleton<Module>());
     bool modified = false;
+
+    Mapping.clear();
     std::deque<HandleNode *> WorkList;
     WorkList.push_back(new HandleNode(DomTree, &(DomTree->GetNode(0)), DomTree->GetNode(0).idom_child.begin(),
                                       DomTree->GetNode(0).idom_child.end(),
                                       std::unordered_map<Value *, std::unordered_map<size_t, Value *>>()));
+    Mapping[DomTree->GetNode(0).thisBlock] = WorkList.back();
     while (!WorkList.empty())
     {
         GepEvaluate::HandleNode *cur = WorkList.back();
@@ -39,18 +43,17 @@ bool GepEvaluate::Run()
             WorkList.push_back(new HandleNode(DomTree, &(DomTree->GetNode(*node)),
                                               DomTree->GetNode(*node).idom_child.begin(),
                                               DomTree->GetNode(*node).idom_child.end(), cur->ValueAddr));
+            Mapping[DomTree->GetNode(*node).thisBlock] = WorkList.back();
         }
         else
-        {
-            delete cur;
             WorkList.pop_back();
-        }
     }
     while (!wait_del.empty())
     {
         User *inst = wait_del.back();
         wait_del.pop_back();
-        delete inst;
+        inst->ClearRelation();
+        inst->EraseFromParent();
     }
     return modified;
 }
@@ -61,6 +64,7 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
     BasicBlock *block = node->GetBlock();
     for (User *inst : *block)
     {
+        HandleBlockIn(node->ValueAddr, node);
         if (dynamic_cast<CallInst *>(inst))
         {
             if (inst->Getuselist()[0]->usee->GetName() == "llvm.memcpy.p0.p0.i32")
@@ -77,6 +81,28 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
                         }
                     }
                 }
+                continue;
+            }
+            for (auto &use : inst->Getuselist())
+            {
+                if (use->usee->GetType()->GetTypeEnum() == InnerDataType::IR_PTR)
+                {
+                    if (auto gep = dynamic_cast<GetElementPtrInst *>(use->usee))
+                    {
+                        auto all_offset_zero = [&gep]() {
+                            return std::all_of(gep->Getuselist().begin() + 1, gep->Getuselist().end(),
+                                               [](User::UsePtr &use) {
+                                                   if (auto val = dynamic_cast<ConstantData *>(use->usee))
+                                                   {
+                                                       return val->isConstZero();
+                                                   }
+                                                   return false;
+                                               });
+                        };
+                        if (all_offset_zero() && dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
+                            node->ValueAddr[gep->Getuselist()[0]->usee].clear();
+                    }
+                }
             }
             continue;
         }
@@ -86,16 +112,43 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
             {
                 if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
                 {
-                    size_t hash = GepHash{}(gep);
+                    size_t hash = GepHash{}(gep, &node->ValueAddr);
                     if (node->ValueAddr[alloca].find(hash) != node->ValueAddr[alloca].end())
                     {
                         inst->RAUW(node->ValueAddr[alloca][hash]);
-                        wait_del.push_back(gep);
                         wait_del.push_back(inst);
                         modified = true;
                     }
                 }
             }
+            continue;
+        }
+        if (dynamic_cast<StoreInst *>(inst))
+        {
+            if (auto gep = dynamic_cast<GetElementPtrInst *>(inst->Getuselist()[1]->usee))
+            {
+                if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
+                {
+                    size_t hash = GepHash{}(gep, &node->ValueAddr);
+                    node->ValueAddr[alloca][hash] = inst->Getuselist()[0]->usee;
+                }
+                else if (auto gep_base = dynamic_cast<GetElementPtrInst *>(gep->Getuselist()[0]->usee))
+                {
+                    assert(0 && "GepCombine has not been run");
+                    if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
+                    {
+                        size_t hash = GepHash{}(gep, &node->ValueAddr);
+                        node->ValueAddr[alloca][hash] = inst->Getuselist()[0]->usee;
+                    }
+                }
+                else if (gep->Getuselist()[0]->usee->isParam())
+                {
+                    auto base = gep->Getuselist()[0]->usee;
+                    size_t hash = GepHash{}(gep, &node->ValueAddr);
+                    node->ValueAddr[base][hash] = inst->Getuselist()[0]->usee;
+                }
+            }
+            continue;
         }
     }
     return modified;
@@ -128,6 +181,51 @@ void GepEvaluate::HandleMemcpy(AllocaInst *inst, Initializer *init, HandleNode *
         else // 这里就是zero
         {
             Value *val = nullptr; // 选择直接不处理, 在map找不到就是0
+        }
+    }
+}
+
+void GepEvaluate::HandleBlockIn(ValueAddr_Struct &addr, HandleNode *node)
+{
+    if (node->GetBlock()->GetUserlist().GetSize() < 2)
+        return;
+    std::vector<ValueAddr_Struct*> maps;
+    
+    for(auto user : node->GetBlock()->GetUserlist())
+    {
+        BasicBlock* userblock = user->GetUser()->GetParent();
+        auto HandleNode = Mapping[userblock];
+        if(HandleNode)
+            maps.push_back(&(HandleNode->ValueAddr));
+        else
+        {
+            addr.clear();
+            return;
+        }
+    }
+
+    auto findCommonKeys = [](std::vector<ValueAddr_Struct*>& maps) {
+        std::unordered_set<Value*> allKeys;
+        std::unordered_set<Value*> commonKeys;
+
+        for (auto& map : maps) {
+            for (auto& [key, value] : *map) {
+                if (key && allKeys.count(key)) {
+                    commonKeys.insert(key); // 发现重复的key
+                } else {
+                    allKeys.insert(key);
+                }
+            }
+        }
+        return commonKeys;
+    };
+    auto commonKeys = findCommonKeys(maps);
+    if(!commonKeys.empty())
+    {
+        for(auto key : commonKeys)
+        {
+            if(addr.find(key) != addr.end())
+                addr.erase(key);
         }
     }
 }
