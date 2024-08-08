@@ -1,14 +1,17 @@
 #pragma once
 #include "../../include//ir/Analysis/LoopInfo.hpp"
 #include "../../include/ir/Analysis/dominant.hpp"
+#include "../../include/ir/opt/BlockMerge.hpp"
 #include "../../include/ir/opt/CSE.hpp"
+#include "../../include/ir/opt/CondMerge.hpp"
 #include "../../include/ir/opt/ConstantFold.hpp"
 #include "../../include/ir/opt/ConstantProp.hpp"
 #include "../../include/ir/opt/DCE.hpp"
 #include "../../include/ir/opt/DeadArgsElimination.hpp"
 #include "../../include/ir/opt/DealCriticalEdges.hpp"
+#include "../../include/ir/opt/GepCombine.hpp"
+#include "../../include/ir/opt/GepEvaluate.hpp"
 #include "../../include/ir/opt/Global2Local.hpp"
-#include "../../include/ir/opt/TailRecurseElimination.hpp"
 #include "../../include/ir/opt/Inline.hpp"
 #include "../../include/ir/opt/Local2Global.hpp"
 #include "../../include/ir/opt/LoopDeletion.hpp"
@@ -20,16 +23,12 @@
 #include "../../include/ir/opt/PromoteMemtoRegister.hpp"
 #include "../../include/ir/opt/SSAPRE.hpp"
 #include "../../include/ir/opt/StoreOnlyGlobalElimination.hpp"
+#include "../../include/ir/opt/TailRecurseElimination.hpp"
 #include "../../include/ir/opt/cfgSimplify.hpp"
 #include "../../include/ir/opt/lcssa.hpp"
 #include "../../include/ir/opt/licm.hpp"
 #include "../../include/ir/opt/mem2reg.hpp"
 #include "../../include/ir/opt/reassociate.hpp"
-#include "../../include/ir/opt/LoopUnroll.hpp"
-#include "../../include/ir/opt/GepCombine.hpp"
-#include "../../include/ir/opt/CondMerge.hpp"
-#include "../../include/ir/opt/GepEvaluate.hpp"
-#include <getopt.h>
 #include <any>
 #include <getopt.h>
 #include <memory>
@@ -62,7 +61,8 @@ enum PassName {
   gepcombine,
   tailrecurseEliminator,
   condmerge,
-  gepevaluate
+  gepevaluate,
+  blockmerge,
 };
 
 static struct option long_options[] = {
@@ -90,6 +90,7 @@ static struct option long_options[] = {
     {"TailRecurseEliminator", no_argument, 0, 25},
     {"CondMerge", no_argument, 0, 26},
     {"GepEvaluate", no_argument, 0, 27},
+    {"BlockMerge", no_argument, 0, 28},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},
@@ -174,7 +175,7 @@ public:
   }
   void DecodeArgs(int argc, char *argv[]);
 
-  bool CommonPass( _AnalysisManager &AM);
+  bool CommonPass(_AnalysisManager &AM);
 
 private:
   void Init();
@@ -184,4 +185,5 @@ private:
   Module *module;
   Function *curfunc;
   bool modified = true;
+  bool other=false;
 };

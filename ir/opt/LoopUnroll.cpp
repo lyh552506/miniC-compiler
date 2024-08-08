@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <type_traits>
+#include <unistd.h>
 #include <unordered_map>
 #include <vector>
 
@@ -265,10 +266,10 @@ BasicBlock *LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   auto step = loop->trait.step;
   switch (op) {
   case BinaryInst::Op_Add:
-    iteration = (bound - initial) / step;
+    iteration = (bound - initial + step + (step > 0 ? -1 : 1)) / step;
     break;
   case BinaryInst::Op_Sub:
-    iteration = (initial - bound) / step;
+    iteration = (initial - bound + step + (step > 0 ? -1 : 1)) / step;
     break;
   case BinaryInst::Op_Mul:
     iteration = std::log(bound / initial) / std::log(step);
@@ -316,10 +317,11 @@ BasicBlock *LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
     call_pos = call_pos.insert_after(cloned);
     replceArg(cloned, CurChange, ResOrigin);
   }
-  UnrollBody->RAUW(ResOrigin);
+  auto callee = dynamic_cast<Function *>(UnrollBody->GetOperand(0));
+  if (ResOrigin)
+    UnrollBody->RAUW(ResOrigin);
   loop->trait.indvar->RAUW(UndefValue::get(loop->trait.indvar->GetType()));
   delete loop->trait.indvar;
-  // return nullptr;
   if (loop->trait.res) {
     loop->trait.res->RAUW(UndefValue::get(loop->trait.res->GetType()));
     delete loop->trait.res;
@@ -333,6 +335,7 @@ BasicBlock *LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
     ++iter;
     delete call;
   }
+  Singleton<Module>().EraseFunction(callee);
   return tmp;
 }
 
@@ -348,6 +351,32 @@ bool LoopUnroll::CanBeUnroll(LoopInfo *loop) {
   if (!dynamic_cast<ConstIRInt *>(loop->trait.initial) ||
       !dynamic_cast<ConstIRInt *>(loop->trait.boundary))
     return false;
+
+  int iteration = 0;
+  auto initial = dynamic_cast<ConstIRInt *>(loop->trait.initial)->GetVal();
+  auto bound = dynamic_cast<ConstIRInt *>(loop->trait.boundary)->GetVal();
+  auto bin = dynamic_cast<BinaryInst *>(loop->trait.change);
+  auto op = bin->getopration();
+  auto step = loop->trait.step;
+  switch (op) {
+  case BinaryInst::Op_Add:
+    iteration = (bound - initial) / step;
+    break;
+  case BinaryInst::Op_Sub:
+    iteration = (initial - bound) / step;
+    break;
+  case BinaryInst::Op_Mul:
+    iteration = std::log(bound / initial) / std::log(step);
+    break;
+  case BinaryInst::Op_Div:
+    iteration = std::log(initial / bound) / std::log(step);
+    break;
+  default:
+    assert(0 && "what op?");
+  }
+  int cost = CaculatePrice(body, iteration,m_func);
+  if (cost > MaxInstCost)
+    return false;
   return true;
 }
 
@@ -361,4 +390,29 @@ void LoopUnroll::CleanUp(LoopInfo *loop, BasicBlock *clean) {
   delete cond;
   clean->push_back(uncond);
   loopAnaly->DeleteLoop(loop);
+}
+
+int LoopUnroll::CaculatePrice(const std::vector<BasicBlock *> &body,
+                              int Iteration, Function *curfunc) {
+  int cost = 0;
+  for (auto bb : body) {
+    for (auto inst : *bb) {
+      if (dynamic_cast<LoadInst *>(inst) || dynamic_cast<StoreInst *>(inst)) {
+        cost += 4;
+      } else if (dynamic_cast<GetElementPtrInst *>(inst)) {
+        cost += 2;
+      } else if (dynamic_cast<CallInst *>(inst)) {
+        auto callee = dynamic_cast<Function *>(inst->GetOperand(0));
+        if (callee) {
+          if (callee == curfunc)
+            return MaxInstCost + 1;
+          cost += CaculatePrice(body, Iteration, callee);
+        } else
+          cost += 2;
+      } else {
+        cost++;
+      }
+    }
+  }
+  return cost * Iteration;
 }

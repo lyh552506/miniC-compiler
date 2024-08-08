@@ -1,5 +1,6 @@
-#include "../../include/ir/opt/cfgSimplify.hpp"
+#include "../../include/ir/opt/BlockMerge.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
+#include "BlockMerge.hpp"
 #include "CFG.hpp"
 #include "Singleton.hpp"
 #include <algorithm>
@@ -11,18 +12,15 @@
 #include <ostream>
 #include <vector>
 
-bool cfgSimplify::Run() {
+bool BlockMerge::Run() {
   bool keep_loop = true;
   FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
   while (keep_loop) {
     keep_loop = false;
-    if (m_dom != nullptr)
-      keep_loop |= simplifyPhiInst();
     keep_loop |= simplify_Block();
     keep_loop |= DealBrInst();
     keep_loop |= simplify_Block();
     keep_loop |= DeleteUnReachable();
-    keep_loop |= DelSamePhis();
     keep_loop |= mergeSpecialBlock();
     keep_loop |= SimplifyUncondBr();
     keep_loop |= mergeRetBlock();
@@ -30,7 +28,7 @@ bool cfgSimplify::Run() {
   return false;
 }
 
-bool cfgSimplify::EliminateDeadLoop() {
+bool BlockMerge::EliminateDeadLoop() {
   bool changed = false;
   for (auto iter = loopAnlaysis->begin(); iter != loopAnlaysis->end(); iter++) {
     auto loop = *iter;
@@ -63,55 +61,7 @@ bool cfgSimplify::EliminateDeadLoop() {
   return changed;
 }
 
-bool cfgSimplify::simplifyPhiInst() {
-  bool changed = false;
-  for (auto bb : m_func->GetBasicBlock()) {
-    for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
-      if (auto phi = dynamic_cast<PhiInst *>(*iter)) {
-        bool HasUndef = false;
-        Value *origin = nullptr;
-        auto &incomes = phi->GetAllPhiVal();
-        for (auto &income : incomes) {
-          if (dynamic_cast<UndefValue *>(income)) {
-            HasUndef = true;
-            continue;
-          }
-          if (income == phi)
-            continue;
-          if (origin != nullptr && income != origin)
-            break;
-          origin = income;
-        }
-        if (origin == nullptr) {
-          auto undef = UndefValue::get(phi->GetType());
-          phi->ClearRelation();
-          phi->RAUW(undef);
-          delete phi;
-          changed = true;
-          continue;
-        }
-        if (HasUndef) {
-          if (auto inst = dynamic_cast<User *>(origin))
-            if (!m_dom->dominates(inst->GetParent(), phi->GetParent()))
-              continue;
-          phi->RAUW(origin);
-          phi->ClearRelation();
-          phi->EraseFromParent();
-          changed = true;
-          continue;
-        }
-        if (incomes.size() == 1) {
-          phi->RAUW(origin);
-          delete phi;
-        }
-      } else
-        break;
-    }
-  }
-  return changed;
-}
-
-bool cfgSimplify::mergeSpecialBlock() {
+bool BlockMerge::mergeSpecialBlock() {
   bool changed = false;
   int index = 0;
   while (index < m_func->GetBasicBlock().size()) {
@@ -186,7 +136,7 @@ bool cfgSimplify::mergeSpecialBlock() {
   return changed;
 }
 
-void cfgSimplify::updateDTinfo(BasicBlock *bb) {
+void BlockMerge::updateDTinfo(BasicBlock *bb) {
   auto &node = m_dom->GetNode(bb->num);
   std::vector<int> Erase;
   for (int rev : node.rev) {
@@ -199,7 +149,7 @@ void cfgSimplify::updateDTinfo(BasicBlock *bb) {
   }
 }
 
-bool cfgSimplify::SimplifyUncondBr() {
+bool BlockMerge::SimplifyUncondBr() {
   int index = 0;
   bool changed = false;
   while (index < m_func->GetBasicBlock().size()) {
@@ -209,6 +159,53 @@ bool cfgSimplify::SimplifyUncondBr() {
       //检查是否是empty block，在这里我们忽略其他phi存在情况，不值得花费太多时间
       if (*(bb->begin()) == inst)
         changed |= SimplifyEmptyUncondBlock(bb);
+      else {
+        auto To = dynamic_cast<BasicBlock *>(inst->GetOperand(0));
+        int num = std::distance(m_dom->GetNode(To->num).rev.begin(),
+                                m_dom->GetNode(To->num).rev.end());
+        if (num == 1) {
+          //  \  /
+          //   bb
+          //   |
+          //   To
+          delete bb->back();
+          for (auto iter = To->begin(); iter != To->end();) {
+            auto inst = *iter;
+            if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+              // must be lcssa phi
+              assert(phi->PhiRecord.size() == 1);
+              //如果删除后还剩一个operand,检查是否是循环
+              BasicBlock *b = phi->PhiRecord.begin()->second.second;
+              if (b == To) {
+                phi->RAUW(UndefValue::get(phi->GetType()));
+                delete phi;
+              } else {
+                Value *repl = (*(phi->PhiRecord.begin())).second.first;
+                if (repl == phi)
+                  phi->RAUW(UndefValue::get(phi->GetType()));
+                phi->RAUW(repl);
+                delete phi;
+              }
+            }
+            ++iter;
+            inst->EraseFromParent();
+            bb->push_back(inst);
+          }
+          for (auto des : m_dom->GetNode(To->num).des) {
+            auto desBB = m_dom->GetNode(des).thisBlock;
+            m_dom->GetNode(des).rev.push_front(bb->num);
+            m_dom->GetNode(bb->num).des.push_front(des);
+            for (auto iter = desBB->begin();
+                 iter != desBB->end() && dynamic_cast<PhiInst *>(*iter);
+                 ++iter) {
+              auto phi = dynamic_cast<PhiInst *>(*iter);
+              phi->ModifyBlock(To, bb);
+            }
+          }
+          DeletDeadBlock(To);
+          changed = true;
+        }
+      }
     } else
       continue;
   }
@@ -216,7 +213,7 @@ bool cfgSimplify::SimplifyUncondBr() {
 }
 
 // 传入的bb满足：跳转语句是uncondbr，并且只有uncondinst这一条指令
-bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock *bb) {
+bool BlockMerge::SimplifyEmptyUncondBlock(BasicBlock *bb) {
   if (bb->num == m_dom->GetNode(bb->num).idom)
     return false;
   BasicBlock *succ = dynamic_cast<BasicBlock *>(
@@ -299,7 +296,7 @@ bool cfgSimplify::SimplifyEmptyUncondBlock(BasicBlock *bb) {
   return true;
 }
 
-bool cfgSimplify::mergeRetBlock() {
+bool BlockMerge::mergeRetBlock() {
   bool changed = false;
   BasicBlock *RetBlock = nullptr;
   int i = 0;
@@ -375,39 +372,7 @@ bool cfgSimplify::mergeRetBlock() {
   return changed;
 }
 
-bool cfgSimplify::DelSamePhis() {
-  int i = 0;
-  bool changed = false;
-  while (i < m_func->GetBasicBlock().size()) {
-    BasicBlock *bb = m_func->GetBasicBlock()[i++];
-    std::vector<PhiInst *> phis;
-    for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
-      if (auto phi = dynamic_cast<PhiInst *>(*iter)) {
-        if (std::find(phis.begin(), phis.end(), phi) == phis.end())
-          phis.push_back(phi);
-      } else
-        break;
-    }
-    if (phis.empty())
-      continue;
-    //查找是否有相同phiinst
-    for (int i = 0; i < phis.size(); ++i)
-      for (int j = i + 1; j < phis.size(); ++j)
-        if (phis[i]->IsSame(phis[j])) {
-          phis[j]->RAUW(phis[i]);
-          auto del = phis[j];
-          phis[j] = phis[phis.size() - 1];
-          delete del;
-          phis.pop_back();
-          //替换了phi后可能会对其他的phi造成影响，此处我们记录并在后续再进行循环
-          i--;
-          changed = true;
-        }
-  }
-  return changed;
-}
-
-bool cfgSimplify::simplify_Block() {
+bool BlockMerge::simplify_Block() {
   bool changed = false;
   int index = 0;
   std::set<BasicBlock *> WorkList{m_func->GetBasicBlock().begin(),
@@ -436,7 +401,7 @@ bool cfgSimplify::simplify_Block() {
   return changed;
 }
 
-bool cfgSimplify::DealBrInst() {
+bool BlockMerge::DealBrInst() {
   bool changed = false;
   for (auto bb : m_func->GetBasicBlock()) {
     User *x = bb->back();
@@ -503,7 +468,7 @@ bool cfgSimplify::DealBrInst() {
   return changed;
 }
 
-void cfgSimplify::DeletDeadBlock(BasicBlock *bb) {
+void BlockMerge::DeletDeadBlock(BasicBlock *bb) {
   auto &node = m_dom->GetNode(bb->num);
   //维护后续的phi关系
   for (int des : node.des) {
@@ -521,14 +486,7 @@ void cfgSimplify::DeletDeadBlock(BasicBlock *bb) {
   m_dom->updateBlockNum()--;
 }
 
-void cfgSimplify::PrintPass() {
-#ifdef SYSY_MIDDLE_END_DEBUG
-  std::cout << "-------cfgsimplify--------\n";
-  Singleton<Module>().Test();
-#endif
-}
-
-bool cfgSimplify::DeleteUnReachable() {
+bool BlockMerge::DeleteUnReachable() {
   bool changed = false;
   std::vector<BasicBlock *> Erase;
   std::set<BasicBlock *> visited;

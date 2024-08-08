@@ -1,5 +1,8 @@
 #include "../../include/ir/opt/New_passManager.hpp"
+#include "BlockMerge.hpp"
 #include "CFG.hpp"
+#include "CondMerge.hpp"
+#include "LoopParallel.hpp"
 #include "LoopUnroll.hpp"
 #include "Singleton.hpp"
 #include "my_stl.hpp"
@@ -83,6 +86,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case gepevaluate:
       AddPass(gepevaluate);
       break;
+    case blockmerge:
+      AddPass(blockmerge);
+      break;
     case O0:
       level = O0;
       break;
@@ -114,8 +120,6 @@ void _PassManager::RunOnLevel() {
 
     // global2local
     RunImpl<Global2Local>(module, AM);
-      PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
-      PassChangedEnd
     while (modified) {
       modified = false;
       // mem2reg
@@ -130,22 +134,24 @@ void _PassManager::RunOnLevel() {
     }
     // Loops
     {
-      int time = 1;
-      while (time) {
-        time--;
-        PassChangedBegin(curfunc) PassChangedEnd
-        RunLevelPass(LoopSimplify, curfunc, modified);
-        PassChangedBegin(curfunc) PassChangedEnd
 
+      modified = true;
+      while (modified) {
+        modified = false;
+        static int a = 0;
+        a++;
+        PassChangedBegin(curfunc)
+            PassChangedEnd RunLevelPass(LoopSimplify, curfunc, other);
+        PassChangedBegin(curfunc) PassChangedEnd
             // lcssa
-
-            RunLevelPass(LcSSA, curfunc, modified);
+            RunLevelPass(LcSSA, curfunc, other);
         PassChangedBegin(curfunc) PassChangedEnd
-
             // loop-rotate
-            RunLevelPass(LoopRotate, curfunc, modified)
-                PassChangedBegin(curfunc) PassChangedEnd
+
+            RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
+                PassChangedEnd
                     // licm
+
                     RunLevelPass(LICMPass, curfunc, modified);
         PassChangedBegin(curfunc) PassChangedEnd
 
@@ -153,9 +159,24 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc) PassChangedEnd
 
+            // RunLevelPass(LoopParallel, curfunc, modified)
+            //     PassChangedBegin(curfunc)
+            //         PassChangedEnd
+
             RunLevelPass(LoopUnroll, curfunc, modified)
-                PassChangedBegin(curfunc) PassChangedEnd 
-             CommonPass(AM);
+                PassChangedBegin(curfunc) PassChangedEnd
+        RunLevelPass(ConstantProp, curfunc, modified);
+
+        RunLevelPass(DCE, curfunc, other);
+        PassChangedBegin(curfunc) PassChangedEnd
+
+            RunLevelPass(BlockMerge, curfunc, other);
+        PassChangedBegin(curfunc) PassChangedEnd
+      }
+      modified = true;
+      while (modified) {
+        modified = false;
+        CommonPass(AM);
       }
     }
     {
@@ -177,11 +198,12 @@ void _PassManager::RunOnLevel() {
 
 bool _PassManager::CommonPass(_AnalysisManager &AM) {
   bool modified = false;
-  PassChangedBegin(curfunc) RunImpl<Mem2reg>(curfunc, AM);
+  RunLevelPass(cfgSimplify, curfunc, modified);
+  PassChangedBegin(curfunc) PassChangedEnd PassChangedBegin(curfunc)
+      RunImpl<Mem2reg>(curfunc, AM);
   PassChangedEnd
       // Local2Global
       RunImpl<Local2Global>(module, AM);
-
   // simplifycfg
   RunLevelPass(ConstantProp, curfunc, modified);
   RunLevelPass(DCE, curfunc, modified);
@@ -199,9 +221,11 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
   RunLevelPass(CSE, curfunc, modified);
   RunLevelPass(GepCombine, curfunc, modified);
   RunLevelPass(DCE, curfunc, modified);
-  // TRE
-  // RunLevelPass(TailRecurseEliminator, curfunc, modified) return modified;
-  return modified;
+  RunLevelPass(BlockMerge, curfunc, modified);
+  PassChangedBegin(curfunc) PassChangedEnd
+      // TRE
+      // RunLevelPass(TailRecurseEliminator, curfunc, modified) return modified;
+      return modified;
 }
 
 ///@brief 执行Pass顺序会按照给定参数的顺序来

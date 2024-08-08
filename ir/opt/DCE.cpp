@@ -141,8 +141,10 @@ bool DCE::HandlePhi(PhiInst *inst) {
     if (auto phi = dynamic_cast<PhiInst *>(user)) {
       std::set<PhiInst *> PotentiallyDeadPhis;
       PotentiallyDeadPhis.insert(inst);
-      if (DeadPhiCycle(phi, PotentiallyDeadPhis))
+      if (DeadPhiCycle(phi, PotentiallyDeadPhis)) {
         inst->RAUW(UndefValue::get(inst->GetType()));
+        return true;
+      }
     }
 
     if (user->GetUserlist().GetSize() == 1 &&

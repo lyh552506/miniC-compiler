@@ -383,6 +383,7 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     if (iter == Header->end())
       break;
     auto inst = *iter;
+    assert(!dynamic_cast<PhiInst *>(inst));
     inst->EraseFromParent();
     inst->SetParent(Latch);
     Latch->push_back(inst);

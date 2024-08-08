@@ -37,6 +37,7 @@ bool LoopParallel::Run() {
       SubstitudeTrait.Init();
       auto call = ExtractLoopParallelBody(loop);
       MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
+      return true;
     }
   }
   return changed;
