@@ -8,6 +8,7 @@
 #include "../../include/ir/opt/ConstantProp.hpp"
 #include "../../include/ir/opt/DCE.hpp"
 #include "../../include/ir/opt/DeadArgsElimination.hpp"
+#include "../../include/ir/opt/InstructionSimplify.hpp"
 #include "../../include/ir/opt/DealCriticalEdges.hpp"
 #include "../../include/ir/opt/GepCombine.hpp"
 #include "../../include/ir/opt/GepEvaluate.hpp"
