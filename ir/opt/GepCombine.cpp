@@ -35,6 +35,12 @@ bool GepCombine::Run()
             WorkList.pop_back();
         }
     }
+    while(!wait_del.empty())
+    {
+        auto inst = wait_del.back();
+        wait_del.pop_back();
+        delete inst;
+    }
     return modified;
 }
 
@@ -43,7 +49,7 @@ bool GepCombine::ProcessNode(HandleNode *node)
     bool modified = false;
     BasicBlock *block = node->GetBlock();
     _DEBUG(std::cerr << "Processing Node: " << block->GetName() << std::endl;)
-    std::unordered_set<GetElementPtrInst*> geps = node->GetGeps();
+    std::unordered_set<GetElementPtrInst *> geps = node->GetGeps();
     for (User *inst : *block)
     {
         if (auto gep = dynamic_cast<GetElementPtrInst *>(inst))
@@ -75,7 +81,7 @@ bool GepCombine::ProcessNode(HandleNode *node)
     return modified;
 }
 
-Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst, std::unordered_set<GetElementPtrInst*>& geps)
+Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst, std::unordered_set<GetElementPtrInst *> &geps)
 {
     Value *Base = inst->Getuselist()[0]->usee;
 
@@ -94,6 +100,39 @@ Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst, std::unordered_set<G
         inst->RAUW(UndefValue::get(inst->GetType()));
         geps.erase(inst);
         return UndefValue::get(inst->GetType());
+    }
+
+    if (auto base_gep = dynamic_cast<GetElementPtrInst *>(Base))
+    {
+        // Now handle the case of < gep base, 0, 0, 0  ... >
+        // auto all_offset_zero = [&base_gep]() {
+        //     return std::all_of(base_gep->Getuselist().begin() + 1, base_gep->Getuselist().end(), [](User::UsePtr
+        //     &use) {
+        //         if (auto val = dynamic_cast<ConstantData *>(use->usee))
+        //         {
+        //             return val->isConstZero();
+        //         }
+        //         return false;
+        //     });
+        // };
+        auto offset = dynamic_cast<ConstIRInt *>(base_gep->Getuselist().back()->usee);
+        if (offset && offset->GetVal() == 0)
+        {
+            std::vector<Operand> Ops;
+            for (int i = 1; i < base_gep->Getuselist().size() - 1; i++)
+                Ops.push_back(base_gep->Getuselist()[i]->GetValue());
+            for (int i = 1; i < inst->Getuselist().size(); i++)
+                Ops.push_back(inst->Getuselist()[i]->usee);
+            GetElementPtrInst *New_Gep = new GetElementPtrInst(base_gep->Getuselist()[0]->usee, Ops);
+            // insert before
+            BasicBlock::mylist<BasicBlock, User>::iterator Inst_Pos(inst);
+            Inst_Pos.insert_before(New_Gep);
+            inst->RAUW(New_Gep);
+            geps.erase(inst);
+            geps.insert(New_Gep);
+            wait_del.push_back(inst);
+            return New_Gep;
+        }
     }
 
     if (inst->Getuselist().size() == 2)
@@ -143,8 +182,7 @@ Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst, std::unordered_set<G
                             for (auto user : val1->GetUserlist())
                             {
                                 auto user_gep = dynamic_cast<GetElementPtrInst *>(user->GetUser());
-                                if (user_gep && geps.count(user_gep) &&
-                                    user_gep->Getuselist()[0]->usee == Base)
+                                if (user_gep && geps.count(user_gep) && user_gep->Getuselist()[0]->usee == Base)
                                 {
                                     inst->RSUW(inst->Getuselist()[0].get(), user->GetUser());
                                     inst->RSUW(inst->Getuselist()[1].get(), binary->Getuselist()[1]->usee);
@@ -162,8 +200,7 @@ Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst, std::unordered_set<G
                             for (auto user : val1->GetUserlist())
                             {
                                 auto user_gep = dynamic_cast<GetElementPtrInst *>(user->GetUser());
-                                if (user_gep && geps.count(user_gep) &&
-                                    user_gep->Getuselist()[0]->usee == Base)
+                                if (user_gep && geps.count(user_gep) && user_gep->Getuselist()[0]->usee == Base)
                                 {
                                     inst->RSUW(inst->Getuselist()[0].get(), user->GetUser());
                                     inst->RSUW(inst->Getuselist()[1].get(), binary->Getuselist()[0]->usee);
@@ -177,22 +214,11 @@ Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst, std::unordered_set<G
             }
         }
     }
-    // Now handle the case of < gep base, 0, 0, 0  ... >
-    auto all_offset_zero = [&inst]() {
-        return std::all_of(inst->Getuselist().begin() + 1, inst->Getuselist().end(), [](User::UsePtr &use) {
-            if (auto val = dynamic_cast<ConstantData *>(use->usee))
-            {
-                return val->isConstZero();
-            }
-            return false;
-        });
-    };
-    // if(all_offset_zero())
-    // return Base;
+
     return nullptr;
 }
 
-GetElementPtrInst *GepCombine::HandleGepPhi(GetElementPtrInst *inst, std::unordered_set<GetElementPtrInst*>& geps)
+GetElementPtrInst *GepCombine::HandleGepPhi(GetElementPtrInst *inst, std::unordered_set<GetElementPtrInst *> &geps)
 {
     Value *Base = inst->Getuselist()[0]->usee;
     if (auto Phi = dynamic_cast<PhiInst *>(Base))
@@ -292,7 +318,8 @@ GetElementPtrInst *GepCombine::HandleGepPhi(GetElementPtrInst *inst, std::unorde
     return nullptr;
 }
 
-GetElementPtrInst *GepCombine::Normal_Handle_With_GepBase(GetElementPtrInst *inst, std::unordered_set<GetElementPtrInst*>& geps)
+GetElementPtrInst *GepCombine::Normal_Handle_With_GepBase(GetElementPtrInst *inst,
+                                                          std::unordered_set<GetElementPtrInst *> &geps)
 {
     Value *Base = inst->Getuselist()[0]->usee;
     if (auto base = dynamic_cast<GetElementPtrInst *>(Base))
