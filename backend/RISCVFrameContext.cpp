@@ -6,6 +6,15 @@ void NamedMOperand::print(){
     std::cout<<name;
 }
 
+OuterTag::OuterTag(std::string _name):NamedMOperand(_name,riscv_none){}
+
+OuterTag* OuterTag::GetOuterTag(std::string _name){
+  static std::unordered_map<std::string,std::unique_ptr<OuterTag>> tags;
+  if(tags.find(_name)==tags.end())
+    tags[_name]=std::make_unique<OuterTag>(_name);
+  return tags[_name].get();
+}
+
 RISCVObject::RISCVObject(Type* _tp,std::string _name):NamedMOperand(_name,riscv_ptr),tp(_tp){}
 RISCVObject::RISCVObject(std::string _name):NamedMOperand(_name,riscv_ptr) {}
 RISCVGlobalObject::RISCVGlobalObject(Type* _tp,std::string _name):RISCVObject(_tp,_name){
