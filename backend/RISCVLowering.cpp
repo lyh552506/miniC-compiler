@@ -113,10 +113,8 @@ bool RISCVFunctionLowering::run(Function *m)
     auto dbd=DeleteDeadBlock();
     dbd.run(mfunc);
 
-    // auto layout=CodeLayout();
-    // layout.run(mfunc);
-
-
+    auto layout=CodeLayout();
+    layout.run(mfunc);
 
     return false;
 }
