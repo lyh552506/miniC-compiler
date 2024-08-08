@@ -87,6 +87,18 @@ Value *SimplifyMulInst(Value *LHS, Value *RHS)
         return RHS;
     if (RHS->isConstOne())
         return LHS;
+
+    // a / b * b -> a
+    if (auto Div = dynamic_cast<BinaryInst *>(LHS))
+    {
+        if (Div->getopration() == BinaryInst::Op_Div && Div->GetOperand(1) == RHS)
+            return Div->GetOperand(0);
+    }
+    if (auto DIV = dynamic_cast<BinaryInst *>(RHS))
+    {
+        if (DIV->getopration() == BinaryInst::Op_Div && DIV->GetOperand(1) == LHS)
+            return DIV->GetOperand(0);
+    }
     return nullptr;
 }
 
@@ -130,6 +142,15 @@ Value *SimplifyDivInst(Value *LHS, Value *RHS)
             return ConstIRInt::GetNewConstant(1);
         else if (dynamic_cast<ConstIRFloat *>(LHS) && dynamic_cast<ConstIRFloat *>(RHS))
             return ConstIRFloat::GetNewConstant(1);
+    }
+
+    // a * b / b -> a
+    if (auto Mul = dynamic_cast<BinaryInst *>(LHS))
+    {
+        if (Mul->getopration() == BinaryInst::Op_Mul && Mul->GetOperand(1) == RHS)
+            return Mul->GetOperand(0);
+        else if (Mul->getopration() == BinaryInst::Op_Mul && Mul->GetOperand(0) == RHS)
+            return Mul->GetOperand(1);
     }
     return nullptr;
 }
@@ -208,9 +229,10 @@ Value *SimplifyIcmpInst(BinaryInst::Operation Opcode, Value *LHS, Value *RHS)
             BinaryInst::Operation LHS_Op = LHS_Cmp->getopration();
             BinaryInst::Operation RHS_Op = RHS_Cmp->getopration();
             auto match_Op = [&](int i, int j) {
-                return LHS_Cmp->GetOperand(0) == RHS_Cmp->GetOperand(i) && LHS_Cmp->GetOperand(1) == RHS_Cmp->GetOperand(j);
+                return LHS_Cmp->GetOperand(0) == RHS_Cmp->GetOperand(i) &&
+                       LHS_Cmp->GetOperand(1) == RHS_Cmp->GetOperand(j);
             };
-            if(LHS_Cmp->GetInvertedOperation(LHS_Op) == RHS_Op && match_Op(0, 1))
+            if (LHS_Cmp->GetInvertedOperation(LHS_Op) == RHS_Op && match_Op(0, 1))
                 return ConstIRBoolean::GetNewConstant(false);
         }
     }
@@ -225,13 +247,13 @@ Value *SimplifyIcmpInst(BinaryInst::Operation Opcode, Value *LHS, Value *RHS)
             BinaryInst::Operation LHS_Op = LHS_Cmp->getopration();
             BinaryInst::Operation RHS_Op = RHS_Cmp->getopration();
             auto match_Op = [&](int i, int j) {
-                return LHS_Cmp->GetOperand(0) == RHS_Cmp->GetOperand(i) && LHS_Cmp->GetOperand(1) == RHS_Cmp->GetOperand(j);
+                return LHS_Cmp->GetOperand(0) == RHS_Cmp->GetOperand(i) &&
+                       LHS_Cmp->GetOperand(1) == RHS_Cmp->GetOperand(j);
             };
-            if(LHS_Cmp->GetInvertedOperation(LHS_Op) == RHS_Op && match_Op(0, 1))
+            if (LHS_Cmp->GetInvertedOperation(LHS_Op) == RHS_Op && match_Op(0, 1))
                 return ConstIRBoolean::GetNewConstant(true);
         }
     }
-
 
     // true or X -> true
     if (Opcode == BinaryInst::Op_Or)
