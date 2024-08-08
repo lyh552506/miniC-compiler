@@ -62,9 +62,9 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
 {
     bool modified = false;
     BasicBlock *block = node->GetBlock();
+    HandleBlockIn(node->ValueAddr, node);
     for (User *inst : *block)
     {
-        HandleBlockIn(node->ValueAddr, node);
         if (dynamic_cast<CallInst *>(inst))
         {
             if (inst->Getuselist()[0]->usee->GetName() == "llvm.memcpy.p0.p0.i32")
@@ -189,13 +189,13 @@ void GepEvaluate::HandleBlockIn(ValueAddr_Struct &addr, HandleNode *node)
 {
     if (node->GetBlock()->GetUserlist().GetSize() < 2)
         return;
-    std::vector<ValueAddr_Struct*> maps;
-    
-    for(auto user : node->GetBlock()->GetUserlist())
+    std::vector<ValueAddr_Struct *> maps;
+
+    for (auto user : node->GetBlock()->GetUserlist())
     {
-        BasicBlock* userblock = user->GetUser()->GetParent();
+        BasicBlock *userblock = user->GetUser()->GetParent();
         auto HandleNode = Mapping[userblock];
-        if(HandleNode)
+        if (HandleNode)
             maps.push_back(&(HandleNode->ValueAddr));
         else
         {
@@ -204,15 +204,20 @@ void GepEvaluate::HandleBlockIn(ValueAddr_Struct &addr, HandleNode *node)
         }
     }
 
-    auto findCommonKeys = [](std::vector<ValueAddr_Struct*>& maps) {
-        std::unordered_set<Value*> allKeys;
-        std::unordered_set<Value*> commonKeys;
+    auto findCommonKeys = [](std::vector<ValueAddr_Struct *> &maps) {
+        std::unordered_set<Value *> allKeys;
+        std::unordered_set<Value *> commonKeys;
 
-        for (auto& map : maps) {
-            for (auto& [key, value] : *map) {
-                if (key && allKeys.count(key)) {
+        for (auto &map : maps)
+        {
+            for (auto &[key, value] : *map)
+            {
+                if (key && allKeys.count(key))
+                {
                     commonKeys.insert(key); // 发现重复的key
-                } else {
+                }
+                else
+                {
                     allKeys.insert(key);
                 }
             }
@@ -220,11 +225,11 @@ void GepEvaluate::HandleBlockIn(ValueAddr_Struct &addr, HandleNode *node)
         return commonKeys;
     };
     auto commonKeys = findCommonKeys(maps);
-    if(!commonKeys.empty())
+    if (!commonKeys.empty())
     {
-        for(auto key : commonKeys)
+        for (auto key : commonKeys)
         {
-            if(addr.find(key) != addr.end())
+            if (addr.find(key) != addr.end())
                 addr.erase(key);
         }
     }
