@@ -52,6 +52,7 @@ class RISCVFrameObject:public RISCVMOperand{
     std::string name;
     RISCVType contextype;
     public:
+    RISCVFrameObject();
     RISCVFrameObject(Value*);
     RISCVFrameObject(VirRegister*);
     RISCVFrameObject(PhyRegister*);

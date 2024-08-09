@@ -52,6 +52,10 @@ RISCVFrameObject::RISCVFrameObject(Value* val) : RISCVMOperand(RISCVTyper(val->G
     else size=val->GetType()->get_size();
     contextype = RISCVTyper(val->GetType());
 }
+RISCVFrameObject::RISCVFrameObject() : RISCVMOperand(riscv_none) {
+    reg = new StackRegister(this, PhyRegister::PhyReg::s0, begin_addr_offsets);
+    size = 8;
+}
 RISCVFrameObject::RISCVFrameObject(VirRegister* val) : RISCVMOperand(val->GetType()) {
     reg = new StackRegister(this, PhyRegister::PhyReg::s0, begin_addr_offsets);
     name = val->GetName();
