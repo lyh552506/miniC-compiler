@@ -85,6 +85,7 @@ class AllocaInst:public User
     void print()final;
     bool IsUsed();
     bool AllZero = false;
+    bool HasStored = false;
 };
 
 class StoreInst:public User

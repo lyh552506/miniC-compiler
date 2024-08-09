@@ -214,6 +214,7 @@ class GepEvaluate : public _PassManagerBase<GepEvaluate, Function>
     _AnalysisManager &AM;
     std::vector<User *> wait_del;
     std::unordered_map<BasicBlock *, HandleNode *> Mapping;
+    std::unordered_map<AllocaInst*, Initializer*> AllocaInitMap;
     bool ProcessNode(HandleNode *node);
     void HandleMemcpy(AllocaInst *inst, Initializer *init, HandleNode *node, std::vector<int> index);
     void HandleZeroInitializer(AllocaInst* inst, HandleNode* node, std::vector<int> index);

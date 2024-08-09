@@ -77,6 +77,7 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
                         if (array->Getuselist().size() != 0)
                         {
                             auto init = dynamic_cast<Initializer *>(array->Getuselist()[0]->usee);
+                            AllocaInitMap[alloca] = init;
                             HandleMemcpy(alloca, init, node, std::vector<int>());
                         }
                     }
@@ -119,6 +120,31 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
                         wait_del.push_back(inst);
                         modified = true;
                     }
+                    else if(!alloca->HasStored)
+                    {
+                        bool flag_all_const = true;
+                        std::vector<int> index;
+                        for(int i = 1; i < gep->Getuselist().size(); i++)
+                        {
+                            if(auto INT = dynamic_cast<ConstIRInt*>(gep->Getuselist()[i]->usee))
+                                index.push_back(INT->GetVal());
+                            else
+                            {
+                                flag_all_const = false;
+                                break;
+                            }
+                        }
+                        if(auto init = AllocaInitMap[alloca])
+                        {
+                            if(auto val = init->getInitVal(index))
+                            {
+                                inst->RAUW(val);
+                                wait_del.push_back(inst);
+                                modified = true;       
+                            }
+                        }
+
+                    }
                 }
             }
             continue;
@@ -129,6 +155,9 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
             {
                 if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
                 {
+                    alloca->HasStored = true;
+                    alloca->AllZero = false;
+                    AllocaInitMap.erase(alloca);
                     size_t hash = GepHash{}(gep, &node->ValueAddr);
                     node->ValueAddr[alloca][hash] = inst->Getuselist()[0]->usee;
                 }
