@@ -173,7 +173,7 @@ class BinaryInst:public User
     bool Atomic=false;
     public:
     BinaryInst(Type* _tp):User(_tp){id = OpID::BinaryUnknown;};
-    BinaryInst(Operand _A,Operation __op,Operand _B);
+    BinaryInst(Operand _A,Operation __op,Operand _B,bool Atom=false);
     BinaryInst* clone(std::unordered_map<Operand,Operand>&)override;
     bool IsCmpInst(){return  (op-Op_Add) > 7;}
     void print()final;

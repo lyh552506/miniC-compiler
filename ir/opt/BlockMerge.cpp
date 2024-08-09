@@ -1,8 +1,5 @@
 #include "../../include/ir/opt/BlockMerge.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
-#include "BlockMerge.hpp"
-#include "CFG.hpp"
-#include "Singleton.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>

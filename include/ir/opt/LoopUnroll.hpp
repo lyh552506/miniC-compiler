@@ -17,8 +17,8 @@ private:
   BasicBlock *Half_Unroll(LoopInfo *loop, CallInst *UnrollBody);
   bool CanBeFullUnroll(LoopInfo *loop);
   bool CanBeHalfUnroll(LoopInfo *loop);
-  int CaculatePrice(const std::vector<BasicBlock *> &body, int Iteration,
-                    Function *curfunc);
+  int CaculatePrice(const std::vector<BasicBlock *> &body, Function *curfunc,
+                    int Iteration = 1);
   void CleanUp(LoopInfo *loop, BasicBlock *clean);
   bool simplify_Block();
   void DeletDeadBlock(BasicBlock *bb);
@@ -30,4 +30,5 @@ private:
   Value *OriginChange = nullptr;
   BasicBlock *prehead = nullptr;
   const int MaxInstCost = 5000;
+  int HalfUnrollTimes = 0;
 };

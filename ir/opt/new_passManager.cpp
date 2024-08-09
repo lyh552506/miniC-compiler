@@ -1,11 +1,4 @@
 #include "../../include/ir/opt/New_passManager.hpp"
-#include "BlockMerge.hpp"
-#include "CFG.hpp"
-#include "CondMerge.hpp"
-#include "LoopParallel.hpp"
-#include "LoopUnroll.hpp"
-#include "Singleton.hpp"
-#include "my_stl.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -162,10 +155,10 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc) PassChangedEnd
 
-            // RunLevelPass(LoopParallel, curfunc, modified)
-            //     PassChangedBegin(curfunc)
-            //         PassChangedEnd
-
+            RunLevelPass(LoopParallel, curfunc, modified)
+                PassChangedBegin(curfunc)
+                    PassChangedEnd
+            
             RunLevelPass(LoopUnroll, curfunc,
                          modified) PassChangedBegin(curfunc)
 PassChangedEnd

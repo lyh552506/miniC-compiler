@@ -5,9 +5,6 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
-#include "New_passManager.hpp"
-#include "Type.hpp"
-#include "my_stl.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -31,8 +28,15 @@ bool LoopUnroll::Run() {
         CleanUp(loop, bb);
         return true;
       }
-    }else if(AM.FindAttr(loop->GetHeader(), Rotate) && CanBeFullUnroll(loop)){
-
+    } else if (AM.FindAttr(loop->GetHeader(), Rotate) &&
+               CanBeHalfUnroll(loop)) {
+      // auto unrollbody = ExtractLoopBody(loop);
+      // if (unrollbody) {
+      //   auto bb = Half_Unroll(loop, unrollbody);
+      //   return false;
+      //   CleanUp(loop, bb);
+      //   return true;
+      // }
     }
   }
   return false;
@@ -362,10 +366,10 @@ bool LoopUnroll::CanBeFullUnroll(LoopInfo *loop) {
   auto step = loop->trait.step;
   switch (op) {
   case BinaryInst::Op_Add:
-    iteration = (bound - initial) / step;
+    iteration = (bound - initial + step + (step > 0 ? -1 : 1)) / step;
     break;
   case BinaryInst::Op_Sub:
-    iteration = (initial - bound) / step;
+    iteration = (initial - bound + step + (step > 0 ? -1 : 1)) / step;
     break;
   case BinaryInst::Op_Mul:
     iteration = std::log(bound / initial) / std::log(step);
@@ -376,14 +380,31 @@ bool LoopUnroll::CanBeFullUnroll(LoopInfo *loop) {
   default:
     assert(0 && "what op?");
   }
-  int cost = CaculatePrice(body, iteration, m_func);
+  int cost = CaculatePrice(body, m_func, iteration);
   if (cost > MaxInstCost)
     return false;
   return true;
 }
 
-bool CanBeHalfUnroll(LoopInfo *loop){
-  
+bool LoopUnroll::CanBeHalfUnroll(LoopInfo *loop) {
+  const auto body = loop->GetLoopBody();
+  LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
+  if (loop->CantCalcTrait())
+    return false;
+  auto header = loop->GetHeader();
+  auto latch = loopAnaly->GetLatch(loop);
+  if (header != latch)
+    return false;
+  if (dynamic_cast<ConstIRInt *>(loop->trait.initial) &&
+      dynamic_cast<ConstIRInt *>(loop->trait.boundary))
+    return false;
+  int iteration = 0;
+  int cost = CaculatePrice(body, m_func);
+  if (cost > 50)
+    HalfUnrollTimes = 3;
+  else
+    HalfUnrollTimes = 5;
+  return true;
 }
 
 void LoopUnroll::CleanUp(LoopInfo *loop, BasicBlock *clean) {
@@ -399,7 +420,7 @@ void LoopUnroll::CleanUp(LoopInfo *loop, BasicBlock *clean) {
 }
 
 int LoopUnroll::CaculatePrice(const std::vector<BasicBlock *> &body,
-                              int Iteration, Function *curfunc) {
+                              Function *curfunc, int Iteration) {
   int cost = 0;
   for (auto bb : body) {
     for (auto inst : *bb) {
@@ -412,7 +433,7 @@ int LoopUnroll::CaculatePrice(const std::vector<BasicBlock *> &body,
         if (callee) {
           if (callee == curfunc)
             return MaxInstCost + 1;
-          cost += CaculatePrice(body, Iteration, callee);
+          cost += CaculatePrice(body, callee, Iteration);
         } else
           cost += 2;
       } else {
@@ -423,6 +444,4 @@ int LoopUnroll::CaculatePrice(const std::vector<BasicBlock *> &body,
   return cost * Iteration;
 }
 
-BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
-  
-}
+BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {}

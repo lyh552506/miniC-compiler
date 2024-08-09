@@ -1,4 +1,5 @@
 #include "../../include/ir/Analysis/SideEffect.hpp"
+#include "CFG.hpp"
 
 bool SideEffect::RunOnModule(Module* module)
 {
@@ -73,6 +74,8 @@ bool SideEffect::FuncHasSideEffect(Function* func)
 {
     bool flag = false;
     if(RecursiveFuncs.count(func))
+        flag = true;
+    if(func->tag == Function::ParallelBody || func->tag == Function::UnrollBody)
         flag = true;
     auto &Params = func->GetParams();
     for(auto &_param : Params)
