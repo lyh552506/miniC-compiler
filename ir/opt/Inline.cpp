@@ -120,8 +120,13 @@ bool NoRecursive::CanBeInlined(CallInst *call) {
   auto &&master = call->GetParent()->GetParent();
   if(slave->tag == Function::Tag::ParallelBody || master->tag == Function::Tag::UnrollBody)
     return false;
+  static int InlineTimes = 0;
   if (!master->isRecursive() && !slave->isRecursive())
     return true;
+  if(InlineTimes<20){
+    InlineTimes++;
+    return true;
+  }
   return false;
 }
 
@@ -168,14 +173,28 @@ bool Inliner::Inline(Module* m) {
     NeedInlineCall.erase(NeedInlineCall.begin());
     BasicBlock *block = inst->GetParent();
     Function *func = block->GetParent();
-
     BasicBlock *SplitBlock = block->SplitAt(inst);
+    if(inst->Getuselist()[0]->usee == func)
+    {
+        auto Br = new UnCondInst(SplitBlock);
+        block->push_back(Br);
+    }
     BasicBlock::mylist<Function, BasicBlock>::iterator Block_Pos(block);
     Block_Pos.insert_after(SplitBlock);
     ++Block_Pos;
     std::vector<BasicBlock *> blocks = CopyBlocks(inst);
+    if(inst->Getuselist()[0]->usee != func)
+    {
     UnCondInst *Br = new UnCondInst(blocks[0]);
     block->push_back(Br);
+    }
+    else
+    {
+      delete block->back();
+      UnCondInst *Br = new UnCondInst(blocks[0]);
+      block->push_back(Br);
+    }
+      
     for (auto it = blocks[0]->begin(); it != blocks[0]->end();) {
       auto shouldmvinst = dynamic_cast<AllocaInst *>(*it);
       ++it;
