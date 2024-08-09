@@ -3,68 +3,140 @@
 #include "../../util/my_stl.hpp"
 #include <algorithm>
 bool DCE::Run() {
-  AM.get<SideEffect>(&Singleton<Module>());
-  Value *C = RVACC(func);
-  if (dynamic_cast<UndefValue *>(C) && !func->HasSideEffect) {
-    for (auto iter = func->rbegin(); iter != func->rend(); --iter) {
-      bool NDelBlock = false;
-      for (auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1) {
-        if (!dynamic_cast<RetInst *>(*iter1)) {
-          (*iter1)->ClearRelation();
-          (*iter1)->EraseFromParent();
-        } else
-          NDelBlock = true;
+  bool mody = true;
+  while (mody) {
+    mody = false;
+    AM.get<SideEffect>(&Singleton<Module>());
+    Value *C = RVACC(func);
+    if (dynamic_cast<UndefValue *>(C) && !func->HasSideEffect) {
+      for (auto iter = func->rbegin(); iter != func->rend(); --iter) {
+        bool NDelBlock = false;
+        for (auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend();
+             --iter1) {
+          if (!dynamic_cast<RetInst *>(*iter1)) {
+            (*iter1)->ClearRelation();
+            (*iter1)->EraseFromParent();
+          } else
+            NDelBlock = true;
+        }
+        if (!NDelBlock)
+          (*iter)->EraseFromParent();
       }
-      if (!NDelBlock)
-        (*iter)->EraseFromParent();
+      mody = true;
+      PassChanged = true;
+      continue;
     }
-    return true;
-  }
-  if (C && !func->HasSideEffect) {
-    bool changed = false;
-    for (auto user : func->GetUserlist()) {
-      User *inst = user->GetUser();
-      if (dynamic_cast<CallInst *>(inst)) {
-        inst->RAUW(C);
-        _DEBUG(std::cerr << "Delete Inst:" << inst->GetName() << "In Func:"
-                         << inst->GetParent()->GetParent()->GetName()
-                         << std::endl;)
-        delete inst;
-        changed = true;
+    if (C && !func->HasSideEffect) {
+      for (auto user : func->GetUserlist()) {
+        User *inst = user->GetUser();
+        if (dynamic_cast<CallInst *>(inst)) {
+          inst->RAUW(C);
+          _DEBUG(std::cerr << "Delete Inst:" << inst->GetName() << "In Func:"
+                           << inst->GetParent()->GetParent()->GetName()
+                           << std::endl;)
+          delete inst;
+          mody = true;
+          PassChanged = true;
+          break;
+        }
+      }
+      if (mody)
+        continue;
+      if (func->GetUserlist().is_empty() && func->GetBasicBlock().size() > 1) {
+        func->clear();
+        func->init_bbs();
+        auto Block = new BasicBlock;
+        auto ret = new RetInst(C);
+        Block->push_back(ret);
+        func->add_block(Block);
+        func->GetBasicBlock().push_back(Block);
+        mody = true;
+        PassChanged = true;
+      }
+      if (mody)
+        continue;
+    }
+    std::vector<User *> WorkList;
+    for (BasicBlock *block : *func) {
+      for (auto inst = block->rbegin(); inst != block->rend(); --inst) {
+        if (std::find(WorkList.begin(), WorkList.end(), (*inst)) ==
+            WorkList.end())
+          mody |= DCEInst((*inst), WorkList);
       }
     }
-    if (func->GetUserlist().is_empty() && func->GetBasicBlock().size() > 1) {
-      // for(auto iter = func->rbegin(); iter != func->rend(); --iter)
-      // {
-      //     auto block = (*iter);
-      //     delete block;
-      // }
-      func->clear();
-      func->init_bbs();
-      auto Block = new BasicBlock;
-      auto ret = new RetInst(C);
-      Block->push_back(ret);
-      func->add_block(Block);
-      func->GetBasicBlock().push_back(Block);
-      changed = true;
+    while (!WorkList.empty()) {
+      User *inst = WorkList.back();
+      WorkList.pop_back();
+      mody |= DCEInst(inst, WorkList);
     }
-    return changed;
-  }
-  bool modified = false;
-  std::vector<User *> WorkList;
-  for (BasicBlock *block : *func) {
-    for (auto inst = block->rbegin(); inst != block->rend(); --inst) {
-      if (std::find(WorkList.begin(), WorkList.end(), (*inst)) ==
-          WorkList.end())
-        modified |= DCEInst((*inst), WorkList);
+    if (mody) {
+      PassChanged = true;
+      continue;
     }
   }
-  while (!WorkList.empty()) {
-    User *inst = WorkList.back();
-    WorkList.pop_back();
-    modified |= DCEInst(inst, WorkList);
-  }
-  return modified;
+  // AM.get<SideEffect>(&Singleton<Module>());
+  // Value *C = RVACC(func);
+  // if (dynamic_cast<UndefValue *>(C) && !func->HasSideEffect) {
+  //   for (auto iter = func->rbegin(); iter != func->rend(); --iter) {
+  //     bool NDelBlock = false;
+  //     for (auto iter1 = (*iter)->rbegin(); iter1 != (*iter)->rend(); --iter1)
+  //     {
+  //       if (!dynamic_cast<RetInst *>(*iter1)) {
+  //         (*iter1)->ClearRelation();
+  //         (*iter1)->EraseFromParent();
+  //       } else
+  //         NDelBlock = true;
+  //     }
+  //     if (!NDelBlock)
+  //       (*iter)->EraseFromParent();
+  //   }
+  //   return true;
+  // }
+  // if (C && !func->HasSideEffect) {
+  //   bool changed = false;
+  //   for (auto user : func->GetUserlist()) {
+  //     User *inst = user->GetUser();
+  //     if (dynamic_cast<CallInst *>(inst)) {
+  //       inst->RAUW(C);
+  //       _DEBUG(std::cerr << "Delete Inst:" << inst->GetName() << "In Func:"
+  //                        << inst->GetParent()->GetParent()->GetName()
+  //                        << std::endl;)
+  //       delete inst;
+  //       changed = true;
+  //     }
+  //   }
+  //   if (func->GetUserlist().is_empty() && func->GetBasicBlock().size() > 1) {
+  //     // for(auto iter = func->rbegin(); iter != func->rend(); --iter)
+  //     // {
+  //     //     auto block = (*iter);
+  //     //     delete block;
+  //     // }
+  //     func->clear();
+  //     func->init_bbs();
+  //     auto Block = new BasicBlock;
+  //     auto ret = new RetInst(C);
+  //     Block->push_back(ret);
+  //     func->add_block(Block);
+  //     func->GetBasicBlock().push_back(Block);
+  //     changed = true;
+  //   }
+  //   return changed;
+  // }
+  // bool modified = false;
+  // std::vector<User *> WorkList;
+  // for (BasicBlock *block : *func) {
+  //   for (auto inst = block->rbegin(); inst != block->rend(); --inst) {
+  //     if (std::find(WorkList.begin(), WorkList.end(), (*inst)) ==
+  //         WorkList.end())
+  //       modified |= DCEInst((*inst), WorkList);
+  //   }
+  // }
+  // while (!WorkList.empty()) {
+  //   User *inst = WorkList.back();
+  //   WorkList.pop_back();
+  //   modified |= DCEInst(inst, WorkList);
+  // }
+  return PassChanged;
 }
 
 bool DCE::DCEInst(User *inst, std::vector<User *> &Worklist) {

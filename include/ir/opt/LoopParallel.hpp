@@ -18,7 +18,6 @@ private:
   bool DependencyAnalysis(LoopInfo *loop);
   Value *FindPointBase(Value *val);
   void MakeWorkThread(Value *begin, Value *end, CallInst *loop_body);
-  std::pair<Value *, Value *> &Slice(Value *begin, Value *end);
   bool Judge(BasicBlock *bb, Value *target);
   void SimplifyPhi(LoopInfo *loop);
   LoopTrait SubstitudeTrait;

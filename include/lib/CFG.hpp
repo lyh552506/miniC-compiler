@@ -170,6 +170,7 @@ class BinaryInst:public User
     };//卧槽，原批
     private:
     Operation op;
+    bool Atomic=false;
     public:
     BinaryInst(Type* _tp):User(_tp){id = OpID::BinaryUnknown;};
     BinaryInst(Operand _A,Operation __op,Operand _B);
@@ -177,6 +178,8 @@ class BinaryInst:public User
     bool IsCmpInst(){return  (op-Op_Add) > 7;}
     void print()final;
     void SetOperand(int index,Value* val);
+    void ChangeAtomic(bool _atomic){Atomic=_atomic;}
+    bool IsAtomic(){return Atomic;}
     std::string GetOperation();
     Operation getopration();
     Operation GetReversedOperation(BinaryInst::Operation ope);

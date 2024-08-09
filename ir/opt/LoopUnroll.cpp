@@ -24,13 +24,15 @@ bool LoopUnroll::Run() {
   for (auto iter = loops.begin(); iter != loops.end();) {
     auto loop = *iter;
     ++iter;
-    if (AM.FindAttr(loop->GetHeader(), Rotate) && CanBeUnroll(loop)) {
+    if (AM.FindAttr(loop->GetHeader(), Rotate) && CanBeFullUnroll(loop)) {
       auto unrollbody = ExtractLoopBody(loop);
       if (unrollbody) {
         auto bb = Unroll(loop, unrollbody);
         CleanUp(loop, bb);
         return true;
       }
+    }else if(AM.FindAttr(loop->GetHeader(), Rotate) && CanBeFullUnroll(loop)){
+
     }
   }
   return false;
@@ -339,7 +341,7 @@ BasicBlock *LoopUnroll::Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   return tmp;
 }
 
-bool LoopUnroll::CanBeUnroll(LoopInfo *loop) {
+bool LoopUnroll::CanBeFullUnroll(LoopInfo *loop) {
   const auto body = loop->GetLoopBody();
   LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   if (loop->CantCalcTrait())
@@ -374,10 +376,14 @@ bool LoopUnroll::CanBeUnroll(LoopInfo *loop) {
   default:
     assert(0 && "what op?");
   }
-  int cost = CaculatePrice(body, iteration,m_func);
+  int cost = CaculatePrice(body, iteration, m_func);
   if (cost > MaxInstCost)
     return false;
   return true;
+}
+
+bool CanBeHalfUnroll(LoopInfo *loop){
+  
 }
 
 void LoopUnroll::CleanUp(LoopInfo *loop, BasicBlock *clean) {
@@ -415,4 +421,8 @@ int LoopUnroll::CaculatePrice(const std::vector<BasicBlock *> &body,
     }
   }
   return cost * Iteration;
+}
+
+BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
+  
 }
