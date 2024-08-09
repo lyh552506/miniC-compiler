@@ -170,7 +170,15 @@ void _PassManager::RunOnLevel() {
         PassChangedBegin(curfunc) PassChangedEnd
       }
       modified = true;
+      RunLevelPass(TailRecurseEliminator, curfunc, modified)
+    }
+      while (RunImpl<Inliner>(module, AM)) {
+      RunLevelPass(cfgSimplify, curfunc, modified)
+          RunImpl<DeadArgsElimination>(module, AM);
+      RunImpl<StoreOnlyGlobalElimination>(module, AM);
+      RunImpl<Global2Local>(module, AM);
       CommonPass(AM);
+
     }
     {
       // tail

@@ -56,20 +56,20 @@ bool RISCVISel::run(Function* m){
             InstLowering(inst);
     }
 
-    /// @note get branch prob to fix terminator
-    auto loopinfo=AM.get<LoopAnalysis>(m,mdom);
-    auto condprob=AM.get<ProbAnalysis>(m,loopinfo);
-    auto probedge=condprob->GetProb();
+    // /// @note get branch prob to fix terminator
+    // auto loopinfo=AM.get<LoopAnalysis>(m,mdom);
+    // auto condprob=AM.get<ProbAnalysis>(m,loopinfo);
+    // auto probedge=condprob->GetProb();
 
-    for(auto& edge:probedge){
-        auto pred=ctx.mapping(edge.Out)->as<RISCVBasicBlock>();
-        auto succ=ctx.mapping(edge.In)->as<RISCVBasicBlock>();
-        auto prob=edge.Prob;
-        auto terminator=pred->getTerminator();
-        assert(terminator.trueblock==succ||terminator.falseblock==succ);
-        if(terminator.falseblock==succ)prob=1-prob;
-        terminator.SetProb(prob);
-    }
+    // for(auto& edge:probedge){
+    //     auto pred=ctx.mapping(edge.Out)->as<RISCVBasicBlock>();
+    //     auto succ=ctx.mapping(edge.In)->as<RISCVBasicBlock>();
+    //     auto prob=edge.Prob;
+    //     auto terminator=pred->getTerminator();
+    //     assert(terminator.trueblock==succ||terminator.falseblock==succ);
+    //     if(terminator.falseblock==succ)prob=1-prob;
+    //     terminator.SetProb(prob);
+    // }
 
     return true;
 }
@@ -190,6 +190,15 @@ void RISCVISel::InstLowering(CondInst* inst){
             {
                 // bne
                 integer_cond_builder(RISCVMIR::_bne);
+                break;
+            }
+            case BinaryInst::Op_And:
+            case BinaryInst::Op_Or:
+            case BinaryInst::Op_Xor:
+            {
+                // bne
+                ctx(Builder_withoutDef(RISCVMIR::_bne,{ctx.mapping(cond->GetDef()),PhyRegister::GetPhyReg(PhyRegister::zero),ctx.mapping(inst->GetOperand(1))}));
+                ctx(Builder_withoutDef(RISCVMIR::_j,{ctx.mapping(inst->GetOperand(2))}));
                 break;
             }
             default:
@@ -386,24 +395,24 @@ void RISCVISel::InstLowering(BinaryInst* inst){
         }
         case BinaryInst::Op_And:
         {
-            if(inst->GetType()==IntType::NewIntTypeGet()) {
+            if(inst->GetType()!=FloatType::NewFloatTypeGet()) {
                 if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1)))
                     ctx(Builder(RISCVMIR::_andi,inst));
                 else 
                     ctx(Builder(RISCVMIR::_and,inst));
             }
-            else assert("Illegal!");
+            else assert(0&&"Illegal!");
             break;
         }
         case BinaryInst::Op_Or:
         {
-            if(inst->GetType()==IntType::NewIntTypeGet()) {
+            if(inst->GetType()!=FloatType::NewFloatTypeGet()) {
                 if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1)))
                     ctx(Builder(RISCVMIR::_ori,inst));
                 else 
                     ctx(Builder(RISCVMIR::_or,inst));
             }
-            else assert("Illegal!");
+            else assert(0&&"Illegal!");
             break;
         }
         default:

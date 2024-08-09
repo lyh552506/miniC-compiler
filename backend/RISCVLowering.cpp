@@ -34,6 +34,7 @@ bool RISCVModuleLowering::run(Module *m)
 
 bool RISCVFunctionLowering::run(Function *m)
 {
+    
     /// @note this function is used to lower buildin function to the correct form
     /// @note and in order to solving user function which have the same name as buildin function
     BuildInFunctionTransform buildin;
@@ -73,6 +74,7 @@ bool RISCVFunctionLowering::run(Function *m)
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
+    std::cout << std::flush;
     for (auto block : *(ctx.GetCurFunction()))
     {
         for (auto it = block->begin(); it != block->end();)
@@ -111,8 +113,8 @@ bool RISCVFunctionLowering::run(Function *m)
     auto dbd=DeleteDeadBlock();
     dbd.run(ctx.GetCurFunction());
 
-    auto layout=CodeLayout();
-    layout.run(mfunc);
+    // auto layout=CodeLayout();
+    // layout.run(mfunc);
 
     return false;
 }

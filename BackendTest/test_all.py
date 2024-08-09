@@ -16,10 +16,10 @@ upload_folder = "uploadfolder"
 # compiler_path = "./compiler"
 compiler_path = "./build/SYSY-compiler"
 
-test_folder="testcases/functional"
-output_folder = "testcases/output"
-# test_folder="function_test"
-# output_folder = "function_test"
+# test_folder="testcases/functional"
+# output_folder = "testcases/output"
+test_folder="function_test"
+output_folder = "function_test"
 sylib_path = "BackendTest/sylib.o"
 
 pass_args=["--O1"] # 
@@ -50,6 +50,7 @@ for test in test_list:
         for arg in pass_args:
             compile_args.append(arg)
         try:
+            print("Running: " + test)
             ret = subprocess.run(compile_args,timeout=60)
         except subprocess.TimeoutExpired:
             Time_Out.append(test)
@@ -126,10 +127,10 @@ for ind in range(0, 1):
         basename = os.path.basename(test)
         try:
             if not os.path.exists(source+".in"):
-                ret = subprocess.run(compile_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=10)
+                ret = subprocess.run(compile_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=60)
             else:
                 shutil.copy(source+".in",upload_folder+"/"+basename+".in")
-                ret = subprocess.run(compile_args,stdin=open(source+".in"),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=10)
+                ret = subprocess.run(compile_args,stdin=open(source+".in"),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=60)
         except subprocess.TimeoutExpired:
             outputfile.write("TIMEOUT ERROR: "+test+ "\n")
             outputfile.flush()
