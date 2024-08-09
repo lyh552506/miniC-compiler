@@ -73,6 +73,36 @@ void Initializer::print() {
   std::cout << "]";
 }
 
+Operand Initializer::getInitVal(std::vector<int>& index,int dep){
+  auto getZero=[&]() -> Operand {
+    auto basetp=dynamic_cast<HasSubType*>(GetType())->get_baseType();
+    if(basetp==IntType::NewIntTypeGet()){
+      return ConstIRInt::GetNewConstant();
+    }
+    else if(basetp==FloatType::NewFloatTypeGet()){
+      return ConstIRFloat::GetNewConstant();
+    }
+    else{
+      return ConstIRBoolean::GetNewConstant();
+    }
+  };
+  
+  if (size() == 0) {
+    return getZero();
+  }
+  int limi = dynamic_cast<ArrayType *>(tp)->GetNumEle();
+  auto i=index[dep];
+  assert(i<limi);
+  auto thissize=size();
+  if(i>=thissize)return getZero();
+  else if(auto inits = dynamic_cast<Initializer *>((*this)[i])){
+    return inits->getInitVal(index,dep+1);
+  }
+  else{
+    return (*this)[i];
+  }
+}
+
 AllocaInst::AllocaInst(std::string str, Type *_tp)
     : User(PointerType::NewPointerTypeGet(_tp)) {
   id = OpID::Alloca;

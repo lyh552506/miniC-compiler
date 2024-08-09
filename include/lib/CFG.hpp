@@ -20,6 +20,7 @@ class Initializer:public Value,public std::vector<Operand>
     /// <Type> [<Content_0>,<Content1>,...]
     /// Content:= <Type> <Content>
     void print();
+    Operand getInitVal(std::vector<int>&,int=0);
 };
 
 /// @details
