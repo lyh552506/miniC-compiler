@@ -1,7 +1,62 @@
 #include "../include/backend/RISCVISel.hpp"
 /// @todo 参数带有浮点数的情况
 
+void LowerFormalArgumentsParallel(Function* func,RISCVLoweringContext& ctx){
+    auto& params=func->GetParams();
+    auto addressreg=ctx.createVReg(riscv_ptr);
+    auto addressinst=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
+    addressinst->SetDef(addressreg);
+    addressinst->AddOperand(OuterTag::GetOuterTag("buildin_"));
+    ctx(addressinst);
+
+    auto mvaddress=[&](int offset){
+        auto addi=new RISCVMIR(RISCVMIR::_addi);
+        addi->SetDef(addressreg);
+        addi->AddOperand(addressreg);
+        addi->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(offset)));
+        ctx(addi);
+    };
+
+    for(auto& paramptr:params){
+        auto param=paramptr.get();
+        auto tp=param->GetType();
+        VirRegister* reg=nullptr;
+        auto load2reg=[&](RISCVMIR::RISCVISA _opcode,RISCVType _tp){
+            auto mir=new RISCVMIR(_opcode);
+            reg=ctx.createVReg(_tp);
+            mir->SetDef(reg);
+            mir->AddOperand(addressreg);
+            ctx.insert_val2mop(param,reg);
+            ctx(mir);
+            mvaddress(tp->get_size());
+        };
+        if(dynamic_cast<PointerType*>(tp)){
+            assert(tp->get_size()==8);
+            load2reg(RISCVMIR::_ld,riscv_ptr);
+        }
+        else if(tp==FloatType::NewFloatTypeGet()){
+            assert(tp->get_size()==4);
+            load2reg(RISCVMIR::_flw,riscv_float32);
+        }
+        else{
+            assert(tp->get_size()==4);
+            load2reg(RISCVMIR::_lw,riscv_i32);
+        }
+    }
+
+    // call fenceArgLoaderd
+    auto fenceArgLoaded=BuildInFunction::GetBuildInFunction("FenceArgLoaded");
+    auto call=new RISCVMIR(RISCVMIR::call);
+    call->AddOperand(ctx.mapping(fenceArgLoaded));
+    ctx(call);
+}
+
 void LowerFormalArguments(Function* func, RISCVLoweringContext& ctx) {
+    if(func->tag==Function::ParallelBody){
+        LowerFormalArgumentsParallel(func,ctx);
+        return;
+    }
+
     #define M(x) ctx.mapping(x)
     int IntMaxNum=8, FloatMaxNum=8;
     std::unique_ptr<RISCVFrame>& frame = ctx.GetCurFunction()->GetFrame();

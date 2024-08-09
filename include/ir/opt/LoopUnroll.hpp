@@ -4,6 +4,7 @@
 #include "../Analysis/dominant.hpp"
 #include "CSE.hpp"
 #include "New_passManager.hpp"
+#include <vector>
 
 class LoopUnroll : public _PassManagerBase<LoopUnroll, Function> {
 public:
@@ -13,7 +14,11 @@ public:
 private:
   CallInst *ExtractLoopBody(LoopInfo *loop);
   BasicBlock *Unroll(LoopInfo *loop, CallInst *UnrollBody);
-  bool CanBeUnroll(LoopInfo *loop);
+  BasicBlock *Half_Unroll(LoopInfo *loop, CallInst *UnrollBody);
+  bool CanBeFullUnroll(LoopInfo *loop);
+  bool CanBeHalfUnroll(LoopInfo *loop);
+  int CaculatePrice(const std::vector<BasicBlock *> &body, int Iteration,
+                    Function *curfunc);
   void CleanUp(LoopInfo *loop, BasicBlock *clean);
   bool simplify_Block();
   void DeletDeadBlock(BasicBlock *bb);
@@ -24,8 +29,5 @@ private:
   std::unordered_map<Value *, Variable *> Val2Arg;
   Value *OriginChange = nullptr;
   BasicBlock *prehead = nullptr;
-  int cost = 0; // gep: 4 ; load: 4 ;binary: 1; phi: 2
-  const int MaxInstCost = 800;
-  const int MaxBlock = 128;
-  const int MaxIteration = 500;
+  const int MaxInstCost = 5000;
 };

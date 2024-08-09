@@ -83,6 +83,7 @@ class AllocaInst:public User
     AllocaInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
     bool IsUsed();
+    bool AllZero = false;
 };
 
 class StoreInst:public User
@@ -169,6 +170,7 @@ class BinaryInst:public User
     };//卧槽，原批
     private:
     Operation op;
+    bool Atomic=false;
     public:
     BinaryInst(Type* _tp):User(_tp){id = OpID::BinaryUnknown;};
     BinaryInst(Operand _A,Operation __op,Operand _B);
@@ -176,6 +178,8 @@ class BinaryInst:public User
     bool IsCmpInst(){return  (op-Op_Add) > 7;}
     void print()final;
     void SetOperand(int index,Value* val);
+    void ChangeAtomic(bool _atomic){Atomic=_atomic;}
+    bool IsAtomic(){return Atomic;}
     std::string GetOperation();
     Operation getopration();
     Operation GetReversedOperation(BinaryInst::Operation ope);
@@ -206,7 +210,7 @@ class ZextInst:public User
 
 class PhiInst : public User {
 public:
-  PhiInst(Type *ty) : User{ty} {id = OpID::Phi;}
+  PhiInst(Type *ty) :oprandNum(0), User{ty} {id = OpID::Phi;}
   PhiInst(User *BeforeInst,Type *ty):oprandNum(0),User{ty} {id = OpID::Phi;}
 
   PhiInst(User *BeforeInst):oprandNum(0) {id = OpID::Phi;}
@@ -214,6 +218,7 @@ public:
   void print() final;
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,std::string Name="");
   static PhiInst *NewPhiNode(User *BeforeInst, BasicBlock *currentBB,Type* ty,std::string Name="");
+  static PhiInst *NewPhiNode(Type* ty);
   void updateIncoming(Value* Income,BasicBlock* BB);//phi i32 [ 0, %7 ], [ %9, %8 ]
   std::vector<Value*>& GetAllPhiVal();
   Value* ReturnValIn(BasicBlock* bb);
@@ -296,6 +301,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     enum Tag{
         Normal,
         UnrollBody,
+        LoopBody,
         ParallelBody,
     };
     Tag tag=Normal;

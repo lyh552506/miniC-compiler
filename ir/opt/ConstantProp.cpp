@@ -1,5 +1,6 @@
 #include "../../include/ir/opt/ConstantProp.hpp"
 #include "BaseCFG.hpp"
+#include "InstructionSimplify.hpp"
 #include <set>
 
 bool ConstantProp::Run() {
@@ -31,6 +32,7 @@ bool ConstantProp::RunOnBlock(BasicBlock *block) {
     inst->EraseFromParent();
     modified |= true;
   }
+  modified |=MatchAddModInst(block);
   return modified;
 }
 

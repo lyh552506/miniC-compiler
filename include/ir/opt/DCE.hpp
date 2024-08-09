@@ -18,4 +18,5 @@ private:
     bool DeadPhiCycle(PhiInst* phi, std::set<PhiInst*>& PotentiallyDeadPhis);
     Value* RVACC(Function* func);
     _AnalysisManager& AM;
+    bool PassChanged=false;
 };

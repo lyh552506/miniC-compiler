@@ -14,6 +14,7 @@ public:
 
 private:
   bool SimplifyLoopsImpl(LoopInfo *loop);
+  void SimplifyPhi();
   void InsertPreHeader(LoopInfo *loop);
   void FormatLatch(LoopInfo *loop, BasicBlock *PreHeader,
                    std::vector<BasicBlock *> &latch);

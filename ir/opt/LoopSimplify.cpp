@@ -20,7 +20,31 @@ bool LoopSimplify::Run() {
     changed |= SimplifyLoopsImpl(loop);
     AM.AddAttr(loop->GetHeader(), Simplified);
   }
+  SimplifyPhi();
   return changed;
+}
+
+void LoopSimplify::SimplifyPhi() {
+  for (auto bb : *m_func)
+    for (auto iter = bb->begin();
+         iter != bb->end() && dynamic_cast<PhiInst *>(*iter);) {
+      auto phi = dynamic_cast<PhiInst *>(*iter);
+      ++iter;
+      int num = 0;
+      Value *Rep = nullptr;
+      for (const auto &[index, val] : phi->PhiRecord) {
+        if (val.first != phi) {
+          num++;
+          Rep = val.first;
+          if (num > 1)
+            break;
+        }
+      }
+      if (num == 1) {
+        phi->RAUW(Rep);
+        delete phi;
+      }
+    }
 }
 
 bool LoopSimplify::SimplifyLoopsImpl(LoopInfo *loop) {

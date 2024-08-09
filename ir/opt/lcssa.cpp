@@ -39,8 +39,9 @@ bool LcSSA::DFSLoops(LoopInfo *l) {
       if (inst->GetUserListSize() == 0)
         continue;
       for (const auto user : inst->GetUserlist()) {
-        if (ContainBB.find(user->GetUser()->GetParent()) == ContainBB.end())
+        if (ContainBB.find(user->GetUser()->GetParent()) == ContainBB.end()) {
           FormingInsts.push_back(inst);
+        }
       }
     }
   }

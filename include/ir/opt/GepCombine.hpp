@@ -74,6 +74,7 @@ class GepCombine : public _PassManagerBase<GepCombine, Function>
     dominance *DomTree;
     Function *func;
     _AnalysisManager &AM;
+    std::vector<User*> wait_del;
     bool ProcessNode(HandleNode *node);
     bool CanHandle(GetElementPtrInst* src, GetElementPtrInst* base);
     Value* SimplifyGepInst(GetElementPtrInst* inst, std::unordered_set<GetElementPtrInst*>& geps);

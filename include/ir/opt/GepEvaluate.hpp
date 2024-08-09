@@ -8,51 +8,155 @@
 #include "PassManagerBase.hpp"
 
 class _AnalysisManager;
+typedef std::unordered_map<Value *, std::unordered_map<size_t, Value *>> ValueAddr_Struct;
+
+struct InitHash
+{
+    size_t operator()(AllocaInst *alloca, std::vector<int> index)
+    {
+        std::reverse(index.begin(), index.end());
+        size_t hash = 0;
+        hash ^= std::hash<AllocaInst *>()(alloca);
+        int j = 0;
+        for (auto i : index)
+        {
+            hash += (((std::hash<int>()(i + 3) * 10107 ^ std::hash<int>()(i + 5) * 137) * 157) * ((j + 4) * 107));
+            j++;
+        }
+        return hash;
+    }
+};
 
 struct ValueHash
 {
-    size_t operator()(Value* val, Value* base) const
+    size_t operator()(Value *val) const
     {
-
+        if (auto val_int = dynamic_cast<ConstIRInt *>(val))
+            return ((std::hash<int>()(val_int->GetVal() + 3) * 10107 ^ std::hash<int>()(val_int->GetVal() + 5) * 137) *
+                    157);
+        else
+            return std::hash<Value *>()(val);
     }
 };
 
 struct GepHash
 {
-    size_t operator()(GetElementPtrInst* gep) const
+    size_t operator()(GetElementPtrInst *gep, ValueAddr_Struct *addr) const
     {
         size_t h = 0;
-        Value* Base = gep->GetOperand(0);
-        if(!Base->isParam())
+        Value *Base = gep->GetOperand(0);
+        if (!Base->isParam())
         {
-            if(auto alloca = dynamic_cast<AllocaInst*>(Base))
-                h ^= std::hash<AllocaInst *>()(alloca);
-            else if(auto gep_base = dynamic_cast<GetElementPtrInst*>(Base))
-                h ^= GepHash{}(gep_base);
-            for(int i = 1; i < gep->Getuselist().size(); i++)
+            if (auto alloca = dynamic_cast<AllocaInst *>(Base))
             {
-                auto p = gep->Getuselist()[i]->usee;
-                h ^= ValueHash{}(p, Base);
+                h ^= std::hash<AllocaInst *>()(alloca);
+                int j = 0;
+                for (int i = 2; i < gep->Getuselist().size(); i++)
+                {
+                    auto p = gep->Getuselist()[i]->usee;
+                    if (auto load = dynamic_cast<LoadInst *>(p))
+                    {
+                        if (auto load_gep = dynamic_cast<GetElementPtrInst *>(load->Getuselist()[0]->usee))
+                        {
+                            size_t load_gep_hash = GepHash{}(load_gep, addr);
+                            if (addr->find(load_gep->Getuselist()[0]->usee) != addr->end())
+                            {
+                                if (addr->find(load_gep->Getuselist()[0]->usee)->second.find(load_gep_hash) !=
+                                    addr->find(load_gep->Getuselist()[0]->usee)->second.end())
+                                {
+                                    h += ValueHash{}(
+                                             addr->find(load_gep->Getuselist()[0]->usee)->second[load_gep_hash]) *
+                                         ((j + 4) * 107);
+                                }
+                            }
+                        }
+                    }
+                    else
+                        h += ValueHash{}(p) * ((j + 4) * 107);
+                    j++;
+                }
+            }
+            else if (auto gep_base = dynamic_cast<GetElementPtrInst *>(Base))
+            {
+                auto alloca = dynamic_cast<AllocaInst *>(gep_base->GetOperand(0));
+                int j = 0;
+                for (int i = 1; i < gep->Getuselist().size(); i++)
+                {
+                    auto p = gep->Getuselist()[i]->usee;
+                    if (auto load = dynamic_cast<LoadInst *>(p))
+                    {
+                        if (auto load_gep = dynamic_cast<GetElementPtrInst *>(load->Getuselist()[0]->usee))
+                        {
+                            size_t load_gep_hash = GepHash{}(load_gep, addr);
+                            if (addr->find(load_gep->Getuselist()[0]->usee) != addr->end())
+                            {
+                                if (addr->find(load_gep->Getuselist()[0]->usee)->second.find(load_gep_hash) !=
+                                    addr->find(load_gep->Getuselist()[0]->usee)->second.end())
+                                {
+                                    h += ValueHash{}(
+                                             addr->find(load_gep->Getuselist()[0]->usee)->second[load_gep_hash]) *
+                                         ((j + 4) * 107);
+                                }
+                            }
+                        }
+                    }
+                    else
+                        h += ValueHash{}(p) * ((j + 4) * 107);
+                    j++;
+                }
             }
         }
         else
         {
-            if(dynamic_cast<HasSubType*>(Base->GetType())->GetSubType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
+            if (dynamic_cast<HasSubType *>(Base->GetType())->GetSubType()->GetTypeEnum() == InnerDataType::IR_ARRAY)
             {
-                auto array = dynamic_cast<ArrayType*>(dynamic_cast<HasSubType*>(Base->GetType())->GetSubType());
+                auto array = dynamic_cast<ArrayType *>(dynamic_cast<HasSubType *>(Base->GetType())->GetSubType());
                 h ^= (std::hash<Value *>()(Base) << array->GetNumEle());
             }
             else
-                h ^= std::hash<Variable *>()(dynamic_cast<Variable*>(Base));
-            for(int i = 1; i < gep->Getuselist().size(); i++)
+                h ^= std::hash<Variable *>()(dynamic_cast<Variable *>(Base));
+            int j = 0;
+            for (int i = 1; i < gep->Getuselist().size(); i++)
             {
                 auto p = gep->Getuselist()[i]->usee;
-                h ^= ValueHash{}(p, Base);
+                h ^= ValueHash{}(p) * ((j + 4) * 107);
+                j++;
             }
         }
         return h;
     }
 };
+
+// struct ValueHash
+// {
+//     size_t operator()(Value *val, ValueAddr_Struct *addr) const
+//     {
+//         if (auto val_int = dynamic_cast<ConstIRInt *>(val))
+//             return ((std::hash<int>()(val_int->GetVal() + 3) * 10107 ^ std::hash<int>()(val_int->GetVal() + 5) * 137)
+//             *
+//                     157);
+//         else if (auto load = dynamic_cast<LoadInst *>(val))
+//         {
+//             if (auto gep = dynamic_cast<GetElementPtrInst *>(load->Getuselist()[0]->usee))
+//             {
+//                 if (addr->find(gep->Getuselist()[0]->usee) != addr->end())
+//                 {
+//                     size_t hash = GepHash{}(gep, addr);
+//                     if (addr->find(gep) != addr->end())
+//                     {
+//                         if (addr->find(gep)->second.find(hash) != addr->find(gep)->second.end())
+//                         {
+//                             return ValueHash{}(addr->find(gep)->second[hash], addr);
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//         else
+//             return std::hash<Value *>()(val);
+//     }
+// };
+
 class GepEvaluate : public _PassManagerBase<GepEvaluate, Function>
 {
     class HandleNode
@@ -64,8 +168,9 @@ class GepEvaluate : public _PassManagerBase<GepEvaluate, Function>
         bool Processed = false;
         std::forward_list<int>::iterator Curiter;
         std::forward_list<int>::iterator Enditer;
-        std::unordered_map<Value *, std::unordered_map<size_t, Value *>> ValueAddr;
-        std::unordered_map<Value *, std::unordered_map<size_t, Value *>> ChildValueAddr;
+
+      public:
+        ValueAddr_Struct ValueAddr;
 
       public:
         std::forward_list<int>::iterator Child()
@@ -94,24 +199,9 @@ class GepEvaluate : public _PassManagerBase<GepEvaluate, Function>
         {
             return block;
         }
-        void SetChildValueAddr(std::unordered_map<Value *, std::unordered_map<size_t, Value *>> valueaddr)
-        {
-            ChildValueAddr = valueaddr;
-        }
-        std::unordered_map<Value *, std::unordered_map<size_t, Value *>> GetChildValueAddr()
-        {
-            return ChildValueAddr;
-        }
-        std::unordered_map<Value *, std::unordered_map<size_t, Value *>> GetValueAddr()
-        {
-            return ValueAddr;
-        }
-        void SetValueAddr(std::unordered_map<Value *, std::unordered_map<size_t, Value *>> valueaddr)
-        {
-            ValueAddr = valueaddr;
-        }
         HandleNode(dominance *dom, dominance::Node *node, std::forward_list<int>::iterator child,
-                   std::forward_list<int>::iterator end,  std::unordered_map<Value *, std::unordered_map<size_t, Value *>> ValueAddr)
+                   std::forward_list<int>::iterator end,
+                   std::unordered_map<Value *, std::unordered_map<size_t, Value *>> ValueAddr)
             : DomTree(dom), dom_node(node), Curiter(child), Enditer(end), ValueAddr(ValueAddr)
         {
             block = node->thisBlock;
@@ -122,8 +212,12 @@ class GepEvaluate : public _PassManagerBase<GepEvaluate, Function>
     Function *func;
     dominance *DomTree;
     _AnalysisManager &AM;
-    std::vector<User*> wait_del;
+    std::vector<User *> wait_del;
+    std::unordered_map<BasicBlock *, HandleNode *> Mapping;
     bool ProcessNode(HandleNode *node);
+    void HandleMemcpy(AllocaInst *inst, Initializer *init, HandleNode *node, std::vector<int> index);
+    void HandleBlockIn(ValueAddr_Struct &addr, HandleNode *node);
+
   public:
     GepEvaluate(Function *_func, _AnalysisManager &_AM) : func(_func), AM(_AM)
     {
