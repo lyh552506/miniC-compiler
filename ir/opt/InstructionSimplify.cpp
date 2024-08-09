@@ -1,8 +1,4 @@
 #include "../../include/ir/opt/InstructionSimplify.hpp"
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "Singleton.hpp"
-#include "my_stl.hpp"
 #include <vector>
 
 Value *SimplifyBinOp(BinaryInst::Operation Opcode, Value *LHS, Value *RHS) {

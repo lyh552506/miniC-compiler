@@ -1,7 +1,5 @@
 #include "../../include/ir/opt/cfgSimplify.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
-#include "CFG.hpp"
-#include "Singleton.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>

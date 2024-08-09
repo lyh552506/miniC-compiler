@@ -1,11 +1,4 @@
 #include "../../include/ir/opt/New_passManager.hpp"
-#include "BlockMerge.hpp"
-#include "CFG.hpp"
-#include "CondMerge.hpp"
-#include "LoopParallel.hpp"
-#include "LoopUnroll.hpp"
-#include "Singleton.hpp"
-#include "my_stl.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -130,10 +123,10 @@ void _PassManager::RunOnLevel() {
       CommonPass(AM);
     }
 
-    RunLevelPass(TailRecurseEliminator, curfunc, modified)
-    while (RunImpl<Inliner>(module, AM)) {
+    RunLevelPass(TailRecurseEliminator, curfunc,
+                 modified) while (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
-      RunImpl<DeadArgsElimination>(module, AM);
+          RunImpl<DeadArgsElimination>(module, AM);
       RunImpl<StoreOnlyGlobalElimination>(module, AM);
       RunImpl<Global2Local>(module, AM);
       CommonPass(AM);
@@ -152,8 +145,7 @@ void _PassManager::RunOnLevel() {
             // loop-rotate
 
             RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
-                PassChangedEnd
-                    // licm
+                PassChangedEnd // licm
 
                     RunLevelPass(LICMPass, curfunc, modified);
         PassChangedBegin(curfunc) PassChangedEnd
@@ -168,8 +160,7 @@ void _PassManager::RunOnLevel() {
 
             RunLevelPass(LoopUnroll, curfunc,
                          modified) PassChangedBegin(curfunc)
-PassChangedEnd
-                 RunLevelPass(ConstantProp, curfunc, modified);
+                PassChangedEnd RunLevelPass(ConstantProp, curfunc, modified);
 
         RunLevelPass(DCE, curfunc, other);
         PassChangedBegin(curfunc) PassChangedEnd
@@ -178,7 +169,7 @@ PassChangedEnd
         PassChangedBegin(curfunc) PassChangedEnd
       }
     }
-      while (RunImpl<Inliner>(module, AM)) {
+    while (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
           RunImpl<DeadArgsElimination>(module, AM);
       RunImpl<StoreOnlyGlobalElimination>(module, AM);
@@ -210,15 +201,13 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     RunLevelPass(cfgSimplify, curfunc, mody);
     PassChangedBegin(curfunc) PassChangedEnd PassChangedBegin(curfunc)
         RunImpl<Mem2reg>(curfunc, AM);
-    PassChangedEnd
-    if (!HasRunCondMerge)
-    {
-        PassChangedBegin(curfunc) PassChangedEnd RunLevelPass(CondMerge, curfunc, modified);
-        PassChangedBegin(curfunc) PassChangedEnd
-        HasRunCondMerge = true;
+    PassChangedEnd if (!HasRunCondMerge) {
+      PassChangedBegin(curfunc)
+          PassChangedEnd RunLevelPass(CondMerge, curfunc, modified);
+      PassChangedBegin(curfunc) PassChangedEnd HasRunCondMerge = true;
     }
-        // Local2Global
-        RunImpl<Local2Global>(module, AM);
+    // Local2Global
+    RunImpl<Local2Global>(module, AM);
     // simplifycfg
     RunLevelPass(ConstantProp, curfunc, mody);
     RunLevelPass(DCE, curfunc, mody);
@@ -228,7 +217,7 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     PassChangedBegin(curfunc) PassChangedEnd
         // cse
         RunLevelPass(CSE, curfunc, mody);
-            RunLevelPass(GepCombine, curfunc, mody);
+    RunLevelPass(GepCombine, curfunc, mody);
 
     RunLevelPass(GepEvaluate, curfunc, mody);
     // constprop

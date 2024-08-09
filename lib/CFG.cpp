@@ -326,7 +326,7 @@ bool check_binary_boolean(BinaryInst::Operation op) {
   }
 }
 
-BinaryInst::BinaryInst(Operand _A, Operation __op, Operand _B)
+BinaryInst::BinaryInst(Operand _A, Operation __op, Operand _B, bool Atom)
     : User(check_binary_boolean(__op) ? BoolType::NewBoolTypeGet()
                                       : _B->GetType()) {
   op = __op;
@@ -334,6 +334,7 @@ BinaryInst::BinaryInst(Operand _A, Operation __op, Operand _B)
   id = static_cast<User::OpID>(__op + BaseEnumNum);
   add_use(_A);
   add_use(_B);
+  Atomic = Atom;
 }
 
 std::string BinaryInst::GetOperation() {
@@ -522,9 +523,10 @@ void BinaryInst::print() {
 
 void BinaryInst::SetOperand(int index, Value *val) {
   assert(index < this->uselist.size());
-  uselist[index].reset();
-  uselist.erase(uselist.begin() + index);
-  uselist.insert(uselist.begin() + index, std::make_unique<Use>(this, val));
+  this->RSUW(index, val);
+  // uselist[index].reset();
+  // uselist.erase(uselist.begin() + index);
+  // uselist.insert(uselist.begin() + index, std::make_unique<Use>(this, val));
 }
 
 Variable::Variable(UsageTag tag, Type *_tp, std::string _id)
@@ -1050,8 +1052,28 @@ bool BasicBlock::EndWithBranch() {
 
 void BasicBlock::RemovePredBB(BasicBlock *pred) {
   //不能自己删除自己
-  if (pred == this)
+  if (pred == this) {
+    for (auto iter = pred->begin();
+         iter != pred->end() && dynamic_cast<PhiInst *>(*iter);) {
+      auto phi = dynamic_cast<PhiInst *>(*iter);
+      ++iter;
+      phi->EraseRecordByBlock(pred);
+      if (phi->PhiRecord.size() == 1) {
+        BasicBlock *b = phi->PhiRecord.begin()->second.second;
+        if (b == this) {
+          phi->RAUW(UndefValue::get(phi->GetType()));
+          delete phi;
+        } else {
+          Value *repl = (*(phi->PhiRecord.begin())).second.first;
+          if (repl == phi)
+            phi->RAUW(UndefValue::get(phi->GetType()));
+          phi->RAUW(repl);
+          delete phi;
+        }
+      }
+    }
     return;
+  }
   for (auto iter = this->begin(); iter != this->end(); ++iter) {
     auto inst = *iter;
     if (auto phi = dynamic_cast<PhiInst *>(this->front())) {
@@ -1464,7 +1486,6 @@ void PhiInst::ModifyBlock_CheckSame(BasicBlock *Old, BasicBlock *New) {
   PhiRecord[index] = Pair;
   return;
 }
-
 
 std::pair<size_t, size_t> &Function::GetInlineInfo() {
   // codesize,framesize

@@ -5,7 +5,6 @@
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Type.hpp"
 #include "../../util/my_stl.hpp"
-#include "New_passManager.hpp"
 #include <algorithm>
 #include <cassert>
 #include <set>
