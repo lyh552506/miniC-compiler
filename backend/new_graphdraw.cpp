@@ -173,8 +173,8 @@ void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
   for (auto &[val, vec] : IntervInfo) {
     if(!GlobalLiveRange.count(val))
     {
-      GlobalLiveRange[val].start = INTMAX_MAX;
-      GlobalLiveRange[val].end = INTMAX_MIN;
+      GlobalLiveRange[val].start = INT32_MAX;
+      GlobalLiveRange[val].end = INT32_MIN;
     }
     unsigned int length = 0;
     for (auto v : vec)
