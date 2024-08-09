@@ -1,5 +1,5 @@
 #include "../../include/ir/Analysis/SideEffect.hpp"
-#include "CFG.hpp"
+#include "../../include/lib/CFG.hpp"
 
 bool SideEffect::RunOnModule(Module* module)
 {
