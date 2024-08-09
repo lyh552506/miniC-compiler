@@ -180,9 +180,16 @@ void GepEvaluate::HandleMemcpy(AllocaInst *inst, Initializer *init, HandleNode *
         }
         else // 这里就是zero
         {
-            Value *val = nullptr; // 选择直接不处理, 在map找不到就是0
+            index.push_back(i);
+            HandleZeroInitializer(inst, node, index);
+            index.pop_back();
         }
     }
+}
+
+void GepEvaluate::HandleZeroInitializer(AllocaInst* inst, HandleNode* node, std::vector<int> index)
+{
+    return; // TODO
 }
 
 void GepEvaluate::HandleBlockIn(ValueAddr_Struct &addr, HandleNode *node)
