@@ -795,7 +795,9 @@ void GraphColor::CaculateSpillLiveness() {
     return;
   }
   for (const auto spill : spilledNodes)
-    for (const auto other : spilledNodes)
+    for (const auto other : spilledNodes) {
+      if (spill == other)
+        continue;
       if (!IsHasInterference(spill, other)) {
         if (SpillToken.find(spill) == SpillToken.end() &&
             SpillToken.find(other) == SpillToken.end()) {
@@ -807,8 +809,6 @@ void GraphColor::CaculateSpillLiveness() {
         } else if (SpillToken.find(spill) == SpillToken.end() &&
                    SpillToken.find(other) != SpillToken.end()) {
           SpillToken[spill] = SpillToken[other];
-        } else {
-          assert(SpillToken[spill] == SpillToken[other]);
         }
       } else {
         if (SpillToken.find(spill) == SpillToken.end() &&
@@ -821,8 +821,7 @@ void GraphColor::CaculateSpillLiveness() {
         } else if (SpillToken.find(spill) == SpillToken.end() &&
                    SpillToken.find(other) != SpillToken.end()) {
           SpillToken[spill] = token++;
-        } else {
-          assert(SpillToken[spill] != SpillToken[other]);
         }
       }
+    }
 }
