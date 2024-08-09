@@ -16,8 +16,13 @@ class DSE : public _PassManagerBase<DSE, Function>
     Function *func;
     _AnalysisManager &AM;
     std::vector<User *> wait_del;
-    void init();
+    std::unordered_set<BasicBlock*> HasHandleBlock;
+    std::unordered_map<Value*, StoreInst*> Store_Map;
+    std::unordered_map<Value*, std::pair<size_t, StoreInst*>> Array_Store_Map;
 
+    bool RunOnBlock(BasicBlock* block);
+    void init();
+    
   public:
     DSE(Function *f, _AnalysisManager &am) : func(f), AM(am)
     {
