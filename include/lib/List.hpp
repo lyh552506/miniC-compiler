@@ -214,13 +214,14 @@ class mylist
         assert(!sequence.empty()&&"sequence can't be empty");
         
         auto prev=begin->prev;
-        auto next=end->next;
+        auto next=end;
+        // auto next=end->next;
         
         if(prev==nullptr)
             head=sequence.front();
 
-        if(next==nullptr)
-            next=sequence.back();
+        // if(next!=nullptr)
+        //     next=sequence.back();
 
         for(auto ele:sequence)
             assert(ele->GetParent()==this&&"All elements inside the sequence must be in this list");

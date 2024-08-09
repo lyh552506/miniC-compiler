@@ -121,9 +121,19 @@ void _PassManager::RunOnLevel() {
     // global2local
     RunImpl<Global2Local>(module, AM);
     CommonPass(AM);
+
     while (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
           RunImpl<DeadArgsElimination>(module, AM);
+      RunImpl<StoreOnlyGlobalElimination>(module, AM);
+      RunImpl<Global2Local>(module, AM);
+      CommonPass(AM);
+    }
+
+    RunLevelPass(TailRecurseEliminator, curfunc, modified)
+    while (RunImpl<Inliner>(module, AM)) {
+      RunLevelPass(cfgSimplify, curfunc, modified)
+      RunImpl<DeadArgsElimination>(module, AM);
       RunImpl<StoreOnlyGlobalElimination>(module, AM);
       RunImpl<Global2Local>(module, AM);
       CommonPass(AM);
@@ -133,8 +143,6 @@ void _PassManager::RunOnLevel() {
       modified = true;
       while (modified) {
         modified = false;
-        static int a = 0;
-        a++;
         PassChangedBegin(curfunc)
             PassChangedEnd RunLevelPass(LoopSimplify, curfunc, other);
         PassChangedBegin(curfunc) PassChangedEnd
@@ -160,8 +168,8 @@ void _PassManager::RunOnLevel() {
 
             RunLevelPass(LoopUnroll, curfunc,
                          modified) PassChangedBegin(curfunc)
-        
-                PassChangedEnd RunLevelPass(ConstantProp, curfunc, modified);
+PassChangedEnd
+                 RunLevelPass(ConstantProp, curfunc, modified);
 
         RunLevelPass(DCE, curfunc, other);
         PassChangedBegin(curfunc) PassChangedEnd
@@ -169,9 +177,15 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(BlockMerge, curfunc, other);
         PassChangedBegin(curfunc) PassChangedEnd
       }
-      modified = true;
+    }
+      while (RunImpl<Inliner>(module, AM)) {
+      RunLevelPass(cfgSimplify, curfunc, modified)
+          RunImpl<DeadArgsElimination>(module, AM);
+      RunImpl<StoreOnlyGlobalElimination>(module, AM);
+      RunImpl<Global2Local>(module, AM);
       CommonPass(AM);
     }
+    CommonPass(AM);
     {
       // tail
       // RunLevelPass(TailRecurseEliminator, curfunc,
@@ -197,6 +211,12 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     PassChangedBegin(curfunc) PassChangedEnd PassChangedBegin(curfunc)
         RunImpl<Mem2reg>(curfunc, AM);
     PassChangedEnd
+    if (!HasRunCondMerge)
+    {
+        PassChangedBegin(curfunc) PassChangedEnd RunLevelPass(CondMerge, curfunc, modified);
+        PassChangedBegin(curfunc) PassChangedEnd
+        HasRunCondMerge = true;
+    }
         // Local2Global
         RunImpl<Local2Global>(module, AM);
     // simplifycfg
@@ -208,6 +228,9 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     PassChangedBegin(curfunc) PassChangedEnd
         // cse
         RunLevelPass(CSE, curfunc, mody);
+            RunLevelPass(GepCombine, curfunc, mody);
+
+    RunLevelPass(GepEvaluate, curfunc, mody);
     // constprop
     RunLevelPass(ConstantProp, curfunc, mody);
     // reassociate

@@ -67,9 +67,9 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block)
         BlockLiveout[block].insert(BlockLivein[succ].begin(), BlockLivein[succ].end());
 }
 void BlockInfo::GetBlockLivein(RISCVBasicBlock *block)
-{
+{int a=0;
     for (auto inst = block->rbegin(); inst != block->rend(); --inst)
-    {
+    {   
         OpType Opcode = (*inst)->GetOpcode();
         if (auto def = (*inst)->GetDef())
         {

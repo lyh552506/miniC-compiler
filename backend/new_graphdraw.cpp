@@ -44,6 +44,7 @@ void GraphColor::RunOnFunc() {
     selectstack.insert(selectstack.end(), SpillStack.begin(), SpillStack.end());
     AssignColors();
     if (!spilledNodes.empty()) {
+      CaculateSpillLiveness();
       SpillNodeInMir();
       condition = true;
     }
@@ -168,9 +169,18 @@ void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
   //计算区间并存入
   auto &IntervInfo = GetRegLiveInterval(mbb);
   for (auto &[val, vec] : IntervInfo) {
+    if (!GlobalLiveRange.count(val)) {
+      GlobalLiveRange[val].start = INT32_MAX;
+      GlobalLiveRange[val].end = INT32_MIN;
+    }
     unsigned int length = 0;
-    for (auto v : vec)
+    for (auto v : vec) {
+      if (v.start < GlobalLiveRange[val].start)
+        GlobalLiveRange[val].start = v.start;
+      if (v.end > GlobalLiveRange[val].end)
+        GlobalLiveRange[val].end = v.end;
       length += v.end - v.start;
+    }
     ValsInterval[val] = length;
   }
 }
@@ -430,7 +440,7 @@ void GraphColor::AssignColors() {
     }
   }
   for (auto caols : coalescedNodes) {
-    if (caols->GetName() == ".32")
+    if (caols->GetName() == ".31")
       int i = 0;
     color[caols] = color[GetAlias(caols)];
   }
@@ -452,7 +462,9 @@ void GraphColor::SpillNodeInMir() {
           dynamic_cast<VirRegister *>(mir->GetDef()) &&
           spilledNodes.find(dynamic_cast<VirRegister *>(mir->GetDef())) !=
               spilledNodes.end()) {
-        auto sd = CreateSpillMir(mir->GetDef(), temps);
+        auto op = dynamic_cast<VirRegister *>(mir->GetDef());
+        assert(SpillToken.find(op) != SpillToken.end());
+        auto sd = CreateSpillMir(mir->GetDef(), temps, SpillToken[op]);
         mir_begin.insert_after(sd);
         _DEBUG(std::cerr
                    << "Spilling "
@@ -472,7 +484,9 @@ void GraphColor::SpillNodeInMir() {
             spilledNodes.find(dynamic_cast<VirRegister *>(
                 mir->GetOperand(i))) != spilledNodes.end()) {
           //存在operand(i)并且operand(i)是一个已经spill节点
-          auto ld = CreateLoadMir(mir->GetOperand(i), temps);
+          auto op = dynamic_cast<VirRegister *>(mir->GetOperand(i));
+          assert(SpillToken.find(op) != SpillToken.end());
+          auto ld = CreateLoadMir(mir->GetOperand(i), temps, SpillToken[op]);
           mir_begin.insert_before(ld);
           _DEBUG(
               std::cerr
@@ -500,7 +514,8 @@ void GraphColor::SpillNodeInMir() {
 }
 
 RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
-                                     std::unordered_set<VirRegister *> &temps) {
+                                     std::unordered_set<VirRegister *> &temps,
+                                     int access_token) {
   auto vreg = dynamic_cast<VirRegister *>(spill);
   assert(vreg && "the chosen operand must be a vreg");
   // assert(AlreadySpill.find(vreg) == AlreadySpill.end() && "no spill before");
@@ -523,14 +538,15 @@ RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
   else if (spill->GetType() == RISCVType::riscv_float32)
     sd = new RISCVMIR(RISCVMIR::RISCVISA::_fsw);
   sd->AddOperand(reg);
-  auto spillnode = m_func->GetFrame()->spill(vreg);
+  auto spillnode = m_func->GetFrame()->spill(access_token);
   sd->AddOperand(spillnode);
   // AlreadySpill[vreg] = sd;
   return sd;
 }
 
 RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
-                                    std::unordered_set<VirRegister *> &temps) {
+                                    std::unordered_set<VirRegister *> &temps,
+                                    int acess_token) {
   auto vreg = dynamic_cast<VirRegister *>(load);
   assert(vreg && "the chosen operand must be a vreg");
   // assert(AlreadySpill.find(vreg) != AlreadySpill.end() && "no spill before");
@@ -550,7 +566,7 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
   else if (load->GetType() == RISCVType::riscv_float32)
     lw = new RISCVMIR(RISCVMIR::RISCVISA::_flw);
   // auto loadnode = AlreadySpill[vreg]->GetOperand(1);
-  auto spillnode = m_func->GetFrame()->spill(vreg);
+  auto spillnode = m_func->GetFrame()->spill(acess_token);
   lw->SetDef(reg);
   lw->AddOperand(spillnode);
   return lw;
@@ -769,4 +785,44 @@ void GraphColor::DecrementDegree(MOperand target) {
       }
     }
   }
+}
+
+void GraphColor::CaculateSpillLiveness() {
+  SpillToken.clear();
+  int token = 0;
+  if (spilledNodes.size() == 1) {
+    SpillToken[*(spilledNodes.begin())] = token;
+    return;
+  }
+  for (const auto spill : spilledNodes)
+    for (const auto other : spilledNodes)
+      if (!IsHasInterference(spill, other)) {
+        if (SpillToken.find(spill) == SpillToken.end() &&
+            SpillToken.find(other) == SpillToken.end()) {
+          SpillToken[spill] = token;
+          SpillToken[other] = token++;
+        } else if (SpillToken.find(spill) != SpillToken.end() &&
+                   SpillToken.find(other) == SpillToken.end()) {
+          SpillToken[other] = SpillToken[spill];
+        } else if (SpillToken.find(spill) == SpillToken.end() &&
+                   SpillToken.find(other) != SpillToken.end()) {
+          SpillToken[spill] = SpillToken[other];
+        } else {
+          assert(SpillToken[spill] == SpillToken[other]);
+        }
+      } else {
+        if (SpillToken.find(spill) == SpillToken.end() &&
+            SpillToken.find(other) == SpillToken.end()) {
+          SpillToken[spill] = token++;
+          SpillToken[other] = token++;
+        } else if (SpillToken.find(spill) != SpillToken.end() &&
+                   SpillToken.find(other) == SpillToken.end()) {
+          SpillToken[other] = token++;
+        } else if (SpillToken.find(spill) == SpillToken.end() &&
+                   SpillToken.find(other) != SpillToken.end()) {
+          SpillToken[spill] = token++;
+        } else {
+          assert(SpillToken[spill] != SpillToken[other]);
+        }
+      }
 }

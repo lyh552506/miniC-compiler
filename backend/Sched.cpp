@@ -66,6 +66,9 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
         using ISA = RISCVMIR::RISCVISA;
         for(int i=0; i<inst->GetOperandSize(); i++) {
             RISCVMOperand*& op = inst->GetOperand(i);
+            // if(inst->GetOpcode() == RISCVMIR::_sw) {
+            //     int a=0;
+            // }
             if(op != nullptr) {
                 if(!depInfo->def2inst[op].empty()) {
                     RISCVMIR* definst = depInfo->def2inst[inst->GetOperand(i)].top();
@@ -141,7 +144,7 @@ bool SchedRegion::LastRegion() {
     // Schedel region is from begin to the previous inst of end. 
     rbegin = rend;
     if(rbegin == block->rbegin()) {
-        // Start division region.
+        // Start division region.    
         if(isboundary(*rbegin)) {
             --rend;
         }
@@ -150,7 +153,9 @@ bool SchedRegion::LastRegion() {
         return false;
     } 
     else {
-        --rend;
+        if(isboundary(*rbegin)) {
+            --rend;
+        }
     }
     while(rend != block->rend()) { 
         if(!isboundary(*rend)) --rend;

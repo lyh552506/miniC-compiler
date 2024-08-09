@@ -14,7 +14,7 @@ protected:
     uint32_t PipelineDivLatency = 0;
     uint32_t PipelineFDivLatency = 0;
 public:
-    virtual void  ScheduleOnModule(RISCVLoweringContext&) = 0;
+    virtual void  ScheduleOnFunction(RISCVLoweringContext&) = 0;
     virtual void ScheduleOnBlock(RISCVBasicBlock*) = 0;
     virtual void ScheduleOnRegion(mylist_iterator, mylist_iterator, BlockDepInfo*) = 0;
     virtual void Schedule(DependencyGraph*) = 0;
@@ -31,7 +31,7 @@ public:
 
 class Pre_RA_Scheduler: private Scheduler {
 public:
-    void ScheduleOnModule(RISCVLoweringContext&) override;
+    void ScheduleOnFunction(RISCVLoweringContext&) override;
     void ScheduleOnBlock(RISCVBasicBlock*) override;
     void ScheduleOnRegion(mylist_iterator, mylist_iterator, BlockDepInfo*) override;
     void Schedule(DependencyGraph*) override;
@@ -39,7 +39,7 @@ public:
 
 class Post_RA_Scheduler: private Scheduler {
 public:
-    void ScheduleOnModule(RISCVLoweringContext&) override;
+    void ScheduleOnFunction(RISCVLoweringContext&) override;
     void ScheduleOnBlock(RISCVBasicBlock*) override;
     void ScheduleOnRegion(mylist_iterator, mylist_iterator, BlockDepInfo*) override;
     void Schedule(DependencyGraph*) override;

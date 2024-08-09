@@ -34,6 +34,7 @@ bool RISCVModuleLowering::run(Module *m)
 
 bool RISCVFunctionLowering::run(Function *m)
 {
+    
     /// @note this function is used to lower buildin function to the correct form
     /// @note and in order to solving user function which have the same name as buildin function
     BuildInFunctionTransform buildin;
@@ -57,25 +58,24 @@ bool RISCVFunctionLowering::run(Function *m)
 
     Legalize legal(ctx);
     // legal.run_beforeRA();
+
     // Backend DCE before RA
     bool modified = true;
     while (modified)
     {
         modified = false;
-        BackendDCE dcebefore(mfunc, ctx);
+        BackendDCE dcebefore(ctx.GetCurFunction(), ctx);
         modified |= dcebefore.RunImpl();
     }
 
-    // asmprinter->printAsm();
-    
-    Pre_RA_Scheduler pre_scheduler;
-    pre_scheduler.ScheduleOnModule(ctx);
-
+    // Pre_RA_Scheduler pre_scheduler;
+    // pre_scheduler.ScheduleOnFunction(ctx);
 
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
     regalloc.RunGCpass();
-    for (auto block : *mfunc)
+    std::cout << std::flush;
+    for (auto block : *(ctx.GetCurFunction()))
     {
         for (auto it = block->begin(); it != block->end();)
         {
@@ -90,19 +90,19 @@ bool RISCVFunctionLowering::run(Function *m)
     while (modified)
     {
         modified = false;
-        BackendDCE dceafter(mfunc, ctx);
+        BackendDCE dceafter(ctx.GetCurFunction(), ctx);
         modified |= dceafter.RunImpl();
     }
 
     // Post_RA_Scheduler post_scheduler;
-    // post_scheduler.ScheduleOnModule(ctx);
+    // post_scheduler.ScheduleOnFunction(ctx);
 
     // Generate Frame of current Function
     // And generate the head and tail of frame here
     PostRACalleeSavedLegalizer callee_saved_legalizer;
-    callee_saved_legalizer.run(mfunc);
+    callee_saved_legalizer.run(ctx.GetCurFunction());
 
-    auto& frame = mfunc->GetFrame();
+    auto& frame = ctx.GetCurFunction()->GetFrame();
     frame->GenerateFrame();
     frame->GenerateFrameHead();
     frame->GenerateFrameTail();
@@ -111,10 +111,10 @@ bool RISCVFunctionLowering::run(Function *m)
     legal.run();
 
     auto dbd=DeleteDeadBlock();
-    dbd.run(mfunc);
+    dbd.run(ctx.GetCurFunction());
 
-    auto layout=CodeLayout();
-    layout.run(mfunc);
+    // auto layout=CodeLayout();
+    // layout.run(mfunc);
 
     return false;
 }

@@ -187,4 +187,5 @@ private:
   Function *curfunc;
   bool modified = true;
   bool other=false;
+  bool HasRunCondMerge = false;
 };
