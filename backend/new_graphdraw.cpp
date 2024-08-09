@@ -517,7 +517,7 @@ void GraphColor::SpillNodeInMir() {
 }
 
 RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
-                                     std::unordered_set<VirRegister *> &temps) {
+                                     std::unordered_set<VirRegister *> &temps,int access_token) {
   auto vreg = dynamic_cast<VirRegister *>(spill);
   assert(vreg && "the chosen operand must be a vreg");
   // assert(AlreadySpill.find(vreg) == AlreadySpill.end() && "no spill before");
@@ -540,14 +540,14 @@ RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
   else if (spill->GetType() == RISCVType::riscv_float32)
     sd = new RISCVMIR(RISCVMIR::RISCVISA::_fsw);
   sd->AddOperand(reg);
-  auto spillnode = m_func->GetFrame()->spill(vreg);
+  auto spillnode = m_func->GetFrame()->spill(access_token);
   sd->AddOperand(spillnode);
   // AlreadySpill[vreg] = sd;
   return sd;
 }
 
 RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
-                                    std::unordered_set<VirRegister *> &temps) {
+                                    std::unordered_set<VirRegister *> &temps,int acess_token) {
   auto vreg = dynamic_cast<VirRegister *>(load);
   assert(vreg && "the chosen operand must be a vreg");
   // assert(AlreadySpill.find(vreg) != AlreadySpill.end() && "no spill before");
@@ -567,7 +567,7 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
   else if (load->GetType() == RISCVType::riscv_float32)
     lw = new RISCVMIR(RISCVMIR::RISCVISA::_flw);
   // auto loadnode = AlreadySpill[vreg]->GetOperand(1);
-  auto spillnode = m_func->GetFrame()->spill(vreg);
+  auto spillnode = m_func->GetFrame()->spill(acess_token);
   lw->SetDef(reg);
   lw->AddOperand(spillnode);
   return lw;
