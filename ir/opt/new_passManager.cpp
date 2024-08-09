@@ -180,6 +180,7 @@ void _PassManager::RunOnLevel() {
       CommonPass(AM);
 
     }
+    CommonPass(AM);
     {
       // tail
       // RunLevelPass(TailRecurseEliminator, curfunc,
