@@ -54,6 +54,9 @@ void GraphColor::RunOnFunc() {
 void GraphColor::MakeWorklist() {
   for (auto node : initial) {
     //添加溢出节点
+    if(node->GetName()==".356"){
+      int a=0;
+    }
     if (Degree[node] > GetRegNums(node))
       spillWorkList.insert(node);
     else if (MoveRelated(node).size() != 0)
@@ -168,9 +171,20 @@ void GraphColor::CaculateLiveInterval(RISCVBasicBlock *mbb) {
   //计算区间并存入
   auto &IntervInfo = GetRegLiveInterval(mbb);
   for (auto &[val, vec] : IntervInfo) {
+    if(!GlobalLiveRange.count(val))
+    {
+      GlobalLiveRange[val].start = INT32_MAX;
+      GlobalLiveRange[val].end = INT32_MIN;
+    }
     unsigned int length = 0;
     for (auto v : vec)
+    {
+      if (v.start < GlobalLiveRange[val].start)
+        GlobalLiveRange[val].start = v.start;
+      if (v.end > GlobalLiveRange[val].end)
+        GlobalLiveRange[val].end = v.end;
       length += v.end - v.start;
+    }
     ValsInterval[val] = length;
   }
 }
@@ -391,6 +405,9 @@ void GraphColor::spill() {
 void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     MOperand select = selectstack.front();
+    if(select->GetName()==".83"){
+      int a=0;
+    }
     RISCVType ty = select->GetType();
     selectstack.erase(selectstack.begin());
     std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),
@@ -430,7 +447,7 @@ void GraphColor::AssignColors() {
     }
   }
   for (auto caols : coalescedNodes) {
-    if (caols->GetName() == ".32")
+    if (caols->GetName() == ".31")
       int i = 0;
     color[caols] = color[GetAlias(caols)];
   }

@@ -1,11 +1,11 @@
 #include "../../include/ir/opt/LoopParallel.hpp"
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
-#include "AliasAnalysis.hpp"
-#include "LoopInfo.hpp"
-#include "LoopSimplify.hpp"
-#include "Type.hpp"
-#include "my_stl.hpp"
+#include "../../include/ir/Analysis/AliasAnalysis.hpp"
+#include "../../include/ir/Analysis/LoopInfo.hpp"
+#include "../../include/ir/opt/LoopSimplify.hpp"
+#include "../../include/lib/Type.hpp"
+#include "../../util/my_stl.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstddef>

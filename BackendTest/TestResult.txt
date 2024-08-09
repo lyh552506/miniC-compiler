@@ -1,0 +1,15 @@
+Wrong Answer: uploadfolder/fft0
+Wrong Answer: uploadfolder/fft1
+Wrong Answer: uploadfolder/fft2
+Wrong Answer: uploadfolder/03_sort2
+Wrong Answer: uploadfolder/shuffle2
+
+TIMEOUT ERROR: uploadfolder/h-1-01
+Wrong Answer: uploadfolder/h-1-01
+Compiler Error: Total: 0
+Assembler Error: Total: 0
+Linker Error: Total: 0
+TimeOut Function:0
+Wrong Answer: Total: 6
+Accecpt : Total: 192
+Duration: 505.132652759552 seconds

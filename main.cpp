@@ -43,8 +43,8 @@ int main(int argc, char **argv) {
   PM->RunOnTest();
 #elif defined(LEVEL)
   PM->RunOnLevel();
-#else
-  assert(0);
+// #else
+//   assert(0);
 #endif
   Singleton<Module>().Test();
   fflush(stdout);

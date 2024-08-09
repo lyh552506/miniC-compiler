@@ -27,5 +27,6 @@ class BackendDCE : public BlockLiveInfo, BackEndPass<RISCVFunction>
     bool RunImpl();
     BackendDCE(RISCVFunction *func_, RISCVLoweringContext &_ctx) : BlockLiveInfo(func_), ctx(_ctx), func(func_)
     {
+      func=ctx.GetCurFunction();
     }
 };
