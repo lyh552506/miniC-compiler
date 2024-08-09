@@ -68,18 +68,24 @@ bool CondMerge::AdjustCondition()
 
 bool CondMerge::Handle_Or(BasicBlock *cur, BasicBlock *succ, std::unordered_set<BasicBlock *> &wait_del)
 {
+    if (cur == succ)
+        return false;
     bool modified = false;
+    if (succ->GetUserlist().GetSize() > 1)
+        return false;
     assert((cur->back()->Getuselist()[1]->usee == succ) ||
            (cur->back()->Getuselist()[2]->usee == succ) && "Error: Neither of the succ is succ_in.");
     auto Cur_Cond = dynamic_cast<CondInst *>(cur->back());
     auto Succ_Cond = dynamic_cast<CondInst *>(succ->back());
+    if (Succ_Cond && Succ_Cond->Getuselist()[2]->usee == succ)
+        return false;
     if (Cur_Cond && Succ_Cond)
     {
         Value *cond1 = Cur_Cond->Getuselist()[0]->usee;
         Value *cond2 = Succ_Cond->Getuselist()[0]->usee;
         if (Cur_Cond->Getuselist()[1]->usee == Succ_Cond->Getuselist()[1]->usee &&
             !Match_Lib_Phi(cur, succ, static_cast<BasicBlock *>(Cur_Cond->Getuselist()[1]->usee)) &&
-            !DetectCall(cond2, succ) && !RetPhi(static_cast<BasicBlock *>(Cur_Cond->Getuselist()[1]->usee)))
+            !DetectCall(cond2, succ, 0) && !RetPhi(static_cast<BasicBlock *>(Cur_Cond->Getuselist()[1]->usee)))
         {
             _DEBUG(std::cerr << "Handling Or(||) case" << std::endl;)
             Cur_Cond->RSUW(Cur_Cond->Getuselist()[2].get(), Succ_Cond->Getuselist()[2]->usee);
@@ -125,18 +131,24 @@ bool CondMerge::Handle_Or(BasicBlock *cur, BasicBlock *succ, std::unordered_set<
 
 bool CondMerge::Handle_And(BasicBlock *cur, BasicBlock *succ, std::unordered_set<BasicBlock *> &wait_del)
 {
+    if (cur == succ)
+        return false;
+    if (succ->GetUserlist().GetSize() > 1)
+        return false;
     bool modified = false;
     assert((cur->back()->Getuselist()[1]->usee == succ) ||
            (cur->back()->Getuselist()[2]->usee == succ) && "Error: Neither of the succ is succ_in.");
     auto Cur_Cond = dynamic_cast<CondInst *>(cur->back());
     auto Succ_Cond = dynamic_cast<CondInst *>(succ->back());
+    if (Succ_Cond && Succ_Cond->Getuselist()[1]->usee == succ)
+        return false;
     if (Cur_Cond && Succ_Cond)
     {
         Value *cond1 = Cur_Cond->Getuselist()[0]->usee;
         Value *cond2 = Succ_Cond->Getuselist()[0]->usee;
         if (Cur_Cond->Getuselist()[2]->usee == Succ_Cond->Getuselist()[2]->usee &&
             !Match_Lib_Phi(cur, succ, static_cast<BasicBlock *>(Cur_Cond->Getuselist()[2]->usee)) &&
-            !DetectCall(cond2, succ))
+            !DetectCall(cond2, succ, 0))
         {
             _DEBUG(std::cerr << "Handling And(&&) case" << std::endl;)
             BasicBlock *PhiBlock = Succ_Cond->Getuselist()[2]->usee->as<BasicBlock>();
@@ -181,18 +193,20 @@ bool CondMerge::Handle_And(BasicBlock *cur, BasicBlock *succ, std::unordered_set
     return modified;
 }
 
-bool CondMerge::DetectCall(Value *val, BasicBlock *block)
+bool CondMerge::DetectCall(Value *val, BasicBlock *block, int depth)
 {
     if (!dynamic_cast<User *>(val))
         return false;
     auto user = dynamic_cast<User *>(val);
+    if (depth > 16)
+        return false;
     if (user->GetParent() != block)
         return false;
     if (dynamic_cast<CallInst *>(val))
         return true;
     for (int i = 0; i < user->Getuselist().size(); i++)
     {
-        if (DetectCall(user->GetOperand(i), block))
+        if (DetectCall(user->GetOperand(i), block, depth + 1))
             return true;
     }
     return false;
@@ -215,7 +229,6 @@ bool CondMerge::RetPhi(BasicBlock *block)
     }
     return false;
 }
-
 
 bool CondMerge::Match_Lib_Phi(BasicBlock *curr, BasicBlock *succ, BasicBlock *exit)
 {
@@ -254,6 +267,8 @@ bool CondMerge::Match_Lib_Phi(BasicBlock *curr, BasicBlock *succ, BasicBlock *ex
             }
             if (from_cur && from_succ)
             {
+                if(from_cur == from_succ)
+                    return true;
                 if (DetectUserPos(from_cur, succ, from_succ))
                     return true;
             }

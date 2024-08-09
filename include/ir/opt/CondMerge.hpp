@@ -17,7 +17,7 @@ class CondMerge : public _PassManagerBase<CondMerge, Function>
     std::vector<BasicBlock *> DFSOrder;
     std::unordered_set<BasicBlock *> wait_del;
     bool AdjustCondition();
-    bool DetectCall(Value *inst, BasicBlock *block);
+    bool DetectCall(Value *inst, BasicBlock *block, int depth);
     bool RetPhi(BasicBlock *block);
     bool Handle_Or(BasicBlock *cur, BasicBlock *succ, std::unordered_set<BasicBlock *> &wait_del);
     bool Handle_And(BasicBlock *cur, BasicBlock *succ, std::unordered_set<BasicBlock *> &wait_del);

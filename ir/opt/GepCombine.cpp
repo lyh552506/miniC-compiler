@@ -159,59 +159,6 @@ Value *GepCombine::SimplifyGepInst(GetElementPtrInst *inst, std::unordered_set<G
                     return Base;
                 }
             }
-
-            if (auto binary = dynamic_cast<BinaryInst *>(Op1))
-            {
-                if (binary->getopration() == BinaryInst::Operation::Op_Sub)
-                {
-                    if (binary->Getuselist()[1]->usee == Base)
-                    {
-                        inst->RSUW(inst->Getuselist()[0].get(), binary->Getuselist()[0]->usee);
-                        inst->RSUW(inst->Getuselist()[1].get(), ConstIRInt::GetNewConstant(0));
-                        _DEBUG(std::cerr << "Handle Case : gep %base, binary(sub)" << std::endl;)
-                        return nullptr;
-                    }
-                }
-                else if (binary->getopration() == BinaryInst::Operation::Op_Add)
-                {
-                    if (dynamic_cast<ConstantData *>(binary->Getuselist()[1]->usee))
-                    {
-                        auto val1 = dynamic_cast<User *>(binary->Getuselist()[0]->usee);
-                        if (val1)
-                        {
-                            for (auto user : val1->GetUserlist())
-                            {
-                                auto user_gep = dynamic_cast<GetElementPtrInst *>(user->GetUser());
-                                if (user_gep && geps.count(user_gep) && user_gep->Getuselist()[0]->usee == Base)
-                                {
-                                    inst->RSUW(inst->Getuselist()[0].get(), user->GetUser());
-                                    inst->RSUW(inst->Getuselist()[1].get(), binary->Getuselist()[1]->usee);
-                                    _DEBUG(std::cerr << "Handle Case : gep %base, binary(add)" << std::endl;)
-                                    return nullptr;
-                                }
-                            }
-                        }
-                    }
-                    if (dynamic_cast<ConstantData *>(binary->Getuselist()[0]->usee))
-                    {
-                        auto val1 = dynamic_cast<User *>(binary->Getuselist()[0]->usee);
-                        if (val1)
-                        {
-                            for (auto user : val1->GetUserlist())
-                            {
-                                auto user_gep = dynamic_cast<GetElementPtrInst *>(user->GetUser());
-                                if (user_gep && geps.count(user_gep) && user_gep->Getuselist()[0]->usee == Base)
-                                {
-                                    inst->RSUW(inst->Getuselist()[0].get(), user->GetUser());
-                                    inst->RSUW(inst->Getuselist()[1].get(), binary->Getuselist()[0]->usee);
-                                    _DEBUG(std::cerr << "Handle Case : gep %base, binary(add)" << std::endl;)
-                                    return nullptr;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 

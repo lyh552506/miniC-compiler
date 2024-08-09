@@ -1430,10 +1430,11 @@ void PhiInst::ModifyBlock(BasicBlock *Old, BasicBlock *New) {
 }
 
 void PhiInst::EraseRecordByBlock(BasicBlock *block) {
-  for (auto &[index, record] : PhiRecord) {
+  for (auto [index, record] : PhiRecord) {
     if (record.second == block) {
       this->Del_Incomes(index);
       this->FormatPhi();
+      return;
     }
   }
 }

@@ -12,7 +12,7 @@ void *ProbAnalysis::GetResult(Function *func) {
       m_Prob.emplace_back(preheader, header, possible);
     } else {
       //大概率不会跳入这
-      auto cond = dynamic_cast<UnCondInst *>(preheader->back());
+      auto cond = dynamic_cast<CondInst *>(preheader->back());
       auto lhs = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
       auto rhs = dynamic_cast<BasicBlock *>(cond->GetOperand(2));
       if (m_loopAnaly->LookUp(lhs) && m_loopAnaly->LookUp(rhs)) {
