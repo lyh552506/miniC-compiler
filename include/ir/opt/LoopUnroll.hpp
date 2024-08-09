@@ -15,8 +15,10 @@ private:
   CallInst *ExtractLoopBody(LoopInfo *loop);
   BasicBlock *Unroll(LoopInfo *loop, CallInst *UnrollBody);
   BasicBlock *Half_Unroll(LoopInfo *loop, CallInst *UnrollBody);
-  bool CanBeUnroll(LoopInfo *loop);
-  int CaculatePrice(const std::vector<BasicBlock *> &body, int Iteration,Function* curfunc);
+  bool CanBeFullUnroll(LoopInfo *loop);
+  bool CanBeHalfUnroll(LoopInfo *loop);
+  int CaculatePrice(const std::vector<BasicBlock *> &body, int Iteration,
+                    Function *curfunc);
   void CleanUp(LoopInfo *loop, BasicBlock *clean);
   bool simplify_Block();
   void DeletDeadBlock(BasicBlock *bb);

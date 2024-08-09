@@ -321,6 +321,7 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
       continue;
     LoadInst *ld = nullptr;
     StoreInst *st = nullptr;
+    BinaryInst *bin = nullptr;
     for (auto bb : body)
       for (auto inst : *bb)
         if (dynamic_cast<LoadInst *>(inst) || dynamic_cast<StoreInst *>(inst)) {
@@ -505,8 +506,4 @@ void LoopParallel::SimplifyPhi(LoopInfo *loop) {
         phi->ReplaceVal(use, bound);
       }
     }
-}
-
-std::pair<Value *, Value *> &LoopParallel::Slice(Value *begin, Value *end) {
-  
 }

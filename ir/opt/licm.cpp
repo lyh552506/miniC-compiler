@@ -1,6 +1,8 @@
 #include "../../include/ir/opt/licm.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
 #include "../../include/lib/CFG.hpp"
+#include "LoopSimplify.hpp"
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 
@@ -90,11 +92,11 @@ bool LICMPass::licmHoist(const std::set<BasicBlock *> &contain, LoopInfo *l,
     auto inst = *iter;
     if (LoopAnalysis::IsLoopInvariant(contain, inst, l) && CanBeMove(l, inst)) {
       auto exit = loop->GetExit(l);
-      if (!IsDomExit(inst, exit))
+      if (!IsDomExit(inst, exit) && !UserInsideLoop(inst, l))
         continue;
       _DEBUG(std::cerr << "LICM START TO HOIST CODE: " << inst->GetName()
                        << std::endl;)
-      auto prehead = loop->GetPreHeader(l);
+      auto prehead = loop->GetPreHeader(l,LoopAnalysis::Loose);
       assert(prehead);
       auto New_inst = inst->CloneInst();
       auto it = prehead->rbegin();
@@ -196,6 +198,14 @@ bool LICMPass::CanBeMove(LoopInfo *curloop, User *I) {
     return HaveSideEffect;
   } else {
     return false;
+  }
+  return true;
+}
+
+bool LICMPass::UserInsideLoop(User *I, LoopInfo *curloop) {
+  for (auto use : I->GetUserlist()) {
+    if (!curloop->Contain(use->GetUser()->GetParent()))
+      return false;
   }
   return true;
 }

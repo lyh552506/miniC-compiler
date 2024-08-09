@@ -317,7 +317,7 @@ bool MatchAddModInst(BasicBlock *cur) {
           if (AddInst.size() <= 1 || ModInst.size() <= 1)
             return false;
           BasicBlock::mylist<BasicBlock, User>::iterator insert_pos(mod);
-          _DEBUG(std::cerr << "Match Add Mod Insts!" >> std::endl;)
+          _DEBUG(std::cerr << "Match Add Mod Insts!" <<std::endl;)
           auto Relp = mod;
           auto op = Base->GetOperand(0);
           int Sum = 0;
