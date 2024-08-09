@@ -98,6 +98,7 @@ public:
   std::map<RISCVBasicBlock *,
            std::unordered_map<MOperand, std::vector<Interval>>>
       RegLiveness;
+  std::unordered_map<MOperand, Interval> GlobalLiveRange;
 
 private:
   void init();
@@ -113,6 +114,16 @@ public:
   }
   void RunOnFunc_();
   void PrintAnalysis();
+  bool IsOp1LiveBeforeOp2(MOperand op1, MOperand op2) {
+    return (GlobalLiveRange[op1].start < GlobalLiveRange[op2].start);
+  };
+  bool IsOp1LiveAfterOp2(MOperand op1, MOperand op2) {
+    return (GlobalLiveRange[op1].end > GlobalLiveRange[op2].end);
+  };
+  bool IsHasInterference(MOperand op1, MOperand op2) {
+    return !(GlobalLiveRange[op1].end < GlobalLiveRange[op2].start ||
+             GlobalLiveRange[op1].start > GlobalLiveRange[op2].end);
+  };
 };
 class GraphColor : public LiveInterval {
 public:
@@ -121,9 +132,7 @@ public:
   using Interval = RegAllocImpl::RegLiveInterval;
   using IntervalLength = unsigned int;
   GraphColor(RISCVFunction *func, RISCVLoweringContext &_ctx)
-      : LiveInterval(func), ctx(_ctx), m_func(func) {
-    m_func = ctx.GetCurFunction();
-  }
+      : LiveInterval(func), ctx(_ctx), m_func(func) {}
   void RunOnFunc();
 
 private:
@@ -153,6 +162,7 @@ private:
   bool GeorgeCheck(MOperand dst, MOperand src, RISCVType ty);
   bool BriggsCheck(MOperand dst, MOperand src, RISCVType ty);
   void AddWorkList(MOperand v);
+  void CaculateSpillLiveness();
   void combine(MOperand rd, MOperand rs);
   MOperand GetAlias(MOperand v);
   void FreezeMoves(MOperand freeze);
@@ -163,9 +173,9 @@ private:
   void LiveInfoInit();
   std::set<MOperand> Adjacent(MOperand);
   RISCVMIR *CreateSpillMir(RISCVMOperand *spill,
-                           std::unordered_set<VirRegister *> &temps);
+                           std::unordered_set<VirRegister *> &temps,int access_token);
   RISCVMIR *CreateLoadMir(RISCVMOperand *load,
-                          std::unordered_set<VirRegister *> &temps);
+                          std::unordered_set<VirRegister *> &temps,int access_token);
   void Print();
   std::vector<MOperand> SpillStack;
   // 保证Interval vector的顺序
@@ -202,6 +212,7 @@ private:
   //  std::unordered_map<VirRegister *, RISCVMIR *> AlreadySpill;
   std::vector<RISCVBasicBlock *> topu;
   std::set<RISCVBasicBlock *> assist;
+  std::unordered_map<MOperand, int> SpillToken;
   float LoopWeight = 1;
   float livenessWeight = 2.5;
   float DegreeWeight = 3;
