@@ -3,16 +3,16 @@
 
 std::vector<double> CodeLayout::getFreq(std::vector<std::vector<double>>& mat,int size){
     auto dumpMat=[&](){
-        std::cerr<<"-----\n";
+        std::cerr<<"Mat:\n";
         for(auto i=0;i<size;i++){
             for(auto j=0;j<=size;j++)
                 std::cerr<<mat[i][j]<<" ";
             std::cerr<<"\n";
         }
-        std::cerr<<"-----\n";
     };
 
-    
+    // dumpMat();
+
     const double eps=1e-6;
     int Rank=0;
     for(int j=0;j<size;j++){
@@ -46,6 +46,15 @@ std::vector<double> CodeLayout::getFreq(std::vector<std::vector<double>>& mat,in
     for(int j=0;j<size;j++)
         freq[j]=mat[j][size]/mat[j][j];
 
+    auto dumpResult=[&](){
+        std::cerr<<"Result:\n";
+        for(auto j=0;j<size;j++)
+            std::cerr<<freq[j]<<" ";
+        std::cerr<<"\n";
+    };
+
+    // dumpResult();
+
     for(auto i=0;i<size;i++)
         assert(freq[i]>=0&&"Negative frequency");
     
@@ -71,7 +80,6 @@ bool CodeLayout::run(RISCVFunction* func){
         mat[i][i]=1;
     
     mat[0][0]+=1;mat[0][size]=2;
-
     auto rec=0;
     for(auto bb:*func){
         block2num[bb]=rec;
@@ -153,8 +161,12 @@ bool CodeLayout::run(RISCVFunction* func){
 
     std::list<int> bestorder;
     for(auto& chain:chains){
-        if(chain.chain.empty())break;
-        bestorder.splice(bestorder.end(),chain.chain);
+        if(chain.chain.empty())continue;;
+        if(getBB(chain.chain.front())==func->front())bestorder.splice(bestorder.end(),chain.chain);
+    }
+    for(auto& chain:chains){
+        if(chain.chain.empty())continue;;
+        if(getBB(chain.chain.front())!=func->front())bestorder.splice(bestorder.end(),chain.chain);
     }
     /* end get order */
     // make sure entry block will be the first
