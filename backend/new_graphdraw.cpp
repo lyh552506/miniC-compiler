@@ -394,9 +394,6 @@ void GraphColor::spill() {
 void GraphColor::AssignColors() {
   while (!selectstack.empty()) {
     MOperand select = selectstack.front();
-    if(select->GetName()==".83"){
-      int a=0;
-    }
     RISCVType ty = select->GetType();
     selectstack.erase(selectstack.begin());
     std::unordered_set<MOperand> int_assist{reglist.GetReglistInt().begin(),

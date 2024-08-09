@@ -301,6 +301,7 @@ class RISCVFrame{
     std::vector<RISCVMOperand*> cantbespill;
     
     std::unordered_map<VirRegister*,StackRegister*> spillmap;
+    
     public:
     RISCVFrame(RISCVFunction*);
     StackRegister* spill(VirRegister*);

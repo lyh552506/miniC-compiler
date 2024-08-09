@@ -332,144 +332,198 @@ attributes #4 = { nofree norecurse nounwind uwtable writeonly "correctly-rounded
 attributes #5 = { nofree nounwind }
 attributes #6 = { nounwind }
 attributes #7 = { cold }
-@.G.head = global [10000000 x i32] zeroinitializer
-@.G.next = global [10000000 x i32] zeroinitializer
-@.G.nextvalue = global [10000000 x i32] zeroinitializer
-@.G.key = global [10000000 x i32] zeroinitializer
-@.G.value = global [10000000 x i32] zeroinitializer
-@.G.keys = global [10000000 x i32] zeroinitializer
-@.G.values = global [10000000 x i32] zeroinitializer
-@.G.requests = global [10000000 x i32] zeroinitializer
-@.G.ans = global [10000000 x i32] zeroinitializer
+@.G.temp = global [2097152 x i32] zeroinitializer
+@.G.a = global [2097152 x i32] zeroinitializer
+@.G.b = global [2097152 x i32] zeroinitializer
+define i32 @multiply(i32 %.5, i32 %.8){
+.4:
+  %.15 = icmp eq i32 %.8, 0
+  br i1 %.15, label %.11, label %.12
+.11:
+  %.415 = phi i32 [0, %.4], [%.37, %.19]
+  ret i32 %.415 
+.12:
+  %.22 = icmp eq i32 %.8, 1
+  br i1 %.22, label %.18, label %.19
+.18:
+  %.25 = srem i32 %.5, 998244353
+  ret i32 %.25 
+.19:
+  %.31 = sdiv i32 %.8, 2
+  %.32at7 = call i32 @multiply(i32 %.5, i32 %.31)
+  %.36 = add i32 %.32at7, %.32at7
+  %.37 = srem i32 %.36, 998244353
+  %.42 = srem i32 %.8, 2
+  %.43 = icmp eq i32 %.42, 1
+  br i1 %.43, label %.39, label %.11
+.39:
+  %.47 = add i32 %.5, %.37
+  %.48 = srem i32 %.47, 998244353
+  ret i32 %.48 
+}
+define i32 @power(i32 %.54, i32 %.57){
+.53:
+  %.63 = icmp eq i32 %.57, 0
+  br i1 %.63, label %.60, label %.61
+.60:
+  %.417 = phi i32 [1, %.53], [%.74at16, %.61]
+  ret i32 %.417 
+.61:
+  %.69 = sdiv i32 %.57, 2
+  %.70at15 = call i32 @power(i32 %.54, i32 %.69)
+  %.74at16 = call i32 @multiply(i32 %.70at15, i32 %.70at15)
+  %.79 = srem i32 %.57, 2
+  %.80 = icmp eq i32 %.79, 1
+  br i1 %.80, label %.76, label %.60
+.76:
+  %.84at17 = call i32 @multiply(i32 %.74at16, i32 %.54)
+  ret i32 %.84at17 
+}
+define i32 @memmove(i32* %.96, i32 %.99, i32* %.102, i32 %.105){
+.95:
+  %.428 = icmp slt i32 0, %.105
+  br i1 %.428, label %.111wloop.25.28, label %.112wn28
+.111wloop.25.28:
+  %.430 = phi i32 [%.129, %.111wloop.25.28], [0, %.95]
+  %.120 = getelementptr inbounds i32, i32* %.102, i32 %.430
+  %.121 = load i32, i32* %.120
+  %.124 = add i32 %.99, %.430
+  %.126 = getelementptr inbounds i32, i32* %.96, i32 %.124
+  store i32 %.121, i32* %.126
+  %.129 = add i32 %.430, 1
+  %.116 = icmp slt i32 %.129, %.105
+  br i1 %.116, label %.111wloop.25.28, label %.448_exit
+.112wn28:
+  %.407.lcssa.0 = phi i32 [%.129.lcssa.0, %.448_exit], [0, %.95]
+  ret i32 %.407.lcssa.0 
+.448_exit:
+  %.129.lcssa.0 = phi i32 [%.129, %.111wloop.25.28]
+  br label %.112wn28 
+}
+define i32 @fft(i32* %.136, i32 %.139, i32 %.142, i32 %.145){
+.135:
+  %.151 = icmp eq i32 %.142, 1
+  br i1 %.151, label %.148, label %.423_preheader
+.148:
+  %.403 = phi i32 [1, %.135], [0, %.228wloop.46.53], [0, %.158wn39]
+  ret i32 %.403 
+.157wloop.35.39:
+  %.437 = phi i32 [%.197, %.180], [0, %.423_preheader]
+  %.167 = srem i32 %.437, 2
+  %.168 = icmp eq i32 %.167, 0
+  br i1 %.168, label %.164, label %.165
+.158wn39:
+  %.202 = getelementptr inbounds [2097152 x i32], [2097152 x i32]* @.G.temp, i32 0, i32 0
+  %.204at41 = call i32 @memmove(i32* %.136, i32 %.139, i32* %.202, i32 %.142)
+  %.208 = sdiv i32 %.142, 2
+  %.211at42 = call i32 @multiply(i32 %.145, i32 %.145)
+  %.212at42 = call i32 @fft(i32* %.136, i32 %.139, i32 %.208, i32 %.211at42)
+  %.217 = add i32 %.139, %.208
+  %.222at43 = call i32 @multiply(i32 %.145, i32 %.145)
+  %.223at43 = call i32 @fft(i32* %.136, i32 %.217, i32 %.208, i32 %.222at43)
+  %.431 = icmp slt i32 0, %.208
+  br i1 %.431, label %.228wloop.46.53, label %.148
+.164:
+  %.172 = add i32 %.139, %.437
+  %.174 = getelementptr inbounds i32, i32* %.136, i32 %.172
+  %.175 = load i32, i32* %.174
+  %.177 = sdiv i32 %.437, 2
+  %.178 = getelementptr inbounds [2097152 x i32], [2097152 x i32]* @.G.temp, i32 0, i32 %.177
+  store i32 %.175, i32* %.178
+  br label %.180 
+.165:
+  %.184 = add i32 %.139, %.437
+  %.186 = getelementptr inbounds i32, i32* %.136, i32 %.184
+  %.187 = load i32, i32* %.186
+  %.191 = sdiv i32 %.437, 2
+  %.192 = add i32 %.444, %.191
+  %.193 = getelementptr inbounds [2097152 x i32], [2097152 x i32]* @.G.temp, i32 0, i32 %.192
+  store i32 %.187, i32* %.193
+  br label %.180 
+.180:
+  %.197 = add i32 %.437, 1
+  %.162 = icmp slt i32 %.197, %.142
+  br i1 %.162, label %.157wloop.35.39, label %.158wn39
+.228wloop.46.53:
+  %.434 = phi i32 [%.288, %.228wloop.46.53], [0, %.158wn39]
+  %.433 = phi i32 [%.285at51, %.228wloop.46.53], [1, %.158wn39]
+  %.239 = add i32 %.139, %.434
+  %.241 = getelementptr inbounds i32, i32* %.136, i32 %.239
+  %.242 = load i32, i32* %.241
+  %.250 = add i32 %.208, %.239
+  %.252 = getelementptr inbounds i32, i32* %.136, i32 %.250
+  %.253 = load i32, i32* %.252
+  %.258at49 = call i32 @multiply(i32 %.433, i32 %.253)
+  %.259 = add i32 %.242, %.258at49
+  %.260 = srem i32 %.259, 998244353
+  store i32 %.260, i32* %.241
+  %.270at50 = call i32 @multiply(i32 %.433, i32 %.253)
+  %.271 = sub i32 %.242, %.270at50
+  %.272 = add i32 %.271, 998244353
+  %.273 = srem i32 %.272, 998244353
+  store i32 %.273, i32* %.252
+  %.285at51 = call i32 @multiply(i32 %.433, i32 %.145)
+  %.288 = add i32 %.434, 1
+  %.234 = icmp slt i32 %.288, %.208
+  br i1 %.234, label %.228wloop.46.53, label %.148
+.423_preheader:
+  %.435 = icmp slt i32 0, %.142
+  %.444 = sdiv i32 %.142, 2
+  br i1 %.435, label %.157wloop.35.39, label %.158wn39
+}
 define i32 @main(){
-.196:
-  %.198at73 = call i32 @getint()
-  %.201 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.keys, i32 0, i32 0
-  %.203at74 = call i32 @getarray(i32* %.201)
-  %.206 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.values, i32 0, i32 0
-  %.207at75 = call i32 @getarray(i32* %.206)
-  %.210 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.requests, i32 0, i32 0
-  %.211at76 = call i32 @getarray(i32* %.210)
-  call void @_sysy_starttime(i32 78)
-  %.450 = icmp slt i32 0, %.203at74
-  br i1 %.450, label %.219wloop.81.84, label %.430_preheader
-.219wloop.81.84:
-  %.453 = phi i32 [%.234, %.293], [0, %.196]
-  %.452 = phi i32 [%.420, %.293], [0, %.196]
-  %.227 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.keys, i32 0, i32 %.453
-  %.228 = load i32, i32* %.227
-  %.230 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.values, i32 0, i32 %.453
-  %.231 = load i32, i32* %.230
-  %.298 = srem i32 %.228, %.198at73
-  %.301 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.head, i32 0, i32 %.298
-  %.302 = load i32, i32* %.301
-  %.303 = icmp eq i32 %.302, 0
-  br i1 %.303, label %.305, label %.428_preheader
-.305:
-  %.307 = add i32 %.452, 1
-  store i32 %.307, i32* %.301
-  %.311 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.key, i32 0, i32 %.307
-  store i32 %.228, i32* %.311
-  %.314 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.value, i32 0, i32 %.307
-  store i32 %.231, i32* %.314
-  %.317 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.next, i32 0, i32 %.307
-  store i32 0, i32* %.317
-  %.320 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.nextvalue, i32 0, i32 %.307
-  store i32 0, i32* %.320
-  br label %.293 
-.331:
-  %.446 = phi i32 [%.327, %.325], [%.302, %.428_preheader]
-  %.332 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.key, i32 0, i32 %.446
-  %.333 = load i32, i32* %.332
-  %.334 = icmp eq i32 %.333, %.228
-  br i1 %.334, label %.336, label %.325
-.350:
-  %.352 = add i32 %.452, 1
-  %.354 = load i32, i32* %.301
-  %.355 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.next, i32 0, i32 %.352
-  store i32 %.354, i32* %.355
-  store i32 %.352, i32* %.301
-  %.360 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.key, i32 0, i32 %.352
-  store i32 %.228, i32* %.360
-  %.363 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.value, i32 0, i32 %.352
-  store i32 %.231, i32* %.363
-  %.366 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.nextvalue, i32 0, i32 %.352
-  store i32 0, i32* %.366
-  br label %.293 
-.336:
-  %.324.lcssa.1 = phi i32 [%.446, %.331]
-  %.338 = add i32 %.452, 1
-  %.340 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.nextvalue, i32 0, i32 %.324.lcssa.1
-  %.341 = load i32, i32* %.340
-  %.342 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.nextvalue, i32 0, i32 %.338
-  store i32 %.341, i32* %.342
-  store i32 %.338, i32* %.340
-  %.347 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.value, i32 0, i32 %.338
-  store i32 %.231, i32* %.347
-  br label %.293 
-.325:
-  %.326 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.next, i32 0, i32 %.446
-  %.327 = load i32, i32* %.326
-  %.329 = icmp ne i32 %.327, 0
-  br i1 %.329, label %.331, label %.350
 .293:
-  %.420 = phi i32 [%.352, %.350], [%.338, %.336], [%.307, %.305]
-  %.234 = add i32 %.453, 1
-  %.224 = icmp slt i32 %.234, %.203at74
-  br i1 %.224, label %.219wloop.81.84, label %.430_preheader
-.239wloop.86.89:
-  %.449 = phi i32 [%.254, %.410], [0, %.430_preheader]
-  %.247 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.requests, i32 0, i32 %.449
-  %.248 = load i32, i32* %.247
-  %.379 = srem i32 %.248, %.198at73
-  %.382 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.head, i32 0, i32 %.379
-  %.383 = load i32, i32* %.382
-  %.441 = icmp ne i32 %.383, 0
-  br i1 %.441, label %.393, label %.410
-.393:
-  %.443 = phi i32 [%.389, %.387], [%.383, %.239wloop.86.89]
-  %.394 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.key, i32 0, i32 %.443
-  %.395 = load i32, i32* %.394
-  %.396 = icmp eq i32 %.395, %.248
-  br i1 %.396, label %.422_preheader, label %.387
-.410:
-  %.411 = phi i32 [0, %.387], [%.399.lcssa.0, %.424_exit], [0, %.239wloop.86.89]
-  %.251 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.ans, i32 0, i32 %.449
-  store i32 %.411, i32* %.251
-  %.254 = add i32 %.449, 1
-  %.244 = icmp slt i32 %.254, %.211at76
-  br i1 %.244, label %.239wloop.86.89, label %.240wn89
-.387:
-  %.388 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.next, i32 0, i32 %.443
-  %.389 = load i32, i32* %.388
-  %.391 = icmp ne i32 %.389, 0
-  br i1 %.391, label %.393, label %.410
-.400:
-  %.440 = phi i32 [%.403, %.400], [%.386.lcssa.1, %.422_preheader]
-  %.439 = phi i32 [%.406, %.400], [0, %.422_preheader]
-  %.401 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.value, i32 0, i32 %.440
-  %.405 = load i32, i32* %.401
-  %.406 = add i32 %.439, %.405
-  %.404 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.nextvalue, i32 0, i32 %.440
-  %.403 = load i32, i32* %.404
-  %.408 = icmp ne i32 %.403, 0
-  br i1 %.408, label %.400, label %.424_exit
-.240wn89:
-  call void @_sysy_stoptime(i32 90)
-  %.261 = getelementptr inbounds [10000000 x i32], [10000000 x i32]* @.G.ans, i32 0, i32 0
-  call void @putarray(i32 %.211at76, i32* %.261)
+  %.295 = getelementptr inbounds [2097152 x i32], [2097152 x i32]* @.G.a, i32 0, i32 0
+  %.297at58 = call i32 @getarray(i32* %.295)
+  %.300 = getelementptr inbounds [2097152 x i32], [2097152 x i32]* @.G.b, i32 0, i32 0
+  %.301at59 = call i32 @getarray(i32* %.300)
+  call void @_sysy_starttime(i32 60)
+  %.445 = add i32 %.297at58, %.301at59
+  %.469 = add i32 %.445, -1
+  br label %.307wc62 
+.307wc62:
+  %.411 = phi i32 [1, %.293], [%.319, %.307wc62]
+  %.316 = icmp slt i32 %.411, %.469
+  %.319 = mul i32 %.411, 2
+  br i1 %.316, label %.307wc62, label %.309wn64
+.309wn64:
+  %.411.lcssa.0 = phi i32 [%.411, %.307wc62]
+  %.327 = sdiv i32 998244352, %.411.lcssa.0
+  %.328at65 = call i32 @power(i32 3, i32 %.327)
+  %.329at65 = call i32 @fft(i32* %.295, i32 0, i32 %.411.lcssa.0, i32 %.328at65)
+  %.334at66 = call i32 @power(i32 3, i32 %.327)
+  %.335at66 = call i32 @fft(i32* %.300, i32 0, i32 %.411.lcssa.0, i32 %.334at66)
+  %.441 = icmp slt i32 0, %.411.lcssa.0
+  br i1 %.441, label %.339wloop.69.72, label %.340wn72
+.339wloop.69.72:
+  %.443 = phi i32 [%.357, %.339wloop.69.72], [0, %.309wn64]
+  %.347 = getelementptr inbounds [2097152 x i32], [2097152 x i32]* @.G.a, i32 0, i32 %.443
+  %.348 = load i32, i32* %.347
+  %.350 = getelementptr inbounds [2097152 x i32], [2097152 x i32]* @.G.b, i32 0, i32 %.443
+  %.351 = load i32, i32* %.350
+  %.352at70 = call i32 @multiply(i32 %.348, i32 %.351)
+  store i32 %.352at70, i32* %.347
+  %.357 = add i32 %.443, 1
+  %.344 = icmp slt i32 %.357, %.411.lcssa.0
+  br i1 %.344, label %.339wloop.69.72, label %.340wn72
+.340wn72:
+  %.364 = sub i32 998244352, %.327
+  %.365at73 = call i32 @power(i32 3, i32 %.364)
+  %.366at73 = call i32 @fft(i32* %.295, i32 0, i32 %.411.lcssa.0, i32 %.365at73)
+  %.438 = icmp slt i32 0, %.411.lcssa.0
+  br i1 %.438, label %.369wloop.75.78, label %.370wn78
+.369wloop.75.78:
+  %.440 = phi i32 [%.387, %.369wloop.75.78], [0, %.340wn72]
+  %.377 = getelementptr inbounds [2097152 x i32], [2097152 x i32]* @.G.a, i32 0, i32 %.440
+  %.378 = load i32, i32* %.377
+  %.381at76 = call i32 @power(i32 %.411.lcssa.0, i32 998244351)
+  %.382at76 = call i32 @multiply(i32 %.378, i32 %.381at76)
+  store i32 %.382at76, i32* %.377
+  %.387 = add i32 %.440, 1
+  %.374 = icmp slt i32 %.387, %.411.lcssa.0
+  br i1 %.374, label %.369wloop.75.78, label %.370wn78
+.370wn78:
+  call void @_sysy_stoptime(i32 79)
+  call void @putarray(i32 %.469, i32* %.295)
   ret i32 0 
-.422_preheader:
-  %.386.lcssa.1 = phi i32 [%.443, %.393]
-  %.437 = icmp ne i32 %.386.lcssa.1, 0
-  br i1 %.437, label %.400, label %.424_exit
-.424_exit:
-  %.399.lcssa.0 = phi i32 [%.406, %.400], [0, %.422_preheader]
-  br label %.410 
-.428_preheader:
-  %.444 = icmp ne i32 %.302, 0
-  br i1 %.444, label %.331, label %.350
-.430_preheader:
-  %.447 = icmp slt i32 0, %.211at76
-  br i1 %.447, label %.239wloop.86.89, label %.240wn89
 }
