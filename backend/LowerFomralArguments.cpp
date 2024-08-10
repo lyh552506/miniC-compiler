@@ -6,7 +6,7 @@ void LowerFormalArgumentsParallel(Function* func,RISCVLoweringContext& ctx){
     auto addressreg=ctx.createVReg(riscv_ptr);
     auto addressinst=new RISCVMIR(RISCVMIR::LoadGlobalAddr);
     addressinst->SetDef(addressreg);
-    addressinst->AddOperand(OuterTag::GetOuterTag("buildin_"));
+    addressinst->AddOperand(OuterTag::GetOuterTag("buildin_parallel_arg_storage"));
     ctx(addressinst);
 
     auto mvaddress=[&](int offset){
@@ -45,7 +45,7 @@ void LowerFormalArgumentsParallel(Function* func,RISCVLoweringContext& ctx){
     }
 
     // call fenceArgLoaderd
-    auto fenceArgLoaded=BuildInFunction::GetBuildInFunction("FenceArgLoaded");
+    auto fenceArgLoaded=BuildInFunction::GetBuildInFunction("buildin_FenceArgLoaded");
     auto call=new RISCVMIR(RISCVMIR::call);
     call->AddOperand(ctx.mapping(fenceArgLoaded));
     ctx(call);
