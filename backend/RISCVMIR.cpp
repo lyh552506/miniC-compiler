@@ -302,9 +302,9 @@ uint64_t RISCVFunction::GetUsedPhyRegMask(){
 
 // RISCVFrame::RISCVFrame() {}
 RISCVFrame::RISCVFrame(RISCVFunction* func) : parent(func) {}
-StackRegister* RISCVFrame::spill(int mop) {
+StackRegister* RISCVFrame::spill(VirRegister* mop) {
     if(spillmap.find(mop)==spillmap.end()){
-        frameobjs.emplace_back(std::make_unique<RISCVFrameObject>());
+        frameobjs.emplace_back(std::make_unique<RISCVFrameObject>(mop));
         spillmap[mop]=frameobjs.back().get()->GetStackReg();
     }
     return spillmap[mop];

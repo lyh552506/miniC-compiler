@@ -10,6 +10,10 @@ class LoopUnroll : public _PassManagerBase<LoopUnroll, Function> {
 public:
   LoopUnroll(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
   bool Run();
+  ~LoopUnroll() {
+    for (auto l : DeleteLoop)
+      delete l;
+  }
 
 private:
   CallInst *ExtractLoopBody(LoopInfo *loop);
@@ -27,6 +31,7 @@ private:
   LoopAnalysis *loopAnaly;
   _AnalysisManager &AM;
   std::unordered_map<Value *, Variable *> Val2Arg;
+  std::vector<LoopInfo *> DeleteLoop;
   Value *OriginChange = nullptr;
   BasicBlock *prehead = nullptr;
   const int MaxInstCost = 5000;

@@ -8,12 +8,12 @@
 #include "../../include/ir/opt/ConstantProp.hpp"
 #include "../../include/ir/opt/DCE.hpp"
 #include "../../include/ir/opt/DeadArgsElimination.hpp"
-#include "../../include/ir/opt/InstructionSimplify.hpp"
 #include "../../include/ir/opt/DealCriticalEdges.hpp"
 #include "../../include/ir/opt/GepCombine.hpp"
 #include "../../include/ir/opt/GepEvaluate.hpp"
 #include "../../include/ir/opt/Global2Local.hpp"
 #include "../../include/ir/opt/Inline.hpp"
+#include "../../include/ir/opt/InstructionSimplify.hpp"
 #include "../../include/ir/opt/Local2Global.hpp"
 #include "../../include/ir/opt/LoopDeletion.hpp"
 #include "../../include/ir/opt/LoopParallel.hpp"
@@ -122,11 +122,20 @@ public:
             typename name = std::enable_if_t<
                 std::is_base_of_v<_AnalysisManagerBase<Pass, Function>, Pass>>>
   Pass *get(Function *func, Args &&...args) {
+    auto it =
+        std::find_if(Contain.begin(), Contain.end(), [&](const std::any &ele) {
+          return ele.type() == typeid(Pass *);
+        });
+    if (it != Contain.end()) {
+      delete std::any_cast<Pass *>(*it);
+      Contain.erase(it);
+    }
     auto pass = new Pass(func, std::forward<Args>(args)...);
     auto *result = pass->GetResult(func);
     Contain.emplace_back(pass);
     return static_cast<Pass *>(result);
   }
+  
 
   void AddAttr(BasicBlock *LoopHeader, LoopAttr attr) {
     LoopForm[LoopHeader].insert(attr);
@@ -189,6 +198,6 @@ private:
   Module *module;
   Function *curfunc;
   bool modified = true;
-  bool other=false;
+  bool other = false;
   bool HasRunCondMerge = false;
 };

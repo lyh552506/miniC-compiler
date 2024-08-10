@@ -2,9 +2,9 @@
 #include "../../lib/BaseCFG.hpp"
 #include "../../lib/CFG.hpp"
 #include "../Analysis/LoopInfo.hpp"
+#include "../Analysis/dominant.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "../Analysis/dominant.hpp"
 #include "lcssa.hpp"
 #include <unordered_map>
 #include <vector>
@@ -14,6 +14,10 @@ public:
   LoopRotate(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
   bool Run();
   void PrintPass();
+  ~LoopRotate() {
+    for (auto l : DeleteLoop)
+      delete l;
+  }
 
 private:
   bool RotateLoop(LoopInfo *loop, bool Succ);
@@ -31,5 +35,6 @@ private:
   dominance *m_dom;
   _AnalysisManager &AM;
   std::unordered_map<Value *, Value *> CloneMap;
+  std::vector<LoopInfo *> DeleteLoop;
   const int Heuristic = 8;
 };

@@ -1,4 +1,5 @@
 #include "../../include/ir/opt/New_passManager.hpp"
+#include "Singleton.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -107,7 +108,8 @@ void _PassManager::RunOnLevel() {
   if (level == O0)
     return;
   if (level == O1) {
-    _AnalysisManager AM;
+    auto AM = Singleton<_AnalysisManager>();
+
     // DeadArgsElimination
     RunImpl<DeadArgsElimination>(module, AM);
 
@@ -120,7 +122,7 @@ void _PassManager::RunOnLevel() {
 
     while (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
-      RunImpl<DeadArgsElimination>(module, AM);
+          RunImpl<DeadArgsElimination>(module, AM);
       RunImpl<StoreOnlyGlobalElimination>(module, AM);
       RunImpl<Global2Local>(module, AM);
       CommonPass(AM);
@@ -155,12 +157,12 @@ void _PassManager::RunOnLevel() {
 
             RunLevelPass(LcSSA, curfunc, other);
         PassChangedBegin(curfunc) PassChangedEnd
-            
+
             // loop-rotate
             RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
                 PassChangedEnd // licm
-           
-        RunLevelPass(LICMPass, curfunc, modified);
+
+                    RunLevelPass(LICMPass, curfunc, modified);
         PassChangedBegin(curfunc) PassChangedEnd
 
             // loopdeletion
@@ -237,8 +239,8 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     // RunLevelPass(GepCombine, curfunc, mody);
     RunLevelPass(DCE, curfunc, mody);
     RunLevelPass(BlockMerge, curfunc, mody);
-    PassChangedBegin(curfunc) PassChangedEnd
-    RunLevelPass(cfgSimplify, curfunc, mody);
+    PassChangedBegin(curfunc)
+        PassChangedEnd RunLevelPass(cfgSimplify, curfunc, mody);
     // TRE
     // RunLevelPass(TailRecurseEliminator, curfunc, mody) return mody;
   }

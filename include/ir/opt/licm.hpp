@@ -16,6 +16,10 @@ public:
   bool RunOnLoop(LoopInfo *l);
   void PrintPass(){};
   bool change = false;
+  ~LICMPass() {
+    for (auto l : DeleteLoop)
+      delete l;
+  }
 
 private:
   bool licmSink(const std::set<BasicBlock *> &contain, LoopInfo *l,
@@ -32,4 +36,5 @@ private:
   AliasAnalysis *alias;
   _AnalysisManager &AM;
   LoopAnalysis *loop;
+  std::vector<LoopInfo *> DeleteLoop;
 };

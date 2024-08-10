@@ -173,9 +173,9 @@ private:
   void LiveInfoInit();
   std::set<MOperand> Adjacent(MOperand);
   RISCVMIR *CreateSpillMir(RISCVMOperand *spill,
-                           std::unordered_set<VirRegister *> &temps,int access_token);
+                           std::unordered_set<VirRegister *> &temps);
   RISCVMIR *CreateLoadMir(RISCVMOperand *load,
-                          std::unordered_set<VirRegister *> &temps,int access_token);
+                          std::unordered_set<VirRegister *> &temps);
   void Print();
   std::vector<MOperand> SpillStack;
   // 保证Interval vector的顺序

@@ -13,12 +13,14 @@ struct ProbEdge {
 
 class ProbAnalysis : public _AnalysisManagerBase<ProbAnalysis, Function> {
 public:
-  ProbAnalysis(Function* func,LoopAnalysis *loopAnaly) : m_loopAnaly(loopAnaly) {}
+  ProbAnalysis(Function *func, LoopAnalysis *loopAnaly, dominance *dom)
+      : m_loopAnaly(loopAnaly), m_dom(dom) {}
   void *GetResult(Function *func);
   std::vector<ProbEdge> GetProb() { return m_Prob; }
 
 private:
   LoopAnalysis *m_loopAnaly;
   std::vector<ProbEdge> m_Prob;
+  dominance *m_dom;
   double possible = 0.995;
 };

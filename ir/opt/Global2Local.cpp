@@ -455,7 +455,7 @@ void Global2Local::CreateCallNum(Module* module)
                   CallFunc->GetBasicBlock().push_back(bb);
                 }
                 dom_info = AM.get<dominance>(CallFunc);
-                loopAnalysis = AM.get<LoopAnalysis>(CallFunc, dom_info);
+                loopAnalysis = AM.get<LoopAnalysis>(CallFunc, dom_info,std::ref(DeleteLoop));
                 if(auto loop = loopAnalysis->LookUp(user->GetParent()))
                 {
                     CallTimes[func] += 3;

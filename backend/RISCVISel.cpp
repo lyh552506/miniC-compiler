@@ -3,6 +3,7 @@
 #include "../include/backend/RISCVFrameContext.hpp"
 #include "../include/ir/opt/New_passManager.hpp"
 #include "../include/ir/Analysis/CondProbAnalysis.hpp"
+#include "../include/ir/Analysis/LoopInfo.hpp"
 RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,User* inst){
     auto minst=new RISCVMIR(_isa);
     minst->SetDef(ctx.mapping(inst));
@@ -56,20 +57,21 @@ bool RISCVISel::run(Function* m){
             InstLowering(inst);
     }
 
-    // /// @note get branch prob to fix terminator
-    // auto loopinfo=AM.get<LoopAnalysis>(m,mdom);
-    // auto condprob=AM.get<ProbAnalysis>(m,loopinfo);
-    // auto probedge=condprob->GetProb();
+    /// @note get branch prob to fix terminator
+    
+    auto loopinfo=AM.get<LoopAnalysis>(m,mdom,std::ref(DeleteLoop));
+    auto condprob=AM.get<ProbAnalysis>(m,loopinfo,mdom);
+    auto probedge=condprob->GetProb();
 
-    // for(auto& edge:probedge){
-    //     auto pred=ctx.mapping(edge.Out)->as<RISCVBasicBlock>();
-    //     auto succ=ctx.mapping(edge.In)->as<RISCVBasicBlock>();
-    //     auto prob=edge.Prob;
-    //     auto terminator=pred->getTerminator();
-    //     assert(terminator.trueblock==succ||terminator.falseblock==succ);
-    //     if(terminator.falseblock==succ)prob=1-prob;
-    //     terminator.SetProb(prob);
-    // }
+    for(auto& edge:probedge){
+        auto pred=ctx.mapping(edge.Out)->as<RISCVBasicBlock>();
+        auto succ=ctx.mapping(edge.In)->as<RISCVBasicBlock>();
+        auto prob=edge.Prob;
+        auto terminator=pred->getTerminator();
+        assert(terminator.trueblock==succ||terminator.falseblock==succ);
+        if(terminator.falseblock==succ)prob=1-prob;
+        terminator.SetProb(prob);
+    }
 
     return true;
 }

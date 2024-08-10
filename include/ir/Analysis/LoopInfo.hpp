@@ -102,7 +102,9 @@ public:
   };
   using iterator = std::vector<LoopInfo *>::const_iterator;
   using reverse_iterator = std::vector<LoopInfo *>::const_reverse_iterator;
-  LoopAnalysis(Function *func, dominance *dom) : m_func(func), m_dom(dom) {
+  LoopAnalysis(Function *func, dominance *dom,
+               std::vector<LoopInfo *> &DeleteLoop)
+      : m_func(func), m_dom(dom), _DeleteLoop(DeleteLoop) {
     setBBs();
     setDest();
   }
@@ -146,7 +148,6 @@ public:
                 return a1->LoopDepth > a2->LoopDepth;
               });
     AlreadyGetInfo = true;
-    // _DEBUG(PrintPass();)
     return this;
   }
   BasicBlock *GetCorrespondBlock(int i) { return (*bbs)[i]; }
@@ -155,10 +156,8 @@ public:
   reverse_iterator rbegin() { return LoopRecord.rbegin(); }
   reverse_iterator rend() { return LoopRecord.rend(); }
 
-  ~LoopAnalysis() {
-    for (auto i : LoopRecord)
-      delete i;
-  }
+  ~LoopAnalysis() = default;
+  std::vector<LoopInfo *> &_DeleteLoop;
 
 private:
   Function *m_func;

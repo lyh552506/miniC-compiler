@@ -11,7 +11,7 @@
 
 bool LcSSA::Run() {
   m_dom = AM.get<dominance>(m_func);
-  loops = AM.get<LoopAnalysis>(m_func, m_dom);
+  loops = AM.get<LoopAnalysis>(m_func, m_dom, std::ref(DeleteLoop));
   bool changed = false;
   if (!loops->CanBeOpt())
     return changed;

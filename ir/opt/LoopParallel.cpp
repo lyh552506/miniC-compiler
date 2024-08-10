@@ -12,7 +12,7 @@
 bool LoopParallel::Run() {
   bool changed = false;
   dom = AM.get<dominance>(m_func);
-  loopAnaly = AM.get<LoopAnalysis>(m_func, dom);
+  loopAnaly = AM.get<LoopAnalysis>(m_func, dom, std::ref(DeleteLoop));
 
   if (m_func->GetName() != "main")
     return false;
