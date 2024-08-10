@@ -6,30 +6,32 @@ void *ProbAnalysis::GetResult(Function *func) {
   for (auto loop : *m_loopAnaly) {
     LoopSimplify::CaculateLoopInfo(loop, m_loopAnaly);
     auto exiting = m_loopAnaly->GetExitingBlock(loop);
-    auto preheader = m_loopAnaly->GetPreHeader(loop, LoopAnalysis::Loose);
     auto header = loop->GetHeader();
-    if (dynamic_cast<UnCondInst *>(preheader->back())) {
-      m_Prob.emplace_back(preheader, header, possible);
-    } else {
-      //大概率不会跳入这
-      auto cond = dynamic_cast<CondInst *>(preheader->back());
-      auto lhs = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
-      auto rhs = dynamic_cast<BasicBlock *>(cond->GetOperand(2));
-      if (m_loopAnaly->LookUp(lhs) && m_loopAnaly->LookUp(rhs)) {
-        int lhs_contain = m_loopAnaly->LookUp(lhs)->GetLoopDepth() +
-                          m_loopAnaly->LookUp(lhs)->GetSubLoop().size();
-        int rhs_contain = m_loopAnaly->LookUp(rhs)->GetLoopDepth() +
-                          m_loopAnaly->LookUp(rhs)->GetSubLoop().size();
-        if (lhs_contain > rhs_contain)
+    for (auto rev : m_dom->GetNode(header->num).rev) {
+      auto preheader = m_dom->GetNode(rev).thisBlock;
+      if (dynamic_cast<UnCondInst *>(preheader->back())) {
+        m_Prob.emplace_back(preheader, header, possible);
+      } else {
+        //大概率不会跳入这
+        auto cond = dynamic_cast<CondInst *>(preheader->back());
+        auto lhs = dynamic_cast<BasicBlock *>(cond->GetOperand(1));
+        auto rhs = dynamic_cast<BasicBlock *>(cond->GetOperand(2));
+        if (m_loopAnaly->LookUp(lhs) && m_loopAnaly->LookUp(rhs)) {
+          int lhs_contain = m_loopAnaly->LookUp(lhs)->GetLoopDepth() +
+                            m_loopAnaly->LookUp(lhs)->GetSubLoop().size();
+          int rhs_contain = m_loopAnaly->LookUp(rhs)->GetLoopDepth() +
+                            m_loopAnaly->LookUp(rhs)->GetSubLoop().size();
+          if (lhs_contain > rhs_contain)
+            m_Prob.emplace_back(preheader, lhs, possible);
+          else if (rhs_contain > lhs_contain)
+            m_Prob.emplace_back(preheader, rhs, possible);
+          else
+            m_Prob.emplace_back(preheader, lhs, 0.5);
+        } else if (m_loopAnaly->LookUp(lhs) && !m_loopAnaly->LookUp(rhs)) {
           m_Prob.emplace_back(preheader, lhs, possible);
-        else if (rhs_contain > lhs_contain)
+        } else if (!m_loopAnaly->LookUp(lhs) && m_loopAnaly->LookUp(rhs)) {
           m_Prob.emplace_back(preheader, rhs, possible);
-        else
-          m_Prob.emplace_back(preheader, lhs, 0.5);
-      } else if (m_loopAnaly->LookUp(lhs) && !m_loopAnaly->LookUp(rhs)) {
-        m_Prob.emplace_back(preheader, lhs, possible);
-      } else if (!m_loopAnaly->LookUp(lhs) && m_loopAnaly->LookUp(rhs)) {
-        m_Prob.emplace_back(preheader, rhs, possible);
+        }
       }
     }
     for (auto ex : exiting) {
