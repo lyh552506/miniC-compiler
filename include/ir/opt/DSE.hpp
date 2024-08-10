@@ -17,12 +17,13 @@ class DeadStoreElimination : public _PassManagerBase<DeadStoreElimination, Funct
     Function *func;
     _AnalysisManager &AM;
     std::vector<User *> wait_del;
-    std::unordered_set<BasicBlock*> HasHandleBlock;
-    std::unordered_map<Value*, StoreInst*> Store_Map;
-    std::unordered_map<Value*, StoreInst*> Global_Store_Map;
-    std::unordered_map<Value*, StoreInst*> Param_Store_Map;
-    std::unordered_map<Value*, std::unordered_map<size_t, StoreInst*>> Array_Store_Map;
-    bool RunOnBlock(BasicBlock* block);
+    std::vector<BasicBlock *> WorkList;
+    std::unordered_set<BasicBlock *> HasHandleBlock;
+    std::unordered_map<Value *, StoreInst *> Store_Map;
+    std::unordered_map<Value *, StoreInst *> Global_Store_Map;
+    std::unordered_map<Value *, StoreInst *> Param_Store_Map;
+    std::unordered_map<Value *, std::unordered_map<size_t, StoreInst *>> Array_Store_Map;
+    bool RunOnBlock(BasicBlock *block);
     void init();
 
   public:

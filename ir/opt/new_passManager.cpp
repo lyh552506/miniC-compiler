@@ -185,7 +185,7 @@ void _PassManager::RunOnLevel() {
       }
     }
     CommonPass(AM);
-        // RunLevelPass(DeadStoreElimination, curfunc, modified);
+        RunLevelPass(DeadStoreElimination, curfunc, modified);
         // RunLevelPass(DCE, curfunc, modified)
     {
       // tail

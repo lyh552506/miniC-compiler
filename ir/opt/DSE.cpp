@@ -11,17 +11,17 @@ void DeadStoreElimination::init()
 bool DeadStoreElimination::Run()
 {
     bool modified = false;
-    std::vector<BasicBlock *> WorkList;
-    WorkList.push_back(func->front());
-    while (!WorkList.empty())
-    {
-        BasicBlock *block = WorkList.back();
-        WorkList.pop_back();
-        if (HasHandleBlock.count(block))
-            continue;
-        HasHandleBlock.insert(block);
+    // WorkList.push_back(func->front());
+    // while (!WorkList.empty())
+    // {
+        // BasicBlock *block = WorkList.back();
+        // WorkList.pop_back();
+        // if (HasHandleBlock.count(block))
+            // continue;
+        // HasHandleBlock.insert(block);
+    for(auto block : *func)
         modified |= RunOnBlock(block);
-    }
+    // }
 
     for (auto &[key, val] : Array_Store_Map)
     {
@@ -59,7 +59,8 @@ bool DeadStoreElimination::RunOnBlock(BasicBlock *block)
         if (auto store = dynamic_cast<StoreInst *>(inst))
         {
             Value *dst = inst->GetOperand(1);
-
+            if(dst->GetName() == ".378")
+                int c = 1;
             if (dst->isGlobal())
             {
                 if (Global_Store_Map.count(dst))
@@ -250,6 +251,33 @@ bool DeadStoreElimination::RunOnBlock(BasicBlock *block)
                     }
                 }
             }
+        }
+        if (dynamic_cast<CondInst *>(inst))
+        {
+            Value *val = inst->Getuselist()[0]->usee;
+            if (val->isGlobal())
+            {
+                if (Global_Store_Map.count(val))
+                    Global_Store_Map.erase(val);
+            }
+            else if (val->isParam())
+            {
+                if (Param_Store_Map.count(val))
+                    Param_Store_Map.erase(val);
+            }
+            else
+            {
+                if (Store_Map.count(val))
+                    Store_Map.erase(val);
+            }
+            WorkList.push_back(dynamic_cast<BasicBlock *>(inst->Getuselist()[1]->usee));
+            WorkList.push_back(dynamic_cast<BasicBlock *>(inst->Getuselist()[2]->usee));
+            continue;
+        }
+        if (dynamic_cast<UnCondInst *>(inst))
+        {
+            WorkList.push_back(dynamic_cast<BasicBlock *>(inst->Getuselist()[0]->usee));
+            continue;
         }
         {
             for (auto &use : inst->Getuselist())
