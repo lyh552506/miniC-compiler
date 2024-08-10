@@ -65,7 +65,9 @@ bool cfgSimplify::simplifyPhiInst() {
   bool changed = false;
   for (auto bb : m_func->GetBasicBlock()) {
     for (auto iter = bb->begin(); iter != bb->end(); ++iter) {
-      if (auto phi = dynamic_cast<PhiInst *>(*iter)) {
+      auto I=*iter;
+      ++iter;
+      if (auto phi = dynamic_cast<PhiInst *>(I)) {
         bool HasUndef = false;
         Value *origin = nullptr;
         auto &incomes = phi->GetAllPhiVal();

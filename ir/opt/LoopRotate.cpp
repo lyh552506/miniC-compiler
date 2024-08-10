@@ -335,15 +335,23 @@ void LoopRotate::PreservePhi(
       //消除递归使用phi
       auto insert_pos = new_header->begin();
       auto phi_use = dynamic_cast<PhiInst *>(u->GetValue());
-      while (phi_use && (phi_use->GetParent() == phi->GetParent()) &&
+      auto bb = phi->GetParent();
+      while (phi_use && (phi_use->GetParent() == bb) &&
              assist.insert(phi_use).second) {
-        if (phi->Getuselist().size() == 1)
+        if (phi->Getuselist().size() == 1) {
           phi->updateIncoming(RecordPhi[phi][true], preheader);
-        auto tmp = dynamic_cast<PhiInst *>(phi_use->GetOperand(0));
-        phi_use->updateIncoming(RecordPhi[phi_use][true], preheader);
-        phi_use->EraseFromParent();
-        insert_pos = insert_pos.insert_before(phi_use);
-        phi_use = tmp;
+          phi->EraseFromParent();
+          insert_pos = insert_pos.insert_before(phi);
+        }
+        if (PhiInsert.find(phi_use) == PhiInsert.end()) {
+          auto tmp = dynamic_cast<PhiInst *>(phi_use->GetOperand(0));
+          phi_use->updateIncoming(RecordPhi[phi_use][true], preheader);
+          phi_use->EraseFromParent();
+          insert_pos = insert_pos.insert_before(phi_use);
+          phi_use = tmp;
+        } else {
+          phi_use = PhiInsert[phi];
+        }
       }
     }
   }
