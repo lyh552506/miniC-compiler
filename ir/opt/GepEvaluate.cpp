@@ -65,6 +65,11 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
     HandleBlockIn(node->ValueAddr, node);
     for (User *inst : *block)
     {
+        if(auto alloca = dynamic_cast<AllocaInst*>(inst))
+        {
+            allocas.insert(alloca);
+            continue;
+        }
         if (dynamic_cast<CallInst *>(inst))
         {
             if (inst->Getuselist()[0]->usee->GetName() == "llvm.memcpy.p0.p0.i32")
@@ -101,7 +106,12 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
                                                });
                         };
                         if (all_offset_zero() && dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
-                            node->ValueAddr[gep->Getuselist()[0]->usee].clear();
+                        {
+                            auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee);
+                            node->ValueAddr[alloca].clear();
+                            alloca->AllZero = false;
+                            alloca->HasStored = true;
+                        }
                     }
                 }
             }
@@ -114,19 +124,22 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
                 if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
                 {
                     size_t hash = GepHash{}(gep, &node->ValueAddr);
-                    if (node->ValueAddr[alloca].find(hash) != node->ValueAddr[alloca].end())
+                    if (node->ValueAddr.find(alloca) != node->ValueAddr.end())
                     {
-                        inst->RAUW(node->ValueAddr[alloca][hash]);
-                        wait_del.push_back(inst);
-                        modified = true;
+                        if (node->ValueAddr[alloca].find(hash) != node->ValueAddr[alloca].end())
+                        {
+                            inst->RAUW(node->ValueAddr[alloca][hash]);
+                            wait_del.push_back(inst);
+                            modified = true;
+                        }
                     }
-                    else if(!alloca->HasStored)
+                    else if (!alloca->HasStored)
                     {
                         bool flag_all_const = true;
                         std::vector<int> index;
-                        for(int i = 1; i < gep->Getuselist().size(); i++)
+                        for (int i = 2; i < gep->Getuselist().size(); i++)
                         {
-                            if(auto INT = dynamic_cast<ConstIRInt*>(gep->Getuselist()[i]->usee))
+                            if (auto INT = dynamic_cast<ConstIRInt *>(gep->Getuselist()[i]->usee))
                                 index.push_back(INT->GetVal());
                             else
                             {
@@ -134,16 +147,18 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
                                 break;
                             }
                         }
-                        if(auto init = AllocaInitMap[alloca])
+                        if (auto init = AllocaInitMap[alloca])
                         {
-                            if(auto val = init->getInitVal(index))
+                            if (flag_all_const)
                             {
-                                inst->RAUW(val);
-                                wait_del.push_back(inst);
-                                modified = true;       
+                                if (auto val = init->getInitVal(index))
+                                {
+                                    inst->RAUW(val);
+                                    wait_del.push_back(inst);
+                                    modified = true;
+                                }
                             }
                         }
-
                     }
                 }
             }
@@ -216,7 +231,7 @@ void GepEvaluate::HandleMemcpy(AllocaInst *inst, Initializer *init, HandleNode *
     }
 }
 
-void GepEvaluate::HandleZeroInitializer(AllocaInst* inst, HandleNode* node, std::vector<int> index)
+void GepEvaluate::HandleZeroInitializer(AllocaInst *inst, HandleNode *node, std::vector<int> index)
 {
     return; // TODO
 }
@@ -235,6 +250,8 @@ void GepEvaluate::HandleBlockIn(ValueAddr_Struct &addr, HandleNode *node)
             maps.push_back(&(HandleNode->ValueAddr));
         else
         {
+            for(auto alloca : allocas)
+                alloca->HasStored = true;
             addr.clear();
             return;
         }
