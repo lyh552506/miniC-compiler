@@ -166,9 +166,37 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc) PassChangedEnd
 
-            // RunLevelPass(LoopParallel, curfunc, modified)
-            //     PassChangedBegin(curfunc)
-            //         PassChangedEnd
+            RunLevelPass(LoopParallel, curfunc, modified)
+                PassChangedBegin(curfunc) PassChangedEnd
+
+                    RunLevelPass(DCE, curfunc, other);
+        PassChangedBegin(curfunc) PassChangedEnd
+
+            RunLevelPass(BlockMerge, curfunc, other);
+        PassChangedBegin(curfunc) PassChangedEnd
+      }
+      CommonPass(AM);
+      // loop unroller
+      modified = true;
+      while (modified) {
+        modified = false;
+        PassChangedBegin(curfunc)
+            PassChangedEnd RunLevelPass(LoopSimplify, curfunc, other);
+        PassChangedBegin(curfunc) PassChangedEnd
+
+            RunLevelPass(LcSSA, curfunc, other);
+        PassChangedBegin(curfunc) PassChangedEnd
+
+            // loop-rotate
+            RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
+                PassChangedEnd // licm
+
+                    RunLevelPass(LICMPass, curfunc, modified);
+        PassChangedBegin(curfunc) PassChangedEnd
+
+            // loopdeletion
+            RunLevelPass(LoopDeletion, curfunc, modified);
+        PassChangedBegin(curfunc) PassChangedEnd
 
             RunLevelPass(LoopUnroll, curfunc,
                          modified) PassChangedBegin(curfunc)
@@ -279,9 +307,6 @@ void _PassManager::RunOnTest() {
     default: {
       for (int i = 0; i < module->GetFuncTion().size(); i++) {
         auto &func = module->GetFuncTion()[i];
-        if (func->tag == Function::UnrollBody ||
-            func->tag == Function::ParallelBody)
-          continue;
         curfunc = func.get();
         // 维护bbs关系
         curfunc->bb_num = 0;
@@ -374,6 +399,9 @@ void _PassManager::RunOnTest() {
           break;
         }
         case parallel: {
+          if (func->tag == Function::UnrollBody ||
+              func->tag == Function::ParallelBody)
+            break;
           auto parallel = RunImpl<LoopParallel>(curfunc, AM);
           break;
         }
@@ -399,6 +427,10 @@ void _PassManager::RunOnTest() {
         }
         case gepevaluate: {
           auto m_gepevaluate = RunImpl<GepEvaluate>(curfunc, AM);
+          break;
+        }
+        case blockmerge: {
+          auto m_blockmerge = RunImpl<BlockMerge>(curfunc, AM);
           break;
         }
         default: {
