@@ -20,6 +20,7 @@ private:
   void MakeWorkThread(Value *begin, Value *end, CallInst *loop_body);
   bool Judge(BasicBlock *bb, Value *target);
   void SimplifyPhi(LoopInfo *loop);
+  bool TempChoice(LoopInfo *loop); // tmp
   LoopTrait SubstitudeTrait;
   std::unordered_set<BasicBlock *> ExcutedLoops;
   LoopAnalysis *loop;
