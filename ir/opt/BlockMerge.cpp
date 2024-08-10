@@ -1,8 +1,7 @@
 #include "../../include/ir/opt/BlockMerge.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
-#include "BlockMerge.hpp"
-#include "CFG.hpp"
-#include "Singleton.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/lib/Singleton.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -17,7 +16,7 @@ bool BlockMerge::Run() {
   FunctionChange(m_func) m_dom = AM.get<dominance>(m_func);
   while (keep_loop) {
     keep_loop = false;
-    keep_loop |= simplify_Block();
+    keep_loop |= simplify_Block(); 
     keep_loop |= DealBrInst();
     keep_loop |= simplify_Block();
     keep_loop |= DeleteUnReachable();

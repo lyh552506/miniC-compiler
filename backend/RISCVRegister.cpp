@@ -101,67 +101,77 @@ void LARegister::print() {
 
 RegisterList::RegisterList() {
     using PhyReg=PhyRegister::PhyReg;
-    PhyRegister* preg = nullptr;
     // reglist_int
     // t0 & t1 will not be regalloced, and it is real temp register
-    PhyReg regenum = PhyReg::t2;
-    preg = PhyRegister::GetPhyReg(regenum);
-    reglist_int.push_back(preg);
-    regenum = PhyReg::s1;
-    while(regenum<=PhyReg::t6) {
-        preg = PhyRegister::GetPhyReg(regenum);
-        reglist_int.push_back(preg);
+    reglist_int.push_back(PhyRegister::GetPhyReg(PhyReg::t2));
+    PhyReg regenum = PhyReg::a0;
+    auto PushReg_Added = [&](std::vector<PhyRegister*>& list) {
+        list.push_back(PhyRegister::GetPhyReg(regenum));
         regenum = PhyReg(regenum + 1);
+    };
+    while(regenum<=PhyReg::a7) {
+      PushReg_Added(reglist_int);
+    }
+    regenum = PhyReg::t3;
+    while(regenum<=PhyReg::t6) {
+      PushReg_Added(reglist_int);
+    }
+    reglist_int.push_back(PhyRegister::GetPhyReg(PhyReg::s1));
+    regenum = PhyReg::s2;
+    while(regenum<=PhyReg::s11) {
+      PushReg_Added(reglist_int);
     }
 
     // reglist_float
     regenum = PhyReg::ft0;
-    while(regenum<=PhyReg::ft11) {
-        preg = PhyRegister::GetPhyReg(regenum);
-        reglist_float.push_back(preg);
-        regenum = PhyReg(regenum + 1);
+    while(regenum<=PhyReg::ft7) {
+      PushReg_Added(reglist_float);
     }
+    regenum = PhyReg::fa0;
+    while(regenum<=PhyReg::fa7) {
+      PushReg_Added(reglist_float);
+    }
+    regenum = PhyReg::ft8;
+    while(regenum<=PhyReg::ft11) {
+      PushReg_Added(reglist_float);
+    }
+    regenum = PhyReg::fs0;
+    while(regenum<=PhyReg::fs1) {
+      PushReg_Added(reglist_float);
+    }
+    regenum = PhyReg::fs2;
+    while(regenum<=PhyReg::fs11) {
+      PushReg_Added(reglist_float);
+    }
+
 
     // reglist_test
     regenum = PhyReg::a0;
     while(regenum<=PhyReg::a3) {
-      preg = PhyRegister::GetPhyReg(regenum);
-      reglist_test.push_back(preg);
-      regenum = PhyReg(regenum + 1);
+      PushReg_Added(reglist_test);
     }
 
     // reglist_caller
-    preg = PhyRegister::GetPhyReg(PhyReg::t2);
-    reglist_caller.push_back(preg);
+    reglist_caller.push_back(PhyRegister::GetPhyReg(PhyReg::t2));
     regenum = PhyReg::a0;
     while(regenum<=PhyReg::a7) {
-      preg = PhyRegister::GetPhyReg(regenum);
-      reglist_caller.push_back(preg);
-      regenum = PhyReg(regenum + 1);
+      PushReg_Added(reglist_caller);
     }
     regenum = PhyReg::t3;
     while(regenum<=PhyReg::t6) {
-      preg = PhyRegister::GetPhyReg(regenum);
-      reglist_caller.push_back(preg);
-      regenum = PhyReg(regenum + 1);
+      PushReg_Added(reglist_caller);
     }
     regenum = PhyReg::ft0;
     while(regenum <= PhyReg::ft7) {
-      preg = PhyRegister::GetPhyReg(regenum);
-      reglist_caller.push_back(preg);
-      regenum = PhyReg(regenum + 1);
+      PushReg_Added(reglist_caller);
     }
     regenum = PhyReg::fa0;
     while(regenum <= PhyReg::fa7) {
-      preg = PhyRegister::GetPhyReg(regenum);
-      reglist_caller.push_back(preg);
-      regenum = PhyReg(regenum + 1);
+      PushReg_Added(reglist_caller);
     }
     regenum = PhyReg::ft8;
     while(regenum <= PhyReg::ft11) {
-      preg = PhyRegister::GetPhyReg(regenum);
-      reglist_caller.push_back(preg);
-      regenum = PhyReg(regenum + 1);
+      PushReg_Added(reglist_caller);
     }
 }
 

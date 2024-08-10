@@ -1,21 +1,12 @@
 #include "../../include/ir/opt/LoopParallel.hpp"
-#include "../../include/lib/BaseCFG.hpp"
-#include "../../include/lib/CFG.hpp"
 #include "../../include/ir/Analysis/AliasAnalysis.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
 #include "../../include/ir/opt/LoopSimplify.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Type.hpp"
 #include "../../util/my_stl.hpp"
-#include <algorithm>
 #include <cassert>
-#include <cstddef>
-#include <cstdlib>
-#include <iostream>
-#include <set>
-#include <string>
-#include <unistd.h>
-#include <unordered_map>
-#include <vector>
 
 // only analysis main function, so inline must take place before this pass
 bool LoopParallel::Run() {
@@ -45,6 +36,8 @@ bool LoopParallel::Run() {
 
 bool LoopParallel::CanBeParallel(LoopInfo *loop) {
   auto header = loop->GetHeader();
+  auto latch = loopAnaly->GetLatch(loop);
+  assert(latch && header);
   int cnt = 0;
   for (auto inst : *header) {
     if (auto phi = dynamic_cast<PhiInst *>(inst)) {
@@ -59,12 +52,30 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
       break;
     }
   }
+  auto ex = loopAnaly->GetExit(loop);
+  for (auto bb : loop->GetLoopBody())
+    for (auto des : dom->GetNode(bb->num).des) {
+      auto desBB = dom->GetNode(des).thisBlock;
+      if (loop->Contain(desBB) && bb != latch)
+        return false;
+    }
+
   LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   if (loop->CantCalcTrait())
     return false;
-  // SimplifyPhi(loop);
+
   if (!DependencyAnalysis(loop))
     return false;
+  auto resPhi = loop->trait.res;
+  if (resPhi) {
+    auto res = resPhi->ReturnValIn(latch);
+    for (auto use : res->GetUserlist()) {
+      auto UserBB = use->GetUser()->GetParent();
+      if (!loop->Contain(UserBB)) {
+        return false;
+      }
+    }
+  }
   return true;
 }
 
@@ -194,6 +205,8 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
       }
     }
   bool NoUse = false;
+  auto exit = loopAnaly->GetExit(loop);
+
   for (auto des : dom->GetNode(latch->num).des)
     if (dom->GetNode(des).thisBlock != header)
       for (auto it = dom->GetNode(des).thisBlock->begin();
@@ -278,6 +291,7 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
 
 bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
   std::unordered_map<Value *, std::pair<Value *, Value *>> PointerAnaly;
+  std::unordered_map<LoadInst *, StoreInst *> ldst;
   auto body = loop->GetLoopBody();
   // only trans Load/Store Inst
   auto GetTarget = [](User *inst) {
@@ -345,9 +359,38 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
                 //可能存在类似arr[i]=arr[i-1] + sum 的例子
                 return false;
               }
+              ldst[ld] = st;
             }
           }
         }
+  }
+  // Can Parallel , Try change to atomic
+  std::vector<Value *> Erase;
+  for (auto &[ld, st] : ldst) {
+    // match pattern like:
+    //   %2=load %1, %3=%2 op other, store %3,%1
+    assert(ld->GetUserlist().GetSize() == 1 &&
+           st->GetOperand(1) == ld->GetOperand(0));
+    auto bin = dynamic_cast<BinaryInst *>(ld->GetUserlist().Front()->GetUser());
+    auto StoreVal = st->GetOperand(0);
+    auto operand = st->GetOperand(1);
+    if (!bin || bin != StoreVal)
+      break;
+    _DEBUG(std::cerr << "Match Load Store!" << std::endl;)
+    auto change =
+        bin->GetOperand(0) == ld ? bin->GetOperand(1) : bin->GetOperand(0);
+    auto Atomic = new BinaryInst(change, bin->getopration(), operand, true);
+    BasicBlock::mylist<BasicBlock, User>::iterator insert_pos(st);
+    insert_pos.insert_before(Atomic);
+    Erase.push_back(st);
+    Erase.push_back(bin);
+    Erase.push_back(ld);
+  }
+  for (auto iter = Erase.begin(); iter != Erase.end();) {
+    auto inst = *iter;
+    inst->RAUW(UndefValue::get(inst->GetType()));
+    ++iter;
+    delete inst;
   }
   return true;
 }

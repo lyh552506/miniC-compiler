@@ -1,6 +1,4 @@
 #include "../../include/ir/opt/ConstantProp.hpp"
-#include "BaseCFG.hpp"
-#include "InstructionSimplify.hpp"
 #include <set>
 
 bool ConstantProp::Run() {

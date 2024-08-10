@@ -2,7 +2,6 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../util/my_stl.hpp"
-#include "New_passManager.hpp"
 #include <algorithm>
 #include <cassert>
 #include <set>
@@ -40,6 +39,9 @@ bool LcSSA::DFSLoops(LoopInfo *l) {
         continue;
       for (const auto user : inst->GetUserlist()) {
         if (ContainBB.find(user->GetUser()->GetParent()) == ContainBB.end()) {
+          // if (auto phi = dynamic_cast<PhiInst *>(user->GetUser()))
+          //   if (phi->GetName().find("lcssa") != std::string::npos)
+          //     continue;
           FormingInsts.push_back(inst);
         }
       }
@@ -60,6 +62,16 @@ bool LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
     std::vector<Use *> Rewrite; //记录inst的所有在外部use
     std::set<BasicBlock *> ContainBB;
     auto target = PopBack(FormingInsts);
+    auto GetNameEnum = [](Value *val) {
+      int p = 0;
+      auto name = val->GetName() + ".lcssa." + std::to_string(p++);
+      for (auto use : val->GetUserlist()) {
+        auto user = use->GetUser();
+        if (user->GetName() == name)
+          name = val->GetName() + ".lcssa." + std::to_string(p++);
+      }
+      return name;
+    };
     auto l = loops->LookUp(target->GetParent());
     std::vector<BasicBlock *> exit = loops->GetExit(l);
     ContainBB.insert(l->GetLoopBody().begin(), l->GetLoopBody().end());
@@ -84,8 +96,7 @@ bool LcSSA::FormalLcSSA(std::vector<User *> &FormingInsts) {
                        << target->GetName() + ".lcssa." + std::to_string(x)
                        << std::endl;);
       auto phi = PhiInst::NewPhiNode(ex->front(), ex, target->GetType(),
-                                     target->GetName() + ".lcssa." +
-                                         std::to_string(x++));
+                                     GetNameEnum(target));
       for (auto rev : m_dom->GetNode(ex->num).rev)
         phi->updateIncoming(target, m_dom->GetNode(rev).thisBlock);
       changed |= true;

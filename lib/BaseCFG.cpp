@@ -195,7 +195,7 @@ bool User::HasSideEffect() {
     Function *func =
         dynamic_cast<Function *>(this->Getuselist()[0]->GetValue());
     if (func) {
-      if (func->HasSideEffect)
+      if (func->HasSideEffect||func->tag!=Function::Normal)
         return true;
       for (auto it = func->begin(); it != func->end(); ++it) {
         BasicBlock *block = *it;

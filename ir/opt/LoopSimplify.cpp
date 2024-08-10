@@ -5,7 +5,6 @@
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Type.hpp"
 #include "../../util/my_stl.hpp"
-#include "New_passManager.hpp"
 #include <algorithm>
 #include <cassert>
 #include <set>
@@ -344,7 +343,8 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
   UpdateLoopInfo(head, insert, bbs);
 }
 
-void LoopSimplify::CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay) {
+void LoopSimplify::CaculateLoopInfo(
+  LoopInfo *loop, LoopAnalysis *Anlay) {
   const auto Header = loop->GetHeader();
   const auto Latch = Anlay->GetLatch(loop);
   const auto br = dynamic_cast<CondInst *>(*(Latch->rbegin()));

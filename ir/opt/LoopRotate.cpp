@@ -7,7 +7,7 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
-#include "New_passManager.hpp"
+#include "my_stl.hpp"
 #include <cassert>
 #include <cstdlib>
 #include <iterator>
@@ -213,6 +213,43 @@ void LoopRotate::PreservePhi(
   }
   //去掉preheader到header的边之后，现在loop有两个是数据流入口，需要更新phi
   // lcssa保证user在loop内
+  auto DealPhi = [&](PhiInst *phi, Use *use) {
+    auto user = use->GetUser();
+    if (PhiInsert.find(phi) == PhiInsert.end()) {
+      assert(phi->PhiRecord.size() == 1);
+      auto new_phi =
+          PhiInst::NewPhiNode(new_header->front(), new_header, phi->GetType());
+      for (auto [flag, val] : RecordPhi[phi]) {
+        if (flag)
+          new_phi->updateIncoming(RecordPhi[phi][flag], preheader);
+        else
+          new_phi->updateIncoming(RecordPhi[phi][flag], header);
+      }
+      user->RSUW(use, new_phi);
+      PhiInsert[phi] = new_phi;
+    } else {
+      user->RSUW(use, PhiInsert[phi]);
+    }
+    if (auto p = dynamic_cast<PhiInst *>(use->GetUser())) {
+      for (int i = 0; i < p->PhiRecord.size(); i++) {
+        if (p->PhiRecord[i].first == phi) {
+          p->PhiRecord[i].first = use->SetValue();
+        }
+      }
+    }
+    for (auto ex : loopAnlasis->GetExit(loop))
+      for (auto _inst : *ex)
+        if (auto p = dynamic_cast<PhiInst *>(_inst)) {
+          for (int i = 0; i < p->PhiRecord.size(); i++)
+            if (p->PhiRecord[i].first == phi &&
+                p->PhiRecord[i].second != header) {
+              p->RSUW(i, PhiInsert[phi]);
+              p->PhiRecord[i].first = PhiInsert[phi];
+            }
+        }
+  };
+  std::vector<std::pair<PhiInst *, Use *>> PhiSet;
+  std::unordered_set<PhiInst *> assist;
   for (auto inst : *header) {
     if (auto phi = dynamic_cast<PhiInst *>(inst)) {
       for (auto iter = inst->GetUserlist().begin();
@@ -228,40 +265,8 @@ void LoopRotate::PreservePhi(
         if (targetBB == preheader) {
           continue;
         }
-        if (auto phi = dynamic_cast<PhiInst *>(inst)) {
-          if (PhiInsert.find(phi) == PhiInsert.end()) {
-            assert(phi->PhiRecord.size() == 1);
-            auto new_phi = PhiInst::NewPhiNode(new_header->front(), new_header,
-                                               inst->GetType());
-            for (auto [flag, val] : RecordPhi[phi]) {
-              if (flag)
-                new_phi->updateIncoming(RecordPhi[phi][flag], preheader);
-              else
-                new_phi->updateIncoming(RecordPhi[phi][flag], header);
-            }
-            user->RSUW(use, new_phi);
-            PhiInsert[phi] = new_phi;
-          } else {
-            user->RSUW(use, PhiInsert[phi]);
-          }
-          if (auto p = dynamic_cast<PhiInst *>(use->GetUser())) {
-            for (int i = 0; i < p->PhiRecord.size(); i++) {
-              if (p->PhiRecord[i].first == phi) {
-                p->PhiRecord[i].first = use->SetValue();
-              }
-            }
-          }
-          for (auto ex : loopAnlasis->GetExit(loop))
-            for (auto _inst : *ex)
-              if (auto p = dynamic_cast<PhiInst *>(_inst)) {
-                for (int i = 0; i < p->PhiRecord.size(); i++)
-                  if (p->PhiRecord[i].first == inst &&
-                      p->PhiRecord[i].second != header) {
-                    p->RSUW(i, PhiInsert[phi]);
-                    p->PhiRecord[i].first = PhiInsert[phi];
-                  }
-              }
-        }
+        PhiSet.emplace_back(phi, use);
+        assist.insert(phi);
       }
       // auto usee = use->GetValue();
       // if (NewInsertPhi.find(usee) == NewInsertPhi.end()) {
@@ -319,6 +324,34 @@ void LoopRotate::PreservePhi(
             phi->ReplaceVal(use, new_phi);
         } else
           user->RSUW(use, new_phi);
+      }
+    }
+  }
+  while (!PhiSet.empty()) {
+    auto [phi, use] = PhiSet.back();
+    PhiSet.pop_back();
+    DealPhi(phi, use);
+    for (auto &u : phi->Getuselist()) {
+      //消除递归使用phi
+      auto insert_pos = new_header->begin();
+      auto phi_use = dynamic_cast<PhiInst *>(u->GetValue());
+      auto bb = phi->GetParent();
+      while (phi_use && (phi_use->GetParent() == bb) &&
+             assist.insert(phi_use).second) {
+        if (phi->Getuselist().size() == 1) {
+          phi->updateIncoming(RecordPhi[phi][true], preheader);
+          phi->EraseFromParent();
+          insert_pos = insert_pos.insert_before(phi);
+        }
+        if (PhiInsert.find(phi_use) == PhiInsert.end()) {
+          auto tmp = dynamic_cast<PhiInst *>(phi_use->GetOperand(0));
+          phi_use->updateIncoming(RecordPhi[phi_use][true], preheader);
+          phi_use->EraseFromParent();
+          insert_pos = insert_pos.insert_before(phi_use);
+          phi_use = tmp;
+        } else {
+          phi_use = PhiInsert[phi];
+        }
       }
     }
   }
@@ -383,7 +416,14 @@ void LoopRotate::SimplifyBlocks(BasicBlock *Header, LoopInfo *loop) {
     if (iter == Header->end())
       break;
     auto inst = *iter;
-    assert(!dynamic_cast<PhiInst *>(inst));
+    if (dynamic_cast<PhiInst *>(inst)) {
+      inst->EraseFromParent();
+      auto it = Latch->begin();
+      for (; it != Latch->end() && dynamic_cast<PhiInst *>(*it); ++it) {
+      }
+      it.insert_before(inst);
+      continue;
+    }
     inst->EraseFromParent();
     inst->SetParent(Latch);
     Latch->push_back(inst);
@@ -417,6 +457,7 @@ bool LoopRotate::TryRotate(LoopInfo *loop) {
   bool Legal = false;
   auto latch = loopAnlasis->GetLatch(loop);
   auto head = loop->GetHeader();
+  auto prehead = loopAnlasis->GetPreHeader(loop, LoopAnalysis::Loose);
   auto uncond = dynamic_cast<UnCondInst *>(latch->back());
   if (!uncond)
     return false;
@@ -441,7 +482,7 @@ bool LoopRotate::TryRotate(LoopInfo *loop) {
     ++iter;
     if (dynamic_cast<UnCondInst *>(inst) || dynamic_cast<CondInst *>(inst))
       break;
-    if (dynamic_cast<BinaryInst *>(inst)) {
+    if (auto bin = dynamic_cast<BinaryInst *>(inst)) {
       if (times > 0)
         return false;
       times++;
@@ -462,6 +503,21 @@ bool LoopRotate::TryRotate(LoopInfo *loop) {
           break;
         }
       }
+      bool HasZero = false;
+      auto rhs = inst->GetOperand(1);
+      if (auto phi = dynamic_cast<PhiInst *>(rhs))
+        for (auto &[idnex, val] : phi->PhiRecord) {
+          if (auto cond = dynamic_cast<ConstIRInt *>(val.first))
+            if (cond->GetVal() == 0)
+              HasZero = true;
+        }
+      if (auto con = dynamic_cast<ConstIRInt *>(rhs))
+        if (con->GetVal() == 0)
+          HasZero = true;
+      if ((bin->getopration() == BinaryInst::Op_Mod ||
+           bin->getopration() == BinaryInst::Op_Mod) &&
+          HasZero)
+        return false;
     } else {
       Legal = false;
       break;
