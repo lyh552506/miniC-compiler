@@ -18,13 +18,11 @@ bool BlockMerge::Run() {
     keep_loop = false;
     keep_loop |= simplify_Block(); 
     keep_loop |= DealBrInst();
-   return false;
     keep_loop |= simplify_Block();
     keep_loop |= DeleteUnReachable();
     keep_loop |= mergeSpecialBlock();
     keep_loop |= SimplifyUncondBr();
     keep_loop |= mergeRetBlock();
-    return false;
   }
   return false;
 }
