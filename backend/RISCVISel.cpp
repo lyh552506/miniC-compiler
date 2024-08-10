@@ -3,6 +3,7 @@
 #include "../include/backend/RISCVFrameContext.hpp"
 #include "../include/ir/opt/New_passManager.hpp"
 #include "../include/ir/Analysis/CondProbAnalysis.hpp"
+#include "../include/ir/Analysis/LoopInfo.hpp"
 RISCVMIR* RISCVISel::Builder(RISCVMIR::RISCVISA _isa,User* inst){
     auto minst=new RISCVMIR(_isa);
     minst->SetDef(ctx.mapping(inst));

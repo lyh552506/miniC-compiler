@@ -5,7 +5,7 @@
 #include "../../include/backend/RISCVRegister.hpp"
 #include "../../include/backend/RISCVMIR.hpp"
 #include "../../include/lib/BaseCFG.hpp"
-#include "LoopInfo.hpp"
+#include "../../include/ir/Analysis/LoopInfo.hpp"
 #include <algorithm>
 #include <vector>
 

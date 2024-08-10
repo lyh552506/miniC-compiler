@@ -1,6 +1,6 @@
 #pragma once
 #include "../../lib/CFG.hpp"
-#include "LoopInfo.hpp"
+#include "../Analysis/LoopInfo.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 #include <vector>
