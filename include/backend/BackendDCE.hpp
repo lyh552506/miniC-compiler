@@ -11,7 +11,7 @@
 #include "../../util/my_stl.hpp"
 class BlockLiveInfo;
 using MOperand = Register *;
-class BackendDCE : public BlockLiveInfo, BackEndPass<RISCVFunction>
+class BackendDCE : public Liveness, BackEndPass<RISCVFunction>
 {
   private:
     RISCVLoweringContext &ctx;
@@ -25,7 +25,7 @@ class BackendDCE : public BlockLiveInfo, BackEndPass<RISCVFunction>
 
   public:
     bool RunImpl();
-    BackendDCE(RISCVFunction *func_, RISCVLoweringContext &_ctx) : BlockLiveInfo(func_), ctx(_ctx), func(func_)
+    BackendDCE(RISCVFunction *func_, RISCVLoweringContext &_ctx) : Liveness(func_), ctx(_ctx), func(func_)
     {
       func=ctx.GetCurFunction();
     }
