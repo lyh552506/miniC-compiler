@@ -1,5 +1,6 @@
 #include "../include/backend/LegalizePass.hpp"
 #include "../include/backend/RISCVAsmPrinter.hpp"
+#include <cstring>
 Legalize::Legalize(RISCVLoweringContext& _ctx) :ctx(_ctx) {}
 
 void Legalize::run() {
@@ -82,29 +83,27 @@ void Legalize::run() {
                 }
                 case RISCVMIR::LoadImmReg:
                 {
-                    // 整数，直接换成li
-                    // 浮点数，使用的是floatvar
-                    // floatvar->Getname();
-                    auto tempfloat=inst->GetOperand(0)->as<tempvar>();
-                    if(tempfloat!=nullptr){
-                        std::string name = tempfloat->Getname();
-                        PhyRegister* lui_rd = PhyRegister::GetPhyReg(PhyRegister::t0);
-                        LARegister* lui_rs = new LARegister(RISCVType::riscv_ptr, name);
-                        Register* flw_rd = inst->GetDef()->as<Register>();
-                        LARegister* flw_rs = new LARegister(RISCVType::riscv_ptr, name, lui_rd);
+                    auto imm=inst->GetOperand(0)->as<Imm>();
+                    auto isfloatconst=imm->GetType()==RISCVType::riscv_float32;
+                    if(isfloatconst){
+                        auto fval=imm->Getdata()->as<ConstIRFloat>()->GetVal();
+                        int initval;
+                        std::memcpy(&initval,&fval,sizeof(float));
 
-                        RISCVMIR* lui = new RISCVMIR(RISCVMIR::RISCVISA::_lui);
-                        lui->SetDef(lui_rd);
-                        lui->AddOperand(lui_rs);
+                        auto liinst=new RISCVMIR(RISCVMIR::li);
+                        liinst->SetDef(PhyRegister::GetPhyReg(PhyRegister::t0));
+                        liinst->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(initval)));
 
-                        RISCVMIR* flw = new RISCVMIR(RISCVMIR::RISCVISA::_flw);
-                        flw->SetDef(flw_rd);
-                        flw->AddOperand(flw_rs);
+                        auto fmvwx=new RISCVMIR(RISCVMIR::_fmv_w_x);
+                        // auto defreg=ctx.createVReg(riscv_float32);
+                        fmvwx->SetDef(inst->GetDef());
+                        fmvwx->AddOperand(PhyRegister::GetPhyReg(PhyRegister::t0));
 
-                        it.insert_before(lui);
-                        it.insert_before(flw);
-                        it=mylist<RISCVBasicBlock,RISCVMIR>::iterator(flw);
+                        it=mylist<RISCVBasicBlock,RISCVMIR>::iterator(inst);
+                        it.insert_before(liinst);
+                        it.insert_before(fmvwx);
                         delete inst;
+                        it=mylist<RISCVBasicBlock,RISCVMIR>::iterator(fmvwx);
                         break;
                     }
                     else{
