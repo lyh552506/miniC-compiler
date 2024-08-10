@@ -82,6 +82,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case blockmerge:
       AddPass(blockmerge);
       break;
+    case Dse:
+      AddPass(Dse);
+      break;
     case O0:
       level = O0;
       break;
@@ -180,6 +183,8 @@ void _PassManager::RunOnLevel() {
       }
     }
     CommonPass(AM);
+        // RunLevelPass(DeadStoreElimination, curfunc, modified);
+        // RunLevelPass(DCE, curfunc, modified)
     {
       // tail
       // RunLevelPass(TailRecurseEliminator, curfunc,
@@ -397,6 +402,11 @@ void _PassManager::RunOnTest() {
         }
         case gepevaluate: {
           auto m_gepevaluate = RunImpl<GepEvaluate>(curfunc, AM);
+          break;
+        }
+        case Dse:
+        {
+          auto m_Dse = RunImpl<DeadStoreElimination>(curfunc, AM);
           break;
         }
         default: {
