@@ -11,6 +11,8 @@
 
 // only analysis main function, so inline must take place before this pass
 bool LoopParallel::Run() {
+  if(m_func->tag!=Function::Normal)
+    return false;
   bool changed = false;
   dom = AM.get<dominance>(m_func);
   loopAnaly = AM.get<LoopAnalysis>(m_func, dom);
@@ -28,7 +30,7 @@ bool LoopParallel::Run() {
                 << "\n";
       SubstitudeTrait.Init();
       auto call = ExtractLoopParallelBody(loop);
-      MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
+      MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);     
       return true;
     }
   }
@@ -144,6 +146,7 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
       return false;
     return true;
   };
+
   for (auto bb : body)
     for (auto inst : *bb) {
       if (Val2Arg.count(inst))
