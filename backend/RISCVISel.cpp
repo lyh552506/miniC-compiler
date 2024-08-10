@@ -57,7 +57,8 @@ bool RISCVISel::run(Function* m){
     }
 
     /// @note get branch prob to fix terminator
-    auto loopinfo=AM.get<LoopAnalysis>(m,mdom);
+    
+    auto loopinfo=AM.get<LoopAnalysis>(m,mdom,std::ref(DeleteLoop));
     auto condprob=AM.get<ProbAnalysis>(m,loopinfo,mdom);
     auto probedge=condprob->GetProb();
 

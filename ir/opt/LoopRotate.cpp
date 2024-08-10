@@ -18,11 +18,11 @@ bool LoopRotate::Run() {
   bool changed = false;
   auto sideeffect = AM.get<SideEffect>(&Singleton<Module>());
   m_dom = AM.get<dominance>(m_func);
-  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
+  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom, std::ref(DeleteLoop));
   auto loops = loopAnlasis->GetLoops();
   for (auto loop : loops) {
     m_dom = AM.get<dominance>(m_func);
-    loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
+    loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom, std::ref(DeleteLoop));
     bool Success = false;
     Success |= TryRotate(loop);
     if (RotateLoop(loop, Success) || Success) {
@@ -40,7 +40,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
     return false;
   loop->RotateTimes++;
   m_dom = AM.get<dominance>(m_func);
-  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom);
+  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom,std::ref(DeleteLoop));
   auto prehead = loopAnlasis->GetPreHeader(loop);
   auto header = loop->GetHeader();
   auto latch = loopAnlasis->GetLatch(loop);

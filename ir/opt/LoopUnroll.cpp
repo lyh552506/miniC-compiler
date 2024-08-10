@@ -16,7 +16,7 @@
 
 bool LoopUnroll::Run() {
   dom = AM.get<dominance>(m_func);
-  loopAnaly = AM.get<LoopAnalysis>(m_func, dom);
+  loopAnaly = AM.get<LoopAnalysis>(m_func, dom, std::ref(DeleteLoop));
   std::vector<LoopInfo *> loops{loopAnaly->begin(), loopAnaly->end()};
   for (auto iter = loops.begin(); iter != loops.end();) {
     auto loop = *iter;

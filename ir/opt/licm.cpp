@@ -7,7 +7,7 @@
 
 bool LICMPass::Run() {
   m_dom = AM.get<dominance>(m_func);
-  loop = AM.get<LoopAnalysis>(m_func, m_dom);
+  loop = AM.get<LoopAnalysis>(m_func, m_dom, std::ref(DeleteLoop));
   alias = AM.get<AliasAnalysis>(m_func);
   auto side = AM.get<SideEffect>(&Singleton<Module>());
   bool changed = false;
@@ -95,7 +95,7 @@ bool LICMPass::licmHoist(const std::set<BasicBlock *> &contain, LoopInfo *l,
         continue;
       _DEBUG(std::cerr << "LICM START TO HOIST CODE: " << inst->GetName()
                        << std::endl;)
-      auto prehead = loop->GetPreHeader(l,LoopAnalysis::Loose);
+      auto prehead = loop->GetPreHeader(l, LoopAnalysis::Loose);
       assert(prehead);
       auto New_inst = inst->CloneInst();
       auto it = prehead->rbegin();

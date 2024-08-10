@@ -6,11 +6,16 @@
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 #include <unordered_set>
+#include <vector>
 class _AnalysisManager;
 class LoopParallel : public _PassManagerBase<LoopParallel, Function> {
 public:
   LoopParallel(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
   bool Run();
+  ~LoopParallel() {
+    for (auto l : DeleteLoop)
+      delete l;
+  }
 
 private:
   bool CanBeParallel(LoopInfo *loop);
@@ -28,4 +33,5 @@ private:
   _AnalysisManager &AM;
   LoopAnalysis *loopAnaly;
   std::unordered_map<Value *, Variable *> Val2Arg;
+  std::vector<LoopInfo *> DeleteLoop;
 };

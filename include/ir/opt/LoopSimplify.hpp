@@ -1,5 +1,6 @@
 #pragma once
 #include "../../lib/CFG.hpp"
+#include "LoopInfo.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 #include <vector>
@@ -11,6 +12,10 @@ public:
   bool Run();
   void PrintPass();
   static void CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay);
+  ~LoopSimplify() {
+    for (auto l : DeleteLoop)
+      delete l;
+  }
 
 private:
   bool SimplifyLoopsImpl(LoopInfo *loop);
@@ -28,6 +33,7 @@ private:
                       const std::vector<BasicBlock *> &pred);
   LoopAnalysis *loopAnlay;
   _AnalysisManager &AM;
+  std::vector<LoopInfo *> DeleteLoop;
   Function *m_func;
   dominance *m_dom;
 };

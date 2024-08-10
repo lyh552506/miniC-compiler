@@ -2,9 +2,9 @@
 #include "../../lib/BaseCFG.hpp"
 #include "../../lib/CFG.hpp"
 #include "../Analysis/LoopInfo.hpp"
+#include "../Analysis/dominant.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "../Analysis/dominant.hpp"
 #include <set>
 #include <unordered_map>
 #include <vector>
@@ -14,6 +14,10 @@ public:
   LcSSA(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
   bool Run();
   void PrintPass() {}
+  ~LcSSA() {
+    for (auto l : DeleteLoop)
+      delete l;
+  }
 
 private:
   bool DFSLoops(LoopInfo *l);
@@ -29,6 +33,7 @@ private:
   LoopAnalysis *loops;
   dominance *m_dom;
   _AnalysisManager &AM;
+  std::vector<LoopInfo *> DeleteLoop;
   //记录lcssa后的phi对应的原值，方便后续替换
   std::unordered_map<PhiInst *, Value *> LcssaRecord;
   std::unordered_map<User *, std::vector<Use *>> UseRerite;

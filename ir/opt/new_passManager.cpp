@@ -106,7 +106,7 @@ void _PassManager::RunOnLevel() {
     return;
   if (level == O1) {
     auto AM = Singleton<_AnalysisManager>();
-    ;
+
     // DeadArgsElimination
     RunImpl<DeadArgsElimination>(module, AM);
 

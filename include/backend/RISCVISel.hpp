@@ -5,12 +5,15 @@
 #include "../../include/backend/RISCVRegister.hpp"
 #include "../../include/backend/RISCVMIR.hpp"
 #include "../../include/lib/BaseCFG.hpp"
+#include "LoopInfo.hpp"
 #include <algorithm>
+#include <vector>
 
 void LowerFormalArguments(Function* func, RISCVLoweringContext& ctx);
 
 class RISCVISel:public BackEndPass<Function>{
     RISCVLoweringContext& ctx;
+    std::vector<LoopInfo*>DeleteLoop;
     RISCVMIR* Builder(RISCVMIR::RISCVISA,User*);
     RISCVMIR* Builder_withoutDef(RISCVMIR::RISCVISA,User*);
     RISCVMIR* Builder(RISCVMIR::RISCVISA,std::initializer_list<RISCVMOperand*>);

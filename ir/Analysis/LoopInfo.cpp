@@ -146,6 +146,7 @@ void LoopAnalysis::LoopAnaly() {
 
 void LoopAnalysis::CloneToBB() {
   for (auto loops : LoopRecord) {
+    _DeleteLoop.push_back(loops);
     int loopdepth = loops->GetLoopDepth();
     loops->GetHeader()->LoopDepth = loopdepth;
     for (auto contain : loops->GetLoopBody())

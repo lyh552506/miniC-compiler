@@ -12,7 +12,7 @@
 bool LoopSimplify::Run() {
   bool changed = false;
   m_dom = AM.get<dominance>(m_func);
-  loopAnlay = AM.get<LoopAnalysis>(m_func, m_dom);
+  loopAnlay = AM.get<LoopAnalysis>(m_func, m_dom, std::ref(DeleteLoop));
   //先处理内层循环
   for (auto iter = loopAnlay->begin(); iter != loopAnlay->end(); iter++) {
     auto loop = *iter;
@@ -343,8 +343,7 @@ void LoopSimplify::UpdateInfo(std::vector<BasicBlock *> &bbs,
   UpdateLoopInfo(head, insert, bbs);
 }
 
-void LoopSimplify::CaculateLoopInfo(
-  LoopInfo *loop, LoopAnalysis *Anlay) {
+void LoopSimplify::CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay) {
   const auto Header = loop->GetHeader();
   const auto Latch = Anlay->GetLatch(loop);
   const auto br = dynamic_cast<CondInst *>(*(Latch->rbegin()));
