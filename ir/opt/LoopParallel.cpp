@@ -419,6 +419,8 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
           }
         }
   }
+  if (!ldst.empty())
+    return false;
   // Can Parallel , Try change to atomic
   std::vector<Value *> Erase;
   for (auto &[ld, st] : ldst) {
@@ -519,7 +521,8 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
                 : ReverOp(cmp->getopration());
   auto loopchange = SubstitudeTrait.change->CloneInst();
   loopchange->RSUW(0, Indvar);
-  auto new_cmp = BinaryInst::CreateInst(Indvar, op, SubstitudeTrait.boundary);
+  auto new_cmp =
+      BinaryInst::CreateInst(loopchange, op, SubstitudeTrait.boundary);
   PhiInst *res = nullptr;
   Indvar->updateIncoming(beg, Entry);
   Indvar->updateIncoming(loopchange, While_Loop);
@@ -539,7 +542,8 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
         if (op == res)
           continue;
       if (ValMap.find(op) == ValMap.end() &&
-          Judge(loop_body->GetParent(), op) && op != Indvar) {
+          Judge(loop_body->GetParent(), op) && op != Indvar &&
+          op != loopchange) {
         ValMap[op] = new Variable(Variable::Param, op->GetType(), "");
       }
     }
@@ -576,7 +580,11 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
       continue;
     }
     if (auto phi = dynamic_cast<PhiInst *>(inst)) {
-      assert(0);
+      assert(phi->PhiRecord.size() == 1);
+      auto repl = phi->GetOperand(0);
+      phi->RAUW(repl);
+      delete phi;
+      continue;
     }
     inst->EraseFromParent();
     While_Loop->push_back(inst);
