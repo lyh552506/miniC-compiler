@@ -376,6 +376,7 @@ BinaryInst *BinaryInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   auto tmp = normal_clone<BinaryInst>(this, mapping);
   tmp->op = op;
   tmp->id = static_cast<User::OpID>(op + BaseEnumNum);
+  tmp->Atomic = Atomic;
   return tmp;
 }
 

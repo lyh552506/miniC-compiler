@@ -171,6 +171,10 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         EndFloatArithmetic,
         EndFloat,
 
+        BeginAtomic,
+        _amoadd_w_aqrl,
+        EndAtomic,
+
         /// @brief Used for call and ret
         BeginMIRPseudo,
         mv,
