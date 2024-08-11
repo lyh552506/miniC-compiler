@@ -22,6 +22,7 @@ private:
   CallInst *ExtractLoopParallelBody(LoopInfo *loop);
   bool DependencyAnalysis(LoopInfo *loop);
   Value *FindPointBase(Value *val);
+  Value *GetBoundVal(BinaryInst::Operation op, LoopInfo *loop, User *cmp);
   void MakeWorkThread(Value *begin, Value *end, CallInst *loop_body);
   bool Judge(BasicBlock *bb, Value *target);
   void SimplifyPhi(LoopInfo *loop);

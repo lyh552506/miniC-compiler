@@ -15,9 +15,10 @@ struct LoopTrait {
   Value *initial = nullptr;
   int step = 0;
   PhiInst *indvar = nullptr; // eg: i++
-  Value *change = nullptr;
+  User *change = nullptr;
   PhiInst *res = nullptr;
   CallInst *call = nullptr; // result
+  BinaryInst *cmp = nullptr;
   void Init() {
     head = nullptr;
     boundary = nullptr;
