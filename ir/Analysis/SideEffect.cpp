@@ -118,7 +118,7 @@ bool SideEffect::FuncHasSideEffect(Function* func)
                 if(Func && Func->HasSideEffect)
                     flag = true;
             }
-            if(dynamic_cast<StoreInst*>(inst))
+            else if(dynamic_cast<StoreInst*>(inst))
             {
                 if(inst->Getuselist()[1]->usee->isGlobal())
                 {
@@ -128,11 +128,29 @@ bool SideEffect::FuncHasSideEffect(Function* func)
                 if(auto gep = dynamic_cast<GetElementPtrInst*>(inst->Getuselist()[1]->usee))
                 {
                     if(gep->Getuselist()[0]->usee->isGlobal())
-                     {
-                        flag = true;
-                        func->Change_Val.insert(gep->Getuselist()[0]->usee);
-                     }
+                    {
+                       flag = true;
+                       func->Change_Val.insert(gep->Getuselist()[0]->usee);
+                    }
                 }
+            }
+            else if(dynamic_cast<LoadInst*>(inst))
+            {
+                Value* val = inst->Getuselist()[0]->usee;
+                if(auto gep = dynamic_cast<GetElementPtrInst*>(val))
+                {
+                    auto base = gep->Getuselist()[0]->usee;
+                    if(base->isGlobal())
+                        base->ReadFunc.insert(func);
+                    else if(base->isParam())
+                        base->ReadFunc.insert(func);
+                }
+                else
+                {
+                    if(val->isGlobal())
+                        val->ReadFunc.insert(func);
+                }
+
             }
         }
     }

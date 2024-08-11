@@ -1,54 +1,57 @@
 #include "../../include/ir/opt/DSE.hpp"
 
+namespace PointerTool
+{
+auto all_offset_const = [](GetElementPtrInst *inst) {
+    return std::all_of(inst->Getuselist().begin() + 1, inst->Getuselist().end(),
+                       [](User::UsePtr &use) { return dynamic_cast<ConstantData *>(use->usee); });
+};
+} // namespace PointerTool
+
 void DeadStoreElimination::init()
 {
-    Store_Map.clear();
-    Array_Store_Map.clear();
     wait_del.clear();
     DomTree = AM.get<dominance>(func);
+    AM.get<SideEffect>(&Singleton<Module>());
+    func->init_visited_block();
+    OrderBlock(func->front());
+    std::reverse(DFSOrder.begin(), DFSOrder.end());
+}
+
+void DeadStoreElimination::OrderBlock(BasicBlock *block)
+{
+    if (block->visited)
+        return;
+    block->visited = true;
+    for (int dest : DomTree->GetNode(block->num).des)
+        OrderBlock(DomTree->GetNode(dest).thisBlock);
+    DFSOrder.push_back(block);
 }
 
 bool DeadStoreElimination::Run()
 {
+    init();
     bool modified = false;
-    // WorkList.push_back(func->front());
-    // while (!WorkList.empty())
-    // {
-        // BasicBlock *block = WorkList.back();
-        // WorkList.pop_back();
-        // if (HasHandleBlock.count(block))
-            // continue;
-        // HasHandleBlock.insert(block);
-    for(auto block : *func)
+    for (auto block : DFSOrder)
         modified |= RunOnBlock(block);
-    // }
-
-    for (auto &[key, val] : Array_Store_Map)
-    {
-        for (auto &[key2, val2] : val)
-        {
-            wait_del.push_back(val2);
-        }
-    }
-    for (auto &[key, val] : Global_Store_Map)
-    {
-        wait_del.push_back(val);
-    }
-    for (auto &[key, val] : Param_Store_Map)
-    {
-        wait_del.push_back(val);
-    }
-    for (auto &[key, val] : Store_Map)
-    {
-        wait_del.push_back(val);
-    }
     while (!wait_del.empty())
     {
         modified = true;
-        User *inst = wait_del.back();
-        wait_del.pop_back();
-        delete inst;
+        User *inst = *wait_del.begin();
+        wait_del.erase(wait_del.begin());
+        inst->ClearRelation();
+        inst->EraseFromParent();
     }
+
+    // SelfStoreElimination();
+    // while (!wait_del.empty())
+    // {
+    //     modified = true;
+    //     User *inst = *wait_del.begin();
+    //     wait_del.erase(wait_del.begin());
+    //     inst->ClearRelation();
+    //     inst->EraseFromParent();
+    // }
     return modified;
 }
 
@@ -56,153 +59,251 @@ bool DeadStoreElimination::RunOnBlock(BasicBlock *block)
 {
     for (User *inst : *block)
     {
-        if (auto store = dynamic_cast<StoreInst *>(inst))
+        if (!dynamic_cast<StoreInst *>(inst))
+            continue;
+        StoreInst *store = dynamic_cast<StoreInst *>(inst);
+        mylist<BasicBlock, User>::iterator pos(store);
+        std::unordered_set<BasicBlock *> visited;
+        if (Judge(store, block, store->GetOperand(1), block, visited, ++pos))
+            wait_del.insert(store);
+    }
+    return false;
+}
+
+bool DeadStoreElimination::Judge(StoreInst *store, BasicBlock *block, Value *dst, BasicBlock *src_block,
+                                 std::unordered_set<BasicBlock *> &visited, mylist<BasicBlock, User>::iterator pos)
+{
+    // 下一个block
+    if (!store)
+    {
+        if (visited.count(block))
+            return true;
+        visited.insert(block);
+        pos = block->begin();
+    }
+    for (; pos != block->end(); ++pos)
+    {
+        User *inst = *pos;
+        if (dynamic_cast<StoreInst *>(inst))
         {
-            Value *dst = inst->GetOperand(1);
-            if(dst->GetName() == ".378")
-                int c = 1;
-            if (dst->isGlobal())
-            {
-                if (Global_Store_Map.count(dst))
-                    wait_del.push_back(Global_Store_Map[dst]);
-                Global_Store_Map[dst] = store;
-            }
-            else if (dst->isParam())
-            {
-                if (Param_Store_Map.count(dst))
-                    wait_del.push_back(Param_Store_Map[dst]);
-                Param_Store_Map[dst] = store;
-            }
-            else
+            Value *val = inst->Getuselist()[0]->usee;
+            if (inst->GetOperand(1) == dst)
+                return true;
+            if (auto gep = dynamic_cast<GetElementPtrInst *>(val))
             {
                 if (auto gep_dst = dynamic_cast<GetElementPtrInst *>(dst))
                 {
-                    if (auto alloca = dynamic_cast<AllocaInst *>(gep_dst->Getuselist()[0]->usee))
+                    if (!PointerTool::all_offset_const(gep) &&
+                        gep->Getuselist()[0]->usee == gep_dst->Getuselist()[0]->usee)
+                        return false;
+                    else if (gep->Getuselist()[0]->usee == gep_dst->Getuselist()[0]->usee &&
+                             AliasAnalysis::GetHash(gep) == AliasAnalysis::GetHash(gep_dst))
+                        return true;
+                }
+            }
+        }
+        else if (dynamic_cast<CallInst *>(inst))
+        {
+            auto op1 = inst->Getuselist()[0]->usee;
+            if (op1->GetName() == "putint" || op1->GetName() == "putfloat")
+            {
+                if (inst->Getuselist()[1]->usee == dst)
+                    return false;
+            }
+            else if (dynamic_cast<GetElementPtrInst *>(dst) && inst->Getuselist().size() > 1)
+            {
+                auto base = dynamic_cast<GetElementPtrInst *>(dst)->GetOperand(0);
+                if (op1->GetName() == "putarray" || op1->GetName() == "putfarray")
+                {
+                    if (auto put = dynamic_cast<GetElementPtrInst *>(inst->Getuselist()[2]->usee))
                     {
-                        if (Array_Store_Map.count(alloca) &&
-                            Array_Store_Map[alloca].count(AliasAnalysis::GetHash(gep_dst)))
-                            wait_del.push_back(Array_Store_Map[alloca][AliasAnalysis::GetHash(gep_dst)]);
-                        Array_Store_Map[alloca][AliasAnalysis::GetHash(gep_dst)] = store;
+                        if (put->Getuselist()[0]->usee == base)
+                            return false;
                     }
-                    else if (gep_dst->Getuselist()[0]->usee->isParam())
-                    {
-                        if (Array_Store_Map.count(gep_dst->Getuselist()[0]->usee) &&
-                            Array_Store_Map[gep_dst->Getuselist()[0]->usee].count(AliasAnalysis::GetHash(gep_dst)))
-                            wait_del.push_back(
-                                Array_Store_Map[gep_dst->Getuselist()[0]->usee][AliasAnalysis::GetHash(gep_dst)]);
-                        Array_Store_Map[gep_dst->Getuselist()[0]->usee][AliasAnalysis::GetHash(gep_dst)] = store;
-                    }
+                }
+                else if (op1->GetName() == "llvm.memcpy.p0.p0.i32")
+                {
+                    if (inst->Getuselist()[1]->usee == base)
+                        return false;
+                }
+                if (base->isGlobal())
+                {
+                    Function *func = inst->Getuselist()[0]->usee->as<Function>();
+                    if (func && base->ReadFunc.count(func))
+                        return false;
                 }
                 else
                 {
-                    if (Store_Map.count(dst))
-                        wait_del.push_back(Store_Map[dst]);
-                    Store_Map[dst] = store;
-                }
-            }
-            continue;
-        }
-
-        if (auto load = dynamic_cast<LoadInst *>(inst))
-        {
-            Value *val = load->GetOperand(0);
-            if (auto gep = dynamic_cast<GetElementPtrInst *>(val))
-            {
-                if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
-                {
-                    if (Array_Store_Map.count(alloca) && Array_Store_Map[alloca].count(AliasAnalysis::GetHash(gep)))
+                    bool flag = false;
+                    int distance = 0;
+                    for (auto &use : inst->Getuselist())
                     {
-                        Array_Store_Map[alloca].erase(AliasAnalysis::GetHash(gep));
+                        if (auto call_gep = dynamic_cast<GetElementPtrInst *>(use->usee))
+                        {
+                            if (call_gep->GetOperand(0) == base)
+                            {
+                                flag = true;
+                                break;
+                            }
+                        }
+                        distance++;
                     }
-                    else if (Array_Store_Map.count(alloca))
+                    if (flag)
                     {
-                        Array_Store_Map[alloca] = {};
+                        Function *func_ = inst->Getuselist()[0]->usee->as<Function>();
+                        if (func_->GetParams()[distance - 1].get()->ReadFunc.count(func_))
+                            return false;
                     }
-                }
-                else if (gep->Getuselist()[0]->usee->isParam())
-                {
-                    if (Array_Store_Map.count(gep->Getuselist()[0]->usee) &&
-                        Array_Store_Map[gep->Getuselist()[0]->usee].count(AliasAnalysis::GetHash(gep)))
-                        Array_Store_Map[gep->Getuselist()[0]->usee].erase(AliasAnalysis::GetHash(gep));
-                    else if (Array_Store_Map.count(gep->Getuselist()[0]->usee))
-                        Array_Store_Map[gep->Getuselist()[0]->usee] = {};
                 }
             }
             else
             {
-                if (val->isGlobal())
+                Function *func = inst->Getuselist()[0]->usee->as<Function>();
+                if (func)
                 {
-                    if (Global_Store_Map.count(val))
-                        Global_Store_Map.erase(val);
-                }
-                else if (val->isParam())
-                {
-                    if (Param_Store_Map.count(val))
-                        Param_Store_Map.erase(val);
-                }
-                else
-                {
-                    if (Store_Map.count(val))
-                        Store_Map.erase(val);
+                    if (func->MemRead())
+                        return false;
                 }
             }
-            continue;
         }
-
-        if (auto call = dynamic_cast<CallInst *>(inst))
+        else if (dynamic_cast<LoadInst *>(inst))
         {
-            std::string name = call->GetOperand(0)->GetName();
-            if (name == "getint" || name == "getch" || name == "getfloat")
+            Value *val = inst->Getuselist()[0]->usee;
+            if (val == dst)
+                return false;
+            if (auto gep = dynamic_cast<GetElementPtrInst *>(val))
             {
-                Value *val = inst->GetDef();
-                if (val->isGlobal())
+                if (auto gep_dst = dynamic_cast<GetElementPtrInst *>(dst))
                 {
-                    if (Global_Store_Map.count(val))
-                        Global_Store_Map.erase(val);
-                }
-                else if (val->isParam())
-                {
-                    if (Param_Store_Map.count(val))
-                        Param_Store_Map.erase(val);
-                }
-                else
-                {
-                    if (Store_Map.count(val))
-                        Store_Map.erase(val);
+                    bool flag = PointerTool::all_offset_const(gep);
+                    if (!flag && gep->Getuselist()[0]->usee == gep_dst->Getuselist()[0]->usee)
+                        return false;
+                    else if (gep->Getuselist()[0]->usee == gep_dst->Getuselist()[0]->usee &&
+                             AliasAnalysis::GetHash(gep) == AliasAnalysis::GetHash(gep_dst))
+                        return false;
                 }
             }
-            else if (name == "getfarray" || name == "getarray")
+        }
+        else if (dynamic_cast<RetInst *>(inst))
+        {
+            if (dst->GetType()->GetTypeEnum() == IR_PTR && func->GetUserlist().GetSize() != 0)
+                return false;
+            if (inst->Getuselist()[0]->usee == dst)
+                return false;
+        }
+        else if (dynamic_cast<CondInst *>(inst))
+        {
+            BasicBlock *true_block = inst->GetOperand(1)->as<BasicBlock>();
+            BasicBlock *false_block = inst->GetOperand(2)->as<BasicBlock>();
+            auto HandleSucc = [&](BasicBlock *succ) {
+                if (src_block == succ)
+                    return false;
+                if (!DomTree->dominates(src_block, succ))
+                    return false;
+                return Judge(nullptr, succ, dst, src_block, visited, succ->begin());
+            };
+            bool Handle_failed = false;
             {
-                Value *val = inst->GetDef();
-                if (auto gep = dynamic_cast<GetElementPtrInst *>(val))
+                if (!HandleSucc(true_block))
+                    Handle_failed = true;
+            }
+            {
+                if (Handle_failed)
+                    return false;
+                if (!HandleSucc(false_block))
+                    Handle_failed = true;
+            }
+            if (Handle_failed)
+                return false;
+        }
+        else if (dynamic_cast<UnCondInst *>(inst))
+        {
+            BasicBlock *succ_block = inst->GetOperand(0)->as<BasicBlock>();
+            auto HandleSucc = [&](BasicBlock *succ) {
+                if (src_block == succ)
+                    return false;
+                if (!DomTree->dominates(src_block, succ))
+                    return false;
+                return Judge(nullptr, succ, dst, src_block, visited, succ->begin());
+            };
+            if (!HandleSucc(succ_block))
+                return false;
+        }
+    }
+    return true;
+}
+
+bool DeadStoreElimination::SelfStoreElimination()
+{
+    std::unordered_map<Value *, std::vector<StoreInst *>> info;
+    Collect(info);
+    CheckSelfStore(info);
+    if (info.empty())
+        return false;
+    for (auto &[key, val] : info)
+    {
+        for (auto inst : val)
+            wait_del.insert(inst);
+    }
+    return true;
+}
+
+void DeadStoreElimination::Collect(std::unordered_map<Value *, std::vector<StoreInst *>> &info)
+{
+    for (BasicBlock *block : DFSOrder)
+    {
+        for (User *inst : *block)
+        {
+            if (auto store = dynamic_cast<StoreInst *>(inst))
+            {
+                Value *dst = store->GetOperand(1);
+                if (auto gep = dynamic_cast<GetElementPtrInst *>(dst))
                 {
                     if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
+                        info[alloca].push_back(store);
+                }
+                else
+                    info[dst].push_back(store);
+            }
+        }
+    }
+}
+
+void DeadStoreElimination::CheckSelfStore(std::unordered_map<Value *, std::vector<StoreInst *>> &info)
+{
+    for (BasicBlock *block : *func)
+    {
+        for (User *inst : *block)
+        {
+            if (auto store = dynamic_cast<StoreInst *>(inst))
+            {
+                Value *src = store->GetOperand(0);
+                if (auto load = dynamic_cast<LoadInst *>(src))
+                {
+                    if (auto gep = dynamic_cast<GetElementPtrInst *>(load->Getuselist()[0]->usee))
                     {
-                        if (Array_Store_Map.count(alloca))
-                            Array_Store_Map[alloca] = {};
-                    }
-                    else if (gep->Getuselist()[0]->usee->isParam())
-                    {
-                        if (Array_Store_Map.count(gep->Getuselist()[0]->usee))
-                            Array_Store_Map[gep->Getuselist()[0]->usee] = {};
+                        if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
+                            info.erase(alloca);
                     }
                 }
                 else
+                    info.erase(src);
+            }
+            else if (dynamic_cast<GetElementPtrInst *>(inst))
+            {
+                if (auto alloca = dynamic_cast<AllocaInst *>(inst->Getuselist()[0]->usee))
                 {
-                    if (val->isGlobal())
+                    if (info.count(alloca))
                     {
-                        if (Global_Store_Map.count(val))
-                            Global_Store_Map.erase(val);
-                    }
-                    else if (val->isParam())
-                    {
-                        if (Param_Store_Map.count(val))
-                            Param_Store_Map.erase(val);
-                    }
-                    else
-                    {
-                        if (Store_Map.count(val))
-                            Store_Map.erase(val);
+                        for (auto user_ : inst->GetUserlist())
+                        {
+                            User *user = user_->GetUser();
+                            if (!dynamic_cast<GetElementPtrInst *>(user) && !dynamic_cast<StoreInst *>(user))
+                            {
+                                info.erase(alloca);
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -211,96 +312,9 @@ bool DeadStoreElimination::RunOnBlock(BasicBlock *block)
                 for (auto &use : inst->Getuselist())
                 {
                     Value *val = use->usee;
-                    if (val->isGlobal())
-                    {
-                        if (Global_Store_Map.count(val))
-                            Global_Store_Map.erase(val);
-                    }
-                    else if (val->isParam())
-                    {
-                        if (Param_Store_Map.count(val))
-                            Param_Store_Map.erase(val);
-                    }
-                    else
-                    {
-                        if (auto gep = dynamic_cast<GetElementPtrInst *>(val))
-                        {
-                            if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
-                            {
-                                if (Array_Store_Map.count(alloca) &&
-                                    Array_Store_Map[alloca].count(AliasAnalysis::GetHash(gep)))
-                                {
-                                    Array_Store_Map[alloca].erase(AliasAnalysis::GetHash(gep));
-                                }
-                                else if (Array_Store_Map.count(alloca))
-                                {
-                                    Array_Store_Map[alloca] = {};
-                                }
-                            }
-                            else if (gep->Getuselist()[0]->usee->isParam())
-                            {
-                                if (Array_Store_Map.count(gep->Getuselist()[0]->usee) &&
-                                    Array_Store_Map[gep->Getuselist()[0]->usee].count(AliasAnalysis::GetHash(gep)))
-                                    Array_Store_Map[gep->Getuselist()[0]->usee].erase(AliasAnalysis::GetHash(gep));
-                                else if (Array_Store_Map.count(gep->Getuselist()[0]->usee))
-                                    Array_Store_Map[gep->Getuselist()[0]->usee] = {};
-                            }
-                        }
-                        else if (Store_Map.count(val))
-                            Store_Map.erase(val);
-                    }
+                    info.erase(val);
                 }
             }
-        }
-        if (dynamic_cast<CondInst *>(inst))
-        {
-            Value *val = inst->Getuselist()[0]->usee;
-            if (val->isGlobal())
-            {
-                if (Global_Store_Map.count(val))
-                    Global_Store_Map.erase(val);
-            }
-            else if (val->isParam())
-            {
-                if (Param_Store_Map.count(val))
-                    Param_Store_Map.erase(val);
-            }
-            else
-            {
-                if (Store_Map.count(val))
-                    Store_Map.erase(val);
-            }
-            WorkList.push_back(dynamic_cast<BasicBlock *>(inst->Getuselist()[1]->usee));
-            WorkList.push_back(dynamic_cast<BasicBlock *>(inst->Getuselist()[2]->usee));
-            continue;
-        }
-        if (dynamic_cast<UnCondInst *>(inst))
-        {
-            WorkList.push_back(dynamic_cast<BasicBlock *>(inst->Getuselist()[0]->usee));
-            continue;
-        }
-        {
-            for (auto &use : inst->Getuselist())
-            {
-                Value *val = use->usee;
-                if (val->isGlobal())
-                {
-                    if (Global_Store_Map.count(val))
-                        Global_Store_Map.erase(val);
-                }
-                else if (val->isParam())
-                {
-                    if (Param_Store_Map.count(val))
-                        Param_Store_Map.erase(val);
-                }
-                else
-                {
-                    if (Store_Map.count(val))
-                        Store_Map.erase(val);
-                }
-            }
-            continue;
         }
     }
-    return false;
 }

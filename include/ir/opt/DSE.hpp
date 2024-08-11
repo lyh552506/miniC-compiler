@@ -16,14 +16,14 @@ class DeadStoreElimination : public _PassManagerBase<DeadStoreElimination, Funct
     dominance *DomTree;
     Function *func;
     _AnalysisManager &AM;
-    std::vector<User *> wait_del;
-    std::vector<BasicBlock *> WorkList;
-    std::unordered_set<BasicBlock *> HasHandleBlock;
-    std::unordered_map<Value *, StoreInst *> Store_Map;
-    std::unordered_map<Value *, StoreInst *> Global_Store_Map;
-    std::unordered_map<Value *, StoreInst *> Param_Store_Map;
-    std::unordered_map<Value *, std::unordered_map<size_t, StoreInst *>> Array_Store_Map;
+    std::set<User *> wait_del;
+    std::vector<BasicBlock *> DFSOrder;
+    void OrderBlock(BasicBlock *block);
     bool RunOnBlock(BasicBlock *block);
+    bool Judge(StoreInst* inst, BasicBlock* block, Value* dst, BasicBlock* src_block, std::unordered_set<BasicBlock*>& visited, mylist<BasicBlock,User>::iterator pos);
+    bool SelfStoreElimination();
+    void Collect(std::unordered_map<Value*, std::vector<StoreInst*>>& info);
+    void CheckSelfStore(std::unordered_map<Value*, std::vector<StoreInst*>>& info);
     void init();
 
   public:

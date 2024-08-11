@@ -186,6 +186,7 @@ void _PassManager::RunOnLevel() {
     }
     CommonPass(AM);
         RunLevelPass(DeadStoreElimination, curfunc, modified);
+        // RunLevelPass(DCE, curfunc, modified);
         // RunLevelPass(DCE, curfunc, modified)
     {
       // tail
@@ -230,6 +231,9 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     RunLevelPass(GepCombine, curfunc, mody);
 
     RunLevelPass(GepEvaluate, curfunc, mody);
+
+    // RunLevelPass(DeadStoreElimination, curfunc, modified);
+    RunLevelPass(DCE, curfunc, mody)
     // constprop
     RunLevelPass(ConstantProp, curfunc, mody);
     // reassociate

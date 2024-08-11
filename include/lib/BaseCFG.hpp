@@ -9,6 +9,7 @@
 #include "Type.hpp"
 #include <string>
 #include <set>
+#include <unordered_set>
 class User;
 class Value;
 class BasicBlock;
@@ -112,6 +113,7 @@ class Value
     bool isConstOne();
     int GetUserListSize(){return GetUserlist().GetSize();}
     std::set<Function*> Change_Funcs;
+    std::unordered_set<Function*> ReadFunc;
     template<typename T>
     T* as(){return dynamic_cast<T*>(this);}
 };
