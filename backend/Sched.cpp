@@ -1,12 +1,27 @@
 #include "../include/backend/Sched.hpp"
+using ISA = RISCVMIR::RISCVISA;
+bool isLoadinst (RISCVMIR* inst) {
+    ISA opcode = inst->GetOpcode();
+    return (opcode > ISA::BeginLoadMem && opcode < ISA::EndLoadMem)\
+        || (opcode > ISA::BeginFloatLoadMem && opcode < ISA::EndFloatLoadMem);
+};
+bool isStoreinst (RISCVMIR* inst) {
+    ISA opcode = inst->GetOpcode();
+    return (opcode > ISA::BeginStoreMem && opcode < ISA::EndStoreMem)\
+        || (opcode > ISA::BeginFloatStoreMem && opcode < ISA::EndFloatStoreMem);
+};
 
 BlockDepInfo::BlockDepInfo(RISCVBasicBlock* block)
     : block(block) {
-    BuildBlockDepInfo(block);
+    BuildBlockDepInfo(block->begin(), block->end());
+}
+BlockDepInfo::BlockDepInfo(RISCVBasicBlock* block, mylist_iterator begin, mylist_iterator end)
+    : block(block) {
+    BuildBlockDepInfo(begin, end);
 }
 
-void BlockDepInfo::BuildBlockDepInfo(RISCVBasicBlock* block) {
-    for(mylist_iterator it = block->begin(); it != block->end(); ++it) {
+void BlockDepInfo::BuildBlockDepInfo(mylist_iterator begin, mylist_iterator end) {
+    for(mylist_iterator it = begin; it != end; ++it) {
         RISCVMIR* inst = *it;
         if(isboundary(inst)) continue;
         Sunit* sunit = new Sunit();
@@ -32,43 +47,42 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
         }
         assert(0 && "impossible");
     };
-    std::list<RealSunit> inst2sunitLocal;
-    for(mylist_iterator it = begin; it != end; ++it) {
-        inst2sunitLocal.push_back(GetRealSunit(*it));
-    }
-    auto GetSunit = [&](RISCVMIR* inst) {
-        for(auto pair : depInfo->inst2sunit) {
-            if(pair.first == inst)
-                return pair.second;
-        }
-        assert(0 && "impossible");
-    };
     auto GetWriteReg = [&](RISCVMIR* inst) {
         return SchedInfo(inst->GetOpcode()).WriteRes;
     };
     auto GetReadAdvance = [&](RISCVMIR* inst) {
         return SchedInfo(inst->GetOpcode()).ReadAdvance;
     };
+    std::list<RealSunit> inst2sunitLocal;
+    for(mylist_iterator it = begin; it != end; ++it) {
+        inst2sunitLocal.push_back(GetRealSunit(*it));
+    }
 
     for(auto it = inst2sunitLocal.rbegin(); it != inst2sunitLocal.rend(); ++it) {
         RISCVMIR*& inst = it->first;
         Sunit*& sunit = it->second;
+        sunits.push_back(sunit);
+        // Glue info
+        if(isLoadinst(inst) || isStoreinst(inst)) {
+            GlueList.push_back(sunit);
+        }
         if(adjList.find(sunit) == adjList.end()) {
-            sunits.push_back(sunit);
             adjList[sunit] = {};
             inDegree[sunit];
         }
-        // def
+        Sunit* def = nullptr;
         if(inst->GetDef() != nullptr) {
+            if(std::stack<RISCVMIR*>& stack = depInfo->def2inst[inst->GetDef()]; stack.size() != 0) {
+                def = GetSunit(stack.top());
+            }
             depInfo->def2inst[inst->GetDef()].pop();
         }
-        // use
-        using ISA = RISCVMIR::RISCVISA;
+        // Dependency info and latency computation
         for(int i=0; i<inst->GetOperandSize(); i++) {
             RISCVMOperand*& op = inst->GetOperand(i);
-            // if(inst->GetOpcode() == RISCVMIR::_sw) {
-            //     int a=0;
-            // }
+            std::stack<RISCVMIR*>& stack = depInfo->use2inst[op];
+            stack.pop();
+            // latency info
             if(op != nullptr) {
                 if(!depInfo->def2inst[op].empty()) {
                     RISCVMIR* definst = depInfo->def2inst[inst->GetOperand(i)].top();
@@ -88,9 +102,29 @@ void DependencyGraph::BuildGraph(mylist_iterator begin, mylist_iterator end){
                 }
             }
         }
+        if(inst->GetDef() != nullptr) {
+            if(std::stack<RISCVMIR*>& stack = depInfo->use2inst[inst->GetDef()]; stack.size() != 0) {
+                if(RISCVMIR* useinst = stack.top()) {
+                    Sunit*& use = GetSunit(useinst);
+                    if(adjList[use].find(def) == adjList[use].end()) {
+                        AntiDepMap[use] = def;
+                        adjList.erase(use);
+                    }
+                    #ifdef DEBUG_SCHED
+                    std::cout << "---AntiDependency---" << std::endl << "def->";
+                    inst->printfull();
+                    std::cout << "use<-";
+                    useinst->printfull();
+                    #endif
+                    // if(adjList[def].size() == 0) {
+                    //     AntiDepMap[use] = def;
+                    //     adjList.erase(use);
+                    // }
+                }
+            }
+        }
         if(sunit->latency > 0) 
             sunit->latency -= GetReadAdvance(inst);
-
         #ifdef DEBUG_SCHED
         std::cout << "latency: " << sunit->latency << "  ";
         inst->printfull();
@@ -108,19 +142,14 @@ void DependencyGraph::addDependency(Sunit* use, Sunit* def){
 
 void DependencyGraph::ComputeHeight() {
     for(auto& it: sunits) {
-    // for(auto it = adjList.rbegin(); it != adjList.rend(); ++it) {
-    //     Sunit* sunit = (*it).first; 
         Sunit* sunit = it;
         if(inDegree[sunit]==0) {
             sunit->height = 0;
         }
-        // std::set<Sunit*>
-        // for(auto ind = (*it).second.begin(); ind != (*it).second.end(); ++ind) {
         for(auto ind = adjList[it].begin(); ind != adjList[it].end(); ++ind) {
             Sunit* def = *ind;
             def->height = def->height > (sunit->height + def->latency) ? def->height : (sunit->height + def->latency);
         }
-
         #ifdef DEBUG_SCHED
         std::cout << "height: " << sunit->height;
         depInfo->Sunit2InstMap[sunit]->printfull();
@@ -131,6 +160,21 @@ void DependencyGraph::ComputeHeight() {
 
 void DependencyGraph::ComputeDepth() {
     
+}
+Sunit*& DependencyGraph::GetSunit(RISCVMIR* inst) {
+    for(auto& pair : depInfo->inst2sunit) {
+        if(pair.first == inst)
+            return pair.second;
+    }
+    assert(0 && "impossible");
+}
+void DependencyGraph::RemoveAntiDep(Sunit* sunit) {
+    for(auto it = AntiDepMap.begin(); it != AntiDepMap.end();) {
+        if(it->second == sunit) {
+            it = AntiDepMap.erase(it);
+        }
+        else ++it;
+    }
 }
 
 SchedRegion::SchedRegion(RISCVBasicBlock* BasicBlock) {
@@ -168,6 +212,7 @@ bool SchedRegion::LastRegion() {
     }
     begin = block->begin();
     end = rbegin;
+    return true;
 }
 bool SchedRegion::NextRegion() {
     // Schedel region is from begin to the previous inst of end. 

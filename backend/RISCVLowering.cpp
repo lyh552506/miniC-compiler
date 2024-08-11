@@ -54,22 +54,19 @@ bool RISCVFunctionLowering::run(Function *m)
 
     asmprinter->SetTextSegment(new textSegment(ctx));
     asmprinter->GetData()->GenerateTempvarList(ctx);
-    // asmprinter->GetData()->LegalizeGloablVar(ctx);
-
-    Legalize legal(ctx);
-    // legal.run_beforeRA();
+    // // asmprinter->GetData()->LegalizeGloablVar(ctx);
 
     // Backend DCE before RA
     bool modified = true;
     while (modified)
     {
         modified = false;
-        BackendDCE dcebefore(ctx.GetCurFunction(), ctx);
+        BackendDCE dcebefore(mfunc, ctx);
         modified |= dcebefore.RunImpl();
     }
 
-    // Pre_RA_Scheduler pre_scheduler;
-    // pre_scheduler.ScheduleOnFunction(ctx);
+    Pre_RA_Scheduler pre_scheduler;
+    pre_scheduler.ScheduleOnFunction(ctx);
 
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
@@ -108,6 +105,7 @@ bool RISCVFunctionLowering::run(Function *m)
     frame->GenerateFrameTail();
 
     // legal.run_afterRA();
+    Legalize legal(ctx);
     legal.run();
 
     auto dbd=DeleteDeadBlock();

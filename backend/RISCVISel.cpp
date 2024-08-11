@@ -77,6 +77,9 @@ bool RISCVISel::run(Function* m){
 }
 
 void RISCVISel::InstLowering(AllocaInst* inst){
+    // RISCVMIR* minst = new RISCVMIR(RISCVMIR::StackAlloc);
+    // minst->SetDef(ctx.mapping(inst));
+    // ctx(minst);
     ctx.mapping(inst);
 }
 
@@ -204,7 +207,8 @@ void RISCVISel::InstLowering(CondInst* inst){
                 break;
             }
             default:
-                assert(0&&"Impossible");
+                // assert(0&&"Impossible");
+                break;
             }
             return;
         }
