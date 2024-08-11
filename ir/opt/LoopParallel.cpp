@@ -88,6 +88,7 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
     }
   }
   if (resPhi) {
+    return false;  //tmp choice
     auto res = resPhi->ReturnValIn(latch);
     for (auto use : res->GetUserlist()) {
       auto UserBB = use->GetUser()->GetParent();

@@ -166,8 +166,10 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc) PassChangedEnd
 
-            RunLevelPass(LoopParallel, curfunc, modified)
+            RunEntryFunc(LoopParallel, modified)
                 PassChangedBegin(curfunc) PassChangedEnd
+
+            RunLevelPass(ConstantProp, curfunc, other)
 
                     RunLevelPass(DCE, curfunc, other);
         PassChangedBegin(curfunc) PassChangedEnd
@@ -176,6 +178,7 @@ void _PassManager::RunOnLevel() {
         PassChangedBegin(curfunc) PassChangedEnd
       }
       CommonPass(AM);
+      return;
       // loop unroller
       modified = true;
       while (modified) {
