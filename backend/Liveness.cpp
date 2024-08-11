@@ -20,6 +20,7 @@ void BlockInfo::RunOnFunction()
         GetBlockLivein(block);
         GetBlockLiveout(block);
     }
+
     bool modified = true;
     while (modified)
     {
@@ -67,7 +68,8 @@ void BlockInfo::GetBlockLiveout(RISCVBasicBlock *block)
         BlockLiveout[block].insert(BlockLivein[succ].begin(), BlockLivein[succ].end());
 }
 void BlockInfo::GetBlockLivein(RISCVBasicBlock *block)
-{int a=0;
+{
+
     for (auto inst = block->rbegin(); inst != block->rend(); --inst)
     {   
         OpType Opcode = (*inst)->GetOpcode();
@@ -75,6 +77,7 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block)
         {
             if (auto reg = def->ignoreLA())
             {
+
                 BlockLivein[block].erase(reg);
                 if (dynamic_cast<VirRegister *>(reg))
                     initial.insert(reg);
@@ -138,15 +141,18 @@ void BlockInfo::GetBlockLivein(RISCVBasicBlock *block)
             }
             for (int i = 0; i < (*inst)->GetOperandSize(); i++)
             {
-                if (auto reg = (*inst)->GetOperand(i)->ignoreLA())
+                if ((*inst)->GetOperand(i))
                 {
-                    BlockLivein[block].insert(reg);
-                    if (dynamic_cast<VirRegister *>(reg))
-                        initial.insert(reg);
-                    else if (auto phy = dynamic_cast<PhyRegister *>(reg))
+                    if(auto reg = (*inst)->GetOperand(i)->ignoreLA())
                     {
-                        Precolored.insert(phy);
-                        color[phy] = phy;
+                        BlockLivein[block].insert(reg);
+                        if (dynamic_cast<VirRegister *>(reg))
+                            initial.insert(reg);
+                        else if (auto phy = dynamic_cast<PhyRegister *>(reg))
+                        {
+                            Precolored.insert(phy);
+                            color[phy] = phy;
+                        }
                     }
                 }
             }
@@ -158,8 +164,6 @@ void BlockInfo::Build()
 {
     for (RISCVBasicBlock *block : *m_func)
     {
-        if(block->GetName() == ".LBB14")
-            int c = 1;
         std::unordered_set<MOperand> live = BlockLiveout[block];
         for (auto inst_ = block->rbegin(); inst_ != block->rend();)
         {
