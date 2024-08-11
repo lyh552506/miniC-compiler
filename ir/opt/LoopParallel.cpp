@@ -212,7 +212,7 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   auto cmp = loopcmp->CloneInst();
   SubstitudeTrait.step = loop->trait.step;
   SubstitudeTrait.boundary = loop->trait.boundary;
-  SubstitudeTrait.cmp=dynamic_cast<BinaryInst*>(cmp);
+  SubstitudeTrait.cmp = dynamic_cast<BinaryInst *>(cmp);
   // TODO find the bound value
   auto bound = GetBoundVal(loopcmp->getopration(), loop, loopcmp);
   for (auto use : indvar->GetUserlist()) {
@@ -389,11 +389,9 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
       continue;
     LoadInst *ld = nullptr;
     StoreInst *st = nullptr;
-    BinaryInst *bin = nullptr;
     for (auto bb : body)
       for (auto inst : *bb)
-        if ((dynamic_cast<LoadInst *>(inst) && val.first == inst) ||
-            (dynamic_cast<StoreInst *>(inst) && val.second == inst)) {
+        if (dynamic_cast<LoadInst *>(inst) || dynamic_cast<StoreInst *>(inst)) {
           auto Target = GetTarget(inst);
           auto _base = FindPointBase(Target);
           if (_base == Base) {
@@ -415,6 +413,8 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
                 return false;
               }
               ldst[ld] = st;
+              ld = nullptr;
+              st = nullptr;
             }
           }
         }
@@ -426,10 +426,10 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
     //   %2=load %1, %3=%2 op other, store %3,%1
     assert(ld->GetUserlist().GetSize() == 1 &&
            st->GetOperand(1) == ld->GetOperand(0));
-    auto bin = dynamic_cast<BinaryInst
-    *>(ld->GetUserlist().Front()->GetUser()); auto StoreVal =
-    st->GetOperand(0); auto operand = st->GetOperand(1); if (!bin || bin !=
-    StoreVal)
+    auto bin = dynamic_cast<BinaryInst *>(ld->GetUserlist().Front()->GetUser());
+    auto StoreVal = st->GetOperand(0);
+    auto operand = st->GetOperand(1);
+    if (!bin || bin != StoreVal)
       break;
     _DEBUG(std::cerr << "Match Load Store!" << std::endl;)
     auto change =
