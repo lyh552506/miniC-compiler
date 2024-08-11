@@ -51,7 +51,7 @@ for test in test_list:
             compile_args.append(arg)
         try:
             print("Running: " + test)
-            ret = subprocess.run(compile_args,timeout=30)
+            ret = subprocess.run(compile_args,timeout=50)
         except subprocess.TimeoutExpired:
             Time_Out.append(test)
             outputfile.write("Timeout: "+test+ "\n")

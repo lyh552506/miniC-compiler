@@ -65,8 +65,8 @@ bool RISCVFunctionLowering::run(Function *m)
         modified |= dcebefore.RunImpl();
     }
 
-    // Pre_RA_Scheduler pre_scheduler;
-    // pre_scheduler.ScheduleOnFunction(ctx);
+    Pre_RA_Scheduler pre_scheduler;
+    pre_scheduler.ScheduleOnFunction(ctx);
 
     // Register Allocation
     RegAllocImpl regalloc(mfunc, ctx);
