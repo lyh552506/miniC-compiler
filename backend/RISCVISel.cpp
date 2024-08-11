@@ -223,6 +223,22 @@ void RISCVISel::InstLowering(BinaryInst* inst){
         {
         case BinaryInst::Op_Add:
         {
+            if(inst->IsAtomic()){
+                assert(inst->GetUserlist().GetSize()==0&&inst->GetOperand(0)->GetType()!=FloatType::NewFloatTypeGet());
+                auto amoadd=new RISCVMIR(RISCVMIR::_amoadd_w_aqrl);
+                amoadd->SetDef(PhyRegister::GetPhyReg(PhyRegister::zero));
+                if(inst->GetOperand(1)->isConst()){
+                    auto constint=inst->GetOperand(1)->as<ConstIRInt>();
+                    amoadd->AddOperand(ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(constint)));
+                }
+                else{
+                    amoadd->AddOperand(ctx.mapping(inst->GetOperand(1)));
+                }
+                amoadd->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                ctx(amoadd);
+                break;
+            }
+            
             if(inst->GetType()==IntType::NewIntTypeGet()) {
                 if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
                     // int inttemp = constint->GetVal();
