@@ -420,33 +420,33 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
         }
   }
   // Can Parallel , Try change to atomic
-  // std::vector<Value *> Erase;
-  // for (auto &[ld, st] : ldst) {
-  //   // match pattern like:
-  //   //   %2=load %1, %3=%2 op other, store %3,%1
-  //   assert(ld->GetUserlist().GetSize() == 1 &&
-  //          st->GetOperand(1) == ld->GetOperand(0));
-  //   auto bin = dynamic_cast<BinaryInst
-  //   *>(ld->GetUserlist().Front()->GetUser()); auto StoreVal =
-  //   st->GetOperand(0); auto operand = st->GetOperand(1); if (!bin || bin !=
-  //   StoreVal)
-  //     break;
-  //   _DEBUG(std::cerr << "Match Load Store!" << std::endl;)
-  //   auto change =
-  //       bin->GetOperand(0) == ld ? bin->GetOperand(1) : bin->GetOperand(0);
-  //   auto Atomic = new BinaryInst(change, bin->getopration(), operand, true);
-  //   BasicBlock::mylist<BasicBlock, User>::iterator insert_pos(st);
-  //   insert_pos.insert_before(Atomic);
-  //   Erase.push_back(st);
-  //   Erase.push_back(bin);
-  //   Erase.push_back(ld);
-  // }
-  // for (auto iter = Erase.begin(); iter != Erase.end();) {
-  //   auto inst = *iter;
-  //   inst->RAUW(UndefValue::get(inst->GetType()));
-  //   ++iter;
-  //   delete inst;
-  // }
+  std::vector<Value *> Erase;
+  for (auto &[ld, st] : ldst) {
+    // match pattern like:
+    //   %2=load %1, %3=%2 op other, store %3,%1
+    assert(ld->GetUserlist().GetSize() == 1 &&
+           st->GetOperand(1) == ld->GetOperand(0));
+    auto bin = dynamic_cast<BinaryInst
+    *>(ld->GetUserlist().Front()->GetUser()); auto StoreVal =
+    st->GetOperand(0); auto operand = st->GetOperand(1); if (!bin || bin !=
+    StoreVal)
+      break;
+    _DEBUG(std::cerr << "Match Load Store!" << std::endl;)
+    auto change =
+        bin->GetOperand(0) == ld ? bin->GetOperand(1) : bin->GetOperand(0);
+    auto Atomic = new BinaryInst(change, bin->getopration(), operand, true);
+    BasicBlock::mylist<BasicBlock, User>::iterator insert_pos(st);
+    insert_pos.insert_before(Atomic);
+    Erase.push_back(st);
+    Erase.push_back(bin);
+    Erase.push_back(ld);
+  }
+  for (auto iter = Erase.begin(); iter != Erase.end();) {
+    auto inst = *iter;
+    inst->RAUW(UndefValue::get(inst->GetType()));
+    ++iter;
+    delete inst;
+  }
   return true;
 }
 
