@@ -460,7 +460,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   Entry->GenerateUnCondInst(While_Loop);
   auto Indvar = PhiInst::NewPhiNode(SubstitudeTrait.change->GetType());
   PhiInst *res = nullptr;
-  Indvar->updateIncoming(begin, Entry);
+  Indvar->updateIncoming(beg, Entry);
   Indvar->updateIncoming(SubstitudeTrait.change, While_Loop);
   While_Loop->push_back(Indvar);
   SubstitudeTrait.indvar->RAUW(Indvar);
