@@ -434,7 +434,7 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
     _DEBUG(std::cerr << "Match Load Store!" << std::endl;)
     auto change =
         bin->GetOperand(0) == ld ? bin->GetOperand(1) : bin->GetOperand(0);
-    auto Atomic = new BinaryInst(change, bin->getopration(), operand, true);
+    auto Atomic = new BinaryInst(operand, bin->getopration(), change, true);
     BasicBlock::mylist<BasicBlock, User>::iterator insert_pos(st);
     insert_pos.insert_before(Atomic);
     Erase.push_back(st);
