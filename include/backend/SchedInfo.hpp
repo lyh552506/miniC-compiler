@@ -2,6 +2,7 @@
 #include "RISCVMIR.hpp"
 using ISA = RISCVMIR::RISCVISA;
 enum PIPELINE : uint32_t{
+    PipelineVoid = 0,
     PipelineA = 1 << 0,
     PipelineB = 1 << 1,
     PipelineAB = PipelineA | PipelineB,
@@ -122,7 +123,8 @@ public:
             Pipeline = PipelineAB;
         }
         else if(op==ISA::call || op==ISA::ret) {
-            assert(0 && "Call and Ret not supported");
+            // call inst will be deleted in adjlist and indegree map;
+            // assert(0 && "Call and Ret not supported");
         }
         else if(op==ISA::LoadGlobalAddr) {
             // lui + addi
@@ -161,6 +163,11 @@ public:
             // ReadAdvance = 0;
             // Pipeline = PipelineAB;
         }
+        // else if(op==ISA::StackAlloc) {
+        //     WriteRes = 0;
+        //     ReadAdvance = 0;
+        //     Pipeline = PipelineVoid;
+        // }
     }
     inline uint32_t get_Pipeline() {return Pipeline;}
 };

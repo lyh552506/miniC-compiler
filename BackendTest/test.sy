@@ -1,124 +1,184 @@
-int arr1[10][2][3][4][5][6][2];
-int arr2[10][2][3][2][4][8][7];
+int ints[10000];
+int intt;
+int chas[10000];
+int chat;
+int i=0, ii=1;
+int c;
+int get[10000];
+int get2[10000];
 
-void loop1(int x, int y) {
-  int a, b, c, d, e, f, g;
-  a = 0;
-  while (a < x && a < y) {
-    b = 0;
-    while (b < 2) {
-      c = 0;
-      while (c < 3) {
-        d = 0;
-        while (d < 4) {
-          e = 0;
-          while (e < 5) {
-            f = 0;
-            while (f < 6) {
-              g = 0;
-              while (g < 2) {
-                arr1[a][b][c][d][e][f][g] = a + b + c + d + e + f + g + x + y;
-                g = g + 1;
-              }
-              f = f + 1;
-            }
-            e = e + 1;
-          }
-          d = d + 1;
-        }
-        c = c + 1;
-      }
-      b = b + 1;
-    }
-    a = a + 1;
-  }
+int isdigit(int x) {
+    if (x >= 48 && x <= 57)
+        return 1;
+    return 0;
 }
 
-void loop2() {
-  int a, b, c, d, e, f, g;
-  a = 0;
-  while (a < 10) {
-    b = 0;
-    while (b < 2) {
-      c = 0;
-      while (c < 3) {
-        d = 0;
-        while (d < 2) {
-          e = 0;
-          while (e < 4) {
-            f = 0;
-            while (f < 8) {
-              g = 0;
-              while (g < 7) {
-                arr2[a][b][c][d][e][f][g] = a + b + d + g;
-                g = g + 1;
-              }
-              f = f + 1;
-            }
-            e = e + 1;
-          }
-          d = d + 1;
-        }
-        c = c + 1;
-      }
-      b = b + 1;
+int power(int b, int a) {
+    int result = 1;
+    while (a != 0) {
+        result = result * b;
+        a = a - 1;
     }
-    a = a + 1;
-  }
+    return result;
 }
 
-int loop3(int h, int i, int j, int k, int l, int m, int n) {
-  int a, b, c, d, e, f, g;
-  int ans = 0;
-  a = 0;
-  while (a < 10) {
-    b = 0;
-    while (b < 100) {
-      c = 0;
-      while (c < 1000) {
-        d = 0;
-        while (d < 10000) {
-          e = 0;
-          while (e < 100000) {
-            f = 0;
-            while (f < 1000000) {
-              g = 0;
-              while (g < 10000000) {
-                ans = ans % 817 + arr1[a][b][c][d][e][f][g] + arr2[a][b][c][d][e][f][g];
-                g = g + 1;
-                if (g >= n) break;
-              }
-              f = f + 1;
-              if (f >= m) break;
-            }
-            e = e + 1;
-            if (e >= l) break;
-          }
-          d = d + 1;
-          if (d >= k) break;
-        }
-        c = c + 1;
-        if (c >= j) break;
-      }
-      b = b + 1;
-      if (b >= i) break;
+int getstr(int get[]) {
+    int x = getch();
+    int length = 0;
+    while (x != 13 && x != 10) {
+        get[length] = x;
+        length = length + 1;
+        x = getch();
     }
-    a = a + 1;
-    if (a >= h) break;
-  }
-  return ans;
+    return length;
 }
 
-int main() {
-  int x = getint();
-  int y = getint();
-  int h = getint();
-  int i = getint(), j = getint();
-  int k = getint();
-  int l = getint();
-  int m = getint();
-  int n = getint();
-  loop1(x, y);
-  loop2();
-  return loop3(h, i, j, k, l, m, n);
+void intpush(int x)
+{
+    intt = intt + 1;
+    ints[intt] = x;
+}
+void chapush(int x)
+{
+    chat = chat + 1;
+    chas[chat] = x;
+}
+int intpop()
+{
+    intt = intt - 1;
+    return ints[intt + 1];
+}
+int chapop()
+{
+    chat = chat - 1;
+    return chas[chat + 1];
+}
+void intadd(int x)
+{
+    ints[intt] = ints[intt] * 10;
+    ints[intt] = ints[intt] + x;
+}
+
+int find()
+{
+    c = chapop();
+    get2[ii] = 32;
+    get2[ii + 1] = c;
+    ii = ii + 2;
+    if (chat == 0) return 0;
+    return 1;
+}
+
+int main()
+{
+    intt=0;
+    chat=0;
+    int lengets = getstr(get);
+    while (i < lengets)
+    {
+        if (isdigit(get[i]) == 1)
+        {
+            get2[ii] = get[i];
+            ii = ii + 1;
+        }
+        else
+        {
+            if(get[i] == 40) chapush(40);
+            if(get[i] == 94) chapush(94);
+            if(get[i] == 41)
+            {
+                c = chapop();
+                while (c != 40)
+                {
+                    get2[ii] = 32;
+                    get2[ii + 1]=c;
+                    ii = ii + 2;
+                    c = chapop();
+                }
+            }
+            if (get[i] == 43)
+            {
+                while (chas[chat] == 43 || chas[chat] == 45 || chas[chat] == 42 || chas[chat] == 47 || chas[chat] == 37 || chas[chat] == 94)
+                {
+                    if (find()==0)break;
+                }
+                chapush(43);
+            }
+            if (get[i] == 45)
+            {
+                while (chas[chat] == 43 || chas[chat] == 45 ||chas[chat] == 42 || chas[chat] == 47 || chas[chat] == 37 || chas[chat] == 94)
+                {
+                    if(find()==0)break;
+                }
+                chapush(45);
+            }
+            if(get[i] == 42)
+            {
+                while (chas[chat] == 42 || chas[chat] == 47 ||chas[chat] == 37 || chas[chat] == 94)
+                {
+                    if (find()==0)break;
+                }
+                chapush(42);
+            }
+            if (get[i] == 47)
+            {
+                while (chas[chat] == 42 || chas[chat] == 47 || chas[chat] == 37 || chas[chat] == 94)
+                {
+                    if (find()==0)break;
+                }
+                chapush(47);
+            }
+            if (get[i] == 37)
+            {
+                while (chas[chat] == 42 || chas[chat] == 47 || chas[chat] == 37 || chas[chat] == 94)
+                {
+                    if (find()==0)break;
+                }
+                chapush(37);
+            }
+            get2[ii] = 32;
+            ii = ii + 1;
+        }
+        i = i + 1;
+    }
+    while(chat > 0)
+    {
+        int c = chapop();
+        get2[ii] = 32;
+        get2[ii + 1]=c;
+        ii = ii + 2;
+    }
+    get2[ii]= 64;
+    i = 1;
+    while (get2[i] != 64)
+    {
+        if (get2[i] == 43 || get2[i] == 45 || get2[i] == 42 || get2[i] == 47 || get2[i] == 37 || get2[i] == 94)
+        {
+            int a=intpop();int b=intpop();int c=0;
+            if (get2[i] == 43) c = a + b;
+            if (get2[i] == 45) c = b - a;
+            if (get2[i] == 42) c = a * b;
+            if (get2[i] == 47) c = b / a;
+            if (get2[i] == 37) c = b % a;
+            if (get2[i] == 94) c = power(b,a);
+            intpush(c);
+        }
+        else
+        {
+            if(get2[i] != 32)
+            {
+                intpush(get2[i] - 48);
+                ii=1;
+                while(get2[i+ii] != 32)
+                {
+                    intadd(get2[i+ii] - 48);
+                    ii = ii + 1;
+                }
+                i = i + ii-1;
+            }
+        }
+        i = i + 1;
+    }
+    putint(ints[1]);
+    return 0;
 }
