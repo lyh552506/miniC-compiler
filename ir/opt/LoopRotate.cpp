@@ -16,6 +16,8 @@
 
 bool LoopRotate::Run() {
   bool changed = false;
+  if (m_func->tag != Function::Normal)
+    return false;
   auto sideeffect = AM.get<SideEffect>(&Singleton<Module>());
   m_dom = AM.get<dominance>(m_func);
   loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom, std::ref(DeleteLoop));
@@ -40,7 +42,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
     return false;
   loop->RotateTimes++;
   m_dom = AM.get<dominance>(m_func);
-  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom,std::ref(DeleteLoop));
+  loopAnlasis = AM.get<LoopAnalysis>(m_func, m_dom, std::ref(DeleteLoop));
   auto prehead = loopAnlasis->GetPreHeader(loop);
   auto header = loop->GetHeader();
   auto latch = loopAnlasis->GetLatch(loop);

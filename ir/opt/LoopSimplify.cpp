@@ -11,6 +11,8 @@
 
 bool LoopSimplify::Run() {
   bool changed = false;
+  if (m_func->tag != Function::Normal)
+    return false;
   m_dom = AM.get<dominance>(m_func);
   loopAnlay = AM.get<LoopAnalysis>(m_func, m_dom, std::ref(DeleteLoop));
   //先处理内层循环
@@ -349,6 +351,7 @@ void LoopSimplify::CaculateLoopInfo(LoopInfo *loop, LoopAnalysis *Anlay) {
   const auto br = dynamic_cast<CondInst *>(*(Latch->rbegin()));
   assert(br);
   const auto cmp = dynamic_cast<BinaryInst *>(GetOperand(br, 0));
+  loop->trait.cmp = cmp;
   PhiInst *indvar = nullptr;
   auto indvarJudge = [&](User *val) -> PhiInst * {
     if (auto phi = dynamic_cast<PhiInst *>(val))

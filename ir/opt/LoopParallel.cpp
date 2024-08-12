@@ -7,12 +7,16 @@
 #include "../../include/lib/Type.hpp"
 #include "../../util/my_stl.hpp"
 #include "New_passManager.hpp"
+#include "RISCVAsmPrinter.hpp"
+#include "Singleton.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
+Variable *LoopParallel::Storage_int = nullptr;
+Variable *LoopParallel::Storage_float = nullptr;
 // only analysis main function, so inline must take place before this pass
 bool LoopParallel::Run() {
   if (m_func->tag != Function::Normal)
@@ -54,8 +58,10 @@ bool LoopParallel::Run() {
       std::cerr << "Find a Parallelable Loop: " << loop->GetHeader()->GetName()
                 << "\n";
       SubstitudeTrait.Init();
+
       auto call = ExtractLoopParallelBody(loop);
       MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
+
       return true;
     }
   }
@@ -67,8 +73,6 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
     return false;
   auto header = loop->GetHeader();
   auto latch = loopAnaly->GetLatch(loop);
-  if (!TempChoice(loop))
-    return false;
   LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   assert(latch && header);
   PhiInst *resPhi = nullptr;
@@ -87,15 +91,54 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
       break;
     }
   }
+
+  auto cmp = dynamic_cast<BinaryInst *>(loop->trait.cmp);
+  if (!cmp)
+    return false;
+  switch (cmp->getopration()) {
+  default:
+    return false;
+  case BinaryInst::Op_L:
+  case BinaryInst::Op_G:
+  case BinaryInst::Op_LE:
+  case BinaryInst::Op_GE:
+    break;
+  }
+
+  bool Outer = false;
+  bool Inner = false;
+  bool NoBinary = true;
   if (resPhi) {
-    return false;  //tmp choice
+    // return false;  //tmp choice
     auto res = resPhi->ReturnValIn(latch);
+
+    std::set<Value *> assist{resPhi, res};
     for (auto use : res->GetUserlist()) {
       auto UserBB = use->GetUser()->GetParent();
-      if (!loop->Contain(UserBB)) {
-        return false;
+      if (!loop->Contain(UserBB))
+        Outer = true;
+      if (assist.find(use->GetUser()) == assist.end() &&
+          loop->Contain(UserBB)) {
+        if (Inner)
+          return false; // 30_many
+        Inner = true;
+      }
+      if (auto bin = dynamic_cast<BinaryInst *>(res)) {
+        NoBinary = false;
       }
     }
+    for (auto use : resPhi->GetUserlist()) {
+      auto UserBB = use->GetUser()->GetParent();
+      if (!loop->Contain(UserBB))
+        Outer = true;
+      if (assist.find(use->GetUser()) == assist.end() && loop->Contain(UserBB))
+        Inner = true;
+    }
+    if (Outer && Inner)
+      return false;
+    if (NoBinary)
+      return false;
+    ShoudPreserveRes = true;
   }
 
   auto ex = loopAnaly->GetExit(loop);
@@ -104,6 +147,20 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
       auto desBB = dom->GetNode(des).thisBlock;
       if (!loop->Contain(desBB) && bb != latch)
         return false;
+    }
+  std::unordered_set<Value *> Ignore{loop->trait.indvar, loop->trait.change};
+  if (resPhi) {
+    Ignore.insert(resPhi);
+    Ignore.insert(resPhi->ReturnValIn(latch));
+  }
+  for (auto bb : loop->GetLoopBody())
+    for (auto inst : *bb) {
+      if (Ignore.find(inst) != Ignore.end())
+        continue;
+      for (auto use : inst->GetUserlist()) {
+        if (!loop->Contain(use->GetUser()->GetParent()))
+          return false;
+      }
     }
 
   if (loop->CantCalcTrait())
@@ -199,6 +256,21 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
     }
   }
 
+  // Preserve Result
+  if (ShoudPreserveRes) {
+    // auto loadG = new LoadInst(Storage);
+    for (auto rev : dom->GetNode(latch->num).rev) {
+      if (dom->GetNode(rev).thisBlock != latch) {
+        auto init = res->ReturnValIn(dom->GetNode(rev).thisBlock);
+        StoreInst *StoreG = nullptr;
+        if (res->GetTypeEnum() == IR_Value_INT)
+          StoreG = new StoreInst(init, Storage_int);
+        else
+          StoreG = new StoreInst(init, Storage_float);
+        substitute->push_back(StoreG);
+      }
+    }
+  }
   std::vector<Value *> args;
   for (const auto &[val, arg] : Val2Arg)
     args.push_back(val);
@@ -216,11 +288,11 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   SubstitudeTrait.cmp = dynamic_cast<BinaryInst *>(cmp);
   // find the bound value
   auto bound = GetBoundVal(loopcmp->getopration(), loop, loopcmp);
-  for (auto use : indvar->GetUserlist()) {
+  for (auto use : loopchange->GetUserlist()) {
     auto userBB = use->GetUser()->GetParent();
     auto user = use->GetUser();
-    if (!loop->Contain(userBB) && userBB != substitute) {
-      assert(dynamic_cast<PhiInst *>(user));
+    if (!loop->Contain(userBB) && userBB != substitute &&
+        dynamic_cast<PhiInst *>(user)) {
       auto phi = dynamic_cast<PhiInst *>(user);
       phi->ReplaceVal(use, bound);
     }
@@ -250,7 +322,7 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
       }
     }
   bool NoUse = false;
-  auto exit = loopAnaly->GetExit(loop);
+  auto Exit = loopAnaly->GetExit(loop);
 
   for (auto des : dom->GetNode(latch->num).des)
     if (dom->GetNode(des).thisBlock != header)
@@ -289,22 +361,21 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
         // }
         // else {
         //   continue;
-        // loop rotate dont insert new exit, so this situation can be:
+        // loop rotate dont insert new Exit, so this situation can be:
         //    prehead
         //     /      \
             // header   \
             //    \     /
-        //      exit (phi.lcssa=[header],[prehead])
+        //      Exit (phi.lcssa=[header],[prehead])
         //     }
         //   }
         // }
       }
   RetInst *ret = nullptr;
-  if (res && !NoUse) {
-    ret = new RetInst(res->ReturnValIn(latch));
-  } else if (res && NoUse) {
-    assert(res->GetParent() == latch);
-    ret = new RetInst(res);
+  if (res) {
+    auto resval = res->ReturnValIn(latch);
+    resval->RAUW(callinst);
+    ret = new RetInst(resval);
   } else {
     ret = new RetInst();
   }
@@ -420,8 +491,8 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
           }
         }
   }
-  if (!ldst.empty())
-    return false;
+  // if (!ldst.empty())
+  //   return false;
   // Can Parallel , Try change to atomic
   std::vector<Value *> Erase;
   for (auto &[ld, st] : ldst) {
@@ -434,6 +505,9 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
     auto operand = st->GetOperand(1);
     if (!bin || bin != StoreVal)
       break;
+    if (bin->getopration() != BinaryInst::Op_Add ||
+        bin->getopration() != BinaryInst::Op_Sub)
+      return false;
     _DEBUG(std::cerr << "Match Load Store!" << std::endl;)
     auto change =
         bin->GetOperand(0) == ld ? bin->GetOperand(1) : bin->GetOperand(0);
@@ -476,7 +550,9 @@ Value *LoopParallel::FindPointBase(Value *val) {
 
 void LoopParallel::MakeWorkThread(Value *begin, Value *end,
                                   CallInst *loop_body) {
+  std::set<Value *> Ignore;
   auto head = SubstitudeTrait.head;
+  bool HasRes = SubstitudeTrait.res == nullptr ? false : true;
   std::unordered_map<Value *, Variable *> ValMap;
   auto Parallel =
       new Function(InnerDataType::IR_Value_VOID,
@@ -494,13 +570,25 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   Parallel->push_bb(Entry);
   auto While_Loop = new BasicBlock();
   Parallel->push_bb(While_Loop);
-  auto exit = new BasicBlock();
-  Parallel->push_bb(exit);
+  auto Exit = new BasicBlock();
+  Parallel->push_bb(Exit);
   Entry->SetName(Entry->GetName() + ".Entry");
   While_Loop->SetName(While_Loop->GetName() + ".While_Loop");
-  exit->SetName(exit->GetName() + ".Exit");
+  Exit->SetName(Exit->GetName() + ".Exit");
   Entry->GenerateUnCondInst(While_Loop);
-
+  if (ShoudPreserveRes) {
+    auto st = SubstitudeTrait.res->GetTypeEnum() == IR_Value_INT
+                  ? Storage_int
+                  : Storage_float;
+    auto loadG = new LoadInst(st);
+    auto iter = head->rbegin();
+    iter.insert_before(loadG);
+    loop_body->RAUW(loadG);
+    // TODO当前只支持add的res变量
+    auto add2res = new BinaryInst(st, BinaryInst::Op_Add, loop_body, true);
+    Exit->push_back(add2res);
+    Ignore.insert(loadG);
+  }
   auto ReverOp = [](BinaryInst::Operation _op) {
     switch (_op) {
     case BinaryInst::Op_L:
@@ -531,14 +619,25 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   While_Loop->push_back(Indvar);
   SubstitudeTrait.indvar->RAUW(Indvar);
   delete SubstitudeTrait.indvar;
-
+  PhiInst *new_res = nullptr;
+  if (HasRes) {
+    assert(SubstitudeTrait.res->PhiRecord.size() == 1);
+    auto orig = SubstitudeTrait.res->GetOperand(0);
+    new_res = PhiInst::NewPhiNode(SubstitudeTrait.res->GetType());
+    new_res->updateIncoming(orig, Entry);
+    new_res->updateIncoming(SubstitudeTrait.call, While_Loop);
+    While_Loop->push_back(new_res);
+    SubstitudeTrait.res->RAUW(orig);
+  }
   // maping
-  std::unordered_set<User *> Worklist{head->begin(), head->end()};
+  std::unordered_set<User *> Worklist{loop_body};
   Worklist.insert(loopchange);
   // WA case:./testcases/functional/62_percolation.sy
   // Reason : when begin and end is const, const step will be faultly RSUW to beg and en
   // No need to insert new_cmp for it has already been successfully adjusted
   // Worklist.insert(new_cmp);
+  if (HasRes)
+    Worklist.insert(new_res);
   for (auto inst : Worklist) {
     for (int i = 0; i < inst->Getuselist().size(); i++) {
       auto op = inst->GetOperand(i);
@@ -547,7 +646,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
           continue;
       if (ValMap.find(op) == ValMap.end() &&
           Judge(loop_body->GetParent(), op) && op != Indvar &&
-          op != loopchange) {
+          op != loopchange && op != new_res) {
         ValMap[op] = new Variable(Variable::Param, op->GetType(), "");
       }
     }
@@ -563,6 +662,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
       }
     }
   }
+
   // add arg
   std::vector<Value *> args{begin, end};
   for (const auto &[val, arg] : ValMap)
@@ -574,25 +674,27 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   for (auto iter = head->begin(); iter != head->end();) {
     auto inst = *iter;
     ++iter;
-    if (dynamic_cast<UnCondInst *>(inst)) {
+    if (dynamic_cast<UnCondInst *>(inst) || dynamic_cast<LoadInst *>(inst) ||
+        dynamic_cast<StoreInst *>(inst)) {
       continue;
     }
     if (auto phi = dynamic_cast<PhiInst *>(inst)) {
       assert(phi->PhiRecord.size() == 1);
-      auto repl = phi->GetOperand(0);
-      phi->RAUW(repl);
-      delete phi;
       continue;
     }
     inst->EraseFromParent();
     While_Loop->push_back(inst);
   }
+
   While_Loop->push_back(loopchange);
   While_Loop->push_back(new_cmp);
-  While_Loop->GenerateCondInst(new_cmp, While_Loop, exit);
+  While_Loop->GenerateCondInst(new_cmp, While_Loop, Exit);
   auto callinst = new CallInst(Parallel, args);
-  head->push_front(callinst);
-  exit->GenerateRetInst();
+  auto it = head->rbegin();
+  if (HasRes)
+    --it;
+  it.insert_before(callinst);
+  Exit->GenerateRetInst();
   return;
 }
 
@@ -616,14 +718,14 @@ bool LoopParallel::Judge(BasicBlock *bb, Value *target) {
 }
 
 void LoopParallel::SimplifyPhi(LoopInfo *loop) {
-  auto exit = loopAnaly->GetExit(loop);
+  auto Exit = loopAnaly->GetExit(loop);
   auto bound = loop->trait.boundary;
   auto change = loop->trait.change;
   if (loop->trait.step && loop->trait.step == 1)
     for (auto use : change->GetUserlist()) {
       auto user = use->GetUser();
-      auto it = std::find(exit.begin(), exit.end(), user->GetParent());
-      if (it != exit.end() && dynamic_cast<PhiInst *>(user)) {
+      auto it = std::find(Exit.begin(), Exit.end(), user->GetParent());
+      if (it != Exit.end() && dynamic_cast<PhiInst *>(user)) {
         auto phi = dynamic_cast<PhiInst *>(user);
         phi->ReplaceVal(use, bound);
       }
@@ -648,7 +750,7 @@ Value *LoopParallel::GetBoundVal(BinaryInst::Operation op, LoopInfo *loop,
   auto Bound = loop->trait.boundary;
   auto initial = loop->trait.initial;
   BasicBlock *prehead = nullptr;
-  BasicBlock *exit = nullptr;
+  BasicBlock *Exit = nullptr;
   // auto new_exit = new BasicBlock();
   // new_exit->SetName(new_exit->GetName() + ".Calc");
   // for (auto rev : dom->GetNode(loop->GetHeader()->num).rev) {
@@ -698,7 +800,7 @@ Value *LoopParallel::GetBoundVal(BinaryInst::Operation op, LoopInfo *loop,
       // new_exit->push_back(u_div);
       // new_exit->push_back(mul);
       // new_exit->push_back(add);
-      // m_func->InsertBlock(latch, exit, new_exit);
+      // m_func->InsertBlock(latch, Exit, new_exit);
       // return add;
       return Bound;
     }
@@ -711,5 +813,25 @@ Value *LoopParallel::GetBoundVal(BinaryInst::Operation op, LoopInfo *loop,
     break;
   default:
     assert(0 && "What happened?");
+  }
+}
+
+void LoopParallel::PreserveResult(LoopInfo *loop) {
+  auto header = loop->GetHeader();
+  auto latch = loopAnaly->GetLatch(loop);
+
+  LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
+  assert(latch && header);
+  PhiInst *resPhi = nullptr;
+  int cnt = 0;
+  for (auto inst : *header) {
+    if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+      cnt++;
+      if (inst == loop->trait.indvar)
+        continue;
+      resPhi = phi;
+    } else {
+      break;
+    }
   }
 }

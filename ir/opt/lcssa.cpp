@@ -10,6 +10,8 @@
 #include <vector>
 
 bool LcSSA::Run() {
+  if (m_func->tag != Function::Normal)
+    return false;
   m_dom = AM.get<dominance>(m_func);
   loops = AM.get<LoopAnalysis>(m_func, m_dom, std::ref(DeleteLoop));
   bool changed = false;

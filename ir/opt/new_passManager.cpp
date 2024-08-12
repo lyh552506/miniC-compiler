@@ -177,7 +177,7 @@ void _PassManager::RunOnLevel() {
 
             RunLevelPass(BlockMerge, curfunc, other);
         PassChangedBegin(curfunc) PassChangedEnd
-      }
+      }return;
       while (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
           RunImpl<DeadArgsElimination>(module, AM);
@@ -185,6 +185,7 @@ void _PassManager::RunOnLevel() {
       RunImpl<Global2Local>(module, AM);
       CommonPass(AM);
     }
+   
       CommonPass(AM);
       return;
       // loop unroller

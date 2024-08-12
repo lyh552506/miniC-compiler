@@ -73,32 +73,30 @@ void Initializer::print() {
   std::cout << "]";
 }
 
-Operand Initializer::getInitVal(std::vector<int>& index,int dep){
-  auto getZero=[&]() -> Operand {
-    auto basetp=dynamic_cast<HasSubType*>(GetType())->get_baseType();
-    if(basetp==IntType::NewIntTypeGet()){
+Operand Initializer::getInitVal(std::vector<int> &index, int dep) {
+  auto getZero = [&]() -> Operand {
+    auto basetp = dynamic_cast<HasSubType *>(GetType())->get_baseType();
+    if (basetp == IntType::NewIntTypeGet()) {
       return ConstIRInt::GetNewConstant();
-    }
-    else if(basetp==FloatType::NewFloatTypeGet()){
+    } else if (basetp == FloatType::NewFloatTypeGet()) {
       return ConstIRFloat::GetNewConstant();
-    }
-    else{
+    } else {
       return ConstIRBoolean::GetNewConstant();
     }
   };
-  
+
   if (size() == 0) {
     return getZero();
   }
   int limi = dynamic_cast<ArrayType *>(tp)->GetNumEle();
-  auto i=index[dep];
-  assert(i<limi);
-  auto thissize=size();
-  if(i>=thissize)return getZero();
-  else if(auto inits = dynamic_cast<Initializer *>((*this)[i])){
-    return inits->getInitVal(index,dep+1);
-  }
-  else{
+  auto i = index[dep];
+  assert(i < limi);
+  auto thissize = size();
+  if (i >= thissize)
+    return getZero();
+  else if (auto inits = dynamic_cast<Initializer *>((*this)[i])) {
+    return inits->getInitVal(index, dep + 1);
+  } else {
     return (*this)[i];
   }
 }
@@ -439,10 +437,14 @@ void BinaryInst::print() {
   std::cout << " = ";
   switch (op) {
   case BinaryInst::Op_Add:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
-      std::cout << "add ";
-    else
-      std::cout << "fadd ";
+    if (!this->Atomic) {
+      if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+        std::cout << "add ";
+      else
+        std::cout << "fadd ";
+    } else {
+      std::cout << "atomicadd ";
+    }
     break;
   case BinaryInst::Op_Sub:
     if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
@@ -544,12 +546,23 @@ void BinaryInst::print() {
   default:
     break;
   }
-  uselist[1]->GetValue()->GetType()->print();
-  std::cout << " ";
-  uselist[0]->GetValue()->print();
-  std::cout << ", ";
-  uselist[1]->GetValue()->print();
-  std::cout << '\n';
+  if (this->Atomic) {
+    uselist[0]->GetValue()->GetType()->print();
+    std::cout << " ";
+    uselist[0]->GetValue()->print();
+    std::cout << ", ";
+    uselist[1]->GetValue()->GetType()->print();
+    std::cout << " ";
+    uselist[1]->GetValue()->print();
+    std::cout << '\n';
+  } else {
+    uselist[1]->GetValue()->GetType()->print();
+    std::cout << " ";
+    uselist[0]->GetValue()->print();
+    std::cout << ", ";
+    uselist[1]->GetValue()->print();
+    std::cout << '\n';
+  }
 }
 
 void BinaryInst::SetOperand(int index, Value *val) {

@@ -5,12 +5,20 @@
 #include "CSE.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
+#include "Type.hpp"
 #include <unordered_set>
 #include <vector>
 class _AnalysisManager;
 class LoopParallel : public _PassManagerBase<LoopParallel, Function> {
 public:
-  LoopParallel(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {}
+  LoopParallel(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {
+    if (!Storage_int)
+      Storage_int = new Variable(Variable::GlobalVariable,
+                                 IntType::NewIntTypeGet(), "Storage_int");
+    if (!Storage_float)
+      Storage_float = new Variable(Variable::GlobalVariable,
+                                   FloatType::NewFloatTypeGet(), "Storage_float");
+  }
   bool Run();
   ~LoopParallel() {
     for (auto l : DeleteLoop)
@@ -27,6 +35,7 @@ private:
   bool Judge(BasicBlock *bb, Value *target);
   void SimplifyPhi(LoopInfo *loop);
   bool TempChoice(LoopInfo *loop); // tmp
+  void PreserveResult(LoopInfo *loop);
   LoopTrait SubstitudeTrait;
   std::unordered_set<BasicBlock *> ExcutedLoops;
   LoopAnalysis *loop;
@@ -34,6 +43,9 @@ private:
   dominance *dom;
   _AnalysisManager &AM;
   LoopAnalysis *loopAnaly;
+  bool ShoudPreserveRes = false;
   std::unordered_map<Value *, Variable *> Val2Arg;
   std::vector<LoopInfo *> DeleteLoop;
+  static Variable *Storage_int;
+  static Variable *Storage_float;
 };
