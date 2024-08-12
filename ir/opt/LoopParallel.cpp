@@ -565,16 +565,10 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   }
   // add arg
   std::vector<Value *> args{begin, end};
-  for (const auto &[val, arg] : ValMap) {
-    if (val == begin || val == end)
-      continue;
+  for (const auto &[val, arg] : ValMap)
     args.push_back(val);
-  }
-  for (const auto [val, arg] : ValMap) {
-    if (val == begin || val == end)
-      continue;
+  for (const auto [val, arg] : ValMap)
     Parallel->PushMyParam(arg);
-  }
 
   // replace
   for (auto iter = head->begin(); iter != head->end();) {
