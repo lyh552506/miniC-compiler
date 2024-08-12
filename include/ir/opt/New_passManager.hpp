@@ -31,7 +31,8 @@
 #include "../../include/ir/opt/mem2reg.hpp"
 #include "../../include/ir/opt/reassociate.hpp"
 #include "../../include/ir/opt/DSE.hpp"
-#include "../../include/ir/opt/New_GepEvaluate.hpp"
+#include "../../include/ir/opt/LoadElimination.hpp"
+#include "../../include/ir/opt/SelfStoreElimination.hpp"
 #include <any>
 #include <getopt.h>
 #include <memory>
@@ -66,7 +67,9 @@ enum PassName {
   condmerge,
   gepevaluate,
   blockmerge,
-  Dse
+  Dse,
+  loadeliminaion,
+  selfstoreelimination
 };
 
 static struct option long_options[] = {
@@ -96,6 +99,8 @@ static struct option long_options[] = {
     {"GepEvaluate", no_argument, 0, 27},
     {"BlockMerge", no_argument, 0, 28},
     {"dse", no_argument, 0, 29},
+    {"LoadElimination", no_argument, 0, 30},
+    {"SelfStoreElimination", no_argument, 0, 31},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},

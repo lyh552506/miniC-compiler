@@ -186,7 +186,7 @@ void _PassManager::RunOnLevel() {
     }
     CommonPass(AM);
         RunLevelPass(DeadStoreElimination, curfunc, modified);
-        RunLevelPass(EVA, curfunc, modified)
+        RunLevelPass(LoadElimination, curfunc, modified)
         // RunLevelPass(DeadStoreElimination, curfunc, modified);
         // RunLevelPass(DCE, curfunc, modified);
         // RunLevelPass(DCE, curfunc, modified)
@@ -415,6 +415,16 @@ void _PassManager::RunOnTest() {
         case Dse:
         {
           auto m_Dse = RunImpl<DeadStoreElimination>(curfunc, AM);
+          break;
+        }
+        case loadeliminaion:
+        {
+          auto m_loadeliminaion = RunImpl<LoadElimination>(curfunc, AM);
+          break;
+        }
+        case selfstoreelimination:
+        {
+          auto m_selfstoreelimination = RunImpl<SelfStoreElimination>(curfunc, AM);
           break;
         }
         default: {

@@ -8,7 +8,7 @@
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
 
-class SelfStoreElimination : public _PassManagerBase<DeadStoreElimination, Function>
+class SelfStoreElimination : public _PassManagerBase<SelfStoreElimination, Function>
 {
   private:
     dominance *DomTree;
