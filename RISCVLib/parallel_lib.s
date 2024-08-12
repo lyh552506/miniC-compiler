@@ -4,81 +4,58 @@
 	.attribute unaligned_access, 0
 	.attribute stack_align, 16
 	.text
-	.section	.rodata.str1.8,"aMS",@progbits,1
-	.align	3
-.LC0:
-	.string	"work thread created"
-	.align	3
-.LC1:
-	.string	"task %d done\n"
-	.text
+#APP
+	.globl _ZSt21ios_base_library_initv
+#NO_APP
 	.align	1
 	.globl	_Z12WorkerThreadPv
 	.type	_Z12WorkerThreadPv, @function
 _Z12WorkerThreadPv:
-.LFB1313:
+.LFB2881:
 	.cfi_startproc
-	lui	a0,%hi(.LC0)
-	addi	sp,sp,-80
-	.cfi_def_cfa_offset 80
-	addi	a0,a0,%lo(.LC0)
-	sd	ra,72(sp)
-	sd	s0,64(sp)
-	sd	s1,56(sp)
-	sd	s2,48(sp)
-	sd	s3,40(sp)
-	sd	s4,32(sp)
-	sd	s5,24(sp)
-	sd	s6,16(sp)
-	sd	s7,8(sp)
-	.cfi_offset 1, -8
+	addi	sp,sp,-64
+	.cfi_def_cfa_offset 64
+	sd	s0,48(sp)
 	.cfi_offset 8, -16
-	.cfi_offset 9, -24
-	.cfi_offset 18, -32
-	.cfi_offset 19, -40
-	.cfi_offset 20, -48
-	.cfi_offset 21, -56
-	.cfi_offset 22, -64
-	.cfi_offset 23, -72
-	lui	s4,%hi(stdout)
-	call	puts
 	lui	s0,%hi(_ZL4full)
 	addi	s0,s0,%lo(_ZL4full)
-	ld	a0,%lo(stdout)(s4)
+	sd	s1,40(sp)
+	.cfi_offset 9, -24
 	andi	s1,s0,3
-	li	s5,1
+	sd	s4,16(sp)
 	slliw	s1,s1,3
-	call	fflush
-	lui	s7,%hi(buildin_funcptr)
+	.cfi_offset 20, -48
+	li	s4,1
+	sd	s2,32(sp)
+	sd	s3,24(sp)
+	sd	s5,8(sp)
+	sd	ra,56(sp)
+	.cfi_offset 18, -32
+	.cfi_offset 19, -40
+	.cfi_offset 21, -56
+	.cfi_offset 1, -8
+	lui	s5,%hi(buildin_funcptr)
 	lui	s3,%hi(_ZL9task_done)
-	lui	s6,%hi(.LC1)
 	andi	s0,s0,-4
-	sllw	s2,s5,s1
+	sllw	s2,s4,s1
 .L2:
 	fence iorw,ow; amoor.w.aq a5,s2,0(s0)
 	srlw	a5,a5,s1
 	andi	a5,a5,0xff
 	bne	a5,zero,.L2
-	ld	a5,%lo(buildin_funcptr)(s7)
+	ld	a5,%lo(buildin_funcptr)(s5)
 	jalr	a5
-	fence	iorw,iorw
-	lw	a1,%lo(_ZL9task_done)(s3)
-	fence	iorw,iorw
-	addi	a0,s6,%lo(.LC1)
-	call	printf
-	ld	a0,%lo(stdout)(s4)
-	call	fflush
 	addi	a5,s3,%lo(_ZL9task_done)
-	fence iorw,ow; amoadd.w.aq zero,s5,0(a5)
+	fence iorw,ow; amoadd.w.aq zero,s4,0(a5)
 	j	.L2
 	.cfi_endproc
-.LFE1313:
+.LFE2881:
 	.size	_Z12WorkerThreadPv, .-_Z12WorkerThreadPv
 	.align	1
 	.globl	buildin_FenceArgLoaded
 	.type	buildin_FenceArgLoaded, @function
 buildin_FenceArgLoaded:
-.LFB1308:
+.LFB2876:
 	.cfi_startproc
 	fence	iorw,iorw
 	lui	a5,%hi(_ZL5empty)
@@ -86,13 +63,13 @@ buildin_FenceArgLoaded:
 	fence	iorw,iorw
 	ret
 	.cfi_endproc
-.LFE1308:
+.LFE2876:
 	.size	buildin_FenceArgLoaded, .-buildin_FenceArgLoaded
 	.align	1
 	.globl	buildin_NotifyWorker
 	.type	buildin_NotifyWorker, @function
 buildin_NotifyWorker:
-.LFB1312:
+.LFB2880:
 	.cfi_startproc
 	sub	a5,a1,a0
 	srai	t1,a5,63
@@ -151,14 +128,14 @@ buildin_NotifyWorker:
 	bne	a5,a4,.L13
 	ret
 	.cfi_endproc
-.LFE1312:
+.LFE2880:
 	.size	buildin_NotifyWorker, .-buildin_NotifyWorker
 	.section	.text.startup,"ax",@progbits
 	.align	1
 	.globl	_Z12CreateThreadv
 	.type	_Z12CreateThreadv, @function
 _Z12CreateThreadv:
-.LFB1314:
+.LFB2882:
 	.cfi_startproc
 	lui	a4,%hi(_ZL4full)
 	addi	a4,a4,%lo(_ZL4full)
@@ -207,7 +184,7 @@ _Z12CreateThreadv:
 	.cfi_def_cfa_offset 0
 	jr	ra
 	.cfi_endproc
-.LFE1314:
+.LFE2882:
 	.size	_Z12CreateThreadv, .-_Z12CreateThreadv
 	.section	.init_array,"aw"
 	.align	3

@@ -72,8 +72,8 @@ void buildin_NotifyWorker(int begin,int end){
 
 void* WorkerThread(void *arg){
     // std::cerr<<"work thread created\n";
-    printf("work thread created\n");
-    fflush(stdout);
+    // printf("work thread created\n");
+    // fflush(stdout);
     while(true)
         WaitBufferRead();
 }

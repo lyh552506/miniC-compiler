@@ -485,8 +485,8 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   auto en = new Variable(Variable::Param, IntType::NewIntTypeGet(), "");
   Parallel->PushMyParam(beg); // beg
   Parallel->PushMyParam(en);  // end
-  ValMap[begin] = beg;
-  ValMap[end] = en;
+  // ValMap[begin] = beg;
+  // ValMap[end] = en;
   Singleton<Module>().Push_Func(Parallel);
   Parallel->clear();
   Parallel->tag = Function::ParallelBody;
@@ -523,7 +523,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   auto loopchange = SubstitudeTrait.change->CloneInst();
   loopchange->RSUW(0, Indvar);
   auto new_cmp =
-      BinaryInst::CreateInst(loopchange, op, SubstitudeTrait.boundary);
+      BinaryInst::CreateInst(loopchange, op, en);
   PhiInst *res = nullptr;
   Indvar->updateIncoming(beg, Entry);
   Indvar->updateIncoming(loopchange, While_Loop);
@@ -535,7 +535,10 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   // maping
   std::unordered_set<User *> Worklist{head->begin(), head->end()};
   Worklist.insert(loopchange);
-  Worklist.insert(new_cmp);
+  // WA case:./testcases/functional/62_percolation.sy
+  // Reason : when begin and end is const, const step will be faultly RSUW to beg and en
+  // No need to insert new_cmp for it has already been successfully adjusted
+  // Worklist.insert(new_cmp);
   for (auto inst : Worklist) {
     for (int i = 0; i < inst->Getuselist().size(); i++) {
       auto op = inst->GetOperand(i);
