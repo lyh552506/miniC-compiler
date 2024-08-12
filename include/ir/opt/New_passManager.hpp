@@ -141,7 +141,7 @@ public:
     Contain.emplace_back(pass);
     return static_cast<Pass *>(result);
   }
-  
+
 
   void AddAttr(BasicBlock *LoopHeader, LoopAttr attr) {
     LoopForm[LoopHeader].insert(attr);

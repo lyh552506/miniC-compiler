@@ -137,14 +137,16 @@ void _PassManager::RunOnLevel() {
       CommonPass(AM);
     }
 
-    RunLevelPass(TailRecurseEliminator, curfunc,
-                 modified) while (RunImpl<Inliner>(module, AM)) {
+    RunLevelPass(TailRecurseEliminator, curfunc, modified)
+
+                 while (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
           RunImpl<DeadArgsElimination>(module, AM);
       RunImpl<StoreOnlyGlobalElimination>(module, AM);
       RunImpl<Global2Local>(module, AM);
       CommonPass(AM);
     }
+
     // Loops
     {
       modified = true;
@@ -184,9 +186,15 @@ void _PassManager::RunOnLevel() {
         PassChangedBegin(curfunc) PassChangedEnd
       }
     }
+
     CommonPass(AM);
+
         RunLevelPass(DeadStoreElimination, curfunc, modified);
+
         RunLevelPass(LoadElimination, curfunc, modified)
+        RunLevelPass(DCE, curfunc, modified)
+        // RunLevelPass(DeadStoreElimination, curfunc, modified);
+        // RunLevelPass(SelfStoreElimination, curfunc, modified)
         // RunLevelPass(DeadStoreElimination, curfunc, modified);
         // RunLevelPass(DCE, curfunc, modified);
         // RunLevelPass(DCE, curfunc, modified)
@@ -210,6 +218,8 @@ void _PassManager::RunOnLevel() {
 bool _PassManager::CommonPass(_AnalysisManager &AM) {
   bool mody = true;
   while (mody) {
+    static int a = 0;
+    a++;
     mody = false;
     RunLevelPass(cfgSimplify, curfunc, mody);
     PassChangedBegin(curfunc) PassChangedEnd PassChangedBegin(curfunc)
@@ -231,20 +241,25 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
         // cse
         RunLevelPass(CSE, curfunc, mody);
     RunLevelPass(GepCombine, curfunc, mody);
-
     RunLevelPass(GepEvaluate, curfunc, mody);
+ RunLevelPass(DeadStoreElimination, curfunc, modified);
+    RunLevelPass(LoadElimination, curfunc, mody)
 
-    // RunLevelPass(DeadStoreElimination, curfunc, modified);
     RunLevelPass(DCE, curfunc, mody)
     // constprop
     RunLevelPass(ConstantProp, curfunc, mody);
+
     // reassociate
     RunLevelPass(Reassociate, curfunc, mody);
+
+
     // cse
     RunLevelPass(CSE, curfunc, mody);
     // RunLevelPass(GepCombine, curfunc, mody);
+        RunLevelPass(BlockMerge, curfunc, mody);
+
     RunLevelPass(DCE, curfunc, mody);
-    RunLevelPass(BlockMerge, curfunc, mody);
+
     PassChangedBegin(curfunc)
         PassChangedEnd RunLevelPass(cfgSimplify, curfunc, mody);
     // TRE

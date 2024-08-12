@@ -54,26 +54,26 @@ bool LoadElimination::RunOnBlock(BasicBlock *block)
         LoadInst *load = dynamic_cast<LoadInst *>(inst);
         mylist<BasicBlock, User>::iterator pos(load);
         std::unordered_set<BasicBlock *> visited;
-        if (auto val = Judge(load, block, load->GetOperand(0), block, visited, --pos))
+        std::pair<Value *, BasicBlock *> val = Judge(load, load, block, load->GetOperand(0), block, visited, --pos, 0);
+        if (val.first && val.first != load)
         {
-            if (val != load)
-            {
-                load->RAUW(val);
-                wait_del.insert(load);
-            }
+            load->RAUW(val.first);
+            wait_del.insert(load);
         }
     }
     return false;
 }
 
-Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBlock *pred_block,
-                  std::unordered_set<BasicBlock *> &visited, mylist<BasicBlock, User>::iterator pos)
+std::pair<Value *, BasicBlock *> LoadElimination::Judge(User *inst, User *origin, BasicBlock *block, Value *src,
+                                                        BasicBlock *pred_block,
+                                                        std::unordered_set<BasicBlock *> &visited,
+                                                        mylist<BasicBlock, User>::iterator pos, size_t depth)
 {
     bool Flag_CommonBlock = false;
     if (!inst && pred_block)
     {
         if (visited.count(pred_block))
-            return nullptr;
+            return std::pair{nullptr, nullptr};
         if (block == pred_block)
             Flag_CommonBlock = true;
         visited.insert(pred_block);
@@ -84,7 +84,7 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
     {
         if (pos == pred_block->rend())
         {
-            std::set<Value *> Pred_Value;
+            std::map<Value *, BasicBlock *> Pred_Value;
             for (auto pred_ : pred_block->GetUserlist())
             {
                 User *br = pred_->GetUser();
@@ -93,17 +93,21 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                     BasicBlock *pred = br->GetParent();
                     // if (pred != block)
                     // {
-                        auto val = Judge(nullptr, block, src, pred, visited, pred->rbegin());
-                        if (val)
-                            Pred_Value.insert(val);
-                        else
-                            return nullptr;
+                    auto val = Judge(nullptr, origin, block, src, pred, visited, pred->rbegin(), depth + 1);
+                    if (val.second == pred_block && val.first != nullptr)
+                        Pred_Value[val.first] = val.second;
+                    else if (val.first && val.second != pred_block)
+                        Pred_Value[val.first] = val.second;
                     // }
                 }
             }
-            if (Pred_Value.size() == 1)
+            if (Pred_Value.size() == 1 && depth != 0 && Pred_Value.begin()->second != pred_block)
                 return *Pred_Value.begin();
-            return nullptr;
+            else if (Pred_Value.size() == 1 && depth == 0 &&
+                     DomTree->dominates(Pred_Value.begin()->second, pred_block) &&
+                     Pred_Value.begin()->second != pred_block && !origin->Change)
+                return *Pred_Value.begin();
+                return std::pair{nullptr, nullptr};
         }
         User *inst_ = *pos;
         if (!Flag_CommonBlock)
@@ -113,7 +117,7 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                 if (auto src_gep = dynamic_cast<GetElementPtrInst *>(src))
                 {
                     if (store->GetOperand(1) == src_gep)
-                        return store->GetOperand(0);
+                        return std::pair{store->GetOperand(0), inst_->GetParent()};
                     Value *Src_base = src_gep->Getuselist()[0]->usee;
                     if (auto dst_gep = dynamic_cast<GetElementPtrInst *>(store->GetOperand(1)))
                     {
@@ -124,24 +128,27 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                                 PointerTool_LoadElimination::all_offset_const(dst_gep))
                             {
                                 if (AliasAnalysis::GetHash(src_gep) == AliasAnalysis::GetHash(dst_gep))
-                                    return store->GetOperand(0);
+                                    return std::pair{store->GetOperand(0), inst_->GetParent()};
                             }
                             else if (!PointerTool_LoadElimination::all_offset_const(dst_gep))
-                                return nullptr;
+                            {
+                                origin->Change = true;
+                                return std::pair{nullptr, nullptr};
+                            }
                         }
                     }
                 }
                 else if (store->GetOperand(1) == src)
                 {
                     if (store->GetOperand(0) == src)
-                        return nullptr;
-                    return store->GetOperand(0);
+                        return std::pair{nullptr, nullptr};
+                    return std::pair{store->GetOperand(0), inst_->GetParent()};
                 }
             }
             else if (auto load = dynamic_cast<LoadInst *>(inst_))
             {
                 if (load->GetOperand(0) == src)
-                    return load;
+                    return std::pair{load, inst_->GetParent()};
             }
             else if (auto call = dynamic_cast<CallInst *>(inst_))
             {
@@ -152,7 +159,10 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                     Value *call_gep_base = dynamic_cast<GetElementPtrInst *>(call->GetOperand(1))->GetOperand(0);
                     Value *src_base = dynamic_cast<GetElementPtrInst *>(src)->GetOperand(0);
                     if (call_gep_base == src_base)
-                        return nullptr;
+                    {
+                        origin->Change = true;
+                        return std::pair{nullptr, nullptr};
+                    }
                 }
                 else if (call_name == "llvm.memcpy.p0.p0.i32" && dynamic_cast<GetElementPtrInst *>(src))
                 {
@@ -174,7 +184,7 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                                         index.push_back(INT->GetVal());
                                 }
                                 if (auto val = init->getInitVal(index))
-                                    return val;
+                                    return std::pair{val, call->GetParent()};
                             }
                         }
                     }
@@ -186,7 +196,10 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                     {
                         Function *func_ = inst_->Getuselist()[0]->usee->as<Function>();
                         if (func_ && func_->Change_Val.count(base))
-                            return nullptr;
+                        {
+                            origin->Change = true;
+                            return std::pair{nullptr, nullptr};
+                        }
                     }
                     else
                     {
@@ -208,7 +221,10 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                         {
                             Function *func_ = call->Getuselist()[0]->usee->as<Function>();
                             if (func_ && func_->Change_Val.count(func_->GetParams()[distance - 1].get()))
-                                return nullptr;
+                            {
+                                origin->Change = true;
+                                return std::pair{nullptr, nullptr};
+                            }
                         }
                     }
                 }
@@ -216,7 +232,10 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                 {
                     Function *func_ = call->Getuselist()[0]->usee->as<Function>();
                     if (func_ && func_->Change_Val.count(src))
-                        return nullptr;
+                    {
+                        origin->Change = true;
+                        return std::pair{nullptr, nullptr};
+                    }
                 }
             }
             else if (auto binary = dynamic_cast<BinaryInst *>(inst_))
@@ -224,7 +243,10 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                 if (binary->IsAtomic())
                 {
                     if (binary->GetOperand(0) == src || binary->GetOperand(1) == src)
-                        return nullptr;
+                    {
+                        origin->Change = true;
+                        return std::pair{nullptr, nullptr};
+                    }
                 }
             }
         }
@@ -235,7 +257,7 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                 if (auto src_gep = dynamic_cast<GetElementPtrInst *>(src))
                 {
                     if (store->GetOperand(1) == src_gep)
-                        return nullptr;
+                        return std::pair{store->GetOperand(0), inst_->GetParent()};
                     Value *Src_base = src_gep->Getuselist()[0]->usee;
                     if (auto dst_gep = dynamic_cast<GetElementPtrInst *>(store->GetOperand(1)))
                     {
@@ -246,18 +268,18 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                                 PointerTool_LoadElimination::all_offset_const(dst_gep))
                             {
                                 if (AliasAnalysis::GetHash(src_gep) == AliasAnalysis::GetHash(dst_gep))
-                                    return nullptr;
+                                    return std::pair{store->GetOperand(0), inst_->GetParent()};
                             }
                             else if (!PointerTool_LoadElimination::all_offset_const(dst_gep))
-                                return nullptr;
+                                return std::pair{store->GetOperand(0), inst_->GetParent()};
                         }
                     }
                 }
                 else if (store->GetOperand(1) == src)
                 {
                     if (store->GetOperand(0) == src)
-                        return nullptr;
-                    return nullptr;
+                        return std::pair{nullptr, nullptr};
+                    return std::pair{store->GetOperand(0), inst_->GetParent()};
                 }
             }
             else if (auto call = dynamic_cast<CallInst *>(inst_))
@@ -269,7 +291,7 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                     Value *call_gep_base = dynamic_cast<GetElementPtrInst *>(call->GetOperand(1))->GetOperand(0);
                     Value *src_base = dynamic_cast<GetElementPtrInst *>(src)->GetOperand(0);
                     if (call_gep_base == src_base)
-                        return nullptr;
+                        return std::pair{call, inst_->GetParent()};
                 }
                 else if (call_name == "llvm.memcpy.p0.p0.i32" && dynamic_cast<GetElementPtrInst *>(src))
                 {
@@ -291,7 +313,7 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                                         index.push_back(INT->GetVal());
                                 }
                                 if (auto val = init->getInitVal(index))
-                                    return nullptr;
+                                    return std::pair{val, inst_->GetParent()};
                             }
                         }
                     }
@@ -303,7 +325,7 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                     {
                         Function *func_ = inst_->Getuselist()[0]->usee->as<Function>();
                         if (func_ && func_->Change_Val.count(base))
-                            return nullptr;
+                            return std::pair{call, inst_->GetParent()};
                     }
                     else
                     {
@@ -325,7 +347,7 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                         {
                             Function *func_ = call->Getuselist()[0]->usee->as<Function>();
                             if (func_ && func_->Change_Val.count(func_->GetParams()[distance - 1].get()))
-                                return nullptr;
+                                return std::pair{call, inst_->GetParent()};
                         }
                     }
                 }
@@ -333,7 +355,7 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                 {
                     Function *func_ = call->Getuselist()[0]->usee->as<Function>();
                     if (func_ && func_->Change_Val.count(src))
-                        return nullptr;
+                        return std::pair{call, inst_->GetParent()};
                 }
             }
             else if (auto binary = dynamic_cast<BinaryInst *>(inst_))
@@ -341,15 +363,15 @@ Value *LoadElimination::Judge(User *inst, BasicBlock *block, Value *src, BasicBl
                 if (binary->IsAtomic())
                 {
                     if (binary->GetOperand(0) == src || binary->GetOperand(1) == src)
-                        return nullptr;
+                        return std::pair{binary, inst_->GetParent()};
                 }
             }
             else if (dynamic_cast<LoadInst *>(inst_))
             {
-                if (inst_->GetOperand(0) == src)
-                    return inst_;
+                if (inst_ == origin)
+                    return std::pair{nullptr, inst_->GetParent()};
             }
         }
     }
-    return nullptr;
+    return std::pair{nullptr, nullptr};
 }

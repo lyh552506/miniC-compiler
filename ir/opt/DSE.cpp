@@ -76,7 +76,7 @@ bool DeadStoreElimination::Judge(StoreInst *store, BasicBlock *block, Value *dst
         User *inst = *pos;
         if (dynamic_cast<StoreInst *>(inst))
         {
-            Value *val = inst->Getuselist()[0]->usee;
+            Value *val = inst->Getuselist()[1]->usee;
             if (inst->GetOperand(1) == dst)
                 return true;
             if (auto gep = dynamic_cast<GetElementPtrInst *>(val))
@@ -141,7 +141,7 @@ bool DeadStoreElimination::Judge(StoreInst *store, BasicBlock *block, Value *dst
                     if (flag)
                     {
                         Function *func_ = inst->Getuselist()[0]->usee->as<Function>();
-                        if (func_->GetParams()[distance - 1].get()->ReadFunc.count(func_))
+                        if (func_->MemRead())
                             return false;
                     }
                 }
@@ -166,7 +166,8 @@ bool DeadStoreElimination::Judge(StoreInst *store, BasicBlock *block, Value *dst
                 if (auto gep_dst = dynamic_cast<GetElementPtrInst *>(dst))
                 {
                     bool flag = PointerTool::all_offset_const(gep);
-                    if (!flag && gep->Getuselist()[0]->usee == gep_dst->Getuselist()[0]->usee)
+                    bool flag1 = PointerTool::all_offset_const(gep_dst);
+                    if ((!flag || !flag1) && gep->Getuselist()[0]->usee == gep_dst->Getuselist()[0]->usee)
                         return false;
                     else if (gep->Getuselist()[0]->usee == gep_dst->Getuselist()[0]->usee &&
                              AliasAnalysis::GetHash(gep) == AliasAnalysis::GetHash(gep_dst))

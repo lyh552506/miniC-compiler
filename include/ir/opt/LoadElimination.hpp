@@ -20,8 +20,8 @@ class LoadElimination : public _PassManagerBase<LoadElimination, Function>
     void OrderBlock(BasicBlock *block);
     bool RunOnBlock(BasicBlock *block);
     void init();
-    Value* Judge(User *inst, BasicBlock *block, Value *src, BasicBlock *pred_block,
-               std::unordered_set<BasicBlock *> &visited, mylist<BasicBlock, User>::iterator pos);
+    std::pair<Value*, BasicBlock*> Judge(User *inst, User* origin, BasicBlock *block, Value *src, BasicBlock *pred_block,
+               std::unordered_set<BasicBlock *> &visited, mylist<BasicBlock, User>::iterator pos, size_t depth);
 
   public:
     LoadElimination(Function *f, _AnalysisManager &am) : func(f), AM(am)
