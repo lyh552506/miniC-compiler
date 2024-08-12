@@ -156,6 +156,16 @@ bool DeadStoreElimination::Judge(StoreInst *store, BasicBlock *block, Value *dst
                 }
             }
         }
+        else if(auto binary = dynamic_cast<BinaryInst*>(inst))
+        {
+            if(binary->IsAtomic())
+            {
+                if(binary->GetOperand(0) == dst)
+                    return false;
+                else if(binary->GetOperand(1) == dst)
+                    return false;
+            }
+        }
         else if (dynamic_cast<LoadInst *>(inst))
         {
             Value *val = inst->Getuselist()[0]->usee;

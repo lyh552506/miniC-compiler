@@ -111,13 +111,28 @@ bool SideEffect::FuncHasSideEffect(Function *func)
                     flag = true;
                     func->Change_Val.insert(_param.get());
                 }
-
+                else if (auto binary = dynamic_cast<BinaryInst *>(Use_->GetUser()))
+                {
+                    if (binary->IsAtomic())
+                    {
+                        flag = true;
+                        func->Change_Val.insert(_param.get());
+                    }
+                }
                 for (Use *Use__ : Use_->GetUser()->GetUserlist())
                 {
                     if (dynamic_cast<StoreInst *>(Use__->GetUser()))
                     {
                         flag = true;
                         func->Change_Val.insert(_param.get());
+                    }
+                    else if(auto binary = dynamic_cast<BinaryInst*>(Use__->GetUser()))
+                    {
+                        if(binary->IsAtomic())
+                        {
+                            flag = true;
+                            func->Change_Val.insert(_param.get());
+                        }
                     }
                 }
             }
@@ -138,12 +153,12 @@ bool SideEffect::FuncHasSideEffect(Function *func)
                 Function *Func = dynamic_cast<Function *>(inst->Getuselist()[0]->usee);
                 if (Func && Func->HasSideEffect)
                     flag = true;
-                if(Func)
+                if (Func)
                 {
-                    for(int i = 1; i < inst->Getuselist().size() ; i++)
+                    for (int i = 1; i < inst->Getuselist().size(); i++)
                     {
-                        Value* param = Func->GetParams()[i - 1].get();
-                        if(param && Func->Change_Val.count(param))
+                        Value *param = Func->GetParams()[i - 1].get();
+                        if (param && Func->Change_Val.count(param))
                         {
                             flag = true;
                             func->Change_Val.insert(inst->GetOperand(i));
@@ -182,8 +197,19 @@ bool SideEffect::FuncHasSideEffect(Function *func)
                 {
                     if (val->isGlobal())
                         val->ReadFunc.insert(func);
-                    else if(val->isParam())
+                    else if (val->isParam())
                         val->ReadFunc.insert(func);
+                }
+            }
+            else if(auto binary = dynamic_cast<BinaryInst*>(inst))
+            {
+                if(binary->IsAtomic())
+                {
+                        binary->GetOperand(0)->ReadFunc.insert(func);
+                        func->Change_Val.insert(binary->GetOperand(0));
+                        binary->GetOperand(1)->ReadFunc.insert(func);
+                        func->Change_Val.insert(binary->GetOperand(1));
+                        flag = true;
                 }
             }
         }
