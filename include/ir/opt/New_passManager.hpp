@@ -31,6 +31,7 @@
 #include "../../include/ir/opt/mem2reg.hpp"
 #include "../../include/ir/opt/reassociate.hpp"
 #include "../../include/ir/opt/DSE.hpp"
+#include "../../include/ir/opt/New_GepEvaluate.hpp"
 #include <any>
 #include <getopt.h>
 #include <memory>

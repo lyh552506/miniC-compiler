@@ -112,7 +112,6 @@ class Value
     bool isConstZero();
     bool isConstOne();
     int GetUserListSize(){return GetUserlist().GetSize();}
-    std::set<Function*> Change_Funcs;
     std::unordered_set<Function*> ReadFunc;
     template<typename T>
     T* as(){return dynamic_cast<T*>(this);}
