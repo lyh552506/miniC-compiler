@@ -135,7 +135,8 @@ void _PassManager::RunOnLevel() {
     }
 
     RunLevelPass(TailRecurseEliminator, curfunc,
-                 modified) while (RunImpl<Inliner>(module, AM)) {
+                 modified) 
+    while (RunImpl<Inliner>(module, AM)) {
       RunLevelPass(cfgSimplify, curfunc, modified)
           RunImpl<DeadArgsElimination>(module, AM);
       RunImpl<StoreOnlyGlobalElimination>(module, AM);
@@ -177,6 +178,13 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(BlockMerge, curfunc, other);
         PassChangedBegin(curfunc) PassChangedEnd
       }
+      while (RunImpl<Inliner>(module, AM)) {
+      RunLevelPass(cfgSimplify, curfunc, modified)
+          RunImpl<DeadArgsElimination>(module, AM);
+      RunImpl<StoreOnlyGlobalElimination>(module, AM);
+      RunImpl<Global2Local>(module, AM);
+      CommonPass(AM);
+    }
       CommonPass(AM);
       return;
       // loop unroller

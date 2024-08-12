@@ -214,7 +214,7 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   SubstitudeTrait.step = loop->trait.step;
   SubstitudeTrait.boundary = loop->trait.boundary;
   SubstitudeTrait.cmp = dynamic_cast<BinaryInst *>(cmp);
-  // TODO find the bound value
+  // find the bound value
   auto bound = GetBoundVal(loopcmp->getopration(), loop, loopcmp);
   for (auto use : indvar->GetUserlist()) {
     auto userBB = use->GetUser()->GetParent();
