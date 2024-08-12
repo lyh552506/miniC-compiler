@@ -71,13 +71,13 @@ buildin_FenceArgLoaded:
 buildin_NotifyWorker:
 .LFB2880:
 	.cfi_startproc
-	sub	a5,a1,a0
-	srai	t1,a5,63
-	andi	t1,t1,3
-	add	t1,t1,a5
+	sub	t1,a1,a0
+	li	a5,63
+	mv	a6,a0
+	ble	t1,a5,.L20
 	srai	t1,t1,2
 	lui	a7,%hi(_ZL5tasks)
-	ble	a1,a0,.L9
+	ble	a1,a0,.L10
 	lui	a4,%hi(_ZL5empty)
 	addi	a4,a4,%lo(_ZL5empty)
 	andi	a3,a4,3
@@ -91,33 +91,33 @@ buildin_NotifyWorker:
 	srli	t3,t3,32
 	andi	a4,a4,-4
 	sllw	a2,t5,a3
-.L12:
-	mv	a6,a0
-	slli	a6,a6,32
-	add	a0,a0,t1
-	srli	a6,a6,32
+.L13:
+	mv	a0,a6
+	slli	a0,a0,32
+	add	a6,a6,t1
+	srli	a0,a0,32
 	mv	a5,a1
-	ble	a1,a0,.L10
-	mv	a5,a0
-.L10:
-	slli	a5,a5,32
-	and	a6,a6,t3
-	or	a6,a6,a5
+	ble	a1,a6,.L11
+	mv	a5,a6
 .L11:
+	slli	a5,a5,32
+	and	a0,a0,t3
+	or	a0,a0,a5
+.L12:
 	fence iorw,ow; amoor.w.aq a5,a2,0(a4)
 	srlw	a5,a5,a3
 	andi	a5,a5,0xff
-	bne	a5,zero,.L11
-	sd	a6,0(t4)
+	bne	a5,zero,.L12
+	sd	a0,0(t4)
 	addi	a5,a7,%lo(_ZL5tasks)
 	fence iorw,ow; amoadd.w.aq zero,t5,0(a5)
 	fence	iorw,iorw
 	sb	zero,%lo(_ZL4full)(t6)
 	fence	iorw,iorw
-	bgt	a1,a0,.L12
-.L9:
+	bgt	a1,a6,.L13
+.L10:
 	lui	a3,%hi(_ZL9task_done)
-.L13:
+.L14:
 	fence	iorw,iorw
 	lw	a5,%lo(_ZL9task_done)(a3)
 	fence	iorw,iorw
@@ -125,8 +125,18 @@ buildin_NotifyWorker:
 	sext.w	a5,a5
 	lw	a4,%lo(_ZL5tasks)(a7)
 	fence	iorw,iorw
-	bne	a5,a4,.L13
+	bne	a5,a4,.L14
 	ret
+.L20:
+	slli	a5,a0,32
+	lui	a4,%hi(buildin_funcptr)
+	slli	a1,a1,32
+	srli	a5,a5,32
+	ld	a4,%lo(buildin_funcptr)(a4)
+	or	a5,a5,a1
+	lui	a3,%hi(.LANCHOR0)
+	sd	a5,%lo(.LANCHOR0)(a3)
+	jr	a4
 	.cfi_endproc
 .LFE2880:
 	.size	buildin_NotifyWorker, .-buildin_NotifyWorker
@@ -154,15 +164,15 @@ _Z12CreateThreadv:
 	.cfi_offset 18, -32
 	andi	a4,a4,-4
 	sllw	a2,a2,a3
-.L20:
+.L22:
 	fence iorw,ow; amoor.w.aq a5,a2,0(a4)
 	srlw	a5,a5,a3
 	andi	a5,a5,0xff
-	bne	a5,zero,.L20
+	bne	a5,zero,.L22
 	mv	s0,sp
 	addi	s2,sp,32
 	lui	s1,%hi(_Z12WorkerThreadPv)
-.L21:
+.L23:
 	li	a3,0
 	addi	a2,s1,%lo(_Z12WorkerThreadPv)
 	li	a1,0
@@ -171,7 +181,7 @@ _Z12CreateThreadv:
 	ld	a0,0(s0)
 	addi	s0,s0,8
 	call	pthread_detach
-	bne	s0,s2,.L21
+	bne	s0,s2,.L23
 	ld	ra,56(sp)
 	.cfi_restore 1
 	ld	s0,48(sp)

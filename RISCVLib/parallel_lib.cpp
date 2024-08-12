@@ -55,6 +55,12 @@ void buildin_NotifyWorker(int begin,int end){
     // tell the worker that the buffer is full
     int64_t _begin=begin;
     int64_t _end=end;
+    if(_end-_begin<64){
+        *(int*)(buildin_parallel_arg_storage)=_begin;
+        *(int*)(buildin_parallel_arg_storage+4)=_end;
+        buildin_funcptr();
+        return;
+    }
     int64_t step=(_end-_begin)/4;
     
     for(_begin;_begin<_end;_begin+=step){
