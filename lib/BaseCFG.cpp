@@ -184,6 +184,11 @@ bool User::HasSideEffect() {
   if (dynamic_cast<StoreInst *>(this)) {
     return true;
   }
+  if(auto binary = dynamic_cast<BinaryInst*>(this))
+  {
+    if(binary->IsAtomic())
+      return true;
+  }
   if (dynamic_cast<CallInst *>(this)) {
     std::string name = this->Getuselist()[0]->usee->GetName();
     if (name == "getint" || name == "getch" || name == "getfloat" ||

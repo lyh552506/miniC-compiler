@@ -1,7 +1,6 @@
 #pragma once
-#include "../../../util/my_stl.hpp"
+#include "../../lib/BaseCFG.hpp"
 #include "../../lib/CFG.hpp"
-#include "../Analysis/AliasAnalysis.hpp"
 #include "../Analysis/LoopInfo.hpp"
 #include "../Analysis/SideEffect.hpp"
 #include "../Analysis/dominant.hpp"
@@ -10,7 +9,7 @@
 
 class _AnalysisManager;
 
-class DeadStoreElimination : public _PassManagerBase<DeadStoreElimination, Function>
+class LoadElimination : public _PassManagerBase<LoadElimination, Function>
 {
   private:
     dominance *DomTree;
@@ -20,12 +19,12 @@ class DeadStoreElimination : public _PassManagerBase<DeadStoreElimination, Funct
     std::vector<BasicBlock *> DFSOrder;
     void OrderBlock(BasicBlock *block);
     bool RunOnBlock(BasicBlock *block);
-    bool Judge(StoreInst *inst, BasicBlock *block, Value *dst, BasicBlock *src_block,
-               std::unordered_set<BasicBlock *> &visited, mylist<BasicBlock, User>::iterator pos);
     void init();
+    std::pair<Value*, BasicBlock*> Judge(User *inst, User* origin, BasicBlock *block, Value *src, BasicBlock *pred_block,
+               std::unordered_set<BasicBlock *> &visited, mylist<BasicBlock, User>::iterator pos, size_t depth);
 
   public:
-    DeadStoreElimination(Function *f, _AnalysisManager &am) : func(f), AM(am)
+    LoadElimination(Function *f, _AnalysisManager &am) : func(f), AM(am)
     {
         init();
     }
