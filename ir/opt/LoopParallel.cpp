@@ -6,10 +6,13 @@
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Type.hpp"
 #include "../../util/my_stl.hpp"
+#include "New_passManager.hpp"
 #include <cassert>
 
 // only analysis main function, so inline must take place before this pass
 bool LoopParallel::Run() {
+  if(m_func->tag!=Function::Normal)
+    return false;
   bool changed = false;
   dom = AM.get<dominance>(m_func);
   loopAnaly = AM.get<LoopAnalysis>(m_func, dom, std::ref(DeleteLoop));
@@ -27,7 +30,7 @@ bool LoopParallel::Run() {
                 << "\n";
       SubstitudeTrait.Init();
       auto call = ExtractLoopParallelBody(loop);
-      MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
+      MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);     
       return true;
     }
   }
@@ -35,15 +38,22 @@ bool LoopParallel::Run() {
 }
 
 bool LoopParallel::CanBeParallel(LoopInfo *loop) {
+  if (!AM.FindAttr(loop->GetHeader(), Rotate))
+    return false;
   auto header = loop->GetHeader();
   auto latch = loopAnaly->GetLatch(loop);
+  if (!TempChoice(loop))
+    return false;
+  LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   assert(latch && header);
+  PhiInst *resPhi = nullptr;
   int cnt = 0;
   for (auto inst : *header) {
     if (auto phi = dynamic_cast<PhiInst *>(inst)) {
       cnt++;
       if (inst == loop->trait.indvar)
         continue;
+      resPhi = phi;
       if (cnt > 2) {
         _DEBUG(std::cerr << "Cant Deal To Much Phi" << std::endl;)
         return false;
@@ -52,21 +62,6 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
       break;
     }
   }
-  auto ex = loopAnaly->GetExit(loop);
-  for (auto bb : loop->GetLoopBody())
-    for (auto des : dom->GetNode(bb->num).des) {
-      auto desBB = dom->GetNode(des).thisBlock;
-      if (loop->Contain(desBB) && bb != latch)
-        return false;
-    }
-
-  LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
-  if (loop->CantCalcTrait())
-    return false;
-
-  if (!DependencyAnalysis(loop))
-    return false;
-  auto resPhi = loop->trait.res;
   if (resPhi) {
     auto res = resPhi->ReturnValIn(latch);
     for (auto use : res->GetUserlist()) {
@@ -76,6 +71,20 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
       }
     }
   }
+
+  auto ex = loopAnaly->GetExit(loop);
+  for (auto bb : loop->GetLoopBody())
+    for (auto des : dom->GetNode(bb->num).des) {
+      auto desBB = dom->GetNode(des).thisBlock;
+      if (loop->Contain(desBB) && bb != latch)
+        return false;
+    }
+
+  if (loop->CantCalcTrait())
+    return false;
+
+  if (!DependencyAnalysis(loop))
+    return false;
   return true;
 }
 
@@ -137,6 +146,7 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
       return false;
     return true;
   };
+
   for (auto bb : body)
     for (auto inst : *bb) {
       if (Val2Arg.count(inst))
@@ -240,7 +250,13 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
               NoUse = true;
             }
           } else {
-            assert(0 && "what happened?");
+            continue;
+            //loop rotate dont insert new exit, so this situation can be:
+            //   prehead
+            //   /     \
+            // header   \
+            //    \     /
+            //     exit (phi.lcssa=[header],[prehead])
           }
         }
       }
@@ -444,7 +460,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   Entry->GenerateUnCondInst(While_Loop);
   auto Indvar = PhiInst::NewPhiNode(SubstitudeTrait.change->GetType());
   PhiInst *res = nullptr;
-  Indvar->updateIncoming(begin, Entry);
+  Indvar->updateIncoming(beg, Entry);
   Indvar->updateIncoming(SubstitudeTrait.change, While_Loop);
   While_Loop->push_back(Indvar);
   SubstitudeTrait.indvar->RAUW(Indvar);
@@ -549,4 +565,15 @@ void LoopParallel::SimplifyPhi(LoopInfo *loop) {
         phi->ReplaceVal(use, bound);
       }
     }
+}
+
+bool LoopParallel::TempChoice(LoopInfo *loop) {
+  for (auto bb : loop->GetLoopBody())
+    for (auto inst : *bb)
+      for (auto use : inst->GetUserlist()) {
+        auto userBB = use->GetUser()->GetParent();
+        if (!loop->Contain(userBB))
+          return false;
+      }
+  return true;
 }

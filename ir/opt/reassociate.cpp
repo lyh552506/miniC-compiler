@@ -448,10 +448,13 @@ Value *Reassociate::OptAdd(BinaryInst *AddInst,
                            std::vector<std::pair<Value *, int>> &LinerizedOp) {
   for (int i = 0; i < LinerizedOp.size(); i++) {
     if (i + 1 < LinerizedOp.size() && LinerizedOp[i + 1] == LinerizedOp[i]) {
-      int same = 2;
+      int same = 1;
+      int index = i;
       Value *src = LinerizedOp[i].first;
-      while (LinerizedOp[same] == LinerizedOp[i])
+      while (LinerizedOp[index + 1] == LinerizedOp[index]) {
         same++;
+        index++;
+      }
       if (same < 3)
         return nullptr;
       BinaryInst *Mul = nullptr;

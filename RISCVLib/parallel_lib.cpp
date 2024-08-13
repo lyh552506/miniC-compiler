@@ -1,6 +1,6 @@
 #include <pthread.h>
 #include <atomic>
-// #include <iostream>
+#include <iostream>
 #include <stdio.h>
 #include <cmath>
 #include "parallel_lib.hpp"
@@ -41,8 +41,8 @@ void WaitBufferRead(){
     full.lock();
     // inside the function, the FenceArgLoaded will be called
     buildin_funcptr();
-    printf("task %d done\n",task_done.load());
-    fflush(stdout);
+    // printf("task %d done\n",task_done.load());
+    // fflush(stdout);
     task_done++;
 }
 

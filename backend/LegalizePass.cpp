@@ -44,9 +44,18 @@ void Legalize::run() {
                     // reg = LoadGlobalAddr globalvar
                     // lui reg, %hi(globalvar)
                     // addi reg, reg, %lo(globalvar)
-                    auto glob=inst->GetOperand(0)->as<globlvar>();
-                    assert(glob!=nullptr);
-                    auto name=glob->GetName();
+                    
+                    auto getTagName=[&](){
+                        if(auto glob=inst->GetOperand(0)->as<globlvar>()){
+                            return glob->GetName();
+                        }
+                        else if(auto tag=inst->GetOperand(0)->as<OuterTag>()){
+                            return tag->GetName();
+                        }
+                        else assert(0&&"GG in get global address");
+                    };
+                    // assert(glob!=nullptr);
+                    auto name=getTagName();
                     auto hi=new LARegister(riscv_ptr,name,LARegister::hi);
                     auto lo=new LARegister(riscv_ptr,name,LARegister::lo);
                     auto reg=inst->GetDef()->as<Register>();
