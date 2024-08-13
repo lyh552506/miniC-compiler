@@ -163,7 +163,6 @@ void _PassManager::RunOnLevel() {
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc) PassChangedEnd
-
             RunEntryFunc(LoopParallel, modified) PassChangedBegin(curfunc)
                 PassChangedEnd
 
@@ -174,13 +173,14 @@ void _PassManager::RunOnLevel() {
 
             RunLevelPass(BlockMerge, curfunc, other);
         PassChangedBegin(curfunc) PassChangedEnd
-      }
-      return;
+      }return;
+     
       while (RunImpl<Inliner>(module, AM)) {
         RunLevelPass(cfgSimplify, curfunc, modified)
             RunImpl<DeadArgsElimination>(module, AM);
         RunImpl<StoreOnlyGlobalElimination>(module, AM);
         RunImpl<Global2Local>(module, AM);
+        
         CommonPass(AM);
       }
 

@@ -58,7 +58,7 @@ bool LoopParallel::Run() {
       std::cerr << "Find a Parallelable Loop: " << loop->GetHeader()->GetName()
                 << "\n";
       SubstitudeTrait.Init();
-      
+
       auto call = ExtractLoopParallelBody(loop);
       MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
       return true;
@@ -114,8 +114,7 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
     if (!dynamic_cast<BinaryInst *>(res))
       return false;
     auto bin = dynamic_cast<BinaryInst *>(res);
-    if (bin->getopration() != BinaryInst::Op_Add)
-      return false;
+
     std::set<Value *> assist{resPhi, res};
     for (auto use : res->GetUserlist()) {
       auto UserBB = use->GetUser()->GetParent();
@@ -510,6 +509,8 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
     if (!bin || bin != StoreVal)
       break;
     if(bin->GetUserListSize()!=1)
+      return false;
+    if(bin->getopration()!=BinaryInst::Op_Add)
       return false;
     _DEBUG(std::cerr << "Match Load Store!" << std::endl;)
     auto change =
