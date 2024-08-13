@@ -61,7 +61,6 @@ bool LoopParallel::Run() {
 
       auto call = ExtractLoopParallelBody(loop);
       MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
-
       return true;
     }
   }
@@ -505,9 +504,6 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
     auto operand = st->GetOperand(1);
     if (!bin || bin != StoreVal)
       break;
-    if (bin->getopration() != BinaryInst::Op_Add ||
-        bin->getopration() != BinaryInst::Op_Sub)
-      return false;
     _DEBUG(std::cerr << "Match Load Store!" << std::endl;)
     auto change =
         bin->GetOperand(0) == ld ? bin->GetOperand(1) : bin->GetOperand(0);
@@ -576,6 +572,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   While_Loop->SetName(While_Loop->GetName() + ".While_Loop");
   Exit->SetName(Exit->GetName() + ".Exit");
   Entry->GenerateUnCondInst(While_Loop);
+ 
   if (ShoudPreserveRes) {
     auto st = SubstitudeTrait.res->GetTypeEnum() == IR_Value_INT
                   ? Storage_int
@@ -610,8 +607,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
                 : ReverOp(cmp->getopration());
   auto loopchange = SubstitudeTrait.change->CloneInst();
   loopchange->RSUW(0, Indvar);
-  auto new_cmp =
-      BinaryInst::CreateInst(loopchange, op, en);
+  auto new_cmp = BinaryInst::CreateInst(loopchange, op, en);
   PhiInst *res = nullptr;
   Indvar->updateIncoming(beg, Entry);
   Indvar->updateIncoming(loopchange, While_Loop);
@@ -620,6 +616,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   SubstitudeTrait.indvar->RAUW(Indvar);
   delete SubstitudeTrait.indvar;
   PhiInst *new_res = nullptr;
+ 
   if (HasRes) {
     assert(SubstitudeTrait.res->PhiRecord.size() == 1);
     auto orig = SubstitudeTrait.res->GetOperand(0);
@@ -627,15 +624,15 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
     new_res->updateIncoming(orig, Entry);
     new_res->updateIncoming(SubstitudeTrait.call, While_Loop);
     While_Loop->push_back(new_res);
-    SubstitudeTrait.res->RAUW(orig);
+    SubstitudeTrait.res->RAUW(new_res);
   }
   // maping
   std::unordered_set<User *> Worklist{loop_body};
   Worklist.insert(loopchange);
   // WA case:./testcases/functional/62_percolation.sy
-  // Reason : when begin and end is const, const step will be faultly RSUW to beg and en
-  // No need to insert new_cmp for it has already been successfully adjusted
-  // Worklist.insert(new_cmp);
+  // Reason : when begin and end is const, const step will be faultly RSUW to
+  // beg and en No need to insert new_cmp for it has already been successfully
+  // adjusted Worklist.insert(new_cmp);
   if (HasRes)
     Worklist.insert(new_res);
   for (auto inst : Worklist) {
@@ -651,7 +648,6 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
       }
     }
   }
-
   for (auto inst : Worklist) {
     for (auto &use : inst->Getuselist()) {
       if (ValMap.find(use->GetValue()) != ValMap.end()) {
@@ -662,7 +658,6 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
       }
     }
   }
-
   // add arg
   std::vector<Value *> args{begin, end};
   for (const auto &[val, arg] : ValMap)
