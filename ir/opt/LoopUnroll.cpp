@@ -30,13 +30,13 @@ bool LoopUnroll::Run() {
       }
     } else if (AM.FindAttr(loop->GetHeader(), Rotate) &&
                CanBeHalfUnroll(loop)) {
-      // auto unrollbody = ExtractLoopBody(loop);
-      // if (unrollbody) {
-      //   auto bb = Half_Unroll(loop, unrollbody);
-      //   return false;
-      //   CleanUp(loop, bb);
-      //   return true;
-      // }
+      auto unrollbody = ExtractLoopBody(loop);
+      if (unrollbody) {
+        auto bb = Half_Unroll(loop, unrollbody);
+        return false;
+        CleanUp(loop, bb);
+        return true;
+      }
     }
   }
   return false;
@@ -401,9 +401,9 @@ bool LoopUnroll::CanBeHalfUnroll(LoopInfo *loop) {
   int iteration = 0;
   int cost = CaculatePrice(body, m_func);
   if (cost > 50)
-    HalfUnrollTimes = 3;
+    HalfUnrollTimes = 4;
   else
-    HalfUnrollTimes = 5;
+    HalfUnrollTimes = 6;
   return true;
 }
 

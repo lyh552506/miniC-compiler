@@ -3,10 +3,12 @@
 #include "../../include/ir/Analysis/dominant.hpp"
 #include "../../include/ir/opt/BlockMerge.hpp"
 #include "../../include/ir/opt/CSE.hpp"
+#include "../../include/ir/opt/Cache.hpp"
 #include "../../include/ir/opt/CondMerge.hpp"
 #include "../../include/ir/opt/ConstantFold.hpp"
 #include "../../include/ir/opt/ConstantProp.hpp"
 #include "../../include/ir/opt/DCE.hpp"
+#include "../../include/ir/opt/DSE.hpp"
 #include "../../include/ir/opt/DeadArgsElimination.hpp"
 #include "../../include/ir/opt/DealCriticalEdges.hpp"
 #include "../../include/ir/opt/GepCombine.hpp"
@@ -14,6 +16,7 @@
 #include "../../include/ir/opt/Global2Local.hpp"
 #include "../../include/ir/opt/Inline.hpp"
 #include "../../include/ir/opt/InstructionSimplify.hpp"
+#include "../../include/ir/opt/LoadElimination.hpp"
 #include "../../include/ir/opt/Local2Global.hpp"
 #include "../../include/ir/opt/LoopDeletion.hpp"
 #include "../../include/ir/opt/LoopParallel.hpp"
@@ -23,6 +26,7 @@
 #include "../../include/ir/opt/PassManagerBase.hpp"
 #include "../../include/ir/opt/PromoteMemtoRegister.hpp"
 #include "../../include/ir/opt/SSAPRE.hpp"
+#include "../../include/ir/opt/SelfStoreElimination.hpp"
 #include "../../include/ir/opt/StoreOnlyGlobalElimination.hpp"
 #include "../../include/ir/opt/TailRecurseElimination.hpp"
 #include "../../include/ir/opt/cfgSimplify.hpp"
@@ -30,9 +34,6 @@
 #include "../../include/ir/opt/licm.hpp"
 #include "../../include/ir/opt/mem2reg.hpp"
 #include "../../include/ir/opt/reassociate.hpp"
-#include "../../include/ir/opt/DSE.hpp"
-#include "../../include/ir/opt/LoadElimination.hpp"
-#include "../../include/ir/opt/SelfStoreElimination.hpp"
 #include <any>
 #include <getopt.h>
 #include <memory>
@@ -69,7 +70,8 @@ enum PassName {
   blockmerge,
   Dse,
   loadeliminaion,
-  selfstoreelimination
+  selfstoreelimination,
+  cacheLookUp,
 };
 
 static struct option long_options[] = {
@@ -98,9 +100,7 @@ static struct option long_options[] = {
     {"CondMerge", no_argument, 0, 26},
     {"GepEvaluate", no_argument, 0, 27},
     {"BlockMerge", no_argument, 0, 28},
-    {"dse", no_argument, 0, 29},
-    {"LoadElimination", no_argument, 0, 30},
-    {"SelfStoreElimination", no_argument, 0, 31},
+    {"CacheLookUp", no_argument, 0, 32},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},
@@ -141,7 +141,6 @@ public:
     Contain.emplace_back(pass);
     return static_cast<Pass *>(result);
   }
-
 
   void AddAttr(BasicBlock *LoopHeader, LoopAttr attr) {
     LoopForm[LoopHeader].insert(attr);

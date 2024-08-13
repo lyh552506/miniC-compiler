@@ -86,6 +86,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case Dse:
       AddPass(Dse);
       break;
+    case cacheLookUp:
+      AddPass(cacheLookUp);
+      break;
     case O0:
       level = O0;
       break;
@@ -170,8 +173,7 @@ void _PassManager::RunOnLevel() {
         PassChangedBegin(curfunc) PassChangedEnd
 
             RunLevelPass(BlockMerge, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd 
-        
+        PassChangedBegin(curfunc) PassChangedEnd
       }
       return;
       while (RunImpl<Inliner>(module, AM)) {
@@ -517,6 +519,10 @@ void _PassManager::RunOnTest() {
         }
         case blockmerge: {
           auto m_blockmerge = RunImpl<BlockMerge>(curfunc, AM);
+          break;
+        }
+        case cacheLookUp: {
+          auto m_cache = RunImpl<CacheLookUp>(curfunc, AM);
           break;
         }
         default: {
