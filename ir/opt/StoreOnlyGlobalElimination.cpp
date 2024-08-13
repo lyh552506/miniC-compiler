@@ -30,7 +30,7 @@ void StoreOnlyGlobalElimination::DetectStoreOnlyGlobal()
 {
     for (auto &ptr : module->GetGlobalVariable())
     {
-        if (ptr->usage == Variable::UsageTag::Param)
+        if (ptr->usage == Variable::UsageTag::Param || ptr->ForParallel)
             continue;
         else if (ptr->usage == Variable::UsageTag::Constant)
         {
