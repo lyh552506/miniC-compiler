@@ -378,6 +378,21 @@ void RISCVISel::InstLowering(BinaryInst* inst){
         {
             if(inst->GetType()==IntType::NewIntTypeGet()) {
                 if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
+                    auto i32val=constint->GetVal();
+                    for(int i=0;i<=30;i++){
+                        int val=1<<i;
+                        if(val==i32val){
+                            auto andi=new RISCVMIR(RISCVMIR::_andi);
+                            auto def=ctx.createVReg(riscv_i32);
+                            andi->SetDef(def);
+                            andi->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                            andi->AddOperand(Imm::GetImm(ConstIRInt::GetNewConstant(i32val-1)));
+                            ctx.insert_val2mop(inst,def);
+                            ctx(andi);
+                            return;
+                        }
+                    }
+                    
                     auto minst=new RISCVMIR(RISCVMIR::_remw);
                     minst->SetDef(ctx.mapping(inst->GetDef()));
                     minst->AddOperand(ctx.mapping(inst->GetOperand(0)));

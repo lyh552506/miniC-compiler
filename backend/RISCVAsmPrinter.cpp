@@ -91,6 +91,7 @@ void dataSegment::GenerateGloblvarList(Module* module, RISCVLoweringContext& ctx
     }
 }
 void dataSegment::GenerateTempvarList(RISCVLoweringContext& ctx) {
+    return;
     for (auto& function : ctx.GetFunctions()) {
         for (auto block : *function) {
             for(mylist<RISCVBasicBlock,RISCVMIR>::iterator it=block->begin();it!=block->end();++it) {

@@ -822,3 +822,43 @@ void GraphColor::CaculateSpillLiveness() {
       }
     }
 }
+
+void GraphColor::LiveInfoInit()
+{
+    BlockLivein.clear();
+    BlockLiveout.clear();
+    BlockInfo.clear();
+    RegLiveness.clear();
+    instNum.clear();
+    InstLive.clear();
+    ValsInterval.clear();
+    freezeWorkList.clear();
+    worklistMoves.clear();
+    simplifyWorkList.clear();
+    spillWorkList.clear();
+    spillWorkList.clear();
+    spilledNodes.clear();
+    initial.clear();
+    coalescedNodes.clear();
+    constrainedMoves.clear();
+    coalescedMoves.clear();
+    frozenMoves.clear();
+    coloredNode.clear();
+    AdjList.clear();
+    selectstack.clear();
+    belongs.clear();
+    activeMoves.clear();
+    alias.clear();
+    RegType.clear();
+    // AlreadySpill.clear();
+    InstLive.clear();
+    Precolored.clear();
+    color.clear();
+    moveList.clear();
+    instNum.clear();
+    RegLiveness.clear();
+    assist.clear();
+    Degree.clear();
+    adjSet.clear();
+    SpillStack.clear();
+}

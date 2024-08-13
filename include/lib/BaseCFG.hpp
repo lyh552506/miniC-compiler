@@ -9,6 +9,7 @@
 #include "Type.hpp"
 #include <string>
 #include <set>
+#include <unordered_set>
 class User;
 class Value;
 class BasicBlock;
@@ -98,6 +99,7 @@ class Value
     InnerDataType GetTypeEnum();
     virtual Type* GetType();
     bool Negative_tag = false;
+    bool Change = false;
     void SetType(Type* _ty){ tp = _ty;}
     void add_user(Use* __data);
     virtual bool isConst(){return false;}
@@ -111,7 +113,7 @@ class Value
     bool isConstZero();
     bool isConstOne();
     int GetUserListSize(){return GetUserlist().GetSize();}
-    std::set<Function*> Change_Funcs;
+    std::unordered_set<Function*> ReadFunc;
     template<typename T>
     T* as(){return dynamic_cast<T*>(this);}
 };
