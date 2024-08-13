@@ -65,7 +65,7 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
     HandleBlockIn(node->ValueAddr, node);
     for (User *inst : *block)
     {
-        if (auto alloca = dynamic_cast<AllocaInst *>(inst))
+        if(auto alloca = dynamic_cast<AllocaInst*>(inst))
         {
             allocas.insert(alloca);
             continue;
@@ -194,32 +194,6 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
             }
             continue;
         }
-        if (auto binary = dynamic_cast<BinaryInst *>(inst))
-        {
-            if (binary->IsAtomic())
-            {
-                Value *op1 = binary->GetOperand(0);
-                Value *op2 = binary->GetOperand(1);
-                if (auto gep1 = dynamic_cast<GetElementPtrInst *>(op1))
-                {
-                    if (auto alloca = dynamic_cast<AllocaInst *>(gep1->Getuselist()[0]->usee))
-                    {
-                        alloca->HasStored = true;
-                        alloca->AllZero = false;
-                        AllocaInitMap.erase(alloca);
-                    }
-                }
-                if (auto gep2 = dynamic_cast<GetElementPtrInst *>(op2))
-                {
-                    if (auto alloca = dynamic_cast<AllocaInst *>(gep2->Getuselist()[0]->usee))
-                    {
-                        alloca->HasStored = true;
-                        alloca->AllZero = false;
-                        AllocaInitMap.erase(alloca);
-                    }
-                }
-            }
-        }
     }
     return modified;
 }
@@ -276,7 +250,7 @@ void GepEvaluate::HandleBlockIn(ValueAddr_Struct &addr, HandleNode *node)
             maps.push_back(&(HandleNode->ValueAddr));
         else
         {
-            for (auto alloca : allocas)
+            for(auto alloca : allocas)
                 alloca->HasStored = true;
             addr.clear();
             return;

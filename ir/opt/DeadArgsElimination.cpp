@@ -44,14 +44,6 @@ void DeadArgsElimination::NormalHandle(Function *func)
                         break;
                     }
                 }
-                else if(auto binary = dynamic_cast<BinaryInst*>(User_->GetUser()))
-                {
-                    if(binary->IsAtomic())
-                    {
-                        flag = false;
-                        break;
-                    }
-                }
                 else
                 {
                     flag = false;
