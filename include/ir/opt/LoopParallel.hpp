@@ -12,12 +12,18 @@ class _AnalysisManager;
 class LoopParallel : public _PassManagerBase<LoopParallel, Function> {
 public:
   LoopParallel(Function *func, _AnalysisManager &_AM) : m_func(func), AM(_AM) {
-    if (!Storage_int)
+    if (!Storage_int) {
       Storage_int = new Variable(Variable::GlobalVariable,
                                  IntType::NewIntTypeGet(), "Storage_int");
-    if (!Storage_float)
-      Storage_float = new Variable(Variable::GlobalVariable,
-                                   FloatType::NewFloatTypeGet(), "Storage_float");
+      Storage_int->ForParallel = true;
+    }
+
+    if (!Storage_float) {
+      Storage_float =
+          new Variable(Variable::GlobalVariable, FloatType::NewFloatTypeGet(),
+                       "Storage_float");
+      Storage_float->ForParallel = true;
+    }
   }
   bool Run();
   ~LoopParallel() {

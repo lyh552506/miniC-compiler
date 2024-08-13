@@ -65,6 +65,7 @@ class Variable:public User
         }
         return uselist[0]->usee;
     };
+    bool ForParallel=false; //for parallel global, cant be local or eliminate
     virtual Value* clone(std::unordered_map<Operand,Operand>&) override;
 };
 

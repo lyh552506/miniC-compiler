@@ -58,7 +58,7 @@ bool LoopParallel::Run() {
       std::cerr << "Find a Parallelable Loop: " << loop->GetHeader()->GetName()
                 << "\n";
       SubstitudeTrait.Init();
-
+      
       auto call = ExtractLoopParallelBody(loop);
       MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
       return true;
@@ -110,7 +110,12 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
   if (resPhi) {
     // return false;  //tmp choice
     auto res = resPhi->ReturnValIn(latch);
-
+    // res必须是加
+    if (!dynamic_cast<BinaryInst *>(res))
+      return false;
+    auto bin = dynamic_cast<BinaryInst *>(res);
+    if (bin->getopration() != BinaryInst::Op_Add)
+      return false;
     std::set<Value *> assist{resPhi, res};
     for (auto use : res->GetUserlist()) {
       auto UserBB = use->GetUser()->GetParent();
@@ -504,6 +509,8 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
     auto operand = st->GetOperand(1);
     if (!bin || bin != StoreVal)
       break;
+    if(bin->GetUserListSize()!=1)
+      return false;
     _DEBUG(std::cerr << "Match Load Store!" << std::endl;)
     auto change =
         bin->GetOperand(0) == ld ? bin->GetOperand(1) : bin->GetOperand(0);
@@ -572,7 +579,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   While_Loop->SetName(While_Loop->GetName() + ".While_Loop");
   Exit->SetName(Exit->GetName() + ".Exit");
   Entry->GenerateUnCondInst(While_Loop);
- 
+
   if (ShoudPreserveRes) {
     auto st = SubstitudeTrait.res->GetTypeEnum() == IR_Value_INT
                   ? Storage_int
@@ -616,7 +623,7 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   SubstitudeTrait.indvar->RAUW(Indvar);
   delete SubstitudeTrait.indvar;
   PhiInst *new_res = nullptr;
- 
+
   if (HasRes) {
     assert(SubstitudeTrait.res->PhiRecord.size() == 1);
     auto orig = SubstitudeTrait.res->GetOperand(0);
