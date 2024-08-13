@@ -34,6 +34,6 @@ private:
   std::vector<LoopInfo *> DeleteLoop;
   Value *OriginChange = nullptr;
   BasicBlock *prehead = nullptr;
-  const int MaxInstCost = 5000;
+  const int MaxInstCost = 1000;
   int HalfUnrollTimes = 0;
 };
