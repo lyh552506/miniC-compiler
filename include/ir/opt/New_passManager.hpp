@@ -33,6 +33,7 @@
 #include "../../include/ir/opt/DSE.hpp"
 #include "../../include/ir/opt/LoadElimination.hpp"
 #include "../../include/ir/opt/SelfStoreElimination.hpp"
+#include "../../include/ir/opt/IndVarSimplify.hpp"
 #include <any>
 #include <getopt.h>
 #include <memory>
@@ -69,7 +70,9 @@ enum PassName {
   blockmerge,
   Dse,
   loadeliminaion,
-  selfstoreelimination
+  selfstoreelimination,
+  cachelookup,
+  indvarsimplify
 };
 
 static struct option long_options[] = {
@@ -101,6 +104,8 @@ static struct option long_options[] = {
     {"dse", no_argument, 0, 29},
     {"LoadElimination", no_argument, 0, 30},
     {"SelfStoreElimination", no_argument, 0, 31},
+    {"CacheLookUp", no_argument, 0, 32},
+    {"IndVarSimplify", no_argument, 0, 33},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},

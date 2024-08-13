@@ -86,6 +86,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case Dse:
       AddPass(Dse);
       break;
+    case indvarsimplify:
+      AddPass(indvarsimplify);
+      break;
     case O0:
       level = O0;
       break;
@@ -246,6 +249,24 @@ void _PassManager::RunOnLevel() {
       RunImpl<Global2Local>(module, AM);
       }
     }
+          PassChangedBegin(curfunc)
+            PassChangedEnd RunLevelPass(LoopSimplify, curfunc, other);
+        PassChangedBegin(curfunc) PassChangedEnd
+
+            RunLevelPass(LcSSA, curfunc, other);
+        PassChangedBegin(curfunc) PassChangedEnd
+
+            // loop-rotate
+            RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
+                PassChangedEnd // licm
+
+                    RunLevelPass(LICMPass, curfunc, modified);
+        PassChangedBegin(curfunc) PassChangedEnd
+  
+              // loopdeletion
+              RunLevelPass(LoopDeletion, curfunc, modified);
+          PassChangedBegin(curfunc) PassChangedEnd
+          RunLevelPass(IndVarSimplify, curfunc, modified);
         // RunLevelPass(SelfStoreElimination, curfunc, modified)
         // RunLevelPass(DCE, curfunc, modified);
         // RunLevelPass(DeadStoreElimination, curfunc, modified);
@@ -444,6 +465,11 @@ void _PassManager::RunOnTest() {
             bb->num = curfunc->bb_num++;
             curfunc->GetBasicBlock().push_back(bb);
           }
+          break;
+        }
+        case indvarsimplify:
+        {
+          auto m_indvarsimplify = RunImpl<IndVarSimplify>(curfunc, AM);
           break;
         }
         case cse: {

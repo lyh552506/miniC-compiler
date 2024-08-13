@@ -18,8 +18,11 @@ class IndVarSimplify : public _PassManagerBase<IndVarSimplify, Function>
     LoopAnalysis *Loop;
     _AnalysisManager &AM;
     std::vector<LoopInfo *> DeleteLoop;
+    std::vector<LoopInfo*> Loops;
     void init();
-
+    bool RunOnLoop(LoopInfo* loop);
+    Value* CaculateTimes(LoopInfo* loop);
+    bool HandlePhi(PhiInst* inst, LoopInfo* loop, Value* Times);
   public:
     IndVarSimplify(Function *func_, _AnalysisManager &AM_) : func(func_), AM(AM_)
     {
