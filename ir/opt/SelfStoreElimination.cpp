@@ -22,7 +22,7 @@ void SelfStoreElimination::OrderBlock(BasicBlock *block)
 
 bool SelfStoreElimination::Run()
 {
-    std::unordered_map<Value *, std::vector<StoreInst *>> info;
+    std::unordered_map<Value *, std::vector<User *>> info;
     Collect(info);
     CheckSelfStore(info);
     if (info.empty())
@@ -32,10 +32,16 @@ bool SelfStoreElimination::Run()
         for (auto inst : val)
             wait_del.insert(inst);
     }
+    while (!wait_del.empty())
+    {
+        User *inst = *wait_del.begin();
+        wait_del.erase(inst);
+        delete inst;
+    }
     return true;
 }
 
-void SelfStoreElimination::Collect(std::unordered_map<Value *, std::vector<StoreInst *>> &info)
+void SelfStoreElimination::Collect(std::unordered_map<Value *, std::vector<User *>> &info)
 {
     for (BasicBlock *block : DFSOrder)
     {
@@ -49,14 +55,30 @@ void SelfStoreElimination::Collect(std::unordered_map<Value *, std::vector<Store
                     if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
                         info[alloca].push_back(store);
                 }
-                else
+                else if (!dynamic_cast<PhiInst *>(dst) && !dst->isGlobal())
                     info[dst].push_back(store);
+            }
+            else if (dynamic_cast<CallInst *>(inst))
+            {
+                Value *call_func = inst->Getuselist()[0]->usee;
+                std::string name = call_func->GetName();
+                if (name == "llvm.memcpy.p0.p0.i32")
+                {
+                    Value *dst = inst->GetOperand(1);
+                    if (auto gep = dynamic_cast<GetElementPtrInst *>(dst))
+                    {
+                        if (auto alloca = dynamic_cast<AllocaInst *>(gep->Getuselist()[0]->usee))
+                            info[alloca].push_back(inst);
+                    }
+                    else if (auto alloca = dynamic_cast<AllocaInst *>(dst))
+                        info[alloca].push_back(inst);
+                }
             }
         }
     }
 }
 
-void SelfStoreElimination::CheckSelfStore(std::unordered_map<Value *, std::vector<StoreInst *>> &info)
+void SelfStoreElimination::CheckSelfStore(std::unordered_map<Value *, std::vector<User *>> &info)
 {
     for (BasicBlock *block : *func)
     {
@@ -92,6 +114,15 @@ void SelfStoreElimination::CheckSelfStore(std::unordered_map<Value *, std::vecto
                             }
                         }
                     }
+                }
+            }
+            else if (dynamic_cast<CallInst *>(inst))
+            {
+                Function *call_func = dynamic_cast<Function *>(inst->Getuselist()[0]->usee);
+                if (call_func)
+                {
+                    for (Value *val : call_func->Change_Val)
+                        info.erase(val);
                 }
             }
             else

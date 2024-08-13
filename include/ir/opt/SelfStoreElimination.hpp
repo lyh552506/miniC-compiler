@@ -17,8 +17,8 @@ class SelfStoreElimination : public _PassManagerBase<SelfStoreElimination, Funct
     std::set<User *> wait_del;
     std::vector<BasicBlock *> DFSOrder;
     void OrderBlock(BasicBlock *block);
-    void Collect(std::unordered_map<Value *, std::vector<StoreInst *>> &info);
-    void CheckSelfStore(std::unordered_map<Value *, std::vector<StoreInst *>> &info);
+    void Collect(std::unordered_map<Value *, std::vector<User *>> &info);
+    void CheckSelfStore(std::unordered_map<Value *, std::vector<User *>> &info);
     void init();
 
   public:
