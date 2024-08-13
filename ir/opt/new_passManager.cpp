@@ -167,9 +167,9 @@ void _PassManager::RunOnLevel() {
       //               RunLevelPass(DCE, curfunc, other);
       //   PassChangedBegin(curfunc) PassChangedEnd
 
-            RunLevelPass(BlockMerge, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
-      }
+      //       RunLevelPass(BlockMerge, curfunc, other);
+      //   PassChangedBegin(curfunc) PassChangedEnd
+      // }
 
       CommonPass(AM);
 
