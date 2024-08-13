@@ -95,7 +95,7 @@ void SideEffect::CreateSideEffectFunc()
 bool SideEffect::FuncHasSideEffect(Function *func)
 {
     bool flag = false;
-    if (RecursiveFuncs.count(func))
+    if (Judge && RecursiveFuncs.count(func))
         flag = true;
     if (func->tag == Function::ParallelBody || func->tag == Function::UnrollBody)
         flag = true;
@@ -138,12 +138,12 @@ bool SideEffect::FuncHasSideEffect(Function *func)
                 Function *Func = dynamic_cast<Function *>(inst->Getuselist()[0]->usee);
                 if (Func && Func->HasSideEffect)
                     flag = true;
-                if(Func)
+                if (Func)
                 {
-                    for(int i = 1; i < inst->Getuselist().size() ; i++)
+                    for (int i = 1; i < inst->Getuselist().size(); i++)
                     {
-                        Value* param = Func->GetParams()[i - 1].get();
-                        if(param && Func->Change_Val.count(param))
+                        Value *param = Func->GetParams()[i - 1].get();
+                        if (param && Func->Change_Val.count(param))
                         {
                             flag = true;
                             func->Change_Val.insert(inst->GetOperand(i));
@@ -182,7 +182,7 @@ bool SideEffect::FuncHasSideEffect(Function *func)
                 {
                     if (val->isGlobal())
                         val->ReadFunc.insert(func);
-                    else if(val->isParam())
+                    else if (val->isParam())
                         val->ReadFunc.insert(func);
                 }
             }

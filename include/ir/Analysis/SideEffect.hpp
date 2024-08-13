@@ -9,6 +9,7 @@ class SideEffect : public _AnalysisManagerBase<SideEffect, Module>
     std::set<Function*> RecursiveFuncs;
     Module* module;
 private:
+    bool Judge = false;
     void CreateCallMap(Function* func);
     void VisitFunc(Function* entry, std::set<Function*>& visited);
     void DetectRecursive();
@@ -16,6 +17,6 @@ private:
     void CreateSideEffectFunc();
     bool RunOnModule(Module* mod);
 public:
-    explicit SideEffect(Module* mod) : module(mod) {}
+    SideEffect(Module* mod,bool Judge_Recursive=true) : module(mod),Judge(Judge_Recursive) {}
     void* GetResult() { RunOnModule(module); return this; }
 };
