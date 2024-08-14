@@ -1,4 +1,4 @@
-#include "../../include/ir/opt/IndVarSimplify.hpp"
+#include "../../include/ir/opt/ScalarStrengthReduce.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
 #include "../../include/ir/Analysis/SideEffect.hpp"
 #include "../../include/ir/Analysis/dominant.hpp"
@@ -15,32 +15,7 @@
 #include <unordered_set>
 #include <vector>
 
-// namespace MatchTool
-// {
-//     struct Match
-//     {
-//         // 0 : no phi  1 : LHS phi  2 : RHS phi
-//         std::pair<User::OpID, int> operator()(Value& val1, Value& val2, User* inst)
-//         {
-//             if(dynamic_cast<BinaryInst*>(inst))
-//             {
-//                 val1 = *inst->GetOperand(0);
-//                 val2 = *inst->GetOperand(1);
-//                 User::OpID id = inst->GetInstId();
-//                 if(dynamic_cast<PhiInst*>(&val1))
-//                     return {id, 1};
-//                 else if(dynamic_cast<PhiInst*>(&val2))
-//                     return {id, 2};
-//                 else if(dynamic_cast<PhiInst*>(&val1) && dynamic_cast<PhiInst*>(&val2))
-//                     return {id, 3};
-//                 else
-//                     return {id, 0};
-//             }
-//         }
-//     };
-// }
-
-void IndVarSimplify::init()
+void ScalarStrengthReduce::init()
 {
     DomTree = AM.get<dominance>(func);
     Loop = AM.get<LoopAnalysis>(func, DomTree, std::ref(DeleteLoop));
@@ -48,124 +23,15 @@ void IndVarSimplify::init()
     Loops = Loop->GetLoops();
 }
 
-// bool IndVarSimplify::Run()
-// {
-//     bool modified = false;
-//     for (auto loop : Loops)
-//         modified |= RunOnLoop(loop);
-//     return modified;
-// }
-
-// bool IndVarSimplify::RunOnLoop(LoopInfo *loop)
-// {
-//     LoopSimplify::CaculateLoopInfo(loop, Loop);
-//     if (loop->CantCalcTrait())
-//         return false;
-//     auto Exits = Loop->GetExit(loop);
-//     if (Exits.size() != 1)
-//         return false;
-//     Value* IndVar = loop->trait.indvar;
-//     if(!IndVar)
-//         return false;
-    
-//     BasicBlock* header = loop->GetHeader();
-
-
-
-//     // Value *Times = CaculateTimes(loop);
-//     // if (!Times)
-//     //     return false;
-
-//     bool modified = false;
-//     // std::vector<BasicBlock *> Bodys = loop->GetLoopBody();
-//     // std::set<PhiInst *> Phis{};
-
-//     // for (BasicBlock *block : Bodys)
-//     // {
-//     //     auto iter = block->begin();
-//     //     while (auto phi = dynamic_cast<PhiInst *>(*iter))
-//     //     {
-//     //         if (phi->Getuselist().size() < 3)
-//     //             Phis.insert(phi);
-//     //         ++iter;
-//     //     }
-//     // }
-//     // Phis.erase(loop->trait.indvar);
-
-//     // for (auto phi : Phis)
-//     //     modified |= HandlePhi(phi, loop, Times);
-
-//     return modified;
-// }
-
-
-// bool IndVarSimplify::HandlePhi(PhiInst *inst, LoopInfo *loop, Value *Times)
-// {
-//     BasicBlock* ExitBlock = Loop->GetExit(loop).front();
-//     BasicBlock* Preheader = Loop->GetPreHeader(loop);
-//     Value* IndVar = nullptr;
-//     Value* IncomeValue = nullptr;    
-//     bool Flag = false;
-//     for (auto &[key, val] : inst->PhiRecord)
-//     {
-//         if (val.second == Preheader)
-//         {
-//             Flag = true;
-//             IncomeValue = val.first;
-//         }
-//         else
-//             IndVar = val.first;
-//     }
-//     if(!Flag)
-//         return false;
-//     auto iter = ExitBlock->begin();
-//     PhiInst* Exit_Phi = nullptr;
-//     Value* IndVar_base = nullptr;
-//     Value* IndVar_op = nullptr;
-//     for(auto user : IndVar->GetUserlist())
-//     {
-//         User* user_inst = user->GetUser();
-//         if(user_inst->GetParent() == ExitBlock && dynamic_cast<PhiInst*>(user_inst))
-//         {
-//             Exit_Phi = dynamic_cast<PhiInst*>(user_inst);
-//         }
-//         else if(user_inst == inst)
-//             continue;
-//         else
-//         {
-//             auto Result = MatchTool::Match{}(*IndVar_base, *IndVar_op, user_inst);
-//             if(Result.second == 0)
-//             {
-
-//             }
-//             else if(Result.second == 1)
-//             {
-                
-//             }
-//             else if(Result.second == 2)
-//             {
-
-//             }
-//             else if(Result.second == 3)
-//             {
-
-//             }
-//         }
-//     }
-
-    
-//     BasicBlock* new_block = new BasicBlock;
-
-// }
-
-bool IndVarSimplify::Run()
+bool ScalarStrengthReduce::Run()
 {
     bool modified = false;
     for (LoopInfo *loop : Loops)
         modified |= RunOnLoop(loop);
+    return modified;
 }
 
-bool IndVarSimplify::RunOnLoop(LoopInfo *loop)
+bool ScalarStrengthReduce::RunOnLoop(LoopInfo *loop)
 {
     if (loop->GetHeader() != Loop->GetLatch(loop))
         return false;
@@ -234,14 +100,17 @@ bool IndVarSimplify::RunOnLoop(LoopInfo *loop)
                             auto iter = ExitBlock->begin();
                             while (dynamic_cast<PhiInst *>(*iter))
                                 ++iter;
-                            iter.insert_before(binary);
-                            BinaryInst *New_add = new BinaryInst(binary, BinaryInst::Op_Mul, Add_RHS);
+                            SextInst* new_sext = new SextInst(binary);
+                            iter.insert_before(new_sext);
+                            BinaryInst *New_add = new BinaryInst(new_sext, BinaryInst::Op_Mul, Add_RHS);
                             iter.insert_before(New_add);
                             BinaryInst *New_Sub = new BinaryInst(New_add, BinaryInst::Op_Sub, Begin);
                             iter.insert_before(New_Sub);
                             BinaryInst *New_Rem = new BinaryInst(New_Sub, BinaryInst::Op_Mod, Rem_RHS);
                             iter.insert_before(New_Rem);
-                            phi->RAUW(New_Rem);
+                            TruncInst* new_trunc = new TruncInst(New_Rem);
+                            iter.insert_before(new_trunc);
+                            phi->RAUW(new_trunc);
                             delete phi;
                             return true;
                         }
@@ -281,7 +150,7 @@ bool IndVarSimplify::RunOnLoop(LoopInfo *loop)
     }
 }
 
-Value *IndVarSimplify::CaculateTimes(LoopInfo *loop)
+Value *ScalarStrengthReduce::CaculateTimes(LoopInfo *loop)
 {
     Value *iteration = nullptr;
     if (dynamic_cast<ConstIRInt *>(loop->trait.initial) && dynamic_cast<ConstIRInt *>(loop->trait.boundary) &&
