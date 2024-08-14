@@ -159,7 +159,9 @@ class User:public Value,public list_node<BasicBlock,User>
         Trunc,
         FP2SI,
         SI2FP,
-        BinaryUnknown
+        BinaryUnknown,
+        Max,
+        Min
     };
     OpID id;
     using UsePtr=std::unique_ptr<Use>;
