@@ -10,7 +10,7 @@
 
 class _AnalysisManager;
 
-class IndVarSimplify : public _PassManagerBase<IndVarSimplify, Function>
+class ScalarStrengthReduce : public _PassManagerBase<ScalarStrengthReduce, Function>
 {
   private:
     Function *func;
@@ -21,15 +21,13 @@ class IndVarSimplify : public _PassManagerBase<IndVarSimplify, Function>
     std::vector<LoopInfo*> Loops;
     void init();
     bool RunOnLoop(LoopInfo* loop);
-    bool ConstFoldLoopAddRem();
     Value* CaculateTimes(LoopInfo* loop);
-    bool HandlePhi(PhiInst* inst, LoopInfo* loop, Value* Times);
   public:
-    IndVarSimplify(Function *func_, _AnalysisManager &AM_) : func(func_), AM(AM_)
+    ScalarStrengthReduce(Function *func_, _AnalysisManager &AM_) : func(func_), AM(AM_)
     {
         init();
     }
-    ~IndVarSimplify()
+    ~ScalarStrengthReduce()
     {
         for (auto Loop : DeleteLoop)
             delete Loop;

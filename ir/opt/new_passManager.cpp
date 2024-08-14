@@ -86,8 +86,8 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case Dse:
       AddPass(Dse);
       break;
-    case indvarsimplify:
-      AddPass(indvarsimplify);
+    case scalarstrengthreduce:
+      AddPass(scalarstrengthreduce);
       break;
     case O0:
       level = O0;
@@ -267,7 +267,7 @@ void _PassManager::RunOnLevel() {
               RunLevelPass(LoopDeletion, curfunc, modified);
           PassChangedBegin(curfunc) PassChangedEnd
           // RunLevelPass(ConstantProp, curfunc, modified)
-          RunLevelPass(IndVarSimplify, curfunc, modified);
+          RunLevelPass(ScalarStrengthReduce, curfunc, modified);
           RunLevelPass(LoopDeletion, curfunc, modified);
           // RunLevelPass(ConstantProp, curfunc, modified)
         // RunLevelPass(SelfStoreElimination, curfunc, modified)
@@ -471,9 +471,9 @@ void _PassManager::RunOnTest() {
           }
           break;
         }
-        case indvarsimplify:
+        case scalarstrengthreduce:
         {
-          auto m_indvarsimplify = RunImpl<IndVarSimplify>(curfunc, AM);
+          auto m_scalarstrengthreduce = RunImpl<ScalarStrengthReduce>(curfunc, AM);
           break;
         }
         case cse: {
