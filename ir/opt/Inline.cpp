@@ -179,28 +179,36 @@ void Inliner::init(Module *m)
         if (CanMatchLib.first != 0)
         {
             /*1 min  2 max*/
-            if(CanMatchLib.first == 1)
+            if (CanMatchLib.first == 1)
             {
-                if(CanMatchLib.second == BinaryInst::Op_L)
+                if (CanMatchLib.second == BinaryInst::Op_L)
                 {
                     auto &calllists = func->GetUserlist();
                     for (auto callinst : calllists)
                     {
                         auto call = callinst->GetUser()->as<CallInst>();
-                        MinInst* inst = new MinInst(call->GetOperand(1), call->GetOperand(2));
+                        MinInst *inst = nullptr;
+                        if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
+                            inst = new MinInst(call->GetOperand(2), call->GetOperand(1));
+                        else
+                            inst = new MinInst(call->GetOperand(1), call->GetOperand(2));
                         BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
                         Pos.insert_before(inst);
                         call->RAUW(inst);
                         delete call;
                     }
                 }
-                else if(CanMatchLib.second == BinaryInst::Op_G)
+                else if (CanMatchLib.second == BinaryInst::Op_G)
                 {
                     auto &calllists = func->GetUserlist();
                     for (auto callinst : calllists)
                     {
                         auto call = callinst->GetUser()->as<CallInst>();
-                        MinInst* inst = new MinInst(call->GetOperand(2), call->GetOperand(1));
+                        MinInst *inst = nullptr;
+                        if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
+                            inst = new MinInst(call->GetOperand(2), call->GetOperand(1));
+                        else
+                            inst = new MinInst(call->GetOperand(1), call->GetOperand(2));
                         BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
                         Pos.insert_before(inst);
                         call->RAUW(inst);
@@ -208,28 +216,36 @@ void Inliner::init(Module *m)
                     }
                 }
             }
-            else if(CanMatchLib.first == 2)
+            else if (CanMatchLib.first == 2)
             {
-                if(CanMatchLib.second == BinaryInst::Op_G)
+                if (CanMatchLib.second == BinaryInst::Op_G)
                 {
                     auto &calllists = func->GetUserlist();
                     for (auto callinst : calllists)
                     {
                         auto call = callinst->GetUser()->as<CallInst>();
-                        MaxInst* inst = new MaxInst(call->GetOperand(1), call->GetOperand(2));
+                        MaxInst *inst = nullptr;
+                        if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
+                            inst = new MaxInst(call->GetOperand(2), call->GetOperand(1));
+                        else
+                            inst = new MaxInst(call->GetOperand(1), call->GetOperand(2));
                         BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
                         Pos.insert_before(inst);
                         call->RAUW(inst);
                         delete call;
                     }
                 }
-                else if(CanMatchLib.second == BinaryInst::Op_L)
+                else if (CanMatchLib.second == BinaryInst::Op_L)
                 {
                     auto &calllists = func->GetUserlist();
                     for (auto callinst : calllists)
                     {
                         auto call = callinst->GetUser()->as<CallInst>();
-                        MaxInst* inst = new MaxInst(call->GetOperand(2), call->GetOperand(1));
+                        MaxInst *inst = nullptr;
+                        if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
+                            inst = new MaxInst(call->GetOperand(2), call->GetOperand(1));
+                        else
+                            inst = new MaxInst(call->GetOperand(1), call->GetOperand(2));
                         BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
                         Pos.insert_before(inst);
                         call->RAUW(inst);
@@ -385,20 +401,22 @@ std::pair<int, BinaryInst::Operation> Inliner::MatchLib(Function *func)
                 return std::pair{0, (BinaryInst::Operation)-1};
         }
     }
-    if(!cmp || !RetPhi)
+    if (!cmp || !RetPhi)
         return std::pair{0, (BinaryInst::Operation)-1};
-    Value* LHS = cmp->GetOperand(0);
-    Value* RHS = cmp->GetOperand(1);
-    BasicBlock* Curr = cmp->GetParent();
-    Value* IncomeCur = RetPhi->ReturnValIn(Curr);
-    if((cmp->getopration() == BinaryInst::Op_L && LHS == IncomeCur) || (cmp->getopration() == BinaryInst::Op_G && RHS == IncomeCur))
+    Value *LHS = cmp->GetOperand(0);
+    Value *RHS = cmp->GetOperand(1);
+    BasicBlock *Curr = cmp->GetParent();
+    Value *IncomeCur = RetPhi->ReturnValIn(Curr);
+    if ((cmp->getopration() == BinaryInst::Op_L && LHS == IncomeCur) ||
+        (cmp->getopration() == BinaryInst::Op_G && RHS == IncomeCur))
     {
-        MinInst* min = new MinInst(LHS->GetType());
+        MinInst *min = new MinInst(LHS->GetType());
         return std::pair{1, cmp->getopration()};
     }
-    else if((cmp->getopration() == BinaryInst::Op_L && RHS == IncomeCur) || (cmp->getopration() == BinaryInst::Op_G && LHS == IncomeCur))
+    else if ((cmp->getopration() == BinaryInst::Op_L && RHS == IncomeCur) ||
+             (cmp->getopration() == BinaryInst::Op_G && LHS == IncomeCur))
     {
-        MaxInst* max = new MaxInst(LHS->GetType());
+        MaxInst *max = new MaxInst(LHS->GetType());
         return std::pair{2, cmp->getopration()};
     }
     return std::pair{0, (BinaryInst::Operation)-1};
