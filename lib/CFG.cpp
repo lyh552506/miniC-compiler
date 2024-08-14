@@ -1064,7 +1064,9 @@ BuildInFunction *BuildInFunction::GetBuildInFunction(std::string _id) {
       return VoidType::NewVoidTypeGet();
     if (_id == "memcpy@plt")
       return VoidType::NewVoidTypeGet();
-    if (_id == "buildin_NotifyWorker")
+    if (_id == "buildin_NotifyWorkerLE")
+      return VoidType::NewVoidTypeGet();
+    if (_id == "buildin_NotifyWorkerLT")
       return VoidType::NewVoidTypeGet();
     if (_id == "buildin_FenceArgLoaded")
       return VoidType::NewVoidTypeGet();

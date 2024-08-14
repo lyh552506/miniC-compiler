@@ -614,8 +614,15 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
             }
         }
     }
+
+    auto getNotifyWorker=[&](){
+        if(func_called->CmpEqual)
+            return BuildInFunction::GetBuildInFunction("buildin_NotifyWorkerLE");
+        else
+            return BuildInFunction::GetBuildInFunction("buildin_NotifyWorkerLT");
+    };
     
-    auto NotifyWorker=BuildInFunction::GetBuildInFunction("buildin_NotifyWorker");
+    auto NotifyWorker=getNotifyWorker();
     auto call=new RISCVMIR(RISCVMIR::call);
     call->AddOperand(M(NotifyWorker));
     call->AddOperand(PhyRegister::GetPhyReg(PhyRegister::a0));
