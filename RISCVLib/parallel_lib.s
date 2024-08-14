@@ -11,7 +11,7 @@
 	.globl	_Z12WorkerThreadPv
 	.type	_Z12WorkerThreadPv, @function
 _Z12WorkerThreadPv:
-.LFB2881:
+.LFB2882:
 	.cfi_startproc
 	addi	sp,sp,-64
 	.cfi_def_cfa_offset 64
@@ -49,7 +49,7 @@ _Z12WorkerThreadPv:
 	fence iorw,ow; amoadd.w.aq zero,s4,0(a5)
 	j	.L2
 	.cfi_endproc
-.LFE2881:
+.LFE2882:
 	.size	_Z12WorkerThreadPv, .-_Z12WorkerThreadPv
 	.align	1
 	.globl	buildin_FenceArgLoaded
@@ -66,16 +66,17 @@ buildin_FenceArgLoaded:
 .LFE2876:
 	.size	buildin_FenceArgLoaded, .-buildin_FenceArgLoaded
 	.align	1
-	.globl	buildin_NotifyWorker
-	.type	buildin_NotifyWorker, @function
-buildin_NotifyWorker:
+	.globl	buildin_NotifyWorkerLT
+	.type	buildin_NotifyWorkerLT, @function
+buildin_NotifyWorkerLT:
 .LFB2880:
 	.cfi_startproc
-	sub	t1,a1,a0
-	li	a5,63
+	sub	a5,a1,a0
+	li	a4,63
 	mv	a6,a0
-	ble	t1,a5,.L20
-	srai	t1,t1,2
+	ble	a5,a4,.L20
+	addi	a5,a5,3
+	srai	t1,a5,2
 	lui	a7,%hi(_ZL5tasks)
 	ble	a1,a0,.L10
 	lui	a4,%hi(_ZL5empty)
@@ -139,13 +140,89 @@ buildin_NotifyWorker:
 	jr	a4
 	.cfi_endproc
 .LFE2880:
-	.size	buildin_NotifyWorker, .-buildin_NotifyWorker
+	.size	buildin_NotifyWorkerLT, .-buildin_NotifyWorkerLT
+	.align	1
+	.globl	buildin_NotifyWorkerLE
+	.type	buildin_NotifyWorkerLE, @function
+buildin_NotifyWorkerLE:
+.LFB2881:
+	.cfi_startproc
+	sub	a5,a1,a0
+	li	a4,62
+	mv	a6,a0
+	ble	a5,a4,.L33
+	addi	a5,a5,4
+	srai	t1,a5,2
+	lui	a7,%hi(_ZL5tasks)
+	ble	a1,a0,.L23
+	lui	a4,%hi(_ZL5empty)
+	addi	a4,a4,%lo(_ZL5empty)
+	andi	a3,a4,3
+	li	t5,1
+	slliw	a3,a3,3
+	lui	t4,%hi(.LANCHOR0)
+	li	t3,-1
+	addi	t4,t4,%lo(.LANCHOR0)
+	lui	a7,%hi(_ZL5tasks)
+	lui	t6,%hi(_ZL4full)
+	srli	t3,t3,32
+	andi	a4,a4,-4
+	sllw	a2,t5,a3
+.L26:
+	mv	a0,a6
+	add	a6,a6,t1
+	slli	a0,a0,32
+	addi	a5,a6,-1
+	srli	a0,a0,32
+	ble	a5,a1,.L24
+	mv	a5,a1
+.L24:
+	slli	a5,a5,32
+	and	a0,a0,t3
+	or	a0,a0,a5
+.L25:
+	fence iorw,ow; amoor.w.aq a5,a2,0(a4)
+	srlw	a5,a5,a3
+	andi	a5,a5,0xff
+	bne	a5,zero,.L25
+	sd	a0,0(t4)
+	addi	a5,a7,%lo(_ZL5tasks)
+	fence iorw,ow; amoadd.w.aq zero,t5,0(a5)
+	fence	iorw,iorw
+	sb	zero,%lo(_ZL4full)(t6)
+	fence	iorw,iorw
+	bgt	a1,a6,.L26
+.L23:
+	lui	a3,%hi(_ZL9task_done)
+.L27:
+	fence	iorw,iorw
+	lw	a5,%lo(_ZL9task_done)(a3)
+	fence	iorw,iorw
+	fence	iorw,iorw
+	sext.w	a5,a5
+	lw	a4,%lo(_ZL5tasks)(a7)
+	fence	iorw,iorw
+	bne	a5,a4,.L27
+	ret
+.L33:
+	slli	a5,a0,32
+	lui	a4,%hi(buildin_funcptr)
+	slli	a1,a1,32
+	srli	a5,a5,32
+	ld	a4,%lo(buildin_funcptr)(a4)
+	or	a5,a5,a1
+	lui	a3,%hi(.LANCHOR0)
+	sd	a5,%lo(.LANCHOR0)(a3)
+	jr	a4
+	.cfi_endproc
+.LFE2881:
+	.size	buildin_NotifyWorkerLE, .-buildin_NotifyWorkerLE
 	.section	.text.startup,"ax",@progbits
 	.align	1
 	.globl	_Z12CreateThreadv
 	.type	_Z12CreateThreadv, @function
 _Z12CreateThreadv:
-.LFB2882:
+.LFB2883:
 	.cfi_startproc
 	lui	a4,%hi(_ZL4full)
 	addi	a4,a4,%lo(_ZL4full)
@@ -164,15 +241,15 @@ _Z12CreateThreadv:
 	.cfi_offset 18, -32
 	andi	a4,a4,-4
 	sllw	a2,a2,a3
-.L22:
+.L35:
 	fence iorw,ow; amoor.w.aq a5,a2,0(a4)
 	srlw	a5,a5,a3
 	andi	a5,a5,0xff
-	bne	a5,zero,.L22
+	bne	a5,zero,.L35
 	mv	s0,sp
 	addi	s2,sp,32
 	lui	s1,%hi(_Z12WorkerThreadPv)
-.L23:
+.L36:
 	li	a3,0
 	addi	a2,s1,%lo(_Z12WorkerThreadPv)
 	li	a1,0
@@ -181,7 +258,7 @@ _Z12CreateThreadv:
 	ld	a0,0(s0)
 	addi	s0,s0,8
 	call	pthread_detach
-	bne	s0,s2,.L23
+	bne	s0,s2,.L36
 	ld	ra,56(sp)
 	.cfi_restore 1
 	ld	s0,48(sp)
@@ -194,7 +271,7 @@ _Z12CreateThreadv:
 	.cfi_def_cfa_offset 0
 	jr	ra
 	.cfi_endproc
-.LFE2882:
+.LFE2883:
 	.size	_Z12CreateThreadv, .-_Z12CreateThreadv
 	.section	.init_array,"aw"
 	.align	3
