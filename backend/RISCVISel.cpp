@@ -242,6 +242,8 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                     // } else assert(0&&"Invalid constint in add inst"); 
                 } else 
                     ctx(Builder(RISCVMIR::_addw,inst));
+            } else if(inst->GetType()==Int64Type::NewInt64TypeGet()) {
+                ctx(Builder(RISCVMIR::_add,inst));
             } else if(inst->GetType()==FloatType::NewFloatTypeGet()) {
                 ctx(Builder(RISCVMIR::_fadd_s,inst));
             }
@@ -258,6 +260,8 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                     minst->AddOperand(ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(constint)));
                     ctx(minst);
                 } else ctx(Builder(RISCVMIR::_subw,inst));
+            } else if(inst->GetType()==Int64Type::NewInt64TypeGet()) {
+                ctx(Builder(RISCVMIR::_sub,inst));
             } else if(inst->GetType()==FloatType::NewFloatTypeGet())
                 ctx(Builder(RISCVMIR::_fsub_s,inst));
             else assert("Illegal!");
@@ -265,7 +269,7 @@ void RISCVISel::InstLowering(BinaryInst* inst){
         }
         case BinaryInst::Op_Mul:
         {
-            if(inst->GetType()==IntType::NewIntTypeGet()) {
+            if(inst->GetType()==IntType::NewIntTypeGet() || inst->GetType()==Int64Type::NewInt64TypeGet()) {
                 if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
                     auto i32val=constint->GetVal();
                     if(i32val==0){
@@ -295,7 +299,13 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                     minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
                     minst->AddOperand(ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(constint)));
                     ctx(minst);
-                } else ctx(Builder(RISCVMIR::_mulw,inst));
+                } else {
+                    if(inst->GetType()==IntType::NewIntTypeGet())
+                        ctx(Builder(RISCVMIR::_mulw,inst));
+                    else if(inst->GetType()==Int64Type::NewInt64TypeGet())   
+                        ctx(Builder(RISCVMIR::_mul,inst));
+                    else assert(0&&"Error Type!");
+                }
             } else if(inst->GetType()==FloatType::NewFloatTypeGet())
                 ctx(Builder(RISCVMIR::_fmul_s,inst));
             else assert("Illegal!");
@@ -364,7 +374,7 @@ void RISCVISel::InstLowering(BinaryInst* inst){
         }
         case BinaryInst::Op_Mod:
         {
-            if(inst->GetType()==IntType::NewIntTypeGet()) {
+            if(inst->GetType()==IntType::NewIntTypeGet() || inst->GetType()==Int64Type::NewInt64TypeGet()) {
                 if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
                     auto i32val=constint->GetVal();
                     for(int i=0;i<=30;i++){
@@ -386,7 +396,13 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                     minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
                     minst->AddOperand(ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(constint)));
                     ctx(minst);
-                } else ctx(Builder(RISCVMIR::_remw,inst));
+                } else {
+                    if(inst->GetType()==IntType::NewIntTypeGet())
+                        ctx(Builder(RISCVMIR::_remw,inst));
+                    else if(inst->GetType()==Int64Type::NewInt64TypeGet()) 
+                        ctx(Builder(RISCVMIR::_rem,inst));
+                    else assert(0&&"Error Type!");
+                }
             } else assert(0&&"Illegal!");
             break;
         }
@@ -821,6 +837,15 @@ void RISCVISel::InstLowering(ZextInst* zext){
     ctx.insert_val2mop(zext,mreg);
 }
 
+void RISCVISel::InstLowering(SextInst* sext) {
+    // StarFive is 64bit machine
+    return;
+}
+
+void RISCVISel::InstLowering(TruncInst* trunc) {
+    ctx(Builder(RISCVMIR::_sext_w, trunc));
+}
+
 void RISCVISel::InstLowering(User* inst){
     if(auto store=dynamic_cast<StoreInst*>(inst))InstLowering(store);
     else if(auto load=dynamic_cast<LoadInst*>(inst))InstLowering(load);
@@ -835,6 +860,8 @@ void RISCVISel::InstLowering(User* inst){
     else if(auto call=dynamic_cast<CallInst*>(inst))InstLowering(call);
     else if(auto ret=dynamic_cast<RetInst*>(inst))InstLowering(ret);
     else if(auto zext=dynamic_cast<ZextInst*>(inst))InstLowering(zext);
+    else if(auto sext=dynamic_cast<SextInst*>(inst))InstLowering(sext);
+    else if(auto trunc=dynamic_cast<TruncInst*>(inst))InstLowering(trunc);
     else assert(0&&"Invalid Inst Type");
 }
 

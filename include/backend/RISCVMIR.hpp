@@ -113,6 +113,10 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         EndMem,
 
+        BeginConvert,
+        _sext_w,
+        EndConvert,
+
         BeginFloat,
 
         BeginFloatMV,

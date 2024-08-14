@@ -43,6 +43,8 @@ class RISCVISel:public BackEndPass<Function>{
     void InstLowering(RetInst*);
 
     void InstLowering(ZextInst*);
+    void InstLowering(SextInst*);
+    void InstLowering(TruncInst*);
  
     RISCVMOperand* Li_Intimm(ConstIRInt* Intconst);
     public:
