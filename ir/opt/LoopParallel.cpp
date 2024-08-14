@@ -122,8 +122,11 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
         Outer = true;
       if (assist.find(use->GetUser()) == assist.end() &&
           loop->Contain(UserBB)) {
-        if (Inner)
-          return false; // 30_many
+        // if (Inner)
+        //   return false; // 30_many
+        auto userbin=dynamic_cast<BinaryInst*>(use->GetUser());
+        if(!userbin||userbin->getopration()!=BinaryInst::Op_Add)
+          return false;
         Inner = true;
       }
       if (auto bin = dynamic_cast<BinaryInst *>(res)) {
