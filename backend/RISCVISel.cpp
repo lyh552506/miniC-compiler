@@ -224,7 +224,16 @@ void RISCVISel::InstLowering(BinaryInst* inst){
         case BinaryInst::Op_Add:
         {
             if(inst->IsAtomic()){
-                assert(inst->GetUserlist().GetSize()==0&&inst->GetOperand(0)->GetType()!=FloatType::NewFloatTypeGet());
+                assert(inst->GetUserlist().GetSize()==0);
+                if(inst->GetOperand(1)->GetType()==FloatType::NewFloatTypeGet()){
+                    // call buildin_AtomicF32add
+                    auto callmir=new RISCVMIR(RISCVMIR::call);
+                    callmir->AddOperand(ctx.mapping(BuildInFunction::GetBuildInFunction("buildin_AtomicF32add")));
+                    callmir->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                    callmir->AddOperand(ctx.mapping(inst->GetOperand(1)));
+                    ctx(callmir);
+                    break;
+                }
                 auto amoadd=new RISCVMIR(RISCVMIR::_amoadd_w_aqrl);
                 amoadd->SetDef(PhyRegister::GetPhyReg(PhyRegister::zero));
                 if(inst->GetOperand(1)->isConst()){

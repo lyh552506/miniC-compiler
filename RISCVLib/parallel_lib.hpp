@@ -14,4 +14,6 @@ void buildin_NotifyWorkerLT(int,int)__attribute((always_inline));
 
 void buildin_FenceArgLoaded()__attribute((always_inline));
 
+void buildin_AtomicF32add(float*,float)__attribute((always_inline));
+
 }

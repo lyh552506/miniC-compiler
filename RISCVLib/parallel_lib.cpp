@@ -122,6 +122,14 @@ void CreateThread() {
     }
 }
 
+void buildin_AtomicF32add(float* ptr, float data) {
+    float old, new_val;
+    do {
+        old = *ptr;
+        new_val = old + data;
+    } while (!__sync_bool_compare_and_swap((int*)ptr, *(int*)&old, *(int*)&new_val));
+}
+
 /*
 parallel_call translation: [done]
     parallel_call func, arg0, arg1, ...

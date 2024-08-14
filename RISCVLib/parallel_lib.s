@@ -276,6 +276,25 @@ _Z12CreateThreadv:
 	.section	.init_array,"aw"
 	.align	3
 	.dword	_Z12CreateThreadv
+	.text
+	.align	1
+	.globl	buildin_AtomicF32add
+	.type	buildin_AtomicF32add, @function
+buildin_AtomicF32add:
+.LFB2884:
+	.cfi_startproc
+.L41:
+	lw	a4,0(a0)
+	fmv.s.x	fa5,a4
+	fadd.s	fa5,fa5,fa0
+	fmv.x.s	a3,fa5
+	fence iorw,ow;  1: lr.w.aq a5,0(a0); bne a5,a4,1f; sc.w.aq a2,a3,0(a0); bnez a2,1b; 1:
+	subw	a5,a5,a4
+	bne	a5,zero,.L41
+	ret
+	.cfi_endproc
+.LFE2884:
+	.size	buildin_AtomicF32add, .-buildin_AtomicF32add
 	.globl	buildin_funcptr
 	.globl	buildin_parallel_arg_storage
 	.bss
