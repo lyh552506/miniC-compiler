@@ -291,7 +291,7 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   auto cmp = loopcmp->CloneInst();
   SubstitudeTrait.step = loop->trait.step;
   SubstitudeTrait.boundary = loop->trait.boundary;
-  SubstitudeTrait.cmp = dynamic_cast<BinaryInst*>(cmp);
+  SubstitudeTrait.cmp = dynamic_cast<BinaryInst *>(cmp);
   // find the bound value
   auto bound = GetBoundVal(loopcmp->getopration(), loop, loopcmp);
   SubstitudeTrait.CmpEqual = loop->trait.CmpEqual;
@@ -635,6 +635,17 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
     assert(SubstitudeTrait.res->PhiRecord.size() == 1);
     // auto orig = SubstitudeTrait.res->GetOperand(0);
     auto orig = FindResInitial(SubstitudeTrait.res);
+    if (!orig->isConstZero()) {
+      auto st = SubstitudeTrait.res->GetTypeEnum() == IR_Value_INT
+                    ? Storage_int
+                    : Storage_float;
+      StoreInst *init_0 = nullptr;
+      if (SubstitudeTrait.res->GetTypeEnum() == IR_Value_INT)
+        init_0 = new StoreInst(ConstIRInt::GetNewConstant(0), st);
+      else
+        init_0 = new StoreInst(ConstIRFloat::GetNewConstant(0), st);
+      Entry->push_front(init_0);
+    }
     new_res = PhiInst::NewPhiNode(SubstitudeTrait.res->GetType());
     new_res->updateIncoming(orig, Entry);
     new_res->updateIncoming(SubstitudeTrait.call, While_Loop);
