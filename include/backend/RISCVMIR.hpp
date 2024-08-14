@@ -41,6 +41,9 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _lui,
         _auipc, //?
 
+        _max,
+        _min,
+
         _mul,
         _mulh,
         _mulhsu,
