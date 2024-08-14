@@ -863,6 +863,36 @@ void RISCVISel::InstLowering(TruncInst* trunc) {
     ctx(Builder(RISCVMIR::_sext_w, trunc));
 }
 
+void RISCVISel::InstLowering(MinInst* min) {
+    assert(!(min->GetOperand(0)->isConst()&&min->GetOperand(1)->isConst()));
+    if(min->GetType()==IntType::NewIntTypeGet()) {
+        if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(min->GetOperand(1))) {
+            auto minst=new RISCVMIR(RISCVMIR::_min);
+            minst->SetDef(ctx.mapping(min->GetDef()));
+            minst->AddOperand(ctx.mapping(min->GetOperand(0)));
+            minst->AddOperand(ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(constint)));
+            ctx(minst);
+        } else ctx(Builder(RISCVMIR::_min,min));
+    }  else if(min->GetType()==FloatType::NewFloatTypeGet())
+        ctx(Builder(RISCVMIR::_fmin_s,min));
+    else assert(0&&"Invalid type");
+};
+
+void RISCVISel::InstLowering(MaxInst* max) {
+    assert(!(max->GetOperand(0)->isConst()&&max->GetOperand(1)->isConst()));
+    if(max->GetType()==IntType::NewIntTypeGet()) {
+        if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(max->GetOperand(1))) {
+            auto minst=new RISCVMIR(RISCVMIR::_max);
+            minst->SetDef(ctx.mapping(max->GetDef()));
+            minst->AddOperand(ctx.mapping(max->GetOperand(0)));
+            minst->AddOperand(ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(constint)));
+            ctx(minst);
+        } else ctx(Builder(RISCVMIR::_max,max));
+    }  else if(max->GetType()==FloatType::NewFloatTypeGet())
+        ctx(Builder(RISCVMIR::_fmax_s,max));
+    else assert(0&&"Invalid type");
+}
+
 void RISCVISel::InstLowering(User* inst){
     if(auto store=dynamic_cast<StoreInst*>(inst))InstLowering(store);
     else if(auto load=dynamic_cast<LoadInst*>(inst))InstLowering(load);
@@ -879,6 +909,8 @@ void RISCVISel::InstLowering(User* inst){
     else if(auto zext=dynamic_cast<ZextInst*>(inst))InstLowering(zext);
     else if(auto sext=dynamic_cast<SextInst*>(inst))InstLowering(sext);
     else if(auto trunc=dynamic_cast<TruncInst*>(inst))InstLowering(trunc);
+    else if(auto min=dynamic_cast<MinInst*>(inst))InstLowering(min);
+    else if(auto max=dynamic_cast<MaxInst*>(inst))InstLowering(max);
     else assert(0&&"Invalid Inst Type");
 }
 
