@@ -621,6 +621,7 @@ void RISCVISel::InstLowering(CallInst* inst){
         return;
     }
 
+
     #define M(x) ctx.mapping(x)
     int IntMaxNum=8, FloatMaxNum=8;
     std::unique_ptr<RISCVFrame>& frame = ctx.GetCurFunction()->GetFrame();
@@ -746,6 +747,10 @@ void RISCVISel::InstLowering(CallInst* inst){
         // ctx(Builder_withoutDef(RISCVMIR::call, inst));
     }
     #undef M
+    if(inst->GetOperand(0)->GetName()=="CacheLookUp"){
+
+        return;
+    }
 }
 
 void RISCVISel::InstLowering(RetInst* inst){

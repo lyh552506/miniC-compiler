@@ -5,7 +5,7 @@ testcases/**/*.ll
 testcases/**/*.s
 testcases/**/*.o
 testcases/output
-BackendTest
+BackendTest/
 uploadfolder
 testcases_output
 testcases_c
