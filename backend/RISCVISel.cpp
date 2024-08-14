@@ -243,6 +243,9 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                 } else 
                     ctx(Builder(RISCVMIR::_addw,inst));
             } else if(inst->GetType()==Int64Type::NewInt64TypeGet()) {
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
+                    ctx(Builder(RISCVMIR::_addi,inst));
+                }
                 ctx(Builder(RISCVMIR::_add,inst));
             } else if(inst->GetType()==FloatType::NewFloatTypeGet()) {
                 ctx(Builder(RISCVMIR::_fadd_s,inst));
@@ -261,7 +264,13 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                     ctx(minst);
                 } else ctx(Builder(RISCVMIR::_subw,inst));
             } else if(inst->GetType()==Int64Type::NewInt64TypeGet()) {
-                ctx(Builder(RISCVMIR::_sub,inst));
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
+                    auto minst=new RISCVMIR(RISCVMIR::_sub);
+                    minst->SetDef(ctx.mapping(inst->GetDef()));
+                    minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                    minst->AddOperand(ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(constint)));
+                    ctx(minst);
+                } else ctx(Builder(RISCVMIR::_sub,inst));
             } else if(inst->GetType()==FloatType::NewFloatTypeGet())
                 ctx(Builder(RISCVMIR::_fsub_s,inst));
             else assert("Illegal!");
@@ -294,7 +303,11 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                             if(val==1073741824)break;
                         }
                     }
-                    auto minst=new RISCVMIR(RISCVMIR::_mulw);
+                    RISCVMIR* minst = nullptr;
+                    if(inst->GetType()==IntType::NewIntTypeGet())
+                        minst=new RISCVMIR(RISCVMIR::_mulw);
+                    else if(inst->GetType()==Int64Type::NewInt64TypeGet()) 
+                        minst=new RISCVMIR(RISCVMIR::_mul);
                     minst->SetDef(ctx.mapping(inst->GetDef()));
                     minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
                     minst->AddOperand(ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(constint)));
@@ -390,8 +403,11 @@ void RISCVISel::InstLowering(BinaryInst* inst){
                             return;
                         }
                     }
-                    
-                    auto minst=new RISCVMIR(RISCVMIR::_remw);
+                    RISCVMIR* minst = nullptr;
+                    if(inst->GetType()==IntType::NewIntTypeGet())
+                        minst=new RISCVMIR(RISCVMIR::_remw);
+                    else if(inst->GetType()==Int64Type::NewInt64TypeGet()) 
+                        minst=new RISCVMIR(RISCVMIR::_rem);
                     minst->SetDef(ctx.mapping(inst->GetDef()));
                     minst->AddOperand(ctx.mapping(inst->GetOperand(0)));
                     minst->AddOperand(ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(constint)));
