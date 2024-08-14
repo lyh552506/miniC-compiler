@@ -855,7 +855,8 @@ void RISCVISel::InstLowering(ZextInst* zext){
 
 void RISCVISel::InstLowering(SextInst* sext) {
     // StarFive is 64bit machine
-    return;
+    auto mreg=ctx.mapping(sext->GetOperand(0));
+    ctx.insert_val2mop(sext,mreg);
 }
 
 void RISCVISel::InstLowering(TruncInst* trunc) {
