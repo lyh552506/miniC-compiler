@@ -58,7 +58,6 @@ bool LoopParallel::Run() {
       std::cerr << "Find a Parallelable Loop: " << loop->GetHeader()->GetName()
                 << "\n";
       SubstitudeTrait.Init();
-
       auto call = ExtractLoopParallelBody(loop);
       MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
       return true;
@@ -285,12 +284,13 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   SubstitudeTrait.change = loopchange;
   auto loopcmp = dynamic_cast<BinaryInst *>(latch->back()->GetOperand(0));
   assert(loopcmp);
-  auto cmp = loopcmp->CloneInst();
+  auto cmp = loopcmp;
   SubstitudeTrait.step = loop->trait.step;
   SubstitudeTrait.boundary = loop->trait.boundary;
-  SubstitudeTrait.cmp = dynamic_cast<BinaryInst *>(cmp);
+  SubstitudeTrait.cmp = cmp;
   // find the bound value
   auto bound = GetBoundVal(loopcmp->getopration(), loop, loopcmp);
+  SubstitudeTrait.CmpEqual = loop->trait.CmpEqual;
   for (auto use : loopchange->GetUserlist()) {
     auto userBB = use->GetUser()->GetParent();
     auto user = use->GetUser();
@@ -508,9 +508,9 @@ bool LoopParallel::DependencyAnalysis(LoopInfo *loop) {
     auto operand = st->GetOperand(1);
     if (!bin || bin != StoreVal)
       break;
-    if(bin->GetUserListSize()!=1)
+    if (bin->GetUserListSize() != 1)
       return false;
-    if(bin->getopration()!=BinaryInst::Op_Add)
+    if (bin->getopration() != BinaryInst::Op_Add)
       return false;
     _DEBUG(std::cerr << "Match Load Store!" << std::endl;)
     auto change =
@@ -567,6 +567,8 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
   Parallel->PushMyParam(en);  // end
   // ValMap[begin] = beg;
   // ValMap[end] = en;
+  if (SubstitudeTrait.CmpEqual)
+    Parallel->CmpEqual = true;
   Singleton<Module>().Push_Func(Parallel);
   Parallel->clear();
   Parallel->tag = Function::ParallelBody;
@@ -752,8 +754,6 @@ Value *LoopParallel::GetBoundVal(BinaryInst::Operation op, LoopInfo *loop,
   auto step = loop->trait.step;
   auto Bound = loop->trait.boundary;
   auto initial = loop->trait.initial;
-  BasicBlock *prehead = nullptr;
-  BasicBlock *Exit = nullptr;
   // auto new_exit = new BasicBlock();
   // new_exit->SetName(new_exit->GetName() + ".Calc");
   // for (auto rev : dom->GetNode(loop->GetHeader()->num).rev) {
@@ -807,13 +807,10 @@ Value *LoopParallel::GetBoundVal(BinaryInst::Operation op, LoopInfo *loop,
       // return add;
       return Bound;
     }
-  case BinaryInst::Op_GE:
-
-    assert(0);
-    break;
   case BinaryInst::Op_LE:
-    assert(0);
-    break;
+  case BinaryInst::Op_GE:
+    loop->trait.CmpEqual = true;
+    return Bound;
   default:
     assert(0 && "What happened?");
   }

@@ -19,6 +19,7 @@ struct LoopTrait {
   PhiInst *res = nullptr;
   CallInst *call = nullptr; // result
   BinaryInst *cmp = nullptr;
+  bool CmpEqual = false;
   void Init() {
     head = nullptr;
     boundary = nullptr;
@@ -28,6 +29,7 @@ struct LoopTrait {
     change = nullptr;
     res = nullptr;
     call = nullptr; // result
+    CmpEqual = false;
   }
 };
 
