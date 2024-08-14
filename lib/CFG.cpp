@@ -730,7 +730,10 @@ void MaxInst::print()
   Value::print();
   std::cout << " = call ";
   this->tp->print();
-  std::cout << " @max(";
+  if(this->tp->GetTypeEnum() == IR_Value_INT)
+    std::cout << " @max(";
+  else if(this->tp->GetTypeEnum() == IR_Value_Float)
+    std::cout << " @fmax(";
   uselist[0]->GetValue()->GetType()->print();
   std::cout << " ";
   uselist[0]->GetValue()->print();
@@ -758,7 +761,10 @@ void MinInst::print()
   Value::print();
   std::cout << " = call ";
   this->tp->print();
-  std::cout << " @min(";
+  if(this->tp->GetTypeEnum() == IR_Value_INT)
+    std::cout << " @min(";
+  else if(this->tp->GetTypeEnum() == IR_Value_Float)
+    std::cout << " @fmin(";
   uselist[0]->GetValue()->GetType()->print();
   std::cout << " ";
   uselist[0]->GetValue()->print();
