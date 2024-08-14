@@ -209,6 +209,24 @@ class ZextInst:public User
     ZextInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
 };
+// sext i32 to i64
+class SextInst:public User
+{
+    public:
+    SextInst(Type* _tp):User(_tp){id = OpID::Sext;};
+    SextInst(Operand);
+    SextInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void print()final;
+};
+// trunc i64 to i32
+class TruncInst:public User
+{
+    public:
+    TruncInst(Type* _tp):User(_tp){id = OpID::Trunc;};
+    TruncInst(Operand);
+    TruncInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void print()final;
+};
 
 class PhiInst : public User {
 public:

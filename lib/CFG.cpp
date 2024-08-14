@@ -358,7 +358,7 @@ bool check_binary_boolean(BinaryInst::Operation op) {
 
 BinaryInst::BinaryInst(Operand _A, Operation __op, Operand _B, bool Atom)
     : User(check_binary_boolean(__op) ? BoolType::NewBoolTypeGet()
-                                      : _B->GetType()) {
+                                      : _A->GetType()) {
   op = __op;
   // 与User中的OpID对应
   id = static_cast<User::OpID>(__op + BaseEnumNum);
@@ -435,34 +435,35 @@ BinaryInst *BinaryInst::CreateInst(Operand _A, Operation __op, Operand _B,
 
 void BinaryInst::print() {
   Value::print();
+  InnerDataType tp = uselist[0]->GetValue()->GetTypeEnum();
   std::cout << " = ";
   switch (op) {
   case BinaryInst::Op_Add:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "add ";
     else
       std::cout << "fadd ";
     break;
   case BinaryInst::Op_Sub:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "sub ";
     else
       std::cout << "fsub ";
     break;
   case BinaryInst::Op_Mul:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "mul ";
     else
       std::cout << "fmul ";
     break;
   case BinaryInst::Op_Div:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "sdiv ";
     else
       std::cout << "fdiv ";
     break;
   case BinaryInst::Op_Mod:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "srem ";
     else
       std::cout << "frem "; ///应该不存在
@@ -477,7 +478,7 @@ void BinaryInst::print() {
     std::cout << "xor ";
     break;
   case BinaryInst::Op_E:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -487,7 +488,7 @@ void BinaryInst::print() {
     std::cout << "eq ";
     break;
   case BinaryInst::Op_NE:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -497,7 +498,7 @@ void BinaryInst::print() {
     std::cout << "ne ";
     break;
   case BinaryInst::Op_G:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -508,7 +509,7 @@ void BinaryInst::print() {
       std::cout << "sgt ";
     break;
   case BinaryInst::Op_GE:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -519,7 +520,7 @@ void BinaryInst::print() {
       std::cout << "sge ";
     break;
   case BinaryInst::Op_L:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -530,7 +531,7 @@ void BinaryInst::print() {
       std::cout << "slt ";
     break;
   case BinaryInst::Op_LE:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -543,7 +544,7 @@ void BinaryInst::print() {
   default:
     break;
   }
-  uselist[1]->GetValue()->GetType()->print();
+  uselist[0]->GetValue()->GetType()->print();
   std::cout << " ";
   uselist[0]->GetValue()->print();
   std::cout << ", ";
@@ -682,6 +683,40 @@ void ZextInst::print() {
   std::cout << " = zext i1 ";
   uselist[0]->GetValue()->print();
   std::cout << " to i32\n";
+}
+
+SextInst::SextInst(Operand ptr) : User(Int64Type::NewInt64TypeGet())
+{
+  add_use(ptr);
+  id = OpID::Sext;
+}
+SextInst* SextInst::clone(std::unordered_map<Operand, Operand>& mapping)
+{
+  return normal_clone<SextInst>(this, mapping);
+}
+void SextInst::print(){
+  Value::print();
+  std::cout <<" = sext i32 ";
+  uselist[0]->GetValue()->print();
+  std::cout << " to i64\n";
+}
+
+TruncInst::TruncInst(Operand ptr) : User(IntType::NewIntTypeGet()) {
+  add_use(ptr);
+  id = OpID::Trunc;
+}
+
+TruncInst* TruncInst::clone(std::unordered_map<Operand, Operand>& mapping)
+{
+  return normal_clone<TruncInst>(this, mapping);
+}
+
+void TruncInst::print()
+{
+  Value::print();
+  std::cout << " = trunc i64 ";
+  uselist[0]->GetValue()->print();
+  std::cout<<" to i32\n";
 }
 
 BasicBlock::BasicBlock() : Value(VoidType::NewVoidTypeGet()){};

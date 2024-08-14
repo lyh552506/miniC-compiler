@@ -266,9 +266,13 @@ void _PassManager::RunOnLevel() {
               // loopdeletion
               RunLevelPass(LoopDeletion, curfunc, modified);
           PassChangedBegin(curfunc) PassChangedEnd
+          // RunLevelPass(ConstantProp, curfunc, modified)
           RunLevelPass(IndVarSimplify, curfunc, modified);
+          RunLevelPass(LoopDeletion, curfunc, modified);
+          // RunLevelPass(ConstantProp, curfunc, modified)
         // RunLevelPass(SelfStoreElimination, curfunc, modified)
         // RunLevelPass(DCE, curfunc, modified);
+        CommonPass(AM);
         // RunLevelPass(DeadStoreElimination, curfunc, modified);
         // RunLevelPass(DCE, curfunc, modified);
         // RunLevelPass(DCE, curfunc, modified)

@@ -21,6 +21,7 @@ class IndVarSimplify : public _PassManagerBase<IndVarSimplify, Function>
     std::vector<LoopInfo*> Loops;
     void init();
     bool RunOnLoop(LoopInfo* loop);
+    bool ConstFoldLoopAddRem();
     Value* CaculateTimes(LoopInfo* loop);
     bool HandlePhi(PhiInst* inst, LoopInfo* loop, Value* Times);
   public:
