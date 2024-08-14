@@ -42,6 +42,7 @@ private:
   void SimplifyPhi(LoopInfo *loop);
   bool TempChoice(LoopInfo *loop); // tmp
   void PreserveResult(LoopInfo *loop);
+  Value* FindResInitial(Value* res);
   LoopTrait SubstitudeTrait;
   std::unordered_set<BasicBlock *> ExcutedLoops;
   LoopAnalysis *loop;

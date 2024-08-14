@@ -124,8 +124,8 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
           loop->Contain(UserBB)) {
         // if (Inner)
         //   return false; // 30_many
-        auto userbin=dynamic_cast<BinaryInst*>(use->GetUser());
-        if(!userbin||userbin->getopration()!=BinaryInst::Op_Add)
+        auto userbin = dynamic_cast<BinaryInst *>(use->GetUser());
+        if (!userbin || userbin->getopration() != BinaryInst::Op_Add)
           return false;
         Inner = true;
       }
@@ -633,7 +633,8 @@ void LoopParallel::MakeWorkThread(Value *begin, Value *end,
 
   if (HasRes) {
     assert(SubstitudeTrait.res->PhiRecord.size() == 1);
-    auto orig = SubstitudeTrait.res->GetOperand(0);
+    // auto orig = SubstitudeTrait.res->GetOperand(0);
+    auto orig = FindResInitial(SubstitudeTrait.res);
     new_res = PhiInst::NewPhiNode(SubstitudeTrait.res->GetType());
     new_res->updateIncoming(orig, Entry);
     new_res->updateIncoming(SubstitudeTrait.call, While_Loop);
@@ -836,6 +837,25 @@ void LoopParallel::PreserveResult(LoopInfo *loop) {
       resPhi = phi;
     } else {
       break;
+    }
+  }
+}
+
+Value *LoopParallel::FindResInitial(Value *res) {
+  if (!dynamic_cast<PhiInst *>(res))
+    return res;
+  auto phi = dynamic_cast<PhiInst *>(res);
+  if (phi->Getuselist().size() == 1) {
+    return FindResInitial(phi->Getuselist()[0]->GetValue());
+  }
+  auto loop = loopAnaly->LookUp(phi->GetParent());
+  if (phi->GetParent() != loop->GetHeader())
+    assert(0 && "Cant happen");
+  for (auto rev : dom->GetNode(phi->GetParent()->num).rev) {
+    auto revBB = dom->GetNode(rev).thisBlock;
+    if (!loop->Contain(revBB)) {
+      auto income = phi->ReturnValIn(revBB);
+      return FindResInitial(income);
     }
   }
 }
