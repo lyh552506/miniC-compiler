@@ -5,6 +5,9 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
+#include "BlockMerge.hpp"
+#include "LoopSimplify.hpp"
+#include "Type.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -33,6 +36,8 @@ bool LoopUnroll::Run() {
       auto unrollbody = ExtractLoopBody(loop);
       if (unrollbody) {
         auto bb = Half_Unroll(loop, unrollbody);
+        Singleton<Module>().Test();
+        std::cout << std::endl;
         return false;
         CleanUp(loop, bb);
         return true;
@@ -350,6 +355,8 @@ bool LoopUnroll::CanBeFullUnroll(LoopInfo *loop) {
   LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   if (loop->CantCalcTrait())
     return false;
+  if (loop->trait.boundary->GetTypeEnum() != IR_Value_INT)
+    return false;
   auto header = loop->GetHeader();
   auto latch = loopAnaly->GetLatch(loop);
   if (header != latch)
@@ -391,13 +398,22 @@ bool LoopUnroll::CanBeHalfUnroll(LoopInfo *loop) {
   LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   if (loop->CantCalcTrait())
     return false;
+  if (loop->trait.boundary->GetTypeEnum() != IR_Value_INT)
+    return false;
   auto header = loop->GetHeader();
   auto latch = loopAnaly->GetLatch(loop);
   if (header != latch)
     return false;
-  if (dynamic_cast<ConstIRInt *>(loop->trait.initial) &&
-      dynamic_cast<ConstIRInt *>(loop->trait.boundary))
+  auto op = loop->trait.cmp->getopration();
+  switch (op) {
+  case BinaryInst::Op_G:
+  case BinaryInst::Op_GE:
+  case BinaryInst::Op_L:
+  case BinaryInst::Op_LE:
+    break;
+  default:
     return false;
+  }
   int iteration = 0;
   int cost = CaculatePrice(body, m_func);
   if (cost > 50)
@@ -444,4 +460,139 @@ int LoopUnroll::CaculatePrice(const std::vector<BasicBlock *> &body,
   return cost * Iteration;
 }
 
-BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {}
+BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
+  auto Unroll_Entry = new BasicBlock();
+  auto MutiUnrollBlock = new BasicBlock();
+  m_func->push_bb(Unroll_Entry);
+  m_func->push_bb(MutiUnrollBlock);
+  auto Single = loop->GetHeader();
+  Unroll_Entry->SetName(Unroll_Entry->GetName() + ".entry");
+  MutiUnrollBlock->SetName(MutiUnrollBlock->GetName() + ".muti");
+  auto head = loop->GetHeader();
+  auto bound = loop->trait.boundary;
+  auto op = loop->trait.cmp->getopration();
+  auto initial = loop->trait.initial;
+  bool NeedReverse = false;
+  User *new_call = nullptr;
+  BasicBlock *tmp = nullptr;
+  std::unordered_map<Value *, Value *> HeaderValMap;
+  // check the bound side, bound is not promised to be rhs
+  if (bound == loop->trait.cmp->GetOperand(0)) {
+    NeedReverse = true;
+  }
+  auto ReverOp = [](BinaryInst::Operation _op) {
+    switch (_op) {
+    case BinaryInst::Op_L:
+      return BinaryInst::Op_G;
+    case BinaryInst::Op_G:
+      return BinaryInst::Op_L;
+    case BinaryInst::Op_GE:
+      return BinaryInst::Op_LE;
+    case BinaryInst::Op_LE:
+      return BinaryInst::Op_GE;
+    default:
+      assert(0 && "What happened?");
+    }
+  };
+  if (NeedReverse)
+    op = ReverOp(op);
+  BinaryInst *cmp = nullptr;
+  switch (op) {
+  // cmp initial > bound
+  case BinaryInst::Op_G:
+  case BinaryInst::Op_GE: {
+    auto add = BinaryInst::CreateInst(
+        bound, BinaryInst::Op_Add, ConstIRInt::GetNewConstant(HalfUnrollTimes));
+    cmp = BinaryInst::CreateInst(initial, op, add);
+    Unroll_Entry->push_back(add);
+    Unroll_Entry->push_back(cmp);
+  } break;
+  // cmp initial < bound
+  case BinaryInst::Op_L:
+  case BinaryInst::Op_LE: {
+    auto sub = BinaryInst::CreateInst(
+        bound, BinaryInst::Op_Sub, ConstIRInt::GetNewConstant(HalfUnrollTimes));
+    cmp = BinaryInst::CreateInst(initial, op, sub);
+    Unroll_Entry->push_back(sub);
+    Unroll_Entry->push_back(cmp);
+  } break;
+  }
+  Unroll_Entry->GenerateCondInst(cmp, MutiUnrollBlock, Single);
+
+  std::unordered_map<Value *, Value *> Arg2Orig;
+  Value *IndVarOrigin = loop->trait.initial;
+  Value *ResOrigin = nullptr;
+  if (loop->trait.res)
+    ResOrigin = loop->trait.res->ReturnValIn(prehead);
+
+  // map the new block
+  PhiInst *new_indvar = nullptr, *new_res = nullptr;
+  bool insert = false;
+  for (auto inst : *head) {
+    if (auto phi = dynamic_cast<PhiInst *>(inst)) {
+      if (phi == loop->trait.indvar) {
+        new_indvar = PhiInst::NewPhiNode(loop->trait.indvar->GetType());
+        new_indvar->updateIncoming(IndVarOrigin, Unroll_Entry);
+        MutiUnrollBlock->push_back(new_indvar);
+        insert = true;
+        HeaderValMap[loop->trait.indvar] = new_indvar;
+      } else if (phi == loop->trait.res && insert) {
+        new_res = PhiInst::NewPhiNode(loop->trait.res->GetType());
+        new_res->updateIncoming(ResOrigin, Unroll_Entry);
+        MutiUnrollBlock->push_back(new_res);
+        HeaderValMap[loop->trait.res] = new_res;
+      }
+    } else {
+      auto new_inst = inst->CloneInst();
+      HeaderValMap[inst] = new_inst;
+      if (inst == UnrollBody)
+        new_call = new_inst;
+      for (int i = 0; i < new_inst->Getuselist().size(); i++) {
+        if (HeaderValMap.find(new_inst->GetOperand(i)) != HeaderValMap.end()) {
+          new_inst->RSUW(i, HeaderValMap[new_inst->GetOperand(i)]);
+        }
+      }
+      MutiUnrollBlock->push_back(new_inst);
+    }
+  }
+  auto replceArg = [&](User *call, Value *IndVar, Value *Res) {
+    for (int i = 1; i < call->Getuselist().size(); i++) {
+      auto arg = call->GetOperand(i);
+      if (auto phi = dynamic_cast<PhiInst *>(arg)) {
+        if (phi == new_indvar) {
+          Arg2Orig[arg] = IndVar;
+        } else if (phi == new_res) {
+          Arg2Orig[arg] = Res;
+        }
+      } else {
+        Arg2Orig[arg] = arg;
+      }
+    }
+  };
+
+  replceArg(new_call, IndVarOrigin, ResOrigin);
+  BasicBlock::mylist<BasicBlock, User>::iterator call_pos(new_call);
+  std::vector<User *> Erase;
+  User *cloned = new_call;
+  Erase.push_back(cloned);
+  Value *CurChange = nullptr;
+  for (int i = 0; i < HalfUnrollTimes; i++) {
+    auto Ret = m_func->InlineCall(dynamic_cast<CallInst *>(cloned), Arg2Orig);
+    if (Ret.first != nullptr)
+      ResOrigin = Ret.first;
+    tmp = Ret.second;
+    CurChange = Arg2Orig[OriginChange];
+    Arg2Orig.clear();
+    cloned = cloned->CloneInst();
+    Erase.push_back(cloned);
+    call_pos = call_pos.insert_after(cloned);
+    replceArg(cloned, CurChange, ResOrigin);
+  }
+  for (auto iter = Erase.begin(); iter != Erase.end();) {
+    auto call = *iter;
+    ++iter;
+    delete call;
+  }
+  //TODO 插入cmp和branch指令，维护rotate形式
+  
+}

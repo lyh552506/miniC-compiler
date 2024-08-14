@@ -29,6 +29,7 @@ public:
   ~LoopParallel() {
     for (auto l : DeleteLoop)
       delete l;
+    delete SubstitudeTrait.cmp;
   }
 
 private:
