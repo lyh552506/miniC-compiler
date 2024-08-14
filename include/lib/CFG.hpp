@@ -228,6 +228,24 @@ class TruncInst:public User
     void print()final;
 };
 
+class MaxInst:public User
+{
+    public:
+    MaxInst(Type* _tp):User(_tp){id = OpID::Max;};
+    MaxInst(Operand,Operand);
+    MaxInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void print()final;
+};
+
+class MinInst:public User
+{
+    public:
+    MinInst(Type* _tp):User(_tp){id = OpID::Min;};
+    MinInst(Operand,Operand);
+    MinInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void print()final;
+};
+
 class PhiInst : public User {
 public:
   PhiInst(Type *ty) :oprandNum(0), User{ty} {id = OpID::Phi;}

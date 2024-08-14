@@ -719,6 +719,61 @@ void TruncInst::print()
   std::cout<<" to i32\n";
 }
 
+MaxInst::MaxInst(Operand _A, Operand _B) : User(_A->GetType()) {
+  add_use(_A);
+  add_use(_B);
+  id = OpID::Max;
+}
+
+void MaxInst::print()
+{
+  Value::print();
+  std::cout << " = call ";
+  this->tp->print();
+  std::cout << " @max(";
+  uselist[0]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[0]->GetValue()->print();
+  std::cout << ", ";
+  uselist[1]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[1]->GetValue()->print();
+  std::cout << ")\n";
+}
+
+MaxInst* MaxInst::clone(std::unordered_map<Operand, Operand>& mapping)
+{
+  return normal_clone<MaxInst>(this, mapping);
+}
+
+MinInst::MinInst(Operand _A, Operand _B) : User(_A->GetType())
+{
+  add_use(_A);
+  add_use(_B);
+  id = OpID::Min;
+}
+
+void MinInst::print()
+{
+  Value::print();
+  std::cout << " = call ";
+  this->tp->print();
+  std::cout << " @min(";
+  uselist[0]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[0]->GetValue()->print();
+  std::cout << ", ";
+  uselist[1]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[1]->GetValue()->print();
+  std::cout << ")\n";
+}
+
+MinInst* MinInst::clone(std::unordered_map<Operand, Operand>& mapping)
+{
+  return normal_clone<MinInst>(this, mapping);
+}
+
 BasicBlock::BasicBlock() : Value(VoidType::NewVoidTypeGet()){};
 Operand BasicBlock::GenerateLoadInst(Operand data) {
   auto tmp = new LoadInst(data);
