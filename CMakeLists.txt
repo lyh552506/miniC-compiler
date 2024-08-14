@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10.0)
 set(CMAKE_CXX_STANDARD 17) 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # set (CMAKE_CXX_COMPILER "/usr/bin/clang")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -lm")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -lm")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdebug-prefix-map=${CMAKE_BINARY_DIR}=${CMAKE_SOURCE_DIR}") #fix gdb can't find source path
 message(${CMAKE_CXX_FLAGS})
 set(CMAKE_BUILD_TYPE "Debug")
