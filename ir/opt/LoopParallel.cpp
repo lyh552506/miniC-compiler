@@ -113,7 +113,8 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
     if (!dynamic_cast<BinaryInst *>(res))
       return false;
     auto bin = dynamic_cast<BinaryInst *>(res);
-
+    if (bin->getopration() != BinaryInst::Op_Add)
+      return false;
     std::set<Value *> assist{resPhi, res};
     for (auto use : res->GetUserlist()) {
       auto UserBB = use->GetUser()->GetParent();
