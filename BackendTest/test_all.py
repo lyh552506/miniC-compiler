@@ -16,10 +16,14 @@ upload_folder = "uploadfolder"
 # compiler_path = "./compiler"
 compiler_path = "./build/SYSY-compiler"
 
-# test_folder="testcases/functional"
-# output_folder = "testcases/output"
-test_folder="function_test"
-output_folder = "function_test"
+test_folder="testcases/functional"
+output_folder = "testcases/output"
+# test_folder="function_test"
+# output_folder = "function_test"
+test_folder="testcases/functional"
+output_folder = "testcases/output"
+# test_folder="function_test"
+# output_folder = "function_test"
 sylib_path = "BackendTest/sylib.o"
 
 pass_args=["--O1"] # 
@@ -51,7 +55,7 @@ for test in test_list:
             compile_args.append(arg)
         try:
             print("Running: " + test)
-            ret = subprocess.run(compile_args,timeout=60)
+            ret = subprocess.run(compile_args,timeout=50)
         except subprocess.TimeoutExpired:
             Time_Out.append(test)
             outputfile.write("Timeout: "+test+ "\n")

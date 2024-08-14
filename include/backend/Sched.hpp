@@ -9,7 +9,10 @@
 using mylist_iterator = mylist<RISCVBasicBlock,RISCVMIR>::iterator;
 // The Sunit, including attributes of Latency, MaxLatency, height and depth,
 // is the unit of the scheduling algorithm.
-    
+bool isLoadinst (RISCVMIR* inst);
+bool isStoreinst (RISCVMIR* inst);
+class GlueChain;
+
 class Sunit {
     friend class DependencyGraph;
 private:
@@ -29,16 +32,19 @@ public:
 using MOp2StackMap = std::unordered_map<RISCVMOperand*, std::stack<RISCVMIR*>>;
 using RealSunit = std::pair<RISCVMIR*, Sunit*>;
 class BlockDepInfo {
-    RISCVBasicBlock* block;
     friend class DependencyGraph;
+    RISCVBasicBlock* block;
     MOp2StackMap def2inst;
     MOp2StackMap use2inst;
     std::list<RealSunit> inst2sunit;
     std::unordered_map<Sunit*, RISCVMIR*> Sunit2InstMap;
 public:
     BlockDepInfo(RISCVBasicBlock*);
-    void BuildBlockDepInfo(RISCVBasicBlock*);
+    BlockDepInfo(RISCVBasicBlock*, mylist_iterator, mylist_iterator);
+    void BuildBlockDepInfo(mylist_iterator, mylist_iterator);
     inline RISCVBasicBlock*& get_block() {return block;}
+    inline MOp2StackMap& get_def2inst() {return def2inst;}
+    inline MOp2StackMap& get_use2inst() {return use2inst;}
     inline std::list<RealSunit>& get_inst2sunit() {return inst2sunit;}
     inline std::unordered_map<Sunit*, RISCVMIR*>& get_Sunit2InstMap() {return Sunit2InstMap;}
 };
@@ -50,7 +56,8 @@ private:
     std::vector<Sunit*> sunits;
     std::map<Sunit*, std::set<Sunit*>> adjList; 
     std::unordered_map<Sunit*, uint32_t> inDegree;
-
+    std::list<Sunit*> GlueList;
+    std::unordered_map<Sunit*, Sunit*> AntiDepMap;
 public:
     friend class Scheduler;
     friend class Pre_RA_Scheduler;
@@ -63,7 +70,13 @@ public:
     void ComputeHeight();
     /// @brief Compute depth of each node in the graph in order form top to bottom.
     void ComputeDepth();
+    inline BlockDepInfo*& get_depInfo() {return depInfo;}
+    inline std::list<Sunit*>& get_GlueList() {return GlueList;}
+    inline std::unordered_map<Sunit*, Sunit*>& get_AntiDepMap() {return AntiDepMap;}
+    Sunit*& GetSunit(RISCVMIR*);
+    void RemoveAntiDep(Sunit*);
 };
+
 
 class SchedRegion {
     friend class Pre_RA_Scheduler;
@@ -82,6 +95,8 @@ public:
 };
 
 bool isboundary(RISCVMIR*);
+
+
 
 #ifdef DEBUG_SCHED
     static std::string Sched_debuginfo = "BackendTest/Sched.buginfo";
