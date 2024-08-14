@@ -288,10 +288,10 @@ CallInst *LoopParallel::ExtractLoopParallelBody(LoopInfo *loop) {
   SubstitudeTrait.change = loopchange;
   auto loopcmp = dynamic_cast<BinaryInst *>(latch->back()->GetOperand(0));
   assert(loopcmp);
-  auto cmp = loopcmp;
+  auto cmp = loopcmp->CloneInst();
   SubstitudeTrait.step = loop->trait.step;
   SubstitudeTrait.boundary = loop->trait.boundary;
-  SubstitudeTrait.cmp = cmp;
+  SubstitudeTrait.cmp = dynamic_cast<BinaryInst*>(cmp);
   // find the bound value
   auto bound = GetBoundVal(loopcmp->getopration(), loop, loopcmp);
   SubstitudeTrait.CmpEqual = loop->trait.CmpEqual;
