@@ -93,6 +93,7 @@ bool LoopRotate::RotateLoop(LoopInfo *loop, bool Succ) {
           new_inst->GetOperand(0)->isConst() &&
           new_inst->GetOperand(1)->isConst()) {
         simplify = ConstantFolding::ConstFoldBinary(
+            dynamic_cast<BinaryInst *>(new_inst),
             dynamic_cast<BinaryInst *>(new_inst)->getopration(),
             dynamic_cast<ConstantData *>(new_inst->GetOperand(0)),
             dynamic_cast<ConstantData *>(new_inst->GetOperand(1)));

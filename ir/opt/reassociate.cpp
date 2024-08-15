@@ -257,7 +257,7 @@ Value *Reassociate::OptExp(BinaryInst *exp,
     if (C == nullptr)
       C = temp;
     else
-      C = ConstantFolding::ConstFoldBinary(exp->getopration(), C, temp);
+      C = ConstantFolding::ConstFoldBinary(exp, exp->getopration(), C, temp);
   }
   //按理说做完常量折叠后，不会出现这种情况了
   if (LinerizedOp.empty()) {

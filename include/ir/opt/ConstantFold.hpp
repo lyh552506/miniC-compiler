@@ -8,7 +8,7 @@ class ConstantFolding
 public:
 Value* ConstantFoldInst(User* inst);
 static ConstantData* ConstantFoldLoadFromConstPtr(ConstantData* Ptr, Type* tp);
-static ConstantData* ConstFoldBinary(BinaryInst::Operation Opcode, ConstantData* LHS, ConstantData* RHS);
+static ConstantData* ConstFoldBinary(BinaryInst* inst, BinaryInst::Operation Opcode, ConstantData* LHS, ConstantData* RHS);
 static bool ReversedSubOperand(BinaryInst* inst);
 private:
 // Handle PhiInst

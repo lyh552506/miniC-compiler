@@ -44,7 +44,7 @@ Value *ConstantFolding::ConstantFoldBinaryInst(BinaryInst *inst)
 
     if (LHS->isConst() && RHS->isConst())
     {
-        Value *Simplify = SimplifyBinOp(inst->getopration(), LHS, RHS);
+        Value *Simplify = SimplifyBinOp(inst, inst->getopration(), LHS, RHS);
         if (Simplify)
         {
             if (dynamic_cast<UndefValue *>(Simplify))
@@ -64,7 +64,7 @@ Value *ConstantFolding::ConstantFoldBinaryInst(BinaryInst *inst)
         if (type == InnerDataType::IR_Value_Float)
             return ConstantFoldBinaryFloat(inst, LHS, RHS);
     }
-    Value *Simplify = SimplifyBinOp(inst->getopration(), LHS, RHS);
+    Value *Simplify = SimplifyBinOp(inst, inst->getopration(), LHS, RHS);
     if (Simplify)
         return Simplify;
     if (inst->getopration() == BinaryInst::Op_Sub)
@@ -351,9 +351,9 @@ Value *ConstantFolding::ConstFoldCmp(BinaryInst::Operation Opcode, bool LVal, bo
     return ConstIRBoolean::GetNewConstant(Result);
 }
 
-ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst::Operation Opcode, ConstantData *LHS, ConstantData *RHS)
+ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst* inst, BinaryInst::Operation Opcode, ConstantData *LHS, ConstantData *RHS)
 {
-    Value *Simplify = SimplifyBinOp(Opcode, LHS, RHS);
+    Value *Simplify = SimplifyBinOp(inst, Opcode, LHS, RHS);
     ConstantData *Simplify_ = static_cast<ConstantData *>(Simplify);
     if (Simplify_)
     {
