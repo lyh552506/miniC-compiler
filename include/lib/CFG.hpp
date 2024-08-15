@@ -246,6 +246,15 @@ class MinInst:public User
     void print()final;
 };
 
+class SelectInst : public User
+{
+    public:
+    SelectInst(Type *ty) : User{ty} {id = OpID::Select;}
+    SelectInst(Operand _Cond, Operand _TrueVal, Operand _FalseVal);
+    SelectInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void print() final;
+};
+
 class PhiInst : public User {
 public:
   PhiInst(Type *ty) :oprandNum(0), User{ty} {id = OpID::Phi;}

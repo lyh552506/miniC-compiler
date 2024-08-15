@@ -467,6 +467,17 @@ void RISCVISel::InstLowering(BinaryInst* inst){
             else assert(0&&"Illegal!");
             break;
         }
+        case BinaryInst::Op_Xor:
+        {
+            if(inst->GetType()!=FloatType::NewFloatTypeGet()) {
+                if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1)))
+                    ctx(Builder(RISCVMIR::_xori,inst));
+                else 
+                    ctx(Builder(RISCVMIR::_xor,inst));
+            }
+            else assert(0&&"Illegal!");
+            break;
+        }
         default:
             assert(0&&"Invalid Opcode");
         }

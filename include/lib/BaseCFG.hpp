@@ -161,7 +161,8 @@ class User:public Value,public list_node<BasicBlock,User>
         SI2FP,
         BinaryUnknown,
         Max,
-        Min
+        Min,
+        Select
     };
     OpID id;
     using UsePtr=std::unique_ptr<Use>;

@@ -78,7 +78,7 @@ bool CSE::ProcessNode(CSENode *node)
         if (auto binary = dynamic_cast<BinaryInst *>(inst))
         {
             node->DelStoreValue(binary, CurGeneration);
-            if (Value *val = SimplifyBinOp(binary->getopration(), binary->GetOperand(0), binary->GetOperand(1)))
+            if (Value *val = SimplifyBinOp(binary, binary->getopration(), binary->GetOperand(0), binary->GetOperand(1)))
             {
                 _DEBUG(std::cerr << "Can Handle BinaryInst: " << inst->GetName() << " as Value:" << val->GetName()
                                  << std::endl;)
