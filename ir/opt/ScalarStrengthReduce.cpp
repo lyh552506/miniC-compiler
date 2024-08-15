@@ -112,6 +112,7 @@ bool ScalarStrengthReduce::RunOnLoop(LoopInfo *loop)
                             iter.insert_before(new_trunc);
                             phi->RAUW(new_trunc);
                             delete phi;
+                            delete phi_;
                             return true;
                         }
                     }
@@ -148,6 +149,7 @@ bool ScalarStrengthReduce::RunOnLoop(LoopInfo *loop)
             }
         }
     }
+    return false;
 }
 
 Value *ScalarStrengthReduce::CaculateTimes(LoopInfo *loop)
