@@ -962,6 +962,7 @@ Function::InlineCall(CallInst *inst,
                      std::unordered_map<Operand, Operand> &OperandMapping) {
   std::pair<Value *, BasicBlock *> tmp{nullptr, nullptr};
   BasicBlock *block = inst->GetParent();
+  User* Jump = block->back();
   Function *func = block->GetParent();
   Function *inlined_func = inst->GetOperand(0)->as<Function>();
   BasicBlock *SplitBlock = block->SplitAt(inst);
@@ -1020,6 +1021,33 @@ Function::InlineCall(CallInst *inst,
         inst->EraseFromParent();
         block->push_back(Br);
       }
+    }
+  }
+  if(dynamic_cast<UnCondInst*>(Jump))
+  {
+    BasicBlock* bb = Jump->GetOperand(0)->as<BasicBlock>();
+    auto iter = bb->begin();
+    while(auto phi = dynamic_cast<PhiInst*>(*iter))
+    {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter;
+    }
+  }
+  else if(dynamic_cast<CondInst*>(Jump))
+  {
+    BasicBlock* bb = Jump->GetOperand(1)->as<BasicBlock>();
+    auto iter = bb->begin();
+    while(auto phi = dynamic_cast<PhiInst*>(*iter))
+    {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter;
+    }
+    BasicBlock* bb1 = Jump->GetOperand(2)->as<BasicBlock>();
+    auto iter1 = bb1->begin();
+    while(auto phi = dynamic_cast<PhiInst*>(*iter1))
+    {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter1;
     }
   }
   return tmp;
