@@ -17,6 +17,8 @@ Value *ConstantFolding::ConstantFoldInst(User *inst)
         return ConstFoldMaxInst(inst->GetOperand(0), inst->GetOperand(1));
     else if(auto mininst = dynamic_cast<MinInst*>(inst))
         return ConstFoldMinInst(inst->GetOperand(0), inst->GetOperand(1));
+    else if(auto select = dynamic_cast<SelectInst*>(inst))
+        return ConstFoldSelectInst(select->GetOperand(0), select->GetOperand(1), select->GetOperand(2));
     return nullptr;
 }
 
@@ -568,4 +570,15 @@ Value* ConstantFolding::ConstFoldMinInst(Value* LHS, Value* RHS)
         return ConstIRFloat::GetNewConstant(std::min(LVal, RVal));
     }
     return nullptr;
+}
+
+Value* ConstantFolding::ConstFoldSelectInst(Value* cond, Value* TrueVal, Value* FalseVal)
+{
+    auto Cond = dynamic_cast<ConstIRBoolean*>(cond);
+    if(!Cond)
+        return nullptr;
+    if(Cond->GetVal())
+        return TrueVal;
+    else
+        return FalseVal;
 }

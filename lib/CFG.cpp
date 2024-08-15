@@ -774,6 +774,37 @@ MinInst* MinInst::clone(std::unordered_map<Operand, Operand>& mapping)
   return normal_clone<MinInst>(this, mapping);
 }
 
+SelectInst::SelectInst(Operand _cond, Operand _A, Operand _B)
+    : User(_A->GetType()) {
+  add_use(_cond);
+  add_use(_A);
+  add_use(_B);
+  id = OpID::Select;
+}
+
+SelectInst* SelectInst::clone(std::unordered_map<Operand, Operand>& mapping)
+{
+  return normal_clone<SelectInst>(this, mapping);
+}
+
+void SelectInst::print()
+{
+  Value::print();
+  std::cout << " = select ";
+  uselist[0]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[0]->GetValue()->print();
+  std::cout << ", ";
+  uselist[1]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[1]->GetValue()->print();
+  std::cout << ", ";
+  uselist[2]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[2]->GetValue()->print();
+  std::cout << '\n';
+}
+
 BasicBlock::BasicBlock() : Value(VoidType::NewVoidTypeGet()){};
 Operand BasicBlock::GenerateLoadInst(Operand data) {
   auto tmp = new LoadInst(data);
