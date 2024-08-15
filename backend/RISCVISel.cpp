@@ -612,6 +612,10 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
     #undef M
 }
 
+void RISCVISel::LowerCallInstCacheLookUp(CallInst* inst){
+    
+}
+
 void RISCVISel::InstLowering(CallInst* inst){
     // 把VReg Copy到PhyReg
     // 如果溢出则按照规约store
@@ -748,8 +752,7 @@ void RISCVISel::InstLowering(CallInst* inst){
     }
     #undef M
     if(inst->GetOperand(0)->GetName()=="CacheLookUp"){
-
-        return;
+        LowerCallInstCacheLookUp(inst);
     }
 }
 

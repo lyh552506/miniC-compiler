@@ -20,6 +20,7 @@ class RISCVISel:public BackEndPass<Function>{
     RISCVMIR* Builder_withoutDef(RISCVMIR::RISCVISA _isa,std::initializer_list<RISCVMOperand*> list);
 
     void LowerCallInstParallel(CallInst*);
+    void LowerCallInstCacheLookUp(CallInst*);
     
     // return the virreg which handles the condition
     // will register to the mapping automatically
