@@ -7,12 +7,16 @@ Value *ConstantFolding::ConstantFoldInst(User *inst)
     //   return ConstantFoldPhiInst(PHiInst);
     if (auto BInaryInst = dynamic_cast<BinaryInst *>(inst))
         return ConstantFoldBinaryInst(BInaryInst);
-    if (auto _SITFP = dynamic_cast<SITFP *>(inst))
+    else if (auto _SITFP = dynamic_cast<SITFP *>(inst))
         return ConstantFoldSITFPInst(_SITFP);
-    if (auto _FPTSI = dynamic_cast<FPTSI *>(inst))
+    else if (auto _FPTSI = dynamic_cast<FPTSI *>(inst))
         return ConstantFoldFPTSIInst(_FPTSI);
-    if (auto ZExtInst = dynamic_cast<ZextInst *>(inst))
+    else if (auto ZExtInst = dynamic_cast<ZextInst *>(inst))
         return ConstantFoldZextInst(ZExtInst);
+    else if (auto maxinst = dynamic_cast<MaxInst*>(inst))
+        return ConstFoldMaxInst(inst->GetOperand(0), inst->GetOperand(1));
+    else if(auto mininst = dynamic_cast<MinInst*>(inst))
+        return ConstFoldMinInst(inst->GetOperand(0), inst->GetOperand(1));
     return nullptr;
 }
 
@@ -526,4 +530,42 @@ bool ConstantFolding::ReversedSubOperand(BinaryInst *inst)
         return true;
     }
     return false;
+}
+
+Value* ConstantFolding::ConstFoldMaxInst(Value* LHS, Value* RHS)
+{
+    if(!dynamic_cast<ConstantData*>(LHS) || !dynamic_cast<ConstantData*>(RHS))
+        return nullptr;
+    if(dynamic_cast<ConstIRInt*>(LHS) && dynamic_cast<ConstIRInt*>(RHS))
+    {
+        int LVal = dynamic_cast<ConstIRInt*>(LHS)->GetVal();
+        int RVal = dynamic_cast<ConstIRInt*>(RHS)->GetVal();
+        return ConstIRInt::GetNewConstant(std::max(LVal, RVal));
+    }
+    else if(dynamic_cast<ConstIRFloat*>(LHS) && dynamic_cast<ConstIRFloat*>(RHS))
+    {
+        float LVal = dynamic_cast<ConstIRFloat*>(LHS)->GetVal();
+        float RVal = dynamic_cast<ConstIRFloat*>(RHS)->GetVal();
+        return ConstIRFloat::GetNewConstant(std::max(LVal, RVal));
+    }
+    return nullptr;
+}
+
+Value* ConstantFolding::ConstFoldMinInst(Value* LHS, Value* RHS)
+{
+    if(!dynamic_cast<ConstantData*>(LHS) || !dynamic_cast<ConstantData*>(RHS))
+        return nullptr;
+    if(dynamic_cast<ConstIRInt*>(LHS) && dynamic_cast<ConstIRInt*>(RHS))
+    {
+        int LVal = dynamic_cast<ConstIRInt*>(LHS)->GetVal();
+        int RVal = dynamic_cast<ConstIRInt*>(RHS)->GetVal();
+        return ConstIRInt::GetNewConstant(std::min(LVal, RVal));
+    }
+    else if(dynamic_cast<ConstIRFloat*>(LHS) && dynamic_cast<ConstIRFloat*>(RHS))
+    {
+        float LVal = dynamic_cast<ConstIRFloat*>(LHS)->GetVal();
+        float RVal = dynamic_cast<ConstIRFloat*>(RHS)->GetVal();
+        return ConstIRFloat::GetNewConstant(std::min(LVal, RVal));
+    }
+    return nullptr;
 }
