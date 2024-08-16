@@ -2,7 +2,10 @@
 struct CacheEntity
 {
     unsigned long int key;
-    int value;
+    union cachevalue{
+        int intvalue;
+        float floatvalue;
+    };
     int hasvalue;
 };
 CacheEntity list[1023];
