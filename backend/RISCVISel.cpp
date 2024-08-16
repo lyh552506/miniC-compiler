@@ -1,5 +1,6 @@
 #include "../include/backend/RISCVISel.hpp"
 #include "../include/backend/RISCVMIR.hpp"
+#include "../include/backend/RISCVTrival.hpp"
 #include "../include/backend/RISCVFrameContext.hpp"
 #include "../include/ir/opt/New_passManager.hpp"
 #include "../include/ir/Analysis/CondProbAnalysis.hpp"
@@ -217,6 +218,30 @@ void RISCVISel::InstLowering(CondInst* inst){
     ctx(Builder_withoutDef(RISCVMIR::_bne, {ctx.mapping(inst->GetOperand(0)), PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero), ctx.mapping(inst->GetOperand(1))}));
     ctx(Builder_withoutDef(RISCVMIR::_j,{ctx.mapping(inst->GetOperand(2))}));
     #undef M
+}
+
+void RISCVISel::InstLowering(SelectInst* inst){
+    auto trueblock=RISCVBasicBlock::CreateRISCVBasicBlock();
+    auto falseblock=RISCVBasicBlock::CreateRISCVBasicBlock();
+    auto nextblock=RISCVBasicBlock::CreateRISCVBasicBlock();
+    auto dstVreg=ctx.createVReg(RISCVTyper(inst->GetType()));
+
+    ctx(Builder_withoutDef(RISCVMIR::_bne, {ctx.mapping(inst->GetOperand(0)), PhyRegister::GetPhyReg(PhyRegister::PhyReg::zero), trueblock}));
+    ctx(Builder_withoutDef(RISCVMIR::_j,{falseblock}));
+
+    {
+        ctx(trueblock);
+        ctx(RISCVTrival::CopyFrom(dstVreg,ctx.mapping(inst->GetOperand(1))));
+        ctx(Builder_withoutDef(RISCVMIR::_j,{nextblock}));
+    }
+
+    {
+        ctx(falseblock);
+        ctx(RISCVTrival::CopyFrom(dstVreg,ctx.mapping(inst->GetOperand(2))));
+        ctx(Builder_withoutDef(RISCVMIR::_j,{nextblock}));
+    }
+
+    ctx(nextblock);
 }
 
 void RISCVISel::InstLowering(BinaryInst* inst){
@@ -922,6 +947,7 @@ void RISCVISel::InstLowering(User* inst){
     else if(auto trunc=dynamic_cast<TruncInst*>(inst))InstLowering(trunc);
     else if(auto min=dynamic_cast<MinInst*>(inst))InstLowering(min);
     else if(auto max=dynamic_cast<MaxInst*>(inst))InstLowering(max);
+    else if(auto sel=inst->as<SelectInst>())InstLowering(sel);
     else assert(0&&"Invalid Inst Type");
 }
 
