@@ -5,6 +5,7 @@
 #include <set>
 #include <unordered_set>
 #include <algorithm>
+#include <vector>
 class BasicBlock;
 class Function;
 
@@ -197,6 +198,7 @@ class GetElementPtrInst:public User
     GetElementPtrInst(Operand);
     GetElementPtrInst(Operand,std::vector<Operand>&);
     GetElementPtrInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void AddArg(Value* arg){add_use(arg);}
     Type* GetType()final;
     void print()final;
     std::vector<Operand> GetIndexs();
@@ -351,6 +353,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
         UnrollBody,
         LoopBody,
         ParallelBody,
+        BuildIn,
     };
     Tag tag=Normal;
     bool CmpEqual=false;
@@ -378,6 +381,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     void init_reach_block();
     bool MemWrite();
     bool MemRead();
+    std::vector<BasicBlock*> GetRetBlock();
     int bb_num=0;
     bool HasSideEffect = false;
 };
