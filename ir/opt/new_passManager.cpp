@@ -276,8 +276,6 @@ void _PassManager::RunOnLevel() {
         // RunLevelPass(SelfStoreElimination, curfunc, modified)
         // RunLevelPass(DCE, curfunc, modified);
         CommonPass(AM);
-    RunLevelPass(ConstantHoist, curfunc,modified);
-        RunLevelPass(cfgSimplify, curfunc, modified)
         // RunLevelPass(DeadStoreElimination, curfunc, modified);
         // RunLevelPass(DCE, curfunc, modified);
         // RunLevelPass(DCE, curfunc, modified)
@@ -339,7 +337,9 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     RunLevelPass(DCE, curfunc, mody)
     // constprop
     RunLevelPass(ConstantProp, curfunc, mody);
-
+    RunLevelPass(ConstantHoist, curfunc,modified);
+        RunLevelPass(cfgSimplify, curfunc, modified)
+            PassChangedBegin(curfunc) PassChangedEnd
     // reassociate
     RunLevelPass(Reassociate, curfunc, mody);
 
