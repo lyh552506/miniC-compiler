@@ -1227,6 +1227,9 @@ BuildInFunction *BuildInFunction::GetBuildInFunction(std::string _id) {
       return VoidType::NewVoidTypeGet();
     if(_id == "buildin_AtomicF32add")
       return VoidType::NewVoidTypeGet();
+    if(_id == "CacheLookUp")
+      return VoidType::NewVoidTypeGet();
+  
     assert(0);
   };
   if (mp.find(_id) == mp.end()) {

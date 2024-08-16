@@ -727,6 +727,8 @@ void RISCVISel::LowerCallInstCacheLookUp(CallInst* inst){
     RISCVMIR* call = new RISCVMIR(RISCVMIR::call);
     // the call inst is: call CacheLookUp(int/float, int/float)
     // the size of uselist is 3, and the first use is called function
+    BuildInFunction* buildinfunc = BuildInFunction::GetBuildInFunction(inst->GetOperand(0)->GetName());
+    call->AddOperand(M(buildinfunc));  // "CacheLookUp"
     int regint=PhyRegister::PhyReg::a0;
     for(int index=1; index<3; index++) {
         Operand op = inst->GetOperand(index);
@@ -755,6 +757,7 @@ void RISCVISel::LowerCallInstCacheLookUp(CallInst* inst){
         }
         else assert(0 && "CallInst selection illegal type");
     }
+    ctx(call);
     #undef M
 }
 
