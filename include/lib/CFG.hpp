@@ -384,6 +384,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
     std::vector<BasicBlock*> GetRetBlock();
     int bb_num=0;
     bool HasSideEffect = false;
+    inline Tag& get_tag() {return tag;} 
 };
 class Module:public SymbolTable
 {

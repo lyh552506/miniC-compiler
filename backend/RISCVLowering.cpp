@@ -34,7 +34,9 @@ bool RISCVModuleLowering::run(Module *m)
 
 bool RISCVFunctionLowering::run(Function *m)
 {
-    
+    if(m->get_tag() == Function::BuildIn) {
+        return false;
+    }
     /// @note this function is used to lower buildin function to the correct form
     /// @note and in order to solving user function which have the same name as buildin function
     BuildInFunctionTransform buildin;
