@@ -252,6 +252,41 @@ void RISCVISel::InstLowering(BinaryInst* inst){
         {
         case BinaryInst::Op_Add:
         {
+            if(inst->IsAtomic()){
+                assert(inst->GetUserlist().GetSize()==0);
+                if(inst->GetOperand(1)->GetType()==FloatType::NewFloatTypeGet()){
+                    auto mv=new RISCVMIR(RISCVMIR::mv);
+                    mv->SetDef(PhyRegister::GetPhyReg(PhyRegister::a0));
+                    mv->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                    ctx(mv);
+
+                    auto mvf=new RISCVMIR(RISCVMIR::_fmv_s);
+                    mvf->SetDef(PhyRegister::GetPhyReg(PhyRegister::fa0));
+                    mvf->AddOperand(ctx.mapping(inst->GetOperand(1)));
+                    ctx(mvf);
+                    
+                    // call buildin_AtomicF32add
+                    auto callmir=new RISCVMIR(RISCVMIR::call);
+                    callmir->AddOperand(ctx.mapping(BuildInFunction::GetBuildInFunction("buildin_AtomicF32add")));
+                    callmir->AddOperand(PhyRegister::GetPhyReg(PhyRegister::a0));
+                    callmir->AddOperand(PhyRegister::GetPhyReg(PhyRegister::fa0));
+                    ctx(callmir);
+                    break;
+                }
+                auto amoadd=new RISCVMIR(RISCVMIR::_amoadd_w_aqrl);
+                amoadd->SetDef(PhyRegister::GetPhyReg(PhyRegister::zero));
+                if(inst->GetOperand(1)->isConst()){
+                    auto constint=inst->GetOperand(1)->as<ConstIRInt>();
+                    amoadd->AddOperand(ctx.GetCurFunction()->GetUsedGlobalMapping(Imm::GetImm(constint)));
+                }
+                else{
+                    amoadd->AddOperand(ctx.mapping(inst->GetOperand(1)));
+                }
+                amoadd->AddOperand(ctx.mapping(inst->GetOperand(0)));
+                ctx(amoadd);
+                break;
+            }
+            
             if(inst->GetType()==IntType::NewIntTypeGet()) {
                 if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(inst->GetOperand(1))) {
                     // int inttemp = constint->GetVal();
@@ -670,8 +705,15 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
             }
         }
     }
+
+    auto getNotifyWorker=[&](){
+        if(func_called->CmpEqual)
+            return BuildInFunction::GetBuildInFunction("buildin_NotifyWorkerLE");
+        else
+            return BuildInFunction::GetBuildInFunction("buildin_NotifyWorkerLT");
+    };
     
-    auto NotifyWorker=BuildInFunction::GetBuildInFunction("buildin_NotifyWorker");
+    auto NotifyWorker=getNotifyWorker();
     auto call=new RISCVMIR(RISCVMIR::call);
     call->AddOperand(M(NotifyWorker));
     call->AddOperand(PhyRegister::GetPhyReg(PhyRegister::a0));

@@ -51,7 +51,11 @@ void RISCVMIR::printfull(){
         }
         
         for(int i=0;i<operands.size();i++){
+            if(i==operands.size()-1&&opcode==RISCVMIR::_amoadd_w_aqrl)
+                std::cout<<"(";                
             operands[i]->print();
+            if(i==operands.size()-1&&opcode==RISCVMIR::_amoadd_w_aqrl)
+                std::cout<<")";                
             if(i!=operands.size()-1)
                 std::cout<<", ";
         }

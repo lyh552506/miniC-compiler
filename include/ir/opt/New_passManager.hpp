@@ -3,10 +3,12 @@
 #include "../../include/ir/Analysis/dominant.hpp"
 #include "../../include/ir/opt/BlockMerge.hpp"
 #include "../../include/ir/opt/CSE.hpp"
+#include "../../include/ir/opt/Cache.hpp"
 #include "../../include/ir/opt/CondMerge.hpp"
 #include "../../include/ir/opt/ConstantFold.hpp"
 #include "../../include/ir/opt/ConstantProp.hpp"
 #include "../../include/ir/opt/DCE.hpp"
+#include "../../include/ir/opt/DSE.hpp"
 #include "../../include/ir/opt/DeadArgsElimination.hpp"
 #include "../../include/ir/opt/DealCriticalEdges.hpp"
 #include "../../include/ir/opt/GepCombine.hpp"
@@ -14,6 +16,7 @@
 #include "../../include/ir/opt/Global2Local.hpp"
 #include "../../include/ir/opt/Inline.hpp"
 #include "../../include/ir/opt/InstructionSimplify.hpp"
+#include "../../include/ir/opt/LoadElimination.hpp"
 #include "../../include/ir/opt/Local2Global.hpp"
 #include "../../include/ir/opt/LoopDeletion.hpp"
 #include "../../include/ir/opt/LoopParallel.hpp"
@@ -23,6 +26,7 @@
 #include "../../include/ir/opt/PassManagerBase.hpp"
 #include "../../include/ir/opt/PromoteMemtoRegister.hpp"
 #include "../../include/ir/opt/SSAPRE.hpp"
+#include "../../include/ir/opt/SelfStoreElimination.hpp"
 #include "../../include/ir/opt/StoreOnlyGlobalElimination.hpp"
 #include "../../include/ir/opt/TailRecurseElimination.hpp"
 #include "../../include/ir/opt/cfgSimplify.hpp"
@@ -128,6 +132,7 @@ private:
   std::vector<std::any> Contain;
   std::vector<LoopInfo *> loops;
   std::unordered_map<BasicBlock *, std::set<LoopAttr>> LoopForm;
+  std::unordered_set<BasicBlock *> UnrollRecord;
 
 public:
   _AnalysisManager() = default;
@@ -150,11 +155,15 @@ public:
     return static_cast<Pass *>(result);
   }
 
-
   void AddAttr(BasicBlock *LoopHeader, LoopAttr attr) {
     LoopForm[LoopHeader].insert(attr);
   }
 
+  void Unrolled(BasicBlock *LoopHeader) { UnrollRecord.insert(LoopHeader); }
+
+  bool IsUnrolled(BasicBlock *LoopHeader) {
+    return UnrollRecord.find(LoopHeader) != UnrollRecord.end();
+  }
   bool FindAttr(BasicBlock *bb, LoopAttr attr) {
     if (LoopForm.find(bb) != LoopForm.end()) {
       if (LoopForm[bb].find(attr) != LoopForm[bb].end())

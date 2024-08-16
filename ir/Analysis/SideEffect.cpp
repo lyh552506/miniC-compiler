@@ -85,6 +85,11 @@ void SideEffect::CreateSideEffectFunc()
             }
         }
     }
+    if(!Judge)
+        for (auto &func_ : module->GetFuncTion())
+    {
+            func_->HasSideEffect = false;
+    }
     for (auto &func_ : module->GetFuncTion())
     {
         if (FuncHasSideEffect(func_.get()))

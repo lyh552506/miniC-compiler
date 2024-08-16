@@ -177,7 +177,9 @@ bool LICMPass::CanBeMove(LoopInfo *curloop, User *I) {
       return false;
     if (target_func->MemWrite())
       return false;
-  } else if (dynamic_cast<BinaryInst *>(I)) {
+  } else if (auto bin = dynamic_cast<BinaryInst *>(I)) {
+    if (bin->IsAtomic())
+      return false;
     return true;
   } else if (auto gep = dynamic_cast<GetElementPtrInst *>(I)) {
     auto hash = AliasAnalysis::GetHash(gep);

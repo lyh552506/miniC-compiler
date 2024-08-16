@@ -1,4 +1,5 @@
 #include "../../include/ir/opt/New_passManager.hpp"
+#include "CFG.hpp"
 #include "Singleton.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
@@ -86,6 +87,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case Dse:
       AddPass(Dse);
       break;
+    case cachelookup:
+      AddPass(cachelookup);
+      break;
     case scalarstrengthreduce:
       AddPass(scalarstrengthreduce);
       break;
@@ -150,177 +154,164 @@ void _PassManager::RunOnLevel() {
         modified = false;
         PassChangedBegin(curfunc)
 
-            PassChangedEnd RunLevelPass(LoopSimplify, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
+              RunLevelPass(LoopSimplify, curfunc, other);
+        PassChangedBegin(curfunc)  
 
             RunLevelPass(LcSSA, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
+        PassChangedBegin(curfunc)  
 
             // loop-rotate
             RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
-                PassChangedEnd // licm
+                  // licm
 
                     RunLevelPass(LICMPass, curfunc, modified);
-        PassChangedBegin(curfunc) PassChangedEnd
+        PassChangedBegin(curfunc)  
 
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
-        PassChangedBegin(curfunc) PassChangedEnd
+        PassChangedBegin(curfunc)
+              RunEntryFunc(LoopParallel, modified)
+                PassChangedBegin(curfunc)  
 
-            // RunLevelPass(LoopParallel, curfunc, modified)
-            //     PassChangedBegin(curfunc) PassChangedEnd
+                    RunLevelPass(ConstantProp, curfunc, other)
 
-                    RunLevelPass(DCE, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
+                        RunLevelPass(DCE, curfunc, other);
+        PassChangedBegin(curfunc)  
 
             RunLevelPass(BlockMerge, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
+        PassChangedBegin(curfunc)  
+      }
+
+      while (RunImpl<Inliner>(module, AM)) {
+        RunLevelPass(cfgSimplify, curfunc, modified)
+            RunImpl<DeadArgsElimination>(module, AM);
+        RunImpl<StoreOnlyGlobalElimination>(module, AM);
+        RunImpl<Global2Local>(module, AM);
+
+        CommonPass(AM);
       }
 
       CommonPass(AM);
-
       // loop unroller
       modified = true;
       while (modified) {
         modified = false;
         PassChangedBegin(curfunc)
-            PassChangedEnd RunLevelPass(LoopSimplify, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
+              RunLevelPass(LoopSimplify, curfunc, other);
+        PassChangedBegin(curfunc)  
 
             RunLevelPass(LcSSA, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
+        PassChangedBegin(curfunc)  
 
             // loop-rotate
             RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
-                PassChangedEnd // licm
+                  // licm
 
                     RunLevelPass(LICMPass, curfunc, modified);
-        PassChangedBegin(curfunc) PassChangedEnd
+        PassChangedBegin(curfunc)  
 
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
-        PassChangedBegin(curfunc) PassChangedEnd
+        PassChangedBegin(curfunc)  
 
             RunLevelPass(LoopUnroll, curfunc,
                          modified) PassChangedBegin(curfunc)
-                PassChangedEnd RunLevelPass(ConstantProp, curfunc, modified);
 
+                  RunLevelPass(ConstantProp, curfunc, modified);
         RunLevelPass(DCE, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
+        PassChangedBegin(curfunc)  
 
             RunLevelPass(BlockMerge, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
+        PassChangedBegin(curfunc)  
       }
     }
     CommonPass(AM);
-    //clean
+    // clean
     {
       modified = true;
-      while(modified)
-      {
+      while (modified) {
         modified = false;
         RunLevelPass(DeadStoreElimination, curfunc, modified);
         RunLevelPass(LoadElimination, curfunc, modified)
+            RunLevelPass(DCE, curfunc, modified)
+                RunLevelPass(DeadStoreElimination, curfunc, modified);
         RunLevelPass(DCE, curfunc, modified)
-        RunLevelPass(DeadStoreElimination, curfunc, modified);
-        RunLevelPass(DCE, curfunc, modified)
-        RunLevelPass(SelfStoreElimination, curfunc, modified)
-        RunLevelPass(DCE, curfunc, modified);
+            RunLevelPass(SelfStoreElimination, curfunc, modified)
+                RunLevelPass(DCE, curfunc, modified);
         // StoreOnlyGlobalElimination
         RunImpl<StoreOnlyGlobalElimination>(module, AM);
-        // global2local
-      RunImpl<Global2Local>(module, AM);
       }
     }
-      CommonPass(AM);
-    //clean
+    CommonPass(AM);
+    // clean
     {
       modified = true;
-      while(modified)
-      {
+      while (modified) {
         modified = false;
         RunLevelPass(DeadStoreElimination, curfunc, modified);
         RunLevelPass(LoadElimination, curfunc, modified)
+            RunLevelPass(DCE, curfunc, modified)
+                RunLevelPass(DeadStoreElimination, curfunc, modified);
         RunLevelPass(DCE, curfunc, modified)
-        RunLevelPass(DeadStoreElimination, curfunc, modified);
-        RunLevelPass(DCE, curfunc, modified)
-        RunLevelPass(SelfStoreElimination, curfunc, modified)
-        RunLevelPass(DCE, curfunc, modified);
+            RunLevelPass(SelfStoreElimination, curfunc, modified)
+                RunLevelPass(DCE, curfunc, modified);
         // StoreOnlyGlobalElimination
         RunImpl<StoreOnlyGlobalElimination>(module, AM);
-        // global2local
-      RunImpl<Global2Local>(module, AM);
       }
     }
-          PassChangedBegin(curfunc)
-            PassChangedEnd RunLevelPass(LoopSimplify, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
+    while (modified) {
+      modified = false;
+      PassChangedBegin(curfunc)
+            RunLevelPass(LoopSimplify, curfunc, other);
+      PassChangedBegin(curfunc)  
 
-            RunLevelPass(LcSSA, curfunc, other);
-        PassChangedBegin(curfunc) PassChangedEnd
+          RunLevelPass(LcSSA, curfunc, other);
+      PassChangedBegin(curfunc)  
 
-            // loop-rotate
-            RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
-                PassChangedEnd // licm
+          // loop-rotate
+          RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)  // licm
 
-                    RunLevelPass(LICMPass, curfunc, modified);
-        PassChangedBegin(curfunc) PassChangedEnd
+                  RunLevelPass(LICMPass, curfunc, modified);
+      PassChangedBegin(curfunc)  
 
-              // loopdeletion
-              RunLevelPass(LoopDeletion, curfunc, modified);
-          PassChangedBegin(curfunc) PassChangedEnd
-          // RunLevelPass(ConstantProp, curfunc, modified)
           RunLevelPass(ScalarStrengthReduce, curfunc, modified);
-          // RunLevelPass(LoopDeletion, curfunc, modified);
-          // RunLevelPass(ConstantProp, curfunc, modified)
-        // RunLevelPass(SelfStoreElimination, curfunc, modified)
-        // RunLevelPass(DCE, curfunc, modified);
-        // CommonPass(AM);
-        // RunLevelPass(DeadStoreElimination, curfunc, modified);
-        // RunLevelPass(DCE, curfunc, modified);
-        // RunLevelPass(DCE, curfunc, modified)
-    {
-      // tail
-      // RunLevelPass(TailRecurseEliminator, curfunc,
-      //              modified) while (RunImpl<Inliner>(module, AM)) {
-      //   RunLevelPass(cfgSimplify, curfunc, modified)
-      //       RunImpl<DeadArgsElimination>(module, AM);
-      //   RunImpl<StoreOnlyGlobalElimination>(module, AM);
-      //   RunImpl<Global2Local>(module, AM);
-      //   while (1) {
-      //     if (!CommonPass(AM))
-      //       break;
-      //   }
-      // }
+      // loopdeletion
+      RunLevelPass(LoopDeletion, curfunc, modified);
+      PassChangedBegin(curfunc)  
+
+      RunLevelPass(ConstantProp, curfunc, modified);
+      RunLevelPass(DCE, curfunc, other);
+      PassChangedBegin(curfunc)  
+
+          RunLevelPass(BlockMerge, curfunc, other);
+      PassChangedBegin(curfunc)  
     }
+    CommonPass(AM);
   }
 }
-
 bool _PassManager::CommonPass(_AnalysisManager &AM) {
   bool mody = true;
   while (mody) {
-    static int a = 0;
-    a++;
     mody = false;
 
     RunLevelPass(cfgSimplify, curfunc, mody);
 
-    PassChangedBegin(curfunc) PassChangedEnd PassChangedBegin(curfunc)
+    PassChangedBegin(curfunc)   PassChangedBegin(curfunc)
         RunImpl<Mem2reg>(curfunc, AM);
-    PassChangedEnd if (!HasRunCondMerge) {
+      if (!HasRunCondMerge) {
       PassChangedBegin(curfunc)
-          PassChangedEnd RunLevelPass(CondMerge, curfunc, modified);
-      PassChangedBegin(curfunc) PassChangedEnd HasRunCondMerge = true;
+            RunLevelPass(CondMerge, curfunc, modified);
+      PassChangedBegin(curfunc)   HasRunCondMerge = true;
     }
     // Local2Global
     RunImpl<Local2Global>(module, AM);
     // simplifycfg
     RunLevelPass(ConstantProp, curfunc, mody);
     RunLevelPass(DCE, curfunc, mody);
-    PassChangedBegin(curfunc) PassChangedEnd
+    PassChangedBegin(curfunc)  
 
         RunLevelPass(cfgSimplify, curfunc, mody);
-    PassChangedBegin(curfunc) PassChangedEnd
+    PassChangedBegin(curfunc)  
 
         // cse
         RunLevelPass(CSE, curfunc, mody);
@@ -328,32 +319,29 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
 
     RunLevelPass(GepEvaluate, curfunc, mody);
 
- RunLevelPass(DeadStoreElimination, curfunc, modified);
+    RunLevelPass(DeadStoreElimination, curfunc, modified);
 
     RunLevelPass(LoadElimination, curfunc, mody)
-    RunLevelPass(DCE, curfunc, mody)
+        RunLevelPass(DCE, curfunc, mody)
 
-    RunLevelPass(DCE, curfunc, mody)
-    // constprop
-    RunLevelPass(ConstantProp, curfunc, mody);
-    RunLevelPass(ConstantHoist, curfunc,modified);
-        RunLevelPass(cfgSimplify, curfunc, modified)
-            PassChangedBegin(curfunc) PassChangedEnd
-    // reassociate
-    RunLevelPass(Reassociate, curfunc, mody);
-
+            RunLevelPass(DCE, curfunc, mody)
+        // constprop
+        RunLevelPass(ConstantProp, curfunc, mody);
+    RunLevelPass(ConstantHoist, curfunc, modified);
+    RunLevelPass(cfgSimplify, curfunc, modified) PassChangedBegin(curfunc)
+         
+            // reassociate
+            RunLevelPass(Reassociate, curfunc, mody);
 
     // cse
     RunLevelPass(CSE, curfunc, mody);
     // RunLevelPass(GepCombine, curfunc, mody);
-        RunLevelPass(BlockMerge, curfunc, mody);
+    RunLevelPass(BlockMerge, curfunc, mody);
 
     RunLevelPass(DCE, curfunc, mody);
 
     PassChangedBegin(curfunc)
-        PassChangedEnd RunLevelPass(cfgSimplify, curfunc, mody);
-    // TRE
-    // RunLevelPass(TailRecurseEliminator, curfunc, mody) return mody;
+          RunLevelPass(cfgSimplify, curfunc, mody);
   }
   return mody;
 }
@@ -474,9 +462,9 @@ void _PassManager::RunOnTest() {
           }
           break;
         }
-        case scalarstrengthreduce:
-        {
-          auto m_scalarstrengthreduce = RunImpl<ScalarStrengthReduce>(curfunc, AM);
+        case scalarstrengthreduce: {
+          auto m_scalarstrengthreduce =
+              RunImpl<ScalarStrengthReduce>(curfunc, AM);
           break;
         }
         case cse: {
@@ -522,28 +510,25 @@ void _PassManager::RunOnTest() {
           auto m_gepevaluate = RunImpl<GepEvaluate>(curfunc, AM);
           break;
         }
-        case Dse:
-        {
+        case Dse: {
           auto m_Dse = RunImpl<DeadStoreElimination>(curfunc, AM);
           break;
         }
-        case loadeliminaion:
-        {
+        case loadeliminaion: {
           auto m_loadeliminaion = RunImpl<LoadElimination>(curfunc, AM);
           break;
         }
-        case selfstoreelimination:
-        {
-          auto m_selfstoreelimination = RunImpl<SelfStoreElimination>(curfunc, AM);
+        case selfstoreelimination: {
+          auto m_selfstoreelimination =
+              RunImpl<SelfStoreElimination>(curfunc, AM);
           break;
         }
         case blockmerge: {
           auto m_blockmerge = RunImpl<BlockMerge>(curfunc, AM);
           break;
         }
-        case consthoist:
-        {
-          auto m_consthoist = RunImpl<ConstantHoist>(curfunc, AM);
+        case cachelookup: {
+          auto m_cache = RunImpl<CacheLookUp>(curfunc, AM);
           break;
         }
         default: {

@@ -73,32 +73,30 @@ void Initializer::print() {
   std::cout << "]";
 }
 
-Operand Initializer::getInitVal(std::vector<int>& index,int dep){
-  auto getZero=[&]() -> Operand {
-    auto basetp=dynamic_cast<HasSubType*>(GetType())->get_baseType();
-    if(basetp==IntType::NewIntTypeGet()){
+Operand Initializer::getInitVal(std::vector<int> &index, int dep) {
+  auto getZero = [&]() -> Operand {
+    auto basetp = dynamic_cast<HasSubType *>(GetType())->get_baseType();
+    if (basetp == IntType::NewIntTypeGet()) {
       return ConstIRInt::GetNewConstant();
-    }
-    else if(basetp==FloatType::NewFloatTypeGet()){
+    } else if (basetp == FloatType::NewFloatTypeGet()) {
       return ConstIRFloat::GetNewConstant();
-    }
-    else{
+    } else {
       return ConstIRBoolean::GetNewConstant();
     }
   };
-  
+
   if (size() == 0) {
     return getZero();
   }
   int limi = dynamic_cast<ArrayType *>(tp)->GetNumEle();
-  auto i=index[dep];
-  assert(i<limi);
-  auto thissize=size();
-  if(i>=thissize)return getZero();
-  else if(auto inits = dynamic_cast<Initializer *>((*this)[i])){
-    return inits->getInitVal(index,dep+1);
-  }
-  else{
+  auto i = index[dep];
+  assert(i < limi);
+  auto thissize = size();
+  if (i >= thissize)
+    return getZero();
+  else if (auto inits = dynamic_cast<Initializer *>((*this)[i])) {
+    return inits->getInitVal(index, dep + 1);
+  } else {
     return (*this)[i];
   }
 }
@@ -376,6 +374,7 @@ BinaryInst *BinaryInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   auto tmp = normal_clone<BinaryInst>(this, mapping);
   tmp->op = op;
   tmp->id = static_cast<User::OpID>(op + BaseEnumNum);
+  tmp->Atomic = Atomic;
   return tmp;
 }
 
@@ -439,10 +438,14 @@ void BinaryInst::print() {
   std::cout << " = ";
   switch (op) {
   case BinaryInst::Op_Add:
-    if (tp == IR_Value_INT || tp == IR_INT_64)
-      std::cout << "add ";
-    else
-      std::cout << "fadd ";
+    if (!this->Atomic) {
+      if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+        std::cout << "add ";
+      else
+        std::cout << "fadd ";
+    } else {
+      std::cout << "atomicadd ";
+    }
     break;
   case BinaryInst::Op_Sub:
     if (tp == IR_Value_INT || tp == IR_INT_64)
@@ -544,12 +547,23 @@ void BinaryInst::print() {
   default:
     break;
   }
-  uselist[0]->GetValue()->GetType()->print();
-  std::cout << " ";
-  uselist[0]->GetValue()->print();
-  std::cout << ", ";
-  uselist[1]->GetValue()->print();
-  std::cout << '\n';
+  if (this->Atomic) {
+    uselist[0]->GetValue()->GetType()->print();
+    std::cout << " ";
+    uselist[0]->GetValue()->print();
+    std::cout << ", ";
+    uselist[1]->GetValue()->GetType()->print();
+    std::cout << " ";
+    uselist[1]->GetValue()->print();
+    std::cout << '\n';
+  } else {
+    uselist[1]->GetValue()->GetType()->print();
+    std::cout << " ";
+    uselist[0]->GetValue()->print();
+    std::cout << ", ";
+    uselist[1]->GetValue()->print();
+    std::cout << '\n';
+  }
 }
 
 void BinaryInst::SetOperand(int index, Value *val) {
@@ -1075,6 +1089,7 @@ Function::InlineCall(CallInst *inst,
                      std::unordered_map<Operand, Operand> &OperandMapping) {
   std::pair<Value *, BasicBlock *> tmp{nullptr, nullptr};
   BasicBlock *block = inst->GetParent();
+  User* Jump = block->back();
   Function *func = block->GetParent();
   Function *inlined_func = inst->GetOperand(0)->as<Function>();
   BasicBlock *SplitBlock = block->SplitAt(inst);
@@ -1135,6 +1150,33 @@ Function::InlineCall(CallInst *inst,
       }
     }
   }
+  if(dynamic_cast<UnCondInst*>(Jump))
+  {
+    BasicBlock* bb = Jump->GetOperand(0)->as<BasicBlock>();
+    auto iter = bb->begin();
+    while(auto phi = dynamic_cast<PhiInst*>(*iter))
+    {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter;
+    }
+  }
+  else if(dynamic_cast<CondInst*>(Jump))
+  {
+    BasicBlock* bb = Jump->GetOperand(1)->as<BasicBlock>();
+    auto iter = bb->begin();
+    while(auto phi = dynamic_cast<PhiInst*>(*iter))
+    {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter;
+    }
+    BasicBlock* bb1 = Jump->GetOperand(2)->as<BasicBlock>();
+    auto iter1 = bb1->begin();
+    while(auto phi = dynamic_cast<PhiInst*>(*iter1))
+    {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter1;
+    }
+  }
   return tmp;
 }
 
@@ -1177,9 +1219,13 @@ BuildInFunction *BuildInFunction::GetBuildInFunction(std::string _id) {
       return VoidType::NewVoidTypeGet();
     if (_id == "memcpy@plt")
       return VoidType::NewVoidTypeGet();
-    if (_id == "buildin_NotifyWorker")
+    if (_id == "buildin_NotifyWorkerLE")
+      return VoidType::NewVoidTypeGet();
+    if (_id == "buildin_NotifyWorkerLT")
       return VoidType::NewVoidTypeGet();
     if (_id == "buildin_FenceArgLoaded")
+      return VoidType::NewVoidTypeGet();
+    if(_id == "buildin_AtomicF32add")
       return VoidType::NewVoidTypeGet();
     assert(0);
   };

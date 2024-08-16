@@ -65,6 +65,7 @@ class Variable:public User
         }
         return uselist[0]->usee;
     };
+    bool ForParallel=false; //for parallel global, cant be local or eliminate
     virtual Value* clone(std::unordered_map<Operand,Operand>&) override;
 };
 
@@ -352,6 +353,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
         ParallelBody,
     };
     Tag tag=Normal;
+    bool CmpEqual=false;
     std::set<Value*> Change_Val; // Used for cse 
     std::pair<size_t,size_t>& GetInlineInfo();
     inline void ClearInlineInfo(){inlineinfo.first=inlineinfo.second=0;};
