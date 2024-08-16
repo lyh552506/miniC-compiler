@@ -41,6 +41,7 @@ class Inliner : public _PassManagerBase<Inliner, Module>
 {
 public:
     bool Run();
+    std::pair<int, BinaryInst::Operation> MatchLib(Function* func);
     bool Inline(Module* m);
     Inliner(Module* m, _AnalysisManager &AM) : m(m), AM(AM) {}
 private:

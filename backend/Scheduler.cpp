@@ -1,5 +1,5 @@
 #include "../include/backend/Scheduler.hpp"
-#define DEBUG_SCHED
+// #define DEBUG_SCHED
 template<typename T_from, typename T_to>
 void Scheduler::transfer(Sunit* sunit, T_from &container_from, T_to& container_to) {
     container_to.push_back(sunit);

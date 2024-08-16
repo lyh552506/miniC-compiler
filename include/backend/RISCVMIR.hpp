@@ -41,6 +41,9 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
         _lui,
         _auipc, //?
 
+        _max,
+        _min,
+
         _mul,
         _mulh,
         _mulhsu,
@@ -113,6 +116,10 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         EndMem,
 
+        BeginConvert,
+        _sext_w,
+        EndConvert,
+
         BeginFloat,
 
         BeginFloatMV,
@@ -170,6 +177,10 @@ class RISCVMIR:public list_node<RISCVBasicBlock,RISCVMIR>
 
         EndFloatArithmetic,
         EndFloat,
+
+        BeginAtomic,
+        _amoadd_w_aqrl,
+        EndAtomic,
 
         /// @brief Used for call and ret
         BeginMIRPseudo,

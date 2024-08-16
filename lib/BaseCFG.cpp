@@ -181,6 +181,10 @@ bool User::IsBinary() {
 }
 
 bool User::HasSideEffect() {
+  if (auto bin = dynamic_cast<BinaryInst *>(this)) {
+    if (bin->IsAtomic())
+      return true;
+  }
   if (dynamic_cast<StoreInst *>(this)) {
     return true;
   }
@@ -200,7 +204,7 @@ bool User::HasSideEffect() {
     Function *func =
         dynamic_cast<Function *>(this->Getuselist()[0]->GetValue());
     if (func) {
-      if (func->HasSideEffect||func->tag!=Function::Normal)
+      if (func->HasSideEffect || func->tag != Function::Normal)
         return true;
       for (auto it = func->begin(); it != func->end(); ++it) {
         BasicBlock *block = *it;
@@ -225,7 +229,7 @@ bool User::HasSideEffect() {
         return false;
     }
   }
-  if(dynamic_cast<RetInst*>(this))
+  if (dynamic_cast<RetInst *>(this))
     return true;
   if (this->GetUserlist().is_empty())
     return false;

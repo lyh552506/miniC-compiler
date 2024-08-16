@@ -2,7 +2,7 @@
 #include <memory>
 enum InnerDataType
 {
-    IR_Value_INT,IR_Value_VOID,IR_Value_Float,IR_PTR,IR_ARRAY,BACKEND_PTR
+    IR_Value_INT,IR_Value_VOID,IR_Value_Float,IR_PTR,IR_ARRAY,BACKEND_PTR, IR_INT_64
 };
 class Type
 {
@@ -17,6 +17,14 @@ class Type
     virtual int get_layer();
     size_t get_size();
     InnerDataType GetTypeEnum();
+};
+
+class Int64Type:public Type
+{
+    Int64Type();
+    public:
+    static Int64Type* NewInt64TypeGet();
+    void print()final;
 };
 class IntType:public Type
 {

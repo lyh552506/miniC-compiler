@@ -89,7 +89,7 @@ MOperand GraphColor::GetAlias(MOperand v) {
 
 //实行George的启发式合并
 bool GraphColor::GeorgeCheck(MOperand dst, MOperand src, RISCVType ty) {
-  if (ty == riscv_i32 || ty == riscv_ptr) {
+  if (ty == riscv_i32 || ty == riscv_ptr || ty == riscv_i64) {
     auto x = Adjacent(src);
     for (auto tmp : x) {
       bool ok = false;
@@ -128,7 +128,7 @@ bool GraphColor::BriggsCheck(MOperand dst, MOperand src, RISCVType ty) {
   std::unordered_set<MOperand> target{tmp.begin(), tmp.end()};
   tmp = Adjacent(src);
   target.insert(tmp.begin(), tmp.end());
-  if (ty == riscv_i32 | ty == riscv_ptr) {
+  if (ty == riscv_i32 | ty == riscv_ptr || ty == riscv_i64) {
     int num = 0;
     for (auto node : target) {
       if (Degree[node] >= reglist.GetReglistInt().size())
@@ -236,7 +236,7 @@ void GraphColor::SetRegState(PhyRegister *reg, RISCVType ty) {
 }
 
 int GraphColor::GetRegNums(MOperand v) {
-  if (v->GetType() == riscv_i32 || v->GetType() == riscv_ptr)
+  if (v->GetType() == riscv_i32 || v->GetType() == riscv_ptr || v->GetType() == riscv_i64)
     return reglist.GetReglistInt().size();
   else if (v->GetType() == riscv_float32)
     return reglist.GetReglistFloat().size();
@@ -244,7 +244,7 @@ int GraphColor::GetRegNums(MOperand v) {
     auto preg = dynamic_cast<PhyRegister *>(v);
     auto tp = RegType[preg];
     assert(tp != RISCVType::riscv_none && "error");
-    return tp == riscv_i32 ? reglist.GetReglistInt().size()
+    return (tp == riscv_i32 || tp == riscv_i64) ? reglist.GetReglistInt().size()
                            : reglist.GetReglistFloat().size();
   }
   assert("excetion case");
@@ -252,7 +252,7 @@ int GraphColor::GetRegNums(MOperand v) {
 }
 
 int GraphColor::GetRegNums(RISCVType ty) {
-  if (ty == riscv_i32 || ty == riscv_ptr)
+  if (ty == riscv_i32 || ty == riscv_ptr || ty == riscv_i64)
     return reglist.GetReglistInt().size();
   if (ty == riscv_float32)
     return reglist.GetReglistFloat().size();
@@ -312,12 +312,14 @@ void GraphColor::FreezeMoves(MOperand freeze) {
     activeMoves.erase(mov);
     frozenMoves.insert(mov);
     if (MoveRelated(value).size() == 0) {
-      if (value->GetType() == riscv_i32 &&
-              Degree[value] < reglist.GetReglistInt().size() ||
-          value->GetType() == riscv_float32 &&
-              Degree[value] < reglist.GetReglistFloat().size() ||
-          value->GetType() == riscv_ptr &&
-              Degree[value] < reglist.GetReglistInt().size()) {
+      if ((value->GetType() == riscv_i32 &&
+              Degree[value] < reglist.GetReglistInt().size()) ||
+              (value->GetType() == riscv_i64 &&
+              Degree[value] < reglist.GetReglistInt().size()) ||
+          (value->GetType() == riscv_float32 &&
+              Degree[value] < reglist.GetReglistFloat().size()) ||
+          (value->GetType() == riscv_ptr &&
+              Degree[value] < reglist.GetReglistInt().size())) {
         freezeWorkList.erase(value);
         PushVecSingleVal(simplifyWorkList, value);
       }
@@ -413,13 +415,13 @@ void GraphColor::AssignColors() {
           Precolored.find(GetAlias(adj)) != Precolored.end()) {
         if (color.find(dynamic_cast<MOperand>(GetAlias(adj))) == color.end())
           assert(0);
-        if (ty == riscv_i32 || ty == riscv_ptr)
+        if (ty == riscv_i32 || ty == riscv_ptr || ty == riscv_i64)
           int_assist.erase(color[GetAlias(adj)]);
         else if (ty == riscv_float32)
           float_assist.erase(color[GetAlias(adj)]);
       }
     bool flag = false;
-    if (ty == riscv_i32 || ty == riscv_ptr) {
+    if (ty == riscv_i32 || ty == riscv_ptr || ty == riscv_i64) {
       if (int_assist.size() == 0)
         spilledNodes.insert(select);
       else {
@@ -531,7 +533,8 @@ RISCVMIR *GraphColor::CreateSpillMir(RISCVMOperand *spill,
   temps.insert(reg);
   RISCVMIR *sd = nullptr;
   if (spill->GetType() == RISCVType::riscv_i32 ||
-      spill->GetType() == RISCVType::riscv_ptr)
+      spill->GetType() == RISCVType::riscv_ptr ||
+      spill->GetType() == RISCVType::riscv_i64 )
     sd = new RISCVMIR(RISCVMIR::RISCVISA::_sd);
   else if (spill->GetType() == RISCVType::riscv_float32)
     sd = new RISCVMIR(RISCVMIR::RISCVISA::_fsw);
@@ -558,7 +561,8 @@ RISCVMIR *GraphColor::CreateLoadMir(RISCVMOperand *load,
   temps.insert(reg);
   RISCVMIR *lw = nullptr;
   if (load->GetType() == RISCVType::riscv_i32 ||
-      load->GetType() == RISCVType::riscv_ptr)
+      load->GetType() == RISCVType::riscv_ptr ||
+      load->GetType() == RISCVType::riscv_i64 )
     lw = new RISCVMIR(RISCVMIR::RISCVISA::_ld);
   else if (load->GetType() == RISCVType::riscv_float32)
     lw = new RISCVMIR(RISCVMIR::RISCVISA::_flw);
@@ -650,7 +654,7 @@ PhyRegister *GraphColor::SelectPhyReg(MOperand vreg, RISCVType ty,
       }
     }
   }
-  if (ty == riscv_i32 || ty == riscv_ptr) {
+  if (ty == riscv_i32 || ty == riscv_ptr || ty == riscv_i64) {
     if (!MoveTarget.empty()) {
       for (auto reg : MoveTarget) {
         if (assist.find(reg) != assist.end()) {
@@ -741,7 +745,7 @@ std::set<MOperand> GraphColor::Adjacent(MOperand val) {
 void GraphColor::DecrementDegree(MOperand target) {
   Degree[target]--;
   //这里注意需要检查一下更新后的相邻边是否只有color-1
-  if (target->GetType() == riscv_i32 || target->GetType() == riscv_ptr) {
+  if (target->GetType() == riscv_i32 || target->GetType() == riscv_ptr || riscv_i64) {
     if (Degree[target] == (GetRegNums(riscv_i32) - 1)) {
       auto x = Adjacent(target);
       std::unordered_set<MOperand> tmp(x.begin(), x.end());

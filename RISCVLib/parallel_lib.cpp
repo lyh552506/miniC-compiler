@@ -51,12 +51,18 @@ void WaitBufferWrite(){
     empty.lock();
 }
 
-void buildin_NotifyWorker(int begin,int end){
+void buildin_NotifyWorkerLT(int begin,int end){
     // tell the worker that the buffer is full
     int64_t _begin=begin;
     int64_t _end=end;
-    int64_t step=(_end-_begin)/4;
-    
+    if(_end-_begin<64){
+        *(int*)(buildin_parallel_arg_storage)=_begin;
+        *(int*)(buildin_parallel_arg_storage+4)=_end;
+        buildin_funcptr();
+        return;
+    }
+    int64_t step=(_end-_begin+3)/4;
+
     for(_begin;_begin<_end;_begin+=step){
         int64_t limi=std::min(_begin+step,_end);
         int st=_begin,ed=limi;
@@ -70,10 +76,36 @@ void buildin_NotifyWorker(int begin,int end){
     WaitTasksCompleted();
 }
 
+void buildin_NotifyWorkerLE(int begin,int end){
+    // tell the worker that the buffer is full
+    int64_t _begin=begin;
+    int64_t _end=end;
+    if(_end-_begin+1<64){
+        *(int*)(buildin_parallel_arg_storage)=_begin;
+        *(int*)(buildin_parallel_arg_storage+4)=_end;
+        buildin_funcptr();
+        return;
+    }
+    int64_t step=(_end-_begin+1+3)/4;
+
+    // the begin 100% will be greater than end in the last iteration, so < and <= is the same here.
+    for(_begin;_begin<_end;_begin+=step){
+        int64_t limi=std::min(_begin+step-1,_end);
+        int st=_begin,ed=limi;
+        WaitBufferWrite();
+        *(int*)(buildin_parallel_arg_storage)=st;
+        *(int*)(buildin_parallel_arg_storage+4)=ed;
+        tasks++;
+        full.unlock();
+    }
+    
+    WaitTasksCompleted();
+}
+
 void* WorkerThread(void *arg){
     // std::cerr<<"work thread created\n";
-    printf("work thread created\n");
-    fflush(stdout);
+    // printf("work thread created\n");
+    // fflush(stdout);
     while(true)
         WaitBufferRead();
 }
@@ -88,6 +120,14 @@ void CreateThread() {
         pthread_detach(threads[i]);
         // pthread_setaffinity_np
     }
+}
+
+void buildin_AtomicF32add(float* ptr, float data) {
+    float old, new_val;
+    do {
+        old = *ptr;
+        new_val = old + data;
+    } while (!__sync_bool_compare_and_swap((int*)ptr, *(int*)&old, *(int*)&new_val));
 }
 
 /*

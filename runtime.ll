@@ -319,6 +319,30 @@ entry:
   ret void
 }
 
+define i32 @min(i32, i32) local_unnamed_addr #0 {
+  %3 = icmp slt i32 %0, %1
+  %4 = select i1 %3, i32 %0, i32 %1
+  ret i32 %4
+}
+
+define i32 @max(i32, i32) local_unnamed_addr #0 {
+  %3 = icmp sgt i32 %0, %1
+  %4 = select i1 %3, i32 %0, i32 %1
+  ret i32 %4
+}
+
+define float @fmax(float, float) local_unnamed_addr #0 {
+  %3 = fcmp ogt float %0, %1
+  %4 = select i1 %3, float %0, float %1
+  ret float %4
+}
+
+define float @fmin(float, float) local_unnamed_addr #0 {
+  %3 = fcmp olt float %0, %1
+  %4 = select i1 %3, float %0, float %1
+  ret float %4
+}
+
 declare i32 @putchar(i32) local_unnamed_addr #5
 
 declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1 immarg) #1

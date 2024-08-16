@@ -1,6 +1,8 @@
 #include "../../include/ir/opt/DCE.hpp"
 #include "../../include/ir/Analysis/SideEffect.hpp"
 #include "../../util/my_stl.hpp"
+#include "CFG.hpp"
+#include "Singleton.hpp"
 #include <algorithm>
 bool DCE::Run() {
   bool mody = true;
@@ -58,10 +60,11 @@ bool DCE::Run() {
     }
     std::vector<User *> WorkList;
     for (BasicBlock *block : *func) {
-      for (auto inst = block->rbegin(); inst != block->rend(); --inst) {
-        if (std::find(WorkList.begin(), WorkList.end(), (*inst)) ==
-            WorkList.end())
-          mody |= DCEInst((*inst), WorkList);
+      for (auto inst = block->rbegin(); inst != block->rend();) {
+        auto in = *inst;
+        --inst;
+        if (std::find(WorkList.begin(), WorkList.end(), in) == WorkList.end())
+          mody |= DCEInst(in, WorkList);
       }
     }
     while (!WorkList.empty()) {
@@ -148,8 +151,9 @@ bool DCE::DCEInst(User *inst, std::vector<User *> &Worklist) {
           Worklist.push_back(inst_);
       }
     }
-    inst->ClearRelation();
-    inst->EraseFromParent();
+    // inst->ClearRelation();
+    // inst->EraseFromParent();
+    delete inst;
     return true;
   }
   return false;
