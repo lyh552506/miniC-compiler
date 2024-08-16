@@ -758,6 +758,8 @@ void RISCVISel::LowerCallInstCacheLookUp(CallInst* inst){
         else assert(0 && "CallInst selection illegal type");
     }
     ctx(call);
+    call->SetDef(PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0));
+    ctx(Builder(RISCVMIR::mv, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
     #undef M
 }
 
