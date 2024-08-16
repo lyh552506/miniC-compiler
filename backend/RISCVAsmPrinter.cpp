@@ -30,6 +30,10 @@ RISCVAsmPrinter::RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweri
 }
 void RISCVAsmPrinter::SetTextSegment(textSegment* _text) {text=_text;}
 dataSegment* &RISCVAsmPrinter::GetData(){return data;} 
+
+void RISCVAsmPrinter::set_use_cachelookup(bool condi) {
+    use_cachelookup = condi;
+}
 void RISCVAsmPrinter::printAsmGlobal() {
     std::cout << "    .file  \"" << filename << "\"" << std::endl;
     std::cout << "    .attribute arch, \"rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0\"" << std::endl;
@@ -39,8 +43,24 @@ void RISCVAsmPrinter::printAsmGlobal() {
     this->data->PrintDataSegment_Globval();
 }
 
+void RISCVAsmPrinter::printCacheLookUp() {
+    std::ifstream file(this->cachefilepath);
+    if (!file.is_open()) {
+        std::cout << "Error: Cannot open file " << this->cachefilepath << std::endl;
+        return;
+    }
+    std::string line;
+    while (std::getline(file, line)) {
+        std::cout << line << std::endl;
+    }
+    file.close();
+    return;
+}
+
 void RISCVAsmPrinter::printAsm() {
     this->printAsmGlobal();
+    if(this->use_cachelookup == true) 
+        this->printCacheLookUp();
     this->text->PrintTextSegment();
     this->data->PrintDataSegment_Tempvar();
 }

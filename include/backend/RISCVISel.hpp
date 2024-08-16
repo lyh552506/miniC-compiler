@@ -4,6 +4,7 @@
 #include "../../include/backend/RISCVContext.hpp"
 #include "../../include/backend/RISCVRegister.hpp"
 #include "../../include/backend/RISCVMIR.hpp"
+#include "../../include/backend/RISCVAsmPrinter.hpp"
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
 #include <algorithm>

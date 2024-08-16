@@ -611,9 +611,9 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
     ctx(call);
     #undef M
 }
-
+extern RISCVAsmPrinter *asmprinter;
 void RISCVISel::LowerCallInstCacheLookUp(CallInst* inst){
-    
+    asmprinter->set_use_cachelookup(true);
 }
 
 void RISCVISel::InstLowering(CallInst* inst){
