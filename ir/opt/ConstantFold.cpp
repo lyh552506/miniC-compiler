@@ -17,6 +17,8 @@ Value *ConstantFolding::ConstantFoldInst(User *inst)
         return ConstFoldMaxInst(inst->GetOperand(0), inst->GetOperand(1));
     else if(auto mininst = dynamic_cast<MinInst*>(inst))
         return ConstFoldMinInst(inst->GetOperand(0), inst->GetOperand(1));
+    else if(auto select = dynamic_cast<SelectInst*>(inst))
+        return ConstFoldSelectInst(select->GetOperand(0), select->GetOperand(1), select->GetOperand(2));
     return nullptr;
 }
 
@@ -44,7 +46,7 @@ Value *ConstantFolding::ConstantFoldBinaryInst(BinaryInst *inst)
 
     if (LHS->isConst() && RHS->isConst())
     {
-        Value *Simplify = SimplifyBinOp(inst->getopration(), LHS, RHS);
+        Value *Simplify = SimplifyBinOp(inst, inst->getopration(), LHS, RHS);
         if (Simplify)
         {
             if (dynamic_cast<UndefValue *>(Simplify))
@@ -64,7 +66,7 @@ Value *ConstantFolding::ConstantFoldBinaryInst(BinaryInst *inst)
         if (type == InnerDataType::IR_Value_Float)
             return ConstantFoldBinaryFloat(inst, LHS, RHS);
     }
-    Value *Simplify = SimplifyBinOp(inst->getopration(), LHS, RHS);
+    Value *Simplify = SimplifyBinOp(inst, inst->getopration(), LHS, RHS);
     if (Simplify)
         return Simplify;
     if (inst->getopration() == BinaryInst::Op_Sub)
@@ -351,9 +353,9 @@ Value *ConstantFolding::ConstFoldCmp(BinaryInst::Operation Opcode, bool LVal, bo
     return ConstIRBoolean::GetNewConstant(Result);
 }
 
-ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst::Operation Opcode, ConstantData *LHS, ConstantData *RHS)
+ConstantData *ConstantFolding::ConstFoldBinary(BinaryInst* inst, BinaryInst::Operation Opcode, ConstantData *LHS, ConstantData *RHS)
 {
-    Value *Simplify = SimplifyBinOp(Opcode, LHS, RHS);
+    Value *Simplify = SimplifyBinOp(inst, Opcode, LHS, RHS);
     ConstantData *Simplify_ = static_cast<ConstantData *>(Simplify);
     if (Simplify_)
     {
@@ -568,4 +570,15 @@ Value* ConstantFolding::ConstFoldMinInst(Value* LHS, Value* RHS)
         return ConstIRFloat::GetNewConstant(std::min(LVal, RVal));
     }
     return nullptr;
+}
+
+Value* ConstantFolding::ConstFoldSelectInst(Value* cond, Value* TrueVal, Value* FalseVal)
+{
+    auto Cond = dynamic_cast<ConstIRBoolean*>(cond);
+    if(!Cond)
+        return nullptr;
+    if(Cond->GetVal())
+        return TrueVal;
+    else
+        return FalseVal;
 }

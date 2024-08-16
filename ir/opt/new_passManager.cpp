@@ -89,6 +89,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case scalarstrengthreduce:
       AddPass(scalarstrengthreduce);
       break;
+    case consthoist:
+      AddPass(consthoist);
+      break;
     case O0:
       level = O0;
       break;
@@ -333,7 +336,9 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     RunLevelPass(DCE, curfunc, mody)
     // constprop
     RunLevelPass(ConstantProp, curfunc, mody);
-
+    RunLevelPass(ConstantHoist, curfunc,modified);
+        RunLevelPass(cfgSimplify, curfunc, modified)
+            PassChangedBegin(curfunc) PassChangedEnd
     // reassociate
     RunLevelPass(Reassociate, curfunc, mody);
 
@@ -347,7 +352,6 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
 
     PassChangedBegin(curfunc)
         PassChangedEnd RunLevelPass(cfgSimplify, curfunc, mody);
-
     // TRE
     // RunLevelPass(TailRecurseEliminator, curfunc, mody) return mody;
   }
@@ -535,6 +539,11 @@ void _PassManager::RunOnTest() {
         }
         case blockmerge: {
           auto m_blockmerge = RunImpl<BlockMerge>(curfunc, AM);
+          break;
+        }
+        case consthoist:
+        {
+          auto m_consthoist = RunImpl<ConstantHoist>(curfunc, AM);
           break;
         }
         default: {

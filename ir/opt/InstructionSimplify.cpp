@@ -1,7 +1,7 @@
 #include "../../include/ir/opt/InstructionSimplify.hpp"
 #include <vector>
 
-Value *SimplifyBinOp(BinaryInst::Operation Opcode, Value *LHS, Value *RHS) {
+Value *SimplifyBinOp(BinaryInst* inst, BinaryInst::Operation Opcode, Value *LHS, Value *RHS) {
   switch (Opcode) {
   case BinaryInst::Op_Add:
     return SimplifyAddInst(LHS, RHS);
@@ -21,7 +21,7 @@ Value *SimplifyBinOp(BinaryInst::Operation Opcode, Value *LHS, Value *RHS) {
   case BinaryInst::Op_GE:
   case BinaryInst::Op_L:
   case BinaryInst::Op_LE:
-    return SimplifyIcmpInst(Opcode, LHS, RHS);
+    return SimplifyIcmpInst(inst, Opcode, LHS, RHS);
   default:
     return nullptr;
   }
@@ -177,7 +177,7 @@ Value *SimplifyModInst(Value *LHS, Value *RHS) {
   return nullptr;
 }
 
-Value *SimplifyIcmpInst(BinaryInst::Operation Opcode, Value *LHS, Value *RHS) {
+Value *SimplifyIcmpInst(BinaryInst* inst, BinaryInst::Operation Opcode, Value *LHS, Value *RHS) {
   // false and  X -> false
   if (Opcode == BinaryInst::Op_And) {
     auto LHSBool = dynamic_cast<ConstIRBoolean *>(LHS);
@@ -245,6 +245,39 @@ Value *SimplifyIcmpInst(BinaryInst::Operation Opcode, Value *LHS, Value *RHS) {
         return ConstIRBoolean::GetNewConstant(true);
     }
   }
+
+  // ( X == a ) && ( Y == b ) ->  ( X ^ a ) || ( Y ^ b ) == 0 实测慢了
+  // if(Opcode == BinaryInst::Op_And)
+  // {
+  //   if(dynamic_cast<BinaryInst*>(LHS) && dynamic_cast<BinaryInst*>(RHS))
+  //   {
+  //     BinaryInst* lhs = dynamic_cast<BinaryInst*>(LHS);
+  //     BinaryInst* rhs = dynamic_cast<BinaryInst*>(RHS);
+  //     if(lhs->getopration() == BinaryInst::Operation::Op_E && rhs->getopration() == BinaryInst::Operation::Op_E)
+  //     {
+  //       BinaryInst* LHS_Xor = new BinaryInst(lhs->GetOperand(0), BinaryInst::Operation::Op_Xor, lhs->GetOperand(1));
+  //       BinaryInst* RHS_Xor = new BinaryInst(rhs->GetOperand(0), BinaryInst::Operation::Op_Xor, rhs->GetOperand(1));
+  //       lhs->RAUW(LHS_Xor);
+  //       rhs->RAUW(RHS_Xor);
+  //       delete lhs;
+  //       delete rhs;
+  //       BinaryInst* New_Or = new BinaryInst(LHS_Xor, BinaryInst::Operation::Op_Or, RHS_Xor);
+  //       BinaryInst* New_Cmp = nullptr;
+  //       if(New_Or->GetType()->GetTypeEnum() == InnerDataType::IR_Value_INT)
+  //         New_Cmp = new BinaryInst(New_Or, BinaryInst::Operation::Op_E, ConstIRInt::GetNewConstant(0));
+  //       else if(New_Or->GetType()->GetTypeEnum() == InnerDataType::IR_Value_Float)
+  //         New_Cmp = new BinaryInst(New_Or, BinaryInst::Operation::Op_E, ConstIRFloat::GetNewConstant(0.0));
+  //       else
+  //         New_Cmp = new BinaryInst(New_Or, BinaryInst::Operation::Op_E, ConstIRBoolean::GetNewConstant(false));
+  //       BasicBlock::mylist<BasicBlock, User>::iterator Pos(inst);
+  //       Pos.insert_before(LHS_Xor);
+  //       Pos.insert_before(RHS_Xor);
+  //       Pos.insert_before(New_Or);
+  //       Pos.insert_before(New_Cmp);
+  //       return New_Cmp;
+  //     }
+  //   }
+  // }
 
   // X == X -> true
   if (LHS == RHS && Opcode == BinaryInst::Op_E)
