@@ -611,9 +611,41 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
     ctx(call);
     #undef M
 }
-extern RISCVAsmPrinter *asmprinter;
 void RISCVISel::LowerCallInstCacheLookUp(CallInst* inst){
+    #define M(x) ctx.mapping(x)
     this->asmprinter->set_use_cachelookup(true);
+    RISCVMIR* call = new RISCVMIR(RISCVMIR::call);
+    // the call inst is: call CacheLookUp(int/float, int/float)
+    // the size of uselist is 3, and the first use is called function
+    int regint=PhyRegister::PhyReg::a0;
+    for(int index=1; index<3; index++) {
+        Operand op = inst->GetOperand(index);
+        if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(op)) {
+            auto li = new RISCVMIR(RISCVMIR::li);
+            PhyRegister* preg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint));
+            call->AddOperand(preg);
+            li->SetDef(preg);
+            Imm* imm = Imm::GetImm(constint);
+            li->AddOperand(imm);
+            ctx.insert_val2mop(constint, imm);
+            ctx(li);
+            regint++;
+        }
+        else if(RISCVTyper(op->GetType())==riscv_i32 || RISCVTyper(op->GetType())==riscv_ptr) {
+            PhyRegister* preg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint));
+            ctx(Builder(RISCVMIR::mv,{preg,M(op)}));
+            call->AddOperand(preg);
+            regint++;
+        }
+        else if(RISCVTyper(op->GetType())==riscv_float32) {
+            PhyRegister* reg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint));
+            ctx(Builder(RISCVMIR::_fmv_x_w,{reg,M(op)}));
+            call->AddOperand(reg);
+            regint++;
+        }
+        else assert(0 && "CallInst selection illegal type");
+    }
+    #undef M
 }
 
 void RISCVISel::InstLowering(CallInst* inst){
@@ -622,6 +654,10 @@ void RISCVISel::InstLowering(CallInst* inst){
     // 如果有返回值则copy a0 到 VReg
     if(inst->GetOperand(0)->as<Function>()&&inst->GetOperand(0)->as<Function>()->tag==Function::ParallelBody){
         LowerCallInstParallel(inst);
+        return;
+    }
+    if(inst->GetOperand(0)->GetName()=="CacheLookUp"){
+        LowerCallInstCacheLookUp(inst);
         return;
     }
     #define M(x) ctx.mapping(x)
@@ -749,9 +785,6 @@ void RISCVISel::InstLowering(CallInst* inst){
         // ctx(Builder_withoutDef(RISCVMIR::call, inst));
     }
     #undef M
-    if(inst->GetOperand(0)->GetName()=="CacheLookUp"){
-        LowerCallInstCacheLookUp(inst);
-    }
 }
 
 void RISCVISel::InstLowering(RetInst* inst){
