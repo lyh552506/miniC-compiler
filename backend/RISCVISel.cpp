@@ -613,7 +613,7 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
 }
 extern RISCVAsmPrinter *asmprinter;
 void RISCVISel::LowerCallInstCacheLookUp(CallInst* inst){
-    asmprinter->set_use_cachelookup(true);
+    this->asmprinter->set_use_cachelookup(true);
 }
 
 void RISCVISel::InstLowering(CallInst* inst){
@@ -624,8 +624,6 @@ void RISCVISel::InstLowering(CallInst* inst){
         LowerCallInstParallel(inst);
         return;
     }
-
-
     #define M(x) ctx.mapping(x)
     int IntMaxNum=8, FloatMaxNum=8;
     std::unique_ptr<RISCVFrame>& frame = ctx.GetCurFunction()->GetFrame();
@@ -846,7 +844,7 @@ void RISCVISel::InstLowering(User* inst){
     else assert(0&&"Invalid Inst Type");
 }
 
-RISCVISel::RISCVISel(RISCVLoweringContext& _ctx):ctx(_ctx){}
+RISCVISel::RISCVISel(RISCVLoweringContext& _ctx, RISCVAsmPrinter*& asmprinter):ctx(_ctx),asmprinter(asmprinter){}
 
 void RISCVISel::condition_helper(BinaryInst* inst){
     assert(inst->GetType()==BoolType::NewBoolTypeGet());

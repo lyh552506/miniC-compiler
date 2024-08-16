@@ -14,6 +14,7 @@ void LowerFormalArguments(Function* func, RISCVLoweringContext& ctx);
 
 class RISCVISel:public BackEndPass<Function>{
     RISCVLoweringContext& ctx;
+    RISCVAsmPrinter*& asmprinter;
     std::vector<LoopInfo*>DeleteLoop;
     RISCVMIR* Builder(RISCVMIR::RISCVISA,User*);
     RISCVMIR* Builder_withoutDef(RISCVMIR::RISCVISA,User*);
@@ -48,7 +49,7 @@ class RISCVISel:public BackEndPass<Function>{
  
     RISCVMOperand* Li_Intimm(ConstIRInt* Intconst);
     public:
-    RISCVISel(RISCVLoweringContext&);
+    RISCVISel(RISCVLoweringContext&, RISCVAsmPrinter*&);
     bool run(Function*);
 };
 
