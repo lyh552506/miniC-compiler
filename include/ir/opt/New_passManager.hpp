@@ -34,6 +34,7 @@
 #include "../../include/ir/opt/licm.hpp"
 #include "../../include/ir/opt/mem2reg.hpp"
 #include "../../include/ir/opt/reassociate.hpp"
+#include "CFG.hpp"
 #include <any>
 #include <getopt.h>
 #include <memory>
@@ -120,6 +121,7 @@ private:
   std::vector<std::any> Contain;
   std::vector<LoopInfo *> loops;
   std::unordered_map<BasicBlock *, std::set<LoopAttr>> LoopForm;
+  std::unordered_set<BasicBlock *> UnrollRecord;
 
 public:
   _AnalysisManager() = default;
@@ -146,6 +148,11 @@ public:
     LoopForm[LoopHeader].insert(attr);
   }
 
+  void Unrolled(BasicBlock *LoopHeader) { UnrollRecord.insert(LoopHeader); }
+
+  bool IsUnrolled(BasicBlock *LoopHeader) {
+    return UnrollRecord.find(LoopHeader) != UnrollRecord.end();
+  }
   bool FindAttr(BasicBlock *bb, LoopAttr attr) {
     if (LoopForm.find(bb) != LoopForm.end()) {
       if (LoopForm[bb].find(attr) != LoopForm[bb].end())

@@ -33,10 +33,15 @@ bool LoopUnroll::Run() {
       }
     } else if (AM.FindAttr(loop->GetHeader(), Rotate) &&
                CanBeHalfUnroll(loop) && !AM.IsUnrolled(loop->GetHeader())) {
+      static int x = 0;
+      x++;
       auto unrollbody = ExtractLoopBody(loop);
+      // if (x == 1) {
+      //   Singleton<Module>().Test();
+      //   std::cout << std::endl;
+      // }
       if (unrollbody) {
         auto bb = Half_Unroll(loop, unrollbody);
-        AM.Unrolled(loop->GetHeader());
         return true;
       }
     }
@@ -392,6 +397,7 @@ bool LoopUnroll::CanBeFullUnroll(LoopInfo *loop) {
 
 bool LoopUnroll::CanBeHalfUnroll(LoopInfo *loop) {
   const auto body = loop->GetLoopBody();
+  int iteration = 0;
   LoopSimplify::CaculateLoopInfo(loop, loopAnaly);
   if (loop->CantCalcTrait())
     return false;
@@ -401,6 +407,16 @@ bool LoopUnroll::CanBeHalfUnroll(LoopInfo *loop) {
   auto latch = loopAnaly->GetLatch(loop);
   if (header != latch)
     return false;
+  if (dynamic_cast<PhiInst *>(loop->trait.boundary))
+    return false;
+  if (auto user = dynamic_cast<User *>(loop->trait.boundary))
+    if (loop->Contain(user->GetParent()))
+      return false;
+  if (auto Con = dynamic_cast<ConstIRInt *>(loop->trait.boundary)) {
+    iteration = Con->GetVal();
+    if (iteration < 30)
+      return false;
+  }
   auto op = loop->trait.cmp->getopration();
   switch (op) {
   case BinaryInst::Op_G:
@@ -414,12 +430,13 @@ bool LoopUnroll::CanBeHalfUnroll(LoopInfo *loop) {
   // auto change = dynamic_cast<BinaryInst *>(loop->trait.change);
   // if (change->getopration() != BinaryInst::Op_Add)
   //   return false;
-  int iteration = 0;
   int cost = CaculatePrice(body, m_func);
-  if (cost > 50)
+  if (iteration != 0)
+    cost *= std::abs(iteration);
+  if (cost > 1000)
     HalfUnrollTimes = 4;
   else
-    HalfUnrollTimes = 6;
+    HalfUnrollTimes = 50;
   return true;
 }
 
@@ -532,6 +549,7 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   Unroll_Entry->push_back(cmp);
 
   Unroll_Entry->GenerateCondInst(cmp, MutiUnrollBlock, SingleHeader);
+
   // map the new block
   bool insert = false;
   for (auto inst : *head) {
@@ -627,6 +645,7 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   delete tmp->back();
   auto single_uncond = new UnCondInst(SingleHeader);
   tmp->push_back(single_uncond);
+
   // update header phi
   singlehead_ind->updateIncoming(Arg2Orig[OriginChange], tmp);
   if (Ret.first)
@@ -660,9 +679,15 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
       }
     }
   }
+
+  loop->trait.change->RAUW(singlehead_ind);
+  delete loop->trait.change;
+  loop->trait.indvar->RAUW(singlehead_ind);
   delete loop->trait.indvar;
   if (loop->trait.res)
     delete loop->trait.res;
   Singleton<Module>().EraseFunction(callee);
+  AM.Unrolled(MutiUnrollBlock);
+  AM.Unrolled(SingleHeader);
   return tmp;
 }

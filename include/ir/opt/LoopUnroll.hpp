@@ -36,6 +36,6 @@ private:
   BasicBlock *prehead = nullptr;
   const int MaxInstCost_Before=200;
   const int MaxInstCost_After=5000;
-  const int MaxInstCost = 5000;
+  const int MaxInstCost = 2000;
   int HalfUnrollTimes = 0;
 };
