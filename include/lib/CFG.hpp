@@ -65,6 +65,7 @@ class Variable:public User
         }
         return uselist[0]->usee;
     };
+    bool ForParallel=false; //for parallel global, cant be local or eliminate
     virtual Value* clone(std::unordered_map<Operand,Operand>&) override;
 };
 
@@ -209,6 +210,51 @@ class ZextInst:public User
     ZextInst* clone(std::unordered_map<Operand,Operand>&)override;
     void print()final;
 };
+// sext i32 to i64
+class SextInst:public User
+{
+    public:
+    SextInst(Type* _tp):User(_tp){id = OpID::Sext;};
+    SextInst(Operand);
+    SextInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void print()final;
+};
+// trunc i64 to i32
+class TruncInst:public User
+{
+    public:
+    TruncInst(Type* _tp):User(_tp){id = OpID::Trunc;};
+    TruncInst(Operand);
+    TruncInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void print()final;
+};
+
+class MaxInst:public User
+{
+    public:
+    MaxInst(Type* _tp):User(_tp){id = OpID::Max;};
+    MaxInst(Operand,Operand);
+    MaxInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void print()final;
+};
+
+class MinInst:public User
+{
+    public:
+    MinInst(Type* _tp):User(_tp){id = OpID::Min;};
+    MinInst(Operand,Operand);
+    MinInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void print()final;
+};
+
+class SelectInst : public User
+{
+    public:
+    SelectInst(Type *ty) : User{ty} {id = OpID::Select;}
+    SelectInst(Operand _Cond, Operand _TrueVal, Operand _FalseVal);
+    SelectInst* clone(std::unordered_map<Operand,Operand>&)override;
+    void print() final;
+};
 
 class PhiInst : public User {
 public:
@@ -307,6 +353,7 @@ class Function:public Value,public mylist<Function,BasicBlock>
         ParallelBody,
     };
     Tag tag=Normal;
+    bool CmpEqual=false;
     std::set<Value*> Change_Val; // Used for cse 
     std::pair<size_t,size_t>& GetInlineInfo();
     inline void ClearInlineInfo(){inlineinfo.first=inlineinfo.second=0;};

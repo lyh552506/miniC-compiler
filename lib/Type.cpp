@@ -17,6 +17,16 @@ Type* Type::NewTypeByEnum(InnerDataType _tp){
     default:assert(0);
     }
 }
+/*Int64Type*/
+Int64Type::Int64Type():Type(IR_INT_64){size = 8;}
+Int64Type* Int64Type::NewInt64TypeGet()
+{
+    static Int64Type single;
+    return &single;
+}
+void Int64Type::print(){
+    std::cout<<"i64";
+}
 
 /*IntType*/
 IntType::IntType():Type(IR_Value_INT){size = 4;}

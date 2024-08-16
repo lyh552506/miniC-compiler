@@ -77,9 +77,8 @@ template <typename T> T PopBack(std::vector<T> &vec) {
     for (auto bb : *curfunc) {                                                 \
       bb->num = curfunc->bb_num++;                                             \
       curfunc->GetBasicBlock().push_back(bb);                                  \
-    }
-
-#define PassChangedEnd }
+    }                                                                          \
+  }
 
 #define FunctionChange(curfunc)                                                \
   curfunc->bb_num = 0;                                                         \
@@ -90,15 +89,17 @@ template <typename T> T PopBack(std::vector<T> &vec) {
   }
 
 #define RunLevelPass(PassName, curfunc, modified)                              \
-  for (auto &func : module->GetFuncTion()) {                                   \
-    curfunc = func.get();                                                      \
+  for (int i = 0; i < module->GetFuncTion().size(); i++) {                     \
+    curfunc = module->GetFuncTion()[i].get();                                  \
     modified |= RunImpl<PassName>(curfunc, AM);                                \
   }
 
-#define ContinueRunPassOnTest(PassName, curfunc)                                                                       \
-    bool modified = true;                                                                                              \
-    while (modified)                                                                                                   \
-    {                                                                                                                  \
-        modified = false;                                                                                              \
-        modified = RunImpl<PassName>(curfunc, AM);                                                                     \
-    }
+#define RunEntryFunc(PassName, modified)                                       \
+  modified |= RunImpl<PassName>(module->GetMainFunction(), AM);
+
+#define ContinueRunPassOnTest(PassName, curfunc)                               \
+  bool modified = true;                                                        \
+  while (modified) {                                                           \
+    modified = false;                                                          \
+    modified = RunImpl<PassName>(curfunc, AM);                                 \
+  }

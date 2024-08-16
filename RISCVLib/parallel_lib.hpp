@@ -8,8 +8,12 @@ static void WaitTasksCompleted()__attribute((always_inline));
 
 extern "C"{
 
-void buildin_NotifyWorker(int,int)__attribute((always_inline));
+void buildin_NotifyWorkerLE(int,int)__attribute((always_inline));
+
+void buildin_NotifyWorkerLT(int,int)__attribute((always_inline));
 
 void buildin_FenceArgLoaded()__attribute((always_inline));
+
+void buildin_AtomicF32add(float*,float)__attribute((always_inline));
 
 }

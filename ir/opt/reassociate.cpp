@@ -83,7 +83,7 @@ int Reassociate::GetRank(Value *val) {
 
 bool Reassociate::OptimizeInst(Value *I) {
   auto bin = dynamic_cast<BinaryInst *>(I);
-  if (!bin || bin->IsCmpInst())
+  if (!bin || bin->IsCmpInst()||bin->IsAtomic())
     return false;
   //如果是可交换（可重组）指令，尝试将含有const的操作数移动到右边
   if (IsCommutative(bin->getopration()))
@@ -257,7 +257,7 @@ Value *Reassociate::OptExp(BinaryInst *exp,
     if (C == nullptr)
       C = temp;
     else
-      C = ConstantFolding::ConstFoldBinary(exp->getopration(), C, temp);
+      C = ConstantFolding::ConstFoldBinary(exp, exp->getopration(), C, temp);
   }
   //按理说做完常量折叠后，不会出现这种情况了
   if (LinerizedOp.empty()) {

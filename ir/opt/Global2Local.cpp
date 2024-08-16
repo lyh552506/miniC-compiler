@@ -87,7 +87,7 @@ void Global2Local::RunPass(Module* module)
                     else
                         iter = globalvals.erase(iter);
                 }
-                else if(global->usage == Variable::Constant)
+                else if(global->usage == Variable::Constant || global->ForParallel)
                     iter++;
                 else if(Global2Funcs[global].size() == 1)
                 {
@@ -120,7 +120,7 @@ void Global2Local::RunPass(Module* module)
             return;
         else if(Repeat && global)
         {
-            if(global->usage == Variable::Constant)
+            if(global->usage == Variable::Constant || global->ForParallel)
                 iter++;
             else if(Global2Funcs[global].size() == 1)
             {

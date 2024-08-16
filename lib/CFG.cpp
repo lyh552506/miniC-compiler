@@ -73,32 +73,30 @@ void Initializer::print() {
   std::cout << "]";
 }
 
-Operand Initializer::getInitVal(std::vector<int>& index,int dep){
-  auto getZero=[&]() -> Operand {
-    auto basetp=dynamic_cast<HasSubType*>(GetType())->get_baseType();
-    if(basetp==IntType::NewIntTypeGet()){
+Operand Initializer::getInitVal(std::vector<int> &index, int dep) {
+  auto getZero = [&]() -> Operand {
+    auto basetp = dynamic_cast<HasSubType *>(GetType())->get_baseType();
+    if (basetp == IntType::NewIntTypeGet()) {
       return ConstIRInt::GetNewConstant();
-    }
-    else if(basetp==FloatType::NewFloatTypeGet()){
+    } else if (basetp == FloatType::NewFloatTypeGet()) {
       return ConstIRFloat::GetNewConstant();
-    }
-    else{
+    } else {
       return ConstIRBoolean::GetNewConstant();
     }
   };
-  
+
   if (size() == 0) {
     return getZero();
   }
   int limi = dynamic_cast<ArrayType *>(tp)->GetNumEle();
-  auto i=index[dep];
-  assert(i<limi);
-  auto thissize=size();
-  if(i>=thissize)return getZero();
-  else if(auto inits = dynamic_cast<Initializer *>((*this)[i])){
-    return inits->getInitVal(index,dep+1);
-  }
-  else{
+  auto i = index[dep];
+  assert(i < limi);
+  auto thissize = size();
+  if (i >= thissize)
+    return getZero();
+  else if (auto inits = dynamic_cast<Initializer *>((*this)[i])) {
+    return inits->getInitVal(index, dep + 1);
+  } else {
     return (*this)[i];
   }
 }
@@ -358,7 +356,7 @@ bool check_binary_boolean(BinaryInst::Operation op) {
 
 BinaryInst::BinaryInst(Operand _A, Operation __op, Operand _B, bool Atom)
     : User(check_binary_boolean(__op) ? BoolType::NewBoolTypeGet()
-                                      : _B->GetType()) {
+                                      : _A->GetType()) {
   op = __op;
   // 与User中的OpID对应
   id = static_cast<User::OpID>(__op + BaseEnumNum);
@@ -376,6 +374,7 @@ BinaryInst *BinaryInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   auto tmp = normal_clone<BinaryInst>(this, mapping);
   tmp->op = op;
   tmp->id = static_cast<User::OpID>(op + BaseEnumNum);
+  tmp->Atomic = Atomic;
   return tmp;
 }
 
@@ -435,34 +434,39 @@ BinaryInst *BinaryInst::CreateInst(Operand _A, Operation __op, Operand _B,
 
 void BinaryInst::print() {
   Value::print();
+  InnerDataType tp = uselist[0]->GetValue()->GetTypeEnum();
   std::cout << " = ";
   switch (op) {
   case BinaryInst::Op_Add:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
-      std::cout << "add ";
-    else
-      std::cout << "fadd ";
+    if (!this->Atomic) {
+      if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+        std::cout << "add ";
+      else
+        std::cout << "fadd ";
+    } else {
+      std::cout << "atomicadd ";
+    }
     break;
   case BinaryInst::Op_Sub:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "sub ";
     else
       std::cout << "fsub ";
     break;
   case BinaryInst::Op_Mul:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "mul ";
     else
       std::cout << "fmul ";
     break;
   case BinaryInst::Op_Div:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "sdiv ";
     else
       std::cout << "fdiv ";
     break;
   case BinaryInst::Op_Mod:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "srem ";
     else
       std::cout << "frem "; ///应该不存在
@@ -477,7 +481,7 @@ void BinaryInst::print() {
     std::cout << "xor ";
     break;
   case BinaryInst::Op_E:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -487,7 +491,7 @@ void BinaryInst::print() {
     std::cout << "eq ";
     break;
   case BinaryInst::Op_NE:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -497,7 +501,7 @@ void BinaryInst::print() {
     std::cout << "ne ";
     break;
   case BinaryInst::Op_G:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -508,7 +512,7 @@ void BinaryInst::print() {
       std::cout << "sgt ";
     break;
   case BinaryInst::Op_GE:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -519,7 +523,7 @@ void BinaryInst::print() {
       std::cout << "sge ";
     break;
   case BinaryInst::Op_L:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -530,7 +534,7 @@ void BinaryInst::print() {
       std::cout << "slt ";
     break;
   case BinaryInst::Op_LE:
-    if (uselist[0]->GetValue()->GetTypeEnum() == IR_Value_INT)
+    if (tp == IR_Value_INT || tp == IR_INT_64)
       std::cout << "i";
     else
       std::cout << "f";
@@ -543,12 +547,23 @@ void BinaryInst::print() {
   default:
     break;
   }
-  uselist[1]->GetValue()->GetType()->print();
-  std::cout << " ";
-  uselist[0]->GetValue()->print();
-  std::cout << ", ";
-  uselist[1]->GetValue()->print();
-  std::cout << '\n';
+  if (this->Atomic) {
+    uselist[0]->GetValue()->GetType()->print();
+    std::cout << " ";
+    uselist[0]->GetValue()->print();
+    std::cout << ", ";
+    uselist[1]->GetValue()->GetType()->print();
+    std::cout << " ";
+    uselist[1]->GetValue()->print();
+    std::cout << '\n';
+  } else {
+    uselist[1]->GetValue()->GetType()->print();
+    std::cout << " ";
+    uselist[0]->GetValue()->print();
+    std::cout << ", ";
+    uselist[1]->GetValue()->print();
+    std::cout << '\n';
+  }
 }
 
 void BinaryInst::SetOperand(int index, Value *val) {
@@ -682,6 +697,132 @@ void ZextInst::print() {
   std::cout << " = zext i1 ";
   uselist[0]->GetValue()->print();
   std::cout << " to i32\n";
+}
+
+SextInst::SextInst(Operand ptr) : User(Int64Type::NewInt64TypeGet())
+{
+  add_use(ptr);
+  id = OpID::Sext;
+}
+SextInst* SextInst::clone(std::unordered_map<Operand, Operand>& mapping)
+{
+  return normal_clone<SextInst>(this, mapping);
+}
+void SextInst::print(){
+  Value::print();
+  std::cout <<" = sext i32 ";
+  uselist[0]->GetValue()->print();
+  std::cout << " to i64\n";
+}
+
+TruncInst::TruncInst(Operand ptr) : User(IntType::NewIntTypeGet()) {
+  add_use(ptr);
+  id = OpID::Trunc;
+}
+
+TruncInst* TruncInst::clone(std::unordered_map<Operand, Operand>& mapping)
+{
+  return normal_clone<TruncInst>(this, mapping);
+}
+
+void TruncInst::print()
+{
+  Value::print();
+  std::cout << " = trunc i64 ";
+  uselist[0]->GetValue()->print();
+  std::cout<<" to i32\n";
+}
+
+MaxInst::MaxInst(Operand _A, Operand _B) : User(_A->GetType()) {
+  add_use(_A);
+  add_use(_B);
+  id = OpID::Max;
+}
+
+void MaxInst::print()
+{
+  Value::print();
+  std::cout << " = call ";
+  this->tp->print();
+  if(this->tp->GetTypeEnum() == IR_Value_INT)
+    std::cout << " @max(";
+  else if(this->tp->GetTypeEnum() == IR_Value_Float)
+    std::cout << " @fmax(";
+  uselist[0]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[0]->GetValue()->print();
+  std::cout << ", ";
+  uselist[1]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[1]->GetValue()->print();
+  std::cout << ")\n";
+}
+
+MaxInst* MaxInst::clone(std::unordered_map<Operand, Operand>& mapping)
+{
+  return normal_clone<MaxInst>(this, mapping);
+}
+
+MinInst::MinInst(Operand _A, Operand _B) : User(_A->GetType())
+{
+  add_use(_A);
+  add_use(_B);
+  id = OpID::Min;
+}
+
+void MinInst::print()
+{
+  Value::print();
+  std::cout << " = call ";
+  this->tp->print();
+  if(this->tp->GetTypeEnum() == IR_Value_INT)
+    std::cout << " @min(";
+  else if(this->tp->GetTypeEnum() == IR_Value_Float)
+    std::cout << " @fmin(";
+  uselist[0]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[0]->GetValue()->print();
+  std::cout << ", ";
+  uselist[1]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[1]->GetValue()->print();
+  std::cout << ")\n";
+}
+
+MinInst* MinInst::clone(std::unordered_map<Operand, Operand>& mapping)
+{
+  return normal_clone<MinInst>(this, mapping);
+}
+
+SelectInst::SelectInst(Operand _cond, Operand _A, Operand _B)
+    : User(_A->GetType()) {
+  add_use(_cond);
+  add_use(_A);
+  add_use(_B);
+  id = OpID::Select;
+}
+
+SelectInst* SelectInst::clone(std::unordered_map<Operand, Operand>& mapping)
+{
+  return normal_clone<SelectInst>(this, mapping);
+}
+
+void SelectInst::print()
+{
+  Value::print();
+  std::cout << " = select ";
+  uselist[0]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[0]->GetValue()->print();
+  std::cout << ", ";
+  uselist[1]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[1]->GetValue()->print();
+  std::cout << ", ";
+  uselist[2]->GetValue()->GetType()->print();
+  std::cout << " ";
+  uselist[2]->GetValue()->print();
+  std::cout << '\n';
 }
 
 BasicBlock::BasicBlock() : Value(VoidType::NewVoidTypeGet()){};
@@ -948,6 +1089,7 @@ Function::InlineCall(CallInst *inst,
                      std::unordered_map<Operand, Operand> &OperandMapping) {
   std::pair<Value *, BasicBlock *> tmp{nullptr, nullptr};
   BasicBlock *block = inst->GetParent();
+  User* Jump = block->back();
   Function *func = block->GetParent();
   Function *inlined_func = inst->GetOperand(0)->as<Function>();
   BasicBlock *SplitBlock = block->SplitAt(inst);
@@ -1008,6 +1150,33 @@ Function::InlineCall(CallInst *inst,
       }
     }
   }
+  if(dynamic_cast<UnCondInst*>(Jump))
+  {
+    BasicBlock* bb = Jump->GetOperand(0)->as<BasicBlock>();
+    auto iter = bb->begin();
+    while(auto phi = dynamic_cast<PhiInst*>(*iter))
+    {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter;
+    }
+  }
+  else if(dynamic_cast<CondInst*>(Jump))
+  {
+    BasicBlock* bb = Jump->GetOperand(1)->as<BasicBlock>();
+    auto iter = bb->begin();
+    while(auto phi = dynamic_cast<PhiInst*>(*iter))
+    {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter;
+    }
+    BasicBlock* bb1 = Jump->GetOperand(2)->as<BasicBlock>();
+    auto iter1 = bb1->begin();
+    while(auto phi = dynamic_cast<PhiInst*>(*iter1))
+    {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter1;
+    }
+  }
   return tmp;
 }
 
@@ -1050,9 +1219,13 @@ BuildInFunction *BuildInFunction::GetBuildInFunction(std::string _id) {
       return VoidType::NewVoidTypeGet();
     if (_id == "memcpy@plt")
       return VoidType::NewVoidTypeGet();
-    if (_id == "buildin_NotifyWorker")
+    if (_id == "buildin_NotifyWorkerLE")
+      return VoidType::NewVoidTypeGet();
+    if (_id == "buildin_NotifyWorkerLT")
       return VoidType::NewVoidTypeGet();
     if (_id == "buildin_FenceArgLoaded")
+      return VoidType::NewVoidTypeGet();
+    if(_id == "buildin_AtomicF32add")
       return VoidType::NewVoidTypeGet();
     assert(0);
   };
