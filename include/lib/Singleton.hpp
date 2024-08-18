@@ -11,5 +11,5 @@ struct IR_CONSTDECL_FLAG
 };
 
 struct Enable_Parallel{
-    bool flag;
+    bool flag=false;
 };
