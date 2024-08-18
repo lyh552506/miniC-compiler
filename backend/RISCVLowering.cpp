@@ -92,7 +92,10 @@ bool RISCVFunctionLowering::run(Function *m)
         BackendDCE dceafter(ctx.GetCurFunction(), ctx);
         modified |= dceafter.RunImpl();
     }
-
+    
+    Pre_RA_Scheduler pre_scheduler;
+    pre_scheduler.ScheduleOnFunction(ctx);
+    
     // Post_RA_Scheduler post_scheduler;
     // post_scheduler.ScheduleOnFunction(ctx);
 
