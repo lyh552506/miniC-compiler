@@ -721,6 +721,47 @@ void RISCVISel::LowerCallInstParallel(CallInst* inst){
     ctx(call);
     #undef M
 }
+void RISCVISel::LowerCallInstCacheLookUp(CallInst* inst){
+    #define M(x) ctx.mapping(x)
+    this->asmprinter->set_use_cachelookup(true);
+    RISCVMIR* call = new RISCVMIR(RISCVMIR::call);
+    // the call inst is: call CacheLookUp(int/float, int/float)
+    // the size of uselist is 3, and the first use is called function
+    BuildInFunction* buildinfunc = BuildInFunction::GetBuildInFunction(inst->GetOperand(0)->GetName());
+    call->AddOperand(M(buildinfunc));  // "CacheLookUp"
+    int regint=PhyRegister::PhyReg::a0;
+    for(int index=1; index<3; index++) {
+        Operand op = inst->GetOperand(index);
+        if(ConstIRInt* constint = dynamic_cast<ConstIRInt*>(op)) {
+            auto li = new RISCVMIR(RISCVMIR::li);
+            PhyRegister* preg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint));
+            call->AddOperand(preg);
+            li->SetDef(preg);
+            Imm* imm = Imm::GetImm(constint);
+            li->AddOperand(imm);
+            ctx.insert_val2mop(constint, imm);
+            ctx(li);
+            regint++;
+        }
+        else if(RISCVTyper(op->GetType())==riscv_i32 || RISCVTyper(op->GetType())==riscv_ptr) {
+            PhyRegister* preg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint));
+            ctx(Builder(RISCVMIR::mv,{preg,M(op)}));
+            call->AddOperand(preg);
+            regint++;
+        }
+        else if(RISCVTyper(op->GetType())==riscv_float32) {
+            PhyRegister* reg = PhyRegister::GetPhyReg(static_cast<PhyRegister::PhyReg>(regint));
+            ctx(Builder(RISCVMIR::_fmv_x_w,{reg,M(op)}));
+            call->AddOperand(reg);
+            regint++;
+        }
+        else assert(0 && "CallInst selection illegal type");
+    }
+    ctx(call);
+    call->SetDef(PhyRegister::GetPhyReg(PhyRegister::PhyReg::fa0));
+    ctx(Builder(RISCVMIR::mv, {ctx.mapping(inst), PhyRegister::GetPhyReg(PhyRegister::PhyReg::a0)}));
+    #undef M
+}
 
 void RISCVISel::InstLowering(CallInst* inst){
     // 把VReg Copy到PhyReg
@@ -730,7 +771,10 @@ void RISCVISel::InstLowering(CallInst* inst){
         LowerCallInstParallel(inst);
         return;
     }
-
+    if(inst->GetOperand(0)->GetName()=="CacheLookUp"){
+        LowerCallInstCacheLookUp(inst);
+        return;
+    }
     #define M(x) ctx.mapping(x)
     int IntMaxNum=8, FloatMaxNum=8;
     std::unique_ptr<RISCVFrame>& frame = ctx.GetCurFunction()->GetFrame();
@@ -993,7 +1037,7 @@ void RISCVISel::InstLowering(User* inst){
     else assert(0&&"Invalid Inst Type");
 }
 
-RISCVISel::RISCVISel(RISCVLoweringContext& _ctx):ctx(_ctx){}
+RISCVISel::RISCVISel(RISCVLoweringContext& _ctx, RISCVAsmPrinter*& asmprinter):ctx(_ctx),asmprinter(asmprinter){}
 
 void RISCVISel::condition_helper(BinaryInst* inst){
     assert(inst->GetType()==BoolType::NewBoolTypeGet());

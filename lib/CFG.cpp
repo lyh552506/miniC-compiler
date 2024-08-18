@@ -699,18 +699,16 @@ void ZextInst::print() {
   std::cout << " to i32\n";
 }
 
-SextInst::SextInst(Operand ptr) : User(Int64Type::NewInt64TypeGet())
-{
+SextInst::SextInst(Operand ptr) : User(Int64Type::NewInt64TypeGet()) {
   add_use(ptr);
   id = OpID::Sext;
 }
-SextInst* SextInst::clone(std::unordered_map<Operand, Operand>& mapping)
-{
+SextInst *SextInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<SextInst>(this, mapping);
 }
-void SextInst::print(){
+void SextInst::print() {
   Value::print();
-  std::cout <<" = sext i32 ";
+  std::cout << " = sext i32 ";
   uselist[0]->GetValue()->print();
   std::cout << " to i64\n";
 }
@@ -720,17 +718,15 @@ TruncInst::TruncInst(Operand ptr) : User(IntType::NewIntTypeGet()) {
   id = OpID::Trunc;
 }
 
-TruncInst* TruncInst::clone(std::unordered_map<Operand, Operand>& mapping)
-{
+TruncInst *TruncInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<TruncInst>(this, mapping);
 }
 
-void TruncInst::print()
-{
+void TruncInst::print() {
   Value::print();
   std::cout << " = trunc i64 ";
   uselist[0]->GetValue()->print();
-  std::cout<<" to i32\n";
+  std::cout << " to i32\n";
 }
 
 MaxInst::MaxInst(Operand _A, Operand _B) : User(_A->GetType()) {
@@ -739,14 +735,13 @@ MaxInst::MaxInst(Operand _A, Operand _B) : User(_A->GetType()) {
   id = OpID::Max;
 }
 
-void MaxInst::print()
-{
+void MaxInst::print() {
   Value::print();
   std::cout << " = call ";
   this->tp->print();
-  if(this->tp->GetTypeEnum() == IR_Value_INT)
+  if (this->tp->GetTypeEnum() == IR_Value_INT)
     std::cout << " @max(";
-  else if(this->tp->GetTypeEnum() == IR_Value_Float)
+  else if (this->tp->GetTypeEnum() == IR_Value_Float)
     std::cout << " @fmax(";
   uselist[0]->GetValue()->GetType()->print();
   std::cout << " ";
@@ -758,26 +753,23 @@ void MaxInst::print()
   std::cout << ")\n";
 }
 
-MaxInst* MaxInst::clone(std::unordered_map<Operand, Operand>& mapping)
-{
+MaxInst *MaxInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<MaxInst>(this, mapping);
 }
 
-MinInst::MinInst(Operand _A, Operand _B) : User(_A->GetType())
-{
+MinInst::MinInst(Operand _A, Operand _B) : User(_A->GetType()) {
   add_use(_A);
   add_use(_B);
   id = OpID::Min;
 }
 
-void MinInst::print()
-{
+void MinInst::print() {
   Value::print();
   std::cout << " = call ";
   this->tp->print();
-  if(this->tp->GetTypeEnum() == IR_Value_INT)
+  if (this->tp->GetTypeEnum() == IR_Value_INT)
     std::cout << " @min(";
-  else if(this->tp->GetTypeEnum() == IR_Value_Float)
+  else if (this->tp->GetTypeEnum() == IR_Value_Float)
     std::cout << " @fmin(";
   uselist[0]->GetValue()->GetType()->print();
   std::cout << " ";
@@ -789,8 +781,7 @@ void MinInst::print()
   std::cout << ")\n";
 }
 
-MinInst* MinInst::clone(std::unordered_map<Operand, Operand>& mapping)
-{
+MinInst *MinInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<MinInst>(this, mapping);
 }
 
@@ -802,13 +793,11 @@ SelectInst::SelectInst(Operand _cond, Operand _A, Operand _B)
   id = OpID::Select;
 }
 
-SelectInst* SelectInst::clone(std::unordered_map<Operand, Operand>& mapping)
-{
+SelectInst *SelectInst::clone(std::unordered_map<Operand, Operand> &mapping) {
   return normal_clone<SelectInst>(this, mapping);
 }
 
-void SelectInst::print()
-{
+void SelectInst::print() {
   Value::print();
   std::cout << " = select ";
   uselist[0]->GetValue()->GetType()->print();
@@ -1089,7 +1078,7 @@ Function::InlineCall(CallInst *inst,
                      std::unordered_map<Operand, Operand> &OperandMapping) {
   std::pair<Value *, BasicBlock *> tmp{nullptr, nullptr};
   BasicBlock *block = inst->GetParent();
-  User* Jump = block->back();
+  User *Jump = block->back();
   Function *func = block->GetParent();
   Function *inlined_func = inst->GetOperand(0)->as<Function>();
   BasicBlock *SplitBlock = block->SplitAt(inst);
@@ -1150,29 +1139,23 @@ Function::InlineCall(CallInst *inst,
       }
     }
   }
-  if(dynamic_cast<UnCondInst*>(Jump))
-  {
-    BasicBlock* bb = Jump->GetOperand(0)->as<BasicBlock>();
+  if (dynamic_cast<UnCondInst *>(Jump)) {
+    BasicBlock *bb = Jump->GetOperand(0)->as<BasicBlock>();
     auto iter = bb->begin();
-    while(auto phi = dynamic_cast<PhiInst*>(*iter))
-    {
+    while (auto phi = dynamic_cast<PhiInst *>(*iter)) {
       phi->ModifyBlock(block, SplitBlock);
       ++iter;
     }
-  }
-  else if(dynamic_cast<CondInst*>(Jump))
-  {
-    BasicBlock* bb = Jump->GetOperand(1)->as<BasicBlock>();
+  } else if (dynamic_cast<CondInst *>(Jump)) {
+    BasicBlock *bb = Jump->GetOperand(1)->as<BasicBlock>();
     auto iter = bb->begin();
-    while(auto phi = dynamic_cast<PhiInst*>(*iter))
-    {
+    while (auto phi = dynamic_cast<PhiInst *>(*iter)) {
       phi->ModifyBlock(block, SplitBlock);
       ++iter;
     }
-    BasicBlock* bb1 = Jump->GetOperand(2)->as<BasicBlock>();
+    BasicBlock *bb1 = Jump->GetOperand(2)->as<BasicBlock>();
     auto iter1 = bb1->begin();
-    while(auto phi = dynamic_cast<PhiInst*>(*iter1))
-    {
+    while (auto phi = dynamic_cast<PhiInst *>(*iter1)) {
       phi->ModifyBlock(block, SplitBlock);
       ++iter1;
     }
@@ -1225,8 +1208,11 @@ BuildInFunction *BuildInFunction::GetBuildInFunction(std::string _id) {
       return VoidType::NewVoidTypeGet();
     if (_id == "buildin_FenceArgLoaded")
       return VoidType::NewVoidTypeGet();
-    if(_id == "buildin_AtomicF32add")
+    if (_id == "buildin_AtomicF32add")
       return VoidType::NewVoidTypeGet();
+    if(_id == "CacheLookUp")
+      return VoidType::NewVoidTypeGet();
+  
     assert(0);
   };
   if (mp.find(_id) == mp.end()) {
@@ -1770,6 +1756,19 @@ bool Function::MemRead() {
     }
   return false;
 }
+
+std::vector<BasicBlock *> Function::GetRetBlock() {
+  std::vector<BasicBlock *> tmp;
+  for (const auto bb : *this) {
+    auto inst = bb->back();
+    if (dynamic_cast<RetInst *>(inst)) {
+      tmp.push_back(bb);
+      continue;
+    }
+  }
+  return tmp;
+}
+
 void Module::Test() {
   for (auto &i : globalvaribleptr)
     i->print();

@@ -1,6 +1,7 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "Cache.hpp"
+#include "Singleton.hpp"
 #include "Type.hpp"
 #include <cassert>
 Function *CacheLookUp::_CacheLookUp = nullptr;
@@ -19,8 +20,12 @@ bool CacheLookUp::Run() {
 
 bool CacheLookUp::InsertCache() {
   //   auto m_dom = AM.get<dominance>(m_func);
-  for (auto bb : *m_func)
-    for (auto inst : *bb) {
+  for (auto iter_bb = m_func->begin(); iter_bb != m_func->end();) {
+    auto bb = *iter_bb;
+    ++iter_bb;
+    for (auto iter_inst = bb->begin(); iter_inst != bb->end();) {
+      auto inst = *iter_inst;
+      ++iter_inst;
       if (auto call = dynamic_cast<CallInst *>(inst)) {
         auto name = call->GetOperand(0)->GetName();
         if (name == "getint" || name == "getch" || name == "getfloat" ||
@@ -36,19 +41,12 @@ bool CacheLookUp::InsertCache() {
         auto ty = call->GetTypeEnum();
         if (ty == IR_Value_VOID)
           return false;
+        auto Exit = callee->GetRetBlock();
 
-        _CacheLookUp = new Function(ty, "CacheLookUp");
+        _CacheLookUp = new Function(IR_PTR, "CacheLookUp");
+        _CacheLookUp->tag = Function::BuildIn;
         Singleton<Module>().Push_Func(_CacheLookUp);
-        // tmp add
         _CacheLookUp->clear();
-        auto tmp = new BasicBlock();
-        RetInst *tmp_ret = nullptr;
-        if (ty == IR_Value_INT)
-          tmp_ret = new RetInst(ConstIRInt::GetNewConstant(RetNone));
-        else
-          tmp_ret = new RetInst(ConstIRFloat::GetNewConstant(RetNone));
-        tmp->push_back(tmp_ret);
-        _CacheLookUp->push_bb(tmp);
         // insert a new entry
         std::vector<Value *> args;
         for (int i = 0; i < callee->GetParams().size(); i++)
@@ -59,28 +57,50 @@ bool CacheLookUp::InsertCache() {
         auto new_entry = new BasicBlock();
         auto new_exit = new BasicBlock();
         auto callCache = new CallInst(_CacheLookUp, args);
+        // get the struct
+        auto gep = new GetElementPtrInst(callCache->GetType());
+        gep->AddArg(callCache);
+        gep->AddArg(ConstIRInt::GetNewConstant(3));
+        auto load = new LoadInst(gep);
         BinaryInst *cmp = nullptr;
-        if (ty == IR_Value_INT)
-          cmp = BinaryInst::CreateInst(callCache, BinaryInst::Op_NE,
-                                       ConstIRInt::GetNewConstant(RetNone));
-        else
-          cmp = BinaryInst::CreateInst(callCache, BinaryInst::Op_NE,
-                                       ConstIRFloat::GetNewConstant(RetNone));
-        auto ret = new RetInst(callCache);
+        cmp = BinaryInst::CreateInst(load, BinaryInst::Op_E,
+                                     ConstIRInt::GetNewConstant(0));
         new_entry->push_back(callCache);
+        new_entry->push_back(gep);
+        new_entry->push_back(load);
         new_entry->push_back(cmp);
-        new_entry->GenerateCondInst(cmp, new_exit, EntryBlock);
+
+        // have cached val, load it
+        auto gep_val = new GetElementPtrInst(callCache->GetType());
+        gep_val->AddArg(callCache);
+        gep_val->AddArg(ConstIRInt::GetNewConstant(2));
+        auto cachedval = new LoadInst(gep_val);
+        cachedval->SetType(callee->GetType());
+        auto ret = new RetInst(cachedval);
+        new_entry->push_back(gep_val);
+        new_entry->push_back(cachedval);
         new_exit->push_back(ret);
+        new_entry->GenerateCondInst(cmp, new_exit, EntryBlock);
         //插入到front，成为新的entry
         callee->GetBasicBlock().insert(callee->GetBasicBlock().begin(),
                                        new_entry);
         callee->push_front(new_entry);
-
         callee->push_bb(new_exit);
-
+        // didnt find it, store the ret val
+        for (auto Retblock : Exit) {
+          auto iter = Retblock->rbegin();
+          auto ret = dynamic_cast<RetInst *>(*iter);
+          assert(ret);
+          auto st_mark = new StoreInst(ConstIRInt::GetNewConstant(1),
+                                       gep); // mark have cached
+          auto st_val = new StoreInst(ret->GetOperand(0), gep_val);
+          iter = iter.insert_before(st_mark);
+          iter.insert_after(st_val);
+        }
         return true;
       }
     }
+  }
   return false;
 }
 

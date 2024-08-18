@@ -17,7 +17,7 @@ void RISCVModuleLowering::LowerGlobalArgument(Module *m)
 bool RISCVModuleLowering::run(Module *m)
 {
     LowerGlobalArgument(m);
-    RISCVFunctionLowering funclower(ctx);
+    RISCVFunctionLowering funclower(ctx, asmprinter);
     auto &funcS = m->GetFuncTion();
     for (auto &func : funcS)
     {
@@ -34,7 +34,9 @@ bool RISCVModuleLowering::run(Module *m)
 
 bool RISCVFunctionLowering::run(Function *m)
 {
-    
+    if(m->get_tag() == Function::BuildIn) {
+        return false;
+    }
     /// @note this function is used to lower buildin function to the correct form
     /// @note and in order to solving user function which have the same name as buildin function
     BuildInFunctionTransform buildin;
@@ -46,7 +48,7 @@ bool RISCVFunctionLowering::run(Function *m)
     auto mfunc = ctx.mapping(m)->as<RISCVFunction>();
     ctx(mfunc);
 
-    RISCVISel isel(ctx);
+    RISCVISel isel(ctx, asmprinter);
     isel.run(m);
 
     PhiElimination phi(ctx);

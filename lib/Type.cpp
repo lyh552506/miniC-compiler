@@ -14,6 +14,7 @@ Type* Type::NewTypeByEnum(InnerDataType _tp){
     case IR_Value_INT:return IntType::NewIntTypeGet(); 
     case IR_Value_VOID:return VoidType::NewVoidTypeGet();
     case IR_Value_Float:return FloatType::NewFloatTypeGet();
+    case IR_PTR:return PointerType::NewPointerTypeGet(Type::NewTypeByEnum(IR_Value_INT));
     default:assert(0);
     }
 }
