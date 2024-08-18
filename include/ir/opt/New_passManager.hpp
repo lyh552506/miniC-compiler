@@ -39,6 +39,7 @@
 #include "../../include/ir/opt/SelfStoreElimination.hpp"
 #include "../../include/ir/opt/ScalarStrengthReduce.hpp"
 #include "../../include/ir/opt/ConstantHoist.hpp"
+#include "../../include/ir/opt/ControlFlowOpt.hpp"
 #include <any>
 #include <getopt.h>
 #include <memory>

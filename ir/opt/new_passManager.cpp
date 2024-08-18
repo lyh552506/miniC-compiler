@@ -170,8 +170,7 @@ void _PassManager::RunOnLevel() {
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc)
-              // RunEntryFunc(LoopParallel, modified)
-                // PassChangedBegin(curfunc)  
+              // RunEntryFunc(LoopParallel, modified)  
 
                     RunLevelPass(ConstantProp, curfunc, other)
 
@@ -287,6 +286,9 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc)  
     }
     CommonPass(AM);
+    // RunLevelPass(ControlFlowOpt, curfunc, other);
+    // RunLevelPass(cfgSimplify, curfunc, other);
+    // RunLevelPass(ConstantProp, curfunc, other);
   }
 }
 bool _PassManager::CommonPass(_AnalysisManager &AM) {

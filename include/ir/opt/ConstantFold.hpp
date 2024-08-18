@@ -27,7 +27,7 @@ Value* ConstFoldFloatCmp(BinaryInst::Operation Opcode, float LVal, float RVal);
 Value* ConstFoldCmp(BinaryInst::Operation Opcode, bool LVal, bool RVal);
 Value* ConstFoldMaxInst(Value* LHS, Value* RHS);
 Value* ConstFoldMinInst(Value* LHS, Value* RHS);
-Value* ConstFoldSelectInst(Value* cond, Value* TrueVal, Value* FalseVal);
+Value* ConstFoldSelectInst(SelectInst* inst, Value* cond, Value* TrueVal, Value* FalseVal);
 // Handle SITFP
 Value* ConstantFoldSITFPInst(SITFP* inst);
 // Handle FPTSI

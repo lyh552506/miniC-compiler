@@ -9,4 +9,5 @@ Value* SimplifyMulInst(Value* LHS, Value* RHS);
 Value* SimplifyDivInst(Value* LHS, Value* RHS);
 Value* SimplifyModInst(Value* LHS, Value* RHS);
 Value* SimplifyIcmpInst(BinaryInst* inst, BinaryInst::Operation Opcode, Value* LHS, Value* RHS);
+Value* SimplifySelectInst(SelectInst* inst);
 bool MatchAddModInst(BasicBlock* cur);

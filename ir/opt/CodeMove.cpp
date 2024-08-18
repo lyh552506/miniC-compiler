@@ -2,7 +2,7 @@
 
 void CodeMove::init()
 {
-    Loop = AM.get<LoopAnalysis>(func);
+    // Loop = AM.get<LoopAnalysis>(func);
     DomTree = AM.get<dominance>(func);
     AM.get<SideEffect>(&Singleton<Module>());
     Loops = Loop->GetLoops();
