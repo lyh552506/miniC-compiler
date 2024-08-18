@@ -4,7 +4,7 @@
 #include <sstream>
 #include "../../include/backend/RISCVFrameContext.hpp"
 #include "../../include/backend/RISCVMIR.hpp"
-#include "../../include/backend/RISCVISel.hpp"
+#include "../../include/backend/RISCVContext.hpp"
 #include "../../include/backend/FloatToDex.hpp"
 #include "../../include/lib/MagicEnum.hpp"
 class globlvar;
@@ -25,12 +25,16 @@ class RISCVAsmPrinter {
     std::string filename;
     textSegment* text;
     dataSegment* data;
+    bool use_cachelookup;
+    std::string cachefilepath = "RISCVLib/CacheLib.s";
     public:
     RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweringContext& ctx);
     ~RISCVAsmPrinter() = default;
     void SetTextSegment(textSegment*);
     dataSegment*& GetData();
+    void set_use_cachelookup(bool);
     void printAsmGlobal();
+    void printCacheLookUp();
     void printAsm();
 };
 

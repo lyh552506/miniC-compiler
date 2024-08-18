@@ -1,6 +1,7 @@
 #include "../../include/ir/opt/New_passManager.hpp"
 #include "CFG.hpp"
 #include "Singleton.hpp"
+#include "mem2reg.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -154,31 +155,39 @@ void _PassManager::RunOnLevel() {
         modified = false;
         PassChangedBegin(curfunc)
 
-              RunLevelPass(LoopSimplify, curfunc, other);
-        PassChangedBegin(curfunc)  
+             RunLevelPass(LoopSimplify, curfunc, other);
+        PassChangedBegin(curfunc) 
 
             RunLevelPass(LcSSA, curfunc, other);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc) 
 
             // loop-rotate
-            RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
-                  // licm
+            RunLevelPass(LoopRotate, curfunc, other)
+            PassChangedBegin(curfunc)
+                 // licm
 
                     RunLevelPass(LICMPass, curfunc, modified);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc) 
 
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
+        PassChangedBegin(curfunc) RunEntryFunc(LoopParallel, modified)
+            PassChangedBegin(curfunc)
+
+                RunLevelPass(ConstantProp, curfunc, other)
+
+                    RunLevelPass(DCE, curfunc, other);
         PassChangedBegin(curfunc)
-              // RunEntryFunc(LoopParallel, modified)  
+              RunEntryFunc(LoopParallel, modified)
+                PassChangedBegin(curfunc)  
 
                     RunLevelPass(ConstantProp, curfunc, other)
 
                         RunLevelPass(DCE, curfunc, other);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc) 
 
             RunLevelPass(BlockMerge, curfunc, other);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc) 
       }
 
       while (RunImpl<Inliner>(module, AM)) {
@@ -191,40 +200,41 @@ void _PassManager::RunOnLevel() {
       }
 
       CommonPass(AM);
+      // return;
       // loop unroller
       modified = true;
       while (modified) {
         modified = false;
+        PassChangedBegin(curfunc) RunLevelPass(LoopSimplify, curfunc, other);
         PassChangedBegin(curfunc)
-              RunLevelPass(LoopSimplify, curfunc, other);
-        PassChangedBegin(curfunc)  
 
             RunLevelPass(LcSSA, curfunc, other);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc)
 
             // loop-rotate
             RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
-                  // licm
+            // licm
 
-                    RunLevelPass(LICMPass, curfunc, modified);
-        PassChangedBegin(curfunc)  
+            RunLevelPass(LICMPass, curfunc, modified);
+        PassChangedBegin(curfunc)
 
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc)
 
-            RunLevelPass(LoopUnroll, curfunc,
-                         modified) PassChangedBegin(curfunc)
+            RunLevelPass(LoopUnroll, curfunc, modified)
+                PassChangedBegin(curfunc)
 
-                  RunLevelPass(ConstantProp, curfunc, modified);
+                    RunLevelPass(ConstantProp, curfunc, modified);
         RunLevelPass(DCE, curfunc, other);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc)
 
             RunLevelPass(BlockMerge, curfunc, other);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc)
       }
     }
     CommonPass(AM);
+
     // clean
     {
       modified = true;
@@ -260,30 +270,30 @@ void _PassManager::RunOnLevel() {
     }
     while (modified) {
       modified = false;
+      PassChangedBegin(curfunc) RunLevelPass(LoopSimplify, curfunc, other);
       PassChangedBegin(curfunc)
-            RunLevelPass(LoopSimplify, curfunc, other);
-      PassChangedBegin(curfunc)  
 
           RunLevelPass(LcSSA, curfunc, other);
-      PassChangedBegin(curfunc)  
+      PassChangedBegin(curfunc)
 
           // loop-rotate
-          RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)  // licm
+          RunLevelPass(LoopRotate, curfunc, other)
+              PassChangedBegin(curfunc) // licm
 
-                  RunLevelPass(LICMPass, curfunc, modified);
-      PassChangedBegin(curfunc)  
+          RunLevelPass(LICMPass, curfunc, modified);
+      PassChangedBegin(curfunc)
 
           RunLevelPass(ScalarStrengthReduce, curfunc, modified);
       // loopdeletion
       RunLevelPass(LoopDeletion, curfunc, modified);
-      PassChangedBegin(curfunc)  
+      PassChangedBegin(curfunc)
 
-      RunLevelPass(ConstantProp, curfunc, modified);
+          RunLevelPass(ConstantProp, curfunc, modified);
       RunLevelPass(DCE, curfunc, other);
-      PassChangedBegin(curfunc)  
+      PassChangedBegin(curfunc)
 
           RunLevelPass(BlockMerge, curfunc, other);
-      PassChangedBegin(curfunc)  
+      PassChangedBegin(curfunc)
     }
     CommonPass(AM);
     // RunLevelPass(ControlFlowOpt, curfunc, other);
@@ -311,7 +321,7 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     // simplifycfg
     RunLevelPass(ConstantProp, curfunc, mody);
     RunLevelPass(DCE, curfunc, mody);
-    PassChangedBegin(curfunc)  
+    PassChangedBegin(curfunc)
 
         RunLevelPass(cfgSimplify, curfunc, mody);
     PassChangedBegin(curfunc)  
@@ -342,8 +352,7 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
 
     RunLevelPass(DCE, curfunc, mody);
 
-    PassChangedBegin(curfunc)
-          RunLevelPass(cfgSimplify, curfunc, mody);
+    PassChangedBegin(curfunc) RunLevelPass(cfgSimplify, curfunc, mody);
   }
   return mody;
 }
@@ -385,6 +394,8 @@ void _PassManager::RunOnTest() {
     default: {
       for (int i = 0; i < module->GetFuncTion().size(); i++) {
         auto &func = module->GetFuncTion()[i];
+        if (func->tag == Function::BuildIn)
+          continue;
         curfunc = func.get();
         // 维护bbs关系
         curfunc->bb_num = 0;
