@@ -32,7 +32,7 @@ void RISCVAsmPrinter::SetTextSegment(textSegment* _text) {text=_text;}
 dataSegment* &RISCVAsmPrinter::GetData(){return data;} 
 void RISCVAsmPrinter::printAsmGlobal() {
     std::cout << "    .file  \"" << filename << "\"" << std::endl;
-    std::cout << "    .attribute arch, \"rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0\"" << std::endl;
+    std::cout << "    .attribute arch, \"rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zba1p0_zbb1p0\"" << std::endl;
     std::cout << "    .attribute unaligned_access, 0" << std::endl; 
     std::cout << "    .attribute stack_align, 16" << std::endl;
     std::cout << "    .text" << std::endl;
