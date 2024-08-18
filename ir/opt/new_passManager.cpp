@@ -1,6 +1,7 @@
 #include "../../include/ir/opt/New_passManager.hpp"
 #include "CFG.hpp"
 #include "Singleton.hpp"
+#include "mem2reg.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -154,32 +155,33 @@ void _PassManager::RunOnLevel() {
         modified = false;
         PassChangedBegin(curfunc)
 
-              RunLevelPass(LoopSimplify, curfunc, other);
-        PassChangedBegin(curfunc)  
+             RunLevelPass(LoopSimplify, curfunc, other);
+        PassChangedBegin(curfunc) 
 
             RunLevelPass(LcSSA, curfunc, other);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc) 
 
             // loop-rotate
-            RunLevelPass(LoopRotate, curfunc, other) PassChangedBegin(curfunc)
-                  // licm
+            RunLevelPass(LoopRotate, curfunc, other)
+            PassChangedBegin(curfunc)
+                 // licm
 
                     RunLevelPass(LICMPass, curfunc, modified);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc) 
 
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
-        PassChangedBegin(curfunc)
-              RunEntryFunc(LoopParallel, modified)
-                PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc) 
+            RunEntryFunc(LoopParallel, modified) PassChangedBegin(curfunc)
+                
 
                     RunLevelPass(ConstantProp, curfunc, other)
 
                         RunLevelPass(DCE, curfunc, other);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc) 
 
             RunLevelPass(BlockMerge, curfunc, other);
-        PassChangedBegin(curfunc)  
+        PassChangedBegin(curfunc) 
       }
 
       while (RunImpl<Inliner>(module, AM)) {
@@ -192,6 +194,7 @@ void _PassManager::RunOnLevel() {
       }
 
       CommonPass(AM);
+      // return;
       // loop unroller
       modified = true;
       while (modified) {
@@ -226,6 +229,7 @@ void _PassManager::RunOnLevel() {
       }
     }
     CommonPass(AM);
+
     // clean
     {
       modified = true;
@@ -297,7 +301,7 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     RunLevelPass(cfgSimplify, curfunc, mody);
 
     PassChangedBegin(curfunc)   PassChangedBegin(curfunc)
-        RunImpl<Mem2reg>(curfunc, AM);
+        RunLevelPass(Mem2reg,curfunc,mody);
       if (!HasRunCondMerge) {
       PassChangedBegin(curfunc)
             RunLevelPass(CondMerge, curfunc, modified);
