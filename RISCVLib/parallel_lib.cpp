@@ -5,7 +5,7 @@
 #include <cmath>
 #include "parallel_lib.hpp"
 
-#define NumThreads 3
+#define NumThreads 4
 
 class Spinlock{
     std::atomic_flag _lock = ATOMIC_FLAG_INIT;
@@ -71,6 +71,15 @@ void buildin_NotifyWorkerLT(int begin,int end){
         *(int*)(buildin_parallel_arg_storage+4)=ed;
         tasks++;
         full.unlock();
+
+        if(_begin+step>=step){
+            // do it yourself
+            buildin_funcptr();
+        }
+        else{
+            // hand it out to other thread worker
+            full.unlock();
+        }
     }
     
     WaitTasksCompleted();
@@ -86,7 +95,7 @@ void buildin_NotifyWorkerLE(int begin,int end){
         buildin_funcptr();
         return;
     }
-    int64_t step=(_end-_begin+1+3)/NumThreads;
+    int64_t step=(_end-_begin+NumThreads)/NumThreads;
 
     // the begin 100% will be greater than end in the last iteration, so < and <= is the same here.
     for(_begin;_begin<_end;_begin+=step){
@@ -96,7 +105,15 @@ void buildin_NotifyWorkerLE(int begin,int end){
         *(int*)(buildin_parallel_arg_storage)=st;
         *(int*)(buildin_parallel_arg_storage+4)=ed;
         tasks++;
-        full.unlock();
+
+        if(_begin+step>=step){
+            // do it yourself
+            buildin_funcptr();
+        }
+        else{
+            // hand it out to other thread worker
+            full.unlock();
+        }
     }
     
     WaitTasksCompleted();
@@ -114,8 +131,8 @@ void* WorkerThread(void *arg){
 void CreateThread() {
     // create four threads using pthread_create, and detach them
     full.lock();
-    pthread_t threads[NumThreads];
-    for (int i = 0; i < NumThreads; i++) {
+    pthread_t threads[NumThreads-1];
+    for (int i = 0; i < NumThreads-1; i++) {
         pthread_create(&threads[i], NULL, WorkerThread, NULL);
         pthread_detach(threads[i]);
         // pthread_setaffinity_np
