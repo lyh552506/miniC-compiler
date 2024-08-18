@@ -127,7 +127,7 @@ bool NoRecursive::CanBeInlined(CallInst *call)
 {
     auto &&slave = call->GetOperand(0)->as<Function>();
     auto &&master = call->GetParent()->GetParent();
-    if (slave->tag == Function::Tag::ParallelBody || master->tag == Function::Tag::UnrollBody)
+    if (slave->tag == Function::Tag::ParallelBody || master->tag == Function::Tag::UnrollBody || slave->tag == Function::Tag::BuildIn)
         return false;
     if (InlineRecursion)
     {
