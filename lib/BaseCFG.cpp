@@ -281,6 +281,12 @@ User *User::CloneInst() {
     }
     return new_phi;
   }
+  else if(auto max = dynamic_cast<MaxInst*>(this))
+    return new MaxInst(GetOperand(0), GetOperand(1));
+  else if(auto min = dynamic_cast<MinInst*>(this))
+    return new MinInst(GetOperand(0), GetOperand(1));
+  else if(auto select = dynamic_cast<SelectInst*>(this))
+    return new SelectInst(GetOperand(0), GetOperand(1), GetOperand(2));
   assert(0);
 }
 
