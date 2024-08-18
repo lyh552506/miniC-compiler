@@ -129,6 +129,7 @@ void _PassManager::RunOnLevel() {
 
     // global2local
     RunImpl<Global2Local>(module, AM);
+
     CommonPass(AM);
 
     while (RunImpl<Inliner>(module, AM)) {
@@ -147,7 +148,6 @@ void _PassManager::RunOnLevel() {
       RunImpl<Global2Local>(module, AM);
       CommonPass(AM);
     }
-
     // Loops
     {
       modified = true;
@@ -159,8 +159,7 @@ void _PassManager::RunOnLevel() {
         PassChangedBegin(curfunc) 
 
             RunLevelPass(LcSSA, curfunc, other);
-        PassChangedBegin(curfunc) 
-
+        PassChangedBegin(curfunc)  
             // loop-rotate
             RunLevelPass(LoopRotate, curfunc, other)
             PassChangedBegin(curfunc)
@@ -171,15 +170,13 @@ void _PassManager::RunOnLevel() {
 
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
-        PassChangedBegin(curfunc) RunEntryFunc(LoopParallel, modified)
+        // PassChangedBegin(curfunc) RunEntryFunc(LoopParallel, modified)
             PassChangedBegin(curfunc)
 
                 RunLevelPass(ConstantProp, curfunc, other)
 
                     RunLevelPass(DCE, curfunc, other);
         PassChangedBegin(curfunc)
-              RunEntryFunc(LoopParallel, modified)
-                PassChangedBegin(curfunc)  
 
                     RunLevelPass(ConstantProp, curfunc, other)
 
@@ -189,7 +186,7 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(BlockMerge, curfunc, other);
         PassChangedBegin(curfunc) 
       }
-
+  
       while (RunImpl<Inliner>(module, AM)) {
         RunLevelPass(cfgSimplify, curfunc, modified)
             RunImpl<DeadArgsElimination>(module, AM);
@@ -204,10 +201,11 @@ void _PassManager::RunOnLevel() {
       // loop unroller
       modified = true;
       while (modified) {
+        static int b = 0;
+        b++;
         modified = false;
         PassChangedBegin(curfunc) RunLevelPass(LoopSimplify, curfunc, other);
         PassChangedBegin(curfunc)
-
             RunLevelPass(LcSSA, curfunc, other);
         PassChangedBegin(curfunc)
 
@@ -296,26 +294,25 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc)
     }
     CommonPass(AM);
-    // RunLevelPass(ControlFlowOpt, curfunc, other);
-    // RunLevelPass(cfgSimplify, curfunc, other);
-    // RunLevelPass(ConstantProp, curfunc, other);
   }
 }
 bool _PassManager::CommonPass(_AnalysisManager &AM) {
   bool mody = true;
   while (mody) {
+    static int a = 0;
+    a++;
     mody = false;
-
-    RunLevelPass(cfgSimplify, curfunc, mody);
-
-    PassChangedBegin(curfunc)   
-    RunLevelPass(Mem2reg, curfunc, mody)
-    PassChangedBegin(curfunc)
       if (!HasRunCondMerge) {
       PassChangedBegin(curfunc)
             RunLevelPass(CondMerge, curfunc, mody);
       PassChangedBegin(curfunc)   HasRunCondMerge = true;
     }
+    RunLevelPass(cfgSimplify, curfunc, mody);
+  
+    PassChangedBegin(curfunc)   
+    RunLevelPass(Mem2reg, curfunc, mody)
+    PassChangedBegin(curfunc)
+
     // Local2Global
     RunImpl<Local2Global>(module, AM);
     // simplifycfg
@@ -352,7 +349,13 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
 
     RunLevelPass(DCE, curfunc, mody);
 
-    PassChangedBegin(curfunc) RunLevelPass(cfgSimplify, curfunc, mody);
+    PassChangedBegin(curfunc)
+          RunLevelPass(cfgSimplify, curfunc, mody);
+    RunLevelPass(ControlFlowOpt, curfunc, mody);
+    PassChangedBegin(curfunc)
+    RunLevelPass(cfgSimplify, curfunc, mody);
+    RunLevelPass(ConstantProp, curfunc, mody);
+    PassChangedBegin(curfunc)
   }
   return mody;
 }
