@@ -97,6 +97,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case consthoist:
       AddPass(consthoist);
       break;
+    case select2branch:
+      AddPass(select2branch);
+      break;
     case O0:
       level = O0;
       break;
@@ -219,7 +222,7 @@ void _PassManager::RunOnLevel() {
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc)
-
+        
             RunLevelPass(LoopUnroll, curfunc, modified)
                 PassChangedBegin(curfunc)
 
@@ -294,6 +297,7 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc)
     }
     CommonPass(AM);
+    RunLevelPass(Select2Branch, curfunc, other)
   }
 }
 bool _PassManager::CommonPass(_AnalysisManager &AM) {
