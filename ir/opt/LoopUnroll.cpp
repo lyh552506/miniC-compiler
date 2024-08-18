@@ -24,22 +24,21 @@ bool LoopUnroll::Run() {
   for (auto iter = loops.begin(); iter != loops.end();) {
     auto loop = *iter;
     ++iter;
-    if (AM.FindAttr(loop->GetHeader(), Rotate) && CanBeFullUnroll(loop)) {
+    if ((AM.FindAttr(loop->GetHeader(), Rotate) ||
+         m_func->tag == Function::ParallelBody) &&
+        CanBeFullUnroll(loop)) {
       auto unrollbody = ExtractLoopBody(loop);
       if (unrollbody) {
         auto bb = Unroll(loop, unrollbody);
         CleanUp(loop, bb);
         return true;
       }
-    } else if (AM.FindAttr(loop->GetHeader(), Rotate) &&
+    } else if ((AM.FindAttr(loop->GetHeader(), Rotate) ||
+                m_func->tag == Function::ParallelBody) &&
                CanBeHalfUnroll(loop) && !AM.IsUnrolled(loop->GetHeader())) {
       static int x = 0;
       x++;
       auto unrollbody = ExtractLoopBody(loop);
-      // if (x == 1) {
-      //   Singleton<Module>().Test();
-      //   std::cout << std::endl;
-      // }
       if (unrollbody) {
         auto bb = Half_Unroll(loop, unrollbody);
         return true;
@@ -431,12 +430,18 @@ bool LoopUnroll::CanBeHalfUnroll(LoopInfo *loop) {
   // if (change->getopration() != BinaryInst::Op_Add)
   //   return false;
   int cost = CaculatePrice(body, m_func);
-  if (iteration != 0)
-    cost *= std::abs(iteration);
-  if (cost > 1000)
-    HalfUnrollTimes = 4;
-  else
+  if (cost == MaxInstCost + 1)
+    return false;
+  if (cost < 200 && iteration > 999)
     HalfUnrollTimes = 50;
+  else if (cost < 200 && iteration > 300)
+    HalfUnrollTimes = 32;
+  else if (cost < 200 && iteration > 100)
+    HalfUnrollTimes = 16;
+  else if (cost < 100)
+    HalfUnrollTimes = 32;
+  else
+    HalfUnrollTimes = 4;
   return true;
 }
 
@@ -465,6 +470,9 @@ int LoopUnroll::CaculatePrice(const std::vector<BasicBlock *> &body,
         auto callee = dynamic_cast<Function *>(inst->GetOperand(0));
         if (callee) {
           if (callee == curfunc)
+            return MaxInstCost + 1;
+          if (callee->tag == Function::BuildIn ||
+              callee->tag == Function::ParallelBody)
             return MaxInstCost + 1;
           cost += CaculatePrice(body, callee, Iteration);
         } else
@@ -689,5 +697,6 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   Singleton<Module>().EraseFunction(callee);
   AM.Unrolled(MutiUnrollBlock);
   AM.Unrolled(SingleHeader);
+  AM.Unrolled(Single);
   return tmp;
 }
