@@ -76,7 +76,8 @@ buildin_NotifyWorkerLT:
 	mv	a6,a0
 	ble	a5,a4,.L20
 	addi	a5,a5,3
-	srai	t1,a5,2
+	li	a4,3
+	div	t1,a5,a4
 	lui	a7,%hi(_ZL5tasks)
 	ble	a1,a0,.L10
 	lui	a4,%hi(_ZL5empty)
@@ -152,7 +153,8 @@ buildin_NotifyWorkerLE:
 	mv	a6,a0
 	ble	a5,a4,.L33
 	addi	a5,a5,4
-	srai	t1,a5,2
+	li	a4,3
+	div	t1,a5,a4
 	lui	a7,%hi(_ZL5tasks)
 	ble	a1,a0,.L23
 	lui	a4,%hi(_ZL5empty)
@@ -234,11 +236,9 @@ _Z12CreateThreadv:
 	sd	ra,56(sp)
 	sd	s0,48(sp)
 	sd	s1,40(sp)
-	sd	s2,32(sp)
 	.cfi_offset 1, -8
 	.cfi_offset 8, -16
 	.cfi_offset 9, -24
-	.cfi_offset 18, -32
 	andi	a4,a4,-4
 	sllw	a2,a2,a3
 .L35:
@@ -246,8 +246,7 @@ _Z12CreateThreadv:
 	srlw	a5,a5,a3
 	andi	a5,a5,0xff
 	bne	a5,zero,.L35
-	mv	s0,sp
-	addi	s2,sp,32
+	addi	s0,sp,8
 	lui	s1,%hi(_Z12WorkerThreadPv)
 .L36:
 	li	a3,0
@@ -258,15 +257,14 @@ _Z12CreateThreadv:
 	ld	a0,0(s0)
 	addi	s0,s0,8
 	call	pthread_detach
-	bne	s0,s2,.L36
+	addi	a5,sp,32
+	bne	s0,a5,.L36
 	ld	ra,56(sp)
 	.cfi_restore 1
 	ld	s0,48(sp)
 	.cfi_restore 8
 	ld	s1,40(sp)
 	.cfi_restore 9
-	ld	s2,32(sp)
-	.cfi_restore 18
 	addi	sp,sp,64
 	.cfi_def_cfa_offset 0
 	jr	ra

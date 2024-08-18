@@ -5,7 +5,7 @@
 #include <cmath>
 #include "parallel_lib.hpp"
 
-#define NumThreads 4
+#define NumThreads 3
 
 class Spinlock{
     std::atomic_flag _lock = ATOMIC_FLAG_INIT;
@@ -61,7 +61,7 @@ void buildin_NotifyWorkerLT(int begin,int end){
         buildin_funcptr();
         return;
     }
-    int64_t step=(_end-_begin+3)/4;
+    int64_t step=(_end-_begin+3)/NumThreads;
 
     for(_begin;_begin<_end;_begin+=step){
         int64_t limi=std::min(_begin+step,_end);
@@ -86,7 +86,7 @@ void buildin_NotifyWorkerLE(int begin,int end){
         buildin_funcptr();
         return;
     }
-    int64_t step=(_end-_begin+1+3)/4;
+    int64_t step=(_end-_begin+1+3)/NumThreads;
 
     // the begin 100% will be greater than end in the last iteration, so < and <= is the same here.
     for(_begin;_begin<_end;_begin+=step){
