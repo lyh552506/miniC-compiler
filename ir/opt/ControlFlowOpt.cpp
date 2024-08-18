@@ -5,7 +5,6 @@
 
 void ControlFlowOpt::init()
 {
-    DomTree = AM.get<dominance>(func);
     AM.get<SideEffect>(&Singleton<Module>());
 }
 
@@ -22,12 +21,12 @@ bool ControlFlowOpt::RunOnBlock(BasicBlock *block)
     bool modified = false;
     if (block->Size() > MaxInstNum)
         return false;
-    if (dynamic_cast<RetInst *>(block->back()))
+    if (dynamic_cast<RetInst *>(block->back()) || dynamic_cast<CondInst*>(block->back()))
         return false;
     User *br = block->back();
-    if (dynamic_cast<CondInst *>(br))
+    if (dynamic_cast<UnCondInst *>(br))
     {
-        if (br->GetOperand(1) == block)
+        if (br->GetOperand(0) == block)
             return false;
     }
     int conut = 0;

@@ -574,8 +574,8 @@ Value* ConstantFolding::ConstFoldMinInst(Value* LHS, Value* RHS)
 
 Value* ConstantFolding::ConstFoldSelectInst(SelectInst* inst, Value* cond, Value* TrueVal, Value* FalseVal)
 {
-    // if(auto val = SimplifySelectInst(inst))
-        // return val;
+    if(auto val = SimplifySelectInst(inst))
+        return val;
     auto Cond = dynamic_cast<ConstIRBoolean*>(cond);
     if(!Cond)
         return nullptr;
