@@ -9,3 +9,7 @@ struct IR_CONSTDECL_FLAG
 {
     bool flag;
 };
+
+struct Enable_Parallel{
+    bool flag;
+};

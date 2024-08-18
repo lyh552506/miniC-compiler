@@ -768,6 +768,7 @@ void RISCVISel::InstLowering(CallInst* inst){
     // 如果溢出则按照规约store
     // 如果有返回值则copy a0 到 VReg
     if(inst->GetOperand(0)->as<Function>()&&inst->GetOperand(0)->as<Function>()->tag==Function::ParallelBody){
+        Singleton<Enable_Parallel>().flag=true;
         LowerCallInstParallel(inst);
         return;
     }
