@@ -1,4 +1,7 @@
-R"(	.globl _ZSt21ios_base_library_initv
+R"(	.attribute stack_align, 16
+	.text
+#APP
+	.globl _ZSt21ios_base_library_initv
 #NO_APP
 	.align	1
 	.globl	_Z12WorkerThreadPv
