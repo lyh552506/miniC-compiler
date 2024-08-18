@@ -1,11 +1,4 @@
-R"(	.file	"parallel_lib.cpp"
-	.option nopic
-	.attribute arch, "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0"
-	.attribute unaligned_access, 0
-	.attribute stack_align, 16
-	.text
-#APP
-	.globl _ZSt21ios_base_library_initv
+R"(	.globl _ZSt21ios_base_library_initv
 #NO_APP
 	.align	1
 	.globl	_Z12WorkerThreadPv
@@ -330,6 +323,4 @@ _ZL5empty:
 	.size	buildin_funcptr, 8
 buildin_funcptr:
 	.zero	8
-	.ident	"GCC: () 13.2.0"
-	.section	.note.GNU-stack,"",@progbits
 )"
