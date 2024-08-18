@@ -175,86 +175,86 @@ void Inliner::init(Module *m)
     for (auto &funcptr : m->GetFuncTion())
     {
         Function *func = funcptr.get();
-        auto CanMatchLib = MatchLib(func);
-        if (CanMatchLib.first != 0)
-        {
-            /*1 min  2 max*/
-            if (CanMatchLib.first == 1)
-            {
-                if (CanMatchLib.second == BinaryInst::Op_L)
-                {
-                    auto &calllists = func->GetUserlist();
-                    for (auto callinst : calllists)
-                    {
-                        auto call = callinst->GetUser()->as<CallInst>();
-                        MinInst *inst = nullptr;
-                        if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
-                            inst = new MinInst(call->GetOperand(2), call->GetOperand(1));
-                        else
-                            inst = new MinInst(call->GetOperand(1), call->GetOperand(2));
-                        BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
-                        Pos.insert_before(inst);
-                        call->RAUW(inst);
-                        delete call;
-                    }
-                }
-                else if (CanMatchLib.second == BinaryInst::Op_G)
-                {
-                    auto &calllists = func->GetUserlist();
-                    for (auto callinst : calllists)
-                    {
-                        auto call = callinst->GetUser()->as<CallInst>();
-                        MinInst *inst = nullptr;
-                        if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
-                            inst = new MinInst(call->GetOperand(2), call->GetOperand(1));
-                        else
-                            inst = new MinInst(call->GetOperand(1), call->GetOperand(2));
-                        BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
-                        Pos.insert_before(inst);
-                        call->RAUW(inst);
-                        delete call;
-                    }
-                }
-            }
-            else if (CanMatchLib.first == 2)
-            {
-                if (CanMatchLib.second == BinaryInst::Op_G)
-                {
-                    auto &calllists = func->GetUserlist();
-                    for (auto callinst : calllists)
-                    {
-                        auto call = callinst->GetUser()->as<CallInst>();
-                        MaxInst *inst = nullptr;
-                        if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
-                            inst = new MaxInst(call->GetOperand(2), call->GetOperand(1));
-                        else
-                            inst = new MaxInst(call->GetOperand(1), call->GetOperand(2));
-                        BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
-                        Pos.insert_before(inst);
-                        call->RAUW(inst);
-                        delete call;
-                    }
-                }
-                else if (CanMatchLib.second == BinaryInst::Op_L)
-                {
-                    auto &calllists = func->GetUserlist();
-                    for (auto callinst : calllists)
-                    {
-                        auto call = callinst->GetUser()->as<CallInst>();
-                        MaxInst *inst = nullptr;
-                        if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
-                            inst = new MaxInst(call->GetOperand(2), call->GetOperand(1));
-                        else
-                            inst = new MaxInst(call->GetOperand(1), call->GetOperand(2));
-                        BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
-                        Pos.insert_before(inst);
-                        call->RAUW(inst);
-                        delete call;
-                    }
-                }
-            }
-            continue;
-        }
+        // auto CanMatchLib = MatchLib(func);
+        // if (CanMatchLib.first != 0)
+        // {
+        //     /*1 min  2 max*/
+        //     if (CanMatchLib.first == 1)
+        //     {
+        //         if (CanMatchLib.second == BinaryInst::Op_L)
+        //         {
+        //             auto &calllists = func->GetUserlist();
+        //             for (auto callinst : calllists)
+        //             {
+        //                 auto call = callinst->GetUser()->as<CallInst>();
+        //                 MinInst *inst = nullptr;
+        //                 if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
+        //                     inst = new MinInst(call->GetOperand(2), call->GetOperand(1));
+        //                 else
+        //                     inst = new MinInst(call->GetOperand(1), call->GetOperand(2));
+        //                 BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
+        //                 Pos.insert_before(inst);
+        //                 call->RAUW(inst);
+        //                 delete call;
+        //             }
+        //         }
+        //         else if (CanMatchLib.second == BinaryInst::Op_G)
+        //         {
+        //             auto &calllists = func->GetUserlist();
+        //             for (auto callinst : calllists)
+        //             {
+        //                 auto call = callinst->GetUser()->as<CallInst>();
+        //                 MinInst *inst = nullptr;
+        //                 if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
+        //                     inst = new MinInst(call->GetOperand(2), call->GetOperand(1));
+        //                 else
+        //                     inst = new MinInst(call->GetOperand(1), call->GetOperand(2));
+        //                 BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
+        //                 Pos.insert_before(inst);
+        //                 call->RAUW(inst);
+        //                 delete call;
+        //             }
+        //         }
+        //     }
+        //     else if (CanMatchLib.first == 2)
+        //     {
+        //         if (CanMatchLib.second == BinaryInst::Op_G)
+        //         {
+        //             auto &calllists = func->GetUserlist();
+        //             for (auto callinst : calllists)
+        //             {
+        //                 auto call = callinst->GetUser()->as<CallInst>();
+        //                 MaxInst *inst = nullptr;
+        //                 if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
+        //                     inst = new MaxInst(call->GetOperand(2), call->GetOperand(1));
+        //                 else
+        //                     inst = new MaxInst(call->GetOperand(1), call->GetOperand(2));
+        //                 BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
+        //                 Pos.insert_before(inst);
+        //                 call->RAUW(inst);
+        //                 delete call;
+        //             }
+        //         }
+        //         else if (CanMatchLib.second == BinaryInst::Op_L)
+        //         {
+        //             auto &calllists = func->GetUserlist();
+        //             for (auto callinst : calllists)
+        //             {
+        //                 auto call = callinst->GetUser()->as<CallInst>();
+        //                 MaxInst *inst = nullptr;
+        //                 if (dynamic_cast<ConstantData *>(call->GetOperand(1)))
+        //                     inst = new MaxInst(call->GetOperand(2), call->GetOperand(1));
+        //                 else
+        //                     inst = new MaxInst(call->GetOperand(1), call->GetOperand(2));
+        //                 BasicBlock::mylist<BasicBlock, User>::iterator Pos(call);
+        //                 Pos.insert_before(inst);
+        //                 call->RAUW(inst);
+        //                 delete call;
+        //             }
+        //         }
+        //     }
+        //     continue;
+        // }
         auto &calllists = func->GetUserlist();
         for (auto callinst : calllists)
         {
