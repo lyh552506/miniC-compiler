@@ -113,6 +113,12 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
                             alloca->HasStored = true;
                         }
                     }
+                    else if (auto alloca = dynamic_cast<AllocaInst *>(use->usee))
+                    {
+                        node->ValueAddr[alloca].clear();
+                        alloca->AllZero = false;
+                        alloca->HasStored = true;
+                    }
                 }
                 else if (auto alloca = dynamic_cast<AllocaInst *>(use->usee))
                 {
