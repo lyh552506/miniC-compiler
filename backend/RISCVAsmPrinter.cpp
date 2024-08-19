@@ -44,18 +44,23 @@ void RISCVAsmPrinter::printAsmGlobal() {
 }
 
 void RISCVAsmPrinter::printCacheLookUp() {
-    std::ifstream file(this->cachefilepath);
-    if (!file.is_open()) {
-        std::cout << "Error: Cannot open file " << this->cachefilepath << std::endl;
-        return;
-    }
-    std::string line;
-    while (std::getline(file, line)) {
-        std::cout << line << std::endl;
-    }
-    file.close();
-    return;
-}
+    // std::ifstream file(this->cachefilepath);
+    // if (!file.is_open()) {
+    //     std::cout << "Error: Cannot open file " << this->cachefilepath << std::endl;
+    //     return;
+    // }
+    // std::string line;
+    // while (std::getline(file, line)) {
+    //     std::cout << line << std::endl;
+    // }
+    // file.close();
+    // return;
+
+    static const char* cachelookuplib =
+    #include "../include/RISCVSupport/parallel.hpp"
+    ;
+    std::cout << cachelookuplib;
+}   
 
 void RISCVAsmPrinter::printParallelLib(){
     static const char* buildinlib=

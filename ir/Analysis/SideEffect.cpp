@@ -85,11 +85,11 @@ void SideEffect::CreateSideEffectFunc()
             }
         }
     }
-    if(!Judge)
+    if (!Judge)
         for (auto &func_ : module->GetFuncTion())
-    {
+        {
             func_->HasSideEffect = false;
-    }
+        }
     for (auto &func_ : module->GetFuncTion())
     {
         if (FuncHasSideEffect(func_.get()))
@@ -189,6 +189,18 @@ bool SideEffect::FuncHasSideEffect(Function *func)
                         val->ReadFunc.insert(func);
                     else if (val->isParam())
                         val->ReadFunc.insert(func);
+                }
+            }
+            else if (func->tag == Function::Tag::ParallelBody && dynamic_cast<BinaryInst *>(inst))
+            {
+                auto binary = inst->as<BinaryInst>();
+                if (binary->IsAtomic())
+                {
+                    for (auto &use : binary->Getuselist())
+                    {
+                        flag = true;
+                        func->Change_Val.insert(use->usee);
+                    }
                 }
             }
         }

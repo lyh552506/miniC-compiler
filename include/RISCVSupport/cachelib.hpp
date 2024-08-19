@@ -1,4 +1,4 @@
-	.text
+R"(	.text
 	.globl	list
 	.bss
 	.align	3
@@ -135,3 +135,4 @@ CacheLookUp:
 	.cfi_endproc
 .LFE0:
 	.size	CacheLookUp, .-CacheLookUp
+)"
