@@ -175,7 +175,7 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc) 
 
-        RunEntryFunc(LoopParallel, modified)
+        // RunEntryFunc(LoopParallel, modified)
             PassChangedBegin(curfunc)
    
                 RunLevelPass(ConstantProp, curfunc, other)
@@ -202,7 +202,7 @@ void _PassManager::RunOnLevel() {
       }
 
       CommonPass(AM);
-
+    RunLevelPass(Select2Branch, curfunc, other)
       // loop unroller
       modified = true;
       while (modified) {
@@ -224,12 +224,9 @@ void _PassManager::RunOnLevel() {
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc)
-        
             RunLevelPass(LoopUnroll, curfunc, modified)
                 PassChangedBegin(curfunc)
-
                     RunLevelPass(ConstantProp, curfunc, modified);
-        
     RunLevelPass(DCE, curfunc, other);
         PassChangedBegin(curfunc)
 
@@ -346,6 +343,7 @@ void _PassManager::RunOnLevel() {
     RunLevelPass(DeadStoreElimination, curfunc, other)
     RunLevelPass(LoadElimination, curfunc, other)
     RunLevelPass(DCE, curfunc, other)
+    RunLevelPass(cfgSimplify, curfunc, modified);
     RunLevelPass(CacheLookUp, curfunc, modified);
     RunLevelPass(Select2Branch, curfunc, other)
   }
@@ -390,7 +388,7 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
 
         // constprop
         RunLevelPass(ConstantProp, curfunc, mody);
-    // RunLevelPass(ConstantHoist, curfunc, mody);
+    RunLevelPass(ConstantHoist, curfunc, mody);
     RunLevelPass(cfgSimplify, curfunc, mody) PassChangedBegin(curfunc)
          
             // reassociate
@@ -402,13 +400,10 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     RunLevelPass(BlockMerge, curfunc, mody);
 
     RunLevelPass(DCE, curfunc, mody);
-
+    RunLevelPass(ControlFlowOpt, curfunc, mody);
     PassChangedBegin(curfunc)
           RunLevelPass(cfgSimplify, curfunc, mody);
-    // RunLevelPass(ControlFlowOpt, curfunc, mody);
-    // PassChangedBegin(curfunc)
-    // RunLevelPass(cfgSimplify, curfunc, mody);
-    // RunLevelPass(ConstantProp, curfunc, mody);
+    RunLevelPass(ConstantProp, curfunc, mody);
     // PassChangedBegin(curfunc)
   }
   return mody;
