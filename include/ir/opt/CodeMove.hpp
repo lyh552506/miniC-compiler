@@ -17,8 +17,13 @@ class CodeMove : public _PassManagerBase<CodeMove, Function>
     _AnalysisManager &AM;
     std::vector<LoopInfo *> DeleteLoops;
     std::vector<LoopInfo *> Loops;
+    std::unordered_map<BasicBlock*, std::vector<User*>> WaitHandle;
+    std::vector<User*> MoveOut;
+    std::unordered_set<Value*> MoveOutSet;
     void init();
     bool CodeMotion();
+    void Collect();
+    bool CanHandle(User* inst);
   public:
     CodeMove(Function *func_, _AnalysisManager &AM_) : func(func_), AM(AM_)
     {
