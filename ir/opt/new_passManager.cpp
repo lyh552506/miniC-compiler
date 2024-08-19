@@ -316,6 +316,26 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc)
     }
     CommonPass(AM);
+    RunLevelPass(ScalarStrengthReduce, curfunc, other)
+    modified = true;
+    while (modified) {
+      modified = false;
+      PassChangedBegin(curfunc) RunLevelPass(LoopSimplify, curfunc, other);
+      PassChangedBegin(curfunc)
+
+          RunLevelPass(LcSSA, curfunc, other);
+      PassChangedBegin(curfunc)
+
+          // loop-rotate
+          RunLevelPass(LoopRotate, curfunc, other)
+              PassChangedBegin(curfunc) // licm
+      // loopdeletion
+      RunLevelPass(LoopDeletion, curfunc, modified);
+      PassChangedBegin(curfunc)
+
+          RunLevelPass(BlockMerge, curfunc, other);
+      PassChangedBegin(curfunc)
+    }
     RunLevelPass(CacheLookUp, curfunc, modified);
   }
 }
