@@ -42,17 +42,18 @@ bool CacheLookUp::InsertCache() {
         if (ty == IR_Value_VOID)
           return false;
         auto Exit = callee->GetRetBlock();
-
-        _CacheLookUp = new Function(IR_PTR, "CacheLookUp");
-        _CacheLookUp->tag = Function::BuildIn;
-        Singleton<Module>().Push_Func(_CacheLookUp);
-        _CacheLookUp->clear();
+        
         // insert a new entry
         std::vector<Value *> args;
         for (int i = 0; i < callee->GetParams().size(); i++)
           args.push_back(callee->GetParams()[i].get());
-        if (args.size() > 5)
+        if (args.size() != 5)
           return false;
+        _CacheLookUp = new Function(IR_PTR, "CacheLookUp");
+        _CacheLookUp->tag = Function::BuildIn;
+        Singleton<Module>().Push_Func(_CacheLookUp);
+        _CacheLookUp->clear();
+
         auto EntryBlock = callee->GetBasicBlock().front();
         auto new_entry = new BasicBlock();
         auto new_exit = new BasicBlock();
