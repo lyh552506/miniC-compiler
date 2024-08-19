@@ -557,7 +557,7 @@ void BinaryInst::print() {
     uselist[1]->GetValue()->print();
     std::cout << '\n';
   } else {
-    uselist[1]->GetValue()->GetType()->print();
+    uselist[0]->GetValue()->GetType()->print();
     std::cout << " ";
     uselist[0]->GetValue()->print();
     std::cout << ", ";

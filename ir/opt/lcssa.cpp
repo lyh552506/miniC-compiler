@@ -17,8 +17,9 @@ bool LcSSA::Run() {
   bool changed = false;
   if (!loops->CanBeOpt())
     return changed;
-  for (auto l = loops->begin(); l != loops->end(); l++) {
+  for (auto l = loops->begin(); l != loops->end(); ) {
     auto loop = *l;
+    l++;
     changed |= DFSLoops(loop);
     AM.AddAttr(loop->GetHeader(), Lcssa);
   }

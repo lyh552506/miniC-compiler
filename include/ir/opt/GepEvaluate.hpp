@@ -35,7 +35,7 @@ struct ValueHash
             return ((std::hash<int>()(val_int->GetVal() + 3) * 10107 ^ std::hash<int>()(val_int->GetVal() + 5) * 137) *
                     157);
         else
-            return std::hash<Value *>()(val);
+            return std::hash<Value *>{}(val) ^ (std::hash<Value *>{}(val) << 3);
     }
 };
 
@@ -68,7 +68,19 @@ struct GepHash
                                              addr->find(load_gep->Getuselist()[0]->usee)->second[load_gep_hash]) *
                                          ((j + 4) * 107);
                                 }
+                                else
+                                {
+                                    h += (std::hash<int>{}(load_gep_hash) << (j + 3) * 101);
+                                }
                             }
+                            else
+                            {
+                                h += (std::hash<int>{}(load_gep_hash) << (j + 3) * 333);
+                            }
+                        }
+                        else
+                        {
+                            h += ValueHash{}(p) * ((j + 111) * 123) * (j + 1);
                         }
                     }
                     else
@@ -97,6 +109,14 @@ struct GepHash
                                              addr->find(load_gep->Getuselist()[0]->usee)->second[load_gep_hash]) *
                                          ((j + 4) * 107);
                                 }
+                                else
+                                {
+                                    h += (std::hash<int>{}(load_gep_hash) << (j + 3) * 101);
+                                }
+                            }
+                            else
+                            {
+                                h += (std::hash<int>{}(load_gep_hash) << (j + 3) * 333);
                             }
                         }
                     }
@@ -214,11 +234,11 @@ class GepEvaluate : public _PassManagerBase<GepEvaluate, Function>
     _AnalysisManager &AM;
     std::vector<User *> wait_del;
     std::unordered_map<BasicBlock *, HandleNode *> Mapping;
-    std::unordered_map<AllocaInst*, Initializer*> AllocaInitMap;
-    std::unordered_set<AllocaInst*> allocas;
+    std::unordered_map<AllocaInst *, Initializer *> AllocaInitMap;
+    std::unordered_set<AllocaInst *> allocas;
     bool ProcessNode(HandleNode *node);
     void HandleMemcpy(AllocaInst *inst, Initializer *init, HandleNode *node, std::vector<int> index);
-    void HandleZeroInitializer(AllocaInst* inst, HandleNode* node, std::vector<int> index);
+    void HandleZeroInitializer(AllocaInst *inst, HandleNode *node, std::vector<int> index);
     void HandleBlockIn(ValueAddr_Struct &addr, HandleNode *node);
 
   public:

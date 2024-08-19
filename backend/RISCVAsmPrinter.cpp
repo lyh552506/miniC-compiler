@@ -57,7 +57,7 @@ void RISCVAsmPrinter::printCacheLookUp() {
     // return;
 
     static const char* cachelookuplib =
-    #include "../include/RISCVSupport/parallel.hpp"
+    #include "../include/RISCVSupport/cachelib.hpp"
     ;
     std::cout << cachelookuplib;
 }   
@@ -73,10 +73,10 @@ void RISCVAsmPrinter::printAsm() {
     this->printAsmGlobal();
     if(this->use_cachelookup == true) 
         this->printCacheLookUp();
-    if(Singleton<Enable_Parallel>().flag==true)
-        this->printParallelLib();
     this->text->PrintTextSegment();
     this->data->PrintDataSegment_Tempvar();
+    if(Singleton<Enable_Parallel>().flag==true)
+        this->printParallelLib();
 }
 
 //textSegment

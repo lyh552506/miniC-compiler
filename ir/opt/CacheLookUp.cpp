@@ -42,17 +42,18 @@ bool CacheLookUp::InsertCache() {
         if (ty == IR_Value_VOID)
           return false;
         auto Exit = callee->GetRetBlock();
-
-        _CacheLookUp = new Function(IR_PTR, "CacheLookUp");
-        _CacheLookUp->tag = Function::BuildIn;
-        Singleton<Module>().Push_Func(_CacheLookUp);
-        _CacheLookUp->clear();
+        
         // insert a new entry
         std::vector<Value *> args;
         for (int i = 0; i < callee->GetParams().size(); i++)
           args.push_back(callee->GetParams()[i].get());
-        if (args.size() > 5)
+        if (args.size() != 2)
           return false;
+        _CacheLookUp = new Function(IR_PTR, "CacheLookUp");
+        _CacheLookUp->tag = Function::BuildIn;
+        Singleton<Module>().Push_Func(_CacheLookUp);
+        _CacheLookUp->clear();
+
         auto EntryBlock = callee->GetBasicBlock().front();
         auto new_entry = new BasicBlock();
         auto new_exit = new BasicBlock();
@@ -63,7 +64,7 @@ bool CacheLookUp::InsertCache() {
         gep->AddArg(ConstIRInt::GetNewConstant(3));
         auto load = new LoadInst(gep);
         BinaryInst *cmp = nullptr;
-        cmp = BinaryInst::CreateInst(load, BinaryInst::Op_E,
+        cmp = BinaryInst::CreateInst(load, BinaryInst::Op_NE,
                                      ConstIRInt::GetNewConstant(0));
         new_entry->push_back(callCache);
         new_entry->push_back(gep);

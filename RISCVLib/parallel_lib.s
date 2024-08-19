@@ -99,28 +99,28 @@ buildin_NotifyWorkerLT:
 	sd	s1,88(sp)
 	.cfi_offset 9, -24
 	andi	s1,s0,3
+	sd	s4,64(sp)
 	sd	s5,56(sp)
 	sd	s6,48(sp)
-	sd	s7,40(sp)
+	.cfi_offset 20, -48
 	.cfi_offset 21, -56
 	.cfi_offset 22, -64
-	.cfi_offset 23, -72
-	li	s6,1
+	li	s5,1
 	slliw	s1,s1,3
-	lui	s7,%hi(.LANCHOR0)
-	li	s5,-1
+	lui	s6,%hi(.LANCHOR0)
+	li	s4,-1
 	sd	s2,80(sp)
-	sd	s4,64(sp)
+	sd	s7,40(sp)
 	sd	s11,8(sp)
 	.cfi_offset 18, -32
-	.cfi_offset 20, -48
+	.cfi_offset 23, -72
 	.cfi_offset 27, -104
-	addi	s7,s7,%lo(.LANCHOR0)
+	addi	s6,s6,%lo(.LANCHOR0)
 	lui	s10,%hi(_ZL5tasks)
-	lui	s4,%hi(_ZL4full)
-	srli	s5,s5,32
+	srli	s4,s4,32
 	andi	s0,s0,-4
-	sllw	s2,s6,s1
+	sllw	s2,s5,s1
+	lui	s7,%hi(_ZL4full)
 	lui	s11,%hi(buildin_funcptr)
 .L15:
 	mv	a3,s8
@@ -132,19 +132,14 @@ buildin_NotifyWorkerLT:
 	mv	a5,s8
 .L11:
 	slli	a5,a5,32
-	and	a4,a4,s5
+	and	a4,a4,s4
 	or	a4,a4,a5
 .L12:
 	fence iorw,ow; amoor.w.aq a5,s2,0(s0)
 	srlw	a5,a5,s1
 	andi	a5,a5,0xff
 	bne	a5,zero,.L12
-	sd	a4,0(s7)
-	addi	a5,s10,%lo(_ZL5tasks)
-	fence iorw,ow; amoadd.w.aq zero,s6,0(a5)
-	fence	iorw,iorw
-	sb	zero,%lo(_ZL4full)(s4)
-	fence	iorw,iorw
+	sd	a4,0(s6)
 	blt	a3,zero,.L13
 	ld	a5,%lo(buildin_funcptr)(s11)
 	jalr	a5
@@ -205,8 +200,10 @@ buildin_NotifyWorkerLT:
 	.cfi_offset 25, -88
 	.cfi_offset 26, -96
 	.cfi_offset 27, -104
+	addi	a5,s10,%lo(_ZL5tasks)
+	fence iorw,ow; amoadd.w.aq zero,s5,0(a5)
 	fence	iorw,iorw
-	sb	zero,%lo(_ZL4full)(s4)
+	sb	zero,%lo(_ZL4full)(s7)
 	fence	iorw,iorw
 	bgt	s9,s8,.L15
 	j	.L24
@@ -315,8 +312,6 @@ buildin_NotifyWorkerLE:
 	andi	a5,a5,0xff
 	bne	a5,zero,.L29
 	sd	a4,0(s6)
-	addi	a5,s10,%lo(_ZL5tasks)
-	fence iorw,ow; amoadd.w.aq zero,s5,0(a5)
 	blt	a3,zero,.L30
 	ld	a5,%lo(buildin_funcptr)(s11)
 	jalr	a5
@@ -377,6 +372,8 @@ buildin_NotifyWorkerLE:
 	.cfi_offset 25, -88
 	.cfi_offset 26, -96
 	.cfi_offset 27, -104
+	addi	a5,s10,%lo(_ZL5tasks)
+	fence iorw,ow; amoadd.w.aq zero,s5,0(a5)
 	fence	iorw,iorw
 	sb	zero,%lo(_ZL4full)(s7)
 	fence	iorw,iorw

@@ -1,5 +1,12 @@
-R"(	.text
-    .align  1
+R"(	.file	"parallel_lib.cpp"
+	.option nopic
+	.attribute unaligned_access, 0
+	.attribute stack_align, 16
+	.text
+#APP
+	.globl _ZSt21ios_base_library_initv
+#NO_APP
+	.align	1
 	.globl	_Z12WorkerThreadPv
 	.type	_Z12WorkerThreadPv, @function
 _Z12WorkerThreadPv:
@@ -63,72 +70,168 @@ buildin_FenceArgLoaded:
 buildin_NotifyWorkerLT:
 .LFB2880:
 	.cfi_startproc
+	addi	sp,sp,-112
+	.cfi_def_cfa_offset 112
+	sd	s9,24(sp)
+	sd	ra,104(sp)
 	sub	a5,a1,a0
 	li	a4,63
-	mv	a6,a0
-	ble	a5,a4,.L20
+	.cfi_offset 25, -88
+	.cfi_offset 1, -8
+	mv	s9,a1
+	ble	a5,a4,.L23
+	sd	s3,72(sp)
+	sd	s8,32(sp)
+	sd	s10,16(sp)
 	addi	a5,a5,3
-	srai	t1,a5,2
-	lui	a7,%hi(_ZL5tasks)
+	.cfi_offset 19, -40
+	.cfi_offset 24, -80
+	.cfi_offset 26, -96
+	mv	s8,a0
+	srai	s3,a5,2
+	lui	s10,%hi(_ZL5tasks)
 	ble	a1,a0,.L10
-	lui	a4,%hi(_ZL5empty)
-	addi	a4,a4,%lo(_ZL5empty)
-	andi	a3,a4,3
-	li	t5,1
-	slliw	a3,a3,3
-	lui	t4,%hi(.LANCHOR0)
-	li	t3,-1
-	addi	t4,t4,%lo(.LANCHOR0)
-	lui	a7,%hi(_ZL5tasks)
-	lui	t6,%hi(_ZL4full)
-	srli	t3,t3,32
-	andi	a4,a4,-4
-	sllw	a2,t5,a3
-.L13:
-	mv	a0,a6
-	slli	a0,a0,32
-	add	a6,a6,t1
-	srli	a0,a0,32
-	mv	a5,a1
-	ble	a1,a6,.L11
-	mv	a5,a6
+	sd	s0,96(sp)
+	.cfi_offset 8, -16
+	lui	s0,%hi(_ZL5empty)
+	addi	s0,s0,%lo(_ZL5empty)
+	sd	s1,88(sp)
+	.cfi_offset 9, -24
+	andi	s1,s0,3
+	sd	s4,64(sp)
+	sd	s5,56(sp)
+	sd	s6,48(sp)
+	.cfi_offset 20, -48
+	.cfi_offset 21, -56
+	.cfi_offset 22, -64
+	li	s5,1
+	slliw	s1,s1,3
+	lui	s6,%hi(.LANCHOR0)
+	li	s4,-1
+	sd	s2,80(sp)
+	sd	s7,40(sp)
+	sd	s11,8(sp)
+	.cfi_offset 18, -32
+	.cfi_offset 23, -72
+	.cfi_offset 27, -104
+	addi	s6,s6,%lo(.LANCHOR0)
+	lui	s10,%hi(_ZL5tasks)
+	srli	s4,s4,32
+	andi	s0,s0,-4
+	sllw	s2,s5,s1
+	lui	s7,%hi(_ZL4full)
+	lui	s11,%hi(buildin_funcptr)
+.L15:
+	mv	a3,s8
+	slli	a4,a3,32
+	add	s8,s8,s3
+	srli	a4,a4,32
+	mv	a5,s9
+	ble	s9,s8,.L11
+	mv	a5,s8
 .L11:
 	slli	a5,a5,32
-	and	a0,a0,t3
-	or	a0,a0,a5
+	and	a4,a4,s4
+	or	a4,a4,a5
 .L12:
-	fence iorw,ow; amoor.w.aq a5,a2,0(a4)
-	srlw	a5,a5,a3
+	fence iorw,ow; amoor.w.aq a5,s2,0(s0)
+	srlw	a5,a5,s1
 	andi	a5,a5,0xff
 	bne	a5,zero,.L12
-	sd	a0,0(t4)
-	addi	a5,a7,%lo(_ZL5tasks)
-	fence iorw,ow; amoadd.w.aq zero,t5,0(a5)
-	fence	iorw,iorw
-	sb	zero,%lo(_ZL4full)(t6)
-	fence	iorw,iorw
-	bgt	a1,a6,.L13
+	sd	a4,0(s6)
+	blt	a3,zero,.L13
+	ld	a5,%lo(buildin_funcptr)(s11)
+	jalr	a5
+	bgt	s9,s8,.L15
+.L24:
+	ld	s0,96(sp)
+	.cfi_restore 8
+	ld	s1,88(sp)
+	.cfi_restore 9
+	ld	s2,80(sp)
+	.cfi_restore 18
+	ld	s4,64(sp)
+	.cfi_restore 20
+	ld	s5,56(sp)
+	.cfi_restore 21
+	ld	s6,48(sp)
+	.cfi_restore 22
+	ld	s7,40(sp)
+	.cfi_restore 23
+	ld	s11,8(sp)
+	.cfi_restore 27
 .L10:
 	lui	a3,%hi(_ZL9task_done)
-.L14:
+.L16:
 	fence	iorw,iorw
 	lw	a5,%lo(_ZL9task_done)(a3)
 	fence	iorw,iorw
 	fence	iorw,iorw
 	sext.w	a5,a5
-	lw	a4,%lo(_ZL5tasks)(a7)
+	lw	a4,%lo(_ZL5tasks)(s10)
 	fence	iorw,iorw
-	bne	a5,a4,.L14
-	ret
-.L20:
+	bne	a5,a4,.L16
+	ld	ra,104(sp)
+	.cfi_restore 1
+	ld	s3,72(sp)
+	.cfi_restore 19
+	ld	s8,32(sp)
+	.cfi_restore 24
+	ld	s10,16(sp)
+	.cfi_restore 26
+	ld	s9,24(sp)
+	.cfi_restore 25
+	addi	sp,sp,112
+	.cfi_def_cfa_offset 0
+	jr	ra
+.L13:
+	.cfi_def_cfa_offset 112
+	.cfi_offset 1, -8
+	.cfi_offset 8, -16
+	.cfi_offset 9, -24
+	.cfi_offset 18, -32
+	.cfi_offset 19, -40
+	.cfi_offset 20, -48
+	.cfi_offset 21, -56
+	.cfi_offset 22, -64
+	.cfi_offset 23, -72
+	.cfi_offset 24, -80
+	.cfi_offset 25, -88
+	.cfi_offset 26, -96
+	.cfi_offset 27, -104
+	addi	a5,s10,%lo(_ZL5tasks)
+	fence iorw,ow; amoadd.w.aq zero,s5,0(a5)
+	fence	iorw,iorw
+	sb	zero,%lo(_ZL4full)(s7)
+	fence	iorw,iorw
+	bgt	s9,s8,.L15
+	j	.L24
+.L23:
+	.cfi_restore 8
+	.cfi_restore 9
+	.cfi_restore 18
+	.cfi_restore 19
+	.cfi_restore 20
+	.cfi_restore 21
+	.cfi_restore 22
+	.cfi_restore 23
+	.cfi_restore 24
+	.cfi_restore 26
+	.cfi_restore 27
 	slli	a5,a0,32
-	lui	a4,%hi(buildin_funcptr)
-	slli	a1,a1,32
+	slli	s9,a1,32
 	srli	a5,a5,32
+	lui	a4,%hi(buildin_funcptr)
+	ld	ra,104(sp)
+	.cfi_restore 1
+	or	a5,a5,s9
 	ld	a4,%lo(buildin_funcptr)(a4)
-	or	a5,a5,a1
+	ld	s9,24(sp)
+	.cfi_restore 25
 	lui	a3,%hi(.LANCHOR0)
 	sd	a5,%lo(.LANCHOR0)(a3)
+	addi	sp,sp,112
+	.cfi_def_cfa_offset 0
 	jr	a4
 	.cfi_endproc
 .LFE2880:
@@ -139,72 +242,168 @@ buildin_NotifyWorkerLT:
 buildin_NotifyWorkerLE:
 .LFB2881:
 	.cfi_startproc
+	addi	sp,sp,-112
+	.cfi_def_cfa_offset 112
+	sd	s9,24(sp)
+	sd	ra,104(sp)
 	sub	a5,a1,a0
 	li	a4,62
-	mv	a6,a0
-	ble	a5,a4,.L33
+	.cfi_offset 25, -88
+	.cfi_offset 1, -8
+	mv	s9,a1
+	ble	a5,a4,.L40
+	sd	s3,72(sp)
+	sd	s8,32(sp)
+	sd	s10,16(sp)
 	addi	a5,a5,4
-	srai	t1,a5,2
-	lui	a7,%hi(_ZL5tasks)
-	ble	a1,a0,.L23
-	lui	a4,%hi(_ZL5empty)
-	addi	a4,a4,%lo(_ZL5empty)
-	andi	a3,a4,3
-	li	t5,1
-	slliw	a3,a3,3
-	lui	t4,%hi(.LANCHOR0)
-	li	t3,-1
-	addi	t4,t4,%lo(.LANCHOR0)
-	lui	a7,%hi(_ZL5tasks)
-	lui	t6,%hi(_ZL4full)
-	srli	t3,t3,32
-	andi	a4,a4,-4
-	sllw	a2,t5,a3
-.L26:
-	mv	a0,a6
-	add	a6,a6,t1
-	slli	a0,a0,32
-	addi	a5,a6,-1
-	srli	a0,a0,32
-	ble	a5,a1,.L24
-	mv	a5,a1
-.L24:
+	.cfi_offset 19, -40
+	.cfi_offset 24, -80
+	.cfi_offset 26, -96
+	mv	s8,a0
+	srai	s3,a5,2
+	lui	s10,%hi(_ZL5tasks)
+	ble	a1,a0,.L27
+	sd	s0,96(sp)
+	.cfi_offset 8, -16
+	lui	s0,%hi(_ZL5empty)
+	addi	s0,s0,%lo(_ZL5empty)
+	sd	s1,88(sp)
+	.cfi_offset 9, -24
+	andi	s1,s0,3
+	sd	s4,64(sp)
+	sd	s5,56(sp)
+	sd	s6,48(sp)
+	.cfi_offset 20, -48
+	.cfi_offset 21, -56
+	.cfi_offset 22, -64
+	li	s5,1
+	slliw	s1,s1,3
+	lui	s6,%hi(.LANCHOR0)
+	li	s4,-1
+	sd	s2,80(sp)
+	sd	s7,40(sp)
+	sd	s11,8(sp)
+	.cfi_offset 18, -32
+	.cfi_offset 23, -72
+	.cfi_offset 27, -104
+	addi	s6,s6,%lo(.LANCHOR0)
+	lui	s10,%hi(_ZL5tasks)
+	srli	s4,s4,32
+	andi	s0,s0,-4
+	sllw	s2,s5,s1
+	lui	s7,%hi(_ZL4full)
+	lui	s11,%hi(buildin_funcptr)
+.L32:
+	mv	a3,s8
+	add	s8,s8,s3
+	slli	a4,a3,32
+	addi	a5,s8,-1
+	srli	a4,a4,32
+	ble	a5,s9,.L28
+	mv	a5,s9
+.L28:
 	slli	a5,a5,32
-	and	a0,a0,t3
-	or	a0,a0,a5
-.L25:
-	fence iorw,ow; amoor.w.aq a5,a2,0(a4)
-	srlw	a5,a5,a3
+	and	a4,a4,s4
+	or	a4,a4,a5
+.L29:
+	fence iorw,ow; amoor.w.aq a5,s2,0(s0)
+	srlw	a5,a5,s1
 	andi	a5,a5,0xff
-	bne	a5,zero,.L25
-	sd	a0,0(t4)
-	addi	a5,a7,%lo(_ZL5tasks)
-	fence iorw,ow; amoadd.w.aq zero,t5,0(a5)
-	fence	iorw,iorw
-	sb	zero,%lo(_ZL4full)(t6)
-	fence	iorw,iorw
-	bgt	a1,a6,.L26
-.L23:
-	lui	a3,%hi(_ZL9task_done)
+	bne	a5,zero,.L29
+	sd	a4,0(s6)
+	blt	a3,zero,.L30
+	ld	a5,%lo(buildin_funcptr)(s11)
+	jalr	a5
+	bgt	s9,s8,.L32
+.L41:
+	ld	s0,96(sp)
+	.cfi_restore 8
+	ld	s1,88(sp)
+	.cfi_restore 9
+	ld	s2,80(sp)
+	.cfi_restore 18
+	ld	s4,64(sp)
+	.cfi_restore 20
+	ld	s5,56(sp)
+	.cfi_restore 21
+	ld	s6,48(sp)
+	.cfi_restore 22
+	ld	s7,40(sp)
+	.cfi_restore 23
+	ld	s11,8(sp)
+	.cfi_restore 27
 .L27:
+	lui	a3,%hi(_ZL9task_done)
+.L33:
 	fence	iorw,iorw
 	lw	a5,%lo(_ZL9task_done)(a3)
 	fence	iorw,iorw
 	fence	iorw,iorw
 	sext.w	a5,a5
-	lw	a4,%lo(_ZL5tasks)(a7)
+	lw	a4,%lo(_ZL5tasks)(s10)
 	fence	iorw,iorw
-	bne	a5,a4,.L27
-	ret
-.L33:
+	bne	a5,a4,.L33
+	ld	ra,104(sp)
+	.cfi_restore 1
+	ld	s3,72(sp)
+	.cfi_restore 19
+	ld	s8,32(sp)
+	.cfi_restore 24
+	ld	s10,16(sp)
+	.cfi_restore 26
+	ld	s9,24(sp)
+	.cfi_restore 25
+	addi	sp,sp,112
+	.cfi_def_cfa_offset 0
+	jr	ra
+.L30:
+	.cfi_def_cfa_offset 112
+	.cfi_offset 1, -8
+	.cfi_offset 8, -16
+	.cfi_offset 9, -24
+	.cfi_offset 18, -32
+	.cfi_offset 19, -40
+	.cfi_offset 20, -48
+	.cfi_offset 21, -56
+	.cfi_offset 22, -64
+	.cfi_offset 23, -72
+	.cfi_offset 24, -80
+	.cfi_offset 25, -88
+	.cfi_offset 26, -96
+	.cfi_offset 27, -104
+	addi	a5,s10,%lo(_ZL5tasks)
+	fence iorw,ow; amoadd.w.aq zero,s5,0(a5)
+	fence	iorw,iorw
+	sb	zero,%lo(_ZL4full)(s7)
+	fence	iorw,iorw
+	bgt	s9,s8,.L32
+	j	.L41
+.L40:
+	.cfi_restore 8
+	.cfi_restore 9
+	.cfi_restore 18
+	.cfi_restore 19
+	.cfi_restore 20
+	.cfi_restore 21
+	.cfi_restore 22
+	.cfi_restore 23
+	.cfi_restore 24
+	.cfi_restore 26
+	.cfi_restore 27
 	slli	a5,a0,32
-	lui	a4,%hi(buildin_funcptr)
-	slli	a1,a1,32
+	slli	s9,a1,32
 	srli	a5,a5,32
+	lui	a4,%hi(buildin_funcptr)
+	ld	ra,104(sp)
+	.cfi_restore 1
+	or	a5,a5,s9
 	ld	a4,%lo(buildin_funcptr)(a4)
-	or	a5,a5,a1
+	ld	s9,24(sp)
+	.cfi_restore 25
 	lui	a3,%hi(.LANCHOR0)
 	sd	a5,%lo(.LANCHOR0)(a3)
+	addi	sp,sp,112
+	.cfi_def_cfa_offset 0
 	jr	a4
 	.cfi_endproc
 .LFE2881:
@@ -226,22 +425,19 @@ _Z12CreateThreadv:
 	sd	ra,56(sp)
 	sd	s0,48(sp)
 	sd	s1,40(sp)
-	sd	s2,32(sp)
 	.cfi_offset 1, -8
 	.cfi_offset 8, -16
 	.cfi_offset 9, -24
-	.cfi_offset 18, -32
 	andi	a4,a4,-4
 	sllw	a2,a2,a3
-.L35:
+.L43:
 	fence iorw,ow; amoor.w.aq a5,a2,0(a4)
 	srlw	a5,a5,a3
 	andi	a5,a5,0xff
-	bne	a5,zero,.L35
-	mv	s0,sp
-	addi	s2,sp,32
+	bne	a5,zero,.L43
+	addi	s0,sp,8
 	lui	s1,%hi(_Z12WorkerThreadPv)
-.L36:
+.L44:
 	li	a3,0
 	addi	a2,s1,%lo(_Z12WorkerThreadPv)
 	li	a1,0
@@ -250,15 +446,14 @@ _Z12CreateThreadv:
 	ld	a0,0(s0)
 	addi	s0,s0,8
 	call	pthread_detach
-	bne	s0,s2,.L36
+	addi	a5,sp,32
+	bne	s0,a5,.L44
 	ld	ra,56(sp)
 	.cfi_restore 1
 	ld	s0,48(sp)
 	.cfi_restore 8
 	ld	s1,40(sp)
 	.cfi_restore 9
-	ld	s2,32(sp)
-	.cfi_restore 18
 	addi	sp,sp,64
 	.cfi_def_cfa_offset 0
 	jr	ra
@@ -275,14 +470,14 @@ _Z12CreateThreadv:
 buildin_AtomicF32add:
 .LFB2884:
 	.cfi_startproc
-.L41:
+.L49:
 	lw	a4,0(a0)
 	fmv.s.x	fa5,a4
 	fadd.s	fa5,fa5,fa0
 	fmv.x.s	a3,fa5
 	fence iorw,ow;  1: lr.w.aq a5,0(a0); bne a5,a4,1f; sc.w.aq a2,a3,0(a0); bnez a2,1b; 1:
 	subw	a5,a5,a4
-	bne	a5,zero,.L41
+	bne	a5,zero,.L49
 	ret
 	.cfi_endproc
 .LFE2884:
@@ -322,4 +517,6 @@ _ZL5empty:
 	.size	buildin_funcptr, 8
 buildin_funcptr:
 	.zero	8
+	.ident	"GCC: () 13.2.0"
+	.section	.note.GNU-stack,"",@progbits
 )"
