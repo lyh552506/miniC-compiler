@@ -316,6 +316,7 @@ void _PassManager::RunOnLevel() {
       PassChangedBegin(curfunc)
     }
     CommonPass(AM);
+    RunLevelPass(CacheLookUp, curfunc, modified);
   }
 }
 bool _PassManager::CommonPass(_AnalysisManager &AM) {

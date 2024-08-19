@@ -54,6 +54,7 @@ bool LoadElimination::RunOnBlock(BasicBlock *block)
         LoadInst *load = dynamic_cast<LoadInst *>(inst);
         mylist<BasicBlock, User>::iterator pos(load);
         std::unordered_set<BasicBlock *> visited;
+        load->Change = false;
         std::pair<Value *, BasicBlock *> val = Judge(load, load, block, load->GetOperand(0), block, visited, --pos, 0);
         if (val.first && val.first != load)
         {
