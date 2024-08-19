@@ -73,10 +73,10 @@ void RISCVAsmPrinter::printAsm() {
     this->printAsmGlobal();
     if(this->use_cachelookup == true) 
         this->printCacheLookUp();
-    if(Singleton<Enable_Parallel>().flag==true)
-        this->printParallelLib();
     this->text->PrintTextSegment();
     this->data->PrintDataSegment_Tempvar();
+    if(Singleton<Enable_Parallel>().flag==true)
+        this->printParallelLib();
 }
 
 //textSegment
