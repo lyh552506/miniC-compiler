@@ -1,4 +1,4 @@
-#include <iostream>
+#include <stdio.h>
 struct __attribute__((packed)) CacheEntity
 {
     // __uint64_t key;//0 , 1

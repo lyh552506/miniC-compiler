@@ -4,14 +4,11 @@
 	.attribute unaligned_access, 0
 	.attribute stack_align, 16
 	.text
-#APP
-	.globl _ZSt21ios_base_library_initv
-#NO_APP
 	.align	1
 	.globl	CacheLookUp
 	.type	CacheLookUp, @function
 CacheLookUp:
-.LFB2001:
+.LFB12:
 	.cfi_startproc
 	slli	a5,a0,32
 	slli	a1,a1,32
@@ -112,7 +109,7 @@ CacheLookUp:
 	mv	a0,a2
 	ret
 	.cfi_endproc
-.LFE2001:
+.LFE12:
 	.size	CacheLookUp, .-CacheLookUp
 	.globl	list
 	.bss
