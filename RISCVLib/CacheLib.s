@@ -1,4 +1,119 @@
+	.file	"CacheLib.cpp"
+	.option nopic
+	.attribute arch, "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0"
+	.attribute unaligned_access, 0
+	.attribute stack_align, 16
 	.text
+#APP
+	.globl _ZSt21ios_base_library_initv
+#NO_APP
+	.align	1
+	.globl	CacheLookUp
+	.type	CacheLookUp, @function
+CacheLookUp:
+.LFB2001:
+	.cfi_startproc
+	slli	a5,a0,32
+	slli	a1,a1,32
+	srli	a5,a5,32
+	or	a5,a5,a1
+	li	a3,1023
+	remu	a3,a5,a3
+	li	a2,1021
+	lui	a4,%hi(list)
+	addi	a4,a4,%lo(list)
+	remu	a2,a5,a2
+	slli	a1,a3,4
+	add	a1,a4,a1
+	lw	a1,12(a1)
+	slli	a7,a3,4
+	add	a0,a4,a7
+	sext.w	a3,a3
+	addi	a2,a2,1
+	beq	a1,zero,.L23
+	ld	a1,0(a0)
+	beq	a1,a5,.L1
+	add	a1,a3,a2
+	li	t1,1022
+	sext.w	a6,a2
+	addw	a3,a3,a2
+	bgtu	a1,t1,.L25
+.L6:
+	slli	a2,a1,32
+	srli	a3,a2,28
+	add	a3,a4,a3
+	lw	a2,12(a3)
+	beq	a2,zero,.L18
+	ld	a2,0(a3)
+	beq	a2,a5,.L17
+	addw	a3,a1,a6
+	li	a2,1022
+	bgtu	a3,a2,.L26
+.L8:
+	slli	a1,a3,32
+	srli	a2,a1,28
+	add	a2,a4,a2
+	lw	a1,12(a2)
+	beq	a1,zero,.L14
+	ld	a1,0(a2)
+	beq	a1,a5,.L15
+	addw	a2,a6,a3
+	li	a1,1022
+	bgtu	a2,a1,.L27
+.L9:
+	slli	a1,a2,32
+	srli	a3,a1,28
+	add	a3,a4,a3
+	lw	a1,12(a3)
+	beq	a1,zero,.L18
+	ld	a1,0(a3)
+	beq	a5,a1,.L17
+	addw	a3,a6,a2
+	li	a2,1022
+	bgtu	a3,a2,.L28
+.L10:
+	slli	a2,a3,32
+	srli	a3,a2,28
+	add	a3,a4,a3
+	lw	a2,12(a3)
+	beq	a2,zero,.L18
+	ld	a2,0(a3)
+	beq	a2,a5,.L17
+	add	a4,a4,a7
+	sw	zero,12(a4)
+.L23:
+	sd	a5,0(a0)
+.L1:
+	ret
+.L25:
+	addiw	a1,a3,-1023
+	j	.L6
+.L26:
+	addiw	a3,a3,-1023
+	j	.L8
+.L27:
+	addiw	a2,a2,-1023
+	j	.L9
+.L28:
+	addiw	a3,a3,-1023
+	j	.L10
+.L18:
+	mv	a0,a3
+	sd	a5,0(a0)
+	ret
+.L17:
+	mv	a0,a3
+	ret
+.L14:
+	mv	a0,a2
+	sd	a5,0(a0)
+	ret
+.L15:
+	mv	a0,a2
+	ret
+	.cfi_endproc
+.LFE2001:
+	.size	CacheLookUp, .-CacheLookUp
 	.globl	list
 	.bss
 	.align	3
@@ -6,122 +121,5 @@
 	.size	list, 16368
 list:
 	.zero	16368
-	.section	.srodata,"a"
-	.align	2
-	.type	_ZL2m1, @object
-	.size	_ZL2m1, 4
-_ZL2m1:
-	.word	1023
-	.align	2
-	.type	_ZL2m2, @object
-	.size	_ZL2m2, 4
-_ZL2m2:
-	.word	1021
-	.text
-	.align	1
-	.globl	CacheLookUp
-	.type	CacheLookUp, @function
-CacheLookUp:
-.LFB0_cache:
-	.cfi_startproc
-	addi	sp,sp,-96
-	.cfi_def_cfa_offset 96
-	sd	s0,88(sp)
-	.cfi_offset 8, -8
-	addi	s0,sp,96
-	.cfi_def_cfa 8, 0
-	mv	a5,a0
-	mv	a4,a1
-	sw	a5,-84(s0)
-	mv	a5,a4
-	sw	a5,-88(s0)
-	lw	a5,-84(s0)
-	slli	a4,a5,32
-	lw	a5,-88(s0)
-	or	a5,a4,a5
-	sd	a5,-32(s0)
-	ld	a4,-32(s0)
-	li	a5,1023
-	remu	a5,a4,a5
-	sd	a5,-40(s0)
-	ld	a4,-32(s0)
-	li	a5,1021
-	remu	a5,a4,a5
-	addi	a5,a5,1
-	sd	a5,-48(s0)
-	ld	a5,-40(s0)
-	sw	a5,-20(s0)
-	li	a5,5
-	sw	a5,-52(s0)
-	sw	zero,-24(s0)
-.L8_cache:
-	lwu	a5,-20(s0)
-	slli	a4,a5,4
-	lui	a5,%hi(list)
-	addi	a5,a5,%lo(list)
-	add	a5,a4,a5
-	sd	a5,-64(s0)
-	ld	a5,-64(s0)
-	lw	a5,8(a5)
-	bne	a5,zero,.L2_cache
-	ld	a5,-64(s0)
-	ld	a4,-32(s0)
-	sd	a4,0(a5)
-	ld	a5,-64(s0)
-	j	.L3_cache
-.L2_cache:
-	ld	a5,-64(s0)
-	ld	a5,0(a5)
-	ld	a4,-32(s0)
-	bne	a4,a5,.L4_cache
-	ld	a5,-64(s0)
-	j	.L3_cache
-.L4_cache:
-	lw	a5,-24(s0)
-	addiw	a5,a5,1
-	sw	a5,-24(s0)
-	lw	a5,-24(s0)
-	sext.w	a4,a5
-	li	a5,4
-	sgtu	a5,a4,a5
-	andi	a5,a5,0xff
-	bne	a5,zero,.L10_cache
-	ld	a5,-48(s0)
-	sext.w	a5,a5
-	lw	a4,-20(s0)
-	addw	a5,a4,a5
-	sw	a5,-20(s0)
-	lw	a5,-20(s0)
-	sext.w	a4,a5
-	li	a5,1022
-	bleu	a4,a5,.L8_cache
-	lw	a5,-20(s0)
-	addiw	a5,a5,-1023
-	sw	a5,-20(s0)
-	j	.L8_cache
-.L10_cache:
-	nop
-	lwu	a5,-20(s0)
-	slli	a4,a5,4
-	lui	a5,%hi(list)
-	addi	a5,a5,%lo(list)
-	add	a5,a4,a5
-	sd	a5,-72(s0)
-	ld	a5,-72(s0)
-	sw	zero,8(a5)
-	ld	a5,-72(s0)
-	ld	a4,-32(s0)
-	sd	a4,0(a5)
-	ld	a5,-72(s0)
-.L3_cache:
-	mv	a0,a5
-	ld	s0,88(sp)
-	.cfi_restore 8
-	.cfi_def_cfa 2, 96
-	addi	sp,sp,96
-	.cfi_def_cfa_offset 0
-	jr	ra
-	.cfi_endproc
-.LFE0_cache:
-	.size	CacheLookUp, .-CacheLookUp
-	
+	.ident	"GCC: () 13.2.0"
+	.section	.note.GNU-stack,"",@progbits

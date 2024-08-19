@@ -95,8 +95,19 @@ bool CacheLookUp::InsertCache() {
           auto st_mark = new StoreInst(ConstIRInt::GetNewConstant(1),
                                        gep); // mark have cached
           auto st_val = new StoreInst(ret->GetOperand(0), gep_val);
+
+          auto param1_storage = new StoreInst(args[0],callCache);
+
+          auto param2_offset = new GetElementPtrInst(callCache);
+          param2_offset->add_use(ConstIRInt::GetNewConstant(1));
+          
+          auto param2_storage = new StoreInst(args[1],param2_offset);
+
           iter = iter.insert_before(st_mark);
-          iter.insert_after(st_val);
+          iter=iter.insert_after(st_val);
+          iter=iter.insert_after(param1_storage);
+          iter=iter.insert_after(param2_offset);
+          iter=iter.insert_after(param2_storage);
         }
         return true;
       }
