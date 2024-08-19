@@ -57,7 +57,7 @@ void RISCVAsmPrinter::printCacheLookUp() {
     // return;
 
     static const char* cachelookuplib =
-    #include "../include/RISCVSupport/parallel.hpp"
+    #include "../include/RISCVSupport/cachelib.hpp"
     ;
     std::cout << cachelookuplib;
 }   
