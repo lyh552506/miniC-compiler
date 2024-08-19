@@ -618,7 +618,7 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
     ++iter;
     delete call;
   }
-  cmp->RSUW(0,CurChange);
+  cmp->RSUW(0, entry_indvar);
   delete add;
 
   delete tmp->back();

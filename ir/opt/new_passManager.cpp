@@ -170,9 +170,11 @@ void _PassManager::RunOnLevel() {
 
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
-        PassChangedBegin(curfunc) RunEntryFunc(LoopParallel, modified)
-            PassChangedBegin(curfunc)
+        PassChangedBegin(curfunc) 
 
+        RunEntryFunc(LoopParallel, modified)
+            PassChangedBegin(curfunc)
+   
                 RunLevelPass(ConstantProp, curfunc, other)
 
                     RunLevelPass(DCE, curfunc, other);
@@ -186,7 +188,7 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(BlockMerge, curfunc, other);
         PassChangedBegin(curfunc) 
       }
-  
+
       while (RunImpl<Inliner>(module, AM)) {
         RunLevelPass(cfgSimplify, curfunc, modified)
             RunImpl<DeadArgsElimination>(module, AM);
@@ -197,15 +199,15 @@ void _PassManager::RunOnLevel() {
       }
 
       CommonPass(AM);
-      // return;
+
       // loop unroller
       modified = true;
       while (modified) {
-        static int b = 0;
-        b++;
         modified = false;
         PassChangedBegin(curfunc) RunLevelPass(LoopSimplify, curfunc, other);
+        
         PassChangedBegin(curfunc)
+    
             RunLevelPass(LcSSA, curfunc, other);
         PassChangedBegin(curfunc)
 
@@ -224,15 +226,33 @@ void _PassManager::RunOnLevel() {
                 PassChangedBegin(curfunc)
 
                     RunLevelPass(ConstantProp, curfunc, modified);
-        RunLevelPass(DCE, curfunc, other);
+        
+    RunLevelPass(DCE, curfunc, other);
         PassChangedBegin(curfunc)
 
-            RunLevelPass(BlockMerge, curfunc, other);
+     RunLevelPass(BlockMerge, curfunc, other);
         PassChangedBegin(curfunc)
+       
+ RunLevelPass(CSE, curfunc, other);
+
+    RunLevelPass(DeadStoreElimination, curfunc,other);
+
+    RunLevelPass(LoadElimination, curfunc, other)
+          RunLevelPass(DCE, curfunc, other)
+
+        // constprop
+        RunLevelPass(ConstantProp, curfunc,other);
+         
+            // reassociate
+            RunLevelPass(Reassociate, curfunc, other);
+          
+        
       }
+      
     }
-    CommonPass(AM);
 
+    CommonPass(AM);
+    
     // clean
     {
       modified = true;
@@ -250,6 +270,7 @@ void _PassManager::RunOnLevel() {
       }
     }
     CommonPass(AM);
+    
     // clean
     {
       modified = true;
@@ -266,6 +287,7 @@ void _PassManager::RunOnLevel() {
         RunImpl<StoreOnlyGlobalElimination>(module, AM);
       }
     }
+    
     while (modified) {
       modified = false;
       PassChangedBegin(curfunc) RunLevelPass(LoopSimplify, curfunc, other);

@@ -108,6 +108,7 @@ std::pair<Value *, BasicBlock *> LoadElimination::Judge(User *inst, User *origin
                      Pred_Value.begin()->second != pred_block && !origin->Change)
                 return *Pred_Value.begin();
             return std::pair{nullptr, nullptr};
+            return std::pair{nullptr, nullptr};
         }
         User *inst_ = *pos;
         if (!Flag_CommonBlock)
