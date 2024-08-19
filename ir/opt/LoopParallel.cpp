@@ -56,8 +56,8 @@ bool LoopParallel::Run() {
   for (auto loop : loops) {
     if (ExcutedLoops.find(loop->GetHeader()) == ExcutedLoops.end() &&
         CanBeParallel(loop)) {
-      std::cerr << "Find a Parallelable Loop: " << loop->GetHeader()->GetName()
-                << "\n";
+      // std::cerr << "Find a Parallelable Loop: " << loop->GetHeader()->GetName()
+                // << "\n";
       SubstitudeTrait.Init();
       auto call = ExtractLoopParallelBody(loop);
       MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
