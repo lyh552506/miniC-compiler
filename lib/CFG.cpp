@@ -1163,6 +1163,101 @@ Function::InlineCall(CallInst *inst,
   return tmp;
 }
 
+std::pair<Value *, BasicBlock *>
+Function::InlineCall(CallInst *inst,
+                     std::unordered_map<Operand, Operand> &OperandMapping,std::unordered_map<Operand, Operand> &Old2Val) {
+  std::pair<Value *, BasicBlock *> tmp{nullptr, nullptr};
+  BasicBlock *block = inst->GetParent();
+  User *Jump = block->back();
+  Function *func = block->GetParent();
+  Function *inlined_func = inst->GetOperand(0)->as<Function>();
+  BasicBlock *SplitBlock = block->SplitAt(inst);
+  tmp.second = SplitBlock;
+  BasicBlock::mylist<Function, BasicBlock>::iterator Block_Pos(block);
+  Block_Pos.insert_after(SplitBlock);
+  ++Block_Pos;
+  std::vector<BasicBlock *> blocks;
+  int num = 1;
+  for (auto &param : inlined_func->GetParams()) {
+    Value *Param = param.get();
+    if (OperandMapping.find(inst->Getuselist()[num]->usee) !=
+        OperandMapping.end())
+      OperandMapping[Param] = OperandMapping[inst->Getuselist()[num]->usee];
+    else
+      OperandMapping[Param] = inst->Getuselist()[num]->usee;
+    num++;
+  }
+  for (BasicBlock *block : *inlined_func)
+    blocks.push_back(block->clone(OperandMapping));
+  for(auto&[_old,_new]:Old2Val){
+    if(OperandMapping.count(_old)){
+      Old2Val[_old]=OperandMapping[_old];
+    }
+  }
+  UnCondInst *Br = new UnCondInst(blocks[0]);
+  block->push_back(Br);
+  for (auto it = blocks[0]->begin(); it != blocks[0]->end();) {
+    auto shouldmvinst = dynamic_cast<AllocaInst *>(*it);
+    ++it;
+    if (shouldmvinst) {
+      BasicBlock *front_block = func->front();
+      shouldmvinst->EraseFromParent();
+      front_block->push_front(shouldmvinst);
+    }
+  }
+  for (BasicBlock *block_ : blocks)
+    Block_Pos.insert_before(block_);
+  if (inlined_func->GetUserListSize() == 0)
+    Singleton<Module>().EraseFunction(inlined_func);
+  Value *Ret_Val = nullptr;
+  if (inst->GetTypeEnum() != InnerDataType::IR_Value_VOID) {
+    for (BasicBlock *block : blocks) {
+      User *inst = block->back();
+      if (dynamic_cast<RetInst *>(inst)) {
+        if (auto val = inst->GetOperand(0)) {
+          tmp.first = val;
+        }
+        UnCondInst *Br = new UnCondInst(SplitBlock);
+        inst->ClearRelation();
+        inst->EraseFromParent();
+        block->push_back(Br);
+      }
+    }
+  } else {
+    for (BasicBlock *block : blocks) {
+      User *inst = block->back();
+      if (dynamic_cast<RetInst *>(inst)) {
+        UnCondInst *Br = new UnCondInst(SplitBlock);
+        inst->ClearRelation();
+        inst->EraseFromParent();
+        block->push_back(Br);
+      }
+    }
+  }
+  if (dynamic_cast<UnCondInst *>(Jump)) {
+    BasicBlock *bb = Jump->GetOperand(0)->as<BasicBlock>();
+    auto iter = bb->begin();
+    while (auto phi = dynamic_cast<PhiInst *>(*iter)) {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter;
+    }
+  } else if (dynamic_cast<CondInst *>(Jump)) {
+    BasicBlock *bb = Jump->GetOperand(1)->as<BasicBlock>();
+    auto iter = bb->begin();
+    while (auto phi = dynamic_cast<PhiInst *>(*iter)) {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter;
+    }
+    BasicBlock *bb1 = Jump->GetOperand(2)->as<BasicBlock>();
+    auto iter1 = bb1->begin();
+    while (auto phi = dynamic_cast<PhiInst *>(*iter1)) {
+      phi->ModifyBlock(block, SplitBlock);
+      ++iter1;
+    }
+  }
+  return tmp;
+}
+
 BuildInFunction::BuildInFunction(Type *tp, std::string _id) : Value(tp) {
   name = _id;
   if (name == "starttime" || name == "stoptime")
@@ -1554,6 +1649,11 @@ void PhiInst::ReplaceVal(Use *use, Value *new_val) {
   assert(UseToRecord.find(use) != UseToRecord.end());
   auto index = UseToRecord[use];
   RSUW(use, new_val);
+  PhiRecord[index].first = new_val;
+}
+
+void PhiInst::ReplaceVal(int index, Value *new_val) {
+  RSUW(index, new_val);
   PhiRecord[index].first = new_val;
 }
 

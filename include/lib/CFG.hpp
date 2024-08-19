@@ -275,6 +275,7 @@ public:
   BasicBlock* ReturnBBIn(Use* use);
   void Phiprop(Value* origin,Value* newval);
   void ReplaceVal(Use* use,Value* new_val);
+  void ReplaceVal(int index, Value *new_val);
 public:
   PhiInst* clone(std::unordered_map<Operand,Operand>&)override;
   std::map<int,std::pair<Value*,BasicBlock*>> PhiRecord; //记录不同输入流的value和block
@@ -377,6 +378,8 @@ class Function:public Value,public mylist<Function,BasicBlock>
     //curr ==>  insert -> curr
     void InsertBlock(BasicBlock* curr,BasicBlock* insert);
     std::pair<Value*,BasicBlock*> InlineCall(CallInst* call,std::unordered_map<Operand, Operand>& OperandMapping);
+    std::pair<Value *, BasicBlock *>InlineCall(CallInst *inst,
+                     std::unordered_map<Operand, Operand> &OperandMapping,std::unordered_map<Operand, Operand> &Old2Val);
     void init_visited_block();
     void init_reach_block();
     bool MemWrite();

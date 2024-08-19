@@ -172,8 +172,8 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc) 
 
-        RunEntryFunc(LoopParallel, modified)
-            PassChangedBegin(curfunc)
+        // RunEntryFunc(LoopParallel, modified)
+        //     PassChangedBegin(curfunc)
    
                 RunLevelPass(ConstantProp, curfunc, other)
 
@@ -203,6 +203,8 @@ void _PassManager::RunOnLevel() {
       // loop unroller
       modified = true;
       while (modified) {
+        static int a=0;
+        a++;
         modified = false;
         PassChangedBegin(curfunc) RunLevelPass(LoopSimplify, curfunc, other);
         
@@ -221,15 +223,18 @@ void _PassManager::RunOnLevel() {
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc)
-
+ 
             RunLevelPass(LoopUnroll, curfunc, modified)
                 PassChangedBegin(curfunc)
-
+ 
                     RunLevelPass(ConstantProp, curfunc, modified);
-        
     RunLevelPass(DCE, curfunc, other);
         PassChangedBegin(curfunc)
-
+static int x=0;
+       x++;
+       if(x==3)
+      {        Singleton<Module>().Test();
+        std::cout<<std::endl;}
      RunLevelPass(BlockMerge, curfunc, other);
         PassChangedBegin(curfunc)
        
@@ -239,20 +244,19 @@ void _PassManager::RunOnLevel() {
 
     RunLevelPass(LoadElimination, curfunc, other)
           RunLevelPass(DCE, curfunc, other)
-
+ 
         // constprop
         RunLevelPass(ConstantProp, curfunc,other);
          
             // reassociate
             RunLevelPass(Reassociate, curfunc, other);
-          
-        
+       
+       
       }
-      
+       
     }
-
-    CommonPass(AM);
     
+    CommonPass(AM);
     // clean
     {
       modified = true;
@@ -343,7 +347,7 @@ void _PassManager::RunOnLevel() {
     RunLevelPass(DeadStoreElimination, curfunc, other)
     RunLevelPass(LoadElimination, curfunc, other)
     RunLevelPass(DCE, curfunc, other)
-    RunLevelPass(CacheLookUp, curfunc, modified);
+    // RunLevelPass(CacheLookUp, curfunc, modified);
   }
 }
 bool _PassManager::CommonPass(_AnalysisManager &AM) {

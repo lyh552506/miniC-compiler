@@ -4,6 +4,7 @@
 #include "../Analysis/dominant.hpp"
 #include "CSE.hpp"
 #include "New_passManager.hpp"
+#include <unordered_map>
 #include <vector>
 
 class LoopUnroll : public _PassManagerBase<LoopUnroll, Function> {
@@ -31,11 +32,13 @@ private:
   LoopAnalysis *loopAnaly;
   _AnalysisManager &AM;
   std::unordered_map<Value *, Variable *> Val2Arg;
+  std::unordered_map<PhiInst *, Value *> OutsidePhi;
+  std::unordered_map<Value *, Value *> Old2New;
   std::vector<LoopInfo *> DeleteLoop;
   Value *OriginChange = nullptr;
   BasicBlock *prehead = nullptr;
-  const int MaxInstCost_Before=200;
-  const int MaxInstCost_After=5000;
+  const int MaxInstCost_Before = 200;
+  const int MaxInstCost_After = 5000;
   const int MaxInstCost = 2000;
   int HalfUnrollTimes = 0;
 };
