@@ -80,9 +80,10 @@ bool CodeMove::RunMotion()
                 if (!flag)
                     continue;
             }
-            auto termination = TargetBlock->end();
-            --termination;
-            termination.insert_before(inst);
+            User *br = TargetBlock->back();
+            BasicBlock::mylist<BasicBlock, User>::iterator Pos(br);
+            inst->EraseFromParent();
+            Pos.insert_before(inst);
             SetTarget.emplace(inst, TargetBlock);
             modified = true;
         }
@@ -103,8 +104,8 @@ bool CodeMove::CanHandle(User *inst)
         return false;
     case User::OpID::Div:
     case User::OpID::Mod:
-        if (inst->GetOperand(1)->isConstZero())
-            return false;
+        return false;
+        return false;
     case User::OpID::Gep: {
         if (inst->GetOperand(0)->isGlobal())
             return false;

@@ -185,6 +185,8 @@ bool User::HasSideEffect() {
     if (bin->IsAtomic())
       return true;
   }
+  if(IsTerminateInst())
+    return true;
   if (dynamic_cast<StoreInst *>(this)) {
     return true;
   }
