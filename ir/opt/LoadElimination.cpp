@@ -54,6 +54,7 @@ bool LoadElimination::RunOnBlock(BasicBlock *block)
         LoadInst *load = dynamic_cast<LoadInst *>(inst);
         mylist<BasicBlock, User>::iterator pos(load);
         std::unordered_set<BasicBlock *> visited;
+        load->Change = false;
         std::pair<Value *, BasicBlock *> val = Judge(load, load, block, load->GetOperand(0), block, visited, --pos, 0);
         if (val.first && val.first != load)
         {
@@ -107,7 +108,7 @@ std::pair<Value *, BasicBlock *> LoadElimination::Judge(User *inst, User *origin
                      DomTree->dominates(Pred_Value.begin()->second, pred_block) &&
                      Pred_Value.begin()->second != pred_block && !origin->Change)
                 return *Pred_Value.begin();
-                return std::pair{nullptr, nullptr};
+            return std::pair{nullptr, nullptr};
         }
         User *inst_ = *pos;
         if (!Flag_CommonBlock)
@@ -203,6 +204,18 @@ std::pair<Value *, BasicBlock *> LoadElimination::Judge(User *inst, User *origin
                     }
                     else
                     {
+                        Function *func_ = call->Getuselist()[0]->usee->as<Function>();
+                        if (func_ && func_->tag == Function::Tag::ParallelBody)
+                        {
+                            for (auto &use : call->Getuselist())
+                            {
+                                if (base == use->usee)
+                                {
+                                    origin->Change = true;
+                                    return std::pair{nullptr, nullptr};
+                                }
+                            }
+                        }
                         bool flag = false;
                         int distance = 0;
                         for (auto &use : call->Getuselist())
@@ -329,6 +342,15 @@ std::pair<Value *, BasicBlock *> LoadElimination::Judge(User *inst, User *origin
                     }
                     else
                     {
+                        Function *func_ = call->Getuselist()[0]->usee->as<Function>();
+                        if (func_ && func_->tag == Function::Tag::ParallelBody)
+                        {
+                            for (auto &use : call->Getuselist())
+                            {
+                                if (base == use->usee)
+                                    return std::pair{nullptr, nullptr};
+                            }
+                        }
                         bool flag = false;
                         int distance = 0;
                         for (auto &use : call->Getuselist())

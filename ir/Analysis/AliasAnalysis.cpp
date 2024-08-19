@@ -33,7 +33,7 @@ size_t AliasAnalysis::GetHash(Value *val) {
   } else if (auto gep = dynamic_cast<GetElementPtrInst *>(val)) {
     auto hash = std::hash<int>()(Gep);
     for (int i = 0; i < gep->Getuselist().size(); i++) {
-      hash += (std::hash<Value *>()(gep->GetOperand(i)) << (i + 3));
+      hash += ((std::hash<Value *>()(gep->GetOperand(i)) << (i + 3)) * (i + 101));
     }
     return hash;
   }

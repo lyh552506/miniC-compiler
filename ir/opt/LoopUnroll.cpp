@@ -33,17 +33,18 @@ bool LoopUnroll::Run() {
         CleanUp(loop, bb);
         return true;
       }
-    } else if ((AM.FindAttr(loop->GetHeader(), Rotate) ||
-                m_func->tag == Function::ParallelBody) &&
-               CanBeHalfUnroll(loop) && !AM.IsUnrolled(loop->GetHeader())) {
-      static int x = 0;
-      x++;
-      auto unrollbody = ExtractLoopBody(loop);
-      if (unrollbody) {
-        auto bb = Half_Unroll(loop, unrollbody);
-        return true;
-      }
     }
+    // else if ((AM.FindAttr(loop->GetHeader(), Rotate) ||
+    //             m_func->tag == Function::ParallelBody) &&
+    //            CanBeHalfUnroll(loop) && !AM.IsUnrolled(loop->GetHeader())) {
+    //   static int x = 0;
+    //   x++;
+    //   auto unrollbody = ExtractLoopBody(loop);
+    //   if (unrollbody) {
+    //     auto bb = Half_Unroll(loop, unrollbody);
+    //     return true;
+    //   }
+    // }
   }
   return false;
 }
@@ -617,7 +618,7 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
     ++iter;
     delete call;
   }
-  cmp->RSUW(0,CurChange);
+  cmp->RSUW(0, entry_indvar);
   delete add;
 
   delete tmp->back();

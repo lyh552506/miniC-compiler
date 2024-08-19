@@ -1,4 +1,5 @@
 #include "../../include/ir/opt/DSE.hpp"
+#include "CFG.hpp"
 
 namespace PointerTool
 {
@@ -63,6 +64,17 @@ bool DeadStoreElimination::RunOnBlock(BasicBlock *block)
 bool DeadStoreElimination::Judge(StoreInst *store, BasicBlock *block, Value *dst, BasicBlock *src_block,
                                  std::unordered_set<BasicBlock *> &visited, mylist<BasicBlock, User>::iterator pos)
 {
+    if(auto phi = dynamic_cast<PhiInst*>(dst))
+    {
+        for(auto&[key, val] : phi->PhiRecord)
+        {
+            if(auto gep = dynamic_cast<GetElementPtrInst*>(val.first))
+            {
+                dst = gep;
+                break;
+            }
+        }
+    }
     // 下一个block
     if (!store)
     {
@@ -124,6 +136,21 @@ bool DeadStoreElimination::Judge(StoreInst *store, BasicBlock *block, Value *dst
                 }
                 else
                 {
+                    Function* parallel_body = inst->GetOperand(0)->as<Function>();
+                    if(parallel_body && parallel_body->tag == Function::Tag::ParallelBody)
+                    {
+                        for(auto& use : inst->Getuselist())
+                        {
+                            Value* val = use->usee;
+                            if(!dynamic_cast<GetElementPtrInst*>(val) && val == base)
+                                return false;
+                            else if(auto gep = dynamic_cast<GetElementPtrInst*>(val))
+                            {
+                                if(gep->GetOperand(0) == base)
+                                    return false;
+                            }
+                        }
+                    }
                     bool flag = false;
                     int distance = 0;
                     for (auto &use : inst->Getuselist())
