@@ -77,9 +77,11 @@ bool CodeMove::RunMotion()
                     else if (auto parent = user->GetParent())
                         UpdateTargetBlock(parent);
                 }
-                if (!flag)
-                    continue;
+                else
+                    flag = false;
             }
+            if (!flag)
+                continue;
             User *br = TargetBlock->back();
             BasicBlock::mylist<BasicBlock, User>::iterator Pos(br);
             inst->EraseFromParent();

@@ -41,6 +41,7 @@
 #include "../../include/ir/opt/ConstantHoist.hpp"
 #include "../../include/ir/opt/ControlFlowOpt.hpp"
 #include "../../include/ir/opt/Select2Branch.hpp"
+#include "../../include/ir/opt/CodeMove.hpp"
 #include <any>
 #include <getopt.h>
 #include <memory>

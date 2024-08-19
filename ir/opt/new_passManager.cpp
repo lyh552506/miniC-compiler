@@ -344,6 +344,9 @@ void _PassManager::RunOnLevel() {
     RunLevelPass(LoadElimination, curfunc, other)
     RunLevelPass(DCE, curfunc, other)
     RunLevelPass(cfgSimplify, curfunc, modified);
+    PassChangedBegin(curfunc)
+    RunLevelPass(CodeMove, curfunc, modified);
+    PassChangedBegin(curfunc)
     RunLevelPass(CacheLookUp, curfunc, modified);
     RunLevelPass(Select2Branch, curfunc, other)
   }
