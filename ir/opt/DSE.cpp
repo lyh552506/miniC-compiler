@@ -64,6 +64,17 @@ bool DeadStoreElimination::RunOnBlock(BasicBlock *block)
 bool DeadStoreElimination::Judge(StoreInst *store, BasicBlock *block, Value *dst, BasicBlock *src_block,
                                  std::unordered_set<BasicBlock *> &visited, mylist<BasicBlock, User>::iterator pos)
 {
+    if(auto phi = dynamic_cast<PhiInst*>(dst))
+    {
+        for(auto&[key, val] : phi->PhiRecord)
+        {
+            if(auto gep = dynamic_cast<GetElementPtrInst*>(val.first))
+            {
+                dst = gep;
+                break;
+            }
+        }
+    }
     // 下一个block
     if (!store)
     {
