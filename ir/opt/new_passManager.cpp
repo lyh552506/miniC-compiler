@@ -336,7 +336,7 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
 
         // constprop
         RunLevelPass(ConstantProp, curfunc, mody);
-    RunLevelPass(ConstantHoist, curfunc, mody);
+    // RunLevelPass(ConstantHoist, curfunc, mody);
     RunLevelPass(cfgSimplify, curfunc, mody) PassChangedBegin(curfunc)
          
             // reassociate
@@ -351,11 +351,11 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
 
     PassChangedBegin(curfunc)
           RunLevelPass(cfgSimplify, curfunc, mody);
-    RunLevelPass(ControlFlowOpt, curfunc, mody);
-    PassChangedBegin(curfunc)
-    RunLevelPass(cfgSimplify, curfunc, mody);
-    RunLevelPass(ConstantProp, curfunc, mody);
-    PassChangedBegin(curfunc)
+    // RunLevelPass(ControlFlowOpt, curfunc, mody);
+    // PassChangedBegin(curfunc)
+    // RunLevelPass(cfgSimplify, curfunc, mody);
+    // RunLevelPass(ConstantProp, curfunc, mody);
+    // PassChangedBegin(curfunc)
   }
   return mody;
 }
