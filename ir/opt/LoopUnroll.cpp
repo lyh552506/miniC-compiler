@@ -5,9 +5,7 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
-#include "BlockMerge.hpp"
-#include "LoopSimplify.hpp"
-#include "Type.hpp"
+#include "../../include/ir/opt/BlockMerge.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>

@@ -1,5 +1,5 @@
 #include "../../include/ir/opt/DSE.hpp"
-#include "CFG.hpp"
+#include "../../include/lib/CFG.hpp"
 
 namespace PointerTool
 {

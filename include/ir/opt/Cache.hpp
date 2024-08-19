@@ -1,9 +1,9 @@
 #pragma once
-#include "../../include/ir/Analysis/SideEffect.hpp"
-#include "../../include/ir/Analysis/dominant.hpp"
-#include "../../include/ir/opt/PassManagerBase.hpp"
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
+#include "PassManagerBase.hpp"
+#include "../../lib/BaseCFG.hpp"
+#include "../../lib/CFG.hpp"
+#include "../Analysis/SideEffect.hpp"
+#include "../Analysis/dominant.hpp"
 #include <vector>
 
 class CacheLookUp : public _PassManagerBase<CacheLookUp, Function> {

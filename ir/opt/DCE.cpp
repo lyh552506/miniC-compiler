@@ -1,8 +1,6 @@
 #include "../../include/ir/opt/DCE.hpp"
 #include "../../include/ir/Analysis/SideEffect.hpp"
 #include "../../util/my_stl.hpp"
-#include "CFG.hpp"
-#include "Singleton.hpp"
 #include <algorithm>
 bool DCE::Run() {
   bool mody = true;

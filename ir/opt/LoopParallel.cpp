@@ -6,9 +6,7 @@
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Type.hpp"
 #include "../../util/my_stl.hpp"
-#include "New_passManager.hpp"
-#include "RISCVAsmPrinter.hpp"
-#include "Singleton.hpp"
+#include "../../include/ir/opt/New_passManager.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>

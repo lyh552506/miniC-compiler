@@ -1,7 +1,7 @@
 #include "../../include/ir/opt/New_passManager.hpp"
-#include "CFG.hpp"
-#include "Singleton.hpp"
-#include "mem2reg.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/lib/Singleton.hpp"
+#include "../../include/ir/opt/mem2reg.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=

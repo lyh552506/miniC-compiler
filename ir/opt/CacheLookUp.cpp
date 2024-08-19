@@ -1,10 +1,8 @@
-#include "BaseCFG.hpp"
-#include "CFG.hpp"
-#include "Cache.hpp"
-#include "LoopInfo.hpp"
-#include "Singleton.hpp"
-#include "Type.hpp"
-#include "dominant.hpp"
+#include "../../include/lib/BaseCFG.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/ir/opt/Cache.hpp"
+#include "../../include/lib/Singleton.hpp"
+#include "../../include/lib/Type.hpp"
 #include <cassert>
 Function *CacheLookUp::_CacheLookUp = nullptr;
 bool CacheLookUp::AlreadyInsert = false;

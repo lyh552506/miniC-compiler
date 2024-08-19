@@ -1,5 +1,5 @@
 #pragma once
-#include "../../include/lib/CFG.hpp"
+#include "../../lib/CFG.hpp"
 #include "../Analysis/dominant.hpp"
 #include <unordered_map>
 using DNode=dominance::Node*;
