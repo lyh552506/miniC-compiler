@@ -127,7 +127,7 @@ void Pre_RA_Scheduler::ScheduleOnFunction(RISCVLoweringContext& ctx) {
 }
 
 void Pre_RA_Scheduler::ScheduleOnBlock(RISCVBasicBlock* block) {
-    // if(block->GetName() == ".LBB11") {
+    // if(block->GetName() == ".LBB2") {
     //     int a = 0;
     // }
     if(block->Size() <= 1) return;
