@@ -47,7 +47,7 @@ bool CacheLookUp::InsertCache() {
         std::vector<Value *> args;
         for (int i = 0; i < callee->GetParams().size(); i++)
           args.push_back(callee->GetParams()[i].get());
-        if (args.size() != 5)
+        if (args.size() != 2)
           return false;
         _CacheLookUp = new Function(IR_PTR, "CacheLookUp");
         _CacheLookUp->tag = Function::BuildIn;
