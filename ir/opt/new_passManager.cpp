@@ -317,6 +317,8 @@ void _PassManager::RunOnLevel() {
     }
     CommonPass(AM);
     RunLevelPass(ScalarStrengthReduce, curfunc, other)
+
+    //clean up
     modified = true;
     while (modified) {
       modified = false;
@@ -336,6 +338,11 @@ void _PassManager::RunOnLevel() {
           RunLevelPass(BlockMerge, curfunc, other);
       PassChangedBegin(curfunc)
     }
+    RunImpl<StoreOnlyGlobalElimination>(module, AM);
+    RunImpl<Global2Local>(module, AM);
+    RunLevelPass(DeadStoreElimination, curfunc, other)
+    RunLevelPass(LoadElimination, curfunc, other)
+    RunLevelPass(DCE, curfunc, other)
     RunLevelPass(CacheLookUp, curfunc, modified);
   }
 }

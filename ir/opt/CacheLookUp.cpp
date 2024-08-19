@@ -64,7 +64,7 @@ bool CacheLookUp::InsertCache() {
         gep->AddArg(ConstIRInt::GetNewConstant(3));
         auto load = new LoadInst(gep);
         BinaryInst *cmp = nullptr;
-        cmp = BinaryInst::CreateInst(load, BinaryInst::Op_E,
+        cmp = BinaryInst::CreateInst(load, BinaryInst::Op_NE,
                                      ConstIRInt::GetNewConstant(0));
         new_entry->push_back(callCache);
         new_entry->push_back(gep);
