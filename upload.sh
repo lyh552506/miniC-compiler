@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 本地上传文件夹的绝对路径
-LOCAL_DIR="/home/nanqin/compiler/miniC-compiler/uploadfolder"
+LOCAL_DIR="./uploadfolder"
 
 # 远程服务器的目标路径
 REMOTE_USER="user"

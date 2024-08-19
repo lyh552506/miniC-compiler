@@ -22,7 +22,7 @@ _ZL2m2:
 	.globl	CacheLookUp
 	.type	CacheLookUp, @function
 CacheLookUp:
-.LFB0:
+.LFB0_cache:
 	.cfi_startproc
 	addi	sp,sp,-96
 	.cfi_def_cfa_offset 96
@@ -36,20 +36,9 @@ CacheLookUp:
 	mv	a5,a4
 	sw	a5,-88(s0)
 	lw	a5,-84(s0)
-	mv	a4,a5
-	lw	a5,-88(s0)
-	and	a5,a4,a5
-	sext.w	a5,a5
-	slli	a5,a5,32
-	sd	a5,-32(s0)
-	lw	a5,-84(s0)
-	mv	a4,a5
+	slli	a4,a5,32
 	lw	a5,-88(s0)
 	or	a5,a4,a5
-	sext.w	a5,a5
-	mv	a4,a5
-	ld	a5,-32(s0)
-	or	a5,a5,a4
 	sd	a5,-32(s0)
 	ld	a4,-32(s0)
 	li	a5,1023
@@ -133,5 +122,5 @@ CacheLookUp:
 	.cfi_def_cfa_offset 0
 	jr	ra
 	.cfi_endproc
-.LFE0:
+.LFE0_cache:
 	.size	CacheLookUp, .-CacheLookUp
