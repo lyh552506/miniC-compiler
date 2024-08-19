@@ -91,6 +91,8 @@ template <typename T> T PopBack(std::vector<T> &vec) {
 #define RunLevelPass(PassName, curfunc, modified)                              \
   for (int i = 0; i < module->GetFuncTion().size(); i++) {                     \
     curfunc = module->GetFuncTion()[i].get();                                  \
+    if(curfunc->tag == Function::Tag::BuildIn)                                 \
+      continue;                                                                \
     modified |= RunImpl<PassName>(curfunc, AM);                                \
   }
 

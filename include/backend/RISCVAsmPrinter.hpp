@@ -35,6 +35,7 @@ class RISCVAsmPrinter {
     void set_use_cachelookup(bool);
     void printAsmGlobal();
     void printCacheLookUp();
+    void printParallelLib();
     void printAsm();
 };
 

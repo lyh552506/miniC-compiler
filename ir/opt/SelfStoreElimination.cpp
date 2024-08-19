@@ -119,10 +119,18 @@ void SelfStoreElimination::CheckSelfStore(std::unordered_map<Value *, std::vecto
             else if (dynamic_cast<CallInst *>(inst))
             {
                 Function *call_func = dynamic_cast<Function *>(inst->Getuselist()[0]->usee);
-                if (call_func)
+                if (call_func && call_func->tag != Function::Tag::ParallelBody)
                 {
                     for (Value *val : call_func->Change_Val)
                         info.erase(val);
+                }
+                else if (call_func && call_func->tag == Function::Tag::ParallelBody)
+                {
+                    for (auto &use : inst->Getuselist())
+                    {
+                        Value *val = use->usee;
+                        info.erase(val);
+                    }
                 }
             }
             else

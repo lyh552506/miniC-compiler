@@ -553,7 +553,7 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
                                ConstIRInt::GetNewConstant(HalfUnrollTimes));
   cmp = BinaryInst::CreateInst(add, op, bound);
 
-  Unroll_Entry->push_back(add);
+  // Unroll_Entry->push_back(add);
   Unroll_Entry->push_back(cmp);
 
   Unroll_Entry->GenerateCondInst(cmp, MutiUnrollBlock, SingleHeader);
@@ -617,6 +617,8 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
     ++iter;
     delete call;
   }
+  cmp->RSUW(0,CurChange);
+  delete add;
 
   delete tmp->back();
   auto muti_uncond = new UnCondInst(Unroll_Entry);
