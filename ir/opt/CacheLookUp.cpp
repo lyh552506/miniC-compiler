@@ -1,8 +1,10 @@
 #include "BaseCFG.hpp"
 #include "CFG.hpp"
 #include "Cache.hpp"
+#include "LoopInfo.hpp"
 #include "Singleton.hpp"
 #include "Type.hpp"
+#include "dominant.hpp"
 #include <cassert>
 Function *CacheLookUp::_CacheLookUp = nullptr;
 bool CacheLookUp::AlreadyInsert = false;
@@ -42,7 +44,12 @@ bool CacheLookUp::InsertCache() {
         if (ty == IR_Value_VOID)
           return false;
         auto Exit = callee->GetRetBlock();
-        
+        auto dom = AM.get<dominance>(m_func);
+        auto loops = AM.get<LoopAnalysis>(m_func, dom, std::ref(DeleteLoop));
+        if (loops->GetLoops().size() > 0)
+          return false;
+        if (Exit.size() > 3)
+          return false;
         // insert a new entry
         std::vector<Value *> args;
         for (int i = 0; i < callee->GetParams().size(); i++)
@@ -96,18 +103,18 @@ bool CacheLookUp::InsertCache() {
                                        gep); // mark have cached
           auto st_val = new StoreInst(ret->GetOperand(0), gep_val);
 
-          auto param1_storage = new StoreInst(args[0],callCache);
+          auto param1_storage = new StoreInst(args[0], callCache);
 
           auto param2_offset = new GetElementPtrInst(callCache);
           param2_offset->add_use(ConstIRInt::GetNewConstant(1));
-          
-          auto param2_storage = new StoreInst(args[1],param2_offset);
+
+          auto param2_storage = new StoreInst(args[1], param2_offset);
 
           iter = iter.insert_before(st_mark);
-          iter=iter.insert_after(st_val);
-          iter=iter.insert_after(param1_storage);
-          iter=iter.insert_after(param2_offset);
-          iter=iter.insert_after(param2_storage);
+          iter = iter.insert_after(st_val);
+          iter = iter.insert_after(param1_storage);
+          iter = iter.insert_after(param2_offset);
+          iter = iter.insert_after(param2_storage);
         }
         return true;
       }
