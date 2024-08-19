@@ -123,4 +123,5 @@ CacheLookUp:
 	jr	ra
 	.cfi_endproc
 .LFE0_cache:
-	.size	CacheLookUp, .-CacheLookUp)"
+	.size	CacheLookUp, .-CacheLookUp
+)"
