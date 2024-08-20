@@ -1,6 +1,6 @@
+#include "../../include/ir/opt/Cache.hpp"
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
-#include "../../include/ir/opt/Cache.hpp"
 #include "../../include/lib/Singleton.hpp"
 #include "../../include/lib/Type.hpp"
 #include <cassert>
@@ -12,13 +12,13 @@ bool CacheLookUp::Run() {
   if (AlreadyInsert)
     return false;
   auto Side = AM.get<SideEffect>(&Singleton<Module>(), false);
-  if (!InsertCache())
+  if (!InsertCache_2arg())
     return false;
   AlreadyInsert = true;
   return false;
 }
 
-bool CacheLookUp::InsertCache() {
+bool CacheLookUp::InsertCache_2arg() {
   //   auto m_dom = AM.get<dominance>(m_func);
   for (auto iter_bb = m_func->begin(); iter_bb != m_func->end();) {
     auto bb = *iter_bb;
@@ -52,8 +52,12 @@ bool CacheLookUp::InsertCache() {
         std::vector<Value *> args;
         for (int i = 0; i < callee->GetParams().size(); i++)
           args.push_back(callee->GetParams()[i].get());
-        if (args.size() != 2)
+        if (args.size() != 2) {
+          if (args.size() < 4 && args.size() > 2)
+            if (InsertCache_4arg(call, args))
+              return true;
           return false;
+        }
         _CacheLookUp = new Function(IR_PTR, "CacheLookUp");
         _CacheLookUp->tag = Function::BuildIn;
         Singleton<Module>().Push_Func(_CacheLookUp);
@@ -130,5 +134,80 @@ bool CacheLookUp::checkRecursive(Function *target) {
           return false;
       }
     }
+  return true;
+}
+
+bool CacheLookUp::InsertCache_4arg(CallInst *call, std::vector<Value *> &args) {
+  auto callee = dynamic_cast<Function *>(call->GetOperand(0));
+  _CacheLookUp = new Function(IR_PTR, "CacheLookUp");
+  _CacheLookUp->tag = Function::BuildIn;
+  Singleton<Module>().Push_Func(_CacheLookUp);
+  _CacheLookUp->clear();
+
+  auto EntryBlock = callee->GetBasicBlock().front();
+  auto new_entry = new BasicBlock();
+  auto new_exit = new BasicBlock();
+  auto callCache = new CallInst(_CacheLookUp, args);
+  // get the struct
+  auto gep = new GetElementPtrInst(callCache->GetType());
+  gep->AddArg(callCache);
+  gep->AddArg(ConstIRInt::GetNewConstant(5));
+  auto load = new LoadInst(gep);
+  BinaryInst *cmp = nullptr;
+  cmp = BinaryInst::CreateInst(load, BinaryInst::Op_NE,
+                               ConstIRInt::GetNewConstant(0));
+  new_entry->push_back(callCache);
+  new_entry->push_back(gep);
+  new_entry->push_back(load);
+  new_entry->push_back(cmp);
+  // have cached val, load it
+  auto gep_val = new GetElementPtrInst(callCache->GetType());
+  gep_val->AddArg(callCache);
+  gep_val->AddArg(ConstIRInt::GetNewConstant(4));
+  auto cachedval = new LoadInst(gep_val);
+  cachedval->SetType(callee->GetType());
+  auto ret = new RetInst(cachedval);
+  new_entry->push_back(gep_val);
+  new_entry->push_back(cachedval);
+  new_exit->push_back(ret);
+  new_entry->GenerateCondInst(cmp, new_exit, EntryBlock);
+  //插入到front，成为新的entry
+  callee->GetBasicBlock().insert(callee->GetBasicBlock().begin(), new_entry);
+  callee->push_front(new_entry);
+  callee->push_bb(new_exit);
+  auto Exit = callee->GetRetBlock();
+  for (auto Retblock : Exit) {
+    auto iter = Retblock->rbegin();
+    auto ret = dynamic_cast<RetInst *>(*iter);
+    assert(ret);
+    auto st_mark = new StoreInst(ConstIRInt::GetNewConstant(1),
+                                 gep); // mark have cached
+    auto st_val = new StoreInst(ret->GetOperand(0), gep_val);
+
+    auto param1_storage = new StoreInst(args[0], callCache);
+
+    auto param2_offset = new GetElementPtrInst(callCache);
+    param2_offset->add_use(ConstIRInt::GetNewConstant(1));
+    auto param2_storage = new StoreInst(args[1], param2_offset);
+
+    auto param3_offset = new GetElementPtrInst(callCache);
+    param3_offset->add_use(ConstIRInt::GetNewConstant(2));
+    auto param3_storage = new StoreInst(args[2], param3_offset);
+
+    auto param4_offset = new GetElementPtrInst(callCache);
+    param4_offset->add_use(ConstIRInt::GetNewConstant(3));
+    auto param4_storage =
+        new StoreInst(ConstIRInt::GetNewConstant(RetNone), param4_offset);
+
+    iter = iter.insert_before(st_mark);
+    iter = iter.insert_after(st_val);
+    iter = iter.insert_after(param1_storage);
+    iter = iter.insert_after(param2_offset);
+    iter = iter.insert_after(param2_storage);
+    iter = iter.insert_after(param3_offset);
+    iter = iter.insert_after(param3_storage);
+    iter = iter.insert_after(param4_offset);
+    iter = iter.insert_after(param4_storage);
+  }
   return true;
 }
