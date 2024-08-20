@@ -43,9 +43,9 @@ bool CacheLookUp::InsertCache_2arg() {
           return false;
         auto Exit = callee->GetRetBlock();
         auto dom = AM.get<dominance>(m_func);
-        auto loops = AM.get<LoopAnalysis>(m_func, dom, std::ref(DeleteLoop));
-        if (loops->GetLoops().size() > 0)
-          return false;
+        // auto loops = AM.get<LoopAnalysis>(m_func, dom, std::ref(DeleteLoop));
+        // if (loops->GetLoops().size() > 0)
+        //   return false;
         if (Exit.size() > 3)
           return false;
         // insert a new entry
@@ -53,7 +53,7 @@ bool CacheLookUp::InsertCache_2arg() {
         for (int i = 0; i < callee->GetParams().size(); i++)
           args.push_back(callee->GetParams()[i].get());
         if (args.size() != 2) {
-          if (args.size() < 4 && args.size() > 2)
+          if (args.size() < 5 && args.size() > 2)
             if (InsertCache_4arg(call, args))
               return true;
           return false;

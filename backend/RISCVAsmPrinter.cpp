@@ -66,7 +66,7 @@ void RISCVAsmPrinter::printCacheLookUp() {
     ;
     std::cout << cachelookuplib;
 }   
-void RISCVAsmPrinter::printCacheLookUp() {
+void RISCVAsmPrinter::printCacheLookUp4() {
     // std::ifstream file(this->cachefilepath);
     // if (!file.is_open()) {
     //     std::cout << "Error: Cannot open file " << this->cachefilepath << std::endl;
