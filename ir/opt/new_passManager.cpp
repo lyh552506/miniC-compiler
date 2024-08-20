@@ -119,6 +119,7 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
 bool _PassManager::Run() { return true; }
 
 void _PassManager::RunOnLevel() {
+  level=O1;
   if (level == O0)
     return;
   if (level == O1) {
