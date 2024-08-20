@@ -13,3 +13,7 @@ struct IR_CONSTDECL_FLAG
 struct Enable_Parallel{
     bool flag=false;
 };
+
+struct Inline_Recursion{
+    bool flag=false;
+};

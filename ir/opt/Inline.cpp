@@ -129,12 +129,12 @@ bool NoRecursive::CanBeInlined(CallInst *call)
     auto &&master = call->GetParent()->GetParent();
     if (slave->tag == Function::Tag::ParallelBody || master->tag == Function::Tag::UnrollBody || slave->tag == Function::Tag::BuildIn)
         return false;
-    if (InlineRecursion)
+    if (Singleton<Inline_Recursion>().flag)
     {
         static int InlineTimes = 0;
         if (!master->isRecursive() && !slave->isRecursive())
             return true;
-        if (InlineTimes < 5)
+        if (InlineTimes<3&&(master->Size()+slave->Size())*3<100)
         {
             InlineTimes++;
             return true;

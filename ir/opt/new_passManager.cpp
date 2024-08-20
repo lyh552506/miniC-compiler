@@ -193,6 +193,7 @@ void _PassManager::RunOnLevel() {
         PassChangedBegin(curfunc) 
       }
 
+      Singleton<Inline_Recursion>().flag=true;
       while (RunImpl<Inliner>(module, AM)) {
         RunLevelPass(cfgSimplify, curfunc, modified)
             RunImpl<DeadArgsElimination>(module, AM);
