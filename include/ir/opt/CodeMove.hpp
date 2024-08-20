@@ -16,7 +16,7 @@ class CodeMove : public _PassManagerBase<CodeMove, Function>
     _AnalysisManager &AM;
     void init();
     bool RunMotion();
-    bool CanHandle(User* inst);
+    bool CanHandle(User* inst, std::unordered_set<Value*> CountSet, BasicBlock* father);
   public:
     CodeMove(Function *func_, _AnalysisManager &AM_) : func(func_), AM(AM_)
     {
