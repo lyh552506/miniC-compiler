@@ -70,7 +70,7 @@ void buildin_NotifyWorkerLT(int begin,int end){
         *(int*)(buildin_parallel_arg_storage)=st;
         *(int*)(buildin_parallel_arg_storage+4)=ed;
 
-        if(_begin+step>=step){
+        if(_begin+step>=_end){
             // do it yourself
             buildin_funcptr();
         }
@@ -104,7 +104,7 @@ void buildin_NotifyWorkerLE(int begin,int end){
         *(int*)(buildin_parallel_arg_storage)=st;
         *(int*)(buildin_parallel_arg_storage+4)=ed;
 
-        if(_begin+step>=step){
+        if(_begin+step>=_end){
             // do it yourself
             buildin_funcptr();
         }
