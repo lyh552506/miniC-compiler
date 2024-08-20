@@ -1,9 +1,9 @@
 #pragma once
-#include "../../include/ir/Analysis/dominant.hpp"
-#include "../../include/ir/opt/New_passManager.hpp"
-#include "../../include/ir/opt/PassManagerBase.hpp"
-#include "../../include/lib/BaseCFG.hpp"
-#include "../../include/lib/CFG.hpp"
+#include "../Analysis/dominant.hpp"
+#include "New_passManager.hpp"
+#include "PassManagerBase.hpp"
+#include "../../lib/BaseCFG.hpp"
+#include "../../lib/CFG.hpp"
 class _AnalysisManager;
 class ArithOpt : public _PassManagerBase<ArithOpt, Function> {
 public:

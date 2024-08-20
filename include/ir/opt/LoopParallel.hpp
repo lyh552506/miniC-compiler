@@ -1,11 +1,11 @@
 #pragma once
 #include "../../lib/CFG.hpp"
 #include "../Analysis/LoopInfo.hpp"
-#include "BaseCFG.hpp"
+#include "../../lib/BaseCFG.hpp"
 #include "CSE.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "Type.hpp"
+#include "../../lib/Type.hpp"
 #include <unordered_set>
 #include <vector>
 class _AnalysisManager;
