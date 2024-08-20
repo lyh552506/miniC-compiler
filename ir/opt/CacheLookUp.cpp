@@ -139,7 +139,7 @@ bool CacheLookUp::checkRecursive(Function *target) {
 
 bool CacheLookUp::InsertCache_4arg(CallInst *call, std::vector<Value *> &args) {
   auto callee = dynamic_cast<Function *>(call->GetOperand(0));
-  _CacheLookUp = new Function(IR_PTR, "CacheLookUp");
+  _CacheLookUp = new Function(IR_PTR, "CacheLookUp4");
   _CacheLookUp->tag = Function::BuildIn;
   Singleton<Module>().Push_Func(_CacheLookUp);
   _CacheLookUp->clear();
