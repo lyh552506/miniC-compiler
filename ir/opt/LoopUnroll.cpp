@@ -1,11 +1,11 @@
 #include "../../include/ir/opt/LoopUnroll.hpp"
 #include "../../include/ir/Analysis/LoopInfo.hpp"
 #include "../../include/ir/Analysis/dominant.hpp"
+#include "../../include/ir/opt/BlockMerge.hpp"
 #include "../../include/ir/opt/PassManagerBase.hpp"
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
-#include "../../include/ir/opt/BlockMerge.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -36,6 +36,12 @@ bool LoopUnroll::Run() {
                CanBeHalfUnroll(loop) && !AM.IsUnrolled(loop->GetHeader())) {
       auto unrollbody = ExtractLoopBody(loop);
       if (unrollbody) {
+        std::cerr << "Find Unroll: " << loop->GetHeader()->GetName()
+                  << std::endl;
+        // if (loop->GetHeader()->GetName() == ".421.Substitute") {
+        //   Singleton<Module>().Test();
+        //   std::cout<<std::endl;
+        // }
         auto bb = Half_Unroll(loop, unrollbody);
         return true;
       }
@@ -411,7 +417,7 @@ bool LoopUnroll::CanBeHalfUnroll(LoopInfo *loop) {
       return false;
   if (auto Con = dynamic_cast<ConstIRInt *>(loop->trait.boundary)) {
     iteration = Con->GetVal();
-    if (iteration < 30)
+    if (iteration < 60)
       return false;
   }
   auto op = loop->trait.cmp->getopration();
@@ -424,9 +430,7 @@ bool LoopUnroll::CanBeHalfUnroll(LoopInfo *loop) {
   default:
     return false;
   }
-  // auto change = dynamic_cast<BinaryInst *>(loop->trait.change);
-  // if (change->getopration() != BinaryInst::Op_Add)
-  //   return false;
+
   int cost = CaculatePrice(body, m_func);
   if (cost == MaxInstCost + 1)
     return false;
@@ -607,7 +611,7 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
     call_pos = call_pos.insert_after(cloned);
     replceArg_muti(cloned, CurChange, ResOrigin);
   }
-  
+
   for (auto iter = Erase.begin(); iter != Erase.end();) {
     auto call = *iter;
     ++iter;
@@ -647,20 +651,22 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
       Arg2Orig[op] = op;
   }
   auto Ret = m_func->InlineCall(UnrollBody, Arg2Orig, Old2New);
-  
+
   tmp = Ret.second;
   delete tmp->back();
 
   for (auto &[phi, val] : this->OutsidePhi) {
     assert(Old2New.count(val));
     for (int i = 0; i < phi->Getuselist().size(); i++) {
-      if (phi->GetOperand(i) == val)
-        {phi->ReplaceVal(i, Old2New[val]);phi->ModifyBlock(Single,tmp);}
+      if (phi->GetOperand(i) == val) {
+        phi->ReplaceVal(i, Old2New[val]);
+        phi->ModifyBlock(Single, tmp);
+      }
     }
   }
   // update header phi
   single_ind->updateIncoming(Arg2Orig[OriginChange], tmp);
-  
+
   if (Ret.first)
     single_res->updateIncoming(Ret.first, tmp);
   auto single_cmp = BinaryInst::CreateInst(Arg2Orig[OriginChange], op, bound);
@@ -671,11 +677,11 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   // body之后只有ind和res可能会被外部使用，维护这两个值
   auto callee = dynamic_cast<Function *>(UnrollBody->GetOperand(0));
   if (ResOrigin) {
-    UnrollBody->RAUW(single_res);
+    UnrollBody->RAUW(Ret.first);
   }
 
   delete UnrollBody;
-  
+
   // change preheader edge
   if (auto uncond = dynamic_cast<UnCondInst *>(preheader->back())) {
     uncond->RSUW(0, Unroll_Entry);
