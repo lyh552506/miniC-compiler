@@ -30,7 +30,7 @@ class SizeLimit:public InlineHeuristic{
 };
 class NoRecursive:public InlineHeuristic{
     Module* m;
-    bool InlineRecursion = false;
+    bool InlineRecursion = true;
     // std::unordered_set<Function*> recursive;
     public:
     bool CanBeInlined(CallInst*)override;

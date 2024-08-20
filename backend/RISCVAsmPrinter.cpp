@@ -34,6 +34,11 @@ dataSegment* &RISCVAsmPrinter::GetData(){return data;}
 void RISCVAsmPrinter::set_use_cachelookup(bool condi) {
     use_cachelookup = condi;
 }
+
+void RISCVAsmPrinter::set_use_cachelookup4(bool condi) {
+    use_cachelookup4 = condi;
+}
+
 void RISCVAsmPrinter::printAsmGlobal() {
     std::cout << "    .file  \"" << filename << "\"" << std::endl;
     std::cout << "    .attribute arch, \"rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zba1p0_zbb1p0\"" << std::endl;
@@ -61,7 +66,24 @@ void RISCVAsmPrinter::printCacheLookUp() {
     ;
     std::cout << cachelookuplib;
 }   
+void RISCVAsmPrinter::printCacheLookUp4() {
+    // std::ifstream file(this->cachefilepath);
+    // if (!file.is_open()) {
+    //     std::cout << "Error: Cannot open file " << this->cachefilepath << std::endl;
+    //     return;
+    // }
+    // std::string line;
+    // while (std::getline(file, line)) {
+    //     std::cout << line << std::endl;
+    // }
+    // file.close();
+    // return;
 
+    static const char* cachelookuplib4 =
+    #include "../include/RISCVSupport/cachelib4.hpp"
+    ;
+    std::cout << cachelookuplib4;
+}   
 void RISCVAsmPrinter::printParallelLib(){
     static const char* buildinlib=
     #include "../include/RISCVSupport/parallel.hpp"
@@ -77,6 +99,8 @@ void RISCVAsmPrinter::printAsm() {
         this->printParallelLib();
     if(this->use_cachelookup == true) 
         this->printCacheLookUp();
+    if(this->use_cachelookup4 == true)
+        this->printCacheLookUp4();
 }
 
 //textSegment
