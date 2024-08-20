@@ -40,8 +40,6 @@
 #include "ScalarStrengthReduce.hpp"
 #include "ConstantHoist.hpp"
 #include "ControlFlowOpt.hpp"
-#include "Select2Branch.hpp"
-#include "CodeMove.hpp"
 #include <any>
 #include <getopt.h>
 #include <memory>
@@ -81,8 +79,7 @@ enum PassName {
   selfstoreelimination,
   cachelookup,
   scalarstrengthreduce,
-  consthoist,
-  select2branch
+  consthoist
 };
 
 static struct option long_options[] = {
@@ -117,7 +114,6 @@ static struct option long_options[] = {
     {"CacheLookUp", no_argument, 0, 32},
     {"ScalarStrengthReduce", no_argument, 0, 33},
     {"consthoist", no_argument, 0, 34},
-    {"select2branch", no_argument, 0, 35},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},

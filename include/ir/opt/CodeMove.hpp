@@ -13,14 +13,21 @@ class CodeMove : public _PassManagerBase<CodeMove, Function>
   private:
     dominance *DomTree;
     Function *func;
+    LoopAnalysis *Loop;
     _AnalysisManager &AM;
+    std::vector<LoopInfo *> DeleteLoops;
+    std::vector<LoopInfo *> Loops;
     void init();
-    bool RunMotion();
-    bool CanHandle(User* inst);
+    bool CodeMotion();
   public:
     CodeMove(Function *func_, _AnalysisManager &AM_) : func(func_), AM(AM_)
     {
         init();
+    }
+    ~CodeMove()
+    {
+        for(auto loop : Loops)
+            delete loop;
     }
     bool Run();
 };
