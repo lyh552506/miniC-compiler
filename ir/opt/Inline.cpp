@@ -134,7 +134,7 @@ bool NoRecursive::CanBeInlined(CallInst *call)
         static int InlineTimes = 0;
         if (!master->isRecursive() && !slave->isRecursive())
             return true;
-        if (InlineTimes < 20)
+        if (InlineTimes < 5)
         {
             InlineTimes++;
             return true;
