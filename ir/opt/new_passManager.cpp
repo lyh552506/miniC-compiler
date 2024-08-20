@@ -175,7 +175,7 @@ void _PassManager::RunOnLevel() {
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc) 
 
-        // RunEntryFunc(LoopParallel, modified)
+        RunEntryFunc(LoopParallel, modified)
             PassChangedBegin(curfunc)
    
                 RunLevelPass(ConstantProp, curfunc, other)
