@@ -1,11 +1,11 @@
 #pragma once
-#include "../../include/lib/BaseCFG.hpp"
-#include "../../include/lib/CFG.hpp"
+#include "../../lib/BaseCFG.hpp"
+#include "../../lib/CFG.hpp"
 #include "../Analysis/LoopInfo.hpp"
 #include "LoopSimplify.hpp"
 #include "New_passManager.hpp"
 #include "PassManagerBase.hpp"
-#include "../../include/lib/Singleton.hpp"
+#include "../../lib/Singleton.hpp"
 #include "../Analysis/dominant.hpp"
 #include "../../../util/my_stl.hpp"
 #include <algorithm>

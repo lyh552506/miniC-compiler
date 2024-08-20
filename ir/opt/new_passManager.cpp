@@ -1,7 +1,7 @@
 #include "../../include/ir/opt/New_passManager.hpp"
-#include "CFG.hpp"
-#include "Singleton.hpp"
-#include "mem2reg.hpp"
+#include "../../include/lib/CFG.hpp"
+#include "../../include/lib/Singleton.hpp"
+#include "../../include/ir/opt/mem2reg.hpp"
 void _PassManager::DecodeArgs(int argc, char *argv[]) {
   int optionIndex, option;
   while ((option = getopt_long(argc, argv, "", long_options, &optionIndex)) !=
@@ -97,6 +97,9 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
     case consthoist:
       AddPass(consthoist);
       break;
+    case select2branch:
+      AddPass(select2branch);
+      break;
     case O0:
       level = O0;
       break;
@@ -116,6 +119,7 @@ void _PassManager::DecodeArgs(int argc, char *argv[]) {
 bool _PassManager::Run() { return true; }
 
 void _PassManager::RunOnLevel() {
+  level=O1;
   if (level == O0)
     return;
   if (level == O1) {
@@ -199,7 +203,7 @@ void _PassManager::RunOnLevel() {
       }
 
       CommonPass(AM);
-
+    RunLevelPass(Select2Branch, curfunc, other)
       // loop unroller
       modified = true;
       while (modified) {
@@ -223,10 +227,8 @@ void _PassManager::RunOnLevel() {
             // loopdeletion
             RunLevelPass(LoopDeletion, curfunc, modified);
         PassChangedBegin(curfunc)
- 
             RunLevelPass(LoopUnroll, curfunc, modified)
                 PassChangedBegin(curfunc)
- 
                     RunLevelPass(ConstantProp, curfunc, modified);
     RunLevelPass(DCE, curfunc, other);
         PassChangedBegin(curfunc)
@@ -347,7 +349,12 @@ static int x=0;
     RunLevelPass(DeadStoreElimination, curfunc, other)
     RunLevelPass(LoadElimination, curfunc, other)
     RunLevelPass(DCE, curfunc, other)
-    // RunLevelPass(CacheLookUp, curfunc, modified);
+    RunLevelPass(cfgSimplify, curfunc, modified);
+    PassChangedBegin(curfunc)
+    RunLevelPass(CodeMove, curfunc, modified);
+    PassChangedBegin(curfunc)
+    RunLevelPass(CacheLookUp, curfunc, modified);
+    RunLevelPass(Select2Branch, curfunc, other)
   }
 }
 bool _PassManager::CommonPass(_AnalysisManager &AM) {
@@ -390,7 +397,7 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
 
         // constprop
         RunLevelPass(ConstantProp, curfunc, mody);
-    // RunLevelPass(ConstantHoist, curfunc, mody);
+    RunLevelPass(ConstantHoist, curfunc, mody);
     RunLevelPass(cfgSimplify, curfunc, mody) PassChangedBegin(curfunc)
          
             // reassociate
@@ -402,13 +409,10 @@ bool _PassManager::CommonPass(_AnalysisManager &AM) {
     RunLevelPass(BlockMerge, curfunc, mody);
 
     RunLevelPass(DCE, curfunc, mody);
-
+    RunLevelPass(ControlFlowOpt, curfunc, mody);
     PassChangedBegin(curfunc)
           RunLevelPass(cfgSimplify, curfunc, mody);
-    // RunLevelPass(ControlFlowOpt, curfunc, mody);
-    // PassChangedBegin(curfunc)
-    // RunLevelPass(cfgSimplify, curfunc, mody);
-    // RunLevelPass(ConstantProp, curfunc, mody);
+    RunLevelPass(ConstantProp, curfunc, mody);
     // PassChangedBegin(curfunc)
   }
   return mody;

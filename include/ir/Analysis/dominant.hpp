@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "../../include/lib/CFG.hpp"
+#include "../../lib/CFG.hpp"
 #include "../opt/PassManagerBase.hpp"
 #include "../../../util/my_stl.hpp"
 
