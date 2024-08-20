@@ -769,9 +769,9 @@ void RISCVISel::LowerCallInstCacheLookUp4(CallInst* inst){
     this->asmprinter->set_use_cachelookup4(true);
     RISCVMIR* call = new RISCVMIR(RISCVMIR::call);
     // the call inst is: call CacheLookUp(int/float, int/float)
-    // the size of uselist is 3, and the first use is called function
+    // the size of uselist is 5, and the first use is called function
     BuildInFunction* buildinfunc = BuildInFunction::GetBuildInFunction(inst->GetOperand(0)->GetName());
-    call->AddOperand(M(buildinfunc));  // "CacheLookUp"
+    call->AddOperand(M(buildinfunc));  // "CacheLookUp4"
     int regint=PhyRegister::PhyReg::a0;
     for(int index=1; index<5; index++) {
         Operand op = inst->GetOperand(index);
