@@ -23,7 +23,7 @@ class RISCVISel:public BackEndPass<Function>{
 
     void LowerCallInstParallel(CallInst*);
     void LowerCallInstCacheLookUp(CallInst*);
-    
+    void LowerCallInstCacheLookUp4(CallInst*);
     // return the virreg which handles the condition
     // will register to the mapping automatically
     void condition_helper(BinaryInst*);
