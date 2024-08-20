@@ -257,6 +257,48 @@ Value *SimplifyIcmpInst(BinaryInst *inst, BinaryInst::Operation Opcode, Value *L
         }
     }
 
+    // (x > a) || (x < b) -> true (a < b)
+    if (Opcode == BinaryInst::Op_Or)
+    {
+        auto LHS_Cmp = dynamic_cast<BinaryInst *>(LHS);
+        auto RHS_Cmp = dynamic_cast<BinaryInst *>(RHS);
+        if (LHS_Cmp && RHS_Cmp && LHS_Cmp->getopration() == BinaryInst::Op_G &&
+            RHS_Cmp->getopration() == BinaryInst::Op_L)
+        {
+            Value *lhs_l = LHS_Cmp->GetOperand(0);
+            Value *lhs_r = LHS_Cmp->GetOperand(1);
+            Value *rhs_l = RHS_Cmp->GetOperand(0);
+            Value *rhs_r = RHS_Cmp->GetOperand(1);
+            if (lhs_l == rhs_l)
+            {
+                if (dynamic_cast<ConstIRInt *>(rhs_r) && dynamic_cast<ConstIRInt *>(lhs_r))
+                {
+                    if (dynamic_cast<ConstIRInt *>(rhs_r)->GetVal() > dynamic_cast<ConstIRInt *>(lhs_r)->GetVal())
+                    {
+                        return ConstIRBoolean::GetNewConstant(true);
+                    }
+                }
+            }
+        }
+        else if (LHS_Cmp && RHS_Cmp && LHS_Cmp->getopration() == BinaryInst::Op_L &&
+                 RHS_Cmp->getopration() == BinaryInst::Op_G)
+        {
+            Value *lhs_l = LHS_Cmp->GetOperand(0);
+            Value *lhs_r = LHS_Cmp->GetOperand(1);
+            Value *rhs_l = RHS_Cmp->GetOperand(0);
+            Value *rhs_r = RHS_Cmp->GetOperand(1);
+            if (lhs_l == rhs_l)
+            {
+                if (dynamic_cast<ConstIRInt *>(rhs_r) && dynamic_cast<ConstIRInt *>(lhs_r))
+                {
+                    if (dynamic_cast<ConstIRInt *>(rhs_r)->GetVal() < dynamic_cast<ConstIRInt *>(lhs_r)->GetVal()){
+                        return ConstIRBoolean::GetNewConstant(true);
+                        }
+
+                }
+            }
+        }
+    }
     // true or X -> true
     if (Opcode == BinaryInst::Op_Or)
     {
@@ -451,6 +493,26 @@ Value *SimplifySelectInst(SelectInst *inst)
                 Pos.insert_before(min);
                 return min;
             }
+        }
+    }
+    else if (auto false_bool = dynamic_cast<ConstIRBoolean *>(FalseVal))
+    {
+        if (false_bool->GetVal() == false)
+        {
+            auto AndInst = new BinaryInst(Cond, BinaryInst::Op_And, TrueVal);
+            BasicBlock::mylist<BasicBlock, User>::iterator Pos(inst);
+            Pos.insert_before(AndInst);
+            return AndInst;
+        }
+    }
+    else if (auto true_bool = dynamic_cast<ConstIRBoolean *>(TrueVal))
+    {
+        if (true_bool->GetVal() == true)
+        {
+            auto OrInst = new BinaryInst(Cond, BinaryInst::Op_Or, FalseVal);
+            BasicBlock::mylist<BasicBlock, User>::iterator Pos(inst);
+            Pos.insert_before(OrInst);
+            return OrInst;
         }
     }
     return nullptr;

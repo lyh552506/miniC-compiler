@@ -18,44 +18,27 @@ bool CodeMove::RunMotion()
     {
         if (block == func->front())
             continue;
-        std::vector<User *> MoveOut;
-        std::unordered_set<Value *> MoveOutSet;
+        std::vector<User *> HandleList;
+        std::unordered_set<Value *> CountSet;
         for (User *inst : *block)
         {
-            if (!CanHandle(inst))
+            if (!CanHandle(inst, CountSet, block))
                 continue;
-
-            bool flag = true;
-            for (auto &use : inst->Getuselist())
-            {
-                if (auto user = dynamic_cast<User *>(use->usee))
-                {
-                    if (user->GetParent() == block)
-                    {
-                        if (!MoveOutSet.count(user))
-                        {
-                            flag = false;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (flag)
-            {
-                MoveOut.push_back(inst);
-                MoveOutSet.insert(inst);
-            }
+                HandleList.push_back(inst);
+                CountSet.insert(inst);
         }
+        if(HandleList.empty())
+            continue;
         std::vector<std::pair<User *, BasicBlock *>> MoveTo;
-        std::unordered_map<User *, BasicBlock *> SetTarget;
-        for (User *inst : MoveOut)
+        std::unordered_map<User *, BasicBlock *> MoveMapping;
+        for (User *inst : HandleList)
         {
-            BasicBlock *TargetBlock = func->front();
-            auto UpdateTargetBlock = [&](BasicBlock *block) {
-                if (block == TargetBlock)
+            BasicBlock *MappingBB = func->front();
+            auto Update = [&](BasicBlock *block) {
+                if (block == MappingBB)
                     return;
-                if (DomTree->dominates(TargetBlock, block))
-                    TargetBlock = block;
+                if (DomTree->dominates(MappingBB, block))
+                    MappingBB = block;
                 return;
             };
             bool flag = true;
@@ -66,8 +49,8 @@ bool CodeMove::RunMotion()
                 {
                     if (user->GetParent() == block)
                     {
-                        if (SetTarget.count(user))
-                            UpdateTargetBlock(SetTarget[user]);
+                        if (MoveMapping.count(user))
+                            Update(MoveMapping[user]);
                         else
                         {
                             flag = false;
@@ -75,25 +58,25 @@ bool CodeMove::RunMotion()
                         }
                     }
                     else if (auto parent = user->GetParent())
-                        UpdateTargetBlock(parent);
+                        Update(parent);
                 }
                 else
                     flag = false;
             }
             if (!flag)
                 continue;
-            User *br = TargetBlock->back();
+            User *br = MappingBB->back();
             BasicBlock::mylist<BasicBlock, User>::iterator Pos(br);
             inst->EraseFromParent();
             Pos.insert_before(inst);
-            SetTarget.emplace(inst, TargetBlock);
+            MoveMapping.emplace(inst, MappingBB);
             modified = true;
         }
     }
     return modified;
 }
 
-bool CodeMove::CanHandle(User *inst)
+bool CodeMove::CanHandle(User *inst, std::unordered_set<Value *> CountSet, BasicBlock *father)
 {
     if (inst->HasSideEffect())
         return false;
@@ -112,7 +95,19 @@ bool CodeMove::CanHandle(User *inst)
         if (inst->GetOperand(0)->isGlobal())
             return false;
     }
-    default:
+    default: {
+        for (auto &use : inst->Getuselist())
+        {
+            if (auto user = dynamic_cast<User *>(use->usee))
+            {
+                if (user->GetParent() == father)
+                {
+                    if (!CountSet.count(user))
+                        return false;
+                }
+            }
+        }
         return true;
+    }
     }
 }
