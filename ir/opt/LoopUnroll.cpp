@@ -634,7 +634,7 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   if (ResOrigin) {
     single_res = PhiInst::NewPhiNode(entry_res->GetType());
     single_res->updateIncoming(entry_res, Unroll_Entry);
-    Single->push_back(single_res);
+    Single->push_front(single_res);
     new_Res = single_res;
   }
   // deal with real unroll body
@@ -649,6 +649,7 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
       Arg2Orig[op] = op;
   }
   auto Ret = m_func->InlineCall(UnrollBody, Arg2Orig, Old2New);
+  
   tmp = Ret.second;
   delete tmp->back();
 
@@ -661,6 +662,7 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   }
   // update header phi
   single_ind->updateIncoming(Arg2Orig[OriginChange], tmp);
+  
   if (Ret.first)
     single_res->updateIncoming(Ret.first, tmp);
   auto single_cmp = BinaryInst::CreateInst(Arg2Orig[OriginChange], op, bound);
@@ -697,11 +699,5 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
   Singleton<Module>().EraseFunction(callee);
   AM.Unrolled(MutiUnrollBlock);
   AM.Unrolled(Single);
-  // static int a=0;
-  //     a++;
-  //     if(a==3){
-  //       Singleton<Module>().Test();
-  //       std::cout<<std::endl;
-  //     }
   return tmp;
 }
