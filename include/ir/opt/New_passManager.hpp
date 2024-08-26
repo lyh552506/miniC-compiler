@@ -42,6 +42,7 @@
 #include "ControlFlowOpt.hpp"
 #include "Select2Branch.hpp"
 #include "CodeMove.hpp"
+#include "IndVarExtr.hpp"
 #include <any>
 #include <getopt.h>
 #include <memory>
