@@ -1,45 +1,47 @@
 #pragma once
-#include "../../include//ir/Analysis/LoopInfo.hpp"
-#include "../../include/ir/Analysis/dominant.hpp"
-#include "../../include/ir/opt/BlockMerge.hpp"
-#include "../../include/ir/opt/CSE.hpp"
-#include "../../include/ir/opt/Cache.hpp"
-#include "../../include/ir/opt/CondMerge.hpp"
-#include "../../include/ir/opt/ConstantFold.hpp"
-#include "../../include/ir/opt/ConstantProp.hpp"
-#include "../../include/ir/opt/DCE.hpp"
-#include "../../include/ir/opt/DSE.hpp"
-#include "../../include/ir/opt/DeadArgsElimination.hpp"
-#include "../../include/ir/opt/DealCriticalEdges.hpp"
-#include "../../include/ir/opt/GepCombine.hpp"
-#include "../../include/ir/opt/GepEvaluate.hpp"
-#include "../../include/ir/opt/Global2Local.hpp"
-#include "../../include/ir/opt/Inline.hpp"
-#include "../../include/ir/opt/InstructionSimplify.hpp"
-#include "../../include/ir/opt/LoadElimination.hpp"
-#include "../../include/ir/opt/Local2Global.hpp"
-#include "../../include/ir/opt/LoopDeletion.hpp"
-#include "../../include/ir/opt/LoopParallel.hpp"
-#include "../../include/ir/opt/LoopRotate.hpp"
-#include "../../include/ir/opt/LoopSimplify.hpp"
-#include "../../include/ir/opt/LoopUnroll.hpp"
-#include "../../include/ir/opt/PassManagerBase.hpp"
-#include "../../include/ir/opt/PromoteMemtoRegister.hpp"
-#include "../../include/ir/opt/SSAPRE.hpp"
-#include "../../include/ir/opt/SelfStoreElimination.hpp"
-#include "../../include/ir/opt/StoreOnlyGlobalElimination.hpp"
-#include "../../include/ir/opt/TailRecurseElimination.hpp"
-#include "../../include/ir/opt/cfgSimplify.hpp"
-#include "../../include/ir/opt/lcssa.hpp"
-#include "../../include/ir/opt/licm.hpp"
-#include "../../include/ir/opt/mem2reg.hpp"
-#include "../../include/ir/opt/reassociate.hpp"
-#include "../../include/ir/opt/DSE.hpp"
-#include "../../include/ir/opt/LoadElimination.hpp"
-#include "../../include/ir/opt/SelfStoreElimination.hpp"
-#include "../../include/ir/opt/ScalarStrengthReduce.hpp"
-#include "../../include/ir/opt/ConstantHoist.hpp"
-#include "../../include/ir/opt/ControlFlowOpt.hpp"
+#include "../Analysis/LoopInfo.hpp"
+#include "../Analysis/dominant.hpp"
+#include "BlockMerge.hpp"
+#include "CSE.hpp"
+#include "Cache.hpp"
+#include "CondMerge.hpp"
+#include "ConstantFold.hpp"
+#include "ConstantProp.hpp"
+#include "DCE.hpp"
+#include "DSE.hpp"
+#include "DeadArgsElimination.hpp"
+#include "DealCriticalEdges.hpp"
+#include "GepCombine.hpp"
+#include "GepEvaluate.hpp"
+#include "Global2Local.hpp"
+#include "Inline.hpp"
+#include "InstructionSimplify.hpp"
+#include "LoadElimination.hpp"
+#include "Local2Global.hpp"
+#include "LoopDeletion.hpp"
+#include "LoopParallel.hpp"
+#include "LoopRotate.hpp"
+#include "LoopSimplify.hpp"
+#include "LoopUnroll.hpp"
+#include "PassManagerBase.hpp"
+#include "PromoteMemtoRegister.hpp"
+#include "SSAPRE.hpp"
+#include "SelfStoreElimination.hpp"
+#include "StoreOnlyGlobalElimination.hpp"
+#include "TailRecurseElimination.hpp"
+#include "cfgSimplify.hpp"
+#include "lcssa.hpp"
+#include "licm.hpp"
+#include "mem2reg.hpp"
+#include "reassociate.hpp"
+#include "DSE.hpp"
+#include "LoadElimination.hpp"
+#include "SelfStoreElimination.hpp"
+#include "ScalarStrengthReduce.hpp"
+#include "ConstantHoist.hpp"
+#include "ControlFlowOpt.hpp"
+#include "Select2Branch.hpp"
+#include "CodeMove.hpp"
 #include <any>
 #include <getopt.h>
 #include <memory>
@@ -79,7 +81,8 @@ enum PassName {
   selfstoreelimination,
   cachelookup,
   scalarstrengthreduce,
-  consthoist
+  consthoist,
+  select2branch
 };
 
 static struct option long_options[] = {
@@ -114,6 +117,7 @@ static struct option long_options[] = {
     {"CacheLookUp", no_argument, 0, 32},
     {"ScalarStrengthReduce", no_argument, 0, 33},
     {"consthoist", no_argument, 0, 34},
+    {"select2branch", no_argument, 0, 35},
     {"O0", no_argument, 0, 0},
     {"O1", no_argument, 0, 1},
     {"O2", no_argument, 0, 2},

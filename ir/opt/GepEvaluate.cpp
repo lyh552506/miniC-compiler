@@ -65,7 +65,7 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
     HandleBlockIn(node->ValueAddr, node);
     for (User *inst : *block)
     {
-        if(auto alloca = dynamic_cast<AllocaInst*>(inst))
+        if (auto alloca = dynamic_cast<AllocaInst *>(inst))
         {
             allocas.insert(alloca);
             continue;
@@ -113,6 +113,18 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
                             alloca->HasStored = true;
                         }
                     }
+                    else if (auto alloca = dynamic_cast<AllocaInst *>(use->usee))
+                    {
+                        node->ValueAddr[alloca].clear();
+                        alloca->AllZero = false;
+                        alloca->HasStored = true;
+                    }
+                }
+                else if (auto alloca = dynamic_cast<AllocaInst *>(use->usee))
+                {
+                    node->ValueAddr[alloca].clear();
+                    alloca->AllZero = false;
+                    alloca->HasStored = true;
                 }
             }
             continue;
@@ -173,6 +185,18 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
                     alloca->HasStored = true;
                     alloca->AllZero = false;
                     AllocaInitMap.erase(alloca);
+                    auto all_offset_const = [&gep]() {
+                        return std::all_of(gep->Getuselist().begin() + 1, gep->Getuselist().end(),
+                                           [](User::UsePtr &use) {
+                                               if (auto val = dynamic_cast<ConstantData *>(use->usee))
+                                               {
+                                                   return true;
+                                               }
+                                               return false;
+                                           });
+                    };
+                    if (!all_offset_const())
+                        node->ValueAddr[alloca].clear();
                     size_t hash = GepHash{}(gep, &node->ValueAddr);
                     node->ValueAddr[alloca][hash] = inst->Getuselist()[0]->usee;
                 }
@@ -188,6 +212,18 @@ bool GepEvaluate::ProcessNode(HandleNode *node)
                 else if (gep->Getuselist()[0]->usee->isParam())
                 {
                     auto base = gep->Getuselist()[0]->usee;
+                    auto all_offset_const = [&gep]() {
+                        return std::all_of(gep->Getuselist().begin() + 1, gep->Getuselist().end(),
+                                           [](User::UsePtr &use) {
+                                               if (auto val = dynamic_cast<ConstantData *>(use->usee))
+                                               {
+                                                   return true;
+                                               }
+                                               return false;
+                                           });
+                    };
+                    if (!all_offset_const())
+                        node->ValueAddr[base].clear();
                     size_t hash = GepHash{}(gep, &node->ValueAddr);
                     node->ValueAddr[base][hash] = inst->Getuselist()[0]->usee;
                 }
@@ -250,7 +286,7 @@ void GepEvaluate::HandleBlockIn(ValueAddr_Struct &addr, HandleNode *node)
             maps.push_back(&(HandleNode->ValueAddr));
         else
         {
-            for(auto alloca : allocas)
+            for (auto alloca : allocas)
                 alloca->HasStored = true;
             addr.clear();
             return;

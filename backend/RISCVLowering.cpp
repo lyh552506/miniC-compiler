@@ -94,7 +94,7 @@ bool RISCVFunctionLowering::run(Function *m)
     }
     
     // Pre_RA_Scheduler pre_scheduler;
-    // pre_scheduler.ScheduleOnFunction(ctx);
+    // pre_sclheduer.ScheduleOnFunction(ctx);
     
     // Post_RA_Scheduler post_scheduler;
     // post_scheduler.ScheduleOnFunction(ctx);
@@ -116,8 +116,8 @@ bool RISCVFunctionLowering::run(Function *m)
     auto dbd=DeleteDeadBlock();
     dbd.run(ctx.GetCurFunction());
 
-    // auto layout=CodeLayout();
-    // layout.run(mfunc);
+    auto layout=CodeLayout();
+    layout.run(mfunc);
 
     return false;
 }

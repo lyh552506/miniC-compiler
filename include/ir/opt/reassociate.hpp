@@ -1,9 +1,9 @@
 #pragma once
-#include "../../include/ir/Analysis/dominant.hpp"
-#include "../../include/ir/opt/New_passManager.hpp"
-#include "../../include/ir/opt/PassManagerBase.hpp"
-#include "../../include/lib/BaseCFG.hpp"
-#include "../../include/lib/CFG.hpp"
+#include "../../../include/ir/Analysis/dominant.hpp"
+#include "../../../include/ir/opt/New_passManager.hpp"
+#include "../../../include/ir/opt/PassManagerBase.hpp"
+#include "../../../include/lib/BaseCFG.hpp"
+#include "../../../include/lib/CFG.hpp"
 #include <vector>
 class _AnalysisManager;
 class Reassociate : public _PassManagerBase<Reassociate, Function> {

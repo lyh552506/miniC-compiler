@@ -26,6 +26,7 @@ class RISCVAsmPrinter {
     textSegment* text;
     dataSegment* data;
     bool use_cachelookup = false;
+    bool use_cachelookup4 = false;
     std::string cachefilepath = "RISCVLib/CacheLib.s";
     public:
     RISCVAsmPrinter(std::string filename, Module* unit, RISCVLoweringContext& ctx);
@@ -33,8 +34,10 @@ class RISCVAsmPrinter {
     void SetTextSegment(textSegment*);
     dataSegment*& GetData();
     void set_use_cachelookup(bool);
+    void set_use_cachelookup4(bool);
     void printAsmGlobal();
     void printCacheLookUp();
+    void printCacheLookUp4();
     void printParallelLib();
     void printAsm();
 };

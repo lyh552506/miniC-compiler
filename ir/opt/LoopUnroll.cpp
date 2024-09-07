@@ -5,9 +5,7 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
-#include "BlockMerge.hpp"
-#include "LoopSimplify.hpp"
-#include "Type.hpp"
+#include "../../include/ir/opt/BlockMerge.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -33,17 +31,18 @@ bool LoopUnroll::Run() {
         CleanUp(loop, bb);
         return true;
       }
-    } else if ((AM.FindAttr(loop->GetHeader(), Rotate) ||
-                m_func->tag == Function::ParallelBody) &&
-               CanBeHalfUnroll(loop) && !AM.IsUnrolled(loop->GetHeader())) {
-      static int x = 0;
-      x++;
-      auto unrollbody = ExtractLoopBody(loop);
-      if (unrollbody) {
-        auto bb = Half_Unroll(loop, unrollbody);
-        return true;
-      }
     }
+    // else if ((AM.FindAttr(loop->GetHeader(), Rotate) ||
+    //             m_func->tag == Function::ParallelBody) &&
+    //            CanBeHalfUnroll(loop) && !AM.IsUnrolled(loop->GetHeader())) {
+    //   static int x = 0;
+    //   x++;
+    //   auto unrollbody = ExtractLoopBody(loop);
+    //   if (unrollbody) {
+    //     auto bb = Half_Unroll(loop, unrollbody);
+    //     return true;
+    //   }
+    // }
   }
   return false;
 }
@@ -553,7 +552,7 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
                                ConstIRInt::GetNewConstant(HalfUnrollTimes));
   cmp = BinaryInst::CreateInst(add, op, bound);
 
-  Unroll_Entry->push_back(add);
+  // Unroll_Entry->push_back(add);
   Unroll_Entry->push_back(cmp);
 
   Unroll_Entry->GenerateCondInst(cmp, MutiUnrollBlock, SingleHeader);
@@ -617,6 +616,8 @@ BasicBlock *LoopUnroll::Half_Unroll(LoopInfo *loop, CallInst *UnrollBody) {
     ++iter;
     delete call;
   }
+  cmp->RSUW(0, entry_indvar);
+  delete add;
 
   delete tmp->back();
   auto muti_uncond = new UnCondInst(Unroll_Entry);

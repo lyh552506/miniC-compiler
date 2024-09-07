@@ -7,7 +7,7 @@
 #include "../../include/lib/BaseCFG.hpp"
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Singleton.hpp"
-#include "my_stl.hpp"
+#include "../../util/my_stl.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
@@ -95,7 +95,7 @@ bool ScalarStrengthReduce::RunOnLoop(LoopInfo *loop)
                 {
                     if (auto phi = dynamic_cast<PhiInst *>(user->GetUser()))
                     {
-                        if (phi->GetParent() == ExitBlock && phi->Getuselist().size() == 1)
+                        if (phi->GetParent() == ExitBlock && phi->GetUserlist().GetSize() == 1)
                         {
                             auto iter = ExitBlock->begin();
                             while (dynamic_cast<PhiInst *>(*iter))
@@ -124,7 +124,7 @@ bool ScalarStrengthReduce::RunOnLoop(LoopInfo *loop)
                 {
                     if (auto phi = dynamic_cast<PhiInst *>(user->GetUser()))
                     {
-                        if (phi->GetParent() == ExitBlock && phi->Getuselist().size() == 1)
+                        if (phi->GetParent() == ExitBlock && phi->GetUserlist().GetSize() == 1)
                         {
                             auto iter = ExitBlock->begin();
                             while (dynamic_cast<PhiInst *>(*iter))

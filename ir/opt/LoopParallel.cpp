@@ -6,11 +6,10 @@
 #include "../../include/lib/CFG.hpp"
 #include "../../include/lib/Type.hpp"
 #include "../../util/my_stl.hpp"
-#include "New_passManager.hpp"
-#include "RISCVAsmPrinter.hpp"
-#include "Singleton.hpp"
+#include "../../include/ir/opt/New_passManager.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
 #include <unordered_map>
 #include <unordered_set>
@@ -55,8 +54,8 @@ bool LoopParallel::Run() {
   for (auto loop : loops) {
     if (ExcutedLoops.find(loop->GetHeader()) == ExcutedLoops.end() &&
         CanBeParallel(loop)) {
-      std::cerr << "Find a Parallelable Loop: " << loop->GetHeader()->GetName()
-                << "\n";
+      // std::cerr << "Find a Parallelable Loop: " << loop->GetHeader()->GetName()
+                // << "\n";
       SubstitudeTrait.Init();
       auto call = ExtractLoopParallelBody(loop);
       MakeWorkThread(loop->trait.initial, loop->trait.boundary, call);
@@ -102,7 +101,34 @@ bool LoopParallel::CanBeParallel(LoopInfo *loop) {
   case BinaryInst::Op_GE:
     break;
   }
-
+  // special trait
+  auto in = dynamic_cast<ConstIRInt *>(loop->trait.initial);
+  auto bou = dynamic_cast<ConstIRInt *>(loop->trait.boundary);
+  if (in && bou) {
+    auto indata = in->GetVal(), boudata = bou->GetVal();
+    auto bin = dynamic_cast<BinaryInst *>(loop->trait.change);
+    auto op = bin->getopration();
+    auto step = loop->trait.step;
+    int iteration = 0;
+    switch (op) {
+    case BinaryInst::Op_Add:
+      iteration = (boudata - indata + step + (step > 0 ? -1 : 1)) / step;
+      break;
+    case BinaryInst::Op_Sub:
+      iteration = (indata - boudata + step + (step > 0 ? -1 : 1)) / step;
+      break;
+    case BinaryInst::Op_Mul:
+      iteration = std::log(boudata / indata) / std::log(step);
+      break;
+    case BinaryInst::Op_Div:
+      iteration = std::log(indata / boudata) / std::log(step);
+      break;
+    default:
+      assert(0 && "what op?");
+    }
+    if (iteration <= 100)
+      return false;
+  }
   bool Outer = false;
   bool Inner = false;
   bool NoBinary = true;

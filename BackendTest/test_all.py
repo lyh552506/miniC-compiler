@@ -16,14 +16,10 @@ upload_folder = "uploadfolder"
 # compiler_path = "./compiler"
 compiler_path = "./build/SYSY-compiler"
 
-test_folder="testcases/functional"
-output_folder = "testcases/output"
-# test_folder="function_test"
-# output_folder = "function_test"
-test_folder="testcases/functional"
-output_folder = "testcases/output"
-# test_folder="function_test"
-# output_folder = "function_test"
+# test_folder="testcases/functional"
+# output_folder = "testcases/output"
+test_folder="function_test"
+output_folder = "function_test"
 sylib_path = "BackendTest/sylib.o"
 
 pass_args=["--O1"] # 

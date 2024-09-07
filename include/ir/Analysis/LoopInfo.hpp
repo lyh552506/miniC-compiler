@@ -4,10 +4,10 @@
 #include <set>
 #include <vector>
 
-#include "../../include/ir/Analysis/dominant.hpp"
-#include "../../include/ir/opt/PassManagerBase.hpp"
-#include "../../include/lib/CFG.hpp"
-#include "../../util/my_stl.hpp"
+#include "dominant.hpp"
+#include "../opt/PassManagerBase.hpp"
+#include "../../lib/CFG.hpp"
+#include "../../../util/my_stl.hpp"
 
 struct LoopTrait {
   BasicBlock *head = nullptr;
