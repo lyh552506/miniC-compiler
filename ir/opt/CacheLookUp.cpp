@@ -43,9 +43,9 @@ bool CacheLookUp::InsertCache_2arg() {
           return false;
         auto Exit = callee->GetRetBlock();
         auto dom = AM.get<dominance>(m_func);
-        // auto loops = AM.get<LoopAnalysis>(m_func, dom, std::ref(DeleteLoop));
-        // if (loops->GetLoops().size() > 0)
-        //   return false;
+        auto loops = AM.get<LoopAnalysis>(m_func, dom, std::ref(DeleteLoop));
+        if (loops->GetLoops().size() > 0)
+          return false;
         if (Exit.size() > 3)
           return false;
         // insert a new entry
@@ -147,6 +147,10 @@ bool CacheLookUp::InsertCache_4arg(CallInst *call, std::vector<Value *> &args) {
   auto EntryBlock = callee->GetBasicBlock().front();
   auto new_entry = new BasicBlock();
   auto new_exit = new BasicBlock();
+
+  if(args.size()==3)
+    args.push_back(ConstIRInt::GetNewConstant(RetNone));
+
   auto callCache = new CallInst(_CacheLookUp, args);
   // get the struct
   auto gep = new GetElementPtrInst(callCache->GetType());
@@ -197,7 +201,7 @@ bool CacheLookUp::InsertCache_4arg(CallInst *call, std::vector<Value *> &args) {
     auto param4_offset = new GetElementPtrInst(callCache);
     param4_offset->add_use(ConstIRInt::GetNewConstant(3));
     auto param4_storage =
-        new StoreInst(ConstIRInt::GetNewConstant(RetNone), param4_offset);
+        new StoreInst(args[3], param4_offset);
 
     iter = iter.insert_before(st_mark);
     iter = iter.insert_after(st_val);
