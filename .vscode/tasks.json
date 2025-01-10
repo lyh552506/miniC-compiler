@@ -2,38 +2,38 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "CMake: build",
-            "type": "cmake",
-            "command": "build",
-            "targets": [
-                "all"
-            ],
-            "group": "build",
-            "problemMatcher": [],
-            "detail": "CMake template build task"
+            "label": "cmake",
+            "type": "shell",
+            "command": "cmake",
+            "args":[
+                "./",
+                "-B",
+                "build",
+                "-G",
+                "Ninja",
+            ]
         },
         {
-            "type": "cppbuild",
-            "label": "C/C++: g++ 生成活动文件",
-            "command": "/usr/bin/g++",
-            "args": [
-                "-fdiagnostics-color=always",
-                "-g",
-                "${file}",
-                "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
-            ],
-            "options": {
-                "cwd": "${fileDirname}"
-            },
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "group": {
+            "label":"ninja",
+            "group":{
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "调试器生成的任务。"
+            "command":"ninja",
+            "args": [
+                "-C",
+                "build",
+                "-j",
+                "8"
+            ]
+        },
+        {
+            "label":"Build",
+            "dependsOrder": "sequence",
+            "dependsOn":[
+                "cmake",
+                "ninja"
+            ]
         }
     ]
 }

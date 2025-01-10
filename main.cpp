@@ -10,7 +10,9 @@
 extern FILE *yyin;
 extern int optind, opterr, optopt;
 extern char *optargi;
+std::string input_path;
 std::string asmoutput_path;
+std::string mode;
 void copyFile(const std::string &sourcePath,
               const std::string &destinationPath) {
   std::ifstream source(sourcePath, std::ios::binary);
@@ -20,7 +22,9 @@ void copyFile(const std::string &sourcePath,
 
 int main(int argc, char **argv) {
   // compiler -S -o testcase.s testcase.sy
+  mode = argv[1];
   asmoutput_path = argv[3];
+  input_path = argv[4];
   yyin = fopen(argv[4], "r");
   yy::parser parse;
   parse();

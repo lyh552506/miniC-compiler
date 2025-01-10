@@ -7,6 +7,7 @@
 #include "../include/backend/DeleteDeadBlock.hpp"
 #include "../include/backend/Scheduler.hpp"
 extern std::string asmoutput_path;
+extern std::string mode;
 RISCVAsmPrinter *asmprinter = nullptr;
 void RISCVModuleLowering::LowerGlobalArgument(Module *m)
 {
@@ -28,7 +29,7 @@ bool RISCVModuleLowering::run(Module *m)
         }
     }
 
-    asmprinter->printAsm();
+    asmprinter->print(mode);
     return false;
 }
 

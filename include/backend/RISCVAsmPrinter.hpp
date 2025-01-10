@@ -40,6 +40,8 @@ class RISCVAsmPrinter {
     void printCacheLookUp4();
     void printParallelLib();
     void printAsm();
+    void printObj();
+    void print(std::string mode);
 };
 
 class dataSegment {

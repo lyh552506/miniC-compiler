@@ -1,5 +1,7 @@
+#include <fstream>
+#include <filesystem>
 #include "../include/backend/RISCVAsmPrinter.hpp"
-
+extern std::string input_path;
 SegmentType __oldtype=TEXT;
 SegmentType* oldtype = &__oldtype;
 SegmentType ChangeSegmentType(SegmentType newtype) {
@@ -91,6 +93,16 @@ void RISCVAsmPrinter::printParallelLib(){
     std::cout<<buildinlib;
 }
 
+void RISCVAsmPrinter::print(std::string mode) {
+    if(mode == "-S") {
+        printAsm();
+    }
+    else if(mode == "-c") {
+        printObj();
+    }
+    else std::cerr << "Error command" << std::endl;
+}
+
 void RISCVAsmPrinter::printAsm() {
     this->printAsmGlobal();
     this->text->PrintTextSegment();
@@ -101,6 +113,33 @@ void RISCVAsmPrinter::printAsm() {
         this->printCacheLookUp();
     if(this->use_cachelookup4 == true)
         this->printCacheLookUp4();
+}
+
+void RISCVAsmPrinter::printObj() {
+    std::string source_path = input_path;
+    size_t pos = input_path.rfind(".sy"); 
+    if(pos != std::string::npos) {
+        input_path.replace(pos, 3, ".c");
+    }
+    try {
+        std::filesystem::copy(source_path, input_path, std::filesystem::copy_options::overwrite_existing);
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "File copy error: " << e.what() << std::endl;
+        exit(1);
+    }
+    std::string command = "riscv64-unknown-linux-gnu-gcc -c -o " + filename + " " + input_path  + " -Wno-implicit-function-declaration";
+    int result = system(command.c_str());
+    if (result != 0) {
+        std::cerr << "Generate object file failed: " << filename << std::endl;
+        exit(1);
+    }
+    try {
+        std::filesystem::remove(input_path);
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "File removal error: " << e.what() << std::endl;
+        exit(1);
+    }
+    return;
 }
 
 //textSegment
