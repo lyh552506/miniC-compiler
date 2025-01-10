@@ -25,14 +25,16 @@ int main(int argc, char **argv) {
   mode = argv[1];
   asmoutput_path = argv[3];
   input_path = argv[4];
-  yyin = fopen(argv[4], "r");
-  yy::parser parse;
-  parse();
-  Singleton<CompUnit *>()->codegen();
-  auto PM = std::make_unique<_PassManager>();
-  // PM->DecodeArgs(argc-4,argv+4);
-  PM->RunOnLevel();
-  freopen(asmoutput_path.c_str(), "w", stdout);
+  if(mode == "-S") {
+    yyin = fopen(argv[4], "r");
+    yy::parser parse;
+    parse();
+    Singleton<CompUnit *>()->codegen();
+    auto PM = std::make_unique<_PassManager>();
+    // PM->DecodeArgs(argc-4,argv+4);
+    PM->RunOnLevel();
+    freopen(asmoutput_path.c_str(), "w", stdout);
+  }
   RISCVModuleLowering RISCVAsm;
   RISCVAsm.run(&Singleton<Module>());
   fflush(stdout);

@@ -120,12 +120,12 @@ void RISCVAsmPrinter::printObj() {
     size_t pos = input_path.rfind(".sy"); 
     if(pos != std::string::npos) {
         input_path.replace(pos, 3, ".c");
-    }
-    try {
-        std::filesystem::copy(source_path, input_path, std::filesystem::copy_options::overwrite_existing);
-    } catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "File copy error: " << e.what() << std::endl;
-        exit(1);
+        try {
+            std::filesystem::copy(source_path, input_path, std::filesystem::copy_options::overwrite_existing);
+        } catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "File copy error: " << e.what() << std::endl;
+            exit(1);
+        }
     }
     std::string command = "riscv64-unknown-linux-gnu-gcc -c -o " + filename + " " + input_path  + " -Wno-implicit-function-declaration";
     int result = system(command.c_str());
